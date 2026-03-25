@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f0f1f3;
+  --fg: #111111;
+  --fg-secondary: #555555;
+  --fg-tertiary: #999999;
+  --border: #e2e4e8;
+  --border-hover: #c8cad0;
+  --accent: #1D9E75;
+  --accent-hover: #178a66;
+  --accent-bg: #e6f7f0;
+  --danger: #dc3545;
+  --warning: #f0a500;
+  --info: #378ADD;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-accent: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --bg-secondary: #141414;
+    --bg-tertiary: #1a1a1a;
+    --fg: #ededed;
+    --fg-secondary: #a0a0a0;
+    --fg-tertiary: #666666;
+    --border: #2a2a2a;
+    --border-hover: #3a3a3a;
+    --accent-bg: #0d2e22;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+/* Phase colors */
+.phase-dream { --phase: #D85A30; }
+.phase-design { --phase: #7F77DD; }
+.phase-plan { --phase: #1D9E75; }
+.phase-build { --phase: #378ADD; }
+.phase-deliver { --phase: #BA7517; }
+.phase-grow { --phase: #639922; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+/* Smooth transitions */
+.transition-all { transition: all 0.2s ease; }
+
+/* Mobile-first responsive helpers */
+@media (max-width: 640px) {
+  /* Ensure minimum touch target size (44px per Apple HIG) */
+  button, a, input, select, textarea { min-height: 44px; }
+  input[type="range"] { min-height: 32px; }
+
+  /* Safe area for notch phones */
+  body { padding-env: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+  /* Horizontal scroll hint for Gantt charts and tabs */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .overflow-x-auto::-webkit-scrollbar { display: none; }
+
+  /* Prevent zoom on input focus (iOS) */
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Print styles for PDF export */
+@media print {
+  nav, footer, .fixed { display: none !important; }
+  body { background: white !important; color: black !important; }
+}
