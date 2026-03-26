@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import CopilotPanel from "@/components/CopilotPanel";
 
 const ENTITY_TYPES = [
@@ -151,13 +152,12 @@ export default function KnowledgePage() {
               const typeInfo = getTypeInfo(entity.entity_type);
               const isExpanded = expanded === entity.id;
               return (
-                <div key={entity.id}
-                  onClick={() => setExpanded(isExpanded ? null : entity.id)}
+                <Link key={entity.id} href={`/knowledge/${entity.slug}`}
                   style={{
                     padding: "14px 16px", borderRadius: 14, cursor: "pointer",
                     border: isExpanded ? `2px solid ${typeInfo.color}` : "1px solid var(--border, #e5e5e5)",
                     background: isExpanded ? `${typeInfo.color}06` : "var(--bg, #fff)",
-                    transition: "all 0.2s",
+                    transition: "all 0.2s", textDecoration: "none", color: "inherit", display: "block",
                   }}>
                   {/* Type badge + title */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -195,24 +195,7 @@ export default function KnowledgePage() {
                     </div>
                   )}
 
-                  {/* Expanded: metadata highlights */}
-                  {isExpanded && entity.metadata && Object.keys(entity.metadata).length > 0 && (
-                    <div style={{
-                      marginTop: 10, padding: 10, borderRadius: 8,
-                      background: "var(--bg, #fff)", border: "1px solid var(--border, #e5e5e5)",
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: typeInfo.color, marginBottom: 4 }}>Details</div>
-                      {Object.entries(entity.metadata).slice(0, 8).map(([key, val]) => (
-                        <div key={key} style={{ fontSize: 10, display: "flex", gap: 6, padding: "2px 0" }}>
-                          <span style={{ color: "var(--fg-tertiary)", minWidth: 100 }}>{key.replace(/_/g, " ")}</span>
-                          <span style={{ color: "var(--fg-secondary)" }}>
-                            {typeof val === "object" ? JSON.stringify(val) : String(val)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                </Link>
               );
             })}
           </div>
