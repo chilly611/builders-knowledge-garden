@@ -29,19 +29,19 @@ const PHASES = [
 ];
 
 const PRODUCTS = [
-  { name: "Smart Project Launcher", tag: "THE COO", desc: "Building type → jurisdiction → auto-populate everything. See and manage codes, phases, team, permits, materials, estimate.", color: "#1D9E75", icon: "🚀" },
-  { name: "Dream Builder", tag: "FREE", desc: "\"I want to build a farmhouse in Asheville\" → full plan in 60 seconds. Voice, text, or image. Shareable dream link.", color: "#D85A30", icon: "💭" },
-  { name: "AI Construction Copilot", tag: "CORE", desc: "Any question, cited answer. 40K+ entities, 142+ jurisdictions. Voice or text. 30+ languages.", color: "#7F77DD", icon: "🧠" },
-  { name: "Voice-First Field Ops", tag: "FIELD", desc: "Talk, don't type. Safety briefings, daily logs, progress reports. Works offline. 30+ languages.", color: "#BA7517", icon: "🎙️" },
-  { name: "AEC CRM", tag: "STICKY", desc: "Lead → proposal → contract → project → warranty. Knowledge-enriched pipeline.", color: "#378ADD", icon: "📊" },
-  { name: "Supply Chain + Marketplace", tag: "REVENUE", desc: "Every material connects to real suppliers. RFQ system. 2-5% marketplace fee.", color: "#639922", icon: "🏪" },
+  { name: "Smart Project Launcher", tag: "THE COO", desc: "Building type → jurisdiction → auto-populate everything. See and manage codes, phases, team, permits, materials, estimate.", color: "#1D9E75", icon: "🚀", href: "/launch" },
+  { name: "Dream Builder", tag: "FREE", desc: "\"I want to build a farmhouse in Asheville\" → full plan in 60 seconds. Voice, text, or image. Shareable dream link.", color: "#D85A30", icon: "💭", href: "/dream" },
+  { name: "Knowledge Garden", tag: "229 ENTITIES", desc: "Browse building codes, materials, methods, safety, trades, standards — 229 entities across 14 types. Every entity has its own page.", color: "#1D9E75", icon: "🌿", href: "/knowledge" },
+  { name: "AI Construction Copilot", tag: "CORE", desc: "Any question, cited answer. Lane-aware personality. Voice or text. RAG pipeline with 229+ entities.", color: "#7F77DD", icon: "🧠", href: "#copilot" },
+  { name: "AEC CRM", tag: "KILLER APP", desc: "Lead → proposal → contract → project → warranty. Pipeline dashboard, lead scoring, activity tracking.", color: "#E8443A", icon: "⚡", href: "/crm" },
+  { name: "Supply Chain + Marketplace", tag: "COMING", desc: "Every material connects to real suppliers. RFQ system. 2-5% marketplace fee.", color: "#639922", icon: "🏪", href: "/marketplace" },
 ];
 
 const STATS = [
   { value: 17, prefix: "$", suffix: "T", label: "Global construction economy", sub: "Largest industry on earth" },
-  { value: 40000, prefix: "", suffix: "+", label: "Knowledge entities", sub: "Codes, materials, methods, safety" },
-  { value: 142, prefix: "", suffix: "+", label: "Jurisdictions", sub: "Global from day one" },
-  { value: 349, prefix: "", suffix: "K", label: "Worker shortage by 2026", sub: "Voice-first solves this" },
+  { value: 229, prefix: "", suffix: "+", label: "Knowledge entities", sub: "Codes, materials, methods, safety, styles" },
+  { value: 171, prefix: "", suffix: "+", label: "Knowledge graph edges", sub: "Codes↔standards↔materials↔methods" },
+  { value: 20, prefix: "", suffix: "", label: "Routes live now", sub: "8 pages + 12 API endpoints" },
 ];
 
 const PRICING = [
@@ -197,11 +197,11 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {PRODUCTS.map((p, i) => (
-              <div key={p.name}
+              <Link key={p.name} href={p.href}
                 className="p-5 rounded-xl transition-all hover:scale-[1.01]"
                 style={{
                   background: "var(--bg-secondary)", border: "1px solid var(--border)",
-                  borderTop: `3px solid ${p.color}`,
+                  borderTop: `3px solid ${p.color}`, textDecoration: "none", color: "inherit", display: "block",
                   opacity: products.visible ? 1 : 0,
                   transform: products.visible ? "none" : "translateY(16px)",
                   transition: `all 0.4s ${i * 0.08}s ease`,
@@ -216,7 +216,7 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-[11px] leading-relaxed" style={{ color: "var(--fg-secondary)" }}>{p.desc}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
