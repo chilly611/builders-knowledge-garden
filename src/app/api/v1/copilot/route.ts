@@ -18,7 +18,7 @@ const MODEL = "claude-sonnet-4-20250514";
 export async function POST(request: NextRequest) {
   const start = Date.now();
 
-  let body: { query: string; jurisdiction?: string; project_context?: Record<string, unknown> };
+  let body: { query: string; jurisdiction?: string; lane?: string; project_context?: Record<string, unknown> };
   try {
     body = await request.json();
   } catch {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { query, jurisdiction, project_context } = body;
+  const { query, jurisdiction, lane, project_context } = body;
 
   if (!query || typeof query !== "string" || query.trim().length === 0) {
     return new Response(JSON.stringify({ error: "query is required" }), {
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     limit: 8,
   });
 
-  // 2. AUGMENT — build system prompt with retrieved entities
-  const systemPrompt = buildSystemPrompt(retrieval.entities, jurisdiction);
+  // 2. AUGMENT — build system prompt with retrieved entities + lane personality
+  const systemPrompt = buildSystemPrompt(retrieval.entities, jurisdiction, lane);
 
   // Build user message with optional project context
   let userMessage = query;

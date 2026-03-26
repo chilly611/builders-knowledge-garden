@@ -122,11 +122,23 @@ export async function retrieveEntities(
 // ---------------------------------------------------------------------------
 // 2. AUGMENT — Build the context window for Claude
 // ---------------------------------------------------------------------------
-export const COPILOT_PROMPT_VERSION = "v0.1.0";
+export const COPILOT_PROMPT_VERSION = "v0.2.0";
+
+const LANE_PERSONALITIES: Record<string, string> = {
+  gc: "You're speaking with a General Contractor. Use technical language freely — they know codes, means and methods, and trade terminology. Be direct and efficient. Reference specific code sections, CSI divisions, and standard practices. They manage projects, crews, and budgets daily.",
+  diy: "You're speaking with a DIY builder or homeowner. Explain jargon in plain language. Never assume they know construction terminology — define terms when you use them. Be patient, encouraging, and thorough. Help them understand WHAT they need and WHY, not just the technical answer. Suggest when they should hire a professional.",
+  specialty: "You're speaking with a Specialty Contractor (electrician, plumber, HVAC tech, etc.). They have deep expertise in their trade but may need context on other trades or general building codes. Reference trade-specific codes (NEC for electrical, IPC/UPC for plumbing, IMC for mechanical, NFPA for fire). Be precise about jurisdictional differences.",
+  supplier: "You're speaking with a material supplier or manufacturer. Help them understand code compliance requirements for their products, certification processes, and how their products connect to specific code sections. Reference ASTM/UL/FM standards and CSI divisions.",
+  equipment: "You're speaking with an equipment provider. Focus on operational aspects: equipment specifications, OSHA requirements for operators, maintenance schedules, utilization optimization. Reference OSHA crane/hoist regulations, NCCCO certifications.",
+  service: "You're speaking with a service provider (architect, engineer, surveyor, consultant). They have professional expertise. Be collegial and reference industry standards and professional practice guidelines. Help with code interpretations and cross-discipline coordination.",
+  worker: "You're speaking with a construction worker or apprentice. Be encouraging and educational. Focus on safety, proper techniques, and career development. Explain the WHY behind safety rules. Reference OSHA requirements clearly. Suggest relevant certifications that could increase their earning potential.",
+  robot: "You're providing data to an AI agent or autonomous system. Be maximally structured and precise. Include exact code section numbers, numerical values with units, and machine-parseable data. Skip conversational niceties. Return structured information.",
+};
 
 export function buildSystemPrompt(
   entities: KnowledgeEntity[],
-  jurisdiction?: string
+  jurisdiction?: string,
+  lane?: string,
 ): string {
   const entityContext = entities
     .map(
@@ -147,7 +159,7 @@ RULES:
 3. If the knowledge entities don't contain enough information, say so honestly. Never fabricate codes, standards, or safety information.
 4. For safety-critical topics (structural, fire, electrical, fall protection), always recommend consulting a licensed professional and the Authority Having Jurisdiction (AHJ).
 5. Be concise but thorough. Construction professionals need actionable answers, not essays.
-6. When jurisdiction matters, specify which jurisdiction your answer applies to.${jurisdiction ? `\n7. The user is asking about jurisdiction: ${jurisdiction}. Prioritize information relevant to this jurisdiction.` : ""}
+6. When jurisdiction matters, specify which jurisdiction your answer applies to.${jurisdiction ? `\n7. The user is asking about jurisdiction: ${jurisdiction}. Prioritize information relevant to this jurisdiction.` : ""}${lane && LANE_PERSONALITIES[lane] ? `\n\nUSER CONTEXT:\n${LANE_PERSONALITIES[lane]}` : ""}
 
 KNOWLEDGE ENTITIES (retrieved for this query):
 ${entityContext || "No entities retrieved — answer from your general construction knowledge and note that you're answering without specific knowledge base citations."}

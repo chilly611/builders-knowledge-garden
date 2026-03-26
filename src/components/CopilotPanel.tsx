@@ -131,6 +131,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
         body: JSON.stringify({
           query: q,
           jurisdiction,
+          lane: typeof window !== "undefined" ? localStorage.getItem("bkg-lane") : undefined,
           project_context: projectContext,
         }),
       });
