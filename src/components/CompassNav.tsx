@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const DESTINATIONS = [
-  { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/", color: "#1D9E75" },
+  { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
   { icon: "💭", label: "Dream Builder", desc: "Describe what you want to build", href: "/dream", color: "#D85A30" },
   { icon: "⚡", label: "Killer App", desc: "Projects, CRM, finances", href: "/crm", color: "#E8443A" },
   { icon: "🧠", label: "AI Copilot", desc: "Ask anything about building", href: "#copilot", color: "#7F77DD" },
