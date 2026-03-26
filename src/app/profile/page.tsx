@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { LANES } from "@/components/LaneSelector";
 import CopilotPanel from "@/components/CopilotPanel";
 
@@ -26,12 +27,7 @@ export default function ProfilePage() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #BA7517, #D85A30)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", fontSize: 18,
-          }}>👤</div>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={36} height={36} style={{ borderRadius: 10 }} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>My Profile</div>
             <div style={{ fontSize: 10, color: "var(--fg-secondary)", letterSpacing: 1 }}>SETTINGS · TEAM · BILLING</div>

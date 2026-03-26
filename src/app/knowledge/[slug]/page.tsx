@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
 
 const TYPE_META: Record<string, { icon: string; color: string; label: string }> = {

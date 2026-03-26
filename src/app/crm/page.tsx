@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
 
 const STAGES = [
@@ -90,12 +91,7 @@ export default function CRMPage() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #E8443A, #D85A30)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", fontSize: 18,
-          }}>⚡</div>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={36} height={36} style={{ borderRadius: 10 }} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>AEC CRM</div>
             <div style={{ fontSize: 10, color: "var(--fg-secondary)", letterSpacing: 1 }}>KILLER APP · PIPELINE</div>

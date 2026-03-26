@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
 
 const ENTITY_TYPES = [
@@ -92,12 +93,7 @@ function KnowledgePageInner() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #1D9E75, #0F6E56)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", fontSize: 18,
-          }}>🌿</div>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's Knowledge Garden" width={36} height={36} style={{ borderRadius: 10 }} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>Knowledge Garden</div>
             <div style={{ fontSize: 10, color: "var(--fg-secondary)", letterSpacing: 1 }}>

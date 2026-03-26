@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, ReactNode } from "react";
+import Image from "next/image";
 
 // ═══ COLORS ═══
 const C = { ac:"#1D9E75", w:"#D85A30", p:"#7F77DD", bl:"#378ADD", gd:"#BA7517", gn:"#639922", rd:"#E8443A", pk:"#EC4899", ind:"#6366F1", br:"#C4A44A" };
@@ -89,7 +90,7 @@ export default function PresentationPage(){
     <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(247,248,250,.92)",backdropFilter:"blur(16px)",borderBottom:"1px solid #e2e6ec",padding:"12px 0"}}>
       <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-          <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#1D9E75,#0c5e45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,boxShadow:"0 4px 16px #1D9E7530"}}>🏗️</div>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={34} height={34} style={{borderRadius:10}} />
           <div><div style={{fontSize:14,fontWeight:700}}>Builder&apos;s Knowledge Garden</div><div style={{fontSize:9,color:"#7a8a9a",letterSpacing:2,textTransform:"uppercase"}}>complete platform architecture · march 2026</div></div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{SLIDES.map((s,i)=><button key={i} onClick={()=>go(i)} style={{padding:"5px 12px",borderRadius:16,border:sl===i?"1.5px solid #1a2433":"1px solid #e2e6ec",background:sl===i?"#1a2433":"#fff",color:sl===i?"#fff":"#7a8a9a",fontSize:10,fontWeight:500,cursor:"pointer",transition:".2s",whiteSpace:"nowrap"}}>{s.lb}</button>)}</div>
@@ -100,7 +101,7 @@ export default function PresentationPage(){
     {/* ═══ COVER ═══ */}
     {cur==="cover"&&<Sec>
       <div style={{textAlign:"center",paddingTop:32}}>
-        <Rv><div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:18}}>{PH.map((p,i)=><div key={i} style={{width:48,height:48,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,background:`${p.c}10`,border:`1px solid ${p.c}25`,animation:`float 3s ease-in-out ${i*.2}s infinite`}}>{p.i}</div>)}</div></Rv>
+        <Rv><div style={{display:"flex",justifyContent:"center",marginBottom:18}}><Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={80} height={80} style={{filter:"drop-shadow(0 4px 16px rgba(29,158,117,0.3))"}} /></div></Rv>
         <Rv delay={100}><div style={{fontSize:9,letterSpacing:3,textTransform:"uppercase",color:C.br,fontWeight:600}}>The Operating System for the $17T Construction Economy</div></Rv>
         <Rv delay={200}><h1 style={{fontSize:38,fontWeight:700,margin:"12px 0",lineHeight:1.2,background:`linear-gradient(135deg,#1a2433 40%,${C.ac})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>The Builder&apos;s<br/>Knowledge Garden</h1></Rv>
         <Rv delay={300}><p style={{fontSize:14,color:"#5a6a7a",maxWidth:520,margin:"0 auto 16px",lineHeight:1.7}}>One platform. Every phase. 40 structured databases. Voice-first. AI-native. The thing that makes every competitor look like a point solution.</p></Rv>

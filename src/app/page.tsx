@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { CompletionRing, AnimCounter, LifecycleFog, GamificationStyles } from "@/components/Gamification";
@@ -77,8 +78,7 @@ export default function Home() {
       <nav className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-20"
         style={{ borderColor: "var(--border)", background: "var(--bg)", backdropFilter: "blur(12px)" }}>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
-               style={{ background: "linear-gradient(135deg, #1D9E75, #0F6E56)" }}>🏗️</div>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's Knowledge Garden" width={32} height={32} className="rounded-lg" />
           <span className="font-semibold text-sm">Builder&apos;s Knowledge Garden</span>
         </div>
         <div className="flex items-center gap-3">
@@ -306,8 +306,7 @@ export default function Home() {
       <footer className="px-6 py-10 border-t text-center" style={{ borderColor: "var(--border)", background: "var(--bg-secondary)" }}>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[10px]"
-              style={{ background: "linear-gradient(135deg, #1D9E75, #0F6E56)" }}>🏗️</div>
+            <Image src="/logo/b_transparent_512.png" alt="Builder's Knowledge Garden" width={24} height={24} className="rounded-md" />
             <span className="text-sm font-semibold">Builder&apos;s Knowledge Garden</span>
           </div>
           <div className="flex gap-1 justify-center mb-4 w-full max-w-xs mx-auto">

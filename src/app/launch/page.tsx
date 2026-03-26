@@ -13,6 +13,7 @@ import {
   generateSchedule,
 } from "@/lib/knowledge-data";
 import Link from "next/link";
+import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
 import {
   CompletionRing,
@@ -140,8 +141,7 @@ export default function LaunchPage() {
       {/* Top Nav with Quest Line */}
       <nav className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "var(--border)" }}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs"
-               style={{ background: "linear-gradient(135deg, #1D9E75, #0F6E56)" }}>🏗️</div>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={28} height={28} className="rounded-md" />
           <span className="font-semibold text-sm">Smart Project Launcher</span>
         </Link>
         {step !== "dashboard" ? (

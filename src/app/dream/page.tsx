@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Cinzel, Outfit } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 
@@ -332,16 +333,18 @@ export default function DreamMachinePage() {
 
           {/* ── Hero title ─────────────────────────────────────── */}
           <div style={{ textAlign: "center", marginBottom: "clamp(40px, 6vh, 64px)" }}>
-            <p className={outfit.className} style={{
-              fontSize: "0.75rem",
-              letterSpacing: "0.25em",
-              textTransform: "uppercase",
-              color: "rgba(232, 168, 62, 0.6)",
-              marginBottom: 12,
-              animation: "subtitleReveal 1s ease 0.3s backwards",
-            }}>
-              Builder&rsquo;s Knowledge Garden
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
+              <Image src="/logo/b_white_outline_512.png" alt="Builder's KG" width={28} height={28} style={{ opacity: 0.7 }} />
+              <p className={outfit.className} style={{
+                fontSize: "0.75rem",
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: "rgba(232, 168, 62, 0.6)",
+                animation: "subtitleReveal 1s ease 0.3s backwards",
+              }}>
+                Builder&rsquo;s Knowledge Garden
+              </p>
+            </div>
             <h1 className={cinzel.className} style={{
               fontSize: "clamp(2rem, 5.5vw, 3.8rem)",
               fontWeight: 900,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 const DESTINATIONS = [
   { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
@@ -88,10 +89,11 @@ function DesktopSidebar() {
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-          background: "linear-gradient(135deg, #1D9E75, #0F6E56)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontSize: 16,
-        }}>🏗️</div>
+          overflow: "hidden",
+        }}>
+          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={32} height={32} style={{ objectFit: "contain" }} />
+        </div>
         {showExpanded && (
           <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
             <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.1 }}>Builder&apos;s KG</div>
