@@ -40,8 +40,8 @@ const PRODUCTS = [
 
 const STATS = [
   { value: 17, prefix: "$", suffix: "T", label: "Global construction economy", sub: "Largest industry on earth" },
-  { value: 229, prefix: "", suffix: "+", label: "Knowledge entities", sub: "Codes, materials, methods, safety, styles" },
-  { value: 171, prefix: "", suffix: "+", label: "Knowledge graph edges", sub: "Codes↔standards↔materials↔methods" },
+  { value: 277, prefix: "", suffix: "+", label: "Knowledge entities", sub: "Codes, materials, methods, safety, styles" },
+  { value: 209, prefix: "", suffix: "+", label: "Knowledge graph edges", sub: "Codes↔standards↔materials↔methods" },
   { value: 20, prefix: "", suffix: "", label: "Routes live now", sub: "8 pages + 12 API endpoints" },
 ];
 
