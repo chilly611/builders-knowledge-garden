@@ -58,7 +58,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
         </div>
 
         {/* Dream Card */}
-        <div style={{ borderRadius: 20, padding: "28px 24px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(232,168,62,0.15)", marginBottom: 20 }}>
+        <div style={{ borderRadius: 20, padding: "28px 24px", background: "#f8f8f8", border: "1px solid rgba(232,168,62,0.15)", marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <span style={{ fontSize: "1.8rem" }}>{GROWTH_ICONS[dream.growth_stage] || "🌱"}</span>
             <div>
@@ -91,7 +91,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
             { label: "Materials", value: `${(dream.materials as string[])?.length || 0} selected` },
             { label: "Codes", value: `${(dream.codes as string[])?.length || 0} apply` },
           ].map((s, i) => (
-            <div key={i} style={{ borderRadius: 14, padding: "14px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
+            <div key={i} style={{ borderRadius: 14, padding: "14px 12px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
               <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>{s.label}</div>
               <div className={outfit.className} style={{ fontSize: "0.95rem", color: "#E8A83E", fontWeight: 600 }}>{s.value}</div>
             </div>

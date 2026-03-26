@@ -137,7 +137,7 @@ export default function SketchDreamPage() {
 
     // Grid
     if (showGrid) {
-      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.strokeStyle = "rgba(0,0,0,0.06)";
       ctx.lineWidth = 1;
       for (let x = 0; x < W; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
       for (let y = 0; y < H; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
@@ -169,7 +169,7 @@ export default function SketchDreamPage() {
       ctx.textAlign = "center";
       ctx.fillText(r.label, r.x + r.w / 2, r.y + r.h / 2 - 4);
       ctx.font = "10px sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
       ctx.fillText(`${r.sqft} sf`, r.x + r.w / 2, r.y + r.h / 2 + 10);
     });
 
@@ -310,10 +310,10 @@ export default function SketchDreamPage() {
     <>
       <style jsx global>{`
         @keyframes cardSlide { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-        .tool-btn { padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .tool-btn { padding: 8px; border-radius: 10px; border: 1px solid #e2e2e2; background: #f8f8f8; color: #777; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
         .tool-btn:hover { border-color: rgba(196,164,74,0.3); color: rgba(255,255,255,0.8); }
         .tool-btn.active { border-color: #C4A44A; background: rgba(196,164,74,0.15); color: #C4A44A; }
-        .room-chip { padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.65rem; cursor: pointer; transition: all 0.2s; }
+        .room-chip { padding: 4px 10px; border-radius: 12px; border: 1px solid #e2e2e2; font-size: 0.65rem; cursor: pointer; transition: all 0.2s; }
         .room-chip:hover { border-color: rgba(196,164,74,0.3); }
         .room-chip.active { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 15%, transparent); color: var(--rc); }
       `}</style>
@@ -331,7 +331,7 @@ export default function SketchDreamPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
             <div>
               <h1 className={cinzel.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.8rem)", color: "#C4A44A", marginBottom: 4 }}>Sketch It Out</h1>
-              <p className={outfit.className} style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem" }}>{rects.length} rooms • {totalSqft} sf • Est. {fmt(roughCost)}</p>
+              <p className={outfit.className} style={{ color: "#aaa", fontSize: "0.78rem" }}>{rects.length} rooms • {totalSqft} sf • Est. {fmt(roughCost)}</p>
             </div>
             <button onClick={() => setGuidedStep(guidedStep === null ? 0 : null)} className={outfit.className} style={{
               padding: "6px 14px", borderRadius: 10, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.2)",
@@ -369,14 +369,14 @@ export default function SketchDreamPage() {
               ]).map(t => (
                 <button key={t.id} className={`tool-btn ${tool === t.id ? "active" : ""}`} title={t.tip} onClick={() => setTool(t.id)}>{t.icon}</button>
               ))}
-              <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
+              <div style={{ height: 1, background: "#f2f2f2", margin: "4px 0" }} />
               <button className="tool-btn" title="Undo" onClick={undo}>↩</button>
               <button className="tool-btn" title="Grid" onClick={() => setShowGrid(!showGrid)} style={{ color: showGrid ? "#C4A44A" : undefined }}>⊞</button>
               <button className="tool-btn" title="Clear" onClick={clearAll}>🗑️</button>
             </div>
 
             {/* Canvas area */}
-            <div ref={containerRef} style={{ position: "relative", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(196,164,74,0.15)", background: "rgba(0,0,0,0.3)", minHeight: 400 }}>
+            <div ref={containerRef} style={{ position: "relative", borderRadius: 16, overflow: "hidden", border: "1px solid #e2e2e2", background: "#f8f8f8", minHeight: 400 }}>
               <canvas ref={canvasRef}
                 onMouseDown={handlePointerDown} onMouseMove={handlePointerMove} onMouseUp={handlePointerUp} onMouseLeave={handlePointerUp}
                 onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}
@@ -389,12 +389,12 @@ export default function SketchDreamPage() {
                     onKeyDown={e => { if (e.key === "Enter") handleLabelSubmit(); if (e.key === "Escape") setLabelPos(null); }}
                     autoFocus placeholder="Label..."
                     className={outfit.className}
-                    style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(0,0,0,0.8)", border: "1px solid #C4A44A", color: "#fff", fontSize: "0.8rem", outline: "none", width: 120 }}
+                    style={{ padding: "4px 10px", borderRadius: 8, background: "#fff", border: "1px solid #C4A44A", color: "#1a1a1a", fontSize: "0.8rem", outline: "none", width: 120, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                   />
                 </div>
               )}
               {/* Room type selector */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 12px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", display: "flex", gap: 6, overflowX: "auto" }}>
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 12px", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)", borderTop: "1px solid #e8e8e8", display: "flex", gap: 6, overflowX: "auto" }}>
                 {(Object.keys(ROOM_COLORS) as RoomType[]).map(rt => (
                   <button key={rt} className={`room-chip ${outfit.className} ${roomType === rt ? "active" : ""}`}
                     onClick={() => setRoomType(rt)}
@@ -406,10 +406,10 @@ export default function SketchDreamPage() {
 
             {/* Interpretation panel */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ borderRadius: 14, padding: "16px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", flex: 1, overflowY: "auto", maxHeight: 420 }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 10, fontWeight: 600 }}>🧠 AI Interpretation</h3>
+              <div style={{ borderRadius: 14, padding: "16px 14px", background: "#f8f8f8", border: "1px solid #e8e8e8", flex: 1, overflowY: "auto", maxHeight: 420 }}>
+                <h3 className={outfit.className} style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#aaa", marginBottom: 10, fontWeight: 600 }}>🧠 AI Interpretation</h3>
                 {aiNotes.length === 0 ? (
-                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>Draw rooms to see AI analysis...</p>
+                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#bbb", fontStyle: "italic" }}>Draw rooms to see AI analysis...</p>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {aiNotes.map((note, i) => (
@@ -422,7 +422,7 @@ export default function SketchDreamPage() {
               {rects.length >= 1 && (
                 <button onClick={generateDreamFromSketch} className={outfit.className} data-sound="select" style={{
                   padding: "12px 16px", borderRadius: 12, border: "none",
-                  background: "linear-gradient(135deg, #C4A44A, #E8A83E)", color: "#fff",
+                  background: "linear-gradient(135deg, #C4A44A, #E8A83E)", color: "#1a1a1a",
                   fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
                 }}>See My Dream △</button>
               )}
@@ -444,10 +444,10 @@ export default function SketchDreamPage() {
                     { label: "Timeline", value: plan.timeline, sub: plan.quality },
                     { label: "Team", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                   ].map((s, i) => (
-                    <div key={i} style={{ borderRadius: 12, padding: "12px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
-                      <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>{s.label}</div>
+                    <div key={i} style={{ borderRadius: 12, padding: "12px 10px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
+                      <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#bbb", marginBottom: 4 }}>{s.label}</div>
                       <div className={outfit.className} style={{ fontSize: "1.05rem", color: "#C4A44A", fontWeight: 700 }}>{s.value}</div>
-                      <div className={outfit.className} style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.3)" }}>{s.sub}</div>
+                      <div className={outfit.className} style={{ fontSize: "0.65rem", color: "#bbb" }}>{s.sub}</div>
                     </div>
                   ))}
                 </div>
@@ -455,7 +455,7 @@ export default function SketchDreamPage() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <Link href={`/launch?sqft=${totalSqft}`} className={outfit.className} style={{
                     padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg, #C4A44A, #E8A83E)",
-                    color: "#fff", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
+                    color: "#1a1a1a", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
                   }}>🚀 Start Project</Link>
                   <Link href={`/dream/describe?dream=${encodeURIComponent(`A ${totalSqft} sf home with ${rects.map(r => r.label).join(", ")}`)}`} className={outfit.className} style={{
                     padding: "10px 18px", borderRadius: 12, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)",

@@ -150,9 +150,9 @@ export default function DreamGardenPage() {
         @keyframes plantSway { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
         @keyframes gardenGlow { 0%,100% { box-shadow: 0 0 0 0 var(--glow); } 50% { box-shadow: 0 0 16px 4px var(--glow); } }
         @keyframes badgeReveal { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        .plant-cell { border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 12px; min-height: 120px; position: relative; }
+        .plant-cell { border-radius: 16px; border: 1px solid #e8e8e8; background: #f5f5f5; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 12px; min-height: 120px; position: relative; }
         .plant-cell:hover { border-color: rgba(29,158,117,0.25); background: rgba(29,158,117,0.04); transform: translateY(-2px); }
-        .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); transition: all 0.3s; }
+        .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 12px; border: 1px solid #e8e8e8; background: #f5f5f5; transition: all 0.3s; }
         .badge.earned { border-color: rgba(232,168,62,0.25); background: rgba(232,168,62,0.06); }
         .badge.locked { opacity: 0.35; }
       `}</style>
@@ -170,7 +170,7 @@ export default function DreamGardenPage() {
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <h1 className={cinzel.className} style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", color: "#1D9E75", marginBottom: 8 }}>Your Dream Garden</h1>
-            <p className={outfit.className} style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem", fontWeight: 300 }}>Every great building starts as a seed. Watch yours grow.</p>
+            <p className={outfit.className} style={{ color: "#999", fontSize: "0.85rem", fontWeight: 300 }}>Every great building starts as a seed. Watch yours grow.</p>
           </div>
 
           {/* Level + XP bar */}
@@ -179,12 +179,12 @@ export default function DreamGardenPage() {
             <div style={{ flex: 1, minWidth: 180 }}>
               <div className={outfit.className} style={{ fontSize: "0.9rem", color: "#1D9E75", fontWeight: 600 }}>{level.name}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#f2f2f2", overflow: "hidden" }}>
                   <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #1D9E75, #C4A44A)", width: `${levelProgress}%`, transition: "width 0.8s ease" }} />
                 </div>
-                <span className={outfit.className} style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.35)" }}>{xp} XP</span>
+                <span className={outfit.className} style={{ fontSize: "0.7rem", color: "#aaa" }}>{xp} XP</span>
               </div>
-              <p className={outfit.className} style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Next: {nextLevel.name} ({nextLevel.minXp} XP)</p>
+              <p className={outfit.className} style={{ fontSize: "0.65rem", color: "#ccc", marginTop: 2 }}>Next: {nextLevel.name} ({nextLevel.minXp} XP)</p>
             </div>
             <button onClick={() => setShowAchievements(!showAchievements)} className={outfit.className} style={{ padding: "6px 14px", borderRadius: 10, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)", color: "#E8A83E", fontSize: "0.75rem", cursor: "pointer" }}>🏆 {earnedIds.length}/{ACHIEVEMENTS.length}</button>
           </div>
@@ -197,10 +197,10 @@ export default function DreamGardenPage() {
               { label: "Styles", value: `${stats.stylesExplored}/30`, icon: "🎨" },
               { label: "Streak", value: `${stats.streakDays} days`, icon: "🔥" },
             ].map((s, i) => (
-              <div key={i} style={{ borderRadius: 12, padding: "12px 10px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
+              <div key={i} style={{ borderRadius: 12, padding: "12px 10px", background: "#f5f5f5", border: "1px solid #e8e8e8", textAlign: "center" }}>
                 <div style={{ fontSize: "1.2rem", marginBottom: 4 }}>{s.icon}</div>
                 <div className={outfit.className} style={{ fontSize: "1rem", color: "#1D9E75", fontWeight: 700 }}>{s.value}</div>
-                <div className={outfit.className} style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{s.label}</div>
+                <div className={outfit.className} style={{ fontSize: "0.6rem", color: "#bbb", letterSpacing: "0.08em", textTransform: "uppercase" }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -217,7 +217,7 @@ export default function DreamGardenPage() {
                       <span style={{ fontSize: "1.2rem" }}>{a.icon}</span>
                       <div>
                         <div className={outfit.className} style={{ fontSize: "0.72rem", color: earned ? "#E8A83E" : "rgba(255,255,255,0.3)", fontWeight: 600 }}>{a.title}</div>
-                        <div className={outfit.className} style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.25)" }}>{a.description}</div>
+                        <div className={outfit.className} style={{ fontSize: "0.6rem", color: "#ccc" }}>{a.description}</div>
                       </div>
                     </div>
                   );
@@ -234,10 +234,10 @@ export default function DreamGardenPage() {
                 <div key={dream.id} className="plant-cell" onClick={() => setSelectedDream(dream)}
                   style={{ "--glow": vis.glow, animation: `cardSlide 0.4s ease ${i * 0.06}s backwards, gardenGlow 4s ease-in-out ${i * 0.5}s infinite` } as React.CSSProperties}>
                   <div style={{ fontSize: vis.size, animation: "plantSway 3s ease-in-out infinite", marginBottom: 8 }}>{vis.icon}</div>
-                  <div className={outfit.className} style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.65)", fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>{dream.title?.slice(0, 30) || "Untitled"}</div>
-                  <div className={outfit.className} style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.25)", marginTop: 4 }}>{vis.label}</div>
+                  <div className={outfit.className} style={{ fontSize: "0.75rem", color: "#444", fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>{dream.title?.slice(0, 30) || "Untitled"}</div>
+                  <div className={outfit.className} style={{ fontSize: "0.6rem", color: "#ccc", marginTop: 4 }}>{vis.label}</div>
                   {dream.plan?.confidence && (
-                    <div style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(29,158,117,0.2)" }}>
+                    <div style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(29,158,117,0.2)" }}>
                       <span className={outfit.className} style={{ fontSize: "0.5rem", color: "#1D9E75", fontWeight: 700 }}>{dream.plan.confidence}%</span>
                     </div>
                   )}
@@ -256,22 +256,22 @@ export default function DreamGardenPage() {
 
           {/* ── DREAM DETAIL PANEL ──────────────────────────────── */}
           {selectedDream && (
-            <div style={{ borderRadius: 18, padding: "24px 20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(29,158,117,0.15)", animation: "cardSlide 0.4s ease" }}>
+            <div style={{ borderRadius: 18, padding: "24px 20px", background: "#f8f8f8", border: "1px solid rgba(29,158,117,0.15)", animation: "cardSlide 0.4s ease" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: "1.6rem" }}>{(GROWTH_VISUALS[selectedDream.growthStage] || GROWTH_VISUALS.seed).icon}</span>
                   <div>
                     <h3 className={outfit.className} style={{ fontSize: "1rem", color: "#1D9E75", fontWeight: 600 }}>{selectedDream.title || "Untitled Dream"}</h3>
-                    <p className={outfit.className} style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)" }}>
+                    <p className={outfit.className} style={{ fontSize: "0.7rem", color: "#bbb" }}>
                       {(GROWTH_VISUALS[selectedDream.growthStage] || GROWTH_VISUALS.seed).label} • Created {new Date(selectedDream.createdAt).toLocaleDateString()} • via {selectedDream.path}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setSelectedDream(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: "1.2rem", cursor: "pointer" }}>✕</button>
+                <button onClick={() => setSelectedDream(null)} style={{ background: "none", border: "none", color: "#bbb", fontSize: "1.2rem", cursor: "pointer" }}>✕</button>
               </div>
 
               {selectedDream.preview && (
-                <p className={outfit.className} style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontWeight: 300, fontStyle: "italic", marginBottom: 16, paddingLeft: 14, borderLeft: "2px solid rgba(29,158,117,0.15)" }}>
+                <p className={outfit.className} style={{ fontSize: "0.85rem", color: "#777", lineHeight: 1.6, fontWeight: 300, fontStyle: "italic", marginBottom: 16, paddingLeft: 14, borderLeft: "2px solid rgba(29,158,117,0.15)" }}>
                   &ldquo;{selectedDream.preview.slice(0, 200)}{selectedDream.preview.length > 200 ? "..." : ""}&rdquo;
                 </p>
               )}
@@ -284,8 +284,8 @@ export default function DreamGardenPage() {
                     { label: "Timeline", value: selectedDream.plan.timeline },
                     { label: "Confidence", value: `${selectedDream.plan.confidence}%` },
                   ].map((s, i) => (
-                    <div key={i} style={{ borderRadius: 10, padding: "10px 8px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", textAlign: "center" }}>
-                      <div className={outfit.className} style={{ fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 3 }}>{s.label}</div>
+                    <div key={i} style={{ borderRadius: 10, padding: "10px 8px", background: "#f5f5f5", border: "1px solid rgba(255,255,255,0.04)", textAlign: "center" }}>
+                      <div className={outfit.className} style={{ fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#ccc", marginBottom: 3 }}>{s.label}</div>
                       <div className={outfit.className} style={{ fontSize: "0.95rem", color: "#1D9E75", fontWeight: 600 }}>{s.value}</div>
                     </div>
                   ))}
@@ -299,7 +299,7 @@ export default function DreamGardenPage() {
                 }}>🌿 Continue Dreaming</Link>
                 <Link href={`/launch?sqft=${selectedDream.plan?.sqft || 2500}`} className={outfit.className} style={{
                   padding: "8px 16px", borderRadius: 10, background: "linear-gradient(135deg, #D85A30, #E8A83E)",
-                  color: "#fff", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none",
+                  color: "#1a1a1a", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none",
                 }}>🚀 Start Project</Link>
                 <button onClick={() => deleteDream(selectedDream.id)} className={outfit.className} style={{
                   padding: "8px 16px", borderRadius: 10, background: "rgba(220,53,69,0.08)", border: "1px solid rgba(220,53,69,0.15)",
@@ -313,11 +313,11 @@ export default function DreamGardenPage() {
           {dreams.length === 0 && (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <div style={{ fontSize: "4rem", marginBottom: 16, opacity: 0.3 }}>🌱</div>
-              <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.4)", fontWeight: 400, marginBottom: 12 }}>Your garden is empty</h2>
-              <p className={outfit.className} style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.25)", marginBottom: 24 }}>Plant your first dream and watch it grow.</p>
+              <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#999", fontWeight: 400, marginBottom: 12 }}>Your garden is empty</h2>
+              <p className={outfit.className} style={{ fontSize: "0.85rem", color: "#ccc", marginBottom: 24 }}>Plant your first dream and watch it grow.</p>
               <Link href="/dream" className={outfit.className} style={{
                 padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg, #1D9E75, #C4A44A)",
-                color: "#fff", fontSize: "0.9rem", fontWeight: 600, textDecoration: "none",
+                color: "#1a1a1a", fontSize: "0.9rem", fontWeight: 600, textDecoration: "none",
               }}>Plant a Dream 🌱</Link>
             </div>
           )}

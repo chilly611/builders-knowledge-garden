@@ -10,7 +10,7 @@ export default function PlansDreamPage() {
     <>
       <div style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a0f05 0%, #1e1208 50%, #0f0a05 100%)",
+        background: "#fff",
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: 24, textAlign: "center",
       }}>
@@ -19,13 +19,13 @@ export default function PlansDreamPage() {
           fontSize: "clamp(1.5rem, 4vw, 2.4rem)", color: "#9C7832", marginBottom: 12,
         }}>I Have Plans</h1>
         <p className={outfit.className} style={{
-          color: "rgba(255,255,255,0.5)", fontSize: "1rem",
+          color: "#777", fontSize: "1rem",
           maxWidth: 440, lineHeight: 1.6, marginBottom: 32, fontWeight: 300,
         }}>Upload DWG, PDF, SketchUp, or photos of existing plans. The platform enriches them with codes, costs, materials, and scheduling intelligence.</p>
         <div style={{
           padding: "16px 28px", borderRadius: 14,
           background: "rgba(156,120,50,0.08)", border: "1px solid rgba(156,120,50,0.2)",
-          color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", marginBottom: 32,
+          color: "#555", fontSize: "0.85rem", marginBottom: 32,
         }} className={outfit.className}>Coming in Chunk 7 — Professional plan upload + knowledge enrichment</div>
         <Link href="/dream" style={{
           color: "#9C7832", textDecoration: "none", fontSize: "0.85rem",
