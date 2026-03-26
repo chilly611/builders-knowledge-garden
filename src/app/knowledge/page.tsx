@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import CopilotPanel from "@/components/CopilotPanel";
 
@@ -26,10 +27,16 @@ interface Entity {
   category?: string; metadata?: Record<string, unknown>;
 }
 
-export default function KnowledgePage() {
+export default function KnowledgePageWrapper() {
+  return <Suspense><KnowledgePageInner /></Suspense>;
+}
+
+function KnowledgePageInner() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
   const [allEntities, setAllEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialQuery);
   const [activeType, setActiveType] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 

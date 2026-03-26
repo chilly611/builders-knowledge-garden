@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { CompletionRing, AnimCounter, LifecycleFog, GamificationStyles } from "@/components/Gamification";
 import CopilotPanel from "@/components/CopilotPanel";
@@ -52,7 +53,9 @@ const PRICING = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const hero = useInView(0.1);
+  const [heroSearch, setHeroSearch] = useState("");
   const stats = useInView(0.2);
   const phases = useInView(0.15);
   const products = useInView(0.15);
@@ -120,6 +123,20 @@ export default function Home() {
             💭 Dream Builder (Free)
           </Link>
         </div>
+
+        {/* Quick Knowledge Search */}
+        <form onSubmit={(e) => { e.preventDefault(); if (heroSearch.trim()) router.push(`/knowledge?q=${encodeURIComponent(heroSearch.trim())}`); }}
+          className="mt-6 flex gap-2 w-full max-w-md"
+          style={{ opacity: hero.visible ? 1 : 0, transition: "opacity 0.6s 0.8s ease" }}>
+          <input type="text" value={heroSearch} onChange={e => setHeroSearch(e.target.value)}
+            placeholder="Search codes, materials, safety..."
+            className="flex-1 px-4 py-2.5 rounded-full text-sm outline-none"
+            style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--fg)" }} />
+          <button type="submit"
+            className="px-5 py-2.5 rounded-full text-sm font-medium text-white transition-all hover:scale-105"
+            style={{ background: "#1D9E75" }}>🔍</button>
+        </form>
+
         <Link href="/onboard"
           className="mt-4 text-xs transition-all hover:underline"
           style={{ color: "var(--fg-tertiary)" }}>
