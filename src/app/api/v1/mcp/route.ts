@@ -135,6 +135,23 @@ const TOOLS = [
     description: "List all supported jurisdictions (142+) with code references and years.",
     parameters: { type: "object", properties: {} },
   },
+  {
+    name: "crm_list_contacts",
+    description: "List CRM contacts with optional filters. Returns pipeline data for AI-powered lead scoring and follow-up recommendations.",
+    parameters: {
+      type: "object",
+      properties: {
+        stage: { type: "string", description: "Pipeline stage: new, contacted, qualified, proposal, negotiation, won, lost, dormant" },
+        temperature: { type: "string", description: "Lead temperature: hot, warm, cool, cold" },
+        search: { type: "string", description: "Search by name, company, email, or tags" },
+      },
+    },
+  },
+  {
+    name: "crm_pipeline_stats",
+    description: "Get CRM pipeline summary: contacts by stage, total value, avg lead score, follow-ups due.",
+    parameters: { type: "object", properties: {} },
+  },
 ];
 
 // ─── GET: List available tools ───
@@ -319,6 +336,22 @@ async function executeTool(tool: string, params: Record<string, unknown>): Promi
 
     case "list_jurisdictions":
       return { jurisdictions: JURISDICTIONS, total: JURISDICTIONS.length };
+
+    case "crm_list_contacts": {
+      const q = new URLSearchParams();
+      if (params.stage) q.set("stage", String(params.stage));
+      if (params.temperature) q.set("temperature", String(params.temperature));
+      if (params.search) q.set("q", String(params.search));
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+      const res = await fetch(`${baseUrl}/api/v1/crm?${q.toString()}`);
+      return await res.json();
+    }
+
+    case "crm_pipeline_stats": {
+      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+      const res = await fetch(`${baseUrl}/api/v1/crm?stats=1`);
+      return await res.json();
+    }
 
     default:
       throw new Error(`Tool ${tool} not implemented`);

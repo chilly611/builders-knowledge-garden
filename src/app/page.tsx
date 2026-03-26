@@ -120,6 +120,11 @@ export default function Home() {
             💭 Dream Builder (Free)
           </Link>
         </div>
+        <Link href="/onboard"
+          className="mt-4 text-xs transition-all hover:underline"
+          style={{ color: "var(--fg-tertiary)" }}>
+          Not sure where to start? Choose your lane →
+        </Link>
       </section>
 
       {/* ═══ STATS ═══ */}

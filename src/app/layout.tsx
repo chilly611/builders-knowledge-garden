@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import CompassNav from "@/components/CompassNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen" style={{ background: "var(--bg)", color: "var(--fg)" }}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <CompassNav />
+        </Providers>
       </body>
     </html>
   );

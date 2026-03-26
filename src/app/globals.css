@@ -100,3 +100,9 @@ body {
   nav, footer, .fixed { display: none !important; }
   body { background: white !important; color: black !important; }
 }
+
+
+/* Desktop sidebar offset — pushes content right when sidebar is visible */
+@media (min-width: 900px) {
+  body > div { margin-left: 64px; transition: margin-left 0.25s ease; }
+}
