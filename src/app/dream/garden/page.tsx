@@ -159,7 +159,7 @@ export default function DreamGardenPage() {
 
       <div style={{
         minHeight: "100vh",
-        background: `radial-gradient(ellipse at 30% 80%, rgba(29,158,117,0.1) 0%, transparent 50%), radial-gradient(ellipse at 70% 20%, rgba(196,164,74,0.08) 0%, transparent 50%), linear-gradient(180deg, #1a0f05 0%, #0d1a12 60%, #0a1510 100%)`,
+        background: "#fff",
         padding: "clamp(32px, 5vh, 48px) 20px 80px",
       }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>

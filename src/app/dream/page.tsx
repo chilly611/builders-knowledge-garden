@@ -3,527 +3,209 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Cinzel, Outfit } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
-
-// ═══════════════════════════════════════════════════════════════
-// THE DREAM MACHINE — Entry Shell
-// Chrome: Warm/Gold (#D85A30 → #C4A44A → #E8A83E)
-// Aesthetic: Magical, immersive, game-like opening screen
-// ═══════════════════════════════════════════════════════════════
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "700", "900"] });
 const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
-// ── Dream path definitions ──────────────────────────────────────
 interface DreamPath {
-  id: string;
-  route: string;
-  icon: string;
-  name: string;
-  tagline: string;
-  time: string;
-  color: string;
-  glow: string;
+  id: string; route: string; icon: string; name: string;
+  tagline: string; time: string; color: string;
+  image: string; // gradient placeholder for visual card
   laneWeights: Record<string, number>;
 }
 
 const DREAM_PATHS: DreamPath[] = [
-  {
-    id: "describe",
-    route: "/dream/describe",
-    icon: "✦",
-    name: "Describe Your Dream",
-    tagline: "Tell us what you want to build in your own words",
-    time: "~60 seconds",
-    color: "#E8A83E",
-    glow: "rgba(232, 168, 62, 0.4)",
-    laneWeights: { diy: 10, gc: 8, specialty: 7, supplier: 5, equipment: 5, service: 6, worker: 6, robot: 4 },
-  },
-  {
-    id: "inspire",
-    route: "/dream/inspire",
-    icon: "◈",
-    name: "Show Me Inspiration",
-    tagline: "Upload photos or paste URLs — AI analyzes style, materials, layout",
-    time: "~2 minutes",
-    color: "#D85A30",
-    glow: "rgba(216, 90, 48, 0.4)",
-    laneWeights: { diy: 9, gc: 6, specialty: 6, supplier: 4, equipment: 3, service: 5, worker: 5, robot: 3 },
-  },
-  {
-    id: "sketch",
-    route: "/dream/sketch",
-    icon: "△",
-    name: "Sketch It Out",
-    tagline: "Draw freehand — AI interprets your sketch into a floor plan",
-    time: "~5 minutes",
-    color: "#C4A44A",
-    glow: "rgba(196, 164, 74, 0.4)",
-    laneWeights: { diy: 6, gc: 7, specialty: 8, supplier: 3, equipment: 3, service: 4, worker: 4, robot: 5 },
-  },
-  {
-    id: "explore",
-    route: "/dream/explore",
-    icon: "⬡",
-    name: "Surprise Me",
-    tagline: "Answer 5 quick questions — AI generates visual concepts for you",
-    time: "~90 seconds",
-    color: "#E07B3A",
-    glow: "rgba(224, 123, 58, 0.4)",
-    laneWeights: { diy: 8, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 6 },
-  },
-  {
-    id: "browse",
-    route: "/dream/browse",
-    icon: "◉",
-    name: "Browse & Discover",
-    tagline: "Infinite visual scroll — save, star, collect. AI learns your taste",
-    time: "Open-ended",
-    color: "#B8873B",
-    glow: "rgba(184, 135, 59, 0.4)",
-    laneWeights: { diy: 7, gc: 4, specialty: 6, supplier: 7, equipment: 4, service: 5, worker: 5, robot: 3 },
-  },
-  {
-    id: "plans",
-    route: "/dream/plans",
-    icon: "⊞",
-    name: "I Have Plans",
-    tagline: "Upload DWG, PDF, or photos — we enrich with knowledge intelligence",
-    time: "~10 minutes",
-    color: "#9C7832",
-    glow: "rgba(156, 120, 50, 0.4)",
-    laneWeights: { diy: 3, gc: 10, specialty: 9, supplier: 6, equipment: 7, service: 8, worker: 4, robot: 8 },
-  },
+  { id: "describe", route: "/dream/describe", icon: "✦", name: "Describe Your Dream",
+    tagline: "Tell us in your own words", time: "~60 sec",
+    color: "#E8A83E", image: "linear-gradient(135deg, #f5e6d3, #e8d5b7, #c4a882)",
+    laneWeights: { diy: 10, gc: 8, specialty: 7, supplier: 5, equipment: 5, service: 6, worker: 6, robot: 4 } },
+  { id: "inspire", route: "/dream/inspire", icon: "◈", name: "Show Me Inspiration",
+    tagline: "Upload photos — AI analyzes everything", time: "~2 min",
+    color: "#D85A30", image: "linear-gradient(135deg, #e8d0c0, #d4a88a, #c48a6a)",
+    laneWeights: { diy: 9, gc: 6, specialty: 6, supplier: 4, equipment: 3, service: 5, worker: 5, robot: 3 } },
+  { id: "sketch", route: "/dream/sketch", icon: "△", name: "Sketch It Out",
+    tagline: "Draw your floor plan — AI interprets live", time: "~5 min",
+    color: "#C4A44A", image: "linear-gradient(135deg, #e0dcd0, #c4c0b0, #a8a498)",
+    laneWeights: { diy: 6, gc: 7, specialty: 8, supplier: 3, equipment: 3, service: 4, worker: 4, robot: 5 } },
+  { id: "explore", route: "/dream/explore", icon: "⬡", name: "Surprise Me",
+    tagline: "Answer 5 questions — AI generates concepts", time: "~90 sec",
+    color: "#E07B3A", image: "linear-gradient(135deg, #f0d8c8, #e0b8a0, #d09880)",
+    laneWeights: { diy: 8, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 6 } },
+  { id: "browse", route: "/dream/browse", icon: "◉", name: "Browse & Discover",
+    tagline: "Infinite visual scroll — save what you love", time: "Open-ended",
+    color: "#B8873B", image: "linear-gradient(135deg, #d8ccb8, #c4b8a0, #b0a488)",
+    laneWeights: { diy: 7, gc: 4, specialty: 6, supplier: 7, equipment: 4, service: 5, worker: 5, robot: 3 } },
+  { id: "plans", route: "/dream/plans", icon: "⊞", name: "I Have Plans",
+    tagline: "Upload DWG, PDF — we add intelligence", time: "~10 min",
+    color: "#9C7832", image: "linear-gradient(135deg, #d0c8b8, #b8b0a0, #a09888)",
+    laneWeights: { diy: 3, gc: 10, specialty: 9, supplier: 6, equipment: 7, service: 8, worker: 4, robot: 8 } },
 ];
 
-// ── Saved dream interface (localStorage) ───────────────────────
 interface SavedDream {
-  id: string;
-  title: string;
-  createdAt: string;
-  growthStage: "seed" | "sprout" | "sapling" | "bloom";
-  path: string;
-  preview?: string;
+  id: string; title: string; createdAt: string;
+  growthStage: "seed" | "sprout" | "sapling" | "bloom"; path: string;
 }
+const GROWTH_ICONS: Record<string, string> = { seed: "🌱", sprout: "🌿", sapling: "🌳", bloom: "🌸" };
 
-// ── Lane-aware path ordering ───────────────────────────────────
 function getOrderedPaths(lane: string | null): DreamPath[] {
   if (!lane) return DREAM_PATHS;
-  return [...DREAM_PATHS].sort((a, b) => {
-    const wa = a.laneWeights[lane] ?? 5;
-    const wb = b.laneWeights[lane] ?? 5;
-    return wb - wa;
-  });
+  return [...DREAM_PATHS].sort((a, b) => (b.laneWeights[lane] ?? 5) - (a.laneWeights[lane] ?? 5));
 }
 
-// ── Growth stage visuals ───────────────────────────────────────
-const GROWTH_ICONS: Record<string, { icon: string; label: string }> = {
-  seed: { icon: "🌱", label: "Seed" },
-  sprout: { icon: "🌿", label: "Sprout" },
-  sapling: { icon: "🌳", label: "Sapling" },
-  bloom: { icon: "🌸", label: "Bloom" },
-};
-
-// ═══════════════════════════════════════════════════════════════
-// MAIN PAGE COMPONENT
-// ═══════════════════════════════════════════════════════════════
 export default function DreamMachinePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [lane, setLane] = useState<string | null>(null);
   const [dreams, setDreams] = useState<SavedDream[]>([]);
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
-  const [isFirstVisit, setIsFirstVisit] = useState(false);
-  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Read lane from localStorage
     const storedLane = localStorage.getItem("bkg-lane");
     if (storedLane) setLane(storedLane);
-    // Read saved dreams
-    try {
-      const raw = localStorage.getItem("bkg-dreams");
-      if (raw) setDreams(JSON.parse(raw));
-    } catch { /* ignore */ }
-    // First visit detection
-    const visited = localStorage.getItem("bkg-dream-visited");
-    if (!visited) {
-      setIsFirstVisit(true);
-      localStorage.setItem("bkg-dream-visited", "1");
-    }
+    try { const raw = localStorage.getItem("bkg-dreams"); if (raw) setDreams(JSON.parse(raw)); } catch {}
   }, []);
 
   const orderedPaths = getOrderedPaths(lane);
-
-  const handlePathClick = useCallback((path: DreamPath) => {
-    router.push(path.route);
-  }, [router]);
-
-  if (!mounted) {
-    return <div style={{ minHeight: "100vh", background: "#1a0f05" }} />;
-  }
+  if (!mounted) return <div style={{ minHeight: "100vh", background: "#fff" }} />;
 
   return (
     <>
       <style jsx global>{`
-        @keyframes meshDrift {
-          0% { background-position: 0% 50%, 100% 50%, 50% 0%; }
-          25% { background-position: 50% 0%, 0% 100%, 100% 50%; }
-          50% { background-position: 100% 50%, 50% 0%, 0% 100%; }
-          75% { background-position: 50% 100%, 100% 0%, 50% 50%; }
-          100% { background-position: 0% 50%, 100% 50%, 50% 0%; }
+        @keyframes heroFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes cardEnter { 0% { opacity: 0; transform: translateY(24px) scale(0.97); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .dream-path-card {
+          position: relative; border-radius: 20px; overflow: hidden; cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+          box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+          animation: cardEnter 0.6s cubic-bezier(0.34,1.56,0.64,1) backwards;
         }
-        @keyframes floatEmber {
-          0% { transform: translateY(0) scale(1); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 0.6; }
-          100% { transform: translateY(-100vh) scale(0.3); opacity: 0; }
+        .dream-path-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
+        .dream-path-card .card-visual {
+          height: 180px; display: flex; align-items: flex-end; padding: 16px;
+          position: relative; overflow: hidden;
         }
-        @keyframes titleGlow {
-          0%, 100% { text-shadow: 0 0 40px rgba(232,168,62,0.3), 0 0 80px rgba(216,90,48,0.15); }
-          50% { text-shadow: 0 0 60px rgba(232,168,62,0.5), 0 0 120px rgba(216,90,48,0.25); }
-        }
-        @keyframes cardEnter {
-          0% { opacity: 0; transform: translateY(30px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes welcomeFade {
-          0% { opacity: 0; transform: scale(0.9); }
-          50% { opacity: 1; transform: scale(1.02); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes subtitleReveal {
-          0% { opacity: 0; letter-spacing: 0.3em; }
-          100% { opacity: 1; letter-spacing: 0.15em; }
-        }
-        @keyframes gardenPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(29, 158, 117, 0.3); }
-          50% { box-shadow: 0 0 0 8px rgba(29, 158, 117, 0); }
-        }
-        .dream-card {
-          position: relative;
-          cursor: pointer;
-          border-radius: 20px;
-          padding: 28px 24px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          backdrop-filter: blur(20px);
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          overflow: hidden;
-          animation: cardEnter 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-        }
-        .dream-card:hover {
-          transform: translateY(-4px) scale(1.02);
-          border-color: rgba(255,255,255,0.18);
-          background: rgba(255,255,255,0.07);
-        }
-        .dream-card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 20px;
-          opacity: 0;
-          transition: opacity 0.4s ease;
-          pointer-events: none;
-        }
-        .dream-card:hover::before {
-          opacity: 1;
-        }
-        .dream-card .card-icon {
-          font-size: 2.8rem;
-          line-height: 1;
-          margin-bottom: 14px;
-          transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .dream-card:hover .card-icon {
-          transform: scale(1.15) rotate(5deg);
-        }
-        .dream-card .time-badge {
-          display: inline-block;
-          padding: 3px 10px;
-          border-radius: 20px;
-          font-size: 0.72rem;
-          letter-spacing: 0.05em;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.6);
-          margin-top: 12px;
+        .dream-path-card .card-visual::after {
+          content: ''; position: absolute; inset: 0;
+          background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
         }
       `}</style>
 
-      {/* ── Full-viewport Dream Machine ───────────────────────── */}
-      <div style={{
-        minHeight: "100vh",
-        position: "relative",
-        overflow: "hidden",
-        background: `
-          radial-gradient(ellipse at 20% 30%, rgba(216,90,48,0.25) 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 70%, rgba(196,164,74,0.2) 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 50%, rgba(232,168,62,0.15) 0%, transparent 60%),
-          linear-gradient(135deg, #1a0f05 0%, #1e1208 30%, #15100a 60%, #0f0a05 100%)
-        `,
-        backgroundSize: "200% 200%, 200% 200%, 150% 150%, 100% 100%",
-        animation: "meshDrift 20s ease-in-out infinite",
-      }}>
+      <div style={{ minHeight: "100vh", background: "#fff" }}>
 
-        {/* ── Floating embers ─────────────────────────────────── */}
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} style={{
-            position: "absolute",
-            width: `${2 + Math.random() * 3}px`,
-            height: `${2 + Math.random() * 3}px`,
-            borderRadius: "50%",
-            background: `rgba(${200 + Math.random() * 55}, ${120 + Math.random() * 80}, ${30 + Math.random() * 40}, ${0.4 + Math.random() * 0.3})`,
-            left: `${5 + Math.random() * 90}%`,
-            bottom: "-10px",
-            animation: `floatEmber ${8 + Math.random() * 12}s linear ${Math.random() * 8}s infinite`,
-            pointerEvents: "none",
-          }} />
-        ))}
-
-        {/* ── First-visit welcome moment ──────────────────────── */}
-        {isFirstVisit && !welcomeDismissed && (
-          <div
-            onClick={() => setWelcomeDismissed(true)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 100,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(10, 5, 2, 0.92)",
-              backdropFilter: "blur(30px)",
-              cursor: "pointer",
-              animation: "welcomeFade 1.2s ease",
-            }}
-          >
-            <div style={{ fontSize: "3.5rem", marginBottom: 20 }}>✦</div>
-            <h2 className={cinzel.className} style={{
-              fontSize: "clamp(1.6rem, 4vw, 2.4rem)",
-              color: "#E8A83E",
-              textAlign: "center",
-              lineHeight: 1.4,
-              maxWidth: 500,
-              animation: "titleGlow 3s ease-in-out infinite",
-            }}>
-              You&rsquo;ve been invited to dream
-            </h2>
-            <p className={outfit.className} style={{
-              color: "rgba(255,255,255,0.5)",
-              marginTop: 16,
-              fontSize: "0.9rem",
-              letterSpacing: "0.08em",
-            }}>tap anywhere to begin</p>
-          </div>
-        )}
-
-        {/* ── Content container ───────────────────────────────── */}
+        {/* ── HERO — Full-width visual with text overlay ────── */}
         <div style={{
-          position: "relative",
-          zIndex: 2,
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "clamp(40px, 8vh, 80px) 20px 60px",
+          position: "relative", height: "clamp(280px, 40vh, 420px)", overflow: "hidden",
+          background: "linear-gradient(135deg, #f5e6d3 0%, #e8d5b7 30%, #d4c4a0 60%, #c4a882 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-
-          {/* ── Hero title ─────────────────────────────────────── */}
-          <div style={{ textAlign: "center", marginBottom: "clamp(40px, 6vh, 64px)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
-              <Image src="/logo/b_white_outline_512.png" alt="Builder's KG" width={28} height={28} style={{ opacity: 0.7 }} />
-              <p className={outfit.className} style={{
-                fontSize: "0.75rem",
-                letterSpacing: "0.25em",
-                textTransform: "uppercase",
-                color: "rgba(232, 168, 62, 0.6)",
-                animation: "subtitleReveal 1s ease 0.3s backwards",
-              }}>
-                Builder&rsquo;s Knowledge Garden
-              </p>
-            </div>
-            <h1 className={cinzel.className} style={{
-              fontSize: "clamp(2rem, 5.5vw, 3.8rem)",
-              fontWeight: 900,
-              color: "#E8A83E",
-              lineHeight: 1.15,
-              animation: "titleGlow 4s ease-in-out infinite",
-              marginBottom: 16,
-            }}>
+          {/* Animated architectural silhouettes */}
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 8, padding: "0 40px", opacity: 0.12 }}>
+            {[120, 200, 160, 280, 140, 220, 180, 100, 240].map((h, i) => (
+              <div key={i} style={{
+                width: `${40 + i * 8}px`, height: `${h}px`, borderRadius: "4px 4px 0 0",
+                background: "#1a1a1a", animation: `heroFloat ${3 + i * 0.4}s ease-in-out ${i * 0.2}s infinite`,
+              }} />
+            ))}
+          </div>
+          <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 20px" }}>
+            <p className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(0,0,0,0.4)", marginBottom: 12 }}>Builder&rsquo;s Knowledge Garden</p>
+            <h1 className={cinzel.className} style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", fontWeight: 900, color: "#2a1f14", lineHeight: 1.1, marginBottom: 14 }}>
               The Dream Machine
             </h1>
-            <p className={outfit.className} style={{
-              fontSize: "clamp(0.95rem, 2vw, 1.15rem)",
-              color: "rgba(255,255,255,0.55)",
-              maxWidth: 520,
-              margin: "0 auto",
-              lineHeight: 1.6,
-              fontWeight: 300,
-            }}>
+            <p className={outfit.className} style={{ fontSize: "clamp(0.95rem, 2vw, 1.15rem)", color: "rgba(42,31,20,0.6)", maxWidth: 480, margin: "0 auto", fontWeight: 300 }}>
               Every great building begins as a feeling. Choose how you want to begin.
             </p>
           </div>
+        </div>
 
-          {/* ── Path cards — creative asymmetric layout ─────────── */}
+        {/* ── PATH CARDS — Visual grid ──────────────────────── */}
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 20px 60px" }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
             gap: 20,
-            maxWidth: 980,
-            margin: "0 auto",
           }}>
             {orderedPaths.map((path, i) => (
               <div
                 key={path.id}
-                className="dream-card"
-                data-sound="select"
-                role="button"
-                tabIndex={0}
-                aria-label={`${path.name} — ${path.tagline}`}
-                onClick={() => handlePathClick(path)}
-                onKeyDown={(e) => e.key === "Enter" && handlePathClick(path)}
+                className="dream-path-card"
+                onClick={() => router.push(path.route)}
                 onMouseEnter={() => setHoveredPath(path.id)}
                 onMouseLeave={() => setHoveredPath(null)}
-                style={{
-                  animationDelay: `${i * 0.1 + 0.2}s`,
-                  ...(hoveredPath === path.id ? {
-                    boxShadow: `0 0 40px ${path.glow}, 0 8px 32px rgba(0,0,0,0.3)`,
-                  } : {}),
-                }}
+                role="button" tabIndex={0} data-sound="select"
+                onKeyDown={(e) => e.key === "Enter" && router.push(path.route)}
+                style={{ animationDelay: `${i * 0.08 + 0.1}s`, background: "#fff" }}
               >
-                {/* Glow overlay */}
-                <div style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: 20,
-                  background: `radial-gradient(ellipse at 50% 0%, ${path.glow} 0%, transparent 70%)`,
-                  opacity: hoveredPath === path.id ? 1 : 0,
-                  transition: "opacity 0.4s ease",
-                  pointerEvents: "none",
-                }} />
-
-                <div style={{ position: "relative", zIndex: 1 }}>
-                  <div className="card-icon" style={{
-                    color: path.color,
-                    filter: `drop-shadow(0 0 12px ${path.glow})`,
+                {/* Visual area with gradient image placeholder */}
+                <div className="card-visual" style={{ background: path.image }}>
+                  <div style={{
+                    position: "absolute", top: 16, left: 16, zIndex: 2,
+                    fontSize: "2.4rem", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))",
+                    animation: hoveredPath === path.id ? "heroFloat 2s ease-in-out infinite" : "none",
                   }}>{path.icon}</div>
-
-                  <h3 className={outfit.className} style={{
-                    fontSize: "1.15rem",
-                    fontWeight: 600,
-                    color: "#fff",
-                    marginBottom: 6,
-                    letterSpacing: "-0.01em",
-                  }}>{path.name}</h3>
-
-                  <p className={outfit.className} style={{
-                    fontSize: "0.85rem",
-                    color: "rgba(255,255,255,0.5)",
-                    lineHeight: 1.5,
-                    fontWeight: 300,
-                  }}>{path.tagline}</p>
-
-                  <span className="time-badge">{path.time}</span>
+                  <div style={{ position: "relative", zIndex: 2 }}>
+                    <span className={outfit.className} style={{
+                      padding: "4px 10px", borderRadius: 8,
+                      background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
+                      fontSize: "0.68rem", color: path.color, fontWeight: 600,
+                    }}>{path.time}</span>
+                  </div>
                 </div>
-
-                {/* Lane-priority indicator (top-right) */}
+                {/* Text area */}
+                <div style={{ padding: "16px 18px 20px" }}>
+                  <h3 className={outfit.className} style={{
+                    fontSize: "1.1rem", fontWeight: 700, color: "#1a1a1a", marginBottom: 4,
+                  }}>{path.name}</h3>
+                  <p className={outfit.className} style={{
+                    fontSize: "0.82rem", color: "#888", fontWeight: 300, lineHeight: 1.4,
+                  }}>{path.tagline}</p>
+                </div>
                 {lane && (path.laneWeights[lane] ?? 5) >= 9 && (
                   <div style={{
-                    position: "absolute",
-                    top: 14,
-                    right: 14,
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.06em",
-                    color: path.color,
-                    opacity: 0.7,
-                    fontWeight: 500,
+                    position: "absolute", top: 12, right: 12, zIndex: 3,
+                    padding: "3px 10px", borderRadius: 8,
+                    background: path.color, color: "#fff",
+                    fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em",
                   }} className={outfit.className}>RECOMMENDED</div>
                 )}
               </div>
             ))}
           </div>
 
-          {/* ── Dream Garden — returning user seeds ────────────── */}
+          {/* ── YOUR GARDEN ─────────────────────────────────────── */}
           {dreams.length > 0 && (
-            <div style={{
-              marginTop: 56,
-              padding: "28px 24px",
-              borderRadius: 20,
-              background: "rgba(29, 158, 117, 0.06)",
-              border: "1px solid rgba(29, 158, 117, 0.15)",
-              backdropFilter: "blur(12px)",
-              animation: "cardEnter 0.8s ease 0.8s backwards",
-            }}>
-              <h3 className={outfit.className} style={{
-                fontSize: "0.85rem",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "#1D9E75",
-                marginBottom: 16,
-                fontWeight: 600,
-              }}>Your Garden</h3>
-
-              <div style={{
-                display: "flex",
-                gap: 16,
-                flexWrap: "wrap",
-              }}>
-                {dreams.slice(0, 6).map((dream) => {
-                  const stage = GROWTH_ICONS[dream.growthStage] || GROWTH_ICONS.seed;
-                  return (
-                    <Link
-                      key={dream.id}
-                      href={`/dream/${dream.path}?resume=${dream.id}`}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "10px 16px",
-                        borderRadius: 12,
-                        background: "rgba(29, 158, 117, 0.08)",
-                        border: "1px solid rgba(29, 158, 117, 0.12)",
-                        textDecoration: "none",
-                        transition: "all 0.3s ease",
-                        animation: "gardenPulse 3s ease-in-out infinite",
-                      }}
-                    >
-                      <span style={{ fontSize: "1.3rem" }}>{stage.icon}</span>
-                      <div>
-                        <div className={outfit.className} style={{
-                          fontSize: "0.82rem",
-                          color: "#fff",
-                          fontWeight: 500,
-                        }}>{dream.title || "Untitled dream"}</div>
-                        <div className={outfit.className} style={{
-                          fontSize: "0.7rem",
-                          color: "rgba(255,255,255,0.4)",
-                        }}>{stage.label}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
+            <div style={{ marginTop: 48, padding: "24px", borderRadius: 20, background: "#f8faf8", border: "1px solid #e0e8e0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 className={outfit.className} style={{ fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#1D9E75", fontWeight: 600 }}>Your Garden</h3>
+                <Link href="/dream/garden" className={outfit.className} style={{ fontSize: "0.72rem", color: "#1D9E75", textDecoration: "none" }}>View Full Garden →</Link>
+              </div>
+              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+                {dreams.slice(0, 6).map((dream) => (
+                  <Link key={dream.id} href={`/dream/${dream.path}`} style={{
+                    flex: "0 0 auto", display: "flex", alignItems: "center", gap: 8,
+                    padding: "10px 16px", borderRadius: 12, background: "#fff",
+                    border: "1px solid #e0e8e0", textDecoration: "none", transition: "all 0.2s",
+                  }}>
+                    <span style={{ fontSize: "1.2rem" }}>{GROWTH_ICONS[dream.growthStage] || "🌱"}</span>
+                    <div>
+                      <div className={outfit.className} style={{ fontSize: "0.78rem", color: "#1a1a1a", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
+                      <div className={outfit.className} style={{ fontSize: "0.62rem", color: "#999" }}>{dream.growthStage}</div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           )}
 
-          {/* ── Bottom tagline ─────────────────────────────────── */}
-          <p className={outfit.className} style={{
-            textAlign: "center",
-            marginTop: 48,
-            fontSize: "0.78rem",
-            color: "rgba(255,255,255,0.3)",
-            letterSpacing: "0.08em",
-            fontWeight: 300,
-          }}>
+          <p className={outfit.className} style={{ textAlign: "center", marginTop: 40, fontSize: "0.75rem", color: "#ccc" }}>
             Dream big. We&rsquo;ll get realistic later.
           </p>
-
-        </div>{/* end content container */}
-      </div>{/* end full-viewport */}
-
+        </div>
+      </div>
       <CopilotPanel />
     </>
   );

@@ -169,16 +169,16 @@ export default function BrowseDreamPage() {
         @keyframes heartPop { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }
         @keyframes dropSlide { 0% { opacity: 0; transform: translateY(20px); } 10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
         @keyframes tasteReveal { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
-        .browse-card { border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s; cursor: pointer; break-inside: avoid; margin-bottom: 16px; }
-        .browse-card:hover { border-color: rgba(184,135,59,0.25); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-        .filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5); font-size: 0.72rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .filter-chip:hover { border-color: rgba(184,135,59,0.3); color: rgba(255,255,255,0.7); }
-        .filter-chip.active { border-color: #B8873B; background: rgba(184,135,59,0.15); color: #B8873B; }
+        .browse-card { border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid #e8e8e8; transition: all 0.3s; cursor: pointer; break-inside: avoid; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.04); }
+        .browse-card:hover { border-color: rgba(184,135,59,0.3); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #e2e4e8; background: #fff; color: #666; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        .filter-chip:hover { border-color: rgba(184,135,59,0.4); color: #444; }
+        .filter-chip.active { border-color: #B8873B; background: rgba(184,135,59,0.08); color: #B8873B; }
       `}</style>
 
       <div style={{
         minHeight: "100vh", position: "relative",
-        background: `radial-gradient(ellipse at 20% 30%, rgba(184,135,59,0.1) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(196,164,74,0.06) 0%, transparent 50%), linear-gradient(135deg, #1a0f05 0%, #1e1208 40%, #15100a 100%)`,
+        background: "#fff",
         padding: "clamp(32px, 5vh, 48px) 20px 80px",
       }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>

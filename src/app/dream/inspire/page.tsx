@@ -210,7 +210,7 @@ export default function InspireDreamPage() {
 
       <div style={{
         minHeight: "100vh", position: "relative",
-        background: `radial-gradient(ellipse at 30% 20%, rgba(216,90,48,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(196,164,74,0.08) 0%, transparent 50%), linear-gradient(135deg, #1a0f05 0%, #1e1208 40%, #15100a 100%)`,
+        background: "#fff",
         padding: "clamp(32px, 6vh, 60px) 20px 80px",
       }}>
         <div style={{ maxWidth: 780, margin: "0 auto" }}>

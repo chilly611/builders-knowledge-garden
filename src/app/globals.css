@@ -32,22 +32,8 @@
   --color-accent: var(--accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0a0a;
-    --bg-secondary: #141414;
-    --bg-tertiary: #1a1a1a;
-    --fg: #ededed;
-    --fg-secondary: #a0a0a0;
-    --fg-tertiary: #666666;
-    --border: #2a2a2a;
-    --border-hover: #3a3a3a;
-    --accent-bg: #0d2e22;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-    --shadow-md: 0 2px 8px rgba(0,0,0,0.3);
-    --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
-  }
-}
+/* Dark mode DISABLED — white backgrounds globally */
+/* @media (prefers-color-scheme: dark) { } */
 
 body {
   background: var(--bg);

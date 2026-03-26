@@ -231,11 +231,11 @@ export default function DescribeDreamPage() {
         @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,168,62,0.3); } 50% { box-shadow: 0 0 20px 4px rgba(232,168,62,0.15); } }
         @keyframes narrativeIn { 0% { opacity: 0; max-height: 0; } 100% { opacity: 1; max-height: 600px; } }
         @keyframes micPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,168,62,0.4); } 50% { box-shadow: 0 0 0 12px rgba(232,168,62,0); } }
-        .dream-textarea { width: 100%; min-height: 140px; padding: 20px; border-radius: 16px; border: 1px solid rgba(232,168,62,0.2); background: rgba(255,255,255,0.04); color: #fff; font-size: 1.05rem; line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.3s, box-shadow 0.3s; font-family: inherit; }
-        .dream-textarea:focus { border-color: rgba(232,168,62,0.5); box-shadow: 0 0 0 3px rgba(232,168,62,0.1); }
-        .dream-textarea::placeholder { color: rgba(255,255,255,0.25); }
-        .entity-link { color: #E8A83E; text-decoration: none; border-bottom: 1px dotted rgba(232,168,62,0.3); transition: border-color 0.2s; }
-        .entity-link:hover { border-bottom-color: #E8A83E; }
+        .dream-textarea { width: 100%; min-height: 140px; padding: 20px; border-radius: 16px; border: 1px solid #e2e4e8; background: #fafafa; color: #1a1a1a; font-size: 1.05rem; line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.3s, box-shadow 0.3s; font-family: inherit; }
+        .dream-textarea:focus { border-color: #E8A83E; box-shadow: 0 0 0 3px rgba(232,168,62,0.1); }
+        .dream-textarea::placeholder { color: #bbb; }
+        .entity-link { color: #D85A30; text-decoration: none; border-bottom: 1px dotted rgba(216,90,48,0.3); transition: border-color 0.2s; }
+        .entity-link:hover { border-bottom-color: #D85A30; }
       `}</style>
 
       {showCelebration && (
@@ -249,7 +249,7 @@ export default function DescribeDreamPage() {
 
       <div style={{
         minHeight: "100vh", position: "relative",
-        background: `radial-gradient(ellipse at 30% 20%, rgba(232,168,62,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(216,90,48,0.08) 0%, transparent 50%), linear-gradient(135deg, #1a0f05 0%, #1e1208 40%, #15100a 100%)`,
+        background: "#fff",
         padding: "clamp(32px, 6vh, 60px) 20px 80px",
       }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -261,8 +261,8 @@ export default function DescribeDreamPage() {
             <div style={{ animation: "cardSlide 0.6s ease" }}>
               <div style={{ textAlign: "center", marginBottom: 36 }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>✦</div>
-                <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#E8A83E", marginBottom: 10 }}>Describe Your Dream</h1>
-                <p className={outfit.className} style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.95rem", fontWeight: 300, maxWidth: 440, margin: "0 auto" }}>Tell us what you want to build. Be as detailed or as vague as you like.</p>
+                <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#D85A30", marginBottom: 10 }}>Describe Your Dream</h1>
+                <p className={outfit.className} style={{ color: "#888", fontSize: "0.95rem", fontWeight: 300, maxWidth: 440, margin: "0 auto" }}>Tell us what you want to build. Be as detailed or as vague as you like.</p>
               </div>
               <div style={{ position: "relative", marginBottom: 20 }}>
                 <textarea ref={textareaRef} className={`dream-textarea ${outfit.className}`} placeholder={PLACEHOLDERS[placeholderIdx]} value={dreamText} onChange={e => setDreamText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && e.metaKey) generateDream(dreamText); }} autoFocus />

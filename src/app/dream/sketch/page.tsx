@@ -320,7 +320,7 @@ export default function SketchDreamPage() {
 
       <div style={{
         minHeight: "100vh",
-        background: `radial-gradient(ellipse at 30% 20%, rgba(196,164,74,0.1) 0%, transparent 50%), linear-gradient(135deg, #1a0f05 0%, #1e1208 40%, #15100a 100%)`,
+        background: "#fff",
         padding: "clamp(24px, 4vh, 40px) 16px 80px",
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
