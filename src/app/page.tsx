@@ -32,17 +32,17 @@ const PHASES = [
 const PRODUCTS = [
   { name: "Smart Project Launcher", tag: "THE COO", desc: "Building type → jurisdiction → auto-populate everything. See and manage codes, phases, team, permits, materials, estimate.", color: "#1D9E75", icon: "🚀", href: "/launch" },
   { name: "Dream Builder", tag: "FREE", desc: "\"I want to build a farmhouse in Asheville\" → full plan in 60 seconds. Voice, text, or image. Shareable dream link.", color: "#D85A30", icon: "💭", href: "/dream" },
-  { name: "Knowledge Garden", tag: "229 ENTITIES", desc: "Browse building codes, materials, methods, safety, trades, standards — 229 entities across 14 types. Every entity has its own page.", color: "#1D9E75", icon: "🌿", href: "/knowledge" },
-  { name: "AI Construction Copilot", tag: "CORE", desc: "Any question, cited answer. Lane-aware personality. Voice or text. RAG pipeline with 229+ entities.", color: "#7F77DD", icon: "🧠", href: "#copilot" },
+  { name: "Knowledge Garden", tag: "300 ENTITIES", desc: "Browse building codes, materials, methods, safety, trades, standards — 300 entities across 13 types. Every entity has its own page.", color: "#1D9E75", icon: "🌿", href: "/knowledge" },
+  { name: "AI Construction Copilot", tag: "CORE", desc: "Any question, cited answer. Lane-aware personality. Voice or text. RAG pipeline with 300+ entities.", color: "#7F77DD", icon: "🧠", href: "#copilot" },
   { name: "AEC CRM", tag: "KILLER APP", desc: "Lead → proposal → contract → project → warranty. Pipeline dashboard, lead scoring, activity tracking.", color: "#E8443A", icon: "⚡", href: "/crm" },
   { name: "Supply Chain + Marketplace", tag: "COMING", desc: "Every material connects to real suppliers. RFQ system. 2-5% marketplace fee.", color: "#639922", icon: "🏪", href: "/marketplace" },
 ];
 
 const STATS = [
   { value: 17, prefix: "$", suffix: "T", label: "Global construction economy", sub: "Largest industry on earth" },
-  { value: 277, prefix: "", suffix: "+", label: "Knowledge entities", sub: "Codes, materials, methods, safety, styles" },
+  { value: 300, prefix: "", suffix: "+", label: "Knowledge entities", sub: "Codes, materials, methods, safety, styles" },
   { value: 209, prefix: "", suffix: "+", label: "Knowledge graph edges", sub: "Codes↔standards↔materials↔methods" },
-  { value: 20, prefix: "", suffix: "", label: "Routes live now", sub: "8 pages + 12 API endpoints" },
+  { value: 22, prefix: "", suffix: "", label: "Routes live now", sub: "10 pages + 12 API endpoints" },
 ];
 
 const PRICING = [
