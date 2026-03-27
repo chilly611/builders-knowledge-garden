@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Cinzel, Outfit } from "next/font/google";
+import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 import { parseDream, generateDreamPlan, DreamPlan } from "@/lib/dream-parser";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "700", "900"] });
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
+const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
+const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 type Tool = "draw" | "rect" | "label" | "eraser";
 type RoomType = "bedroom" | "kitchen" | "bathroom" | "living" | "office" | "garage" | "other";
@@ -324,16 +324,16 @@ export default function SketchDreamPage() {
         padding: "clamp(24px, 4vh, 40px) 16px 80px",
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "#a08840", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
+          <Link href="/dream" className={archivo.className} style={{ color: "#a08840", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
             <div>
-              <h1 className={cinzel.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.8rem)", color: "#C4A44A", marginBottom: 4 }}>Sketch It Out</h1>
-              <p className={outfit.className} style={{ color: "#555", fontSize: "0.78rem" }}>{rects.length} rooms • {totalSqft} sf • Est. {fmt(roughCost)}</p>
+              <h1 className={archivoBlack.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.8rem)", color: "#C4A44A", marginBottom: 4 }}>Sketch It Out</h1>
+              <p className={archivo.className} style={{ color: "#555", fontSize: "0.78rem" }}>{rects.length} rooms • {totalSqft} sf • Est. {fmt(roughCost)}</p>
             </div>
-            <button onClick={() => setGuidedStep(guidedStep === null ? 0 : null)} className={outfit.className} style={{
+            <button onClick={() => setGuidedStep(guidedStep === null ? 0 : null)} className={archivo.className} style={{
               padding: "6px 14px", borderRadius: 10, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.2)",
               color: "#C4A44A", fontSize: "0.75rem", cursor: "pointer",
             }}>{guidedStep !== null ? "Hide Guide" : "📖 Help Me Draw"}</button>
@@ -343,7 +343,7 @@ export default function SketchDreamPage() {
           {guidedStep !== null && (
             <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto" }}>
               {GUIDED_STEPS.map((step, i) => (
-                <div key={i} onClick={() => setGuidedStep(i)} className={outfit.className} style={{
+                <div key={i} onClick={() => setGuidedStep(i)} className={archivo.className} style={{
                   flex: "0 0 auto", padding: "10px 14px", borderRadius: 12, cursor: "pointer",
                   background: guidedStep === i ? "rgba(196,164,74,0.12)" : "rgba(255,255,255,0.03)",
                   border: `1px solid ${guidedStep === i ? "rgba(196,164,74,0.25)" : "rgba(255,255,255,0.06)"}`,
@@ -388,7 +388,7 @@ export default function SketchDreamPage() {
                   <input type="text" value={labelInput} onChange={e => setLabelInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") handleLabelSubmit(); if (e.key === "Escape") setLabelPos(null); }}
                     autoFocus placeholder="Label..."
-                    className={outfit.className}
+                    className={archivo.className}
                     style={{ padding: "4px 10px", borderRadius: 8, background: "#fff", border: "1px solid #C4A44A", color: "#222", fontSize: "0.8rem", outline: "none", width: 120, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                   />
                 </div>
@@ -396,7 +396,7 @@ export default function SketchDreamPage() {
               {/* Room type selector */}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 12px", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)", borderTop: "1px solid #e8e8e8", display: "flex", gap: 6, overflowX: "auto" }}>
                 {(Object.keys(ROOM_COLORS) as RoomType[]).map(rt => (
-                  <button key={rt} className={`room-chip ${outfit.className} ${roomType === rt ? "active" : ""}`}
+                  <button key={rt} className={`room-chip ${archivo.className} ${roomType === rt ? "active" : ""}`}
                     onClick={() => setRoomType(rt)}
                     style={{ "--rc": ROOM_COLORS[rt], color: roomType === rt ? ROOM_COLORS[rt] : "rgba(255,255,255,0.4)" } as React.CSSProperties}
                   >{ROOM_LABELS[rt]}</button>
@@ -407,20 +407,20 @@ export default function SketchDreamPage() {
             {/* Interpretation panel */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ borderRadius: 14, padding: "16px 14px", background: "#f8f8f8", border: "1px solid #e8e8e8", flex: 1, overflowY: "auto", maxHeight: 420 }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 10, fontWeight: 600 }}>🧠 AI Interpretation</h3>
+                <h3 className={archivo.className} style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 10, fontWeight: 600 }}>🧠 AI Interpretation</h3>
                 {aiNotes.length === 0 ? (
-                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#666", fontStyle: "italic" }}>Draw rooms to see AI analysis...</p>
+                  <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#666", fontStyle: "italic" }}>Draw rooms to see AI analysis...</p>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {aiNotes.map((note, i) => (
-                      <p key={i} className={outfit.className} style={{ fontSize: "0.75rem", color: note.startsWith("⚠") ? "rgba(216,90,48,0.8)" : note.startsWith("📋") || note.startsWith("🔧") || note.startsWith("🔥") ? "rgba(196,164,74,0.7)" : "rgba(255,255,255,0.5)", lineHeight: 1.4, margin: 0 }}>{note}</p>
+                      <p key={i} className={archivo.className} style={{ fontSize: "0.75rem", color: note.startsWith("⚠") ? "rgba(216,90,48,0.8)" : note.startsWith("📋") || note.startsWith("🔧") || note.startsWith("🔥") ? "rgba(196,164,74,0.7)" : "rgba(255,255,255,0.5)", lineHeight: 1.4, margin: 0 }}>{note}</p>
                     ))}
                   </div>
                 )}
               </div>
 
               {rects.length >= 1 && (
-                <button onClick={generateDreamFromSketch} className={outfit.className} data-sound="select" style={{
+                <button onClick={generateDreamFromSketch} className={archivo.className} data-sound="select" style={{
                   padding: "12px 16px", borderRadius: 12, border: "none",
                   background: "linear-gradient(135deg, #C4A44A, #E8A83E)", color: "#222",
                   fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
@@ -435,7 +435,7 @@ export default function SketchDreamPage() {
               <div style={{ borderRadius: 18, padding: "24px 20px", background: "rgba(196,164,74,0.04)", border: "1px solid rgba(196,164,74,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                   <span style={{ fontSize: "1.4rem" }}>△</span>
-                  <h2 className={cinzel.className} style={{ fontSize: "1.2rem", color: "#C4A44A" }}>Your Sketch Dream</h2>
+                  <h2 className={archivoBlack.className} style={{ fontSize: "1.2rem", color: "#C4A44A" }}>Your Sketch Dream</h2>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 16 }}>
                   {[
@@ -445,19 +445,19 @@ export default function SketchDreamPage() {
                     { label: "Team", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                   ].map((s, i) => (
                     <div key={i} style={{ borderRadius: 12, padding: "12px 10px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-                      <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 4 }}>{s.label}</div>
-                      <div className={outfit.className} style={{ fontSize: "1.05rem", color: "#C4A44A", fontWeight: 700 }}>{s.value}</div>
-                      <div className={outfit.className} style={{ fontSize: "0.65rem", color: "#666" }}>{s.sub}</div>
+                      <div className={archivo.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 4 }}>{s.label}</div>
+                      <div className={archivo.className} style={{ fontSize: "1.05rem", color: "#C4A44A", fontWeight: 700 }}>{s.value}</div>
+                      <div className={archivo.className} style={{ fontSize: "0.65rem", color: "#666" }}>{s.sub}</div>
                     </div>
                   ))}
                 </div>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <Link href={`/launch?sqft=${totalSqft}`} className={outfit.className} style={{
+                  <Link href={`/launch?sqft=${totalSqft}`} className={archivo.className} style={{
                     padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg, #C4A44A, #E8A83E)",
                     color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
                   }}>🚀 Start Project</Link>
-                  <Link href={`/dream/describe?dream=${encodeURIComponent(`A ${totalSqft} sf home with ${rects.map(r => r.label).join(", ")}`)}`} className={outfit.className} style={{
+                  <Link href={`/dream/describe?dream=${encodeURIComponent(`A ${totalSqft} sf home with ${rects.map(r => r.label).join(", ")}`)}`} className={archivo.className} style={{
                     padding: "10px 18px", borderRadius: 12, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)",
                     color: "#E8A83E", fontSize: "0.82rem", fontWeight: 500, textDecoration: "none",
                   }}>✦ Describe Further</Link>

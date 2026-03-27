@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Cinzel, Outfit } from "next/font/google";
+import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "700", "900"] });
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
+const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
+const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 interface DreamPath {
   id: string; route: string; icon: string; name: string;
@@ -19,27 +19,27 @@ interface DreamPath {
 const DREAM_PATHS: DreamPath[] = [
   { id: "describe", route: "/dream/describe", icon: "✦", name: "Describe Your Dream",
     tagline: "Tell us in your own words", time: "~60 sec",
-    color: "#E8A83E", image: "linear-gradient(135deg, #f5e6d3, #e8d5b7, #c4a882)",
+    color: "#E8A83E", image: "url(https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80&fit=crop)",
     laneWeights: { diy: 10, gc: 8, specialty: 7, supplier: 5, equipment: 5, service: 6, worker: 6, robot: 4 } },
   { id: "inspire", route: "/dream/inspire", icon: "◈", name: "Show Me Inspiration",
     tagline: "Upload photos — AI analyzes everything", time: "~2 min",
-    color: "#D85A30", image: "linear-gradient(135deg, #e8d0c0, #d4a88a, #c48a6a)",
+    color: "#D85A30", image: "url(https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=600&q=80&fit=crop)",
     laneWeights: { diy: 9, gc: 6, specialty: 6, supplier: 4, equipment: 3, service: 5, worker: 5, robot: 3 } },
   { id: "sketch", route: "/dream/sketch", icon: "△", name: "Sketch It Out",
     tagline: "Draw your floor plan — AI interprets live", time: "~5 min",
-    color: "#C4A44A", image: "linear-gradient(135deg, #e0dcd0, #c4c0b0, #a8a498)",
+    color: "#C4A44A", image: "url(https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=80&fit=crop)",
     laneWeights: { diy: 6, gc: 7, specialty: 8, supplier: 3, equipment: 3, service: 4, worker: 4, robot: 5 } },
   { id: "explore", route: "/dream/explore", icon: "⬡", name: "Surprise Me",
     tagline: "Answer 5 questions — AI generates concepts", time: "~90 sec",
-    color: "#E07B3A", image: "linear-gradient(135deg, #f0d8c8, #e0b8a0, #d09880)",
+    color: "#E07B3A", image: "url(https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&q=80&fit=crop)",
     laneWeights: { diy: 8, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 6 } },
   { id: "browse", route: "/dream/browse", icon: "◉", name: "Browse & Discover",
     tagline: "Infinite visual scroll — save what you love", time: "Open-ended",
-    color: "#B8873B", image: "linear-gradient(135deg, #d8ccb8, #c4b8a0, #b0a488)",
+    color: "#B8873B", image: "url(https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80&fit=crop)",
     laneWeights: { diy: 7, gc: 4, specialty: 6, supplier: 7, equipment: 4, service: 5, worker: 5, robot: 3 } },
   { id: "plans", route: "/dream/plans", icon: "⊞", name: "I Have Plans",
     tagline: "Upload DWG, PDF — we add intelligence", time: "~10 min",
-    color: "#9C7832", image: "linear-gradient(135deg, #d0c8b8, #b8b0a0, #a09888)",
+    color: "#9C7832", image: "url(https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80&fit=crop)",
     laneWeights: { diy: 3, gc: 10, specialty: 9, supplier: 6, equipment: 7, service: 8, worker: 4, robot: 8 } },
 ];
 
@@ -85,8 +85,9 @@ export default function DreamMachinePage() {
         }
         .dream-path-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
         .dream-path-card .card-visual {
-          height: 180px; display: flex; align-items: flex-end; padding: 16px;
+          height: 200px; display: flex; align-items: flex-end; padding: 16px;
           position: relative; overflow: hidden;
+          background-size: cover !important; background-position: center !important;
         }
         .dream-path-card .card-visual::after {
           content: ''; position: absolute; inset: 0;
@@ -98,25 +99,25 @@ export default function DreamMachinePage() {
 
         {/* ── HERO — Full-width visual with text overlay ────── */}
         <div style={{
-          position: "relative", height: "clamp(280px, 40vh, 420px)", overflow: "hidden",
-          background: "linear-gradient(135deg, #f5e6d3 0%, #e8d5b7 30%, #d4c4a0 60%, #c4a882 100%)",
+          position: "relative", height: "clamp(300px, 45vh, 480px)", overflow: "hidden",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          {/* Animated architectural silhouettes */}
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 8, padding: "0 40px", opacity: 0.12 }}>
-            {[120, 200, 160, 280, 140, 220, 180, 100, 240].map((h, i) => (
-              <div key={i} style={{
-                width: `${40 + i * 8}px`, height: `${h}px`, borderRadius: "4px 4px 0 0",
-                background: "#1a1a1a", animation: `heroFloat ${3 + i * 0.4}s ease-in-out ${i * 0.2}s infinite`,
-              }} />
-            ))}
-          </div>
+          {/* Real architecture photo background */}
+          <div style={{
+            position: "absolute", inset: 0,
+            backgroundImage: "url(https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1400&q=85&fit=crop)",
+            backgroundSize: "cover", backgroundPosition: "center",
+          }} />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(180deg, rgba(42,31,20,0.3) 0%, rgba(42,31,20,0.7) 60%, rgba(42,31,20,0.92) 100%)",
+          }} />
           <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 20px" }}>
-            <p className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(0,0,0,0.4)", marginBottom: 12 }}>Builder&rsquo;s Knowledge Garden</p>
-            <h1 className={cinzel.className} style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", fontWeight: 900, color: "#2a1f14", lineHeight: 1.1, marginBottom: 14 }}>
+            <p className={archivo.className} style={{ fontSize: "0.72rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Builder&rsquo;s Knowledge Garden</p>
+            <h1 className={archivoBlack.className} style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", fontWeight: 900, color: "#fff", lineHeight: 1.1, marginBottom: 14 }}>
               The Dream Machine
             </h1>
-            <p className={outfit.className} style={{ fontSize: "clamp(0.95rem, 2vw, 1.15rem)", color: "rgba(42,31,20,0.6)", maxWidth: 480, margin: "0 auto", fontWeight: 300 }}>
+            <p className={archivo.className} style={{ fontSize: "clamp(0.95rem, 2vw, 1.15rem)", color: "rgba(255,255,255,0.7)", maxWidth: 480, margin: "0 auto", fontWeight: 300 }}>
               Every great building begins as a feeling. Choose how you want to begin.
             </p>
           </div>
@@ -148,7 +149,7 @@ export default function DreamMachinePage() {
                     animation: hoveredPath === path.id ? "heroFloat 2s ease-in-out infinite" : "none",
                   }}>{path.icon}</div>
                   <div style={{ position: "relative", zIndex: 2 }}>
-                    <span className={outfit.className} style={{
+                    <span className={archivo.className} style={{
                       padding: "4px 10px", borderRadius: 8,
                       background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
                       fontSize: "0.68rem", color: path.color, fontWeight: 600,
@@ -157,10 +158,10 @@ export default function DreamMachinePage() {
                 </div>
                 {/* Text area */}
                 <div style={{ padding: "16px 18px 20px" }}>
-                  <h3 className={outfit.className} style={{
+                  <h3 className={archivo.className} style={{
                     fontSize: "1.1rem", fontWeight: 700, color: "#222", marginBottom: 4,
                   }}>{path.name}</h3>
-                  <p className={outfit.className} style={{
+                  <p className={archivo.className} style={{
                     fontSize: "0.82rem", color: "#666", fontWeight: 300, lineHeight: 1.4,
                   }}>{path.tagline}</p>
                 </div>
@@ -170,7 +171,7 @@ export default function DreamMachinePage() {
                     padding: "3px 10px", borderRadius: 8,
                     background: path.color, color: "#222",
                     fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em",
-                  }} className={outfit.className}>RECOMMENDED</div>
+                  }} className={archivo.className}>RECOMMENDED</div>
                 )}
               </div>
             ))}
@@ -180,8 +181,8 @@ export default function DreamMachinePage() {
           {dreams.length > 0 && (
             <div style={{ marginTop: 48, padding: "24px", borderRadius: 20, background: "#f8faf8", border: "1px solid #e0e8e0" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#1D9E75", fontWeight: 600 }}>Your Garden</h3>
-                <Link href="/dream/garden" className={outfit.className} style={{ fontSize: "0.72rem", color: "#1D9E75", textDecoration: "none" }}>View Full Garden →</Link>
+                <h3 className={archivo.className} style={{ fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#1D9E75", fontWeight: 600 }}>Your Garden</h3>
+                <Link href="/dream/garden" className={archivo.className} style={{ fontSize: "0.72rem", color: "#1D9E75", textDecoration: "none" }}>View Full Garden →</Link>
               </div>
               <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
                 {dreams.slice(0, 6).map((dream) => (
@@ -192,8 +193,8 @@ export default function DreamMachinePage() {
                   }}>
                     <span style={{ fontSize: "1.2rem" }}>{GROWTH_ICONS[dream.growthStage] || "🌱"}</span>
                     <div>
-                      <div className={outfit.className} style={{ fontSize: "0.78rem", color: "#222", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
-                      <div className={outfit.className} style={{ fontSize: "0.62rem", color: "#555" }}>{dream.growthStage}</div>
+                      <div className={archivo.className} style={{ fontSize: "0.78rem", color: "#222", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
+                      <div className={archivo.className} style={{ fontSize: "0.62rem", color: "#555" }}>{dream.growthStage}</div>
                     </div>
                   </Link>
                 ))}
@@ -201,7 +202,7 @@ export default function DreamMachinePage() {
             </div>
           )}
 
-          <p className={outfit.className} style={{ textAlign: "center", marginTop: 40, fontSize: "0.75rem", color: "#666" }}>
+          <p className={archivo.className} style={{ textAlign: "center", marginTop: 40, fontSize: "0.75rem", color: "#666" }}>
             Dream big. We&rsquo;ll get realistic later.
           </p>
         </div>

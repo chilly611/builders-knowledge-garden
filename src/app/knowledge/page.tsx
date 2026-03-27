@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
+import { getImageForEntity } from "@/lib/image-service";
 
 const ENTITY_TYPES = [
   { id: "all", label: "All", icon: "🌿", color: "#1D9E75" },
@@ -157,21 +158,26 @@ function KnowledgePageInner() {
               return (
                 <Link key={entity.id} href={`/knowledge/${entity.slug}`}
                   style={{
-                    padding: "14px 16px", borderRadius: 14, cursor: "pointer",
+                    borderRadius: 14, cursor: "pointer", overflow: "hidden",
                     border: isExpanded ? `2px solid ${typeInfo.color}` : "1px solid var(--border, #e5e5e5)",
-                    background: isExpanded ? `${typeInfo.color}06` : "var(--bg, #fff)",
+                    background: "var(--bg, #fff)",
                     transition: "all 0.2s", textDecoration: "none", color: "inherit", display: "block",
                   }}>
-                  {/* Type badge + title */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                    <span style={{
-                      fontSize: 9, padding: "2px 8px", borderRadius: 8,
-                      background: `${typeInfo.color}15`, color: typeInfo.color, fontWeight: 600,
-                    }}>{typeInfo.icon} {typeInfo.label}</span>
-                    {entity.category && (
-                      <span style={{ fontSize: 9, color: "var(--fg-tertiary)" }}>· {entity.category}</span>
-                    )}
+                  {/* Entity type image strip */}
+                  <div style={{
+                    height: 80, position: "relative", overflow: "hidden",
+                    backgroundImage: `url(${getImageForEntity(entity).url})`,
+                    backgroundSize: "cover", backgroundPosition: "center",
+                  }}>
+                    <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 20%, ${typeInfo.color}bb 100%)` }} />
+                    <div style={{ position: "absolute", bottom: 6, left: 10, zIndex: 2 }}>
+                      <span style={{
+                        fontSize: 9, padding: "2px 8px", borderRadius: 8,
+                        background: "rgba(255,255,255,0.9)", color: typeInfo.color, fontWeight: 600,
+                      }}>{typeInfo.icon} {typeInfo.label}</span>
+                    </div>
                   </div>
+                  <div style={{ padding: "10px 14px 14px" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3, marginBottom: 4 }}>
                     {entity.title}
                   </div>
@@ -198,6 +204,7 @@ function KnowledgePageInner() {
                     </div>
                   )}
 
+                  </div>
                 </Link>
               );
             })}

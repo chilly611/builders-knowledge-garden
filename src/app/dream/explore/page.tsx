@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Cinzel, Outfit } from "next/font/google";
+import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 import { parseDream, generateDreamPlan, DreamPlan } from "@/lib/dream-parser";
 import { ARCHITECTURE_STYLES } from "@/lib/architecture-styles";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "700", "900"] });
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
+const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
+const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 type Phase = "quiz" | "generating" | "concepts" | "detail";
 
@@ -196,7 +196,7 @@ export default function ExploreDreamPage() {
         padding: "clamp(32px, 6vh, 60px) 20px 80px",
       }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "#c06830", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
+          <Link href="/dream" className={archivo.className} style={{ color: "#c06830", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -212,20 +212,20 @@ export default function ExploreDreamPage() {
 
               <div style={{ textAlign: "center", marginBottom: 32 }}>
                 <div style={{ fontSize: "2.2rem", marginBottom: 10 }}>⬡</div>
-                <h1 className={cinzel.className} style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", color: "#E07B3A", marginBottom: 8 }}>Surprise Me</h1>
-                <p className={outfit.className} style={{ color: "#555", fontSize: "0.85rem", fontWeight: 300 }}>Question {quizStep + 1} of 6</p>
+                <h1 className={archivoBlack.className} style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", color: "#E07B3A", marginBottom: 8 }}>Surprise Me</h1>
+                <p className={archivo.className} style={{ color: "#555", fontSize: "0.85rem", fontWeight: 300 }}>Question {quizStep + 1} of 6</p>
               </div>
 
               {/* Step 0: Building type */}
               {quizStep === 0 && (
                 <div>
-                  <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 20, fontWeight: 400 }}>What are you building?</h2>
+                  <h2 className={archivo.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 20, fontWeight: 400 }}>What are you building?</h2>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
                     {BUILDING_TYPES.map(bt => (
                       <div key={bt.id} className={`quiz-option ${answers.buildingType === bt.id ? "selected" : ""}`}
                         onClick={() => setAnswers(a => ({ ...a, buildingType: bt.id }))}>
                         <div style={{ fontSize: "2rem", marginBottom: 6 }}>{bt.icon}</div>
-                        <div className={outfit.className} style={{ fontSize: "0.82rem", color: answers.buildingType === bt.id ? "#E07B3A" : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{bt.label}</div>
+                        <div className={archivo.className} style={{ fontSize: "0.82rem", color: answers.buildingType === bt.id ? "#E07B3A" : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{bt.label}</div>
                       </div>
                     ))}
                   </div>
@@ -235,9 +235,9 @@ export default function ExploreDreamPage() {
               {/* Step 1: Location */}
               {quizStep === 1 && (
                 <div style={{ textAlign: "center" }}>
-                  <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", marginBottom: 20, fontWeight: 400 }}>Where are you building?</h2>
+                  <h2 className={archivo.className} style={{ fontSize: "1.1rem", color: "#333", marginBottom: 20, fontWeight: 400 }}>Where are you building?</h2>
                   <input type="text" value={answers.location} onChange={e => setAnswers(a => ({ ...a, location: e.target.value }))}
-                    placeholder="City or state — e.g. Austin, TX" autoFocus className={outfit.className}
+                    placeholder="City or state — e.g. Austin, TX" autoFocus className={archivo.className}
                     style={{ width: "100%", maxWidth: 400, padding: "14px 20px", borderRadius: 14, background: "#fafafa", border: "1px solid rgba(224,123,58,0.2)", color: "#222", fontSize: "1rem", outline: "none", textAlign: "center" }}
                     onKeyDown={e => e.key === "Enter" && answers.location && nextStep()} />
                 </div>
@@ -246,8 +246,8 @@ export default function ExploreDreamPage() {
               {/* Step 2: Vibes */}
               {quizStep === 2 && (
                 <div>
-                  <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 6, fontWeight: 400 }}>What is your vibe?</h2>
-                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#666", textAlign: "center", marginBottom: 20 }}>Select 1–3</p>
+                  <h2 className={archivo.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 6, fontWeight: 400 }}>What is your vibe?</h2>
+                  <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#666", textAlign: "center", marginBottom: 20 }}>Select 1–3</p>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
                     {VIBES.map(v => {
                       const sel = answers.vibes.includes(v.id);
@@ -256,7 +256,7 @@ export default function ExploreDreamPage() {
                           onClick={() => setAnswers(a => ({ ...a, vibes: sel ? a.vibes.filter(x => x !== v.id) : [...a.vibes, v.id].slice(0, 3) }))}
                           style={sel ? { borderColor: v.color, background: `${v.color}18` } : {}}>
                           <div style={{ fontSize: "1.8rem", marginBottom: 6 }}>{v.icon}</div>
-                          <div className={outfit.className} style={{ fontSize: "0.8rem", color: sel ? v.color : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{v.label}</div>
+                          <div className={archivo.className} style={{ fontSize: "0.8rem", color: sel ? v.color : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{v.label}</div>
                         </div>
                       );
                     })}
@@ -267,13 +267,13 @@ export default function ExploreDreamPage() {
               {/* Step 3: Size */}
               {quizStep === 3 && (
                 <div>
-                  <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 20, fontWeight: 400 }}>How big?</h2>
+                  <h2 className={archivo.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 20, fontWeight: 400 }}>How big?</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 400, margin: "0 auto" }}>
                     {SIZE_OPTIONS.map(s => (
                       <div key={s.id} className={`quiz-option ${answers.size === s.id ? "selected" : ""}`}
                         onClick={() => setAnswers(a => ({ ...a, size: s.id }))} style={{ textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span className={outfit.className} style={{ fontSize: "0.9rem", color: answers.size === s.id ? "#E07B3A" : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{s.label}</span>
-                        <span className={outfit.className} style={{ fontSize: "0.75rem", color: "#666" }}>{s.sub}</span>
+                        <span className={archivo.className} style={{ fontSize: "0.9rem", color: answers.size === s.id ? "#E07B3A" : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{s.label}</span>
+                        <span className={archivo.className} style={{ fontSize: "0.75rem", color: "#666" }}>{s.sub}</span>
                       </div>
                     ))}
                   </div>
@@ -283,12 +283,12 @@ export default function ExploreDreamPage() {
               {/* Step 4: Budget */}
               {quizStep === 4 && (
                 <div>
-                  <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 20, fontWeight: 400 }}>Budget range?</h2>
+                  <h2 className={archivo.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 20, fontWeight: 400 }}>Budget range?</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 400, margin: "0 auto" }}>
                     {BUDGET_OPTIONS.map(b => (
                       <div key={b.id} className={`quiz-option ${answers.budget === b.id ? "selected" : ""}`}
                         onClick={() => setAnswers(a => ({ ...a, budget: b.id }))} style={{ textAlign: "center" }}>
-                        <span className={outfit.className} style={{ fontSize: "0.95rem", color: answers.budget === b.id ? "#E07B3A" : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{b.label}</span>
+                        <span className={archivo.className} style={{ fontSize: "0.95rem", color: answers.budget === b.id ? "#E07B3A" : "rgba(255,255,255,0.6)", fontWeight: 500 }}>{b.label}</span>
                       </div>
                     ))}
                   </div>
@@ -298,8 +298,8 @@ export default function ExploreDreamPage() {
               {/* Step 5: Priorities */}
               {quizStep === 5 && (
                 <div>
-                  <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 6, fontWeight: 400 }}>What matters most?</h2>
-                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#666", textAlign: "center", marginBottom: 20 }}>Pick your top 3</p>
+                  <h2 className={archivo.className} style={{ fontSize: "1.1rem", color: "#333", textAlign: "center", marginBottom: 6, fontWeight: 400 }}>What matters most?</h2>
+                  <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#666", textAlign: "center", marginBottom: 20 }}>Pick your top 3</p>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, maxWidth: 500, margin: "0 auto" }}>
                     {PRIORITIES.map(p => {
                       const sel = answers.priorities.includes(p.id);
@@ -307,7 +307,7 @@ export default function ExploreDreamPage() {
                         <div key={p.id} className={`quiz-option ${sel ? "selected" : ""}`}
                           onClick={() => setAnswers(a => ({ ...a, priorities: sel ? a.priorities.filter(x => x !== p.id) : [...a.priorities, p.id].slice(0, 3) }))}>
                           <div style={{ fontSize: "1.5rem", marginBottom: 4 }}>{p.icon}</div>
-                          <div className={outfit.className} style={{ fontSize: "0.78rem", color: sel ? "#E07B3A" : "rgba(255,255,255,0.5)", fontWeight: 500 }}>{p.label}</div>
+                          <div className={archivo.className} style={{ fontSize: "0.78rem", color: sel ? "#E07B3A" : "rgba(255,255,255,0.5)", fontWeight: 500 }}>{p.label}</div>
                         </div>
                       );
                     })}
@@ -318,9 +318,9 @@ export default function ExploreDreamPage() {
               {/* Next / Generate button */}
               <div style={{ textAlign: "center", marginTop: 32 }}>
                 {quizStep > 0 && (
-                  <button onClick={() => setQuizStep(quizStep - 1)} className={outfit.className} style={{ padding: "10px 20px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.85rem", cursor: "pointer", marginRight: 10 }}>← Back</button>
+                  <button onClick={() => setQuizStep(quizStep - 1)} className={archivo.className} style={{ padding: "10px 20px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.85rem", cursor: "pointer", marginRight: 10 }}>← Back</button>
                 )}
-                <button onClick={nextStep} disabled={!canProceed} className={outfit.className} data-sound="select" style={{
+                <button onClick={nextStep} disabled={!canProceed} className={archivo.className} data-sound="select" style={{
                   padding: "12px 32px", borderRadius: 14, border: "none",
                   background: canProceed ? "linear-gradient(135deg, #E07B3A, #E8A83E)" : "rgba(255,255,255,0.06)",
                   color: canProceed ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "1rem", fontWeight: 600,
@@ -335,8 +335,8 @@ export default function ExploreDreamPage() {
           {phase === "generating" && (
             <div style={{ textAlign: "center", minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <div style={{ fontSize: "3.5rem", marginBottom: 20, animation: "sparkle 2s ease-in-out infinite" }}>⬡</div>
-              <p className={cinzel.className} style={{ color: "#E07B3A", fontSize: "1.1rem", marginBottom: 16 }}>Generating concepts...</p>
-              <p className={outfit.className} style={{ color: "#555", fontSize: "0.82rem" }}>{revealCount} of {concepts.length} ready</p>
+              <p className={archivoBlack.className} style={{ color: "#E07B3A", fontSize: "1.1rem", marginBottom: 16 }}>Generating concepts...</p>
+              <p className={archivo.className} style={{ color: "#555", fontSize: "0.82rem" }}>{revealCount} of {concepts.length} ready</p>
               <div style={{ display: "flex", gap: 4, marginTop: 16 }}>
                 {concepts.map((_, i) => (
                   <div key={i} style={{ width: 24, height: 4, borderRadius: 2, background: i < revealCount ? "linear-gradient(90deg, #E07B3A, #E8A83E)" : "rgba(255,255,255,0.06)", transition: "background 0.3s" }} />
@@ -349,8 +349,8 @@ export default function ExploreDreamPage() {
           {phase === "concepts" && (
             <div style={{ animation: "cardSlide 0.5s ease" }}>
               <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <h2 className={cinzel.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.7rem)", color: "#E07B3A", marginBottom: 6 }}>Your Concepts</h2>
-                <p className={outfit.className} style={{ color: "#555", fontSize: "0.82rem" }}>{concepts.length} ideas tailored to your preferences. Tap to explore.</p>
+                <h2 className={archivoBlack.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.7rem)", color: "#E07B3A", marginBottom: 6 }}>Your Concepts</h2>
+                <p className={archivo.className} style={{ color: "#555", fontSize: "0.82rem" }}>{concepts.length} ideas tailored to your preferences. Tap to explore.</p>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
@@ -361,27 +361,27 @@ export default function ExploreDreamPage() {
                     <div style={{ padding: "18px 16px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                         <span style={{ fontSize: "1.6rem" }}>{c.emoji}</span>
-                        <span className={outfit.className} style={{
+                        <span className={archivo.className} style={{
                           padding: "3px 10px", borderRadius: 10, fontSize: "0.68rem", fontWeight: 600,
                           background: c.match >= 80 ? "rgba(29,158,117,0.15)" : "rgba(224,123,58,0.1)",
                           color: c.match >= 80 ? "#1D9E75" : "#E07B3A",
                           border: `1px solid ${c.match >= 80 ? "rgba(29,158,117,0.25)" : "rgba(224,123,58,0.15)"}`,
                         }}>{c.match}% match</span>
                       </div>
-                      <h3 className={outfit.className} style={{ fontSize: "0.95rem", color: "#222", fontWeight: 600, marginBottom: 4 }}>{c.name}</h3>
-                      <p className={outfit.className} style={{ fontSize: "0.75rem", color: "#555", lineHeight: 1.4, marginBottom: 10 }}>{c.description.slice(0, 120)}...</p>
+                      <h3 className={archivo.className} style={{ fontSize: "0.95rem", color: "#222", fontWeight: 600, marginBottom: 4 }}>{c.name}</h3>
+                      <p className={archivo.className} style={{ fontSize: "0.75rem", color: "#555", lineHeight: 1.4, marginBottom: 10 }}>{c.description.slice(0, 120)}...</p>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
                         {c.materials.map((m, j) => (
-                          <span key={j} className={outfit.className} style={{ padding: "2px 7px", borderRadius: 6, background: "rgba(224,123,58,0.08)", fontSize: "0.6rem", color: "#555" }}>{m}</span>
+                          <span key={j} className={archivo.className} style={{ padding: "2px 7px", borderRadius: 6, background: "rgba(224,123,58,0.08)", fontSize: "0.6rem", color: "#555" }}>{m}</span>
                         ))}
                       </div>
-                      <span className={outfit.className} style={{ fontSize: "0.72rem", color: "#E07B3A", fontWeight: 500 }}>{c.costRange}</span>
+                      <span className={archivo.className} style={{ fontSize: "0.72rem", color: "#E07B3A", fontWeight: 500 }}>{c.costRange}</span>
                     </div>
                   </div>
                 ))}
               </div>
               <div style={{ textAlign: "center", marginTop: 24 }}>
-                <button onClick={() => { setPhase("quiz"); setQuizStep(0); setConcepts([]); setRevealCount(0); }} className={outfit.className} style={{ padding: "10px 20px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.82rem", cursor: "pointer" }}>← Retake Quiz</button>
+                <button onClick={() => { setPhase("quiz"); setQuizStep(0); setConcepts([]); setRevealCount(0); }} className={archivo.className} style={{ padding: "10px 20px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.82rem", cursor: "pointer" }}>← Retake Quiz</button>
               </div>
             </div>
           )}
@@ -389,15 +389,15 @@ export default function ExploreDreamPage() {
           {/* ── DETAIL PHASE ────────────────────────────────────── */}
           {phase === "detail" && selectedConcept && plan && (
             <div style={{ animation: "cardSlide 0.5s ease" }}>
-              <button onClick={() => setPhase("concepts")} className={outfit.className} style={{ padding: "6px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.78rem", cursor: "pointer", marginBottom: 20 }}>← All Concepts</button>
+              <button onClick={() => setPhase("concepts")} className={archivo.className} style={{ padding: "6px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.78rem", cursor: "pointer", marginBottom: 20 }}>← All Concepts</button>
 
               <div style={{ borderRadius: 20, padding: "28px 24px", background: "rgba(224,123,58,0.04)", border: "1px solid rgba(224,123,58,0.15)", marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <span style={{ fontSize: "1.6rem" }}>{selectedConcept.emoji}</span>
-                  <h2 className={cinzel.className} style={{ fontSize: "1.2rem", color: "#E07B3A" }}>{selectedConcept.name}</h2>
-                  <span className={outfit.className} style={{ padding: "3px 10px", borderRadius: 10, fontSize: "0.68rem", fontWeight: 600, background: "rgba(29,158,117,0.15)", color: "#1D9E75", marginLeft: "auto" }}>{selectedConcept.match}% match</span>
+                  <h2 className={archivoBlack.className} style={{ fontSize: "1.2rem", color: "#E07B3A" }}>{selectedConcept.name}</h2>
+                  <span className={archivo.className} style={{ padding: "3px 10px", borderRadius: 10, fontSize: "0.68rem", fontWeight: 600, background: "rgba(29,158,117,0.15)", color: "#1D9E75", marginLeft: "auto" }}>{selectedConcept.match}% match</span>
                 </div>
-                <p className={outfit.className} style={{ color: "#555", fontSize: "0.9rem", lineHeight: 1.7, fontWeight: 300 }}>{selectedConcept.description}</p>
+                <p className={archivo.className} style={{ color: "#555", fontSize: "0.9rem", lineHeight: 1.7, fontWeight: 300 }}>{selectedConcept.description}</p>
               </div>
 
               {/* Stats */}
@@ -409,34 +409,34 @@ export default function ExploreDreamPage() {
                   { label: "Team", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                 ].map((s, i) => (
                   <div key={i} style={{ borderRadius: 14, padding: "14px 12px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-                    <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 4 }}>{s.label}</div>
-                    <div className={outfit.className} style={{ fontSize: "1.1rem", color: "#E07B3A", fontWeight: 700, marginBottom: 2 }}>{s.value}</div>
-                    <div className={outfit.className} style={{ fontSize: "0.65rem", color: "#666" }}>{s.sub}</div>
+                    <div className={archivo.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 4 }}>{s.label}</div>
+                    <div className={archivo.className} style={{ fontSize: "1.1rem", color: "#E07B3A", fontWeight: 700, marginBottom: 2 }}>{s.value}</div>
+                    <div className={archivo.className} style={{ fontSize: "0.65rem", color: "#666" }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
 
               {plan.challenges.length > 0 && (
                 <div style={{ borderRadius: 14, padding: "16px 14px", marginBottom: 20, background: "rgba(216,90,48,0.04)", border: "1px solid rgba(216,90,48,0.12)" }}>
-                  <h3 className={outfit.className} style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(216,90,48,0.7)", marginBottom: 10, fontWeight: 600 }}>⚠️ Watch Out For</h3>
+                  <h3 className={archivo.className} style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(216,90,48,0.7)", marginBottom: 10, fontWeight: 600 }}>⚠️ Watch Out For</h3>
                   {plan.challenges.map((ch, i) => (
-                    <p key={i} className={outfit.className} style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.4, margin: "0 0 4px" }}>• {ch}</p>
+                    <p key={i} className={archivo.className} style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.4, margin: "0 0 4px" }}>• {ch}</p>
                   ))}
                 </div>
               )}
 
               {/* Actions */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-                <button onClick={saveDream} disabled={saved} className={outfit.className} style={{
+                <button onClick={saveDream} disabled={saved} className={archivo.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: saved ? "rgba(29,158,117,0.15)" : "rgba(224,123,58,0.1)",
                   border: `1px solid ${saved ? "rgba(29,158,117,0.3)" : "rgba(224,123,58,0.2)"}`, color: saved ? "#1D9E75" : "#E07B3A",
                   fontSize: "0.82rem", fontWeight: 500, cursor: "pointer",
                 }}>{saved ? "✓ Saved" : "🌱 Save Dream"}</button>
-                <Link href={`/dream/describe?dream=${encodeURIComponent(selectedConcept.description)}`} className={outfit.className} style={{
+                <Link href={`/dream/describe?dream=${encodeURIComponent(selectedConcept.description)}`} className={archivo.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)",
                   color: "#E8A83E", fontSize: "0.82rem", fontWeight: 500, textDecoration: "none", textAlign: "center",
                 }}>✦ Refine Further</Link>
-                <Link href={`/launch?type=${answers.buildingType}&sqft=${SIZE_OPTIONS.find(s => s.id === answers.size)?.sf || 2500}`} className={outfit.className} style={{
+                <Link href={`/launch?type=${answers.buildingType}&sqft=${SIZE_OPTIONS.find(s => s.id === answers.size)?.sf || 2500}`} className={archivo.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #E07B3A, #E8A83E)",
                   color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center",
                 }}>🚀 Start Project</Link>

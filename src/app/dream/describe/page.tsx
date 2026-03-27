@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Cinzel, Outfit } from "next/font/google";
+import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 import { parseDream, generateDreamPlan, DreamPlan } from "@/lib/dream-parser";
 
-const cinzel = Cinzel({ subsets: ["latin"], weight: ["400", "700", "900"] });
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
+const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
+const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 type Phase = "input" | "processing" | "result";
 
@@ -243,7 +243,7 @@ export default function DescribeDreamPage() {
           {["🎉", "🏗️", "✨", "🌱", "🎊"].map((e, i) => (
             <span key={i} style={{ fontSize: "3rem", position: "absolute", animation: `celebrationBurst 2s ease ${i * 0.2}s forwards`, left: `${20 + i * 15}%`, top: "40%" }}>{e}</span>
           ))}
-          <div className={cinzel.className} style={{ fontSize: "1.5rem", color: "#E8A83E", animation: "celebrationBurst 3s ease 0.5s forwards" }}>Your first dream!</div>
+          <div className={archivoBlack.className} style={{ fontSize: "1.5rem", color: "#E8A83E", animation: "celebrationBurst 3s ease 0.5s forwards" }}>Your first dream!</div>
         </div>
       )}
 
@@ -253,7 +253,7 @@ export default function DescribeDreamPage() {
         padding: "clamp(32px, 6vh, 60px) 20px 80px",
       }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "#D85A30", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32 }}>
+          <Link href="/dream" className={archivo.className} style={{ color: "#D85A30", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -261,11 +261,11 @@ export default function DescribeDreamPage() {
             <div style={{ animation: "cardSlide 0.6s ease" }}>
               <div style={{ textAlign: "center", marginBottom: 36 }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>✦</div>
-                <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#D85A30", marginBottom: 10 }}>Describe Your Dream</h1>
-                <p className={outfit.className} style={{ color: "#666", fontSize: "0.95rem", fontWeight: 300, maxWidth: 440, margin: "0 auto" }}>Tell us what you want to build. Be as detailed or as vague as you like.</p>
+                <h1 className={archivoBlack.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#D85A30", marginBottom: 10 }}>Describe Your Dream</h1>
+                <p className={archivo.className} style={{ color: "#666", fontSize: "0.95rem", fontWeight: 300, maxWidth: 440, margin: "0 auto" }}>Tell us what you want to build. Be as detailed or as vague as you like.</p>
               </div>
               <div style={{ position: "relative", marginBottom: 20 }}>
-                <textarea ref={textareaRef} className={`dream-textarea ${outfit.className}`} placeholder={PLACEHOLDERS[placeholderIdx]} value={dreamText} onChange={e => setDreamText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && e.metaKey) generateDream(dreamText); }} autoFocus />
+                <textarea ref={textareaRef} className={`dream-textarea ${archivo.className}`} placeholder={PLACEHOLDERS[placeholderIdx]} value={dreamText} onChange={e => setDreamText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && e.metaKey) generateDream(dreamText); }} autoFocus />
                 {voiceSupported && (
                   <button onClick={toggleVoice} aria-label={isListening ? "Stop listening" : "Start voice input"} style={{
                     position: "absolute", bottom: 14, right: 14, width: 40, height: 40, borderRadius: "50%",
@@ -276,7 +276,7 @@ export default function DescribeDreamPage() {
                   }}>{isListening ? "◉" : "🎤"}</button>
                 )}
               </div>
-              <button onClick={() => generateDream(dreamText)} disabled={!dreamText.trim()} className={outfit.className} data-sound="select" style={{
+              <button onClick={() => generateDream(dreamText)} disabled={!dreamText.trim()} className={archivo.className} data-sound="select" style={{
                 width: "100%", padding: "14px 24px", borderRadius: 14, border: "none",
                 background: dreamText.trim() ? "linear-gradient(135deg, #D85A30, #E8A83E)" : "rgba(255,255,255,0.06)",
                 color: dreamText.trim() ? "#fff" : "rgba(255,255,255,0.3)", fontSize: "1rem", fontWeight: 600,
@@ -284,10 +284,10 @@ export default function DescribeDreamPage() {
                 animation: dreamText.trim() ? "pulseGlow 3s ease-in-out infinite" : "none", letterSpacing: "0.02em",
               }}>Dream It ✦</button>
               <div style={{ marginTop: 28 }}>
-                <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#555", marginBottom: 10, letterSpacing: "0.08em" }}>Or try:</p>
+                <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#555", marginBottom: 10, letterSpacing: "0.08em" }}>Or try:</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {examples.map((ex, i) => (
-                    <button key={i} onClick={() => { setDreamText(ex); textareaRef.current?.focus(); }} className={outfit.className} style={{
+                    <button key={i} onClick={() => { setDreamText(ex); textareaRef.current?.focus(); }} className={archivo.className} style={{
                       padding: "10px 14px", borderRadius: 10, background: "#f8f8f8", border: "1px solid #e8e8e8",
                       color: "#555", fontSize: "0.82rem", textAlign: "left", cursor: "pointer", transition: "all 0.2s", lineHeight: 1.4,
                     }} onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(232,168,62,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
@@ -302,10 +302,10 @@ export default function DescribeDreamPage() {
           {phase === "processing" && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", animation: "cardSlide 0.5s ease" }}>
               <div style={{ fontSize: "4rem", marginBottom: 32, animation: "seedSprout 2s ease-in-out infinite alternate" }}>🌱</div>
-              <p className={cinzel.className} style={{ color: "#D85A30", fontSize: "1.1rem", marginBottom: 28, letterSpacing: "0.04em" }}>Growing your dream...</p>
+              <p className={archivoBlack.className} style={{ color: "#D85A30", fontSize: "1.1rem", marginBottom: 28, letterSpacing: "0.04em" }}>Growing your dream...</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%", maxWidth: 320 }}>
                 {processingSteps.map((step, i) => (
-                  <div key={i} className={outfit.className} style={{ display: "flex", alignItems: "center", gap: 12, animation: `stepReveal 0.4s ease ${i * 0.15}s backwards` }}>
+                  <div key={i} className={archivo.className} style={{ display: "flex", alignItems: "center", gap: 12, animation: `stepReveal 0.4s ease ${i * 0.15}s backwards` }}>
                     <div style={{
                       width: 22, height: 22, borderRadius: "50%",
                       background: step.done ? "#1D9E75" : step.active ? "rgba(232,168,62,0.2)" : "rgba(255,255,255,0.06)",
@@ -325,46 +325,46 @@ export default function DescribeDreamPage() {
             <div ref={resultRef} style={{ animation: "cardSlide 0.6s ease" }}>
               {/* Confidence bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                <div className={outfit.className} style={{ fontSize: "0.75rem", color: "#555", letterSpacing: "0.08em", textTransform: "uppercase" }}>Dream Confidence</div>
+                <div className={archivo.className} style={{ fontSize: "0.75rem", color: "#555", letterSpacing: "0.08em", textTransform: "uppercase" }}>Dream Confidence</div>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#f2f2f2", overflow: "hidden" }}>
                   <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #D85A30, #E8A83E)", width: `${plan.confidence}%`, transition: "width 1s ease" }} />
                 </div>
-                <span className={outfit.className} style={{ fontSize: "0.85rem", color: "#E8A83E", fontWeight: 600 }}>{plan.confidence}%</span>
+                <span className={archivo.className} style={{ fontSize: "0.85rem", color: "#E8A83E", fontWeight: 600 }}>{plan.confidence}%</span>
               </div>
 
               {/* Narrative section */}
               <div style={{ borderRadius: 20, padding: "28px 24px", background: "#f8f8f8", border: "1px solid rgba(232,168,62,0.12)", marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                   <span style={{ fontSize: "1.6rem" }}>✦</span>
-                  <h2 className={cinzel.className} style={{ fontSize: "1.3rem", color: "#E8A83E" }}>Your Dream</h2>
+                  <h2 className={archivoBlack.className} style={{ fontSize: "1.3rem", color: "#E8A83E" }}>Your Dream</h2>
                 </div>
-                <p className={outfit.className} style={{ color: "#555", fontSize: "1rem", lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", marginBottom: 20, paddingLeft: 16, borderLeft: "2px solid rgba(232,168,62,0.2)" }}>&ldquo;{plan.input.raw}&rdquo;</p>
+                <p className={archivo.className} style={{ color: "#555", fontSize: "1rem", lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", marginBottom: 20, paddingLeft: 16, borderLeft: "2px solid rgba(232,168,62,0.2)" }}>&ldquo;{plan.input.raw}&rdquo;</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                   {plan.input.buildingTypeMatch && (
-                    <span className={outfit.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)", color: "#E8A83E", fontSize: "0.78rem", fontWeight: 500 }}>{plan.input.buildingTypeMatch.icon} {plan.input.buildingTypeMatch.name}</span>
+                    <span className={archivo.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)", color: "#E8A83E", fontSize: "0.78rem", fontWeight: 500 }}>{plan.input.buildingTypeMatch.icon} {plan.input.buildingTypeMatch.name}</span>
                   )}
                   {plan.input.style && (
-                    <span className={outfit.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.2)", color: "#C4A44A", fontSize: "0.78rem", fontWeight: 500 }}>🎨 {plan.input.style}</span>
+                    <span className={archivo.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.2)", color: "#C4A44A", fontSize: "0.78rem", fontWeight: 500 }}>🎨 {plan.input.style}</span>
                   )}
                   {plan.input.locationMatch && (
-                    <Link href="/knowledge" className={outfit.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(29,158,117,0.1)", border: "1px solid rgba(29,158,117,0.2)", color: "#1D9E75", fontSize: "0.78rem", fontWeight: 500, textDecoration: "none" }}>📍 {plan.input.locationMatch.name}</Link>
+                    <Link href="/knowledge" className={archivo.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(29,158,117,0.1)", border: "1px solid rgba(29,158,117,0.2)", color: "#1D9E75", fontSize: "0.78rem", fontWeight: 500, textDecoration: "none" }}>📍 {plan.input.locationMatch.name}</Link>
                   )}
                 </div>
                 {aiNarrative ? (
-                  <div className={outfit.className} style={{ color: "#555", fontSize: "0.92rem", lineHeight: 1.75, fontWeight: 300, animation: "narrativeIn 0.8s ease", whiteSpace: "pre-wrap" }}>{aiNarrative}</div>
+                  <div className={archivo.className} style={{ color: "#555", fontSize: "0.92rem", lineHeight: 1.75, fontWeight: 300, animation: "narrativeIn 0.8s ease", whiteSpace: "pre-wrap" }}>{aiNarrative}</div>
                 ) : isStreaming ? (
-                  <div className={outfit.className} style={{ color: "#b8873b", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
+                  <div className={archivo.className} style={{ color: "#b8873b", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
                 ) : null}
               </div>
 
               {/* Intelligence grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
                 <div style={{ borderRadius: 16, padding: "20px 18px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                  <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>📋 Key Codes</h3>
+                  <h3 className={archivo.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>📋 Key Codes</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {plan.codes.slice(0, 5).map((code, i) => (
                       <Link key={i} href={`/knowledge/${code.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}`} className="entity-link" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>
-                        <span className={outfit.className}>
+                        <span className={archivo.className}>
                           <strong style={{ color: "#E8A83E" }}>{code.title}</strong>
                           <span style={{ color: "#555", marginLeft: 6 }}>— {code.status}</span>
                         </span>
@@ -373,10 +373,10 @@ export default function DescribeDreamPage() {
                   </div>
                 </div>
                 <div style={{ borderRadius: 16, padding: "20px 18px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                  <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>🧱 Cost Breakdown</h3>
+                  <h3 className={archivo.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>🧱 Cost Breakdown</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {plan.estimate.slice(0, 6).map((div, i) => (
-                      <div key={i} className={outfit.className} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
+                      <div key={i} className={archivo.className} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
                         <span style={{ color: "#555" }}>{div.division}</span>
                         <span style={{ color: "#E8A83E", fontWeight: 500 }}>{fmt(div.amount)}</span>
                       </div>
@@ -394,19 +394,19 @@ export default function DescribeDreamPage() {
                   { label: "Team Size", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                 ].map((stat, i) => (
                   <div key={i} style={{ borderRadius: 14, padding: "16px 14px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-                    <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 6 }}>{stat.label}</div>
-                    <div className={outfit.className} style={{ fontSize: "1.15rem", color: "#E8A83E", fontWeight: 700, marginBottom: 3 }}>{stat.value}</div>
-                    <div className={outfit.className} style={{ fontSize: "0.72rem", color: "#555" }}>{stat.sub}</div>
+                    <div className={archivo.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 6 }}>{stat.label}</div>
+                    <div className={archivo.className} style={{ fontSize: "1.15rem", color: "#E8A83E", fontWeight: 700, marginBottom: 3 }}>{stat.value}</div>
+                    <div className={archivo.className} style={{ fontSize: "0.72rem", color: "#555" }}>{stat.sub}</div>
                   </div>
                 ))}
               </div>
 
               {/* Challenges */}
               <div style={{ borderRadius: 16, padding: "20px 18px", marginBottom: 20, background: "rgba(216,90,48,0.04)", border: "1px solid rgba(216,90,48,0.12)" }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(216,90,48,0.7)", marginBottom: 12, fontWeight: 600 }}>⚠️ Watch Out For</h3>
+                <h3 className={archivo.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(216,90,48,0.7)", marginBottom: 12, fontWeight: 600 }}>⚠️ Watch Out For</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {plan.challenges.map((ch, i) => (
-                    <p key={i} className={outfit.className} style={{ fontSize: "0.82rem", color: "#555", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>• {ch}</p>
+                    <p key={i} className={archivo.className} style={{ fontSize: "0.82rem", color: "#555", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>• {ch}</p>
                   ))}
                 </div>
               </div>
@@ -414,37 +414,37 @@ export default function DescribeDreamPage() {
               {knowledgeDrop && (
                 <div style={{ borderRadius: 14, padding: "14px 18px", marginBottom: 20, background: "rgba(29,158,117,0.06)", border: "1px solid rgba(29,158,117,0.15)", display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <span style={{ fontSize: "1.1rem" }}>💡</span>
-                  <p className={outfit.className} style={{ fontSize: "0.8rem", color: "#555", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>{knowledgeDrop}</p>
+                  <p className={archivo.className} style={{ fontSize: "0.8rem", color: "#555", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>{knowledgeDrop}</p>
                 </div>
               )}
 
               {/* Actions */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 24 }}>
-                <button onClick={saveDream} disabled={saved} className={outfit.className} data-sound="select" style={{
+                <button onClick={saveDream} disabled={saved} className={archivo.className} data-sound="select" style={{
                   padding: "12px 16px", borderRadius: 12, background: saved ? "rgba(29,158,117,0.15)" : "rgba(232,168,62,0.1)",
                   border: `1px solid ${saved ? "rgba(29,158,117,0.3)" : "rgba(232,168,62,0.2)"}`, color: saved ? "#1D9E75" : "#E8A83E",
                   fontSize: "0.82rem", fontWeight: 500, cursor: "pointer", transition: "all 0.3s",
                 }}>{saved ? "✓ Saved" : "🌱 Save Dream"}</button>
-                <button onClick={() => setShowRefinement(true)} className={outfit.className} style={{
+                <button onClick={() => setShowRefinement(true)} className={archivo.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.2)",
                   color: "#C4A44A", fontSize: "0.82rem", fontWeight: 500, cursor: "pointer", transition: "all 0.3s",
                 }}>🔄 Refine Dream</button>
-                <Link href="/dream/inspire" className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(216,90,48,0.1)", border: "1px solid rgba(216,90,48,0.2)", color: "#D85A30", fontSize: "0.82rem", fontWeight: 500, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>📷 Add Photos</Link>
-                <Link href={`/launch?type=${plan.input.buildingType || "sfr"}&loc=${plan.input.location || ""}&sqft=${plan.sqft}`} className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", border: "none", color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>🚀 Start Project</Link>
-                <button onClick={shareDream} className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: shared ? "#1D9E75" : "rgba(255,255,255,0.5)", fontSize: "0.82rem", fontWeight: 500, cursor: "pointer", transition: "all 0.3s" }}>{shared ? "✓ Link copied!" : "🔗 Share"}</button>
+                <Link href="/dream/inspire" className={archivo.className} style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(216,90,48,0.1)", border: "1px solid rgba(216,90,48,0.2)", color: "#D85A30", fontSize: "0.82rem", fontWeight: 500, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>📷 Add Photos</Link>
+                <Link href={`/launch?type=${plan.input.buildingType || "sfr"}&loc=${plan.input.location || ""}&sqft=${plan.sqft}`} className={archivo.className} style={{ padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", border: "none", color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>🚀 Start Project</Link>
+                <button onClick={shareDream} className={archivo.className} style={{ padding: "12px 16px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: shared ? "#1D9E75" : "rgba(255,255,255,0.5)", fontSize: "0.82rem", fontWeight: 500, cursor: "pointer", transition: "all 0.3s" }}>{shared ? "✓ Link copied!" : "🔗 Share"}</button>
               </div>
 
               {/* Refinement */}
               {showRefinement && (
                 <div style={{ borderRadius: 16, padding: "20px 18px", background: "rgba(196,164,74,0.04)", border: "1px solid rgba(196,164,74,0.15)", animation: "cardSlide 0.4s ease" }}>
-                  <h3 className={outfit.className} style={{ fontSize: "0.85rem", color: "#C4A44A", marginBottom: 12, fontWeight: 600 }}>Refine your dream</h3>
-                  <p className={outfit.className} style={{ fontSize: "0.8rem", color: "#555", marginBottom: 12, fontWeight: 300 }}>Add details, change materials, adjust the budget, specify features...</p>
+                  <h3 className={archivo.className} style={{ fontSize: "0.85rem", color: "#C4A44A", marginBottom: 12, fontWeight: 600 }}>Refine your dream</h3>
+                  <p className={archivo.className} style={{ fontSize: "0.8rem", color: "#555", marginBottom: 12, fontWeight: 300 }}>Add details, change materials, adjust the budget, specify features...</p>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input type="text" value={refinementInput} onChange={e => setRefinementInput(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && refinementInput.trim() && handleRefinement(refinementInput)}
-                      placeholder="Make it passive house certified with a green roof..." className={outfit.className}
+                      placeholder="Make it passive house certified with a green roof..." className={archivo.className}
                       style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid rgba(196,164,74,0.2)", color: "#222", fontSize: "0.85rem", outline: "none" }} />
-                    <button onClick={() => refinementInput.trim() && handleRefinement(refinementInput)} disabled={!refinementInput.trim()} className={outfit.className} style={{
+                    <button onClick={() => refinementInput.trim() && handleRefinement(refinementInput)} disabled={!refinementInput.trim()} className={archivo.className} style={{
                       padding: "10px 18px", borderRadius: 10, background: refinementInput.trim() ? "rgba(196,164,74,0.2)" : "rgba(255,255,255,0.04)",
                       border: "1px solid rgba(196,164,74,0.2)", color: refinementInput.trim() ? "#C4A44A" : "rgba(255,255,255,0.3)", fontSize: "0.85rem", fontWeight: 500,
                       cursor: refinementInput.trim() ? "pointer" : "not-allowed",
@@ -452,7 +452,7 @@ export default function DescribeDreamPage() {
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
                     {["Add a home office", "Make it net-zero energy", "Use CLT instead of wood frame", "Add an accessory dwelling unit", "Increase to 4 bedrooms", "Budget under $400K"].map((sug, i) => (
-                      <button key={i} onClick={() => handleRefinement(sug)} className={outfit.className} style={{
+                      <button key={i} onClick={() => handleRefinement(sug)} className={archivo.className} style={{
                         padding: "5px 12px", borderRadius: 16, background: "#f8f8f8", border: "1px solid #e2e2e2",
                         color: "#555", fontSize: "0.72rem", cursor: "pointer", transition: "all 0.2s",
                       }} onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(196,164,74,0.3)"; e.currentTarget.style.color = "#C4A44A"; }}
@@ -465,10 +465,10 @@ export default function DescribeDreamPage() {
 
               {/* Team needs */}
               <div style={{ borderRadius: 16, padding: "20px 18px", marginTop: 20, background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>👷 Team Needs</h3>
+                <h3 className={archivo.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>👷 Team Needs</h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {plan.team.map((t, i) => (
-                    <span key={i} className={outfit.className} style={{ padding: "4px 12px", borderRadius: 16, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.75rem" }}>{t.role}</span>
+                    <span key={i} className={archivo.className} style={{ padding: "4px 12px", borderRadius: 16, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.75rem" }}>{t.role}</span>
                   ))}
                 </div>
               </div>
