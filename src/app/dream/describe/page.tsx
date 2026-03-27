@@ -10,9 +10,9 @@ import { useSound } from "@/lib/sound-engine";
 import ConstructionAnimation from "@/components/visuals/ConstructionAnimation";
 import dynamic from "next/dynamic";
 
-const BuildingViewer = dynamic(() => import("@/components/three/BuildingViewer"), {
+const BuildingDesigner = dynamic(() => import("@/components/three/BuildingDesigner"), {
   ssr: false,
-  loading: () => <div style={{ height: 350, borderRadius: 16, background: "#dce8f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#666" }}>Loading 3D viewer...</div>,
+  loading: () => <div style={{ height: 500, borderRadius: 16, background: "#dce8f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#666" }}>Loading 3D designer...</div>,
 });
 
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
@@ -381,21 +381,19 @@ export default function DescribeDreamPage() {
                 ) : null}
               </div>
 
-              {/* 3D Building Viewer */}
+              {/* 3D Building Designer with parametric sliders */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                   <span style={{ fontSize: 16 }}>🧊</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#378ADD" }}>Interactive 3D Model</span>
-                  <span style={{ fontSize: 10, color: "#999" }}>Drag to orbit · Scroll to zoom</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#378ADD" }}>3D Building Designer</span>
+                  <span style={{ fontSize: 10, color: "#999" }}>Drag to orbit · Scroll to zoom · Adjust sliders below</span>
                 </div>
-                <BuildingViewer
-                  stories={plan.input.stories || 2}
-                  width={Math.sqrt(plan.sqft / (plan.input.stories || 2)) * 0.8}
-                  depth={Math.sqrt(plan.sqft / (plan.input.stories || 2)) * 0.6}
-                  roofPitch={plan.input.style?.includes("modern") || plan.input.style?.includes("contemporary") ? 10 : 25}
-                  roofType={plan.input.style?.includes("modern") || plan.input.style?.includes("flat") ? "flat" : "gable"}
-                  height={350}
-                  onSurfaceClick={(s) => play("select")}
+                <BuildingDesigner
+                  initialStories={plan.input.stories || 2}
+                  initialWidth={Math.max(8, Math.round(Math.sqrt(plan.sqft / (plan.input.stories || 2)) * 0.8))}
+                  initialDepth={Math.max(6, Math.round(Math.sqrt(plan.sqft / (plan.input.stories || 2)) * 0.6))}
+                  initialRoofPitch={plan.input.style?.includes("modern") || plan.input.style?.includes("contemporary") ? 10 : 25}
+                  initialRoofType={plan.input.style?.includes("modern") || plan.input.style?.includes("flat") ? "flat" : "gable"}
                 />
               </div>
 
