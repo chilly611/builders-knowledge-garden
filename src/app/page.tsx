@@ -95,8 +95,17 @@ export default function Home() {
 
   // Detect first-time visitors
   useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("bkg-lane")) {
-      setIsFirstVisit(true);
+    if (typeof window !== "undefined") {
+      if (!localStorage.getItem("bkg-lane")) {
+        setIsFirstVisit(true);
+      }
+    }
+  }, []);
+
+  const [userLane, setUserLane] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setUserLane(localStorage.getItem("bkg-lane"));
     }
   }, []);
 
@@ -209,6 +218,43 @@ export default function Home() {
           Scroll to explore
         </motion.div>
       </section>
+
+      {/* ═══ QUICK ACTIONS for returning users ═══ */}
+      {userLane && !isFirstVisit && (
+        <section style={{ padding: "32px 24px", borderBottom: "1px solid var(--border)", background: "var(--bg-secondary)" }}>
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 12 }}>
+              Quick actions
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+              {(userLane === "diy" ? [
+                { icon: "💭", label: "Describe a dream", href: "/dream/describe", color: "#D85A30" },
+                { icon: "📷", label: "Get inspired", href: "/dream/browse", color: "#B8873B" },
+                { icon: "📚", label: "Learn about codes", href: "/knowledge", color: "#1D9E75" },
+                { icon: "🚀", label: "Launch a project", href: "/launch", color: "#378ADD" },
+              ] : [
+                { icon: "🚀", label: "Launch a project", href: "/launch", color: "#1D9E75" },
+                { icon: "📋", label: "Look up a code", href: "/knowledge", color: "#D85A30" },
+                { icon: "⚡", label: "Manage pipeline", href: "/crm", color: "#E8443A" },
+                { icon: "🧠", label: "Ask AI Copilot", href: "#copilot", color: "#7F77DD" },
+              ]).map(a => (
+                <Link key={a.href} href={a.href} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
+                  borderRadius: 12, background: "#fff", border: "1px solid #e2e4e8",
+                  textDecoration: "none", color: "#111", fontSize: 13, fontWeight: 500,
+                  transition: "all 0.15s",
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 4px 12px ${a.color}15`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                >
+                  <span style={{ fontSize: 20 }}>{a.icon}</span>
+                  {a.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ═══ STATS ═══ */}
       <section ref={stats.ref} style={{ padding: "80px 24px", borderBottom: "1px solid var(--border)" }}>

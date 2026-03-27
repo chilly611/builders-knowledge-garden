@@ -84,34 +84,73 @@ const STYLE_PHOTOS: Record<string, string> = {
 
 // Keyword-specific photos: if a slug/title contains these words, use this photo
 const KEYWORD_PHOTOS: Record<string, string> = {
+  // Fire & life safety
   "fire": "https://images.unsplash.com/photo-1590644365607-1c5cbe553851?w=600&q=80&fit=crop",
   "sprinkler": "https://images.unsplash.com/photo-1590644365607-1c5cbe553851?w=600&q=80&fit=crop",
+  "smoke": "https://images.unsplash.com/photo-1590644365607-1c5cbe553851?w=600&q=80&fit=crop",
+  "egress": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80&fit=crop",
+  "exit": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80&fit=crop",
+  // Structural
   "concrete": "https://images.unsplash.com/photo-1587582423116-ec07293f0395?w=600&q=80&fit=crop",
   "steel": "https://images.unsplash.com/photo-1517581177684-8dfe4cb2b01c?w=600&q=80&fit=crop",
-  "wood": "https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=600&q=80&fit=crop",
+  "structural": "https://images.unsplash.com/photo-1517581177684-8dfe4cb2b01c?w=600&q=80&fit=crop",
+  "load": "https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=600&q=80&fit=crop",
+  "seismic": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80&fit=crop",
+  // Wood & framing
+  "wood": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop",
   "framing": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop",
-  "roof": "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80&fit=crop",
+  "lumber": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop",
+  // Roofing & envelope
+  "roof": "https://images.unsplash.com/photo-1632389975917-ce3d9e0ad7ef?w=600&q=80&fit=crop",
+  "shingle": "https://images.unsplash.com/photo-1632389975917-ce3d9e0ad7ef?w=600&q=80&fit=crop",
+  "envelope": "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80&fit=crop",
+  // Foundation & site
   "foundation": "https://images.unsplash.com/photo-1587582423116-ec07293f0395?w=600&q=80&fit=crop",
+  "excavat": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&q=80&fit=crop",
+  "grading": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&q=80&fit=crop",
+  // MEP
   "electrical": "https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=600&q=80&fit=crop",
+  "wiring": "https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=600&q=80&fit=crop",
+  "nec": "https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=600&q=80&fit=crop",
   "plumb": "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=600&q=80&fit=crop",
+  "pipe": "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=600&q=80&fit=crop",
   "hvac": "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=600&q=80&fit=crop",
+  "duct": "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=600&q=80&fit=crop",
+  "mechanical": "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?w=600&q=80&fit=crop",
+  // Insulation & energy
   "insulation": "https://images.unsplash.com/photo-1597484661643-2f5fef640dd1?w=600&q=80&fit=crop",
+  "energy": "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&q=80&fit=crop",
+  "solar": "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&q=80&fit=crop",
+  "passive": "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&q=80&fit=crop",
+  // Materials
   "window": "https://images.unsplash.com/photo-1505409859467-3a796fd5a263?w=600&q=80&fit=crop",
   "glass": "https://images.unsplash.com/photo-1505409859467-3a796fd5a263?w=600&q=80&fit=crop",
   "brick": "https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=600&q=80&fit=crop",
   "masonry": "https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=600&q=80&fit=crop",
   "drywall": "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&q=80&fit=crop",
-  "paint": "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&q=80&fit=crop",
+  "gypsum": "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&q=80&fit=crop",
+  "paint": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=600&q=80&fit=crop",
   "tile": "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=600&q=80&fit=crop",
   "floor": "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=600&q=80&fit=crop",
+  "rebar": "https://images.unsplash.com/photo-1517581177684-8dfe4cb2b01c?w=600&q=80&fit=crop",
+  "copper": "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=600&q=80&fit=crop",
+  // Equipment & safety
   "scaffold": "https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=600&q=80&fit=crop",
   "crane": "https://images.unsplash.com/photo-1429497419816-9ca5cfb4571a?w=600&q=80&fit=crop",
-  "excavat": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&q=80&fit=crop",
-  "permit": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80&fit=crop",
-  "inspect": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80&fit=crop",
+  "fall": "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&q=80&fit=crop",
   "safety": "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&q=80&fit=crop",
   "osha": "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&q=80&fit=crop",
+  "ppe": "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&q=80&fit=crop",
   "weld": "https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=600&q=80&fit=crop",
+  "trench": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&q=80&fit=crop",
+  "confine": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80&fit=crop",
+  // Administrative
+  "permit": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80&fit=crop",
+  "inspect": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80&fit=crop",
+  "zoning": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&q=80&fit=crop",
+  "occupancy": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80&fit=crop",
+  "accessibility": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80&fit=crop",
+  // Building types
   "data-center": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80&fit=crop",
   "hospital": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&q=80&fit=crop",
   "warehouse": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&q=80&fit=crop",
@@ -119,6 +158,17 @@ const KEYWORD_PHOTOS: Record<string, string> = {
   "office": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80&fit=crop",
   "residential": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80&fit=crop",
   "apartment": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80&fit=crop",
+  "school": "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&q=80&fit=crop",
+  "hotel": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80&fit=crop",
+  // Trades
+  "electrician": "https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=600&q=80&fit=crop",
+  "plumber": "https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=600&q=80&fit=crop",
+  "carpenter": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop",
+  "roofer": "https://images.unsplash.com/photo-1632389975917-ce3d9e0ad7ef?w=600&q=80&fit=crop",
+  "mason": "https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=600&q=80&fit=crop",
+  "ironworker": "https://images.unsplash.com/photo-1517581177684-8dfe4cb2b01c?w=600&q=80&fit=crop",
+  "painter": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=600&q=80&fit=crop",
+  "glazier": "https://images.unsplash.com/photo-1505409859467-3a796fd5a263?w=600&q=80&fit=crop",
 };
 
 const TYPE_PHOTO_POOLS: Record<string, string[]> = {

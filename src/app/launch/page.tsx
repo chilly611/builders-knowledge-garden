@@ -394,7 +394,7 @@ export default function LaunchPage() {
             </div>
 
             {/* OVERVIEW TAB — with completion rings (#20) */}
-            {dashTab === "overview" && (
+            {dashTab === "overview" && (<>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className={card} style={cardStyle}>
                   <div className="flex items-center justify-between">
@@ -480,7 +480,33 @@ export default function LaunchPage() {
                   </div>
                 </div>
               </div>
-            )}
+
+                {/* ═══ WHAT TO DO NEXT ═══ */}
+                <div style={{ marginTop: 20, padding: "20px 24px", borderRadius: 16, background: "linear-gradient(135deg, rgba(29,158,117,0.06), rgba(55,138,221,0.04))", border: "1px solid rgba(29,158,117,0.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <span style={{ fontSize: 18 }}>🎯</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>What to do next</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <button onClick={() => setDashTab("codes")} style={{ padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1px solid #e2e4e8", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 2 }}>📋 Review Code Requirements</div>
+                      <div style={{ fontSize: 11, color: "#888" }}>{reviewedCodes.size} of {codes.length} reviewed</div>
+                    </button>
+                    <button onClick={() => setDashTab("schedule")} style={{ padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1px solid #e2e4e8", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 2 }}>📅 Review Schedule</div>
+                      <div style={{ fontSize: 11, color: "#888" }}>AI timeline with hold points</div>
+                    </button>
+                    <button onClick={() => setDashTab("materials")} style={{ padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1px solid #e2e4e8", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 2 }}>🧱 Select Materials</div>
+                      <div style={{ fontSize: 11, color: "#888" }}>Cost and compliance info</div>
+                    </button>
+                    <button onClick={() => setDashTab("estimate")} style={{ padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1px solid #e2e4e8", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", marginBottom: 2 }}>💰 Review Estimate</div>
+                      <div style={{ fontSize: 11, color: "#888" }}>CSI MasterFormat breakdown</div>
+                    </button>
+                  </div>
+                </div>
+            </>)}
 
 
             {/* CODES TAB — with reviewable items */}
