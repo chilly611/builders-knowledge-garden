@@ -8,6 +8,12 @@ import CopilotPanel from "@/components/CopilotPanel";
 import { parseDream, generateDreamPlan, DreamPlan } from "@/lib/dream-parser";
 import { useSound } from "@/lib/sound-engine";
 import ConstructionAnimation from "@/components/visuals/ConstructionAnimation";
+import dynamic from "next/dynamic";
+
+const BuildingViewer = dynamic(() => import("@/components/three/BuildingViewer"), {
+  ssr: false,
+  loading: () => <div style={{ height: 350, borderRadius: 16, background: "#dce8f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#666" }}>Loading 3D viewer...</div>,
+});
 
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
 const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
@@ -373,6 +379,24 @@ export default function DescribeDreamPage() {
                 ) : isStreaming ? (
                   <div className={archivo.className} style={{ color: "#b8873b", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
                 ) : null}
+              </div>
+
+              {/* 3D Building Viewer */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 16 }}>🧊</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#378ADD" }}>Interactive 3D Model</span>
+                  <span style={{ fontSize: 10, color: "#999" }}>Drag to orbit · Scroll to zoom</span>
+                </div>
+                <BuildingViewer
+                  stories={plan.input.stories || 2}
+                  width={Math.sqrt(plan.sqft / (plan.input.stories || 2)) * 0.8}
+                  depth={Math.sqrt(plan.sqft / (plan.input.stories || 2)) * 0.6}
+                  roofPitch={plan.input.style?.includes("modern") || plan.input.style?.includes("contemporary") ? 10 : 25}
+                  roofType={plan.input.style?.includes("modern") || plan.input.style?.includes("flat") ? "flat" : "gable"}
+                  height={350}
+                  onSurfaceClick={(s) => play("select")}
+                />
               </div>
 
               {/* AI-Generated Renders */}
