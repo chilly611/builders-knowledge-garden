@@ -175,9 +175,72 @@ export default function CRMPage() {
           </div>
         </div>
 
+        {/* Quick guidance — what you can do from here */}
+        {!loading && contacts.length > 0 && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
+            {[
+              { icon: "➕", label: "Add Contact", color: "#E8443A" },
+              { icon: "📄", label: "Generate Proposal", color: "#7F77DD" },
+              { icon: "📊", label: "Pipeline Report", color: "#1D9E75" },
+              { icon: "📥", label: "Import CSV", color: "#378ADD" },
+            ].map(a => (
+              <button key={a.label} style={{
+                padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e4e8",
+                background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                fontSize: 11, fontWeight: 600, color: "#555", whiteSpace: "nowrap", transition: "all 0.15s",
+                flexShrink: 0,
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.color = a.color; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.color = "#555"; }}
+              >
+                <span>{a.icon}</span> {a.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Contact List */}
         {loading ? (
           <div style={{ textAlign: "center", padding: 40, color: "var(--fg-tertiary)" }}>Loading pipeline...</div>
+        ) : contacts.length === 0 ? (
+          /* Empty state — first time CRM user */
+          <div style={{ padding: "40px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>Your pipeline is empty</h3>
+            <p style={{ fontSize: 14, color: "#888", maxWidth: 400, margin: "0 auto 24px", lineHeight: 1.5 }}>
+              Start building your client pipeline. Every great project starts with a conversation.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 500, margin: "0 auto" }}>
+              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#E8443A"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>➕</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>Add a contact</div>
+                <div style={{ fontSize: 11, color: "#888" }}>Enter a lead manually from a call or meeting</div>
+              </button>
+              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#7F77DD"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>📥</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>Import contacts</div>
+                <div style={{ fontSize: 11, color: "#888" }}>Upload a CSV or connect QuickBooks</div>
+              </button>
+              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#1D9E75"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>🤖</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>AI proposal generator</div>
+                <div style={{ fontSize: 11, color: "#888" }}>Auto-generate proposals from project data</div>
+              </button>
+              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#378ADD"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>🏗️</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>Launch a project first</div>
+                <div style={{ fontSize: 11, color: "#888" }}>Set up a project, then link clients to it</div>
+              </button>
+            </div>
+          </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "var(--fg-tertiary)" }}>No contacts match your filter</div>
         ) : (
