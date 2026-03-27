@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 import { parseDream, generateDreamPlan, DreamPlan } from "@/lib/dream-parser";
+import { useSound } from "@/lib/sound-engine";
+import ConstructionAnimation from "@/components/visuals/ConstructionAnimation";
 
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
 const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
@@ -71,6 +73,7 @@ export default function DescribeDreamPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [aiRenders, setAiRenders] = useState<{imageUrl: string; prompt: string}[]>([]);
   const [rendersLoading, setRendersLoading] = useState(false);
+  const { play } = useSound();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
@@ -133,6 +136,7 @@ export default function DescribeDreamPage() {
     setProcessingSteps(prev => prev.map(s => ({ ...s, done: true, active: false })));
     await new Promise(r => setTimeout(r, 400));
     setPhase("result");
+    play("complete");
     // Fire AI renders in parallel (non-blocking)
     setRendersLoading(true);
     fetch("/api/v1/render", {
@@ -153,7 +157,7 @@ export default function DescribeDreamPage() {
     ].filter(Boolean);
     setKnowledgeDrop(drops[0] || drops[drops.length - 1] || null);
     if (isFirstDream) {
-      setTimeout(() => setShowCelebration(true), 800);
+      setTimeout(() => { setShowCelebration(true); play("celebrate"); }, 800);
       setTimeout(() => setShowCelebration(false), 4000);
     }
     setIsStreaming(true);
@@ -301,7 +305,7 @@ export default function DescribeDreamPage() {
                 <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#555", marginBottom: 10, letterSpacing: "0.08em" }}>Or try:</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {examples.map((ex, i) => (
-                    <button key={i} onClick={() => { setDreamText(ex); textareaRef.current?.focus(); }} className={archivo.className} style={{
+                    <button key={i} onClick={() => { setDreamText(ex); play("select"); textareaRef.current?.focus(); }} className={archivo.className} style={{
                       padding: "10px 14px", borderRadius: 10, background: "#f8f8f8", border: "1px solid #e8e8e8",
                       color: "#555", fontSize: "0.82rem", textAlign: "left", cursor: "pointer", transition: "all 0.2s", lineHeight: 1.4,
                     }} onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(232,168,62,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
@@ -405,6 +409,15 @@ export default function DescribeDreamPage() {
                   </div>
                 </div>
               )}
+
+              {/* Construction Sequence — Watch it rise */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 16 }}>🏗️</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1D9E75" }}>Construction Sequence</span>
+                </div>
+                <ConstructionAnimation autoPlay interval={3} height={280} onComplete={() => play("complete")} />
+              </div>
 
               {/* Intelligence grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>

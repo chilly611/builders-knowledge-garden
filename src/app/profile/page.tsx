@@ -5,10 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { LANES } from "@/components/LaneSelector";
 import CopilotPanel from "@/components/CopilotPanel";
+import { useSound } from "@/lib/sound-engine";
 
 export default function ProfilePage() {
   const [lane, setLane] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled, play } = useSound();
 
   useEffect(() => {
     setMounted(true);
@@ -86,6 +88,34 @@ export default function ProfilePage() {
               <div style={{ fontSize: 9, color: "var(--fg-tertiary)" }}>{s.sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* Sound toggle */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 16px", borderRadius: 12, border: "1px solid var(--border, #e5e5e5)",
+          marginBottom: 16, background: soundEnabled ? "rgba(29,158,117,0.04)" : "var(--bg, #fff)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 20 }}>{soundEnabled ? "🔊" : "🔇"}</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Sound Effects</div>
+              <div style={{ fontSize: 11, color: "var(--fg-secondary)" }}>Subtle audio feedback on interactions</div>
+            </div>
+          </div>
+          <button onClick={() => { const next = !soundEnabled; setSoundEnabled(next); if (next) play("complete"); }}
+            style={{
+              width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
+              background: soundEnabled ? "#1D9E75" : "var(--border, #ddd)", position: "relative",
+              transition: "background 0.2s",
+            }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: 9, background: "#fff",
+              position: "absolute", top: 3,
+              left: soundEnabled ? 23 : 3,
+              transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+            }} />
+          </button>
         </div>
 
         {/* Settings sections */}

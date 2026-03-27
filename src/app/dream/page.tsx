@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
+import { useSound } from "@/lib/sound-engine";
 
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
 const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
@@ -58,6 +59,7 @@ export default function DreamMachinePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [lane, setLane] = useState<string | null>(null);
+  const { play } = useSound();
   const [dreams, setDreams] = useState<SavedDream[]>([]);
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
@@ -134,7 +136,7 @@ export default function DreamMachinePage() {
               <div
                 key={path.id}
                 className="dream-path-card"
-                onClick={() => router.push(path.route)}
+                onClick={() => { play("navigate"); router.push(path.route); }}
                 onMouseEnter={() => setHoveredPath(path.id)}
                 onMouseLeave={() => setHoveredPath(null)}
                 role="button" tabIndex={0} data-sound="select"
