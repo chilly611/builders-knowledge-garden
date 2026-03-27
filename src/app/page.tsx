@@ -265,7 +265,7 @@ export default function Home() {
                 }}>
                 {p.highlight && (
                   <div className="text-[8px] font-bold tracking-wider uppercase mb-2 px-2 py-0.5 rounded-full inline-block"
-                    style={{ background: "var(--accent)", color: "#fff" }}>Most Popular</div>
+                    style={{ background: "var(--accent)", color: "#222" }}>Most Popular</div>
                 )}
                 <div className="text-[10px] font-medium uppercase tracking-wider mb-1" style={{ color: "var(--fg-tertiary)" }}>{p.tier}</div>
                 <div className="text-2xl font-semibold mb-0.5">{p.price}</div>

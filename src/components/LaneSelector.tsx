@@ -137,7 +137,7 @@ export default function LaneSelector({ onSelect, selected }: LaneSelectorProps) 
                 {isSelected && (
                   <span style={{
                     marginLeft: "auto", width: 22, height: 22, borderRadius: 11,
-                    background: lane.color, color: "#fff", fontSize: 13, fontWeight: 700,
+                    background: lane.color, color: "#222", fontSize: 13, fontWeight: 700,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>✓</span>
                 )}

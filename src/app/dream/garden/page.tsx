@@ -284,7 +284,7 @@ export default function DreamGardenPage() {
                     { label: "Timeline", value: selectedDream.plan.timeline },
                     { label: "Confidence", value: `${selectedDream.plan.confidence}%` },
                   ].map((s, i) => (
-                    <div key={i} style={{ borderRadius: 10, padding: "10px 8px", background: "#f5f5f5", border: "1px solid rgba(255,255,255,0.04)", textAlign: "center" }}>
+                    <div key={i} style={{ borderRadius: 10, padding: "10px 8px", background: "#f5f5f5", border: "1px solid #e2e2e2", textAlign: "center" }}>
                       <div className={outfit.className} style={{ fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 3 }}>{s.label}</div>
                       <div className={outfit.className} style={{ fontSize: "0.95rem", color: "#1D9E75", fontWeight: 600 }}>{s.value}</div>
                     </div>

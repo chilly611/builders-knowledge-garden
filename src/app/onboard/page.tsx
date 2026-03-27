@@ -45,7 +45,7 @@ export default function OnboardPage() {
             style={{
               padding: "14px 40px", borderRadius: 24, border: "none",
               background: "linear-gradient(135deg, #1D9E75, #0F6E56)",
-              color: "#fff", fontSize: 15, fontWeight: 600,
+              color: "#222", fontSize: 15, fontWeight: 600,
               cursor: "pointer", transition: "all 0.2s",
               boxShadow: "0 4px 16px rgba(29,158,117,0.3)",
             }}

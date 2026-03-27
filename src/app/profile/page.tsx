@@ -66,7 +66,7 @@ export default function ProfilePage() {
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No lane selected yet</div>
             <Link href="/onboard" style={{
               display: "inline-block", marginTop: 8, padding: "10px 24px", borderRadius: 20,
-              background: "#1D9E75", color: "#fff", fontSize: 12, fontWeight: 600, textDecoration: "none",
+              background: "#1D9E75", color: "#222", fontSize: 12, fontWeight: 600, textDecoration: "none",
             }}>Choose your lane →</Link>
           </div>
         )}
@@ -127,7 +127,7 @@ export default function ProfilePage() {
           <button style={{
             padding: "10px 24px", borderRadius: 20, border: "none",
             background: "linear-gradient(135deg, #1D9E75, #0F6E56)",
-            color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+            color: "#222", fontSize: 12, fontWeight: 600, cursor: "pointer",
           }}>Upgrade Now</button>
         </div>
       </div>

@@ -369,7 +369,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
                 {msg.role === "user" ? (
                   <div
                     className="max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-br-md text-sm"
-                    style={{ background: "var(--accent)", color: "#fff" }}
+                    style={{ background: "var(--accent)", color: "#222" }}
                   >
                     {msg.content}
                   </div>
