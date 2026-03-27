@@ -69,6 +69,8 @@ export default function DescribeDreamPage() {
   const [knowledgeDrop, setKnowledgeDrop] = useState<string | null>(null);
   const [isFirstDream, setIsFirstDream] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [aiRenders, setAiRenders] = useState<{imageUrl: string; prompt: string}[]>([]);
+  const [rendersLoading, setRendersLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
@@ -131,6 +133,18 @@ export default function DescribeDreamPage() {
     setProcessingSteps(prev => prev.map(s => ({ ...s, done: true, active: false })));
     await new Promise(r => setTimeout(r, 400));
     setPhase("result");
+    // Fire AI renders in parallel (non-blocking)
+    setRendersLoading(true);
+    fetch("/api/v1/render", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: text, mode: "concepts", count: 4 }),
+    }).then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data.renders) setAiRenders(data.renders);
+      }
+    }).catch(() => {}).finally(() => setRendersLoading(false));
     const drops = [
       dreamPlan.input.location === "fl-mia" ? "Miami-Dade County requires all building products to have a Notice of Acceptance (NOA) — the strictest wind code in the US." : null,
       dreamPlan.input.buildingType === "datacenter" ? "A typical data center uses 10-50x more energy per square foot than a commercial office building." : null,
@@ -356,6 +370,41 @@ export default function DescribeDreamPage() {
                   <div className={archivo.className} style={{ color: "#b8873b", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
                 ) : null}
               </div>
+
+              {/* AI-Generated Renders */}
+              {(aiRenders.length > 0 || rendersLoading) && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 16 }}>🎨</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#D85A30" }}>AI Concept Renders</span>
+                    {rendersLoading && <span style={{ fontSize: 11, color: "#999", fontStyle: "italic" }}>Generating...</span>}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+                    {rendersLoading && aiRenders.length === 0 && [0,1,2,3].map(i => (
+                      <div key={i} style={{
+                        height: 160, borderRadius: 14, overflow: "hidden",
+                        background: "linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)",
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer 1.5s infinite",
+                      }} />
+                    ))}
+                    {aiRenders.map((render, i) => (
+                      <div key={i} style={{
+                        borderRadius: 14, overflow: "hidden", border: "1px solid #e8e8e8",
+                        cursor: "pointer", transition: "all 0.2s",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                      >
+                        <img src={render.imageUrl} alt={`Concept ${i + 1}`} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                        <div style={{ padding: "8px 10px", fontSize: 10, color: "#888" }}>
+                          {["Exterior", "Interior", "Aerial", "Sketch"][i] || `Concept ${i + 1}`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Intelligence grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
