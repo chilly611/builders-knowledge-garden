@@ -182,7 +182,7 @@ export default function BrowseDreamPage() {
         padding: "clamp(32px, 5vh, 48px) 20px 80px",
       }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "rgba(184,135,59,0.5)", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
+          <Link href="/dream" className={outfit.className} style={{ color: "#a08030", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -205,7 +205,7 @@ export default function BrowseDreamPage() {
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search styles, materials, building types..."
               className={outfit.className} style={{
                 width: "100%", padding: "12px 18px", borderRadius: 14, background: "#fafafa",
-                border: "1px solid rgba(184,135,59,0.15)", color: "#1a1a1a", fontSize: "0.9rem", outline: "none",
+                border: "1px solid rgba(184,135,59,0.15)", color: "#222", fontSize: "0.9rem", outline: "none",
               }} />
           </div>
 
@@ -224,7 +224,7 @@ export default function BrowseDreamPage() {
           {knowledgeDrop && (
             <div style={{ position: "fixed", bottom: 100, left: "50%", transform: "translateX(-50%)", zIndex: 100, maxWidth: 420, padding: "12px 20px", borderRadius: 14, background: "rgba(29,158,117,0.95)", backdropFilter: "blur(12px)", animation: "dropSlide 6s ease", display: "flex", gap: 8, alignItems: "center" }}>
               <span style={{ fontSize: "1.1rem" }}>💡</span>
-              <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#1a1a1a", margin: 0, lineHeight: 1.4 }}>{knowledgeDrop}</p>
+              <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#222", margin: 0, lineHeight: 1.4 }}>{knowledgeDrop}</p>
             </div>
           )}
 
@@ -283,7 +283,7 @@ export default function BrowseDreamPage() {
                     </div>
                     {/* Emoji + title */}
                     <div style={{ fontSize: "2rem", marginBottom: 8 }}>{card.emoji}</div>
-                    <h3 className={outfit.className} style={{ fontSize: "1rem", color: "#1a1a1a", fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{card.title}</h3>
+                    <h3 className={outfit.className} style={{ fontSize: "1rem", color: "#222", fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{card.title}</h3>
                     <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#888", fontWeight: 300, marginBottom: 12, lineHeight: 1.4 }}>{card.subtitle}</p>
 
                     {/* Material tags */}

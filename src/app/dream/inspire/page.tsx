@@ -214,7 +214,7 @@ export default function InspireDreamPage() {
         padding: "clamp(32px, 6vh, 60px) 20px 80px",
       }}>
         <div style={{ maxWidth: 780, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "rgba(216,90,48,0.5)", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32 }}>
+          <Link href="/dream" className={outfit.className} style={{ color: "#c06030", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 32 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -251,7 +251,7 @@ export default function InspireDreamPage() {
               <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                 <input type="text" value={urlInput} onChange={e => setUrlInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addUrl()}
                   placeholder="Paste a Zillow, Realtor, or Airbnb image URL..." className={outfit.className}
-                  style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid rgba(216,90,48,0.15)", color: "#1a1a1a", fontSize: "0.85rem", outline: "none" }} />
+                  style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid rgba(216,90,48,0.15)", color: "#222", fontSize: "0.85rem", outline: "none" }} />
                 <button onClick={addUrl} disabled={!urlInput.trim()} className={outfit.className} style={{
                   padding: "10px 18px", borderRadius: 10, background: urlInput.trim() ? "rgba(216,90,48,0.15)" : "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(216,90,48,0.2)", color: urlInput.trim() ? "#D85A30" : "rgba(255,255,255,0.3)",
@@ -294,7 +294,7 @@ export default function InspireDreamPage() {
                         </div>
                       )}
                       {/* Remove button */}
-                      <button onClick={(e) => { e.stopPropagation(); removePhoto(photo.id); }} style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.5)", border: "none", color: "#1a1a1a", fontSize: "0.6rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                      <button onClick={(e) => { e.stopPropagation(); removePhoto(photo.id); }} style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.5)", border: "none", color: "#222", fontSize: "0.6rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -304,7 +304,7 @@ export default function InspireDreamPage() {
               {doneCount >= 2 && analyzingCount === 0 && (
                 <button onClick={runSynthesis} className={outfit.className} data-sound="select" style={{
                   width: "100%", padding: "14px 24px", borderRadius: 14, border: "none", marginTop: 20,
-                  background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#1a1a1a",
+                  background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#222",
                   fontSize: "1rem", fontWeight: 600, cursor: "pointer", animation: "pulseGlow 3s ease-in-out infinite",
                 }}>Reveal My Style DNA ◈ ({doneCount} photos)</button>
               )}
@@ -367,7 +367,7 @@ export default function InspireDreamPage() {
 
               <button onClick={generateDreamFromPhotos} className={outfit.className} data-sound="select" style={{
                 width: "100%", padding: "14px 24px", borderRadius: 14, border: "none",
-                background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#1a1a1a",
+                background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#222",
                 fontSize: "1rem", fontWeight: 600, cursor: "pointer", animation: "pulseGlow 3s ease-in-out infinite",
               }}>Generate Dream from Style DNA ◈</button>
             </div>
@@ -388,7 +388,7 @@ export default function InspireDreamPage() {
                 {aiNarrative ? (
                   <div className={outfit.className} style={{ color: "#444", fontSize: "0.92rem", lineHeight: 1.75, fontWeight: 300, whiteSpace: "pre-wrap" }}>{aiNarrative}</div>
                 ) : isStreaming ? (
-                  <div className={outfit.className} style={{ color: "rgba(216,90,48,0.5)", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your vision...</div>
+                  <div className={outfit.className} style={{ color: "#c06030", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your vision...</div>
                 ) : null}
               </div>
 
@@ -431,7 +431,7 @@ export default function InspireDreamPage() {
                 }}>📷 Add More Photos</button>
                 <Link href={`/launch?type=${plan.input.buildingType || "sfr"}&sqft=${plan.sqft}`} className={outfit.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)",
-                  color: "#1a1a1a", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center",
+                  color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center",
                 }}>🚀 Start Project</Link>
                 <button onClick={shareDream} className={outfit.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2",

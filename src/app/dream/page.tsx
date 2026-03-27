@@ -158,7 +158,7 @@ export default function DreamMachinePage() {
                 {/* Text area */}
                 <div style={{ padding: "16px 18px 20px" }}>
                   <h3 className={outfit.className} style={{
-                    fontSize: "1.1rem", fontWeight: 700, color: "#1a1a1a", marginBottom: 4,
+                    fontSize: "1.1rem", fontWeight: 700, color: "#222", marginBottom: 4,
                   }}>{path.name}</h3>
                   <p className={outfit.className} style={{
                     fontSize: "0.82rem", color: "#888", fontWeight: 300, lineHeight: 1.4,
@@ -168,7 +168,7 @@ export default function DreamMachinePage() {
                   <div style={{
                     position: "absolute", top: 12, right: 12, zIndex: 3,
                     padding: "3px 10px", borderRadius: 8,
-                    background: path.color, color: "#fff",
+                    background: path.color, color: "#222",
                     fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em",
                   }} className={outfit.className}>RECOMMENDED</div>
                 )}
@@ -192,7 +192,7 @@ export default function DreamMachinePage() {
                   }}>
                     <span style={{ fontSize: "1.2rem" }}>{GROWTH_ICONS[dream.growthStage] || "🌱"}</span>
                     <div>
-                      <div className={outfit.className} style={{ fontSize: "0.78rem", color: "#1a1a1a", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
+                      <div className={outfit.className} style={{ fontSize: "0.78rem", color: "#222", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
                       <div className={outfit.className} style={{ fontSize: "0.62rem", color: "#999" }}>{dream.growthStage}</div>
                     </div>
                   </Link>

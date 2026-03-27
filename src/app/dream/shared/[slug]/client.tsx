@@ -37,7 +37,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
         <div style={{ fontSize: "3rem", marginBottom: 16 }}>🌱</div>
         <h1 className={cinzel.className} style={{ fontSize: "1.5rem", color: "#E8A83E", marginBottom: 8 }}>Dream Not Found</h1>
         <p className={outfit.className} style={{ color: "rgba(255,255,255,0.4)", marginBottom: 24 }}>This dream may have been removed or the link is invalid.</p>
-        <Link href="/dream" className={outfit.className} style={{ padding: "10px 24px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#fff", textDecoration: "none", fontWeight: 600 }}>Start Your Own Dream ✦</Link>
+        <Link href="/dream" className={outfit.className} style={{ padding: "10px 24px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#222", textDecoration: "none", fontWeight: 600 }}>Start Your Own Dream ✦</Link>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <p className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(232,168,62,0.5)", marginBottom: 8 }}>Builder&rsquo;s Knowledge Garden</p>
+          <p className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#b8873b", marginBottom: 8 }}>Builder&rsquo;s Knowledge Garden</p>
           <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#E8A83E", marginBottom: 8 }}>A Shared Dream</h1>
           <p className={outfit.className} style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.35)" }}>Someone imagined something beautiful. Now it&rsquo;s your turn.</p>
         </div>
@@ -102,7 +102,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
         <div style={{ textAlign: "center" }}>
           <Link href="/dream" className={outfit.className} style={{
             display: "inline-block", padding: "14px 32px", borderRadius: 14,
-            background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#fff",
+            background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#222",
             fontSize: "1rem", fontWeight: 600, textDecoration: "none",
             letterSpacing: "0.02em",
           }}>Dream Something Like This ✦</Link>

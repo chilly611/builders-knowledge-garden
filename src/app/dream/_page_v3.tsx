@@ -884,7 +884,7 @@ function DreamPageInner() {
                           style={{ borderColor: step.cta ? step.c : "var(--border)", borderLeft: `3px solid ${step.c}`, background: step.cta ? `${step.c}08` : "var(--bg-secondary)" }}
                           onClick={step.cta ? () => window.location.href = `/launch?type=${result.input.buildingType}&location=${encodeURIComponent(result.input.location || "")}` : undefined}>
                           <div className="flex items-center gap-3 mb-1">
-                            <span className="text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: step.c, color: "#fff" }}>{step.n}</span>
+                            <span className="text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: step.c, color: "#222" }}>{step.n}</span>
                             <span className="text-sm font-medium" style={{ color: step.cta ? step.c : "var(--fg)" }}>{step.t}</span>
                           </div>
                           <p className="text-xs leading-relaxed ml-8" style={{ color: "var(--fg-secondary)" }}>{step.d}</p>

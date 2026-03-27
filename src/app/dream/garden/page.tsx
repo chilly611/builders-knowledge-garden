@@ -163,7 +163,7 @@ export default function DreamGardenPage() {
         padding: "clamp(32px, 5vh, 48px) 20px 80px",
       }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "rgba(29,158,117,0.5)", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
+          <Link href="/dream" className={outfit.className} style={{ color: "#1a8a60", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -247,7 +247,7 @@ export default function DreamGardenPage() {
 
             {/* Empty plot — plant new dream */}
             <Link href="/dream" style={{ textDecoration: "none" }}>
-              <div className="plant-cell" style={{ borderStyle: "dashed", borderColor: "rgba(29,158,117,0.15)" }}>
+              <div className="plant-cell" style={{ borderStyle: "dashed", borderColor: "#1D9E75" }}>
                 <div style={{ fontSize: "2rem", marginBottom: 8, opacity: 0.4 }}>+</div>
                 <div className={outfit.className} style={{ fontSize: "0.72rem", color: "rgba(29,158,117,0.4)", fontWeight: 400 }}>Plant a new dream</div>
               </div>
@@ -299,7 +299,7 @@ export default function DreamGardenPage() {
                 }}>🌿 Continue Dreaming</Link>
                 <Link href={`/launch?sqft=${selectedDream.plan?.sqft || 2500}`} className={outfit.className} style={{
                   padding: "8px 16px", borderRadius: 10, background: "linear-gradient(135deg, #D85A30, #E8A83E)",
-                  color: "#1a1a1a", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none",
+                  color: "#222", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none",
                 }}>🚀 Start Project</Link>
                 <button onClick={() => deleteDream(selectedDream.id)} className={outfit.className} style={{
                   padding: "8px 16px", borderRadius: 10, background: "rgba(220,53,69,0.08)", border: "1px solid rgba(220,53,69,0.15)",
@@ -317,7 +317,7 @@ export default function DreamGardenPage() {
               <p className={outfit.className} style={{ fontSize: "0.85rem", color: "#ccc", marginBottom: 24 }}>Plant your first dream and watch it grow.</p>
               <Link href="/dream" className={outfit.className} style={{
                 padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg, #1D9E75, #C4A44A)",
-                color: "#1a1a1a", fontSize: "0.9rem", fontWeight: 600, textDecoration: "none",
+                color: "#222", fontSize: "0.9rem", fontWeight: 600, textDecoration: "none",
               }}>Plant a Dream 🌱</Link>
             </div>
           )}

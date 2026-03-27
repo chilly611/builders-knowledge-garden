@@ -324,7 +324,7 @@ export default function SketchDreamPage() {
         padding: "clamp(24px, 4vh, 40px) 16px 80px",
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "rgba(196,164,74,0.5)", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
+          <Link href="/dream" className={outfit.className} style={{ color: "#a08840", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -389,7 +389,7 @@ export default function SketchDreamPage() {
                     onKeyDown={e => { if (e.key === "Enter") handleLabelSubmit(); if (e.key === "Escape") setLabelPos(null); }}
                     autoFocus placeholder="Label..."
                     className={outfit.className}
-                    style={{ padding: "4px 10px", borderRadius: 8, background: "#fff", border: "1px solid #C4A44A", color: "#1a1a1a", fontSize: "0.8rem", outline: "none", width: 120, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                    style={{ padding: "4px 10px", borderRadius: 8, background: "#fff", border: "1px solid #C4A44A", color: "#222", fontSize: "0.8rem", outline: "none", width: 120, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                   />
                 </div>
               )}
@@ -422,7 +422,7 @@ export default function SketchDreamPage() {
               {rects.length >= 1 && (
                 <button onClick={generateDreamFromSketch} className={outfit.className} data-sound="select" style={{
                   padding: "12px 16px", borderRadius: 12, border: "none",
-                  background: "linear-gradient(135deg, #C4A44A, #E8A83E)", color: "#1a1a1a",
+                  background: "linear-gradient(135deg, #C4A44A, #E8A83E)", color: "#222",
                   fontSize: "0.85rem", fontWeight: 600, cursor: "pointer",
                 }}>See My Dream △</button>
               )}
@@ -455,7 +455,7 @@ export default function SketchDreamPage() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <Link href={`/launch?sqft=${totalSqft}`} className={outfit.className} style={{
                     padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg, #C4A44A, #E8A83E)",
-                    color: "#1a1a1a", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
+                    color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
                   }}>🚀 Start Project</Link>
                   <Link href={`/dream/describe?dream=${encodeURIComponent(`A ${totalSqft} sf home with ${rects.map(r => r.label).join(", ")}`)}`} className={outfit.className} style={{
                     padding: "10px 18px", borderRadius: 12, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)",

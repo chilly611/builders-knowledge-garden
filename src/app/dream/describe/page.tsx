@@ -310,7 +310,7 @@ export default function DescribeDreamPage() {
                       width: 22, height: 22, borderRadius: "50%",
                       background: step.done ? "#1D9E75" : step.active ? "rgba(232,168,62,0.2)" : "rgba(255,255,255,0.06)",
                       border: `1px solid ${step.done ? "#1D9E75" : step.active ? "#E8A83E" : "rgba(255,255,255,0.1)"}`,
-                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem", color: "#fff", transition: "all 0.3s",
+                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem", color: "#222", transition: "all 0.3s",
                     }}>
                       {step.done ? <span style={{ animation: "stepCheck 0.3s ease" }}>✓</span> : step.active ? <span style={{ animation: "micPulse 1s infinite" }}>●</span> : ""}
                     </div>
@@ -353,7 +353,7 @@ export default function DescribeDreamPage() {
                 {aiNarrative ? (
                   <div className={outfit.className} style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.92rem", lineHeight: 1.75, fontWeight: 300, animation: "narrativeIn 0.8s ease", whiteSpace: "pre-wrap" }}>{aiNarrative}</div>
                 ) : isStreaming ? (
-                  <div className={outfit.className} style={{ color: "rgba(232,168,62,0.5)", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
+                  <div className={outfit.className} style={{ color: "#b8873b", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
                 ) : null}
               </div>
 
@@ -430,7 +430,7 @@ export default function DescribeDreamPage() {
                   color: "#C4A44A", fontSize: "0.82rem", fontWeight: 500, cursor: "pointer", transition: "all 0.3s",
                 }}>🔄 Refine Dream</button>
                 <Link href="/dream/inspire" className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(216,90,48,0.1)", border: "1px solid rgba(216,90,48,0.2)", color: "#D85A30", fontSize: "0.82rem", fontWeight: 500, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>📷 Add Photos</Link>
-                <Link href={`/launch?type=${plan.input.buildingType || "sfr"}&loc=${plan.input.location || ""}&sqft=${plan.sqft}`} className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", border: "none", color: "#fff", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>🚀 Start Project</Link>
+                <Link href={`/launch?type=${plan.input.buildingType || "sfr"}&loc=${plan.input.location || ""}&sqft=${plan.sqft}`} className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", border: "none", color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center", transition: "all 0.3s" }}>🚀 Start Project</Link>
                 <button onClick={shareDream} className={outfit.className} style={{ padding: "12px 16px", borderRadius: 12, background: "#fafafa", border: "1px solid #e2e2e2", color: shared ? "#1D9E75" : "rgba(255,255,255,0.5)", fontSize: "0.82rem", fontWeight: 500, cursor: "pointer", transition: "all 0.3s" }}>{shared ? "✓ Link copied!" : "🔗 Share"}</button>
               </div>
 
@@ -443,7 +443,7 @@ export default function DescribeDreamPage() {
                     <input type="text" value={refinementInput} onChange={e => setRefinementInput(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && refinementInput.trim() && handleRefinement(refinementInput)}
                       placeholder="Make it passive house certified with a green roof..." className={outfit.className}
-                      style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid rgba(196,164,74,0.2)", color: "#fff", fontSize: "0.85rem", outline: "none" }} />
+                      style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid rgba(196,164,74,0.2)", color: "#222", fontSize: "0.85rem", outline: "none" }} />
                     <button onClick={() => refinementInput.trim() && handleRefinement(refinementInput)} disabled={!refinementInput.trim()} className={outfit.className} style={{
                       padding: "10px 18px", borderRadius: 10, background: refinementInput.trim() ? "rgba(196,164,74,0.2)" : "rgba(255,255,255,0.04)",
                       border: "1px solid rgba(196,164,74,0.2)", color: refinementInput.trim() ? "#C4A44A" : "rgba(255,255,255,0.3)", fontSize: "0.85rem", fontWeight: 500,

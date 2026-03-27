@@ -196,7 +196,7 @@ export default function ExploreDreamPage() {
         padding: "clamp(32px, 6vh, 60px) 20px 80px",
       }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <Link href="/dream" className={outfit.className} style={{ color: "rgba(224,123,58,0.5)", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
+          <Link href="/dream" className={outfit.className} style={{ color: "#c06830", textDecoration: "none", fontSize: "0.82rem", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
             <span style={{ fontSize: "0.9em" }}>←</span> Dream Machine
           </Link>
 
@@ -238,7 +238,7 @@ export default function ExploreDreamPage() {
                   <h2 className={outfit.className} style={{ fontSize: "1.1rem", color: "#333", marginBottom: 20, fontWeight: 400 }}>Where are you building?</h2>
                   <input type="text" value={answers.location} onChange={e => setAnswers(a => ({ ...a, location: e.target.value }))}
                     placeholder="City or state — e.g. Austin, TX" autoFocus className={outfit.className}
-                    style={{ width: "100%", maxWidth: 400, padding: "14px 20px", borderRadius: 14, background: "#fafafa", border: "1px solid rgba(224,123,58,0.2)", color: "#1a1a1a", fontSize: "1rem", outline: "none", textAlign: "center" }}
+                    style={{ width: "100%", maxWidth: 400, padding: "14px 20px", borderRadius: 14, background: "#fafafa", border: "1px solid rgba(224,123,58,0.2)", color: "#222", fontSize: "1rem", outline: "none", textAlign: "center" }}
                     onKeyDown={e => e.key === "Enter" && answers.location && nextStep()} />
                 </div>
               )}
@@ -368,7 +368,7 @@ export default function ExploreDreamPage() {
                           border: `1px solid ${c.match >= 80 ? "rgba(29,158,117,0.25)" : "rgba(224,123,58,0.15)"}`,
                         }}>{c.match}% match</span>
                       </div>
-                      <h3 className={outfit.className} style={{ fontSize: "0.95rem", color: "#1a1a1a", fontWeight: 600, marginBottom: 4 }}>{c.name}</h3>
+                      <h3 className={outfit.className} style={{ fontSize: "0.95rem", color: "#222", fontWeight: 600, marginBottom: 4 }}>{c.name}</h3>
                       <p className={outfit.className} style={{ fontSize: "0.75rem", color: "#999", lineHeight: 1.4, marginBottom: 10 }}>{c.description.slice(0, 120)}...</p>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
                         {c.materials.map((m, j) => (
@@ -438,7 +438,7 @@ export default function ExploreDreamPage() {
                 }}>✦ Refine Further</Link>
                 <Link href={`/launch?type=${answers.buildingType}&sqft=${SIZE_OPTIONS.find(s => s.id === answers.size)?.sf || 2500}`} className={outfit.className} style={{
                   padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg, #E07B3A, #E8A83E)",
-                  color: "#1a1a1a", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center",
+                  color: "#222", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", textAlign: "center",
                 }}>🚀 Start Project</Link>
               </div>
             </div>
