@@ -311,7 +311,7 @@ export default function SketchDreamPage() {
       <style jsx global>{`
         @keyframes cardSlide { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
         .tool-btn { padding: 8px; border-radius: 10px; border: 1px solid #e2e2e2; background: #f8f8f8; color: #777; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-        .tool-btn:hover { border-color: rgba(196,164,74,0.3); color: rgba(255,255,255,0.8); }
+        .tool-btn:hover { border-color: rgba(196,164,74,0.3); color: #555; }
         .tool-btn.active { border-color: #C4A44A; background: rgba(196,164,74,0.15); color: #C4A44A; }
         .room-chip { padding: 4px 10px; border-radius: 12px; border: 1px solid #e2e2e2; font-size: 0.65rem; cursor: pointer; transition: all 0.2s; }
         .room-chip:hover { border-color: rgba(196,164,74,0.3); }
@@ -331,7 +331,7 @@ export default function SketchDreamPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
             <div>
               <h1 className={cinzel.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.8rem)", color: "#C4A44A", marginBottom: 4 }}>Sketch It Out</h1>
-              <p className={outfit.className} style={{ color: "#aaa", fontSize: "0.78rem" }}>{rects.length} rooms • {totalSqft} sf • Est. {fmt(roughCost)}</p>
+              <p className={outfit.className} style={{ color: "#555", fontSize: "0.78rem" }}>{rects.length} rooms • {totalSqft} sf • Est. {fmt(roughCost)}</p>
             </div>
             <button onClick={() => setGuidedStep(guidedStep === null ? 0 : null)} className={outfit.className} style={{
               padding: "6px 14px", borderRadius: 10, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.2)",
@@ -407,9 +407,9 @@ export default function SketchDreamPage() {
             {/* Interpretation panel */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ borderRadius: 14, padding: "16px 14px", background: "#f8f8f8", border: "1px solid #e8e8e8", flex: 1, overflowY: "auto", maxHeight: 420 }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#aaa", marginBottom: 10, fontWeight: 600 }}>🧠 AI Interpretation</h3>
+                <h3 className={outfit.className} style={{ fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 10, fontWeight: 600 }}>🧠 AI Interpretation</h3>
                 {aiNotes.length === 0 ? (
-                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#bbb", fontStyle: "italic" }}>Draw rooms to see AI analysis...</p>
+                  <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#666", fontStyle: "italic" }}>Draw rooms to see AI analysis...</p>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {aiNotes.map((note, i) => (
@@ -445,9 +445,9 @@ export default function SketchDreamPage() {
                     { label: "Team", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                   ].map((s, i) => (
                     <div key={i} style={{ borderRadius: 12, padding: "12px 10px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-                      <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#bbb", marginBottom: 4 }}>{s.label}</div>
+                      <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 4 }}>{s.label}</div>
                       <div className={outfit.className} style={{ fontSize: "1.05rem", color: "#C4A44A", fontWeight: 700 }}>{s.value}</div>
-                      <div className={outfit.className} style={{ fontSize: "0.65rem", color: "#bbb" }}>{s.sub}</div>
+                      <div className={outfit.className} style={{ fontSize: "0.65rem", color: "#666" }}>{s.sub}</div>
                     </div>
                   ))}
                 </div>

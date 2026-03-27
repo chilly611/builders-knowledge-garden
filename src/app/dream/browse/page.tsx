@@ -190,7 +190,7 @@ export default function BrowseDreamPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
             <div>
               <h1 className={cinzel.className} style={{ fontSize: "clamp(1.3rem, 3.5vw, 1.8rem)", color: "#B8873B", marginBottom: 4 }}>Browse &amp; Discover</h1>
-              <p className={outfit.className} style={{ color: "#aaa", fontSize: "0.78rem" }}>{filtered.length} designs • {savedIds.length} saved</p>
+              <p className={outfit.className} style={{ color: "#555", fontSize: "0.78rem" }}>{filtered.length} designs • {savedIds.length} saved</p>
             </div>
             {savedIds.length >= 5 && (
               <button onClick={() => setShowTaste(!showTaste)} className={outfit.className} style={{
@@ -238,7 +238,7 @@ export default function BrowseDreamPage() {
               <p className={outfit.className} style={{ color: "#555", fontSize: "0.88rem", lineHeight: 1.6, fontWeight: 300, marginBottom: 16 }}>{tasteProfile.summary}</p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <h4 className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#bbb", marginBottom: 8 }}>Top Styles</h4>
+                  <h4 className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 8 }}>Top Styles</h4>
                   {tasteProfile.topStyles.map((s, i) => (
                     <div key={i} className={outfit.className} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "#666", marginBottom: 4 }}>
                       <span>{s.name}</span><span style={{ color: "#B8873B" }}>×{s.count}</span>
@@ -246,7 +246,7 @@ export default function BrowseDreamPage() {
                   ))}
                 </div>
                 <div>
-                  <h4 className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#bbb", marginBottom: 8 }}>Top Materials</h4>
+                  <h4 className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 8 }}>Top Materials</h4>
                   {tasteProfile.topMaterials.map((m, i) => (
                     <div key={i} className={outfit.className} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "#666", marginBottom: 4 }}>
                       <span>{m.name}</span><span style={{ color: "#B8873B" }}>×{m.count}</span>
@@ -274,7 +274,7 @@ export default function BrowseDreamPage() {
                   <div style={{ padding: "20px 16px 16px", position: "relative" }}>
                     {/* Type badge + save */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <span className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#bbb", fontWeight: 600 }}>{card.type}</span>
+                      <span className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", fontWeight: 600 }}>{card.type}</span>
                       <button onClick={(e) => { e.stopPropagation(); toggleSave(card.id); }} style={{
                         background: "none", border: "none", fontSize: "1.1rem", cursor: "pointer",
                         transition: "transform 0.2s",
@@ -284,7 +284,7 @@ export default function BrowseDreamPage() {
                     {/* Emoji + title */}
                     <div style={{ fontSize: "2rem", marginBottom: 8 }}>{card.emoji}</div>
                     <h3 className={outfit.className} style={{ fontSize: "1rem", color: "#222", fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{card.title}</h3>
-                    <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#888", fontWeight: 300, marginBottom: 12, lineHeight: 1.4 }}>{card.subtitle}</p>
+                    <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#666", fontWeight: 300, marginBottom: 12, lineHeight: 1.4 }}>{card.subtitle}</p>
 
                     {/* Material tags */}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
@@ -299,7 +299,7 @@ export default function BrowseDreamPage() {
                         <span className={outfit.className} style={{ fontSize: "0.7rem", color: "#B8873B", fontWeight: 500 }}>{card.costPerSf}</span>
                       )}
                       {card.region && (
-                        <span className={outfit.className} style={{ fontSize: "0.65rem", color: "#ccc" }}>{card.region}</span>
+                        <span className={outfit.className} style={{ fontSize: "0.65rem", color: "#666" }}>{card.region}</span>
                       )}
                     </div>
 
@@ -319,11 +319,11 @@ export default function BrowseDreamPage() {
           {/* Infinite scroll loader */}
           {visibleCount < filtered.length && (
             <div ref={loaderRef} style={{ textAlign: "center", padding: "32px 0" }}>
-              <p className={outfit.className} style={{ color: "#ccc", fontSize: "0.78rem" }}>Loading more...</p>
+              <p className={outfit.className} style={{ color: "#666", fontSize: "0.78rem" }}>Loading more...</p>
             </div>
           )}
           {visibleCount >= filtered.length && filtered.length > 0 && (
-            <p className={outfit.className} style={{ textAlign: "center", padding: "32px 0", color: "#ddd", fontSize: "0.78rem" }}>
+            <p className={outfit.className} style={{ textAlign: "center", padding: "32px 0", color: "#666", fontSize: "0.78rem" }}>
               {filtered.length} designs explored • {savedIds.length} saved
             </p>
           )}

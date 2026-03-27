@@ -222,19 +222,19 @@ export default function InspireDreamPage() {
           <div style={{ textAlign: "center", marginBottom: 32 }}>
             <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>◈</div>
             <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#D85A30", marginBottom: 10 }}>Show Me Inspiration</h1>
-            <p className={outfit.className} style={{ color: "#888", fontSize: "0.95rem", fontWeight: 300, maxWidth: 480, margin: "0 auto" }}>
+            <p className={outfit.className} style={{ color: "#666", fontSize: "0.95rem", fontWeight: 300, maxWidth: 480, margin: "0 auto" }}>
               Upload photos of buildings you love. AI analyzes each one and synthesizes your Style DNA.
             </p>
           </div>
 
           {/* Confidence + counter bar */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <span className={outfit.className} style={{ fontSize: "0.72rem", color: "#999", letterSpacing: "0.08em", textTransform: "uppercase" }}>Confidence</span>
+            <span className={outfit.className} style={{ fontSize: "0.72rem", color: "#555", letterSpacing: "0.08em", textTransform: "uppercase" }}>Confidence</span>
             <div style={{ flex: 1, height: 5, borderRadius: 3, background: "#f2f2f2", overflow: "hidden" }}>
               <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #D85A30, #E8A83E)", width: `${confidence}%`, transition: "width 0.6s ease" }} />
             </div>
             <span className={outfit.className} style={{ fontSize: "0.82rem", color: "#D85A30", fontWeight: 600 }}>{confidence}%</span>
-            <span className={outfit.className} style={{ fontSize: "0.72rem", color: "#aaa", marginLeft: 8 }}>{doneCount}/{photos.length} analyzed</span>
+            <span className={outfit.className} style={{ fontSize: "0.72rem", color: "#555", marginLeft: 8 }}>{doneCount}/{photos.length} analyzed</span>
           </div>
 
           {/* Upload zone — always visible in upload/analyzing phases */}
@@ -244,7 +244,7 @@ export default function InspireDreamPage() {
                 <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => e.target.files && addFiles(e.target.files)} />
                 <div style={{ fontSize: "2.4rem", marginBottom: 12 }}>📷</div>
                 <p className={outfit.className} style={{ color: "#D85A30", fontSize: "1rem", fontWeight: 500, marginBottom: 6 }}>Drop up to 20 inspiration photos</p>
-                <p className={outfit.className} style={{ color: "#aaa", fontSize: "0.8rem", fontWeight: 300 }}>or click to browse • JPG, PNG, WebP</p>
+                <p className={outfit.className} style={{ color: "#555", fontSize: "0.8rem", fontWeight: 300 }}>or click to browse • JPG, PNG, WebP</p>
               </div>
 
               {/* URL input */}
@@ -268,7 +268,7 @@ export default function InspireDreamPage() {
                         <img src={photo.src} alt="Inspiration" style={{ width: 180, height: 140, objectFit: "cover", display: "block" }} />
                       ) : (
                         <div style={{ width: 180, height: 140, background: "rgba(216,90,48,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span className={outfit.className} style={{ color: "#bbb", fontSize: "0.75rem" }}>URL image</span>
+                          <span className={outfit.className} style={{ color: "#666", fontSize: "0.75rem" }}>URL image</span>
                         </div>
                       )}
                       {/* Status overlay */}
@@ -326,7 +326,7 @@ export default function InspireDreamPage() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
                   <div style={{ borderRadius: 14, padding: "14px 12px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                    <h4 className={outfit.className} style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#aaa", marginBottom: 8, fontWeight: 600 }}>🧱 Materials</h4>
+                    <h4 className={outfit.className} style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 8, fontWeight: 600 }}>🧱 Materials</h4>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {styleDNA.materials.slice(0, 8).map((m, i) => (
                         <span key={i} className={outfit.className} style={{ padding: "3px 10px", borderRadius: 12, background: "rgba(216,90,48,0.1)", border: "1px solid rgba(216,90,48,0.15)", fontSize: "0.72rem", color: "#555" }}>{m.name} <span style={{ color: "#D85A30", fontWeight: 600 }}>×{m.count}</span></span>
@@ -334,7 +334,7 @@ export default function InspireDreamPage() {
                     </div>
                   </div>
                   <div style={{ borderRadius: 14, padding: "14px 12px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                    <h4 className={outfit.className} style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#aaa", marginBottom: 8, fontWeight: 600 }}>✨ Features</h4>
+                    <h4 className={outfit.className} style={{ fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 8, fontWeight: 600 }}>✨ Features</h4>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {styleDNA.features.slice(0, 8).map((f, i) => (
                         <span key={i} className={outfit.className} style={{ padding: "3px 10px", borderRadius: 12, background: "rgba(196,164,74,0.1)", border: "1px solid rgba(196,164,74,0.15)", fontSize: "0.72rem", color: "#555" }}>{f.name} <span style={{ color: "#C4A44A", fontWeight: 600 }}>×{f.count}</span></span>
@@ -359,7 +359,7 @@ export default function InspireDreamPage() {
                     )}
                     <div style={{ padding: "10px 12px" }}>
                       <p className={outfit.className} style={{ fontSize: "0.75rem", color: "#D85A30", fontWeight: 600, marginBottom: 4 }}>{photo.analysis!.style}</p>
-                      <p className={outfit.className} style={{ fontSize: "0.7rem", color: "#999", lineHeight: 1.4, margin: 0 }}>{photo.analysis!.vibe}</p>
+                      <p className={outfit.className} style={{ fontSize: "0.7rem", color: "#555", lineHeight: 1.4, margin: 0 }}>{photo.analysis!.vibe}</p>
                     </div>
                   </div>
                 ))}
@@ -401,9 +401,9 @@ export default function InspireDreamPage() {
                   { label: "Team Size", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                 ].map((stat, i) => (
                   <div key={i} style={{ borderRadius: 14, padding: "16px 14px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-                    <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#aaa", marginBottom: 6 }}>{stat.label}</div>
+                    <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 6 }}>{stat.label}</div>
                     <div className={outfit.className} style={{ fontSize: "1.15rem", color: "#D85A30", fontWeight: 700, marginBottom: 3 }}>{stat.value}</div>
-                    <div className={outfit.className} style={{ fontSize: "0.72rem", color: "#aaa" }}>{stat.sub}</div>
+                    <div className={outfit.className} style={{ fontSize: "0.72rem", color: "#555" }}>{stat.sub}</div>
                   </div>
                 ))}
               </div>

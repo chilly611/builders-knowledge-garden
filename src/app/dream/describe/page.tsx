@@ -262,7 +262,7 @@ export default function DescribeDreamPage() {
               <div style={{ textAlign: "center", marginBottom: 36 }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>✦</div>
                 <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#D85A30", marginBottom: 10 }}>Describe Your Dream</h1>
-                <p className={outfit.className} style={{ color: "#888", fontSize: "0.95rem", fontWeight: 300, maxWidth: 440, margin: "0 auto" }}>Tell us what you want to build. Be as detailed or as vague as you like.</p>
+                <p className={outfit.className} style={{ color: "#666", fontSize: "0.95rem", fontWeight: 300, maxWidth: 440, margin: "0 auto" }}>Tell us what you want to build. Be as detailed or as vague as you like.</p>
               </div>
               <div style={{ position: "relative", marginBottom: 20 }}>
                 <textarea ref={textareaRef} className={`dream-textarea ${outfit.className}`} placeholder={PLACEHOLDERS[placeholderIdx]} value={dreamText} onChange={e => setDreamText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && e.metaKey) generateDream(dreamText); }} autoFocus />
@@ -284,12 +284,12 @@ export default function DescribeDreamPage() {
                 animation: dreamText.trim() ? "pulseGlow 3s ease-in-out infinite" : "none", letterSpacing: "0.02em",
               }}>Dream It ✦</button>
               <div style={{ marginTop: 28 }}>
-                <p className={outfit.className} style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", marginBottom: 10, letterSpacing: "0.08em" }}>Or try:</p>
+                <p className={outfit.className} style={{ fontSize: "0.78rem", color: "#555", marginBottom: 10, letterSpacing: "0.08em" }}>Or try:</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {examples.map((ex, i) => (
                     <button key={i} onClick={() => { setDreamText(ex); textareaRef.current?.focus(); }} className={outfit.className} style={{
                       padding: "10px 14px", borderRadius: 10, background: "#f8f8f8", border: "1px solid #e8e8e8",
-                      color: "rgba(255,255,255,0.45)", fontSize: "0.82rem", textAlign: "left", cursor: "pointer", transition: "all 0.2s", lineHeight: 1.4,
+                      color: "#555", fontSize: "0.82rem", textAlign: "left", cursor: "pointer", transition: "all 0.2s", lineHeight: 1.4,
                     }} onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(232,168,62,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
                        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
                     >{ex}</button>
@@ -325,7 +325,7 @@ export default function DescribeDreamPage() {
             <div ref={resultRef} style={{ animation: "cardSlide 0.6s ease" }}>
               {/* Confidence bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                <div className={outfit.className} style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Dream Confidence</div>
+                <div className={outfit.className} style={{ fontSize: "0.75rem", color: "#555", letterSpacing: "0.08em", textTransform: "uppercase" }}>Dream Confidence</div>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#f2f2f2", overflow: "hidden" }}>
                   <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #D85A30, #E8A83E)", width: `${plan.confidence}%`, transition: "width 1s ease" }} />
                 </div>
@@ -338,7 +338,7 @@ export default function DescribeDreamPage() {
                   <span style={{ fontSize: "1.6rem" }}>✦</span>
                   <h2 className={cinzel.className} style={{ fontSize: "1.3rem", color: "#E8A83E" }}>Your Dream</h2>
                 </div>
-                <p className={outfit.className} style={{ color: "rgba(255,255,255,0.7)", fontSize: "1rem", lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", marginBottom: 20, paddingLeft: 16, borderLeft: "2px solid rgba(232,168,62,0.2)" }}>&ldquo;{plan.input.raw}&rdquo;</p>
+                <p className={outfit.className} style={{ color: "#555", fontSize: "1rem", lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", marginBottom: 20, paddingLeft: 16, borderLeft: "2px solid rgba(232,168,62,0.2)" }}>&ldquo;{plan.input.raw}&rdquo;</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                   {plan.input.buildingTypeMatch && (
                     <span className={outfit.className} style={{ padding: "5px 14px", borderRadius: 20, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)", color: "#E8A83E", fontSize: "0.78rem", fontWeight: 500 }}>{plan.input.buildingTypeMatch.icon} {plan.input.buildingTypeMatch.name}</span>
@@ -351,7 +351,7 @@ export default function DescribeDreamPage() {
                   )}
                 </div>
                 {aiNarrative ? (
-                  <div className={outfit.className} style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.92rem", lineHeight: 1.75, fontWeight: 300, animation: "narrativeIn 0.8s ease", whiteSpace: "pre-wrap" }}>{aiNarrative}</div>
+                  <div className={outfit.className} style={{ color: "#555", fontSize: "0.92rem", lineHeight: 1.75, fontWeight: 300, animation: "narrativeIn 0.8s ease", whiteSpace: "pre-wrap" }}>{aiNarrative}</div>
                 ) : isStreaming ? (
                   <div className={outfit.className} style={{ color: "#b8873b", fontSize: "0.85rem", fontStyle: "italic", animation: "micPulse 2s infinite" }}>Writing your story...</div>
                 ) : null}
@@ -360,24 +360,24 @@ export default function DescribeDreamPage() {
               {/* Intelligence grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
                 <div style={{ borderRadius: 16, padding: "20px 18px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                  <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12, fontWeight: 600 }}>📋 Key Codes</h3>
+                  <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>📋 Key Codes</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {plan.codes.slice(0, 5).map((code, i) => (
                       <Link key={i} href={`/knowledge/${code.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}`} className="entity-link" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>
                         <span className={outfit.className}>
                           <strong style={{ color: "#E8A83E" }}>{code.title}</strong>
-                          <span style={{ color: "rgba(255,255,255,0.4)", marginLeft: 6 }}>— {code.status}</span>
+                          <span style={{ color: "#555", marginLeft: 6 }}>— {code.status}</span>
                         </span>
                       </Link>
                     ))}
                   </div>
                 </div>
                 <div style={{ borderRadius: 16, padding: "20px 18px", background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                  <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12, fontWeight: 600 }}>🧱 Cost Breakdown</h3>
+                  <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>🧱 Cost Breakdown</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {plan.estimate.slice(0, 6).map((div, i) => (
                       <div key={i} className={outfit.className} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
-                        <span style={{ color: "rgba(255,255,255,0.6)" }}>{div.division}</span>
+                        <span style={{ color: "#555" }}>{div.division}</span>
                         <span style={{ color: "#E8A83E", fontWeight: 500 }}>{fmt(div.amount)}</span>
                       </div>
                     ))}
@@ -394,9 +394,9 @@ export default function DescribeDreamPage() {
                   { label: "Team Size", value: `${plan.team.length} roles`, sub: plan.team.slice(0, 2).map(t => t.role).join(", ") },
                 ].map((stat, i) => (
                   <div key={i} style={{ borderRadius: 14, padding: "16px 14px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-                    <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>{stat.label}</div>
+                    <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 6 }}>{stat.label}</div>
                     <div className={outfit.className} style={{ fontSize: "1.15rem", color: "#E8A83E", fontWeight: 700, marginBottom: 3 }}>{stat.value}</div>
-                    <div className={outfit.className} style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)" }}>{stat.sub}</div>
+                    <div className={outfit.className} style={{ fontSize: "0.72rem", color: "#555" }}>{stat.sub}</div>
                   </div>
                 ))}
               </div>
@@ -406,7 +406,7 @@ export default function DescribeDreamPage() {
                 <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(216,90,48,0.7)", marginBottom: 12, fontWeight: 600 }}>⚠️ Watch Out For</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {plan.challenges.map((ch, i) => (
-                    <p key={i} className={outfit.className} style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>• {ch}</p>
+                    <p key={i} className={outfit.className} style={{ fontSize: "0.82rem", color: "#555", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>• {ch}</p>
                   ))}
                 </div>
               </div>
@@ -414,7 +414,7 @@ export default function DescribeDreamPage() {
               {knowledgeDrop && (
                 <div style={{ borderRadius: 14, padding: "14px 18px", marginBottom: 20, background: "rgba(29,158,117,0.06)", border: "1px solid rgba(29,158,117,0.15)", display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <span style={{ fontSize: "1.1rem" }}>💡</span>
-                  <p className={outfit.className} style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>{knowledgeDrop}</p>
+                  <p className={outfit.className} style={{ fontSize: "0.8rem", color: "#555", lineHeight: 1.5, fontWeight: 300, margin: 0 }}>{knowledgeDrop}</p>
                 </div>
               )}
 
@@ -438,7 +438,7 @@ export default function DescribeDreamPage() {
               {showRefinement && (
                 <div style={{ borderRadius: 16, padding: "20px 18px", background: "rgba(196,164,74,0.04)", border: "1px solid rgba(196,164,74,0.15)", animation: "cardSlide 0.4s ease" }}>
                   <h3 className={outfit.className} style={{ fontSize: "0.85rem", color: "#C4A44A", marginBottom: 12, fontWeight: 600 }}>Refine your dream</h3>
-                  <p className={outfit.className} style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)", marginBottom: 12, fontWeight: 300 }}>Add details, change materials, adjust the budget, specify features...</p>
+                  <p className={outfit.className} style={{ fontSize: "0.8rem", color: "#555", marginBottom: 12, fontWeight: 300 }}>Add details, change materials, adjust the budget, specify features...</p>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input type="text" value={refinementInput} onChange={e => setRefinementInput(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && refinementInput.trim() && handleRefinement(refinementInput)}
@@ -454,7 +454,7 @@ export default function DescribeDreamPage() {
                     {["Add a home office", "Make it net-zero energy", "Use CLT instead of wood frame", "Add an accessory dwelling unit", "Increase to 4 bedrooms", "Budget under $400K"].map((sug, i) => (
                       <button key={i} onClick={() => handleRefinement(sug)} className={outfit.className} style={{
                         padding: "5px 12px", borderRadius: 16, background: "#f8f8f8", border: "1px solid #e2e2e2",
-                        color: "rgba(255,255,255,0.4)", fontSize: "0.72rem", cursor: "pointer", transition: "all 0.2s",
+                        color: "#555", fontSize: "0.72rem", cursor: "pointer", transition: "all 0.2s",
                       }} onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(196,164,74,0.3)"; e.currentTarget.style.color = "#C4A44A"; }}
                          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
                       >{sug}</button>
@@ -465,10 +465,10 @@ export default function DescribeDreamPage() {
 
               {/* Team needs */}
               <div style={{ borderRadius: 16, padding: "20px 18px", marginTop: 20, background: "#f8f8f8", border: "1px solid #e8e8e8" }}>
-                <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 12, fontWeight: 600 }}>👷 Team Needs</h3>
+                <h3 className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555", marginBottom: 12, fontWeight: 600 }}>👷 Team Needs</h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {plan.team.map((t, i) => (
-                    <span key={i} className={outfit.className} style={{ padding: "4px 12px", borderRadius: 16, background: "#fafafa", border: "1px solid #e2e2e2", color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>{t.role}</span>
+                    <span key={i} className={outfit.className} style={{ padding: "4px 12px", borderRadius: 16, background: "#fafafa", border: "1px solid #e2e2e2", color: "#555", fontSize: "0.75rem" }}>{t.role}</span>
                   ))}
                 </div>
               </div>

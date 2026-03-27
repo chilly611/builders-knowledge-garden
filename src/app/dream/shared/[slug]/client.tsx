@@ -36,7 +36,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
       }}>
         <div style={{ fontSize: "3rem", marginBottom: 16 }}>🌱</div>
         <h1 className={cinzel.className} style={{ fontSize: "1.5rem", color: "#E8A83E", marginBottom: 8 }}>Dream Not Found</h1>
-        <p className={outfit.className} style={{ color: "rgba(255,255,255,0.4)", marginBottom: 24 }}>This dream may have been removed or the link is invalid.</p>
+        <p className={outfit.className} style={{ color: "#555", marginBottom: 24 }}>This dream may have been removed or the link is invalid.</p>
         <Link href="/dream" className={outfit.className} style={{ padding: "10px 24px", borderRadius: 12, background: "linear-gradient(135deg, #D85A30, #E8A83E)", color: "#222", textDecoration: "none", fontWeight: 600 }}>Start Your Own Dream ✦</Link>
       </div>
     );
@@ -54,7 +54,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <p className={outfit.className} style={{ fontSize: "0.72rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#b8873b", marginBottom: 8 }}>Builder&rsquo;s Knowledge Garden</p>
           <h1 className={cinzel.className} style={{ fontSize: "clamp(1.5rem, 4vw, 2.2rem)", color: "#E8A83E", marginBottom: 8 }}>A Shared Dream</h1>
-          <p className={outfit.className} style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.35)" }}>Someone imagined something beautiful. Now it&rsquo;s your turn.</p>
+          <p className={outfit.className} style={{ fontSize: "0.82rem", color: "#555" }}>Someone imagined something beautiful. Now it&rsquo;s your turn.</p>
         </div>
 
         {/* Dream Card */}
@@ -62,8 +62,8 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <span style={{ fontSize: "1.8rem" }}>{GROWTH_ICONS[dream.growth_stage] || "🌱"}</span>
             <div>
-              <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>{dream.input_mode} dream</div>
-              <div className={outfit.className} style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.25)" }}>{new Date(dream.created_at).toLocaleDateString()}</div>
+              <div className={outfit.className} style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555" }}>{dream.input_mode} dream</div>
+              <div className={outfit.className} style={{ fontSize: "0.7rem", color: "#555" }}>{new Date(dream.created_at).toLocaleDateString()}</div>
             </div>
             <div style={{ marginLeft: "auto", padding: "4px 12px", borderRadius: 10, background: "rgba(232,168,62,0.1)", border: "1px solid rgba(232,168,62,0.2)" }}>
               <span className={outfit.className} style={{ fontSize: "0.75rem", color: "#E8A83E", fontWeight: 600 }}>{dream.confidence_score}%</span>
@@ -71,7 +71,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
           </div>
 
           {dream.prompt && (
-            <p className={outfit.className} style={{ fontSize: "1rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", marginBottom: 20, paddingLeft: 16, borderLeft: "2px solid rgba(232,168,62,0.2)" }}>
+            <p className={outfit.className} style={{ fontSize: "1rem", color: "#555", lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", marginBottom: 20, paddingLeft: 16, borderLeft: "2px solid rgba(232,168,62,0.2)" }}>
               &ldquo;{dream.prompt.slice(0, 300)}{dream.prompt.length > 300 ? "..." : ""}&rdquo;
             </p>
           )}
@@ -92,7 +92,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
             { label: "Codes", value: `${(dream.codes as string[])?.length || 0} apply` },
           ].map((s, i) => (
             <div key={i} style={{ borderRadius: 14, padding: "14px 12px", background: "#f8f8f8", border: "1px solid #e8e8e8", textAlign: "center" }}>
-              <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>{s.label}</div>
+              <div className={outfit.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555", marginBottom: 4 }}>{s.label}</div>
               <div className={outfit.className} style={{ fontSize: "0.95rem", color: "#E8A83E", fontWeight: 600 }}>{s.value}</div>
             </div>
           ))}
@@ -106,7 +106,7 @@ export default function SharedDreamClient({ dream, slug }: { dream: SharedDream 
             fontSize: "1rem", fontWeight: 600, textDecoration: "none",
             letterSpacing: "0.02em",
           }}>Dream Something Like This ✦</Link>
-          <p className={outfit.className} style={{ marginTop: 16, fontSize: "0.75rem", color: "rgba(255,255,255,0.25)" }}>Powered by Builder&rsquo;s Knowledge Garden — the operating system for the global construction economy</p>
+          <p className={outfit.className} style={{ marginTop: 16, fontSize: "0.75rem", color: "#555" }}>Powered by Builder&rsquo;s Knowledge Garden — the operating system for the global construction economy</p>
         </div>
 
       </div>

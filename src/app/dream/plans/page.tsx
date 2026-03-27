@@ -19,7 +19,7 @@ export default function PlansDreamPage() {
           fontSize: "clamp(1.5rem, 4vw, 2.4rem)", color: "#9C7832", marginBottom: 12,
         }}>I Have Plans</h1>
         <p className={outfit.className} style={{
-          color: "#777", fontSize: "1rem",
+          color: "#555", fontSize: "1rem",
           maxWidth: 440, lineHeight: 1.6, marginBottom: 32, fontWeight: 300,
         }}>Upload DWG, PDF, SketchUp, or photos of existing plans. The platform enriches them with codes, costs, materials, and scheduling intelligence.</p>
         <div style={{

@@ -161,7 +161,7 @@ export default function DreamMachinePage() {
                     fontSize: "1.1rem", fontWeight: 700, color: "#222", marginBottom: 4,
                   }}>{path.name}</h3>
                   <p className={outfit.className} style={{
-                    fontSize: "0.82rem", color: "#888", fontWeight: 300, lineHeight: 1.4,
+                    fontSize: "0.82rem", color: "#666", fontWeight: 300, lineHeight: 1.4,
                   }}>{path.tagline}</p>
                 </div>
                 {lane && (path.laneWeights[lane] ?? 5) >= 9 && (
@@ -193,7 +193,7 @@ export default function DreamMachinePage() {
                     <span style={{ fontSize: "1.2rem" }}>{GROWTH_ICONS[dream.growthStage] || "🌱"}</span>
                     <div>
                       <div className={outfit.className} style={{ fontSize: "0.78rem", color: "#222", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
-                      <div className={outfit.className} style={{ fontSize: "0.62rem", color: "#999" }}>{dream.growthStage}</div>
+                      <div className={outfit.className} style={{ fontSize: "0.62rem", color: "#555" }}>{dream.growthStage}</div>
                     </div>
                   </Link>
                 ))}
@@ -201,7 +201,7 @@ export default function DreamMachinePage() {
             </div>
           )}
 
-          <p className={outfit.className} style={{ textAlign: "center", marginTop: 40, fontSize: "0.75rem", color: "#ccc" }}>
+          <p className={outfit.className} style={{ textAlign: "center", marginTop: 40, fontSize: "0.75rem", color: "#666" }}>
             Dream big. We&rsquo;ll get realistic later.
           </p>
         </div>
