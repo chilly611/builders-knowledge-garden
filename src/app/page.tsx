@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { CompletionRing, AnimCounter, LifecycleFog, GamificationStyles } from "@/components/Gamification";
 import CopilotPanel from "@/components/CopilotPanel";
+import SplashIntro from "@/components/SplashIntro";
 
 // Animated visibility hook
 function useInView(threshold = 0.2) {
@@ -57,6 +58,7 @@ export default function Home() {
   const router = useRouter();
   const hero = useInView(0.1);
   const [heroSearch, setHeroSearch] = useState("");
+  const [showSplash, setShowSplash] = useState(true);
   const stats = useInView(0.2);
   const phases = useInView(0.15);
   const products = useInView(0.15);
@@ -72,6 +74,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+      {showSplash && <SplashIntro onComplete={() => setShowSplash(false)} />}
       <GamificationStyles />
 
       {/* ═══ NAV ═══ */}
