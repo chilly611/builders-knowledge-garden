@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AnimCounter, GamificationStyles } from "@/components/Gamification";
 import CopilotPanel from "@/components/CopilotPanel";
 // Image URLs are inline in data arrays below — image-service used by other pages
+import ConstructionAnimation from "@/components/visuals/ConstructionAnimation";
 
 function useInView(threshold = 0.2) {
   const ref = useRef<HTMLDivElement>(null);
@@ -204,6 +205,18 @@ export default function Home() {
               <div style={{ fontSize: 13, fontWeight: 500, marginTop: 6, color: "var(--fg)" }}>{s.label}</div>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* ═══ CONSTRUCTION ANIMATION — Watch a building rise ═══ */}
+      <section style={{ padding: "60px 24px", background: "var(--bg)" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <span style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#D85A30", fontWeight: 600 }}>Watch It Rise</span>
+            <h2 style={{ fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 700, margin: "6px 0 8px" }}>From bare ground to move-in ready</h2>
+            <p style={{ fontSize: 14, color: "var(--fg-secondary)" }}>Every building follows this journey. We manage every phase.</p>
+          </div>
+          <ConstructionAnimation autoPlay interval={4} height={340} />
         </div>
       </section>
 
