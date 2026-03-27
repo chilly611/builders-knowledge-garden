@@ -84,23 +84,25 @@ export default function CRMPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Killer App Header — warm/red chrome */}
-      <header style={{
-        padding: "16px 24px", borderBottom: "2px solid #E8443A20",
-        background: "linear-gradient(135deg, #E8443A08, #D85A3008)",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={36} height={36} style={{ borderRadius: 10 }} />
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>AEC CRM</div>
-            <div style={{ fontSize: 10, color: "var(--fg-secondary)", letterSpacing: 1 }}>KILLER APP · PIPELINE</div>
+      {/* Killer App Photo Hero — red chrome */}
+      <div style={{ position: "relative", height: 180, overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "url(https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=1400&q=80&fit=crop)",
+          backgroundSize: "cover", backgroundPosition: "center",
+        }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(232,68,58,0.4) 0%, rgba(0,0,0,0.75) 100%)" }} />
+        <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 24px 16px", maxWidth: 960, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Image src="/logo/b_transparent_512.png" alt="B" width={32} height={32} style={{ borderRadius: 8 }} />
+            <div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: 0 }}>AEC CRM</h1>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0 }}>Killer App · Pipeline Management</p>
+            </div>
           </div>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 4 }}>🔒 Private & Encrypted</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10, color: "var(--fg-tertiary)" }}>🔒 Private & Encrypted</span>
-        </div>
-      </header>
+      </div>
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 16px" }}>
         {/* Pipeline Stats Bar */}

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
+import { getImageForEntity } from "@/lib/image-service";
 
 const TYPE_META: Record<string, { icon: string; color: string; label: string }> = {
   building_code: { icon: "📋", color: "#D85A30", label: "Building Code" },
@@ -108,17 +109,29 @@ export default function EntityDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Breadcrumb */}
-      <div style={{ padding: "12px 24px", borderBottom: "1px solid var(--border, #e5e5e5)", fontSize: 12 }}>
-        <Link href="/knowledge" style={{ color: "var(--fg-tertiary)", textDecoration: "none" }}>🌿 Knowledge Garden</Link>
-        <span style={{ color: "var(--fg-tertiary)", margin: "0 6px" }}>›</span>
-        <span style={{ color: t.color, fontWeight: 500 }}>{t.icon} {t.label}</span>
+      {/* Photo Hero Banner */}
+      <div style={{ position: "relative", height: 200, overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: `url(${getImageForEntity(entity).url})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+        }} />
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, ${t.color}cc 100%)` }} />
+        <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "0 24px 20px", maxWidth: 800, margin: "0 auto" }}>
+          {/* Breadcrumb */}
+          <div style={{ fontSize: 12, marginBottom: 10 }}>
+            <Link href="/knowledge" style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none" }}>Knowledge Garden</Link>
+            <span style={{ color: "rgba(255,255,255,0.4)", margin: "0 6px" }}>›</span>
+            <span style={{ color: "#fff", fontWeight: 500 }}>{t.icon} {t.label}</span>
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.3, color: "#fff", margin: 0, textShadow: "0 1px 4px rgba(0,0,0,0.3)" }}>{title}</h1>
+        </div>
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
-        {/* Header */}
+        {/* Summary + meta badges */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <span style={{
               fontSize: 10, padding: "3px 10px", borderRadius: 8,
               background: `${t.color}15`, color: t.color, fontWeight: 600,
@@ -126,7 +139,6 @@ export default function EntityDetailPage() {
             {entity.category && <span style={{ fontSize: 10, color: "var(--fg-tertiary)" }}>· {entity.category}</span>}
             {entity.domain && <span style={{ fontSize: 10, color: "var(--fg-tertiary)" }}>· {entity.domain}</span>}
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 }}>{title}</h1>
           <p style={{ fontSize: 14, color: "var(--fg-secondary)", lineHeight: 1.6 }}>{summary}</p>
         </div>
 

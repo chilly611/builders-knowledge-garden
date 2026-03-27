@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
+import { getImageForEntityType } from "@/lib/image-service";
 
 interface Material {
   id: string; slug: string; title: string; summary: string;
@@ -52,21 +53,26 @@ export default function MarketplacePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <header style={{
-        padding: "16px 24px", borderBottom: "2px solid #378ADD20",
-        background: "linear-gradient(135deg, #378ADD08, #1D9E7508)",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={36} height={36} style={{ borderRadius: 10 }} />
+      {/* Photo Hero */}
+      <div style={{ position: "relative", height: 200, overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "url(https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1400&q=80&fit=crop)",
+          backgroundSize: "cover", backgroundPosition: "center",
+        }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)" }} />
+        <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", alignItems: "flex-end", padding: "0 24px 20px", maxWidth: 960, margin: "0 auto" }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>Marketplace</div>
-            <div style={{ fontSize: 10, color: "var(--fg-secondary)", letterSpacing: 1 }}>
-              {materials.length} MATERIALS · SUPPLIERS COMING SOON
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <Image src="/logo/b_transparent_512.png" alt="B" width={32} height={32} style={{ borderRadius: 8 }} />
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0 }}>Marketplace</h1>
             </div>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", margin: 0 }}>
+              {materials.length} materials · Suppliers, pricing & RFQ coming soon
+            </p>
           </div>
         </div>
-      </header>
+      </div>
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 16px" }}>
         {/* Coming soon banner */}
@@ -105,14 +111,26 @@ export default function MarketplacePage() {
               const grade = meta.sustainability_grade || "";
               return (
                 <Link key={mat.id} href={`/knowledge/${mat.slug}`} style={{
-                  padding: "14px 16px", borderRadius: 14, textDecoration: "none", color: "inherit",
+                  borderRadius: 14, textDecoration: "none", color: "inherit", overflow: "hidden",
                   border: "1px solid var(--border, #e5e5e5)", background: "var(--bg, #fff)",
-                  transition: "all 0.15s", display: "block",
+                  transition: "all 0.2s", display: "block",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#378ADD"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(55,138,221,0.12)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#378ADD"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(55,138,221,0.12)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border, #e5e5e5)"; e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{mat.title}</div>
+                  {/* Material texture image */}
+                  <div style={{
+                    height: 80, position: "relative", overflow: "hidden",
+                    backgroundImage: `url(${getImageForEntityType("material").url})`,
+                    backgroundSize: "cover", backgroundPosition: "center",
+                  }}>
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(55,138,221,0.7) 100%)" }} />
+                    {csi && <div style={{ position: "absolute", bottom: 6, left: 10, zIndex: 2 }}>
+                      <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 8, background: "rgba(255,255,255,0.9)", color: "#378ADD", fontWeight: 600 }}>CSI {String(csi)}</span>
+                    </div>}
+                  </div>
+                  <div style={{ padding: "12px 16px 14px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{mat.title}</div>
                   <div style={{ fontSize: 11, color: "var(--fg-secondary)", lineHeight: 1.5, marginBottom: 8,
                     display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
                   }}>{mat.summary}</div>
@@ -124,6 +142,7 @@ export default function MarketplacePage() {
                       color: grade === "A" ? "#22C55E" : grade === "B" ? "#60A5FA" : grade === "C" ? "#F59E0B" : "#EF4444",
                       fontWeight: 600,
                     }}>🌱 {String(grade)}</span>}
+                  </div>
                   </div>
                 </Link>
               );
