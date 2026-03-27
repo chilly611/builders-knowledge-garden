@@ -113,7 +113,7 @@ export default function EntityDetailPage() {
       <div style={{ position: "relative", height: 200, overflow: "hidden" }}>
         <div style={{
           position: "absolute", inset: 0,
-          backgroundImage: `url(${getImageForEntity(entity).url})`,
+          backgroundImage: `url(${getImageForEntity({ entity_type: entity.entity_type, slug: entity.slug, title: jsonText(entity.title) }).url})`,
           backgroundSize: "cover", backgroundPosition: "center",
         }} />
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, ${t.color}cc 100%)` }} />

@@ -38,11 +38,31 @@
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
 }
 
 * { box-sizing: border-box; }
+
+/* ═══ GLOBAL TEXT SAFETY NET — prevent white-on-white everywhere ═══ */
+h1, h2, h3, h4, h5, h6 { color: var(--fg); }
+p { color: var(--fg-secondary); }
+a { color: inherit; }
+button { color: var(--fg); font-family: inherit; }
+input, select, textarea { color: var(--fg); font-family: inherit; background: var(--bg); }
+::placeholder { color: var(--fg-tertiary); }
+label { color: var(--fg-secondary); }
+span { color: inherit; }
+/* Ensure all text on white backgrounds is visible */
+div { color: inherit; }
+/* Links on photo overlays stay white */
+[style*="rgba(0,0,0"] a, [style*="rgba(0,0,0"] span, [style*="rgba(0,0,0"] div { color: inherit; }
+/* Fix Tailwind text-white utility on light backgrounds */
+.text-white { color: #ffffff !important; }
+
+/* ═══ Archivo font applied to EVERYTHING ═══ */
+*, *::before, *::after { font-family: var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif; }
 
 /* Phase colors */
 .phase-dream { --phase: #D85A30; }

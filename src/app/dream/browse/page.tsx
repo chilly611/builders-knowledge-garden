@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Archivo_Black, Archivo } from "next/font/google";
 import CopilotPanel from "@/components/CopilotPanel";
 import { ARCHITECTURE_STYLES, ArchStyle } from "@/lib/architecture-styles";
+import { getImageForEntity } from "@/lib/image-service";
 
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
 const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
@@ -264,27 +265,40 @@ export default function BrowseDreamPage() {
               const isSaved = savedIds.includes(card.id);
               return (
                 <div key={card.id} className="browse-card" style={{ animation: `cardSlide 0.4s ease ${Math.min(i * 0.05, 0.5)}s backwards` }}>
-                  {/* Color palette header */}
-                  <div style={{ display: "flex", height: 6 }}>
-                    {card.palette.map((c, j) => (
-                      <div key={j} style={{ flex: 1, background: c }} />
-                    ))}
-                  </div>
-                  {/* Card visual area */}
-                  <div style={{ padding: "20px 16px 16px", position: "relative" }}>
-                    {/* Type badge + save */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <span className={archivo.className} style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", fontWeight: 600 }}>{card.type}</span>
-                      <button onClick={(e) => { e.stopPropagation(); toggleSave(card.id); }} style={{
-                        background: "none", border: "none", fontSize: "1.1rem", cursor: "pointer",
-                        transition: "transform 0.2s",
-                        animation: justSaved === card.id ? "heartPop 0.4s ease" : "none",
-                      }}>{isSaved ? "❤️" : "🤍"}</button>
+                  {/* Photo header */}
+                  <div style={{ position: "relative", height: 140, overflow: "hidden" }}>
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${getImageForEntity({ entity_type: card.type === "style" ? "architectural_style" : card.type === "material" ? "material" : "building_type", slug: card.slug || card.id, title: card.title }).url})`,
+                      backgroundSize: "cover", backgroundPosition: "center",
+                      transition: "transform 0.4s ease",
+                    }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.6) 100%)" }} />
+                    {/* Save button */}
+                    <button onClick={(e) => { e.stopPropagation(); toggleSave(card.id); }} style={{
+                      position: "absolute", top: 10, right: 10, zIndex: 3,
+                      width: 32, height: 32, borderRadius: "50%",
+                      background: isSaved ? "rgba(232,68,58,0.9)" : "rgba(0,0,0,0.4)",
+                      backdropFilter: "blur(4px)", border: "none", fontSize: 14,
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      animation: justSaved === card.id ? "heartPop 0.4s ease" : "none",
+                      color: "#fff",
+                    }}>{isSaved ? "♥" : "♡"}</button>
+                    {/* Type badge */}
+                    <div style={{ position: "absolute", bottom: 10, left: 12, zIndex: 2 }}>
+                      <span className={archivo.className} style={{ fontSize: 10, padding: "3px 10px", borderRadius: 8, background: "rgba(255,255,255,0.9)", color: "#444", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{card.type}</span>
                     </div>
-                    {/* Emoji + title */}
-                    <div style={{ fontSize: "2rem", marginBottom: 8 }}>{card.emoji}</div>
+                    {/* Palette strip at bottom edge */}
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", height: 3 }}>
+                      {card.palette.map((c, j) => (
+                        <div key={j} style={{ flex: 1, background: c }} />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Text content */}
+                  <div style={{ padding: "14px 16px 16px" }}>
                     <h3 className={archivo.className} style={{ fontSize: "1rem", color: "#222", fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{card.title}</h3>
-                    <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#666", fontWeight: 300, marginBottom: 12, lineHeight: 1.4 }}>{card.subtitle}</p>
+                    <p className={archivo.className} style={{ fontSize: "0.78rem", color: "#666", fontWeight: 300, marginBottom: 10, lineHeight: 1.4 }}>{card.subtitle}</p>
 
                     {/* Material tags */}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
@@ -304,7 +318,7 @@ export default function BrowseDreamPage() {
                     </div>
 
                     {/* Build this */}
-                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", gap: 6 }}>
+                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #e8e8e8", display: "flex", gap: 6 }}>
                       {card.slug && (
                         <Link href={`/knowledge/${card.slug}`} className={archivo.className} style={{ padding: "5px 10px", borderRadius: 8, background: "rgba(29,158,117,0.08)", border: "1px solid rgba(29,158,117,0.15)", color: "#1D9E75", fontSize: "0.65rem", fontWeight: 500, textDecoration: "none" }}>Learn More</Link>
                       )}

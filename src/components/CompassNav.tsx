@@ -78,21 +78,20 @@ function DesktopSidebar() {
         borderRight: "1px solid var(--border, #e5e5e5)",
         display: "flex", flexDirection: "column",
         transition: "width 0.25s cubic-bezier(0.34,1.56,0.64,1)",
-        overflow: "hidden",
+        overflowX: "hidden", overflowY: "auto",
       }}
     >
       {/* Logo / Home */}
       <Link href="/" style={{
         display: "flex", alignItems: "center", gap: 10,
-        padding: "16px 16px", textDecoration: "none", color: "inherit",
-        borderBottom: "1px solid var(--border, #e5e5e5)", minHeight: 60,
+        padding: "14px 12px", textDecoration: "none", color: "inherit",
+        borderBottom: "1px solid var(--border, #e5e5e5)", minHeight: 56,
       }}>
         <div style={{
-          width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+          width: 36, height: 36, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          overflow: "hidden",
         }}>
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={32} height={32} style={{ objectFit: "contain" }} />
+          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={34} height={34} style={{ objectFit: "contain" }} />
         </div>
         {showExpanded && (
           <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>

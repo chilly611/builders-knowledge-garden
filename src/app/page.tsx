@@ -80,6 +80,7 @@ export default function Home() {
   const router = useRouter();
   const [heroSearch, setHeroSearch] = useState("");
   const [heroIdx, setHeroIdx] = useState(0);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
   const stats = useInView(0.2);
   const phases = useInView(0.15);
   const products = useInView(0.15);
@@ -90,6 +91,13 @@ export default function Home() {
   useEffect(() => {
     const t = setInterval(() => setHeroIdx(i => (i + 1) % HERO_GALLERY.length), 6000);
     return () => clearInterval(t);
+  }, []);
+
+  // Detect first-time visitors
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("bkg-lane")) {
+      setIsFirstVisit(true);
+    }
   }, []);
 
   // Auto-cycle phases
@@ -176,6 +184,18 @@ export default function Home() {
               style={{ flex: 1, padding: "12px 20px", borderRadius: 24, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "#fff", fontSize: 14, outline: "none", backdropFilter: "blur(8px)" }} />
             <button type="submit" style={{ padding: "12px 20px", borderRadius: 24, background: "#1D9E75", color: "#fff", border: "none", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>Search</button>
           </form>
+
+          {/* First-time user nudge */}
+          {isFirstVisit && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2, duration: 0.5 }}
+              style={{ marginTop: 20, padding: "12px 24px", borderRadius: 16, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", backdropFilter: "blur(8px)", display: "inline-flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 18 }}>👋</span>
+              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>First time here?</span>
+              <Link href="/onboard" style={{ color: "#5DCAA5", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                Let us guide you →
+              </Link>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Scroll indicator */}
