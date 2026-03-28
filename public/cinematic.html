@@ -29,20 +29,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff}
 .skip-btn.visible{opacity:1;pointer-events:auto}
 .skip-btn:hover{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.25)}
 .logo-mark{position:absolute;top:28px;left:28px;z-index:20;width:32px;height:32px;border-radius:10px;background:rgba(29,158,117,0.2);border:1px solid rgba(29,158,117,0.4);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--garden-light);opacity:0.5}
-.quiz{flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:linear-gradient(180deg,#080808 0%,#0f0f0f 100%)}
+.quiz{flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:linear-gradient(180deg,#080808 0%,#0f0f0f 100%);overflow-y:auto}
 .quiz-inner{max-width:1060px;width:100%;text-align:center;opacity:0;animation:quizIn 0.85s var(--ease-out) forwards}
 @keyframes quizIn{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
 .step-label{font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--garden-light);margin-bottom:14px;font-weight:600}
-.quiz-question{font-family:'Archivo Black',sans-serif;font-size:clamp(26px,5vw,52px);line-height:1.08;margin-bottom:48px}
-.path-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-@media(max-width:900px){.path-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:500px){.path-grid{grid-template-columns:1fr;max-width:400px;margin:0 auto}}
+.quiz-question{font-family:'Archivo Black',sans-serif;font-size:clamp(26px,5vw,52px);line-height:1.08;margin-bottom:40px}
+.path-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:900px){.path-grid{grid-template-columns:1fr 1fr}.path-grid .path-card:nth-child(3){grid-column:span 2}}
+@media(max-width:500px){.path-grid{grid-template-columns:1fr}.path-grid .path-card:nth-child(3){grid-column:span 1}}
 .path-card{border-radius:var(--radius);overflow:hidden;background:var(--surface-2);cursor:pointer;position:relative;transition:all 0.45s var(--ease-out);opacity:0;animation:cardUp 0.7s var(--ease-out) forwards}
-.path-card:nth-child(1){animation-delay:0.15s}.path-card:nth-child(2){animation-delay:0.25s}.path-card:nth-child(3){animation-delay:0.35s}.path-card:nth-child(4){animation-delay:0.45s}
+.path-card:nth-child(1){animation-delay:0.15s}.path-card:nth-child(2){animation-delay:0.25s}.path-card:nth-child(3){animation-delay:0.35s}
 @keyframes cardUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
 .path-card:hover{transform:translateY(-10px) scale(1.02);box-shadow:0 30px 80px rgba(0,0,0,0.6)}
 .path-card:hover .path-card-glow{opacity:1}.path-card:hover .path-card-img{transform:scale(1.08)}.path-card:active{transform:scale(0.97)}
-.path-card-glow{position:absolute;inset:-2px;border-radius:calc(var(--radius) + 2px);background:linear-gradient(135deg,var(--garden-glow),rgba(93,202,165,0.25));opacity:0;transition:opacity 0.35s;z-index:0}
+.path-card-glow{position:absolute;inset:-2px;border-radius:calc(var(--radius)+2px);background:linear-gradient(135deg,var(--garden-glow),rgba(93,202,165,0.25));opacity:0;transition:opacity 0.35s;z-index:0}
 .path-card-inner{position:relative;z-index:1}
 .path-card-img-wrap{height:220px;position:relative;overflow:hidden}
 .path-card-img{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform 0.7s var(--ease-out)}
@@ -50,6 +50,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff}
 .path-card-icon{position:absolute;top:16px;right:16px;width:42px;height:42px;border-radius:12px;background:rgba(29,158,117,0.15);backdrop-filter:blur(12px);border:1px solid rgba(29,158,117,0.25);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--garden-light);transition:all 0.3s}
 .path-card:hover .path-card-icon{background:rgba(29,158,117,0.35);border-color:rgba(29,158,117,0.6);transform:scale(1.1)}
 .path-card-text{padding:22px 22px 28px}.path-card-text h3{font-size:19px;font-weight:700;margin-bottom:6px;line-height:1.2;color:#fff}.path-card-text p{font-size:13px;color:var(--text-dim);line-height:1.45}
+
+/* ═══ EXPLORE CARD — full width surrealist collage ═══ */
+.explore-card{margin-top:18px;border-radius:var(--radius);overflow:hidden;background:var(--surface-2);cursor:pointer;position:relative;transition:all 0.45s var(--ease-out);opacity:0;animation:cardUp 0.7s var(--ease-out) 0.5s forwards;display:flex;min-height:180px}
+.explore-card:hover{transform:translateY(-8px) scale(1.01);box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+.explore-card:hover .explore-glow{opacity:1}
+.explore-glow{position:absolute;inset:-2px;border-radius:calc(var(--radius)+2px);background:linear-gradient(135deg,rgba(29,158,117,0.4),rgba(93,202,165,0.2),rgba(29,158,117,0.3));opacity:0;transition:opacity 0.35s;z-index:0}
+.explore-inner{position:relative;z-index:1;display:flex;width:100%}
+.explore-collage{flex:1;position:relative;overflow:hidden;min-height:180px}
+.collage-item{position:absolute;background-size:cover;background-position:center;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:transform 0.6s var(--ease-out)}
+.explore-card:hover .collage-item{filter:brightness(1.1)}
+.explore-text-area{width:340px;flex-shrink:0;padding:32px 36px;display:flex;flex-direction:column;justify-content:center;z-index:2;position:relative}
+.explore-text-area::before{content:'';position:absolute;left:0;top:10%;bottom:10%;width:1px;background:linear-gradient(180deg,transparent,rgba(29,158,117,0.3),transparent)}
+.explore-text-area h3{font-family:'Archivo Black',sans-serif;font-size:24px;line-height:1.15;margin-bottom:10px;color:#fff}
+.explore-text-area p{font-size:14px;color:var(--text-dim);line-height:1.5}
+.explore-text-area .explore-icon{width:48px;height:48px;border-radius:14px;background:rgba(29,158,117,0.15);border:1px solid rgba(29,158,117,0.25);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+@media(max-width:700px){.explore-inner{flex-direction:column}.explore-text-area{width:100%;padding:20px 24px}.explore-collage{min-height:200px}.explore-text-area::before{display:none}}
+
 .goal-list{display:flex;flex-direction:column;gap:14px;max-width:640px;margin:0 auto;text-align:left}
 .goal-card{display:flex;align-items:center;gap:20px;padding:24px 28px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(20px);cursor:pointer;transition:all 0.4s var(--ease-out);opacity:0;animation:cardUp 0.6s var(--ease-out) forwards}
 .goal-card:nth-child(1){animation-delay:0.1s}.goal-card:nth-child(2){animation-delay:0.2s}.goal-card:nth-child(3){animation-delay:0.3s}
@@ -89,7 +106,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff}
     <div class="logo-mark">B</div>
   </div>
   <div class="phase quiz" id="phase-quiz1">
-    <div class="quiz-inner"><div class="step-label">Step 1 of 2</div><h2 class="quiz-question">What brings you here?</h2><div class="path-grid" id="path-grid"></div></div>
+    <div class="quiz-inner">
+      <div class="step-label">Step 1 of 2</div>
+      <h2 class="quiz-question">What brings you here?</h2>
+      <div class="path-grid" id="path-grid"></div>
+      <div class="explore-card" id="explore-card" onclick="selectPath('explore')">
+        <div class="explore-glow"></div>
+        <div class="explore-inner">
+          <div class="explore-collage" id="explore-collage"></div>
+          <div class="explore-text-area">
+            <div class="explore-icon">&#127807;</div>
+            <h3>Explore the Garden</h3>
+            <p>Learning, scientific insights, and deep research into the $17 trillion construction economy. Codes, materials, methods, standards &mdash; the most complete construction knowledge base on earth.</p>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="logo-mark">B</div>
   </div>
   <div class="phase quiz" id="phase-quiz2">
@@ -102,11 +134,64 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff}
   </div>
 </div>
 <script>
-var SCENES=[{image:"https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1920&q=85&fit=crop",headline:"Every great building",sub:""},{image:"https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=85&fit=crop",headline:"started as a dream",sub:""},{image:"https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&q=85&fit=crop",headline:"We make the journey",sub:"from dream to reality"},{image:"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=85&fit=crop",headline:"effortless",sub:""}];
-var PATHS=[{id:"dream",label:"I have a dream",sub:"I want to build something amazing",image:"https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=900&q=85&fit=crop",icon:"&#10022;"},{id:"build",label:"I build for a living",sub:"Contractor, tradesperson, developer",image:"https://images.unsplash.com/photo-1429497419816-9ca5cfb4571a?w=900&q=85&fit=crop",icon:"&#9889;"},{id:"supply",label:"I supply the industry",sub:"Materials, design, engineering",image:"https://images.unsplash.com/photo-1530982011887-3cc11cc85693?w=900&q=85&fit=crop",icon:"&#9670;"},{id:"explore",label:"Explore the garden",sub:"Learning, scientific insights, research",image:"https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=900&q=85&fit=crop",icon:"&#127807;"}];
-var GOALS={dream:[{id:"describe",label:"Describe my dream",sub:"AI brings it to life in 60 seconds",icon:"&#128173;"},{id:"browse",label:"Get inspired",sub:"Browse stunning architecture",icon:"&#128247;"},{id:"cost",label:"What will it cost?",sub:"Instant AI estimate",icon:"&#9672;"}],build:[{id:"launch",label:"Launch a project",sub:"Full AI dashboard in 30 seconds",icon:"&#128640;"},{id:"codes",label:"Look up a code",sub:"IBC, NEC, OSHA - any jurisdiction",icon:"&#128203;"},{id:"pipeline",label:"Manage my pipeline",sub:"CRM built for construction",icon:"&#9889;"}],supply:[{id:"list",label:"List my products",sub:"Reach builders who need you",icon:"&#127978;"},{id:"connect",label:"Find contractors",sub:"Connect with your market",icon:"&#129309;"},{id:"platform",label:"Browse the platform",sub:"500+ knowledge entities",icon:"&#129504;"}],explore:[{id:"knowledge",label:"Browse the knowledge base",sub:"Codes, materials, methods, standards",icon:"&#128218;"},{id:"copilot",label:"Ask the AI Copilot",sub:"Any construction question, cited answer",icon:"&#129504;"},{id:"styles",label:"Explore architecture",sub:"30 architectural styles with deep dives",icon:"&#127963;"}]};
+var SCENES=[
+  {image:"https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1920&q=85&fit=crop",headline:"Every great building",sub:""},
+  {image:"https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=85&fit=crop",headline:"started as a dream",sub:""},
+  {image:"https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&q=85&fit=crop",headline:"We make the journey",sub:"from dream to reality"},
+  {image:"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=85&fit=crop",headline:"effortless",sub:""}
+];
+var PATHS=[
+  {id:"dream",label:"I have a dream",sub:"I want to build something amazing",image:"https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=900&q=85&fit=crop",icon:"&#10022;"},
+  {id:"build",label:"I build for a living",sub:"Contractor, tradesperson, developer",image:"https://images.unsplash.com/photo-1429497419816-9ca5cfb4571a?w=900&q=85&fit=crop",icon:"&#9889;"},
+  {id:"supply",label:"I supply the industry",sub:"Materials, design, engineering",image:"https://images.unsplash.com/photo-1530982011887-3cc11cc85693?w=900&q=85&fit=crop",icon:"&#9670;"}
+];
+
+// Surrealist collage items — tools/equipment at deliberately wrong scales
+var COLLAGE_ITEMS=[
+  {img:"https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=500&q=80&fit=crop",x:"0%",y:"0%",w:"35%",h:"100%",z:1,rot:0,label:"crane canopy"},
+  {img:"https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&q=80&fit=crop",x:"60%",y:"55%",w:"42%",h:"48%",z:5,rot:2,label:"drill corner"},
+  {img:"https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80&fit=crop",x:"30%",y:"5%",w:"38%",h:"50%",z:3,rot:-3,label:"heavy hammer"},
+  {img:"https://images.unsplash.com/photo-1590650153855-d9e808231d41?w=400&q=80&fit=crop",x:"20%",y:"50%",w:"30%",h:"45%",z:2,rot:1,label:"scaffolding"},
+  {img:"https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&q=80&fit=crop",x:"55%",y:"0%",w:"28%",h:"35%",z:4,rot:-1,label:"excavator tiny"},
+  {img:"https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=400&q=80&fit=crop",x:"82%",y:"10%",w:"20%",h:"30%",z:6,rot:4,label:"wiring compass"},
+  {img:"https://images.unsplash.com/photo-1517581177684-8dfe4cb2b01c?w=400&q=80&fit=crop",x:"42%",y:"60%",w:"22%",h:"35%",z:4,rot:-2,label:"steel beams"}
+];
+
+var GOALS={
+  dream:[{id:"describe",label:"Describe my dream",sub:"AI brings it to life in 60 seconds",icon:"&#128173;"},{id:"browse",label:"Get inspired",sub:"Browse stunning architecture",icon:"&#128247;"},{id:"cost",label:"What will it cost?",sub:"Instant AI estimate",icon:"&#9672;"}],
+  build:[{id:"launch",label:"Launch a project",sub:"Full AI dashboard in 30 seconds",icon:"&#128640;"},{id:"codes",label:"Look up a code",sub:"IBC, NEC, OSHA - any jurisdiction",icon:"&#128203;"},{id:"pipeline",label:"Manage my pipeline",sub:"CRM built for construction",icon:"&#9889;"}],
+  supply:[{id:"list",label:"List my products",sub:"Reach builders who need you",icon:"&#127978;"},{id:"connect",label:"Find contractors",sub:"Connect with your market",icon:"&#129309;"},{id:"platform",label:"Browse the platform",sub:"500+ knowledge entities",icon:"&#129504;"}],
+  explore:[{id:"knowledge",label:"Browse the knowledge base",sub:"Codes, materials, methods, standards",icon:"&#128218;"},{id:"copilot",label:"Ask the AI Copilot",sub:"Any construction question, cited answer",icon:"&#129504;"},{id:"styles",label:"Explore architecture",sub:"30 architectural styles with deep dives",icon:"&#127963;"}]
+};
 var LAUNCH_LABELS={describe:"Dream Builder",browse:"Inspiration Gallery",cost:"Project Launcher",launch:"Project Launcher",codes:"Knowledge Garden",pipeline:"CRM Pipeline",list:"Marketplace",connect:"CRM Pipeline",platform:"Knowledge Garden",knowledge:"Knowledge Garden",copilot:"AI Copilot",styles:"Architecture Explorer"};
 var currentScene=0,sceneTimer=null,progressTimer=null,startTime=Date.now(),chosenPath=null;
+
+// Build the surrealist collage
+function buildCollage(){
+  var c=document.getElementById("explore-collage");
+  c.innerHTML="";
+  // Dark base
+  var base=document.createElement("div");
+  base.style.cssText="position:absolute;inset:0;background:linear-gradient(135deg,#0a0f0a,#0f1510,#0a0d0a);";
+  c.appendChild(base);
+  // Items at surreal scales
+  for(var i=0;i<COLLAGE_ITEMS.length;i++){
+    var it=COLLAGE_ITEMS[i];
+    var d=document.createElement("div");
+    d.className="collage-item";
+    d.style.cssText="left:"+it.x+";top:"+it.y+";width:"+it.w+";height:"+it.h+";z-index:"+it.z+";background-image:url("+it.img+");transform:rotate("+it.rot+"deg);opacity:0.85;";
+    c.appendChild(d);
+  }
+  // Green tint overlay
+  var tint=document.createElement("div");
+  tint.style.cssText="position:absolute;inset:0;background:linear-gradient(135deg,rgba(29,158,117,0.15),transparent 60%,rgba(29,158,117,0.1));z-index:10;pointer-events:none;";
+  c.appendChild(tint);
+  // Vignette
+  var vig=document.createElement("div");
+  vig.style.cssText="position:absolute;inset:0;box-shadow:inset 0 0 80px rgba(0,0,0,0.7);z-index:11;pointer-events:none;";
+  c.appendChild(vig);
+}
+
 function showScene(idx){var s=SCENES[idx],bg=document.getElementById("scene-bg"),h1=document.getElementById("scene-headline"),sub=document.getElementById("scene-sub");bg.className="scene-bg exiting";setTimeout(function(){bg.style.backgroundImage="url("+s.image+")";h1.textContent=s.headline;sub.textContent=s.sub||"";h1.style.animation="none";h1.offsetHeight;h1.style.animation="";sub.style.animation="none";sub.offsetHeight;sub.style.animation="";bg.className="scene-bg entering"},650)}
 function startCinematic(){var s=SCENES[0];document.getElementById("scene-bg").style.backgroundImage="url("+s.image+")";document.getElementById("scene-headline").textContent=s.headline;document.getElementById("scene-sub").textContent=s.sub||"";setTimeout(function(){document.getElementById("skip-btn").classList.add("visible")},2500);var td=SCENES.length*2800;startTime=Date.now();progressTimer=setInterval(function(){var e=Date.now()-startTime;document.getElementById("progress-fill").style.width=Math.min(e/td*100,100)+"%"},40);sceneTimer=setInterval(function(){currentScene++;if(currentScene>=SCENES.length){clearInterval(sceneTimer);clearInterval(progressTimer);setTimeout(function(){goToPhase("phase-quiz1")},600);return}showScene(currentScene)},2800)}
 function skipToQuiz(){clearInterval(sceneTimer);clearInterval(progressTimer);goToPhase("phase-quiz1")}
@@ -116,7 +201,7 @@ function selectPath(id){chosenPath=id;setTimeout(function(){buildGoalCards(id);g
 function buildGoalCards(pid){var l=document.getElementById("goal-list");l.innerHTML="";var gs=GOALS[pid]||GOALS.explore;for(var i=0;i<gs.length;i++){(function(g){var c=document.createElement("div");c.className="goal-card";c.onclick=function(){selectGoal(g.id)};c.innerHTML='<div class="goal-icon">'+g.icon+'</div><div class="goal-text"><h3>'+g.label+'</h3><p>'+g.sub+'</p></div><div class="goal-arrow">&#8594;</div>';l.appendChild(c)})(gs[i])}}
 function selectGoal(id){document.getElementById("launch-label").textContent="Loading "+(LAUNCH_LABELS[id]||"your experience")+"...";goToPhase("phase-launch")}
 function goBackToStep1(){chosenPath=null;buildPathCards();goToPhase("phase-quiz1")}
-buildPathCards();startCinematic();
+buildPathCards();buildCollage();startCinematic();
 </script>
 </body>
 </html>
