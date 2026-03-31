@@ -1,359 +1,639 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import CopilotPanel from "@/components/CopilotPanel";
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
-const STAGES = [
-  { id: "new", label: "New", color: "#94A3B8", icon: "🆕" },
-  { id: "contacted", label: "Contacted", color: "#60A5FA", icon: "📞" },
-  { id: "qualified", label: "Qualified", color: "#A78BFA", icon: "✅" },
-  { id: "proposal", label: "Proposal", color: "#F59E0B", icon: "📄" },
-  { id: "negotiation", label: "Negotiating", color: "#F97316", icon: "🤝" },
-  { id: "won", label: "Won", color: "#22C55E", icon: "🏆" },
-  { id: "lost", label: "Lost", color: "#EF4444", icon: "❌" },
+/* ─── Types ─── */
+type ProjectPhase = 'DREAM' | 'DESIGN' | 'PLAN' | 'BUILD' | 'DELIVER' | 'GROW';
+type Urgency = 'red' | 'yellow' | 'green';
+
+interface Project {
+  id: string;
+  name: string;
+  phase: ProjectPhase;
+  progress: number;
+  budget: string;
+  budgetStatus: 'on-track' | 'over' | 'ahead';
+  riskLevel: 'low' | 'medium' | 'high';
+  nextMilestone: string;
+  daysUntil: number;
+  thumbnail: string;
+}
+
+interface AttentionItem {
+  id: string;
+  urgency: Urgency;
+  title: string;
+  project: string;
+  body: string;
+  options?: string[];
+}
+
+interface UpcomingEvent {
+  day: string;
+  time: string;
+  project: string;
+  type: string;
+  icon: string;
+}
+
+interface PaymentItem {
+  label: string;
+  amount: string;
+  direction: 'in' | 'out';
+  date: string;
+}
+
+/* ─── Constants ─── */
+const PHASE_COLORS: Record<ProjectPhase, string> = {
+  DREAM: '#D85A30',
+  DESIGN: '#7F77DD',
+  PLAN: '#1D9E75',
+  BUILD: '#378ADD',
+  DELIVER: '#BA7517',
+  GROW: '#639922',
+};
+
+const URGENCY_COLORS: Record<Urgency, string> = {
+  red: '#EF4444',
+  yellow: '#F59E0B',
+  green: '#22C55E',
+};
+
+const URGENCY_EMOJI: Record<Urgency, string> = {
+  red: '🔴',
+  yellow: '🟡',
+  green: '🟢',
+};
+
+/* ─── Demo Data ─── */
+const PROJECTS: Project[] = [
+  {
+    id: 'p-ocean', name: 'Oceanview Residence', phase: 'BUILD', progress: 62,
+    budget: '$1.2M', budgetStatus: 'on-track', riskLevel: 'medium',
+    nextMilestone: 'Framing inspection', daysUntil: 4,
+    thumbnail: '🏠',
+  },
+  {
+    id: 'p-downtown', name: 'Downtown Mixed-Use', phase: 'PLAN', progress: 15,
+    budget: '$8.5M', budgetStatus: 'over', riskLevel: 'high',
+    nextMilestone: 'Permit submission', daysUntil: 12,
+    thumbnail: '🏢',
+  },
+  {
+    id: 'p-hill', name: 'Hillside Renovation', phase: 'DESIGN', progress: 30,
+    budget: '$420K', budgetStatus: 'on-track', riskLevel: 'low',
+    nextMilestone: 'Client design review', daysUntil: 7,
+    thumbnail: '🏡',
+  },
+  {
+    id: 'p-tech', name: 'Tech Campus Phase 2', phase: 'BUILD', progress: 85,
+    budget: '$24M', budgetStatus: 'ahead', riskLevel: 'low',
+    nextMilestone: 'Mechanical rough-in', daysUntil: 2,
+    thumbnail: '🏗️',
+  },
+  {
+    id: 'p-beach', name: 'Beachfront Duplex', phase: 'DELIVER', progress: 95,
+    budget: '$680K', budgetStatus: 'on-track', riskLevel: 'low',
+    nextMilestone: 'Final walkthrough', daysUntil: 3,
+    thumbnail: '🏖️',
+  },
 ];
 
-const TEMPS = [
-  { id: "hot", label: "Hot", color: "#EF4444", icon: "🔥" },
-  { id: "warm", label: "Warm", color: "#F59E0B", icon: "☀️" },
-  { id: "cool", label: "Cool", color: "#60A5FA", icon: "🌤️" },
-  { id: "cold", label: "Cold", color: "#94A3B8", icon: "❄️" },
+const ATTENTION_ITEMS: AttentionItem[] = [
+  {
+    id: 'a1', urgency: 'red', title: 'Steel delivery delayed 2 weeks',
+    project: 'Oceanview Residence',
+    body: 'Impact: 5-day schedule slip. Supplier flagged port congestion.',
+    options: ['Expedite (+$2,400)', 'Substitute material', 'Adjust sequence'],
+  },
+  {
+    id: 'a2', urgency: 'yellow', title: 'Permit expiring in 5 days',
+    project: 'Downtown Mixed-Use',
+    body: 'Building permit renewal required. Extension application ready to submit.',
+  },
+  {
+    id: 'a3', urgency: 'yellow', title: 'Change order unsigned — 4 days',
+    project: 'Hillside Renovation',
+    body: 'Client has not responded to CO #3 (kitchen layout revision, +$12K).',
+  },
+  {
+    id: 'a4', urgency: 'green', title: 'Inspection passed',
+    project: 'Tech Campus Phase 2',
+    body: 'Electrical rough-in passed. Ready for drywall phase.',
+  },
+  {
+    id: 'a5', urgency: 'red', title: 'Budget variance alert — 12% over',
+    project: 'Downtown Mixed-Use',
+    body: 'Concrete costs $102K over estimate. Price escalation + quantity overrun.',
+    options: ['VE options', 'Renegotiate', 'Client approval'],
+  },
+  {
+    id: 'a6', urgency: 'yellow', title: 'Weather alert — rain Thursday',
+    project: 'Oceanview Residence',
+    body: 'Foundation pour scheduled Thursday. 80% chance of rain.',
+    options: ['Reschedule to Friday', 'Proceed with tarp', 'Delay 1 week'],
+  },
+  {
+    id: 'a7', urgency: 'green', title: 'Payment received — $68K',
+    project: 'Beachfront Duplex',
+    body: 'Draw #4 cleared. All project payments current.',
+  },
 ];
 
-interface Contact {
-  id: string; first_name: string; last_name?: string; company?: string;
-  email?: string; phone?: string; contact_type: string; stage: string;
-  temperature: string; project_type?: string; project_location?: string;
-  estimated_value?: number; lead_score: number; notes?: string;
-  tags: string[]; created_at: string; updated_at: string;
-  last_contact_at?: string; next_followup?: string; activity_count?: number;
+const UPCOMING_EVENTS: UpcomingEvent[] = [
+  { day: 'Mon', time: '9:00 AM', project: 'Tech Campus', type: 'Safety meeting', icon: '🦺' },
+  { day: 'Tue', time: '10:30 AM', project: 'Oceanview', type: 'Steel delivery', icon: '🚛' },
+  { day: 'Wed', time: '2:00 PM', project: 'Hillside', type: 'Client meeting', icon: '🤝' },
+  { day: 'Thu', time: '8:00 AM', project: 'Oceanview', type: 'Foundation pour', icon: '🏗️' },
+  { day: 'Fri', time: '11:00 AM', project: 'Beachfront', type: 'Final walkthrough', icon: '✅' },
+];
+
+const WEATHER_FORECAST = [
+  { day: 'Mon', icon: '☀️', high: 72, condition: 'Clear' },
+  { day: 'Tue', icon: '⛅', high: 68, condition: 'Partly cloudy' },
+  { day: 'Wed', icon: '☀️', high: 74, condition: 'Sunny' },
+  { day: 'Thu', icon: '🌧️', high: 61, condition: 'Rain — 80%' },
+  { day: 'Fri', icon: '⛅', high: 66, condition: 'Clearing' },
+];
+
+const PAYMENTS: PaymentItem[] = [
+  { label: 'Beachfront draw #5', amount: '$72K', direction: 'in', date: 'Apr 2' },
+  { label: 'Tech Campus draw #8', amount: '$180K', direction: 'in', date: 'Apr 5' },
+  { label: 'Oceanview draw #4', amount: '$95K', direction: 'in', date: 'Apr 8' },
+  { label: 'Concrete supplier', amount: '$48K', direction: 'out', date: 'Apr 1' },
+  { label: 'Steel order (Oceanview)', amount: '$32K', direction: 'out', date: 'Apr 3' },
+  { label: 'Electrical sub', amount: '$28K', direction: 'out', date: 'Apr 7' },
+];
+
+/* ─── Utility Components ─── */
+function MetricCard({ label, value, sub, trend }: {
+  label: string; value: string; sub?: string; trend?: 'up' | 'down' | 'neutral';
+}) {
+  const trendColor = trend === 'up' ? '#22C55E' : trend === 'down' ? '#EF4444' : '#94A3B8';
+  return (
+    <div style={{
+      flex: '1 1 0',
+      minWidth: 140,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 12,
+      padding: '16px 18px',
+    }}>
+      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, fontWeight: 600 }}>
+        {label}
+      </p>
+      <p style={{ fontSize: '28px', fontWeight: 800, margin: '6px 0 0', color: '#fff', letterSpacing: '-1px' }}>
+        {value}
+      </p>
+      {sub && (
+        <p style={{ fontSize: '12px', margin: '4px 0 0', color: trendColor, fontWeight: 600 }}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
 }
 
-interface PipelineStats {
-  pipeline: Record<string, { count: number; value: number }>;
-  totals: { contacts: number; total_value: number; avg_score: number; hot: number; needs_followup: number };
+function ProgressBar({ percent, color }: { percent: number; color: string }) {
+  return (
+    <div style={{
+      width: '100%', height: 6, borderRadius: 3,
+      background: 'rgba(255,255,255,0.08)',
+      overflow: 'hidden',
+    }}>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${percent}%` }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        style={{
+          height: '100%', borderRadius: 3,
+          background: `linear-gradient(90deg, ${color}, ${color}CC)`,
+        }}
+      />
+    </div>
+  );
 }
 
-function formatCurrency(n: number) {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
+function PhaseIndicator({ phase }: { phase: ProjectPhase }) {
+  const phases: ProjectPhase[] = ['DREAM', 'DESIGN', 'PLAN', 'BUILD', 'DELIVER', 'GROW'];
+  const idx = phases.indexOf(phase);
+  return (
+    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+      {phases.map((p, i) => (
+        <div key={p} style={{
+          width: i <= idx ? 16 : 8,
+          height: 4,
+          borderRadius: 2,
+          background: i <= idx ? PHASE_COLORS[p] : 'rgba(255,255,255,0.1)',
+          transition: 'all 0.3s ease',
+        }} />
+      ))}
+      <span style={{
+        fontSize: '10px', fontWeight: 700, color: PHASE_COLORS[phase],
+        marginLeft: 6, letterSpacing: '0.5px',
+      }}>
+        {phase}
+      </span>
+    </div>
+  );
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  return `${Math.floor(days / 7)}w ago`;
-}
+/* ─── Main Page ─── */
+export default function CommandCenterPage() {
+  const [expandedAttention, setExpandedAttention] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-export default function CRMPage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [stats, setStats] = useState<PipelineStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { setMounted(true); }, []);
 
-  // Fetch data
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/v1/crm").then(r => r.json()),
-      fetch("/api/v1/crm?stats=1").then(r => r.json()),
-    ]).then(([contactData, statsData]) => {
-      setContacts(contactData.contacts || []);
-      setStats(statsData);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  if (!mounted) return null;
 
-  const filtered = contacts.filter(c => {
-    if (filter !== "all" && c.stage !== filter) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return c.first_name.toLowerCase().includes(q) ||
-        (c.last_name || "").toLowerCase().includes(q) ||
-        (c.company || "").toLowerCase().includes(q);
-    }
-    return true;
-  });
+  const redCount = ATTENTION_ITEMS.filter(i => i.urgency === 'red').length;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Killer App Photo Hero — red chrome */}
-      <div style={{ position: "relative", height: 180, overflow: "hidden" }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: "url(https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=1400&q=80&fit=crop)",
-          backgroundSize: "cover", backgroundPosition: "center",
-        }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(232,68,58,0.4) 0%, rgba(0,0,0,0.75) 100%)" }} />
-        <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 24px 16px", maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Image src="/logo/b_transparent_512.png" alt="B" width={32} height={32} style={{ borderRadius: 8 }} />
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: 0 }}>AEC CRM</h1>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0 }}>Killer App · Pipeline Management</p>
-            </div>
-          </div>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 4 }}>🔒 Private & Encrypted</span>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 16px" }}>
-        {/* Pipeline Stats Bar */}
-        {stats && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
-            {[
-              { label: "Total Pipeline", value: formatCurrency(stats.totals.total_value), sub: `${stats.totals.contacts} contacts`, color: "#E8443A" },
-              { label: "Avg Lead Score", value: `${stats.totals.avg_score}`, sub: "out of 100", color: "#7F77DD" },
-              { label: "Hot Leads", value: `${stats.totals.hot}`, sub: "need attention", color: "#EF4444" },
-              { label: "Follow-ups Due", value: `${stats.totals.needs_followup}`, sub: "overdue", color: "#F59E0B" },
-              { label: "Won This Month", value: formatCurrency(stats.pipeline.won?.value || 0), sub: `${stats.pipeline.won?.count || 0} deals`, color: "#22C55E" },
-            ].map((s, i) => (
-              <div key={i} style={{
-                padding: "14px 12px", borderRadius: 12,
-                border: "1px solid var(--border, #e5e5e5)",
-                background: "var(--bg, #fff)",
-              }}>
-                <div style={{ fontSize: 22, fontWeight: 600, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: 11, fontWeight: 500, marginTop: 2 }}>{s.label}</div>
-                <div style={{ fontSize: 9, color: "var(--fg-tertiary)" }}>{s.sub}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pipeline Kanban Bar */}
-        {stats && (
-          <div style={{ display: "flex", gap: 3, marginBottom: 16, borderRadius: 10, overflow: "hidden" }}>
-            {STAGES.map(s => {
-              const data = stats.pipeline[s.id];
-              const total = stats.totals.contacts || 1;
-              const pct = ((data?.count || 0) / total) * 100;
-              return (
-                <button key={s.id} onClick={() => setFilter(filter === s.id ? "all" : s.id)}
-                  style={{
-                    flex: Math.max(pct, 8), padding: "8px 6px", border: "none", cursor: "pointer",
-                    background: filter === s.id ? s.color : `${s.color}30`,
-                    color: filter === s.id ? "#fff" : s.color,
-                    fontSize: 9, fontWeight: 600, textAlign: "center",
-                    transition: "all 0.2s", borderRadius: 4,
-                  }}>
-                  {s.icon} {data?.count || 0}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Search + Filter row */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-          <input
-            ref={searchRef} type="text" placeholder="Search contacts..."
-            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            style={{
-              flex: 1, padding: "10px 14px", borderRadius: 10,
-              border: "1px solid var(--border, #e5e5e5)", background: "var(--bg, #fff)",
-              fontSize: 13, color: "var(--fg)", outline: "none",
-            }}
-          />
-          <div style={{ display: "flex", gap: 4 }}>
-            {TEMPS.map(t => (
-              <button key={t.id} onClick={() => setFilter(filter === t.id ? "all" : t.id)}
-                style={{
-                  padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
-                  background: filter === t.id ? t.color : "var(--bg-hover, #f5f5f5)",
-                  color: filter === t.id ? "#fff" : "var(--fg-secondary)",
-                  fontSize: 10, fontWeight: 500, transition: "all 0.15s",
-                }}>{t.icon}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick guidance — what you can do from here */}
-        {!loading && contacts.length > 0 && (
-          <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
-            {[
-              { icon: "➕", label: "Add Contact", color: "#E8443A" },
-              { icon: "📄", label: "Generate Proposal", color: "#7F77DD" },
-              { icon: "📊", label: "Pipeline Report", color: "#1D9E75" },
-              { icon: "📥", label: "Import CSV", color: "#378ADD" },
-            ].map(a => (
-              <button key={a.label} style={{
-                padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e4e8",
-                background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-                fontSize: 11, fontWeight: 600, color: "#555", whiteSpace: "nowrap", transition: "all 0.15s",
-                flexShrink: 0,
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.color = a.color; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.color = "#555"; }}
-              >
-                <span>{a.icon}</span> {a.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Contact List */}
-        {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "var(--fg-tertiary)" }}>Loading pipeline...</div>
-        ) : contacts.length === 0 ? (
-          /* Empty state — first time CRM user */
-          <div style={{ padding: "40px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>Your pipeline is empty</h3>
-            <p style={{ fontSize: 14, color: "#888", maxWidth: 400, margin: "0 auto 24px", lineHeight: 1.5 }}>
-              Start building your client pipeline. Every great project starts with a conversation.
+    <div style={{
+      minHeight: '100vh',
+      background: '#0a0a0a',
+      color: '#fff',
+      fontFamily: 'var(--font-archivo), sans-serif',
+    }}>
+      {/* ─── Hero Header ─── */}
+      <header style={{
+        background: 'linear-gradient(135deg, rgba(232,68,58,0.15) 0%, rgba(232,68,58,0.05) 50%, transparent 100%)',
+        borderBottom: '1px solid rgba(232,68,58,0.15)',
+        padding: '24px 32px 20px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div>
+            <h1 style={{
+              fontSize: '26px', fontWeight: 800, margin: 0,
+              background: 'linear-gradient(135deg, #E8443A, #FF7A6E)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.5px',
+            }}>
+              Command Center
+            </h1>
+            <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+              Monday, March 30 · Your AI COO
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 500, margin: "0 auto" }}>
-              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#E8443A"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>➕</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>Add a contact</div>
-                <div style={{ fontSize: 11, color: "#888" }}>Enter a lead manually from a call or meeting</div>
-              </button>
-              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#7F77DD"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>📥</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>Import contacts</div>
-                <div style={{ fontSize: 11, color: "#888" }}>Upload a CSV or connect QuickBooks</div>
-              </button>
-              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#1D9E75"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>🤖</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>AI proposal generator</div>
-                <div style={{ fontSize: 11, color: "#888" }}>Auto-generate proposals from project data</div>
-              </button>
-              <button style={{ padding: "16px 18px", borderRadius: 14, border: "1px solid #e2e4e8", background: "#fff", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#378ADD"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e4e8"; e.currentTarget.style.transform = ""; }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>🏗️</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>Launch a project first</div>
-                <div style={{ fontSize: 11, color: "#888" }}>Set up a project, then link clients to it</div>
-              </button>
-            </div>
           </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 40, color: "var(--fg-tertiary)" }}>No contacts match your filter</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {filtered.map(c => {
-              const stage = STAGES.find(s => s.id === c.stage);
-              const temp = TEMPS.find(t => t.id === c.temperature);
-              const isSelected = selectedContact?.id === c.id;
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {redCount > 0 && (
+              <span style={{
+                background: '#EF4444', color: '#fff', borderRadius: 12,
+                padding: '4px 10px', fontSize: '12px', fontWeight: 700,
+              }}>
+                {redCount} urgent
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ─── ZONE 1: Business Pulse ─── */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <MetricCard label="Active Projects" value="5" sub="2 in BUILD" trend="neutral" />
+          <MetricCard label="Monthly Revenue" value="$142K" sub="↑ 5% vs projected" trend="up" />
+          <MetricCard label="Cash Position" value="$89K" sub="Available" trend="neutral" />
+          <MetricCard label="Overdue Items" value="3" sub="2 critical" trend="down" />
+          <MetricCard label="Win Rate" value="68%" sub="Trailing 6 months" trend="up" />
+        </div>
+      </header>
+
+      {/* ─── Main Grid: 3 columns ─── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '300px 1fr 280px',
+        gap: 0,
+        minHeight: 'calc(100vh - 200px)',
+      }}>
+        {/* ─── ZONE 2: AI Attention Queue (Left) ─── */}
+        <div style={{
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+          padding: '20px 16px',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 200px)',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 16,
+          }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'rgba(255,255,255,0.8)' }}>
+              Needs Your Attention
+            </h2>
+            <span style={{
+              background: 'rgba(232,68,58,0.15)',
+              color: '#E8443A',
+              borderRadius: 10,
+              padding: '2px 8px',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}>
+              {ATTENTION_ITEMS.length}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {ATTENTION_ITEMS.map((item, i) => {
+              const isExpanded = expandedAttention === item.id;
               return (
-                <button key={c.id} onClick={() => setSelectedContact(isSelected ? null : c)}
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => setExpandedAttention(isExpanded ? null : item.id)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "14px 16px", borderRadius: 14, cursor: "pointer",
-                    border: isSelected ? "2px solid #E8443A" : "1px solid var(--border, #e5e5e5)",
-                    background: isSelected ? "#E8443A08" : "var(--bg, #fff)",
-                    textAlign: "left", color: "inherit", width: "100%",
-                    transition: "all 0.15s",
-                  }}>
-                  {/* Score ring */}
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 22, flexShrink: 0,
-                    background: `conic-gradient(${stage?.color || "#888"} ${c.lead_score * 3.6}deg, var(--border, #e5e5e5) 0deg)`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 17, background: "var(--bg, #fff)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 11, fontWeight: 700, color: stage?.color,
-                    }}>{c.lead_score}</div>
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>{c.first_name} {c.last_name}</span>
-                      <span style={{ fontSize: 12 }}>{temp?.icon}</span>
-                      {c.company && <span style={{ fontSize: 11, color: "var(--fg-secondary)" }}>· {c.company}</span>}
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--fg-secondary)", marginTop: 2 }}>
-                      {c.project_type && <span>{c.project_type} · </span>}
-                      {c.project_location && <span>{c.project_location} · </span>}
-                      {c.estimated_value ? formatCurrency(c.estimated_value) : ""}
+                    background: isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isExpanded ? `${URGENCY_COLORS[item.urgency]}30` : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius: 10,
+                    padding: '12px 14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <span style={{ fontSize: '12px', marginTop: 2 }}>{URGENCY_EMOJI[item.urgency]}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 700, margin: 0, color: '#fff', lineHeight: 1.3 }}>
+                        {item.title}
+                      </p>
+                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', margin: '3px 0 0' }}>
+                        {item.project}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Stage + timing */}
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{
-                      fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 8,
-                      background: `${stage?.color}18`, color: stage?.color,
-                    }}>{stage?.icon} {stage?.label}</div>
-                    {c.last_contact_at && (
-                      <div style={{ fontSize: 9, color: "var(--fg-tertiary)", marginTop: 4 }}>
-                        {timeAgo(c.last_contact_at)}
-                      </div>
-                    )}
-                    {c.next_followup && new Date(c.next_followup) <= new Date() && (
-                      <div style={{ fontSize: 9, color: "#EF4444", fontWeight: 600, marginTop: 2 }}>
-                        ⚠️ Follow-up due
-                      </div>
-                    )}
-                  </div>
-                </button>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      style={{ marginTop: 10, paddingLeft: 20 }}
+                    >
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, margin: '0 0 10px' }}>
+                        {item.body}
+                      </p>
+                      {item.options && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {item.options.map(opt => (
+                            <button key={opt} style={{
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              borderRadius: 6,
+                              padding: '5px 10px',
+                              fontSize: '11px',
+                              color: 'rgba(255,255,255,0.7)',
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}>
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </motion.div>
               );
             })}
           </div>
-        )}
+        </div>
 
-        {/* Detail Panel */}
-        {selectedContact && (
+        {/* ─── ZONE 3: Active Project Cards (Center) ─── */}
+        <div style={{
+          padding: '20px 24px',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 200px)',
+        }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 16px', color: 'rgba(255,255,255,0.8)' }}>
+            Active Projects
+          </h2>
+
           <div style={{
-            marginTop: 16, padding: 20, borderRadius: 16,
-            border: "2px solid #E8443A30", background: "#E8443A04",
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 14,
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 600 }}>
-                  {selectedContact.first_name} {selectedContact.last_name}
-                </div>
-                {selectedContact.company && <div style={{ fontSize: 13, color: "var(--fg-secondary)" }}>{selectedContact.company}</div>}
-              </div>
-              <button onClick={() => setSelectedContact(null)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--fg-tertiary)" }}>✕</button>
-            </div>
+            {PROJECTS.map((project, i) => {
+              const budgetColors = {
+                'on-track': '#22C55E',
+                'over': '#EF4444',
+                'ahead': '#3B82F6',
+              };
+              const budgetLabels = {
+                'on-track': 'On Track',
+                'over': 'Over Budget',
+                'ahead': 'Under Budget',
+              };
+              const riskColors = {
+                low: '#22C55E',
+                medium: '#F59E0B',
+                high: '#EF4444',
+              };
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-              {selectedContact.email && <div style={{ fontSize: 11 }}>📧 {selectedContact.email}</div>}
-              {selectedContact.phone && <div style={{ fontSize: 11 }}>📱 {selectedContact.phone}</div>}
-              {selectedContact.estimated_value && <div style={{ fontSize: 11 }}>💰 {formatCurrency(selectedContact.estimated_value)}</div>}
-            </div>
+              return (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  whileHover={{ y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 14,
+                    padding: '18px 18px 16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <span style={{
+                      fontSize: '28px',
+                      width: 44, height: 44,
+                      borderRadius: 10,
+                      background: `${PHASE_COLORS[project.phase]}15`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {project.thumbnail}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#fff' }}>
+                        {project.name}
+                      </p>
+                      <PhaseIndicator phase={project.phase} />
+                    </div>
+                  </div>
 
-            {selectedContact.notes && (
-              <div style={{ fontSize: 12, color: "var(--fg-secondary)", lineHeight: 1.6, marginBottom: 12,
-                padding: 12, borderRadius: 10, background: "var(--bg, #fff)", border: "1px solid var(--border, #e5e5e5)" }}>
-                {selectedContact.notes}
-              </div>
-            )}
+                  {/* Progress */}
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Progress</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: PHASE_COLORS[project.phase] }}>{project.progress}%</span>
+                    </div>
+                    <ProgressBar percent={project.progress} color={PHASE_COLORS[project.phase]} />
+                  </div>
 
-            {selectedContact.tags.length > 0 && (
-              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {selectedContact.tags.map(t => (
-                  <span key={t} style={{
-                    fontSize: 10, padding: "3px 8px", borderRadius: 8,
-                    background: "#E8443A12", color: "#E8443A", fontWeight: 500,
-                  }}>{t}</span>
-                ))}
-              </div>
-            )}
+                  {/* Stats row */}
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: 8, marginBottom: 12,
+                  }}>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', margin: 0 }}>Budget</p>
+                      <p style={{ fontSize: '14px', fontWeight: 700, margin: '2px 0 0', color: '#fff' }}>{project.budget}</p>
+                      <span style={{
+                        fontSize: '10px', fontWeight: 600,
+                        color: budgetColors[project.budgetStatus],
+                      }}>
+                        {budgetLabels[project.budgetStatus]}
+                      </span>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', margin: 0 }}>Risk</p>
+                      <span style={{
+                        fontSize: '12px', fontWeight: 700,
+                        color: riskColors[project.riskLevel],
+                        textTransform: 'capitalize',
+                      }}>
+                        {project.riskLevel === 'low' ? '● ' : project.riskLevel === 'medium' ? '◐ ' : '◉ '}
+                        {project.riskLevel}
+                      </span>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', margin: 0 }}>Next</p>
+                      <p style={{ fontSize: '11px', fontWeight: 600, margin: '2px 0 0', color: 'rgba(255,255,255,0.7)' }}>
+                        {project.daysUntil}d
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Next milestone */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    color: 'rgba(255,255,255,0.5)',
+                  }}>
+                    📍 {project.nextMilestone} — {project.daysUntil} days
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
 
-      <CopilotPanel />
+        {/* ─── ZONE 4: Upcoming & Weather (Right) ─── */}
+        <div style={{
+          borderLeft: '1px solid rgba(255,255,255,0.06)',
+          padding: '20px 16px',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 200px)',
+        }}>
+          {/* This Week */}
+          <h2 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px', color: 'rgba(255,255,255,0.8)' }}>
+            This Week
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
+            {UPCOMING_EVENTS.map((evt, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>{evt.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '12px', fontWeight: 600, margin: 0, color: '#fff' }}>{evt.type}</p>
+                  <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', margin: '2px 0 0' }}>
+                    {evt.project} · {evt.day} {evt.time}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Weather */}
+          <h2 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px', color: 'rgba(255,255,255,0.8)' }}>
+            Weather Impact
+          </h2>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+            {WEATHER_FORECAST.map(w => (
+              <div key={w.day} style={{
+                flex: 1, textAlign: 'center',
+                background: w.condition.includes('Rain') ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${w.condition.includes('Rain') ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 8, padding: '8px 4px',
+              }}>
+                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>{w.day}</p>
+                <p style={{ fontSize: '20px', margin: '4px 0' }}>{w.icon}</p>
+                <p style={{ fontSize: '13px', fontWeight: 700, margin: 0, color: '#fff' }}>{w.high}°</p>
+              </div>
+            ))}
+          </div>
+          <div style={{
+            background: 'rgba(239,68,68,0.06)',
+            border: '1px solid rgba(239,68,68,0.15)',
+            borderRadius: 8, padding: '8px 10px',
+            fontSize: '11px', color: 'rgba(239,68,68,0.8)',
+            marginBottom: 24,
+          }}>
+            ⚠️ Rain Thursday — 2 active projects affected
+          </div>
+
+          {/* Payment Timeline */}
+          <h2 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px', color: 'rgba(255,255,255,0.8)' }}>
+            Payment Timeline
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {PAYMENTS.map((p, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '8px 10px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 8,
+              }}>
+                <div>
+                  <p style={{ fontSize: '12px', fontWeight: 600, margin: 0, color: '#fff' }}>{p.label}</p>
+                  <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', margin: '2px 0 0' }}>{p.date}</p>
+                </div>
+                <span style={{
+                  fontSize: '13px', fontWeight: 700,
+                  color: p.direction === 'in' ? '#22C55E' : '#EF4444',
+                }}>
+                  {p.direction === 'in' ? '+' : '-'}{p.amount}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Net Cash Flow */}
+          <div style={{
+            marginTop: 12,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 10,
+            padding: '12px',
+            textAlign: 'center',
+          }}>
+            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Net 2-Week Cash Flow
+            </p>
+            <p style={{ fontSize: '24px', fontWeight: 800, margin: '6px 0 0', color: '#22C55E' }}>
+              +$239K
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
