@@ -1,5 +1,5 @@
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-03-30
+## Updated: 2026-04-01
 
 ---
 
@@ -64,6 +64,16 @@
 **Date:** 2026-03-30
 **Discovery:** World Labs launched their World API in January 2026. It generates navigable 3D worlds from text, images, or video. Their open-source SparkJS library integrates Gaussian splats into Three.js. This is a MASSIVE opportunity for the Dream Builder.
 **Rule:** Integrate Marble for the "Worldwalker" interface. Budget for API costs ($20-95/mo depending on generations needed).
+
+### REPLICATE_API_TOKEN must be in Vercel env vars for renders
+**Date:** 2026-04-01
+**What happened:** The Alchemist showed "Render generating..." forever. The `/api/v1/render` endpoint exists and works, but returns 503 if `REPLICATE_API_TOKEN` isn't set. The Alchemist wasn't even calling the endpoint — it was generating a mock result with `imageUrl: null` and displaying static placeholder text.
+**Fix:** (1) Added background FLUX render call after mock result generation. (2) Fixed response parsing to match actual API shape (`renderData.renders[0].imageUrl` not `renderData.url`). (3) Made placeholder text conditional on `renderLoading` state.
+**Rule:** When wiring any feature to an external API: verify the env var is set in Vercel (not just locally), verify the response shape matches what you're parsing, and always have a loading/fallback state. The Replicate account is `xrworkers` at replicate.com — a "Vercel Integration" token already exists there.
+
+### Render API response shape: `{ success, renders: [{ imageUrl, renderTime, model, prompt }] }`
+**Date:** 2026-04-01
+**Rule:** The `/api/v1/render` endpoint returns renders in an array. Access via `data.renders[0].imageUrl`, NOT `data.url` or `data.imageUrl`. Both Oracle and Alchemist use this endpoint.
 
 ### All input modalities should converge to plain text before NL parser
 **Date:** 2026-03-26

@@ -1,5 +1,5 @@
 # Builder's Knowledge Garden — Tasks & Status
-## Updated: 2026-03-30
+## Updated: 2026-04-01
 
 ---
 
@@ -8,15 +8,19 @@
 ### What's Live & Working (builders.theknowledgegardens.com)
 - **Branch:** `main` (force-synced to `master` on 2026-03-29)
 - **Vercel:** Auto-deploys from `main`
-- **18 routes live:** /, /dream, /dream/describe, /dream/browse, /dream/sketch, /dream/garden, /dream/inspire, /dream/explore, /dream/plans, /dream/shared/[slug], /knowledge, /knowledge/[slug], /crm, /marketplace, /presentation, /onboard, /launch, /profile
+- **22 routes live:** /, /dream, /dream/describe, /dream/browse, /dream/sketch, /dream/garden, /dream/inspire, /dream/explore, /dream/plans, /dream/shared/[slug], /dream/oracle, /dream/alchemist, /dream/cosmos, /knowledge, /knowledge/[slug], /crm (now Command Center), /marketplace, /presentation, /onboard, /launch, /profile
 - **Static:** /cinematic.html (v4: Spanish villa dream, luxury art interior, surrealist tool garden)
 - **GitHub PAT** (`claude 2`): `<GITHUB_PAT_STORED_LOCALLY>` — has Contents: Read/Write for the repo. Use GitHub Contents API to push files.
+- **Replicate:** Account `xrworkers` on replicate.com. Vercel Integration token exists. Env var `REPLICATE_API_TOKEN` must be set in Vercel project settings for AI renders to work.
 
-### What's Been Built (master branch, March 26-28)
+### What's Been Built (master branch, March 26-28; plus April 1 session)
 - Cinematic entry experience (4-scene intro, Ken Burns zoom, skip button, progress bar)
 - Dream Machine: Describe, Inspire, Browse, Sketch, Surprise Me, Dream Garden (XP/achievements)
+- **The Oracle** (`/dream/oracle`): AI Dream Profiler — 7 immersive life questions → Claude analyzes → dream architectural profile → 3 FLUX renders. Voice input via Web Speech API. Full 5-phase state machine.
+- **The Alchemist** (`/dream/alchemist`): Combinatorial Dream Builder — 56 ingredients across 4 categories, click-to-add crucible, transmute animation, FLUX render integration (fires background render via `/api/v1/render`). Requires `REPLICATE_API_TOKEN`.
+- **The Construction Cosmos** (`/dream/cosmos`): 2D orbital visualization — 28 nodes across 3 concentric orbits, deterministic star field, category color-coding.
+- **Command Center** (`/crm`): AI COO War Room replacing old CRM — 4-zone layout (Business Pulse, AI Attention Queue, Active Projects, Upcoming/Weather/Payments). Red chrome design.
 - Smart Project Launcher: 4-step wizard → 7-tab dashboard (Overview, Codes, Schedule, Materials, Team, Permits, Budget)
-- CRM: Basic pipeline viewer (stages, temperature, lead scoring) — NEEDS MAJOR UPGRADE
 - Knowledge browse with entity detail pages
 - Marketplace page (placeholder)
 - Presentation page (team update slides)
@@ -26,9 +30,11 @@
 - Gamification Phase 1 (Fog of War, Quest Line, Confidence Score, Celebrations)
 - Three.js BuildingDesigner with parametric sliders
 - Tone.js sound engine
-- Replicate FLUX 1.1 Pro AI image generation
+- Replicate FLUX 1.1 Pro AI image generation (`/api/v1/render` endpoint)
 - Logo asset library (transparent variants, outline styles, app icons, favicon, OG images)
 - Visual transformation: photo heroes, Archivo font family, dark/light theme with CSS vars
+- **Strategic Design Doc** (`BKG-Strategic-Design-Navigation-Delight.docx`): 8-section document covering 8 user lanes, delight layer, navigation architecture, daily experience, AI automation, roadmap
+- **Navigation Prototype** (`navigation-prototype.jsx`): Interactive React prototype with lane selector, morning briefing, surface explorer, notification orchestra
 
 ### Database (Supabase)
 - ~500 knowledge entities seeded
@@ -45,17 +51,17 @@
 Replace current Browse & Discover with transformative experiences.
 See: `dream-builder-interface-brainstorm.md` in project files
 
-#### 1A. The Alchemist (#8) — SPRINT 1
+#### 1A. The Alchemist (#8) — SPRINT 1 ✅ SCAFFOLDED
 - Drag symbols, images, words, textures onto a mystical workbench
 - Combinations "react" and a unique building concept materializes
 - Shareable "recipes" for virality
 - Tech: Drag-and-drop UI, Claude for combinatorial reasoning, FLUX/Marble for output
-- [ ] Design the ingredient palette (styles, materials, features, moods, photos, emojis)
-- [ ] Build drag-and-drop crucible UI (React DnD or custom)
-- [ ] Wire Claude API for combinatorial synthesis
-- [ ] Wire FLUX/Replicate for concept rendering
+- [x] Design the ingredient palette (56 ingredients: styles, materials, features, moods)
+- [x] Build click-to-add crucible UI (custom implementation)
+- [ ] Wire Claude API for combinatorial synthesis (currently uses mock generation)
+- [x] Wire FLUX/Replicate for concept rendering (background render via `/api/v1/render`, needs `REPLICATE_API_TOKEN` in Vercel)
 - [ ] "Recipe" save and share (shareable URL)
-- [ ] Animation: swirl/react/materialize sequence
+- [x] Animation: swirl/react/materialize sequence
 
 #### 1B. The Worldwalker (#1) — SPRINT 2
 - World Labs Marble API generates navigable 3D worlds from images/text
@@ -67,37 +73,39 @@ See: `dream-builder-interface-brainstorm.md` in project files
 - [ ] Voice edit commands while immersed
 - [ ] Export to VR (WebXR for Vision Pro / Quest)
 
-#### 1C. The Construction Cosmos (#17) — SPRINT 3
-- 3D orbital visualization of the building universe (like orchid orrery)
+#### 1C. The Construction Cosmos (#17) — SPRINT 3 ✅ SCAFFOLDED
+- 2D orbital visualization of the building universe
 - Center: your dream. Orbits: styles, materials, codes, constraints
-- Tech: Three.js orbital mechanics, parametric building generator
-- [ ] Port orchid orrery orbital mechanics to construction context
-- [ ] Define orbit layers (styles, materials, codes, constraints)
+- Tech: Canvas-based orbital mechanics, deterministic star field
+- [x] Port orbital mechanics to construction context (2D canvas, 28 nodes, 3 orbits)
+- [x] Define orbit layers (styles, materials, codes — 3 concentric rings)
 - [ ] Interactive: drag elements toward center to influence design
 - [ ] Connect to Knowledge Garden entities
 - [ ] Parametric building morphing in center
+- [ ] Upgrade to Three.js 3D version
 
-#### 1D. The Oracle (#10) — SPRINT 1 (fastest to ship)
+#### 1D. The Oracle (#10) — SPRINT 1 ✅ FULLY BUILT
 - 7 questions about YOUR LIFE (not architecture) → AI reverse-engineers the building
 - "What does your perfect morning look like?" → spatial needs, materials, light quality
 - Tech: Claude for psychological → architectural mapping, FLUX for rendering
-- [ ] Design the 7 questions
-- [ ] Claude prompt engineering for life→architecture mapping
-- [ ] Generate "dream profile" visualization
-- [ ] Render 3 wildly different buildings from answers
+- [x] Design the 7 questions (immersive full-screen with voice input)
+- [x] Claude prompt engineering for life→architecture mapping (`/api/v1/oracle/analyze`)
+- [x] Generate "dream profile" visualization (5-phase state machine: intro→questions→processing→profile→renders)
+- [x] Render 3 wildly different buildings from answers (via `/api/v1/render`, needs `REPLICATE_API_TOKEN`)
 - [ ] Save and share dream profile
 
 ### 🔥 Priority 2: Killer App — Command Center Rebuild
 The CRM page must become an AI COO war room, not a SaaS CRM demo.
 See: `killer-app-recovery-plan.md` in project files
 
-#### Phase 1: Command Center (replace /crm)
-- [ ] Top strip: Business pulse (active projects, monthly revenue, cash position, overdue count)
-- [ ] Left column: AI Attention Queue (prioritized decisions needed NOW)
-- [ ] Center: Active Project Cards (health dots, phase, % complete, budget burn, risk)
-- [ ] Right column: Upcoming (inspections, deliveries, weather, payments)
-- [ ] Seed realistic demo data (5 projects, 20 contacts, financial data)
+#### Phase 1: Command Center (replace /crm) ✅ SCAFFOLDED
+- [x] Top strip: Business pulse (active projects, monthly revenue, cash position, overdue count)
+- [x] Left column: AI Attention Queue (7 prioritized items)
+- [x] Center: Active Project Cards (5 projects with health, phase, budget, risk)
+- [x] Right column: Upcoming (inspections, deliveries, weather, payments)
+- [x] Seed realistic demo data (5 projects, financial data)
 - [ ] Connect launcher projects to Command Center
+- [ ] Wire to real Supabase data
 
 #### Phase 2: Smart Financial Layer
 - [ ] Invoice generator (line items from project cost codes)

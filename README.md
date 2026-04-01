@@ -17,6 +17,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+## Environment Variables
+
+Required in Vercel (and `.env.local` for local dev):
+
+| Variable | Service | Used By |
+|----------|---------|---------|
+| `REPLICATE_API_TOKEN` | Replicate (account: xrworkers) | `/api/v1/render` — FLUX image generation for Oracle, Alchemist |
+| `ANTHROPIC_API_KEY` | Anthropic Claude | `/api/v1/oracle/analyze` — dream profiling, AI copilot |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase | Knowledge entities, gamification, auth |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase | Server-side data access |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk | Authentication |
+| `CLERK_SECRET_KEY` | Clerk | Auth server-side |
+
 ## Logo Assets
 
 All logo variants live in `public/logo/`:
