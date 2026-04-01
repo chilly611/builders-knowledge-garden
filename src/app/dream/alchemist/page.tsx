@@ -128,6 +128,7 @@ export default function AlchemistPage() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [result, setResult] = useState<AlchemyResult | null>(null);
   const [transmutePulse, setTransmutePulse] = useState(0);
+  const [renderLoading, setRenderLoading] = useState(false);
   const crucibleRef = useRef<HTMLDivElement>(null);
 
   const addToCrucible = useCallback((ingredient: Ingredient) => {
@@ -169,7 +170,35 @@ export default function AlchemistPage() {
     } catch {
       // Generate locally
       await new Promise(r => setTimeout(r, 800));
-      setResult(generateMockResult(crucible));
+      const mockResult = generateMockResult(crucible);
+      setResult(mockResult);
+      setPhase('result');
+
+      // Fire off a FLUX render in the background via /api/v1/render
+      setRenderLoading(true);
+      try {
+        const renderRes = await fetch('/api/v1/render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: mockResult.imagePrompt,
+            style: 'exterior',
+            aspect: 'landscape',
+            quality: 'standard',
+          }),
+        });
+        if (renderRes.ok) {
+          const renderData = await renderRes.json();
+          if (renderData.success && renderData.renders?.[0]?.imageUrl) {
+            setResult(prev => prev ? { ...prev, imageUrl: renderData.renders[0].imageUrl } : prev);
+          }
+        }
+      } catch {
+        // Render failed — concept still shows without image
+      } finally {
+        setRenderLoading(false);
+      }
+      return;
     }
 
     setPhase('result');
@@ -475,7 +504,7 @@ export default function AlchemistPage() {
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ fontSize: '64px', display: 'block', marginBottom: 12 }}>🏛️</span>
                     <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
-                      Render generating...
+                      {renderLoading ? 'Rendering your vision...' : 'Concept visualization'}
                     </p>
                   </div>
                 )}
