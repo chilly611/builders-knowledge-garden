@@ -183,7 +183,17 @@ export default function OraclePage() {
       const profileResponse = await fetch('/api/v1/oracle/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({
+          answers: {
+            morning: answers[0],
+            entertain: answers[1],
+            nature: answers[2],
+            beautiful_place: answers[3],
+            safety: answers[4],
+            recharge: answers[5],
+            identity: answers[6],
+          },
+        }),
       });
 
       if (!profileResponse.ok) {
