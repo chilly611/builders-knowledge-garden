@@ -40,6 +40,22 @@
 **Date:** 2026-03-28
 **Rule:** The bar is always LOVABLE, not viable. If it doesn't make users feel something positive, it's not ready to ship.
 
+### LIGHT BACKGROUNDS — global preference
+**Date:** 2026-04-01
+**Rule:** Default to light/warm backgrounds across all BKG surfaces. Dark-on-dark has been a recurring readability problem. Light backgrounds with rich brand-colored text (green, gold, red) give better contrast and a more inviting feel. Reserve dark backgrounds only for cinematic/immersive moments (intros, renders, modals), never for primary working surfaces like sliders, controls, or content panels.
+
+### Game onboarding — socialization by play
+**Date:** 2026-04-01
+**Rule:** Every BKG experience must teach through play, not instructions. Think video game tutorials: the first interaction should be effortless and immediately rewarding. Never dump all controls on the user at once. Progressive disclosure: start with 1-2 interactions, unlock more as confidence builds. Every few seconds a new micro-story begins — keep attention with constant novelty.
+
+### Mini-loops — open and close consistently
+**Date:** 2026-04-01
+**Rule:** Short attention spans in a heavily mediated world. Design every experience with tight open/close loops: set a small goal → accomplish it → celebrate → next goal. People get happy setting a goal and accomplishing it. Each loop should be 5-15 seconds. Examples: "Move this slider → see the building name change → sparkle", "Choose 3 genes → unlock Evolution → celebrate". Stack loops into larger arcs but never leave a loop open for more than ~15 seconds without a payoff.
+
+### Audio + captioning
+**Date:** 2026-04-01
+**Rule:** Sound design amplifies the game feel (Tone.js already in stack). But every audio moment must have a visual/text caption equivalent. Never rely on audio alone. Captions should be brief, playful, and timed to the interaction. Consider: slider moves → subtle tone shift + floating label, milestone → chime + confetti + caption, render complete → reveal sound + "Your vision is ready" text.
+
 ### White-on-white text was a recurring issue
 **Date:** 2026-03-27
 **What happened:** Multiple commits fixing white text on white backgrounds across Dream pages.
