@@ -218,3 +218,39 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - /clients — Clients preview
 - /documents — Documents preview
 - /site — Site Intelligence preview
+
+
+---
+
+## 2026-04-02 — Chat Session: Strategic Reorientation + Procore/Oracle Deep Analysis
+**Agent:** Chat (Claude Opus 4.6)
+
+**What was done:**
+- Full analysis of 15-page Procore vs Oracle Smart Construction Platform comparison report
+- Mapped all 37 features from both platforms against BKG current state
+- Identified 11 critical gaps (RFIs, submittals, change orders, punch lists, budget tracking, invoicing, daily logs, drawing management, document CDE, inspection forms, bid management)
+- Confirmed 12 structural advantages that neither can replicate
+- Revised 6-week sprint plan incorporating table-stakes PM features (RFIs, submittals, COs, punch lists, budget tracking must be in Sprint 3)
+- Created interactive competitive scorecard widget with 11 tabs
+- Created strategic battle plan widget with 6 tabs
+- Locked in LIGHT background design mandate globally (added to Claude memory)
+- Updated tasks.todo.md with revised sprint plan and competitive gap analysis
+- Updated tasks.lessons.md with new learnings
+- Created 5 Cowork-ready task specs for Sprint 1-5
+- Updated session-log.md
+
+**Key strategic decisions:**
+1. RFIs, submittals, change orders, and punch lists moved from "Phase 2" to Sprint 3 — they're table stakes, not nice-to-haves
+2. Budget tracking and invoice management moved to Sprint 3-4 — this is what makes contractors unable to leave
+3. Don't try to out-Primavera Primavera — serve the 95% who can't afford $125-200/user/mo
+4. Steal Textura's lien waiver automation model — include it in Pro tier (they charge 0.22% of contract value)
+5. Light backgrounds globally — no more dark themes unless explicitly requested
+6. "Coming soon" pages must die — build or remove
+
+**New lessons documented:**
+- Table-stakes PM features (RFI, submittal, CO, punch list) must be functional before showing advantages
+- Light backgrounds are a brand mandate, not a preference toggle
+- Oracle Textura's payment automation model is a revenue feature we should replicate
+- Procore's OCR on drawings can be matched with Claude Vision API
+
+**Files changed:** tasks.todo.md, tasks.lessons.md, docs/session-log.md
