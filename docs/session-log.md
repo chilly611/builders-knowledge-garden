@@ -146,3 +146,40 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - src/app/dream/page.tsx (15 cards with permanent logo URLs)
 - src/app/api/v1/dreams/state/route.ts
 - supabase/migrations/dream_states.sql
+
+---
+
+## 2026-04-01 (late) — Chat Session: Killer App Command Center v2 — Real Data Layer
+**Agent:** Chat (Claude Sonnet 4.6)
+
+**What was built:**
+- **`src/app/api/v1/projects/route.ts`** (new) — Supabase CRUD for projects: GET list, POST create, PATCH update, DELETE
+- **`src/app/api/v1/projects/analyze/route.ts`** (new) — AI COO analysis:
+  - GET: load saved unresolved attention items from Supabase
+  - POST: calls Claude with all active project data → generates 5-10 prioritized attention items → saves to Supabase
+  - PATCH: resolve/dismiss individual attention item
+- **`src/app/crm/page.tsx`** (rebuilt) — Command Center with real data:
+  - Loads projects from `/api/v1/projects` on mount (Supabase)
+  - Loads saved attention items from `/api/v1/projects/analyze`
+  - "+ Add Project" button → full modal with all fields (name, phase, progress, budget, risk, milestone, location, client, notes)
+  - "🤖 AI Analyze" button → calls Claude with live project data → AI COO generates specific, dollar-aware attention items
+  - Attention items dismissible with "✓ Resolve" (persists to Supabase)
+  - Dynamic date in header (real today's date, not hardcoded)
+  - Empty state with CTA when no projects yet
+  - Project cards expandable (show location, type, notes, delete)
+  - Real business pulse metrics derived from live project data
+- **`supabase/migrations/command_center.sql`** (new) — table definitions for `command_center_projects` and `command_center_attention`
+
+**Required action (1 step):**
+- Run `supabase/migrations/command_center.sql` in Supabase SQL Editor to create the two tables
+
+**What changed from previous version:**
+- Before: all data hardcoded in TypeScript constants, no persistence, no real AI calls, static date
+- After: full Supabase persistence, real Claude API calls, CRUD, dismissable attention items
+
+**Key decisions:**
+- Used service role key for Supabase writes (bypasses RLS) with open policies for now — add org_id filtering once Clerk is wired
+- AI analysis uses claude-opus-4-6, clears old AI items on each re-analysis run
+- Projects API falls back gracefully (returns empty array) if Supabase tables don't exist yet
+
+**Files changed:** 4 files pushed to main → Vercel auto-deploying
