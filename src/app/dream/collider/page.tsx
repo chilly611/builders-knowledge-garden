@@ -212,7 +212,7 @@ export default function ColliderPage() {
             style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative', width: 300, height: 300, marginBottom: 40 }}>
               {/* Two orbs colliding */}
-              <motion.div animate={{ x: [−100, 0], scale: [1, 0.5, 1.3, 1] }} transition={{ duration: 2, ease: 'easeInOut' }}
+              <motion.div animate={{ x: [-100, 0], scale: [1, 0.5, 1.3, 1] }} transition={{ duration: 2, ease: 'easeInOut' }}
                 style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle, ${WARM}, transparent)`, filter: 'blur(20px)' }} />
               <motion.div animate={{ x: [100, 0], scale: [1, 0.5, 1.3, 1] }} transition={{ duration: 2, ease: 'easeInOut' }}
                 style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, #C4A44A, transparent)', filter: 'blur(20px)' }} />
