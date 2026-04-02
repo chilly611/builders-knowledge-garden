@@ -42,6 +42,30 @@ const DREAM_PATHS: DreamPath[] = [
     tagline: "Upload DWG, PDF — we add intelligence", time: "~10 min",
     color: "#9C7832", image: "url(https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80&fit=crop)",
     laneWeights: { diy: 3, gc: 10, specialty: 9, supplier: 6, equipment: 7, service: 8, worker: 4, robot: 8 } },
+  { id: "oracle", route: "/dream/oracle", icon: "🔮", name: "The Oracle",
+    tagline: "7 life questions — AI reveals your dream home", time: "~3 min",
+    color: "#D85A30", image: "url(https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80&fit=crop)",
+    laneWeights: { diy: 10, gc: 6, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 4 } },
+  { id: "alchemist", route: "/dream/alchemist", icon: "⚗️", name: "The Alchemist",
+    tagline: "Mix ingredients — a unique building materializes", time: "~2 min",
+    color: "#C4A44A", image: "url(https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&q=80&fit=crop)",
+    laneWeights: { diy: 9, gc: 7, specialty: 6, supplier: 5, equipment: 4, service: 6, worker: 6, robot: 5 } },
+  { id: "quest", route: "/dream/quest", icon: "⚔️", name: "The Quest",
+    tagline: "RPG adventure — collect tokens, build your dream", time: "~5 min",
+    color: "#E07B3A", image: "url(https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=600&q=80&fit=crop)",
+    laneWeights: { diy: 8, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 8, robot: 6 } },
+  { id: "genome", route: "/dream/genome", icon: "🧬", name: "The Genome",
+    tagline: "Evolve your design with DNA sliders", time: "~3 min",
+    color: "#1D9E75", image: "url(https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=600&q=80&fit=crop)",
+    laneWeights: { diy: 7, gc: 8, specialty: 8, supplier: 5, equipment: 6, service: 6, worker: 5, robot: 7 } },
+  { id: "cosmos", route: "/dream/cosmos", icon: "🌌", name: "The Cosmos",
+    tagline: "3D orbital universe of building possibilities", time: "Open-ended",
+    color: "#1D9E75", image: "url(https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop)",
+    laneWeights: { diy: 6, gc: 7, specialty: 7, supplier: 8, equipment: 6, service: 6, worker: 5, robot: 8 } },
+  { id: "narrator", route: "/dream/narrator", icon: "📖", name: "The Narrator",
+    tagline: "A story of your future home — rendered scene by scene", time: "~4 min",
+    color: "#B8873B", image: "url(https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&q=80&fit=crop)",
+    laneWeights: { diy: 9, gc: 5, specialty: 4, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 4 } },
 ];
 
 interface SavedDream {
@@ -177,6 +201,64 @@ export default function DreamMachinePage() {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* ── KNOWLEDGE GARDEN — THE FOUNDATION ─────────────── */}
+          <div
+            className="dream-path-card"
+            onClick={() => { play("navigate"); router.push("/knowledge"); }}
+            role="button" tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && router.push("/knowledge")}
+            style={{
+              marginTop: 24, gridColumn: "1 / -1", background: "#0a0a0a",
+              borderRadius: 20, overflow: "hidden", cursor: "pointer",
+              position: "relative", minHeight: 200,
+              display: "flex", alignItems: "center",
+              border: "1px solid rgba(29,158,117,0.15)",
+            }}
+          >
+            {/* Background image with blend */}
+            <div style={{
+              position: "absolute", inset: 0,
+              backgroundImage: "url(https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200&q=80&fit=crop)",
+              backgroundSize: "cover", backgroundPosition: "center",
+              opacity: 0.3, mixBlendMode: "lighten",
+            }} />
+            {/* Gradient overlay */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(90deg, #0a0a0a 0%, #0a0a0a 15%, rgba(10,10,10,0.85) 35%, rgba(10,10,10,0.4) 70%, transparent 100%)",
+            }} />
+            {/* Content */}
+            <div style={{ position: "relative", zIndex: 2, padding: "36px 40px", maxWidth: 520 }}>
+              <div className={archivo.className} style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase",
+                letterSpacing: "0.14em", color: "#5DCAA5", marginBottom: 12,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1D9E75", animation: "pulse 2.5s ease-in-out infinite" }} />
+                The Knowledge Garden
+              </div>
+              <h3 className={archivoBlack.className} style={{
+                fontSize: "clamp(1.4rem, 3vw, 1.8rem)", color: "#fff", lineHeight: 1.15, marginBottom: 10,
+              }}>
+                Explore the Garden
+              </h3>
+              <p className={archivo.className} style={{
+                fontSize: "0.9rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.6, fontWeight: 300, marginBottom: 18,
+              }}>
+                The scientific foundation beneath everything. Browse knowledge entities, study codes, discover materials, and let AI guide you through the construction universe.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["Browse Knowledge", "AI Copilot", "Architecture Styles", "Codes & Standards"].map(tag => (
+                  <span key={tag} className={archivo.className} style={{
+                    padding: "5px 13px", background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 100,
+                    fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", fontWeight: 400,
+                  }}>{tag}</span>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* ── YOUR GARDEN ─────────────────────────────────────── */}
