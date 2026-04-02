@@ -85,3 +85,33 @@ curl -s -H "Authorization: Bearer $TOKEN" \
   "https://api.github.com/repos/chilly611/builders-knowledge-garden/contents/docs/session-log.md?ref=main"
 # Then PUT with new content + sha
 ```
+
+---
+
+## 2026-04-01 — Chat Session: Three New Dream Interfaces + Session Tracking
+**Agent:** Chat (Claude Opus 4.6)
+**What was built:**
+- The Collider (/dream/collider) — Two dreams enter, one building leaves. Couples/partners each pick style/material/feature/mood/scale independently, then "collide" their dreams. Shows harmonies, tensions, and synthesized compromises.
+- The Sandbox (/dream/sandbox) — Minecraft for real buildings. 12×12 grid, 10 room types with colored blocks, drag to place, real-time stats (rooms, sq ft, stories). Preview modal shows full blueprint.
+- The Voice Architect (/dream/voice) — Pure conversational dream building. Voice input via Web Speech API, chat-style UI, AI architect responds with spatial/material/cost insights. Suggestion prompts for getting started.
+- CLAUDE.md pushed to repo with mandatory end-of-session protocol
+- docs/session-log.md created as persistent timeline
+- tasks.todo.md and tasks.lessons.md fully updated
+- Project Instructions updated with end-of-session mandate
+- Memory updated with tracking strategy
+
+**Key decisions:**
+- Chose Collider, Sandbox, and Voice Architect as next 3 (complementary to Oracle, Alchemist, Cosmos, Quest, Genome, Narrator already built)
+- The repo is the SINGLE SOURCE OF TRUTH — not chat threads, not Cowork tasks
+- Every session (Chat or Cowork) must append to session-log.md
+- Fixed Unicode minus sign that broke Vercel build
+
+**Routes now live (12 Dream interfaces!):**
+- /dream/describe, /dream/browse, /dream/sketch, /dream/garden, /dream/inspire
+- /dream/oracle, /dream/alchemist, /dream/cosmos, /dream/quest, /dream/genome, /dream/narrator
+- /dream/collider, /dream/sandbox, /dream/voice (NEW)
+
+**Issues found:**
+- Unicode minus sign (−) vs ASCII hyphen (-) caused Vercel build failure — fixed
+- Chrome extension connection from Chat is unreliable — works intermittently
+- Cowork tasks don't persist between sessions — repo files are the solution
