@@ -200,11 +200,11 @@ function GuideTip({ step, onDismiss }: { step: number; onDismiss: () => void }) 
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="bg-gray-900 text-white rounded-xl px-4 py-3 text-sm shadow-xl max-w-xs"
+      className="bg-white text-gray-800 rounded-xl px-4 py-3 text-sm shadow-xl border border-gray-200 max-w-xs"
     >
       <p className="mb-1">{tip.text}</p>
-      {tip.target && <p className="text-[#1D9E75] text-xs font-medium">{tip.target}</p>}
-      <button onClick={onDismiss} className="text-gray-400 hover:text-white text-xs mt-2 underline underline-offset-2">
+      {tip.target && <p className="text-[#1D9E75] text-xs font-semibold">{tip.target}</p>}
+      <button onClick={onDismiss} className="text-[#D85A30] hover:text-[#c44d28] text-xs mt-2 font-semibold underline underline-offset-2">
         Got it, let me explore
       </button>
     </motion.div>
