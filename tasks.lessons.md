@@ -133,3 +133,35 @@
 ### Each Cowork task needs complete context
 **Date:** 2026-03-30
 **Rule:** Cowork agents don't share context with Chat sessions. Every Cowork task must include: the full project instructions, the specific task spec, relevant file paths, API keys/tokens needed, and success criteria.
+
+---
+
+## Replicate FLUX rate limits
+**Date:** 2026-04-01
+**What happened:** Trying to fire 15 FLUX generation requests simultaneously hit 429 rate limit. Account has <$5 credit, limited to 6 requests/min with burst of 1.
+**Fix:** Sequential generation with 30s backoff on rate limit. All 15 completed.
+**Rule:** Generate images sequentially, not in parallel. Budget for ~30s per image including polling.
+
+## Supabase SQL Editor — use Monaco API for clean input
+**Date:** 2026-04-01
+**What happened:** Typing SQL into Supabase SQL Editor via Chrome automation caused bracket auto-completion to add extra closing parens, breaking the query (syntax error at line 38).
+**Fix:** Used `window.monaco.editor.getEditors()[0].setValue(sql)` via JavaScript execution — bypasses autocomplete entirely.
+**Rule:** For any code editor with autocomplete (Monaco, CodeMirror), use the JavaScript API to set content instead of simulating keyboard input.
+
+## FLUX logos need permanent hosting
+**Date:** 2026-04-01
+**What happened:** Replicate delivery URLs (replicate.delivery/xezq/...) work initially but expire after some time.
+**Fix:** Downloaded all 15 images and pushed to repo at `public/logos/dream/*.webp`. Updated hub to use `/logos/dream/{key}.webp` paths.
+**Rule:** Always download AI-generated images and host permanently in the repo's public/ directory. Never use CDN delivery URLs as permanent references.
+
+## Unicode minus sign breaks Vercel builds
+**Date:** 2026-04-01
+**What happened:** The Collider page had a Unicode minus sign (−, U+2212) instead of ASCII hyphen (-) in a numeric literal `[−100, 0]`. TypeScript compiled fine locally but Vercel's build failed.
+**Fix:** Replace `−` with `-` globally in the file.
+**Rule:** Always check for Unicode characters in code — especially minus signs, quotes, and dashes. Use ASCII equivalents in all code.
+
+## Cowork tasks don't persist — repo is the only source of truth
+**Date:** 2026-04-01
+**What happened:** Cowork chat threads disappear between sessions. Can't reference previous work.
+**Fix:** Established protocol: every session (Chat or Cowork) must append to `docs/session-log.md` and update `tasks.todo.md` via GitHub Contents API.
+**Rule:** The repo is the SINGLE SOURCE OF TRUTH. Not chat threads, not Cowork tasks. CLAUDE.md in repo root enforces this for all agents.
