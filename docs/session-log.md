@@ -115,3 +115,34 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Unicode minus sign (−) vs ASCII hyphen (-) caused Vercel build failure — fixed
 - Chrome extension connection from Chat is unreliable — works intermittently
 - Cowork tasks don't persist between sessions — repo files are the solution
+
+---
+
+## 2026-04-01 (evening) — Chat Session: FLUX Logos, Dream State Persistence, Hub Update
+**Agent:** Chat (Claude Opus 4.6)
+**What was built:**
+- 15 FLUX-generated branded logos for all Dream Machine interfaces
+  - Generated via Replicate FLUX 1.1 Pro with architectural game-title aesthetic prompts
+  - Golden motifs on dark backgrounds: quill (Describe), prism (Inspire), compass (Sketch), dice (Explore), frames (Browse), blueprints (Plans), eye (Oracle), crucible (Alchemist), sword (Quest), helix (Genome), orrery (Cosmos), book (Narrator), beams (Collider), blocks (Sandbox), microphone (Voice)
+  - Downloaded and permanently hosted at public/logos/dream/*.webp
+- Dream hub page updated with all 15 cards using permanent logo URLs
+- 3 new cards added to hub: Collider, Sandbox, Voice Architect
+- Dream State API route: src/app/api/v1/dreams/state/route.ts (POST create/update, GET retrieve)
+- Supabase dream_states table created via SQL Editor (Chrome automation)
+  - 26 columns covering all 15 interfaces + synthesized properties + growth tracking
+  - Indexes on user_id and updated_at
+  - RLS policies: public read, anyone insert, anyone update
+  - Test insert succeeded: "Test Dream - Mediterranean Villa" with oracle_profile and alchemist_recipe
+- Migration SQL pushed to supabase/migrations/dream_states.sql
+
+**Key decisions:**
+- Permanent logo hosting at /logos/dream/*.webp instead of Replicate CDN (expires)
+- Dream state uses single table with per-interface JSONB columns (not separate tables)
+- Growth stage auto-calculated: 1 interface = seed, 2-3 = sprout, 4-6 = sapling, 7+ = bloom
+- Used Monaco editor JavaScript API to set SQL content (more reliable than typing)
+
+**Files pushed:**
+- public/logos/dream/{describe,inspire,sketch,explore,browse,plans,oracle,alchemist,quest,genome,cosmos,narrator,collider,sandbox,voice}.webp
+- src/app/dream/page.tsx (15 cards with permanent logo URLs)
+- src/app/api/v1/dreams/state/route.ts
+- supabase/migrations/dream_states.sql
