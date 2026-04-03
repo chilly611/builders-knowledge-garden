@@ -411,3 +411,44 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Oracle at /dream/oracle — ✅ SaveLoadPanel visible
 - Alchemist at /dream/alchemist — ✅ SaveLoadPanel visible
 - Cosmos at /dream/cosmos — ✅ SaveLoadPanel visible
+
+---
+
+## Session: 2026-04-03 — Auth System Build & Deployment Fixes
+
+**Goal:** Build complete authentication and user system via GitHub web UI and Supabase dashboard browser automation.
+
+**What was built:**
+- Supabase Auth integration (email/password + Google OAuth)
+- user_profiles table with RLS policies and auto-create trigger
+- saved_projects table with universal JSONB state format
+- CRUD API routes: /api/v1/saved-projects, /api/v1/user/profile, /api/v1/auth/session
+- AuthModal component with AuthModalProvider context
+- SaveProjectButton component
+- useDreamPersistence hook for universal project persistence
+- Auth callback route for Google OAuth
+- CompassNav AuthButton with sign-in/sign-out
+- Login page with Google OAuth button
+
+**Files committed (via GitHub web UI):**
+- src/lib/auth-server.ts (NEW)
+- src/lib/supabase-browser.ts (NEW)
+- src/lib/use-dream-persistence.ts (NEW)
+- src/components/AuthModal.tsx (NEW)
+- src/components/SaveProjectButton.tsx (NEW)
+- src/app/api/v1/auth/session/route.ts (NEW)
+- src/app/api/v1/saved-projects/route.ts (NEW)
+- src/app/api/v1/user/profile/route.ts (NEW)
+- src/app/auth/callback/route.ts (NEW)
+- src/components/Providers.tsx (UPDATED - added AuthModalProvider)
+- src/components/CompassNav.tsx (UPDATED - added AuthButton)
+- src/app/login/page.tsx (UPDATED - Google OAuth + Suspense boundary)
+- supabase/migrations/user_profiles.sql (NEW - executed in Supabase SQL Editor)
+
+**Build errors fixed:**
+1. user_metadata not on AuthUser type -> used `as any` cast with eslint-disable
+2. File duplication from selectAll+insertText -> fixed by re-fetching via API and taking first half
+3. loading/signOut not on AuthContextType -> used logout, removed loading check
+4. useSearchParams requires Suspense boundary -> wrapped LoginPage in Suspense
+
+**Verification:** Vercel deployment "3a673a8" is Ready + Current on builders.theknowledgegardens.com
