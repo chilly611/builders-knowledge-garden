@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ProjectProvider, useProject } from '../dream-shared/ProjectContext';
-import SaveLoadPanel from '../dream-shared/SaveLoadPanel';
-import ProjectPicker from '../dream-shared/ProjectPicker';
-import type { OracleState, DreamProject } from '../dream-shared/types';
+import { ProjectProvider, useProject } from '../../dream-shared/ProjectContext';
+import SaveLoadPanel from '../../dream-shared/SaveLoadPanel';
+import ProjectPicker from '../../dream-shared/ProjectPicker';
+import type { OracleState, DreamProject } from '../../dream-shared/types';
 
 type Phase = 'intro' | 'questions' | 'processing' | 'profile' | 'renders';
 
