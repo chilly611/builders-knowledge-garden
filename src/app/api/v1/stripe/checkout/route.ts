@@ -11,11 +11,11 @@ const PRICE_MAP: Record<string, string> = {
   enterprise: process.env.STRIPE_PRICE_ENTERPRISE || "",
 };
 
-// Pro is recurring subscription, Team and Enterprise are one-time payments
+// All tiers are recurring monthly subscriptions
 const MODE_MAP: Record<string, "subscription" | "payment"> = {
   pro: "subscription",
-  team: "payment",
-  enterprise: "payment",
+  team: "subscription",
+  enterprise: "subscription",
 };
 
 export async function POST(req: NextRequest) {
