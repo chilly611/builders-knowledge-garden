@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ProjectProvider, useProject } from '../dream-shared/ProjectContext';
-import SaveLoadPanel from '../dream-shared/SaveLoadPanel';
-import ProjectPicker from '../dream-shared/ProjectPicker';
-import type { CosmosState, DreamProject } from '../dream-shared/types';
+import { ProjectProvider, useProject } from '../../dream-shared/ProjectContext';
+import SaveLoadPanel from '../../dream-shared/SaveLoadPanel';
+import ProjectPicker from '../../dream-shared/ProjectPicker';
+import type { CosmosState, DreamProject } from '../../dream-shared/types';
 
 /* ─── Types ─── */
 interface OrbitalNode {
