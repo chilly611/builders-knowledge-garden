@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ProjectProvider, useProject } from '../dream-shared/ProjectContext';
+import SaveLoadPanel from '../dream-shared/SaveLoadPanel';
+import ProjectPicker from '../dream-shared/ProjectPicker';
+import type { CosmosState, DreamProject } from '../dream-shared/types';
 
 /* ─── Types ─── */
 interface OrbitalNode {
@@ -235,7 +239,7 @@ function CosmosVisualization({
 }
 
 /* ─── Main Page ─── */
-export default function CosmosPage() {
+function CosmosPageInner() {
   const [selected, setSelected] = useState<OrbitalNode | null>(null);
   const [absorbed, setAbsorbed] = useState<string[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -253,6 +257,46 @@ export default function CosmosPage() {
   };
 
   const absorbedNodes = ALL_NODES.filter(n => absorbed.includes(n.id));
+
+  // ─── Save/Load Integration ───
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleSerialize = useCallback(() => {
+    const interfaceData: CosmosState = {
+      absorbedIds: absorbed,
+      selectedId: selected?.id || null,
+    };
+    const absNodes = ALL_NODES.filter(n => absorbed.includes(n.id));
+    return {
+      interfaceData,
+      essence: {
+        styles: absNodes.filter(n => n.orbit === 1).map(n => n.label),
+        materials: absNodes.filter(n => n.orbit === 2).map(n => n.label),
+        constraints: absNodes.filter(n => n.orbit === 3).map(n => n.label),
+        freeformNotes: absNodes.map(n => n.label).join(', '),
+      },
+    };
+  }, [absorbed, selected]);
+
+  const handleDeserialize = useCallback((data: { interfaceData: unknown; essence: DreamProject['dreamEssence'] }) => {
+    const state = data.interfaceData as CosmosState | null;
+    if (state) {
+      setAbsorbed(state.absorbedIds || []);
+      if (state.selectedId) {
+        const node = ALL_NODES.find(n => n.id === state.selectedId);
+        if (node) { setSelected(node); setPanelOpen(true); }
+      }
+    } else if (data.essence) {
+      // Seed from dream essence (cross-interface import)
+      const matchedIds: string[] = [];
+      const labels = [...(data.essence.styles || []), ...(data.essence.materials || []), ...(data.essence.constraints || [])];
+      for (const label of labels) {
+        const node = ALL_NODES.find(n => n.label.toLowerCase() === label.toLowerCase());
+        if (node) matchedIds.push(node.id);
+      }
+      if (matchedIds.length > 0) setAbsorbed(matchedIds);
+    }
+  }, []);
 
   return (
     <div style={{
@@ -473,6 +517,25 @@ export default function CosmosPage() {
         )}
       </AnimatePresence>
 
+      {/* Save/Load System */}
+      <SaveLoadPanel
+        interfaceType="cosmos"
+        accentColor="#1D9E75"
+        onSerialize={handleSerialize}
+        onDeserialize={handleDeserialize}
+        onOpenPicker={() => setShowPicker(true)}
+      />
+      <ProjectPicker
+        isOpen={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelectProject={(project) => {
+          const iData = project.interfaceData.cosmos;
+          handleDeserialize({ interfaceData: iData || null, essence: project.dreamEssence });
+        }}
+        currentInterfaceType="cosmos"
+        accentColor="#1D9E75"
+      />
+
       <style jsx global>{`
         @keyframes twinkle {
           0%, 100% { opacity: 0.2; }
@@ -480,5 +543,13 @@ export default function CosmosPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function CosmosPage() {
+  return (
+    <ProjectProvider>
+      <CosmosPageInner />
+    </ProjectProvider>
   );
 }
