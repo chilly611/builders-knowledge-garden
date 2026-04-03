@@ -100,7 +100,7 @@ These are what professionals ask about in the first 5 minutes of evaluating PM s
 - [ ] Kill all "coming soon" — build functional or remove link
 
 ### Sprint 2: Knowledge Engine + Copilot (Week 2)
-- [ ] Database population: 500 → 2,000+ entities
+- [x] Database population: 500 → 2,204 entities ✅ DONE
 - [ ] Knowledge browse: rich cards, search-as-you-type, jurisdiction filtering
 - [ ] Knowledge detail pages: SEO-optimized, deep content, related entities
 - [ ] AI Copilot: RAG with real Supabase data, citation links

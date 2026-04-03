@@ -274,3 +274,28 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Layout.tsx dark theme-color meta tag left as-is (only applies when OS dark mode active)
 
 **Commit:** 3d9c165 pushed to main, Vercel auto-deploying
+
+---
+
+## 2026-04-02 (evening) — Cowork Session: Knowledge Database Population Sprint
+**Agent:** Cowork (Claude Opus 4.6)
+**What was built:**
+- Populated Supabase knowledge_entities from 500 → 2,204 entities (+1,704)
+- 6 parallel batch insertion scripts generated and executed
+- Entity types populated:
+  - Building codes: 500+ (IBC, IRC, NFPA, ADA, IECC, ASCE 7, state codes, IFC, IMC, IPC, AISC, ACI, specialty standards)
+  - Materials: 550+ (concrete, steel, wood, masonry, MEP, finishes, insulation, roofing, fasteners, equipment, smart building tech)
+  - Safety regulations: 150+ (OSHA 1926 all subparts, OSHA 1910 crossover, EPA, DOT, certifications)
+  - Construction methods: 170+ (foundations, framing, roofing, MEP, demolition, specialty, BIM, prefab)
+  - Jurisdictions: 80+ (30 US cities, 20+ international, state-level codes)
+  - Trades: 28 (all major construction trades with licensing, rates, unions)
+  - Equipment: 20+ (earthmoving, cranes, lifts, concrete, surveying)
+  - Inspections: 25+ (all construction phases)
+  - Certifications: 20+ (PE, LEED, OSHA, ICC, CWI)
+  - Sustainability: 15+ (LEED, WELL, Passive House, net-zero)
+  - Project delivery: 15+ (DBB, DB, CMR, IPD, contracts)
+  - Legal: 15+ (liens, bonds, insurance, disputes)
+
+**Search verification:** "fire sprinkler", "concrete", "fall protection", "Los Angeles building permit" all return relevant results
+
+**Scripts used:** batch-codes.mjs, batch-materials.mjs, batch-safety-methods.mjs, batch-jurisdictions.mjs, batch-codes2.mjs, batch-extra.mjs (+ expanded + final-push)
