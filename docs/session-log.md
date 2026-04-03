@@ -254,3 +254,23 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Procore's OCR on drawings can be matched with Claude Vision API
 
 **Files changed:** tasks.todo.md, tasks.lessons.md, docs/session-log.md
+
+---
+
+## 2026-04-02 (afternoon) — Cowork Session: Light Theme Purge
+**Agent:** Cowork (Claude Opus 4.6)
+**What was built:**
+- Purged ALL remaining dark backgrounds (#0a0a0a, #151515, #1a1a1a) from 15 files
+- Dream pages converted: oracle (12 instances), narrator (8), quest (8), sandbox (2), alchemist, collider, voice, dream hub
+- Business pages converted: clients, documents, field, finances, site
+- Cinematic page fully converted to light
+- KillerAppNav: dark navbar → light (rgba(255,255,255,0.97)), dark tooltips → light
+- All white-on-dark text flipped to dark-on-light (preserved white text on accent buttons)
+
+**Key decisions:**
+- Used CSS variables (var(--bg), var(--fg)) throughout instead of hardcoded hex
+- #1a1a1a in CRM page is intentionally dark TEXT color on light background (correct usage)
+- #0A0A0A in architecture-styles.ts is palette data, not UI — left unchanged
+- Layout.tsx dark theme-color meta tag left as-is (only applies when OS dark mode active)
+
+**Commit:** 3d9c165 pushed to main, Vercel auto-deploying

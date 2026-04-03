@@ -200,3 +200,17 @@
 9. **Aconex's metadata-driven document architecture with unalterable audit trails is designed for litigation.** Enterprise buyers on $68B programs need legal immutability. Our document CDE (Phase 2) must have audit logging from day one — the Supabase audit table is already in schema.
 
 10. **Oracle's Application Switcher solves the "federated feel" problem.** Even when apps are separate (Aconex, Primavera, Textura), a unified nav makes them feel connected. Our compass bloom navigation serves this same purpose — critical to build in Sprint 1.
+
+---
+
+## Cowork Session — 2026-04-02 (afternoon): Light Theme Purge
+
+11. **CSS variable architecture pays off massively for theme changes.** Swapping `var(--bg)` at the root recolors ~80% of the app. The remaining 20% is hardcoded hex values in inline styles — these must be hunted down file by file.
+
+12. **Distinguish dark-as-background vs dark-as-text-color.** During the purge, `#1a1a1a` appeared in CRM page — but as TEXT color on light backgrounds (correct!). Don't blindly replace all dark hex values; check context.
+
+13. **Dream pages are the worst offenders for hardcoded dark colors.** Oracle (12), Narrator (8), Quest (8) had the most instances. These were built during the dark theme era and never migrated. Future rule: always use CSS variables, never hardcode surface colors.
+
+14. **Git lock files in Cowork sandbox need manual cleanup.** The sandbox can leave `.git/index.lock` and `.git/HEAD.lock` files. Use `find .git -name "*.lock" -exec rm -f {} \;` to clean up before committing.
+
+15. **Remote divergence is common across Chat/Cowork sessions.** Always `git pull --rebase origin main` before committing. The repo gets updated from multiple session types simultaneously.
