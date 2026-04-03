@@ -101,6 +101,8 @@ These are what professionals ask about in the first 5 minutes of evaluating PM s
 
 ### Sprint 2: Knowledge Engine + Copilot (Week 2)
 - [x] Database population: 500 → 2,204 entities ✅ DONE
+- [x] PM Modules: RFI, Submittal, Change Order, Punch List, Budget ✅ DONE
+- [x] Stripe infrastructure: checkout/webhook/portal routes, pricing page ✅ DONE
 - [ ] Knowledge browse: rich cards, search-as-you-type, jurisdiction filtering
 - [ ] Knowledge detail pages: SEO-optimized, deep content, related entities
 - [ ] AI Copilot: RAG with real Supabase data, citation links
