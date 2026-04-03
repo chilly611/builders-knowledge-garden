@@ -4,14 +4,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth";
+import { useAuthModal } from "@/components/AuthModal";
 
 const DESTINATIONS = [
-  { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
-  { icon: "💭", label: "Dream Builder", desc: "Describe what you want to build", href: "/dream", color: "#D85A30" },
-  { icon: "⚡", label: "Killer App", desc: "Projects, CRM, finances", href: "/crm", color: "#E8443A" },
-  { icon: "🧠", label: "AI Copilot", desc: "Ask anything about building", href: "#copilot", color: "#7F77DD" },
-  { icon: "🏪", label: "Marketplace", desc: "Suppliers, subs, equipment", href: "/marketplace", color: "#378ADD" },
-  { icon: "👤", label: "My Profile", desc: "Settings, team, billing", href: "/profile", color: "#BA7517" },
+  { icon: "ð¿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
+  { icon: "ð­", label: "Dream Builder", desc: "Describe what you want to build", href: "/dream", color: "#D85A30" },
+  { icon: "â¡", label: "Killer App", desc: "Projects, CRM, finances", href: "/crm", color: "#E8443A" },
+  { icon: "ð§ ", label: "AI Copilot", desc: "Ask anything about building", href: "#copilot", color: "#7F77DD" },
+  { icon: "ðª", label: "Marketplace", desc: "Suppliers, subs, equipment", href: "/marketplace", color: "#378ADD" },
+  { icon: "ð¤", label: "My Profile", desc: "Settings, team, billing", href: "/profile", color: "#BA7517" },
 ];
 
 function useIsDesktop() {
@@ -56,7 +58,7 @@ function getLaneOrder(lane: string | null): typeof DESTINATIONS {
   });
 }
 
-/* ═══ DESKTOP SIDEBAR ═══ */
+/* âââ DESKTOP SIDEBAR âââ */
 function DesktopSidebar() {
   const [expanded, setExpanded] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -143,14 +145,14 @@ function DesktopSidebar() {
           transition: "all 0.15s",
         }}
       >
-        <span style={{ fontSize: 14 }}>{pinned ? "📌" : "📎"}</span>
+        <span style={{ fontSize: 14 }}>{pinned ? "ð" : "ð"}</span>
         {showExpanded && <span>{pinned ? "Unpin" : "Pin open"}</span>}
       </button>
     </nav>
   );
 }
 
-/* ═══ MOBILE FAB + BLOOM ═══ */
+/* âââ MOBILE FAB + BLOOM âââ */
 function MobileFAB() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -234,7 +236,7 @@ function MobileFAB() {
         onMouseEnter={e => { if (!open) e.currentTarget.style.transform = "scale(1.08)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
       >
-        {open ? "✕" : "🧭"}
+        {open ? "â" : "ð§­"}
       </button>
 
       <style>{`
@@ -247,7 +249,63 @@ function MobileFAB() {
   );
 }
 
-/* ═══ MAIN EXPORT — switches between desktop sidebar and mobile FAB ═══ */
+/* âââ MAIN EXPORT â switches between desktop sidebar and mobile FAB âââ */
+
+function AuthButton() {
+  const { user, loading, signOut } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const [showMenu, setShowMenu] = useState(false);
+
+  if (loading) return null;
+
+  if (!user) {
+    return (
+      <button
+        onClick={() => openAuthModal()}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+        title="Sign in"
+      >
+        <span style={{ fontSize: "1.2em" }}>&#128273;</span>
+        <span className="hidden lg:inline">Sign in</span>
+      </button>
+    );
+  }
+
+  const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Builder";
+  const avatarUrl = user.user_metadata?.avatar_url;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowMenu(!showMenu)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+        ) : (
+          <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-xs text-white font-bold">
+            {displayName[0]?.toUpperCase()}
+          </div>
+        )}
+        <span className="hidden lg:inline truncate max-w-[100px]">{displayName}</span>
+      </button>
+      {showMenu && (
+        <div className="absolute bottom-full left-0 mb-2 w-48 bg-gray-900 border border-white/10 rounded-lg shadow-xl py-1 z-50">
+          <div className="px-3 py-2 text-xs text-white/50 truncate">{user.email}</div>
+          <hr className="border-white/10 my-1" />
+          <a href="/profile" className="block px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10">My Profile</a>
+          <button
+            onClick={() => { signOut(); setShowMenu(false); }}
+            className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-white/10"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CompassNav() {
   const [mounted, setMounted] = useState(false);
   const isDesktop = useIsDesktop();
