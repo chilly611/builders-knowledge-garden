@@ -80,9 +80,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const PROJECT_TYPES = [
-  'Single-Family Residential', 'Multi-Family', 'Commercial', 'Retail',
-  'Industrial', 'Data Center', 'Healthcare', 'Education', 'Mixed-Use',
-  'Renovation / Remodel', 'Infrastructure', 'Other',
+  'ADU / Accessory Dwelling Unit', 'Single-Family Residential', 'Multi-Family',
+  'Townhome / Rowhouse', 'Condo / Co-op', 'Modular / Prefab',
+  'Garage / Outbuilding', 'Pool / Outdoor Living',
+  'Renovation / Remodel', 'Addition / Extension', 'Tenant Improvement',
+  'Commercial', 'Retail', 'Restaurant / Hospitality',
+  'Office', 'Industrial / Warehouse', 'Data Center',
+  'Healthcare', 'Education', 'Government / Municipal',
+  'Mixed-Use', 'Infrastructure', 'Other',
 ];
 
 const DEFAULT_FORM: NewProjectForm = {
@@ -411,8 +416,25 @@ export default function CommandCenterPage() {
           budget_amount: form.budget_amount ? parseFloat(form.budget_amount.replace(/,/g, '')) : null,
         }),
       });
-      if (res.ok) { setShowAddModal(false); setForm(DEFAULT_FORM); await loadData(); }
+      if (res.ok) {
+        setShowAddModal(false); setForm(DEFAULT_FORM); await loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Save failed: ${err.error || res.statusText}. Check that the database table exists.`);
+      }
+    } catch (e) {
+      alert(`Network error saving project. The API may not be connected to the database.`);
+      console.error('Submit error:', e);
     } finally { setSubmitting(false); }
+  };
+
+  const clearAllProjects = async () => {
+    if (!confirm('Delete ALL projects? This clears your test data so you can start fresh.')) return;
+    for (const p of projects) {
+      await fetch(`/api/v1/projects?id=${p.id}`, { method: 'DELETE' });
+    }
+    setProjects([]);
+    setAttentionItems([]);
   };
 
   const deleteProject = async (id: string) => {
@@ -516,6 +538,11 @@ export default function CommandCenterPage() {
             <button onClick={() => setShowCapabilities(true)} style={{ background: '#f5f5f0', border: '1px solid #e5e5e0', borderRadius: 9, padding: '9px 14px', color: '#666', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
               ⚡ Capabilities
             </button>
+            {projects.length > 0 && (
+              <button onClick={clearAllProjects} style={{ background: '#f5f5f0', border: '1px solid #e5e5e0', borderRadius: 9, padding: '9px 14px', color: '#999', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                🗑 Clear Test Data
+              </button>
+            )}
             {redItems > 0 && (
               <span style={{ background: '#EF4444', color: '#fff', borderRadius: 12, padding: '3px 10px', fontSize: '12px', fontWeight: 700 }}>
                 {redItems} urgent
@@ -708,7 +735,7 @@ export default function CommandCenterPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <FormField label="Phase">
                     <select value={form.phase} onChange={e => setForm(f => ({ ...f, phase: e.target.value as ProjectPhase }))} style={SELECT_STYLE}>
-                      {(['DREAM','DESIGN','PLAN','BUILD','DELIVER','GROW'] as ProjectPhase[]).map(p => <option key={p} value={p} style={{ background: '#111' }}>{p}</option>)}
+                      {(['DREAM','DESIGN','PLAN','BUILD','DELIVER','GROW'] as ProjectPhase[]).map(p => <option key={p} value={p} style={{ background: '#fff', color: '#1a1a1a' }}>{p}</option>)}
                     </select>
                   </FormField>
                   <FormField label="Progress (%)">
@@ -721,24 +748,24 @@ export default function CommandCenterPage() {
                   </FormField>
                   <FormField label="Budget Status">
                     <select value={form.budget_status} onChange={e => setForm(f => ({ ...f, budget_status: e.target.value as BudgetStatus }))} style={SELECT_STYLE}>
-                      <option value="on-track" style={{ background: '#111' }}>On Track</option>
-                      <option value="over" style={{ background: '#111' }}>Over Budget</option>
-                      <option value="ahead" style={{ background: '#111' }}>Ahead of Budget</option>
+                      <option value="on-track" style={{ background: '#fff', color: '#1a1a1a' }}>On Track</option>
+                      <option value="over" style={{ background: '#fff', color: '#1a1a1a' }}>Over Budget</option>
+                      <option value="ahead" style={{ background: '#fff', color: '#1a1a1a' }}>Ahead of Budget</option>
                     </select>
                   </FormField>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <FormField label="Risk Level">
                     <select value={form.risk_level} onChange={e => setForm(f => ({ ...f, risk_level: e.target.value as RiskLevel }))} style={SELECT_STYLE}>
-                      <option value="low" style={{ background: '#111' }}>Low Risk</option>
-                      <option value="medium" style={{ background: '#111' }}>Medium Risk</option>
-                      <option value="high" style={{ background: '#111' }}>High Risk</option>
+                      <option value="low" style={{ background: '#fff', color: '#1a1a1a' }}>Low Risk</option>
+                      <option value="medium" style={{ background: '#fff', color: '#1a1a1a' }}>Medium Risk</option>
+                      <option value="high" style={{ background: '#fff', color: '#1a1a1a' }}>High Risk</option>
                     </select>
                   </FormField>
                   <FormField label="Project Type">
                     <select value={form.project_type} onChange={e => setForm(f => ({ ...f, project_type: e.target.value }))} style={SELECT_STYLE}>
-                      <option value="" style={{ background: '#111' }}>Select type…</option>
-                      {PROJECT_TYPES.map(t => <option key={t} value={t} style={{ background: '#111' }}>{t}</option>)}
+                      <option value="" style={{ background: '#fff', color: '#1a1a1a' }}>Select type…</option>
+                      {PROJECT_TYPES.map(t => <option key={t} value={t} style={{ background: '#fff', color: '#1a1a1a' }}>{t}</option>)}
                     </select>
                   </FormField>
                 </div>
@@ -773,7 +800,7 @@ export default function CommandCenterPage() {
 
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
-        select option { background: #111 !important; color: #fff !important; }
+        select option { background: #fff !important; color: #1a1a1a !important; }
       `}</style>
     </div>
   );
