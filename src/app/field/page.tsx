@@ -49,21 +49,21 @@ export default function FieldOpsPage() {
                 <span style={{ fontSize: 28 }}>🦺</span>
                 <div>
                   <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Field Ops</h1>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Voice-first. Weather-aware. Code-connected.</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>Voice-first. Weather-aware. Code-connected.</p>
                 </div>
               </div>
-              <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', maxWidth: 520, lineHeight: 1.6, margin: '12px 0 0' }}>
+              <p style={{ fontSize: 15, color: '#666', maxWidth: 520, lineHeight: 1.6, margin: '12px 0 0' }}>
                 Every field worker with a phone becomes a real-time data source. Voice logs, AI safety briefings, photo documentation — all connected to your projects, your codes, your schedule.
               </p>
             </div>
             {/* Beta progress */}
             <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 12, padding: '16px 20px', minWidth: 200 }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 8px' }}>Beta Progress</p>
-              <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
+              <div style={{ height: 6, background: '#EEEDE8', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
                 <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #F59E0B, #FBBF24)', borderRadius: 3 }} />
               </div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0 }}>{progress}% complete</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>Launching Q2 2026</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>{progress}% complete</p>
+              <p style={{ fontSize: 11, color: '#888', margin: '2px 0 0' }}>Launching Q2 2026</p>
             </div>
           </div>
         </div>
@@ -71,13 +71,13 @@ export default function FieldOpsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 0, minHeight: 'calc(100vh - 200px)' }}>
 
           {/* Main content */}
-          <div style={{ padding: '24px 28px', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ padding: '24px 28px', borderRight: '1px solid #e5e5e0' }}>
 
             {/* Voice log demo */}
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: '#777', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px' }}>
               Voice Log Preview
             </h2>
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '20px', marginBottom: 24 }}>
+            <div style={{ background: '#F5F5F0', border: '1px solid #e5e5e0', borderRadius: 14, padding: '20px', marginBottom: 24 }}>
               {/* Mic button */}
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
                 <button
@@ -96,36 +96,36 @@ export default function FieldOpsPage() {
                   {recording ? '⏹' : '🎤'}
                 </button>
               </div>
-              <p style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 20px' }}>
+              <p style={{ textAlign: 'center', fontSize: 12, color: '#888', margin: '0 0 20px' }}>
                 {recording ? 'Recording… speak your site update' : 'Tap to start voice log'}
               </p>
               {/* Log feed */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {DEMO_LOGS.map((log, i) => (
-                  <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px' }}>
+                  <div key={i} style={{ background: '#F5F5F0', border: '1px solid #e5e5e0', borderRadius: 8, padding: '10px 14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: log.worker === 'AI Briefing' ? '#F59E0B' : 'rgba(255,255,255,0.6)' }}>{log.worker}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: log.worker === 'AI Briefing' ? '#F59E0B' : '#666' }}>{log.worker}</span>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>{log.time}</span>
+                        <span style={{ fontSize: 10, color: '#aaa' }}>{log.time}</span>
                         <span style={{ fontSize: 9, fontWeight: 600, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 4, padding: '1px 5px' }}>{log.tag}</span>
                       </div>
                     </div>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>{log.log}</p>
+                    <p style={{ fontSize: 12, color: '#777', margin: 0, lineHeight: 1.5 }}>{log.log}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Features grid */}
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>What's included</h2>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: '#777', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>What's included</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
               {FEATURES.map((f, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px 16px' }}>
+                <div key={i} style={{ background: '#FAFAF8', border: '1px solid #e5e5e0', borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 18, flexShrink: 0 }}>{f.icon}</span>
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 700, margin: '0 0 4px', color: '#fff' }}>{f.title}</p>
-                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
+                      <p style={{ fontSize: 13, fontWeight: 700, margin: '0 0 4px', color: '#1a1a1a' }}>{f.title}</p>
+                      <p style={{ fontSize: 11, color: '#888', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -135,33 +135,33 @@ export default function FieldOpsPage() {
 
           {/* Right sidebar: competition + CTA */}
           <div style={{ padding: '24px 20px' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: '#777', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>
               Who this replaces
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
               {COMPETITORS.map((c, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 14px' }}>
+                <div key={i} style={{ background: '#FAFAF8', border: '1px solid #e5e5e0', borderRadius: 10, padding: '12px 14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{c.name}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{c.name}</span>
                     <span style={{ fontSize: 9, fontWeight: 600, color: c.color, background: `${c.color}15`, border: `1px solid ${c.color}30`, borderRadius: 4, padding: '2px 6px' }}>REPLACED</span>
                   </div>
                   <p style={{ fontSize: 10, color: '#22C55E', margin: '0 0 3px', fontWeight: 600 }}>Covers: {c.coverage}</p>
-                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.4 }}>Missing: {c.missing}</p>
+                  <p style={{ fontSize: 10, color: '#999', margin: 0, lineHeight: 1.4 }}>Missing: {c.missing}</p>
                 </div>
               ))}
             </div>
 
             {/* CTA */}
             <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: '20px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>Get early access</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '0 0 14px', lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', margin: '0 0 6px' }}>Get early access</p>
+              <p style={{ fontSize: 11, color: '#888', margin: '0 0 14px', lineHeight: 1.5 }}>
                 Be first to use Field Ops when it launches. Early users get 3 months free.
               </p>
               <input placeholder="your@email.com" style={{
                 width: '100%', boxSizing: 'border-box',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                background: '#F0F0EB', border: '1px solid #e5e5e0',
                 borderRadius: 8, padding: '8px 12px',
-                color: '#fff', fontSize: 12, marginBottom: 10,
+                color: '#1a1a1a', fontSize: 12, marginBottom: 10,
                 fontFamily: 'inherit', outline: 'none',
               }} />
               <button style={{
@@ -174,13 +174,13 @@ export default function FieldOpsPage() {
             </div>
 
             {/* XP unlock */}
-            <div style={{ marginTop: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 14px' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎮 Unlock Condition</p>
-              <p style={{ fontSize: 12, color: '#fff', margin: '0 0 8px' }}>Reach Level 3 Builder to unlock Field Ops Beta</p>
-              <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ marginTop: 16, background: '#FAFAF8', border: '1px solid #e5e5e0', borderRadius: 10, padding: '12px 14px' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#888', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🎮 Unlock Condition</p>
+              <p style={{ fontSize: 12, color: '#1a1a1a', margin: '0 0 8px' }}>Reach Level 3 Builder to unlock Field Ops Beta</p>
+              <div style={{ height: 5, background: '#EEEDE8', borderRadius: 3, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: '56%', background: 'linear-gradient(90deg, #F59E0B, #FBBF24)', borderRadius: 3 }} />
               </div>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', margin: '4px 0 0' }}>2,840 / 5,000 XP</p>
+              <p style={{ fontSize: 10, color: '#999', margin: '4px 0 0' }}>2,840 / 5,000 XP</p>
             </div>
           </div>
         </div>

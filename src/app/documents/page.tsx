@@ -38,48 +38,48 @@ export default function DocumentsPage() {
                 <span style={{ fontSize: 28 }}>📋</span>
                 <div>
                   <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Documents</h1>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>RFIs · submittals · change orders · drawings</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>RFIs · submittals · change orders · drawings</p>
                 </div>
               </div>
-              <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', maxWidth: 520, lineHeight: 1.6, margin: '12px 0 0' }}>
+              <p style={{ fontSize: 15, color: '#666', maxWidth: 520, lineHeight: 1.6, margin: '12px 0 0' }}>
                 Documents that understand construction. RFIs auto-answered by your knowledge engine. Change orders priced in seconds. Submittals routed intelligently.
               </p>
             </div>
             <div style={{ background: 'rgba(55,138,221,0.08)', border: '1px solid rgba(55,138,221,0.2)', borderRadius: 12, padding: '16px 20px', minWidth: 180, textAlign: 'center' }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: '#378ADD', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 4px' }}>Coming</p>
-              <p style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Q4 2026</p>
+              <p style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Q4 2026</p>
             </div>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', minHeight: 'calc(100vh - 200px)' }}>
-          <div style={{ padding: '24px 28px', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>Document Log Preview</h2>
+          <div style={{ padding: '24px 28px', borderRight: '1px solid #e5e5e0' }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>Document Log Preview</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 24 }}>
               {DEMO_DOCS.map((d, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div key={i} style={{ background: '#F5F5F0', border: '1px solid #e5e5e0', borderRadius: 10, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 3 }}>
                       <span style={{ fontSize: 9, fontWeight: 700, color: '#378ADD', background: 'rgba(55,138,221,0.1)', border: '1px solid rgba(55,138,221,0.2)', borderRadius: 4, padding: '1px 5px' }}>{d.type}</span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{d.id}</span>
+                      <span style={{ fontSize: 10, color: '#999' }}>{d.id}</span>
                     </div>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: '#fff', margin: 0 }}>{d.title}</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>{d.title}</p>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
                     <span style={{ fontSize: 9, fontWeight: 600, color: STATUS_COLOR[d.status] || '#fff', background: `${STATUS_COLOR[d.status] || '#fff'}15`, border: `1px solid ${STATUS_COLOR[d.status] || '#fff'}30`, borderRadius: 4, padding: '2px 6px', display: 'block', marginBottom: 3 }}>{d.status}</span>
-                    {d.daysOpen > 0 && <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)' }}>{d.daysOpen}d open</span>}
+                    {d.daysOpen > 0 && <span style={{ fontSize: 9, color: '#aaa' }}>{d.daysOpen}d open</span>}
                   </div>
                 </div>
               ))}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
               {DOCS_FEATURES.map((f, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 14px' }}>
+                <div key={i} style={{ background: '#FAFAF8', border: '1px solid #e5e5e0', borderRadius: 10, padding: '12px 14px' }}>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <span style={{ fontSize: 18 }}>{f.icon}</span>
                     <div>
-                      <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 3px', color: '#fff' }}>{f.title}</p>
-                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.4 }}>{f.desc}</p>
+                      <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 3px', color: '#1a1a1a' }}>{f.title}</p>
+                      <p style={{ fontSize: 11, color: '#888', margin: 0, lineHeight: 1.4 }}>{f.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -89,9 +89,9 @@ export default function DocumentsPage() {
           <div style={{ padding: '24px 20px' }}>
             <div style={{ background: 'rgba(55,138,221,0.06)', border: '1px solid rgba(55,138,221,0.15)', borderRadius: 12, padding: '14px', marginBottom: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#378ADD', margin: '0 0 6px' }}>vs. PlanGrid (Autodesk), Procore Docs</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.5 }}>PlanGrid is great at storing PDFs. We store documents that KNOW their content — RFIs auto-answered, drawings linked to code requirements, change orders auto-priced.</p>
+              <p style={{ fontSize: 11, color: '#888', margin: 0, lineHeight: 1.5 }}>PlanGrid is great at storing PDFs. We store documents that KNOW their content — RFIs auto-answered, drawings linked to code requirements, change orders auto-priced.</p>
             </div>
-            <input placeholder="your@email.com" style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 12, marginBottom: 10, fontFamily: 'inherit', outline: 'none' }} />
+            <input placeholder="your@email.com" style={{ width: '100%', boxSizing: 'border-box', background: '#F0F0EB', border: '1px solid #e5e5e0', borderRadius: 8, padding: '8px 12px', color: '#1a1a1a', fontSize: 12, marginBottom: 10, fontFamily: 'inherit', outline: 'none' }} />
             <button style={{ width: '100%', background: '#378ADD', border: 'none', borderRadius: 8, padding: '10px 0', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>📋 Notify me</button>
           </div>
         </div>

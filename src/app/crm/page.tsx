@@ -115,7 +115,7 @@ function PhaseIndicator({ phase }: { phase: ProjectPhase }) {
   return (
     <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
       {phases.map((p, i) => (
-        <div key={p} style={{ width: i <= idx ? 14 : 7, height: 4, borderRadius: 2, background: i <= idx ? PHASE_COLORS[p] : 'rgba(255,255,255,0.1)', transition: 'all 0.3s ease' }} />
+        <div key={p} style={{ width: i <= idx ? 14 : 7, height: 4, borderRadius: 2, background: i <= idx ? PHASE_COLORS[p] : '#EEEDE8', transition: 'all 0.3s ease' }} />
       ))}
       <span style={{ fontSize: '10px', fontWeight: 700, color: PHASE_COLORS[phase], marginLeft: 6, letterSpacing: '0.5px' }}>{phase}</span>
     </div>
@@ -148,7 +148,7 @@ function MorningBriefing({ report, onRefresh, refreshing }: {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const alertColor = report ? ALERT_COLORS[report.alert_level] : '#94A3B8';
-  const alertBg = report ? ALERT_BG[report.alert_level] : 'rgba(255,255,255,0.03)';
+  const alertBg = report ? ALERT_BG[report.alert_level] : '#F5F5F0';
   const categories = report?.report_data?.categories || {};
   const topActions = report?.report_data?.top_actions || [];
 
@@ -186,7 +186,7 @@ function MorningBriefing({ report, onRefresh, refreshing }: {
               </span>
             )}
           </div>
-          <p style={{ fontSize: '13px', color: report ? '#fff' : 'rgba(255,255,255,0.4)', margin: '2px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80vw' }}>
+          <p style={{ fontSize: '13px', color: report ? '#1a1a1a' : '#888', margin: '2px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80vw' }}>
             {report ? report.report_data?.summary || report.summary : 'No briefing yet — click to generate your first intelligence report'}
           </p>
         </div>
@@ -203,10 +203,10 @@ function MorningBriefing({ report, onRefresh, refreshing }: {
             onClick={e => { e.stopPropagation(); onRefresh(); }}
             disabled={refreshing}
             style={{
-              background: refreshing ? 'rgba(255,255,255,0.05)' : `${alertColor}20`,
+              background: refreshing ? '#F0F0EB' : `${alertColor}20`,
               border: `1px solid ${alertColor}30`,
               borderRadius: 6, padding: '4px 10px',
-              color: refreshing ? 'rgba(255,255,255,0.3)' : alertColor,
+              color: refreshing ? '#999' : alertColor,
               fontSize: '11px', fontWeight: 700, cursor: refreshing ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit',
             }}
@@ -226,7 +226,7 @@ function MorningBriefing({ report, onRefresh, refreshing }: {
             exit={{ height: 0, opacity: 0 }}
             style={{ overflow: 'hidden' }}
           >
-            <div style={{ padding: '0 28px 20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ padding: '0 28px 20px', borderTop: '1px solid #e5e5e0' }}>
 
               {/* Top 3 actions */}
               {topActions.length > 0 && (
@@ -263,8 +263,8 @@ function MorningBriefing({ report, onRefresh, refreshing }: {
                       key={key}
                       onClick={() => setActiveCategory(isActive ? null : key)}
                       style={{
-                        background: isActive ? `${ALERT_COLORS[c.status]}15` : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${isActive ? ALERT_COLORS[c.status] + '40' : 'rgba(255,255,255,0.07)'}`,
+                        background: isActive ? `${ALERT_COLORS[c.status]}15` : '#F5F5F0',
+                        border: `1px solid ${isActive ? ALERT_COLORS[c.status] + '40' : '#e5e5e0'}`,
                         borderLeft: `3px solid ${ALERT_COLORS[c.status]}`,
                         borderRadius: '0 8px 8px 0',
                         padding: '10px 12px', cursor: 'pointer',
@@ -432,7 +432,7 @@ export default function CommandCenterPage() {
             <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, background: 'linear-gradient(135deg, #E8443A, #FF7A6E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>
               Command Center
             </h1>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{nowDate} · Your AI COO</p>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#999' }}>{nowDate} · Your AI COO</p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {redItems > 0 && (
@@ -458,13 +458,13 @@ export default function CommandCenterPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 0, minHeight: 'calc(100vh - 256px)' }}>
 
         {/* ─── LEFT: AI Attention Queue ─── */}
-        <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', padding: '18px 14px', overflowY: 'auto', maxHeight: 'calc(100vh - 256px)' }}>
+        <div style={{ borderRight: '1px solid #e5e5e0', padding: '18px 14px', overflowY: 'auto', maxHeight: 'calc(100vh - 256px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <h2 style={{ fontSize: '13px', fontWeight: 700, margin: 0, color: '#555' }}>Needs Attention</h2>
             <button onClick={runAnalysis} disabled={analyzing || !projects.length} style={{
-              background: analyzing ? 'rgba(255,255,255,0.05)' : 'rgba(232,68,58,0.15)',
-              border: `1px solid ${analyzing ? 'rgba(255,255,255,0.08)' : 'rgba(232,68,58,0.3)'}`,
-              borderRadius: 8, padding: '4px 10px', color: analyzing ? 'rgba(255,255,255,0.3)' : '#E8443A',
+              background: analyzing ? '#F0F0EB' : 'rgba(232,68,58,0.15)',
+              border: `1px solid ${analyzing ? '#e5e5e0' : 'rgba(232,68,58,0.3)'}`,
+              borderRadius: 8, padding: '4px 10px', color: analyzing ? '#999' : '#E8443A',
               fontSize: '11px', fontWeight: 700, cursor: projects.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
             }}>
               {analyzing ? '⏳ Analyzing…' : '🤖 AI Analyze'}
@@ -490,7 +490,7 @@ export default function CommandCenterPage() {
                   return (
                     <motion.div key={item.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16, height: 0 }} transition={{ delay: i * 0.04 }}
                       onClick={() => setExpandedAttention(isExpanded ? null : item.id)}
-                      style={{ background: isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isExpanded ? `${URGENCY_COLORS[item.urgency]}30` : 'rgba(255,255,255,0.06)'}`, borderLeft: `3px solid ${URGENCY_COLORS[item.urgency]}`, borderRadius: '0 8px 8px 0', padding: '10px 12px', cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                      style={{ background: isExpanded ? '#F0F0EB' : '#FAFAF8', border: `1px solid ${isExpanded ? `${URGENCY_COLORS[item.urgency]}30` : '#e5e5e0'}`, borderLeft: `3px solid ${URGENCY_COLORS[item.urgency]}`, borderRadius: '0 8px 8px 0', padding: '10px 12px', cursor: 'pointer', transition: 'all 0.2s ease' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                         <span style={{ fontSize: '11px', marginTop: 2, flexShrink: 0 }}>{URGENCY_EMOJI[item.urgency]}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -551,11 +551,11 @@ export default function CommandCenterPage() {
                   return (
                     <motion.div key={project.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
                       onClick={() => setExpandedProject(isExpanded ? null : project.id)}
-                      style={{ background: '#fff', border: `1px solid ${isExpanded ? `${phaseColor}30` : 'rgba(255,255,255,0.07)'}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer', transition: 'border-color 0.2s ease' }}>
+                      style={{ background: '#fff', border: `1px solid ${isExpanded ? `${phaseColor}30` : '#e5e5e0'}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer', transition: 'border-color 0.2s ease' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: '#1a1a1a', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.name}</p>
-                          {project.client_name && <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', margin: '2px 0 0' }}>{project.client_name}</p>}
+                          {project.client_name && <p style={{ fontSize: '11px', color: '#999', margin: '2px 0 0' }}>{project.client_name}</p>}
                         </div>
                         <span style={{ background: `${riskColor}18`, border: `1px solid ${riskColor}30`, color: riskColor, borderRadius: 5, padding: '2px 7px', fontSize: '10px', fontWeight: 700, flexShrink: 0, marginLeft: 8 }}>
                           {project.risk_level.toUpperCase()}
@@ -569,10 +569,10 @@ export default function CommandCenterPage() {
                         </div>
                         <ProgressBar percent={project.progress} color={phaseColor} />
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid #e5e5e0' }}>
                         <div>
                           <p style={{ fontSize: '10px', color: '#aaa', margin: 0 }}>Budget</p>
-                          <p style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0 0', color: project.budget_status === 'over' ? '#EF4444' : project.budget_status === 'ahead' ? '#22C55E' : '#fff' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 700, margin: '2px 0 0', color: project.budget_status === 'over' ? '#EF4444' : project.budget_status === 'ahead' ? '#22C55E' : '#1a1a1a' }}>
                             {formatBudget(project.budget_amount)}
                             {project.budget_amount && <span style={{ fontSize: '10px', fontWeight: 400, color: '#aaa', marginLeft: 4 }}>{project.budget_status}</span>}
                           </p>
@@ -582,7 +582,7 @@ export default function CommandCenterPage() {
                             <p style={{ fontSize: '10px', color: '#aaa', margin: 0 }}>Next</p>
                             <p style={{ fontSize: '11px', fontWeight: 600, margin: '2px 0 0', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {project.next_milestone}
-                              {project.milestone_date && <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', display: 'block' }}>{new Date(project.milestone_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+                              {project.milestone_date && <span style={{ color: '#999', fontSize: '10px', display: 'block' }}>{new Date(project.milestone_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
                             </p>
                           </div>
                         )}
@@ -590,7 +590,7 @@ export default function CommandCenterPage() {
                       <AnimatePresence>
                         {isExpanded && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
-                            <div style={{ paddingTop: 12, marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ paddingTop: 12, marginTop: 10, borderTop: '1px solid #e5e5e0' }}>
                               {project.location && <p style={{ fontSize: '11px', color: '#999', margin: '0 0 4px' }}>📍 {project.location}</p>}
                               {project.project_type && <p style={{ fontSize: '11px', color: '#999', margin: '0 0 4px' }}>🏗 {project.project_type}</p>}
                               {project.notes && <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0', lineHeight: 1.5 }}>{project.notes}</p>}
@@ -681,7 +681,7 @@ export default function CommandCenterPage() {
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                 <button onClick={() => setShowAddModal(false)} style={{ flex: 1, background: '#f5f5f3', border: '1px solid #e5e5e0', borderRadius: 9, padding: '11px 0', color: '#888', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-                <button onClick={submitProject} disabled={!form.name.trim() || submitting} style={{ flex: 2, background: form.name.trim() ? 'linear-gradient(135deg, #E8443A, #c93328)' : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 9, padding: '11px 0', color: form.name.trim() ? '#fff' : 'rgba(255,255,255,0.3)', fontSize: '14px', fontWeight: 700, cursor: form.name.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                <button onClick={submitProject} disabled={!form.name.trim() || submitting} style={{ flex: 2, background: form.name.trim() ? 'linear-gradient(135deg, #E8443A, #c93328)' : '#F0F0EB', border: 'none', borderRadius: 9, padding: '11px 0', color: form.name.trim() ? '#fff' : '#999', fontSize: '14px', fontWeight: 700, cursor: form.name.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
                   {submitting ? 'Adding…' : 'Add Project'}
                 </button>
               </div>
