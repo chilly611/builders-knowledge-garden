@@ -214,3 +214,30 @@
 14. **Git lock files in Cowork sandbox need manual cleanup.** The sandbox can leave `.git/index.lock` and `.git/HEAD.lock` files. Use `find .git -name "*.lock" -exec rm -f {} \;` to clean up before committing.
 
 15. **Remote divergence is common across Chat/Cowork sessions.** Always `git pull --rebase origin main` before committing. The repo gets updated from multiple session types simultaneously.
+
+---
+
+## Cowork Session — 2026-04-02 (evening): White-on-White Fix + Onboarding UX
+
+16. **Outer container theme fix is NOT enough.** Changing the root div to `var(--bg)` only fixes the page background. Every internal element with `rgba(255,255,255,...)` colors (text, backgrounds, borders) must be individually converted. The 5 CRM sub-pages (field, clients, documents, finances, site) each had 20-40 dark-theme color values inside them despite the outer wrapper being "fixed."
+
+17. **Dark-theme color mapping for light backgrounds.** Standard conversions:
+    - `color: '#fff'` → `color: '#1a1a1a'` (primary text)
+    - `color: 'rgba(255,255,255,0.6)'` → `color: '#666'` (secondary text)
+    - `color: 'rgba(255,255,255,0.4)'` → `color: '#888'` (tertiary text)
+    - `color: 'rgba(255,255,255,0.3)'` → `color: '#999'` (muted text)
+    - `background: 'rgba(255,255,255,0.02-0.03)'` → `background: '#F5F5F0'` (card surface)
+    - `border: '1px solid rgba(255,255,255,0.07)'` → `border: '1px solid #e5e5e0'` (borders)
+    - BUT: `color: '#fff'` on colored buttons (red, green, blue bg) is CORRECT — don't replace those.
+
+18. **Competitive UX insights for construction platforms:**
+    - Fieldwire = gold standard for adoption speed (consumer-app UX, zero training)
+    - XBuild = AI-guided onboarding (no training at all, AI walks through workflow)
+    - ALICE = visual scenario comparison (scatterplots for schedule options)
+    - Procore = unlimited users eliminates shadow IT
+    - Oracle Application Switcher = unified nav across federated apps (our compass bloom serves same purpose)
+    - Buildertrend = "too many clicks" complaint — keep interactions minimal
+
+19. **Onboarding should use localStorage for state persistence.** `bkg_lane` stores selected persona, `bkg_onboarded` stores completion status. These keys gate the LanePicker and OnboardingFlow overlays on the CRM page. Users can reset by clicking their lane badge in the header.
+
+20. **Dynamic imports prevent SSR issues with framer-motion components.** Use `dynamic(() => import(...), { ssr: false })` for any component using framer-motion that's imported into a page. Direct imports can cause hydration mismatches.
