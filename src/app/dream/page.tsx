@@ -222,7 +222,7 @@ export default function DreamMachinePage() {
             role="button" tabIndex={0}
             onKeyDown={(e) => e.key === "Enter" && router.push("/knowledge")}
             style={{
-              marginTop: 24, gridColumn: "1 / -1", background: "#0a0a0a",
+              marginTop: 24, gridColumn: "1 / -1", background: "var(--bg, #ffffff)",
               borderRadius: 20, overflow: "hidden", cursor: "pointer",
               position: "relative", minHeight: 200,
               display: "flex", alignItems: "center",
@@ -239,7 +239,7 @@ export default function DreamMachinePage() {
             {/* Gradient overlay */}
             <div style={{
               position: "absolute", inset: 0,
-              background: "linear-gradient(90deg, #0a0a0a 0%, #0a0a0a 15%, rgba(10,10,10,0.85) 35%, rgba(10,10,10,0.4) 70%, transparent 100%)",
+              background: "linear-gradient(90deg, var(--bg, #ffffff) 0%, var(--bg, #ffffff) 15%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.4) 70%, transparent 100%)",
             }} />
             {/* Content */}
             <div style={{ position: "relative", zIndex: 2, padding: "36px 40px", maxWidth: 520 }}>

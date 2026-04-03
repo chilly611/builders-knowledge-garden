@@ -119,7 +119,7 @@ export default function ColliderPage() {
   const WARM = '#D85A30';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'var(--font-archivo)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #ffffff)', color: 'var(--fg, #111111)', fontFamily: 'var(--font-archivo)' }}>
       {/* Header */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '16px 24px', zIndex: 50 }}>
         <Link href="/dream" style={{ color: WARM, textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '8px 16px', borderRadius: 20, border: `1px solid ${WARM}40` }}>

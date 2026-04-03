@@ -131,8 +131,8 @@ export default function CinematicPage() {
     <div
       style={{
         fontFamily: "'Archivo', sans-serif",
-        background: '#0a0a0a',
-        color: '#f0f0f0',
+        background: 'var(--bg, #ffffff)',
+        color: 'var(--fg, #111111)',
         minHeight: '100vh',
         overflowX: 'hidden',
       }}
@@ -361,8 +361,8 @@ export default function CinematicPage() {
                 whileHover={{ y: -5, boxShadow: '0 24px 64px -16px rgba(0,0,0,0.5)' }}
                 style={{
                   position: 'relative',
-                  background: '#1a1a1a',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'var(--bg-secondary, #f8f9fa)',
+                  border: '1px solid var(--border, #e2e4e8)',
                   borderRadius: 20,
                   cursor: 'pointer',
                   overflow: 'hidden',
@@ -389,7 +389,7 @@ export default function CinematicPage() {
                       left: 0,
                       right: 0,
                       height: 60,
-                      background: 'linear-gradient(to top, #1a1a1a, transparent)',
+                      background: 'linear-gradient(to top, var(--bg-secondary, #f8f9fa), transparent)',
                     }}
                   />
                   <div
@@ -472,8 +472,8 @@ export default function CinematicPage() {
             }}
             style={{
               position: 'relative',
-              background: '#111111',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'var(--bg-secondary, #f8f9fa)',
+              border: '1px solid var(--border, #e2e4e8)',
               borderRadius: 20,
               height: 300,
               cursor: 'pointer',
@@ -486,7 +486,7 @@ export default function CinematicPage() {
                 position: 'absolute',
                 inset: 0,
                 background:
-                  'linear-gradient(90deg, #111111 0%, #111111 12%, rgba(17,17,17,0.95) 22%, rgba(17,17,17,0.75) 38%, rgba(17,17,17,0.3) 60%, transparent 85%)',
+                  'linear-gradient(90deg, var(--bg-secondary, #f8f9fa) 0%, var(--bg-secondary, #f8f9fa) 12%, rgba(248,249,250,0.95) 22%, rgba(248,249,250,0.75) 38%, rgba(248,249,250,0.3) 60%, transparent 85%)',
                 zIndex: 2,
               }}
             />

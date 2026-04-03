@@ -210,7 +210,7 @@ export default function NarratorPage() {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '2rem',
-        backgroundColor: '#0a0a0a',
+        backgroundColor: 'var(--bg, #ffffff)',
       }}
     >
       <motion.h1
@@ -367,7 +367,7 @@ export default function NarratorPage() {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '2rem',
-        backgroundColor: '#0a0a0a',
+        backgroundColor: 'var(--bg, #ffffff)',
       }}
     >
       <motion.h1
@@ -493,7 +493,7 @@ export default function NarratorPage() {
           background: 'linear-gradient(135deg, #D85A30 0%, #C4A44A 100%)',
           border: 'none',
           borderRadius: '6px',
-          color: '#0a0a0a',
+          color: '#111111',
           cursor: preferences.location && preferences.vibe && preferences.scale ? 'pointer' : 'not-allowed',
           fontSize: '1.1rem',
           fontWeight: 600,
@@ -538,7 +538,7 @@ export default function NarratorPage() {
           justifyContent: 'center',
           alignItems: 'center',
           padding: '2rem',
-          backgroundColor: '#0a0a0a',
+          backgroundColor: 'var(--bg, #ffffff)',
           position: 'relative',
         }}
       >
@@ -776,7 +776,7 @@ export default function NarratorPage() {
                 background: 'linear-gradient(135deg, #D85A30 0%, #C4A44A 100%)',
                 border: 'none',
                 borderRadius: '6px',
-                color: '#0a0a0a',
+                color: '#111111',
                 cursor: 'pointer',
                 fontSize: '0.95rem',
                 fontFamily: 'inherit',
@@ -814,7 +814,7 @@ export default function NarratorPage() {
           justifyContent: 'center',
           alignItems: 'center',
           padding: '2rem',
-          backgroundColor: '#0a0a0a',
+          backgroundColor: 'var(--bg, #ffffff)',
         }}
       >
         {/* Back button */}
@@ -1077,7 +1077,7 @@ export default function NarratorPage() {
               background: 'linear-gradient(135deg, #D85A30 0%, #C4A44A 100%)',
               border: 'none',
               borderRadius: '6px',
-              color: '#0a0a0a',
+              color: '#111111',
               cursor: 'pointer',
               fontSize: '1rem',
               fontWeight: 600,
@@ -1105,7 +1105,7 @@ export default function NarratorPage() {
 
   // Render current phase
   return (
-    <div style={{ background: '#0a0a0a' }}>
+    <div style={{ background: 'var(--bg, #ffffff)' }}>
       <AnimatePresence mode="wait">
         {phase === 'intro' && <div key="intro">{renderIntro()}</div>}
         {phase === 'customize' && <div key="customize">{renderCustomize()}</div>}

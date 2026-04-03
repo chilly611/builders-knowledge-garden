@@ -400,7 +400,7 @@ function IntroPhase({ onBegin }: { onBegin: () => void }) {
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -531,13 +531,13 @@ function QuestionsPhase({
 }) {
   // Different background atmospheres for each question
   const backgroundGradients = [
-    'linear-gradient(135deg, #0a0a0a 0%, #2d1810 100%)',
-    'linear-gradient(135deg, #0a0a0a 0%, #1a1a3d 100%)',
-    'linear-gradient(135deg, #0a0a0a 0%, #1d2b1a 100%)',
-    'linear-gradient(135deg, #0a0a0a 0%, #2b1d1d 100%)',
-    'linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 100%)',
-    'linear-gradient(135deg, #0a0a0a 0%, #2d2310 100%)',
-    'linear-gradient(135deg, #0a0a0a 0%, #1a2a2d 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #2d1810 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a1a3d 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1d2b1a 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #2b1d1d 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f2e 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #2d2310 100%)',
+    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a2a2d 100%)',
   ];
 
   return (
@@ -765,7 +765,7 @@ function ProcessingPhase({
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -917,7 +917,7 @@ function ProfilePhase({
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1080,7 +1080,7 @@ function RendersPhase({
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -1234,7 +1234,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     minHeight: '100vh',
     width: '100%',
-    background: '#0a0a0a',
+    background: 'var(--bg, #ffffff)',
     color: 'white',
     fontFamily: 'var(--font-archivo)',
   },

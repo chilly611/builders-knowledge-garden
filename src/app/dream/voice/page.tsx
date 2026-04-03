@@ -129,9 +129,9 @@ export default function VoiceArchitectPage() {
   }, [input, messages]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'var(--font-archivo)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #ffffff)', color: 'var(--fg, #111111)', fontFamily: 'var(--font-archivo)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid rgba(17,17,17,0.06)' }}>
         <Link href="/dream" style={{ color: WARM, textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '8px 16px', borderRadius: 20, border: `1px solid ${WARM}40` }}>
           ← Dream Machine
         </Link>

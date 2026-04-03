@@ -83,9 +83,9 @@ export default function SandboxPage() {
   const summary = generateBuildingSummary(blocks);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: 'white', fontFamily: 'var(--font-archivo)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #ffffff)', color: 'var(--fg, #111111)', fontFamily: 'var(--font-archivo)' }}>
       {/* Header */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', zIndex: 50, background: 'rgba(10,10,10,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(17,17,17,0.06)' }}>
         <Link href="/dream" style={{ color: WARM, textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '8px 16px', borderRadius: 20, border: `1px solid ${WARM}40` }}>
           ← Dream Machine
         </Link>
@@ -102,7 +102,7 @@ export default function SandboxPage() {
 
       <div style={{ display: 'flex', paddingTop: 60 }}>
         {/* Tool palette */}
-        <div style={{ width: 80, padding: '16px 8px', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 4, position: 'fixed', top: 60, bottom: 0, overflowY: 'auto', background: '#0a0a0a', zIndex: 40 }}>
+        <div style={{ width: 80, padding: '16px 8px', borderRight: '1px solid rgba(17,17,17,0.06)', display: 'flex', flexDirection: 'column', gap: 4, position: 'fixed', top: 60, bottom: 0, overflowY: 'auto', background: 'var(--bg, #ffffff)', zIndex: 40 }}>
           {ROOM_TYPES.map(rt => (
             <button key={rt.type} onClick={() => { setSelectedType(rt); setIsErasing(false); }}
               style={{
@@ -127,7 +127,7 @@ export default function SandboxPage() {
 
         {/* Grid */}
         <div style={{ flex: 1, marginLeft: 80, padding: 24, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 'calc(100vh - 60px)' }}>
-          <div ref={gridRef} style={{ display: 'grid', gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`, gridTemplateRows: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`, gap: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 2 }}
+          <div ref={gridRef} style={{ display: 'grid', gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`, gridTemplateRows: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`, gap: 1, background: 'rgba(17,17,17,0.03)', borderRadius: 16, padding: 2 }}
             onMouseDown={() => setIsDragging(true)} onMouseUp={() => setIsDragging(false)} onMouseLeave={() => setIsDragging(false)}>
             {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
               const x = i % GRID_SIZE;
@@ -138,11 +138,11 @@ export default function SandboxPage() {
                   onMouseEnter={() => isDragging && handleCellInteraction(x, y)}
                   style={{
                     width: CELL_SIZE, height: CELL_SIZE,
-                    background: block ? block.color : 'rgba(255,255,255,0.02)',
-                    border: block ? `2px solid ${block.color}` : '1px solid rgba(255,255,255,0.04)',
+                    background: block ? block.color : 'rgba(17,17,17,0.02)',
+                    border: block ? `2px solid ${block.color}` : '1px solid rgba(17,17,17,0.04)',
                     borderRadius: 6, cursor: isErasing ? 'crosshair' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: block ? 9 : 0, color: 'rgba(255,255,255,0.9)', fontWeight: 600,
+                    fontSize: block ? 9 : 0, color: 'var(--fg, #111111)', fontWeight: 600,
                     transition: 'all 0.1s', userSelect: 'none',
                     opacity: block ? 0.9 : 1,
                   }}>
@@ -157,7 +157,7 @@ export default function SandboxPage() {
       {/* Stats bar */}
       {blocks.length > 0 && (
         <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          style={{ position: 'fixed', bottom: 0, left: 80, right: 0, padding: '12px 24px', background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'fixed', bottom: 0, left: 80, right: 0, padding: '12px 24px', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(17,17,17,0.06)', display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
             <span style={{ color: WARM, fontWeight: 700, fontSize: 18 }}>{blocks.length}</span> rooms
           </div>
@@ -181,40 +181,40 @@ export default function SandboxPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              style={{ maxWidth: 600, width: '100%', padding: 40, borderRadius: 24, background: '#111', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{ maxWidth: 600, width: '100%', padding: 40, borderRadius: 24, background: 'var(--bg, #ffffff)', border: '1px solid rgba(17,17,17,0.1)' }}>
               <h2 style={{ fontSize: 28, fontWeight: 700, color: WARM, marginBottom: 8 }}>Your Blueprint</h2>
               <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 24 }}>{summary.description}</p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(17,17,17,0.05)', textAlign: 'center' }}>
                   <div style={{ fontSize: 24, fontWeight: 700, color: WARM }}>{blocks.length}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Rooms</div>
+                  <div style={{ fontSize: 11, color: 'rgba(17,17,17,0.4)' }}>Rooms</div>
                 </div>
-                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(17,17,17,0.05)', textAlign: 'center' }}>
                   <div style={{ fontSize: 24, fontWeight: 700, color: WARM }}>~{summary.totalSf.toLocaleString()}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Sq Ft</div>
+                  <div style={{ fontSize: 11, color: 'rgba(17,17,17,0.4)' }}>Sq Ft</div>
                 </div>
-                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(17,17,17,0.05)', textAlign: 'center' }}>
                   <div style={{ fontSize: 24, fontWeight: 700, color: WARM }}>{summary.stories}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Stories</div>
+                  <div style={{ fontSize: 11, color: 'rgba(17,17,17,0.4)' }}>Stories</div>
                 </div>
               </div>
 
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>Room Breakdown</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(17,17,17,0.4)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>Room Breakdown</div>
                 {Object.entries(summary.rooms).map(([name, count]) => (
-                  <div key={name} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{name}</span>
+                  <div key={name} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(17,17,17,0.05)' }}>
+                    <span style={{ fontSize: 14, color: 'rgba(17,17,17,0.7)' }}>{name}</span>
                     <span style={{ fontSize: 14, fontWeight: 600, color: WARM }}>{count}×</span>
                   </div>
                 ))}
               </div>
 
               <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={() => setPhase('build')} style={{ flex: 1, padding: '14px 24px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+                <button onClick={() => setPhase('build')} style={{ flex: 1, padding: '14px 24px', borderRadius: 12, border: '1px solid rgba(17,17,17,0.2)', background: 'transparent', color: 'var(--fg, #111111)', fontSize: 14, cursor: 'pointer' }}>
                   Keep Editing
                 </button>
-                <button style={{ flex: 1, padding: '14px 24px', borderRadius: 12, border: 'none', background: WARM, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                <button style={{ flex: 1, padding: '14px 24px', borderRadius: 12, border: 'none', background: WARM, color: '#ffffff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   Generate Architecture →
                 </button>
               </div>

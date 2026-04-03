@@ -25,7 +25,7 @@ export function ClientsPage() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'var(--font-archivo), sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #ffffff)', color: 'var(--fg, #111111)', fontFamily: 'var(--font-archivo), sans-serif' }}>
       <KillerAppNav />
       <div style={{ paddingTop: 48 }}>
         <div style={{ background: 'linear-gradient(135deg, rgba(127,119,221,0.1) 0%, transparent 60%)', borderBottom: '1px solid rgba(127,119,221,0.15)', padding: '32px 32px 28px' }}>
@@ -35,7 +35,7 @@ export function ClientsPage() {
                 <span style={{ fontSize: 28 }}>👥</span>
                 <div>
                   <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Clients</h1>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>AEC-native CRM · proposals · client portal</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--fg-secondary, #555555)' }}>AEC-native CRM · proposals · client portal</p>
                 </div>
               </div>
               <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', maxWidth: 520, lineHeight: 1.6, margin: '12px 0 0' }}>

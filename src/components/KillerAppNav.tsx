@@ -41,7 +41,7 @@ export default function KillerAppNav() {
       position: 'fixed',
       top: 0, left: 64, right: 0, height: 48,
       zIndex: 99,
-      background: 'rgba(8,8,8,0.97)',
+      background: 'rgba(255,255,255,0.97)',
       backdropFilter: 'blur(20px)',
       borderBottom: '1px solid rgba(232,68,58,0.18)',
       display: 'flex',
@@ -61,7 +61,7 @@ export default function KillerAppNav() {
       </div>
 
       {/* Divider */}
-      <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.08)', marginRight: 12, flexShrink: 0 }} />
+      <div style={{ width: 1, height: 24, background: 'var(--border, #e2e4e8)', marginRight: 12, flexShrink: 0 }} />
 
       {/* Module pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -92,7 +92,7 @@ export default function KillerAppNav() {
                 <span style={{ fontSize: 13 }}>{mod.icon}</span>
                 <span style={{
                   fontSize: 12, fontWeight: isActive ? 700 : 500,
-                  color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
+                  color: isActive ? '#fff' : 'var(--fg-secondary, #555555)',
                   transition: 'color 0.15s',
                 }}>
                   {mod.label}
@@ -121,9 +121,9 @@ export default function KillerAppNav() {
                   <div style={{
                     position: 'absolute', top: 38, left: '50%',
                     transform: 'translateX(-50%)',
-                    background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'var(--bg-secondary, #f8f9fa)', border: `1px solid var(--border, #e2e4e8)`,
                     borderRadius: 6, padding: '4px 8px',
-                    fontSize: 10, color: 'rgba(255,255,255,0.6)',
+                    fontSize: 10, color: 'var(--fg-secondary, #555555)',
                     whiteSpace: 'nowrap', zIndex: 200,
                     pointerEvents: 'none',
                   }}>
@@ -169,15 +169,15 @@ export default function KillerAppNav() {
         {/* XP + Streak */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--bg-secondary, #f8f9fa)',
+          border: `1px solid var(--border, #e2e4e8)`,
           borderRadius: 7, padding: '4px 10px',
         }}>
           <span style={{ fontSize: 11 }}>⚡</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg, #111111)' }}>
             {xp.toLocaleString()} XP
           </span>
-          <span style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)' }} />
+          <span style={{ width: 1, height: 12, background: 'var(--border, #e2e4e8)' }} />
           <span style={{ fontSize: 11 }}>🔥</span>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B' }}>{streak}</span>
         </div>

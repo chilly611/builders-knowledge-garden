@@ -28,7 +28,7 @@ export default function DocumentsPage() {
   if (!mounted) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'var(--font-archivo), sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #ffffff)', color: 'var(--fg, #111111)', fontFamily: 'var(--font-archivo), sans-serif' }}>
       <KillerAppNav />
       <div style={{ paddingTop: 48 }}>
         <div style={{ background: 'linear-gradient(135deg, rgba(55,138,221,0.1) 0%, transparent 60%)', borderBottom: '1px solid rgba(55,138,221,0.15)', padding: '32px 32px 28px' }}>

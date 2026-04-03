@@ -218,8 +218,8 @@ export default function AlchemistPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0a0a0a',
-      color: '#fff',
+      background: 'var(--bg, #ffffff)',
+      color: 'var(--fg, #111111)',
       fontFamily: 'var(--font-archivo), sans-serif',
       position: 'relative',
       overflow: 'hidden',

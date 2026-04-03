@@ -261,7 +261,7 @@ export default function QuestPage() {
   const progressText = phase === 'boss' ? 'Boss Battle' : `Scene ${sceneIndex + 1} of 8`;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', color: '#ffffff', fontFamily: 'var(--font-archivo)', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg, #ffffff)', color: '#111111', fontFamily: 'var(--font-archivo)', overflow: 'hidden' }}>
       {/* Back button */}
       <Link href="/dream" style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 50, textDecoration: 'none' }}>
         <motion.button
@@ -308,7 +308,7 @@ export default function QuestPage() {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%)',
+                background: 'radial-gradient(circle at center, rgba(17,17,17,0.8) 0%, var(--bg, #ffffff) 100%)',
                 zIndex: 0
               }}
             />
@@ -362,7 +362,7 @@ export default function QuestPage() {
                   fontSize: '18px',
                   fontWeight: 700,
                   background: 'linear-gradient(135deg, #D85A30 0%, #C4A44A 100%)',
-                  color: '#0a0a0a',
+                  color: '#111111',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -468,7 +468,7 @@ export default function QuestPage() {
                     onClick={() => (phase === 'boss' ? handleBossChoice(choice.token) : handleChoice(choice.token))}
                     style={{
                       padding: '24px',
-                      backgroundColor: '#151515',
+                      backgroundColor: 'var(--bg-secondary, #f8f9fa)',
                       border: '2px solid #D85A30',
                       borderRadius: '12px',
                       color: '#ffffff',
@@ -681,7 +681,7 @@ export default function QuestPage() {
                   style={{
                     width: '100%',
                     height: '400px',
-                    backgroundColor: '#151515',
+                    backgroundColor: 'var(--bg-secondary, #f8f9fa)',
                     borderRadius: '12px',
                     border: '2px dashed #D85A30',
                     display: 'flex',
@@ -726,7 +726,7 @@ export default function QuestPage() {
                       transition={{ delay: 0.6 + idx * 0.05 }}
                       style={{
                         padding: '12px 16px',
-                        backgroundColor: '#151515',
+                        backgroundColor: 'var(--bg-secondary, #f8f9fa)',
                         border: '1px solid #333',
                         borderRadius: '8px',
                         color: '#aaaaaa',
@@ -774,7 +774,7 @@ export default function QuestPage() {
                 transition={{ delay: 0.85 }}
                 style={{
                   padding: '24px',
-                  backgroundColor: '#151515',
+                  backgroundColor: 'var(--bg-secondary, #f8f9fa)',
                   border: '1px solid #333',
                   borderRadius: '12px',
                   marginBottom: '40px'
@@ -801,7 +801,7 @@ export default function QuestPage() {
                   fontSize: '16px',
                   fontWeight: 700,
                   background: 'linear-gradient(135deg, #D85A30 0%, #C4A44A 100%)',
-                  color: '#0a0a0a',
+                  color: '#111111',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
