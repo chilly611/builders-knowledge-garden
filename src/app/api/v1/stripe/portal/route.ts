@@ -1,50 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-12-18.acacia" as any,
+});
 
 export async function POST(req: NextRequest) {
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-
-  if (!stripeKey || stripeKey.trim() === "") {
-    return NextResponse.json(
-      {
-        error: "Stripe not configured",
-        message: "Add STRIPE_SECRET_KEY to .env.local to enable billing portal",
-      },
-      { status: 503 }
-    );
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
   }
 
   try {
     const body = await req.json();
     const { customerId, returnUrl } = body;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://builders.theknowledgegardens.com";
 
     if (!customerId) {
-      return NextResponse.json(
-        { error: "Missing customerId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing customerId" }, { status: 400 });
     }
 
-    // When Stripe is fully configured:
-    // const Stripe = (await import("stripe")).default;
-    // const stripe = new Stripe(stripeKey);
-    //
-    // const session = await stripe.billingPortal.sessions.create({
-    //   customer: customerId,
-    //   return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/account`,
-    // });
-    //
-    // return NextResponse.json({ url: session.url });
-
-    return NextResponse.json({
-      message: "Billing portal ready — configure STRIPE_SECRET_KEY",
-      customerId,
-      status: "not_configured",
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl || `${appUrl}/crm`,
     });
-  } catch (error) {
+
+    return NextResponse.json({ url: session.url });
+  } catch (error: any) {
     console.error("Portal error:", error);
-    return NextResponse.json(
-      { error: "Internal server error", message: String(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

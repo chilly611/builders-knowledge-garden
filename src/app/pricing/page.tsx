@@ -31,19 +31,23 @@ export default function PricingPage() {
   ];
 
   const handleCheckout = (tier: Tier) => {
-    if (tier === "enterprise") {
-      window.location.href = "mailto:hello@theknowledgegardens.com?subject=Enterprise%20Inquiry";
-    } else if (tier === "explorer") {
+    if (tier === "explorer") {
       window.location.href = "/dream";
+      return;
+    }
+
+    const links: Record<string, string | undefined> = {
+      pro: process.env.NEXT_PUBLIC_STRIPE_LINK_PRO,
+      team: process.env.NEXT_PUBLIC_STRIPE_LINK_TEAM,
+      enterprise: process.env.NEXT_PUBLIC_STRIPE_LINK_ENTERPRISE,
+    };
+
+    const link = links[tier];
+    if (link) {
+      window.open(link, '_blank');
     } else {
-      // Check if Stripe is configured, otherwise redirect to launch
-      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-      if (!stripeKey) {
-        window.location.href = "/launch";
-      } else {
-        // When Stripe is configured, this would call the checkout endpoint
-        window.location.href = `/api/v1/stripe/checkout?tier=${tier}`;
-      }
+      // Fallback to API checkout
+      window.location.href = `/api/v1/stripe/checkout?tier=${tier}`;
     }
   };
 

@@ -164,6 +164,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription?.unsubscribe();
   }, []);
 
+  // Fetch subscription tier from API when user is authenticated
+  useEffect(() => {
+    const fetchSubscriptionTier = async () => {
+      if (!user?.email) return;
+
+      try {
+        const response = await fetch(`/api/v1/stripe/subscription?email=${encodeURIComponent(user.email)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUser(prevUser => {
+            if (!prevUser) return prevUser;
+            return { ...prevUser, tier: (data.tier as Tier) || "explorer" };
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch subscription tier:", error);
+      }
+    };
+
+    fetchSubscriptionTier();
+  }, [user?.email]);
+
   const tier = TIERS[user?.tier || "explorer"];
   const isAuthenticated = !!user;
   const isDreamMode = tier.mode === "dream";
