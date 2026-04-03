@@ -328,21 +328,20 @@ export default function CommandCenterPage() {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Onboarding state
-  const [onboardingPhase, setOnboardingPhase] = useState<'lane' | 'onboarding' | 'done'>('done');
+  // Onboarding state — always starts with lane picker until user is a subscriber
+  const [onboardingPhase, setOnboardingPhase] = useState<'lane' | 'onboarding' | 'done'>('lane');
   const [selectedLane, setSelectedLane] = useState<string>('');
   const [showCapabilities, setShowCapabilities] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Check if user has completed onboarding
+    // Restore lane if previously selected (but still show onboarding every time)
     try {
       const lane = localStorage?.getItem('bkg_lane');
-      const onboarded = localStorage?.getItem('bkg_onboarded');
       if (lane) setSelectedLane(lane);
-      if (!onboarded) {
-        setOnboardingPhase(lane ? 'onboarding' : 'lane');
-      }
+      // TODO: check if user is a subscriber — if so, skip onboarding
+      // const isSubscriber = false;
+      // if (isSubscriber) setOnboardingPhase('done');
     } catch { /* SSR safety */ }
     loadData();
   }, []);
@@ -437,7 +436,7 @@ export default function CommandCenterPage() {
     return `$${amt.toLocaleString()}`;
   };
 
-  // Onboarding handlers
+  // Onboarding handlers — session-only dismissal (shows again on reload until subscribed)
   const handleLaneSelect = (lane: string) => {
     setSelectedLane(lane);
     try { localStorage?.setItem('bkg_lane', lane); } catch {}
@@ -445,16 +444,14 @@ export default function CommandCenterPage() {
   };
 
   const handleOnboardingComplete = () => {
-    try { localStorage?.setItem('bkg_onboarded', 'true'); } catch {}
     setOnboardingPhase('done');
   };
 
   const handleOnboardingSkip = () => {
-    try { localStorage?.setItem('bkg_onboarded', 'true'); } catch {}
     setOnboardingPhase('done');
   };
 
-  // Show onboarding overlays
+  // Show onboarding overlays (persistent until subscribed)
   if (onboardingPhase === 'lane') {
     return <LanePicker onSelect={handleLaneSelect} onDismiss={() => setOnboardingPhase('done')} />;
   }

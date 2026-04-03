@@ -508,6 +508,25 @@ export default function LanePicker({ onSelect, onDismiss }: LanePickerProps) {
         >
           You can change your lane anytime in settings
         </p>
+        <motion.button
+          onClick={onDismiss}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            marginTop: 12,
+            background: '#f5f5f0',
+            border: '1px solid #e5e5e0',
+            borderRadius: 10,
+            padding: '10px 24px',
+            fontSize: 14,
+            fontWeight: 700,
+            color: '#666',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-archivo)',
+          }}
+        >
+          Skip Intro →
+        </motion.button>
       </motion.div>
 
       {/* Celebration canvas */}

@@ -521,18 +521,28 @@ export default function OnboardingFlow({
         />
       </motion.div>
 
-      {/* Header with skip */}
-      <div className="flex justify-between items-center p-4 md:p-6">
-        <div className="text-sm font-semibold text-gray-600" style={{ fontFamily: 'var(--font-archivo)' }}>
+      {/* Header with prominent skip */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#888', fontFamily: 'var(--font-archivo)' }}>
           {currentStep + 1} of {steps.length}
         </div>
         <motion.button
           onClick={onSkip}
-          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            background: '#f5f5f0',
+            border: '1px solid #e5e5e0',
+            borderRadius: 10,
+            padding: '10px 20px',
+            fontSize: 14,
+            fontWeight: 700,
+            color: '#666',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-archivo)',
+          }}
         >
-          Skip
+          Skip Intro →
         </motion.button>
       </div>
 
