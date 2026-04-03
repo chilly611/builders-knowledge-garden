@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+const LanePicker = dynamic(() => import('@/components/LanePicker'), { ssr: false });
+const OnboardingFlow = dynamic(() => import('@/components/OnboardingFlow'), { ssr: false });
+const CapabilityShowcase = dynamic(() => import('@/components/CapabilityShowcase'), { ssr: false });
 
 /* ─── Types ─── */
 type ProjectPhase = 'DREAM' | 'DESIGN' | 'PLAN' | 'BUILD' | 'DELIVER' | 'GROW';
@@ -323,7 +328,24 @@ export default function CommandCenterPage() {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); loadData(); }, []);
+  // Onboarding state
+  const [onboardingPhase, setOnboardingPhase] = useState<'lane' | 'onboarding' | 'done'>('done');
+  const [selectedLane, setSelectedLane] = useState<string>('');
+  const [showCapabilities, setShowCapabilities] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Check if user has completed onboarding
+    try {
+      const lane = localStorage?.getItem('bkg_lane');
+      const onboarded = localStorage?.getItem('bkg_onboarded');
+      if (lane) setSelectedLane(lane);
+      if (!onboarded) {
+        setOnboardingPhase(lane ? 'onboarding' : 'lane');
+      }
+    } catch { /* SSR safety */ }
+    loadData();
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -415,8 +437,62 @@ export default function CommandCenterPage() {
     return `$${amt.toLocaleString()}`;
   };
 
+  // Onboarding handlers
+  const handleLaneSelect = (lane: string) => {
+    setSelectedLane(lane);
+    try { localStorage?.setItem('bkg_lane', lane); } catch {}
+    setOnboardingPhase('onboarding');
+  };
+
+  const handleOnboardingComplete = () => {
+    try { localStorage?.setItem('bkg_onboarded', 'true'); } catch {}
+    setOnboardingPhase('done');
+  };
+
+  const handleOnboardingSkip = () => {
+    try { localStorage?.setItem('bkg_onboarded', 'true'); } catch {}
+    setOnboardingPhase('done');
+  };
+
+  // Show onboarding overlays
+  if (onboardingPhase === 'lane') {
+    return <LanePicker onSelect={handleLaneSelect} onDismiss={() => setOnboardingPhase('done')} />;
+  }
+  if (onboardingPhase === 'onboarding') {
+    return <OnboardingFlow lane={selectedLane} onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />;
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#FAFAF8', color: '#1a1a1a', fontFamily: 'var(--font-archivo), sans-serif' }}>
+
+      {/* ─── CAPABILITY SHOWCASE TOGGLE ─── */}
+      <AnimatePresence>
+        {showCapabilities && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            onClick={() => setShowCapabilities(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{ background: '#fff', borderRadius: 16, maxWidth: 900, width: '100%', maxHeight: '85vh', overflow: 'auto', padding: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e5e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderRadius: '16px 16px 0 0' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Platform Capabilities</h2>
+                <button onClick={() => setShowCapabilities(false)} style={{ background: '#f5f5f0', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#666' }}>Close</button>
+              </div>
+              <div style={{ padding: '0 20px 20px' }}>
+                <CapabilityShowcase lane={selectedLane} compact={false} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── MORNING BRIEFING STRIP ─── */}
       <MorningBriefing report={heartbeat} onRefresh={refreshBriefing} refreshing={refreshingBriefing} />
@@ -435,6 +511,14 @@ export default function CommandCenterPage() {
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#999' }}>{nowDate} · Your AI COO</p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {selectedLane && (
+              <span style={{ background: '#f5f5f0', border: '1px solid #e5e5e0', borderRadius: 8, padding: '4px 10px', fontSize: '11px', fontWeight: 600, color: '#888', cursor: 'pointer' }} onClick={() => { try { localStorage?.removeItem('bkg_onboarded'); localStorage?.removeItem('bkg_lane'); } catch {} setOnboardingPhase('lane'); }}>
+                {selectedLane === 'gc' ? '🏗️ GC' : selectedLane === 'diy' ? '🏠 DIY' : selectedLane === 'specialty' ? '⚡ Specialty' : selectedLane === 'developer' ? '📊 Dev' : selectedLane === 'supplier' ? '🚛 Supplier' : '🤖 Agent'}
+              </span>
+            )}
+            <button onClick={() => setShowCapabilities(true)} style={{ background: '#f5f5f0', border: '1px solid #e5e5e0', borderRadius: 9, padding: '9px 14px', color: '#666', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              ⚡ Capabilities
+            </button>
             {redItems > 0 && (
               <span style={{ background: '#EF4444', color: '#fff', borderRadius: 12, padding: '3px 10px', fontSize: '12px', fontWeight: 700 }}>
                 {redItems} urgent
