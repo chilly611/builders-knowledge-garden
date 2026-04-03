@@ -2,6 +2,10 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ProjectProvider, useProject } from '../dream-shared/ProjectContext';
+import SaveLoadPanel from '../dream-shared/SaveLoadPanel';
+import ProjectPicker from '../dream-shared/ProjectPicker';
+import type { AlchemistState, DreamProject } from '../dream-shared/types';
 
 /* ─── Types ─── */
 type IngredientType = 'style' | 'material' | 'feature' | 'mood';
@@ -122,13 +126,12 @@ function generateMockResult(crucible: Ingredient[]): AlchemyResult {
 }
 
 /* ─── Component ─── */
-export default function AlchemistPage() {
+function AlchemistPageInner() {
   const [phase, setPhase] = useState<Phase>('compose');
   const [crucible, setCrucible] = useState<Ingredient[]>([]);
   const [activeCategory, setActiveCategory] = useState(0);
   const [result, setResult] = useState<AlchemyResult | null>(null);
   const [transmutePulse, setTransmutePulse] = useState(0);
-  const [renderLoading, setRenderLoading] = useState(false);
   const crucibleRef = useRef<HTMLDivElement>(null);
 
   const addToCrucible = useCallback((ingredient: Ingredient) => {
@@ -170,35 +173,7 @@ export default function AlchemistPage() {
     } catch {
       // Generate locally
       await new Promise(r => setTimeout(r, 800));
-      const mockResult = generateMockResult(crucible);
-      setResult(mockResult);
-      setPhase('result');
-
-      // Fire off a FLUX render in the background via /api/v1/render
-      setRenderLoading(true);
-      try {
-        const renderRes = await fetch('/api/v1/render', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: mockResult.imagePrompt,
-            style: 'exterior',
-            aspect: 'landscape',
-            quality: 'standard',
-          }),
-        });
-        if (renderRes.ok) {
-          const renderData = await renderRes.json();
-          if (renderData.success && renderData.renders?.[0]?.imageUrl) {
-            setResult(prev => prev ? { ...prev, imageUrl: renderData.renders[0].imageUrl } : prev);
-          }
-        }
-      } catch {
-        // Render failed — concept still shows without image
-      } finally {
-        setRenderLoading(false);
-      }
-      return;
+      setResult(generateMockResult(crucible));
     }
 
     setPhase('result');
@@ -215,11 +190,66 @@ export default function AlchemistPage() {
     setPhase('compose');
   }, []);
 
+  // ─── Save/Load Integration ───
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleSerialize = useCallback(() => {
+    const interfaceData: AlchemistState = {
+      phase,
+      crucibleIds: crucible.map(i => i.id),
+      activeCategory,
+      result: result ? {
+        name: result.name,
+        style: result.style,
+        description: result.description,
+        features: result.features,
+        estimatedCost: result.estimatedCost,
+        imagePrompt: result.imagePrompt,
+      } : null,
+    };
+    const allIngredients = [...STYLES, ...MATERIALS, ...FEATURES, ...MOODS];
+    return {
+      interfaceData,
+      essence: {
+        styles: crucible.filter(i => i.type === 'style').map(i => i.label),
+        materials: crucible.filter(i => i.type === 'material').map(i => i.label),
+        features: crucible.filter(i => i.type === 'feature').map(i => i.label),
+        moods: crucible.filter(i => i.type === 'mood').map(i => i.label),
+        estimatedBudget: result?.estimatedCost || '',
+        freeformNotes: result?.description || '',
+      },
+    };
+  }, [phase, crucible, activeCategory, result]);
+
+  const handleDeserialize = useCallback((data: { interfaceData: unknown; essence: DreamProject['dreamEssence'] }) => {
+    const state = data.interfaceData as AlchemistState | null;
+    const allIngredients = [...STYLES, ...MATERIALS, ...FEATURES, ...MOODS];
+    if (state) {
+      setPhase(state.phase === 'transmuting' ? 'compose' : state.phase || 'compose');
+      setCrucible(state.crucibleIds
+        .map(id => allIngredients.find(i => i.id === id))
+        .filter((i): i is Ingredient => !!i));
+      setActiveCategory(state.activeCategory || 0);
+      if (state.result) {
+        setResult({ ...state.result, imageUrl: null });
+      }
+    } else if (data.essence) {
+      // Seed from dream essence (cross-interface import)
+      const matched: Ingredient[] = [];
+      for (const label of [...(data.essence.styles || []), ...(data.essence.materials || []), ...(data.essence.features || []), ...(data.essence.moods || [])]) {
+        const found = allIngredients.find(i => i.label.toLowerCase() === label.toLowerCase());
+        if (found && matched.length < 7) matched.push(found);
+      }
+      if (matched.length > 0) setCrucible(matched);
+      setPhase('compose');
+    }
+  }, []);
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'var(--bg, #ffffff)',
-      color: 'var(--fg, #111111)',
+      background: '#0a0a0a',
+      color: '#fff',
       fontFamily: 'var(--font-archivo), sans-serif',
       position: 'relative',
       overflow: 'hidden',
@@ -504,7 +534,7 @@ export default function AlchemistPage() {
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ fontSize: '64px', display: 'block', marginBottom: 12 }}>🏛️</span>
                     <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
-                      {renderLoading ? 'Rendering your vision...' : 'Concept visualization'}
+                      Render generating...
                     </p>
                   </div>
                 )}
@@ -606,6 +636,25 @@ export default function AlchemistPage() {
         )}
       </AnimatePresence>
 
+      {/* Save/Load System */}
+      <SaveLoadPanel
+        interfaceType="alchemist"
+        accentColor="#C4A44A"
+        onSerialize={handleSerialize}
+        onDeserialize={handleDeserialize}
+        onOpenPicker={() => setShowPicker(true)}
+      />
+      <ProjectPicker
+        isOpen={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelectProject={(project) => {
+          const iData = project.interfaceData.alchemist;
+          handleDeserialize({ interfaceData: iData || null, essence: project.dreamEssence });
+        }}
+        currentInterfaceType="alchemist"
+        accentColor="#C4A44A"
+      />
+
       <style jsx global>{`
         @keyframes crucibleGlow {
           0%, 100% { box-shadow: 0 0 30px rgba(216,90,48,0.15); }
@@ -613,5 +662,13 @@ export default function AlchemistPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AlchemistPage() {
+  return (
+    <ProjectProvider>
+      <AlchemistPageInner />
+    </ProjectProvider>
   );
 }
