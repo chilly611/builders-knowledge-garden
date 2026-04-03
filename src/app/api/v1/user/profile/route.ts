@@ -24,11 +24,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Return profile or sensible defaults
+    const meta = (user as Record<string, unknown>).user_metadata as Record<string, string> | undefined;
     const result = profile || {
       id: user.id,
       email: user.email,
-      display_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Builder",
-      avatar_url: user.user_metadata?.avatar_url || null,
+      display_name: meta?.full_name || user.email?.split("@")[0] || "Builder",
+      avatar_url: meta?.avatar_url || null,
       lane: "explorer",
       preferences: {},
       onboarded: false,
