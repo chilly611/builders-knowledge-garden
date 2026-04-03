@@ -43,7 +43,7 @@ const PRODUCTS = [
     img: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80&fit=crop" },
   { name: "Dream Builder", tag: "FREE", desc: "Describe your dream in words, photos, or voice. Watch it come to life in 60 seconds.", color: "#D85A30", href: "/dream",
     img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80&fit=crop" },
-  { name: "Knowledge Garden", tag: "500+ ENTITIES", desc: "Browse building codes, materials, methods, safety, trades — the world's construction encyclopedia.", color: "#1D9E75", href: "/knowledge",
+  { name: "Knowledge Garden", tag: "2,200+ ENTITIES", desc: "Browse building codes, materials, methods, safety, trades — the world's construction encyclopedia.", color: "#1D9E75", href: "/knowledge",
     img: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop" },
   { name: "AI Copilot", tag: "VOICE + TEXT", desc: "Any construction question, cited jurisdiction-aware answer. Lane-aware personality. Hands-free.", color: "#7F77DD", href: "#copilot",
     img: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80&fit=crop" },
@@ -55,7 +55,7 @@ const PRODUCTS = [
 
 const STATS = [
   { value: 17, prefix: "$", suffix: "T", label: "Global construction economy" },
-  { value: 500, prefix: "", suffix: "+", label: "Knowledge entities" },
+  { value: 2200, prefix: "", suffix: "+", label: "Knowledge entities" },
   { value: 315, prefix: "", suffix: "+", label: "Knowledge graph edges" },
   { value: 30, prefix: "", suffix: "", label: "Routes live" },
 ];

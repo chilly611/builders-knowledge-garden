@@ -15,6 +15,11 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
+import BudgetModule from "@/components/pm/BudgetModule";
+import RFIModule from "@/components/pm/RFIModule";
+import SubmittalModule from "@/components/pm/SubmittalModule";
+import ChangeOrderModule from "@/components/pm/ChangeOrderModule";
+import PunchListModule from "@/components/pm/PunchListModule";
 import {
   CompletionRing,
   AnimCounter,
@@ -380,6 +385,11 @@ export default function LaunchPage() {
                 { id: "team", label: "Team", icon: "👥" },
                 { id: "permits", label: "Permits", icon: "📄" },
                 { id: "estimate", label: "Estimate", icon: "💰" },
+                { id: "budget", label: "Budget", icon: "💵" },
+                { id: "rfis", label: "RFIs", icon: "❓" },
+                { id: "submittals", label: "Submittals", icon: "📦" },
+                { id: "change-orders", label: "Change Orders", icon: "✏️" },
+                { id: "punch-list", label: "Punch List", icon: "✓" },
               ].map((t) => (
                 <button key={t.id} onClick={() => setDashTab(t.id)}
                   className="px-4 py-2.5 text-xs font-medium transition-all relative whitespace-nowrap"
@@ -760,6 +770,31 @@ export default function LaunchPage() {
                   );
                 })}
               </div>
+            )}
+
+            {/* BUDGET TAB — Project budget tracking by CSI division */}
+            {dashTab === "budget" && (
+              <BudgetModule projectId="project-1" />
+            )}
+
+            {/* RFIs TAB — Request for Information tracking */}
+            {dashTab === "rfis" && (
+              <RFIModule projectId="project-1" />
+            )}
+
+            {/* SUBMITTALS TAB — Shop drawings and product data tracking */}
+            {dashTab === "submittals" && (
+              <SubmittalModule projectId="project-1" />
+            )}
+
+            {/* CHANGE ORDERS TAB — Cost and schedule impact tracking */}
+            {dashTab === "change-orders" && (
+              <ChangeOrderModule projectId="project-1" />
+            )}
+
+            {/* PUNCH LIST TAB — Final inspection items */}
+            {dashTab === "punch-list" && (
+              <PunchListModule projectId="project-1" />
             )}
 
             {/* Dashboard action bar */}
