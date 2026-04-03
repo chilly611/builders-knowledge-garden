@@ -367,3 +367,47 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Global animation wrapper using Framer Motion AnimatePresence for page transitions
 - Gamification hooks (XP, streaks, celebrations) as shared context provider
 - Progressive revelation patterns from Gamified Onboarding Playbook (28 strategies)
+
+
+---
+
+## 2026-04-03 (afternoon) — Cowork Session: Universal Save/Load System
+**Agent:** Cowork (Claude Opus 4.6)
+
+**What was built:**
+- Universal save/load/upload system across all dream interfaces (~1,800 lines shared code)
+- `dream-shared/types.ts` — DreamProject, DreamEssence, interface registry (10 interfaces)
+- `dream-shared/ProjectContext.tsx` — StorageAdapter pattern, LocalStorageAdapter, ProjectProvider context
+- `dream-shared/SaveLoadPanel.tsx` — Collapsible panel with Save/Export/Upload/"Continue in..." buttons, drag-and-drop
+- `dream-shared/ProjectPicker.tsx` — Modal with search, filter pills, sort, delete, inline name editing
+- `dream-shared/index.ts` — Barrel export
+- Oracle page updated with serialize/deserialize + SaveLoadPanel + ProjectPicker
+- Alchemist page updated with serialize/deserialize + SaveLoadPanel + ProjectPicker  
+- Cosmos page updated with serialize/deserialize + SaveLoadPanel + ProjectPicker
+
+**Key decisions:**
+- StorageAdapter interface for swappable backend (localStorage now, API later)
+- DreamEssence as universal portable format (styles, materials, features, moods, constraints)
+- Per-interface serialize/deserialize with fuzzy matching for cross-interface switching
+- Import paths use `../../dream-shared/` from `src/app/dream/[interface]/page.tsx`
+
+**Files deployed (8 files via GitHub Contents API):**
+- src/app/dream-shared/types.ts (NEW)
+- src/app/dream-shared/ProjectContext.tsx (NEW)
+- src/app/dream-shared/SaveLoadPanel.tsx (NEW)
+- src/app/dream-shared/ProjectPicker.tsx (NEW)
+- src/app/dream-shared/index.ts (NEW)
+- src/app/dream/oracle/page.tsx (UPDATED)
+- src/app/dream/alchemist/page.tsx (UPDATED)
+- src/app/dream/cosmos/page.tsx (UPDATED)
+
+**Issues encountered & resolved:**
+- Import path bug: `../dream-shared/` → `../../dream-shared/` (Vercel build failure)
+- 8 individual API commits triggered 8 Vercel deploys; intermediate ones failed (expected)
+- Final deployment verified: all 3 interfaces render with SaveLoadPanel visible
+
+**Verification:**
+- Vercel deployment "AituUXTk" — Ready + Current
+- Oracle at /dream/oracle — ✅ SaveLoadPanel visible
+- Alchemist at /dream/alchemist — ✅ SaveLoadPanel visible
+- Cosmos at /dream/cosmos — ✅ SaveLoadPanel visible
