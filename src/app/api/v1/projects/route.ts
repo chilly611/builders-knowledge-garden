@@ -8,12 +8,22 @@ function getSupabase() {
   );
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { data, error } = await getSupabase()
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('user_id');
+
+    let query = getSupabase()
       .from('command_center_projects')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
+
+    // Filter by user_id if provided
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
     if (error) throw error;
     return NextResponse.json({ projects: data || [] });
   } catch (e) {
@@ -28,9 +38,17 @@ export async function POST(request: NextRequest) {
     if (!body.name?.trim()) {
       return NextResponse.json({ error: 'name is required' }, { status: 400 });
     }
+
+    // Extract user_id from request body
+    const userId = body.user_id;
+    if (!userId) {
+      return NextResponse.json({ error: 'user_id is required' }, { status: 400 });
+    }
+
     const { data, error } = await getSupabase()
       .from('command_center_projects')
       .insert([{
+        user_id: userId,
         name: body.name.trim(),
         phase: body.phase || 'PLAN',
         progress: Number(body.progress) || 0,
@@ -57,8 +75,25 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, user_id, ...updates } = body;
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+    if (!user_id) return NextResponse.json({ error: 'user_id required' }, { status: 400 });
+
+    // Verify ownership: fetch the record and check user_id matches
+    const { data: existingProject, error: fetchError } = await getSupabase()
+      .from('command_center_projects')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingProject) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if (existingProject.user_id !== user_id) {
+      return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
+    }
+
     const { data, error } = await getSupabase()
       .from('command_center_projects')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -76,8 +111,27 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const userId = searchParams.get('user_id');
+
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+  if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 });
+
   try {
+    // Verify ownership: fetch the record and check user_id matches
+    const { data: existingProject, error: fetchError } = await getSupabase()
+      .from('command_center_projects')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingProject) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if (existingProject.user_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
+    }
+
     const { error } = await getSupabase()
       .from('command_center_projects')
       .delete()
@@ -85,6 +139,7 @@ export async function DELETE(request: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ ok: true });
   } catch (e) {
+    console.error('Projects DELETE error:', e);
     return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
   }
 }
