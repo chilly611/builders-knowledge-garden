@@ -1,11 +1,13 @@
 // Builder's Knowledge Garden — Auth & Subscription Context
+// Supabase Auth integration
 // DREAM (free) vs BUILD (paid) gating
-// Mock mode works without Clerk/Stripe keys for development
-// When keys are added, swap mock implementations for real ones
+// Uses real Supabase auth with mock tier defaults
 
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ─── SUBSCRIPTION TIERS ───
 export type Tier = "explorer" | "pro" | "team" | "enterprise" | "platform";
@@ -111,10 +113,56 @@ export function useAuth(): AuthContextType {
 
 // ─── PROVIDER ───
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Mock auth state — replace with Clerk when keys arrive
   const [user, setUser] = useState<User | null>(null);
   const [aiQueries, setAIQueries] = useState(0);
   const [projectCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize auth state from Supabase session
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "Builder",
+            tier: "explorer", // Default to explorer; Stripe integration will upgrade tiers
+            orgId: session.user.user_metadata?.orgId,
+            orgName: session.user.user_metadata?.orgName,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to initialize auth:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "Builder",
+            tier: "explorer",
+            orgId: session.user.user_metadata?.orgId,
+            orgName: session.user.user_metadata?.orgName,
+          });
+        } else {
+          setUser(null);
+          setAIQueries(0);
+        }
+      }
+    );
+
+    return () => subscription?.unsubscribe();
+  }, []);
 
   const tier = TIERS[user?.tier || "explorer"];
   const isAuthenticated = !!user;
@@ -124,22 +172,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canCreateProject = isBuildMode && projectCount < tier.limits.projects;
 
   const login = useCallback(() => {
-    // Mock login — Clerk will handle this
-    setUser({
-      id: "mock-user-1",
-      email: "builder@example.com",
-      name: "Demo Builder",
-      tier: "explorer",
-    });
+    // Note: actual login happens in /login page
+    // This is a placeholder for programmatic login if needed
+    console.log("Use /login page for authentication");
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    setAIQueries(0);
+  const logout = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setAIQueries(0);
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+    }
   }, []);
 
   const upgrade = useCallback((newTier: Tier) => {
-    // Mock upgrade — Stripe checkout will handle this
+    // Stripe checkout will handle tier upgrades
+    // This is a placeholder for future Stripe integration
     if (user) {
       setUser({ ...user, tier: newTier });
     }

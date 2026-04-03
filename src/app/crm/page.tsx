@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
 
 const LanePicker = dynamic(() => import('@/components/LanePicker'), { ssr: false });
 const OnboardingFlow = dynamic(() => import('@/components/OnboardingFlow'), { ssr: false });
@@ -318,6 +321,66 @@ function MorningBriefing({ report, onRefresh, refreshing }: {
   );
 }
 
+/* ─── Auth Header Info ─── */
+function AuthHeaderInfo() {
+  const { user, logout } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    await logout();
+    router.push('/login');
+  };
+
+  if (!user) {
+    return (
+      <Link
+        href="/login"
+        style={{
+          background: '#f5f5f0',
+          border: '1px solid #e5e5e0',
+          borderRadius: 9,
+          padding: '9px 14px',
+          color: '#666',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          textDecoration: 'none',
+          display: 'inline-block',
+        }}
+      >
+        Sign In
+      </Link>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <span style={{ fontSize: '12px', color: '#666', fontWeight: 500 }}>
+        {user.email}
+      </span>
+      <button
+        onClick={handleLogout}
+        disabled={isLoading}
+        style={{
+          background: '#f5f5f0',
+          border: '1px solid #e5e5e0',
+          borderRadius: 9,
+          padding: '9px 14px',
+          color: '#666',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          opacity: isLoading ? 0.6 : 1,
+        }}
+      >
+        {isLoading ? 'Signing out...' : 'Sign Out'}
+      </button>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 export default function CommandCenterPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -529,6 +592,7 @@ export default function CommandCenterPage() {
             </h1>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#999' }}>{nowDate} · Your AI COO</p>
           </div>
+          <AuthHeaderInfo />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {selectedLane && (
               <span style={{ background: '#f5f5f0', border: '1px solid #e5e5e0', borderRadius: 8, padding: '4px 10px', fontSize: '11px', fontWeight: 600, color: '#888', cursor: 'pointer' }} onClick={() => { try { localStorage?.removeItem('bkg_onboarded'); localStorage?.removeItem('bkg_lane'); } catch {} setOnboardingPhase('lane'); }}>
