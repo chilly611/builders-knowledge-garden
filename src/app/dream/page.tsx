@@ -78,6 +78,22 @@ const DREAM_PATHS: DreamPath[] = [
     tagline: "Talk your dream into existence", time: "Open-ended",
     color: "#C4A44A", image: "url(/logos/dream/voice.webp)",
     laneWeights: { diy: 10, gc: 7, specialty: 6, supplier: 5, equipment: 4, service: 6, worker: 8, robot: 5 } },
+  { id: "sim", route: "/dream/sim", icon: "🏙️", name: "The Sim",
+    tagline: "SimCity meets your dream home — place rooms, watch AI build", time: "~5 min",
+    color: "#1D9E75", image: "url(/logos/dream/sandbox.webp)",
+    laneWeights: { diy: 10, gc: 8, specialty: 7, supplier: 6, equipment: 5, service: 6, worker: 9, robot: 8 } },
+  { id: "timemachine", route: "/dream/timemachine", icon: "⏳", name: "The Time Machine",
+    tagline: "Watch your building rise phase by phase — 4D construction", time: "~3 min",
+    color: "#D85A30", image: "url(/logos/dream/plans.webp)",
+    laneWeights: { diy: 8, gc: 9, specialty: 9, supplier: 7, equipment: 8, service: 7, worker: 6, robot: 7 } },
+  { id: "elements", route: "/dream/elements", icon: "⚛️", name: "The Periodic Table",
+    tagline: "Combine building elements like a scientist — synthesize architecture", time: "Open-ended",
+    color: "#7F77DD", image: "url(/logos/dream/genome.webp)",
+    laneWeights: { diy: 7, gc: 8, specialty: 9, supplier: 8, equipment: 6, service: 6, worker: 5, robot: 7 } },
+  { id: "worldwalker", route: "/dream/worldwalker", icon: "🚶", name: "The Worldwalker",
+    tagline: "Walk through your dream in 3D — explore every room", time: "Open-ended",
+    color: "#E8443A", image: "url(/logos/dream/cosmos.webp)",
+    laneWeights: { diy: 10, gc: 7, specialty: 6, supplier: 5, equipment: 4, service: 6, worker: 8, robot: 9 } },
 ];
 
 interface SavedDream {

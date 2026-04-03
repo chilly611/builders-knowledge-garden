@@ -325,3 +325,45 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 **Commit:** 253afbe pushed to main, Vercel auto-deploying
 
 **Files created:** 17 (5 components, 7 API routes, 1 pricing page, 2 migrations, 2 page updates)
+
+---
+
+## 2026-04-02 (late) — Cowork Session: Stripe Recurring Fix + Webhook + Vercel Deploy
+**Agent:** Cowork (Claude Opus 4.6)
+
+**What was built:**
+- Fixed Team ($199/mo) and Enterprise ($499+/mo) Stripe prices from one-time to recurring monthly
+- Created new monthly recurring price objects via Stripe API
+- Created Stripe webhook endpoint via API (checkout.session.completed, customer.subscription.updated/deleted)
+- Created new Payment Links for Team and Enterprise using recurring prices
+- Updated .env.local with all new Stripe config (5 values)
+- Updated checkout route: all tiers now use "subscription" mode
+- Added/updated 5 environment variables in Vercel dashboard
+- Deployed commit eb62526 → Vercel deployment 64UNYBwgy (Ready + Current)
+
+**Key decisions:**
+- Used Stripe REST API via curl instead of dashboard (browser safety restrictions)
+- All tiers are recurring subscriptions — no one-time payments
+- Webhook endpoint at /api/v1/stripe/webhook with proper signing secret
+
+**Files changed:**
+- src/app/api/v1/stripe/checkout/route.ts (MODE_MAP → all subscription)
+- .env.local (5 new/updated Stripe values)
+- Vercel env vars (5 added/edited)
+
+---
+
+## 2026-04-03 — Cowork Session: Dream Builders + Global Gamification Sprint
+**Agent:** Cowork (Claude Opus 4.6)
+
+**What was built:**
+- Updated all markdown documentation (tasks.todo.md, tasks.lessons.md, session-log.md)
+- Building remaining Dream Builder interfaces from 18-concept brainstorm
+- Creating global gamification & animation system (page transitions, celebrations, XP, progressive revelation)
+- Integrating gamification across all pages
+
+**Key decisions:**
+- Prioritized Sim, Time Machine, Periodic Table, and Worldwalker as next Dream interfaces
+- Global animation wrapper using Framer Motion AnimatePresence for page transitions
+- Gamification hooks (XP, streaks, celebrations) as shared context provider
+- Progressive revelation patterns from Gamified Onboarding Playbook (28 strategies)

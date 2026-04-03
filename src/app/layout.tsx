@@ -3,6 +3,7 @@ import { Archivo, Archivo_Black } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import CompassNav from "@/components/CompassNav";
+import { GamificationProvider } from "@/components/GamificationProvider";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -59,8 +60,10 @@ export default function RootLayout({
     <html lang="en" className={`${archivo.variable} ${archivoBlack.variable}`}>
       <body className="min-h-screen" style={{ background: "var(--bg)", color: "var(--fg)", fontFamily: "var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
         <Providers>
-          {children}
-          <CompassNav />
+          <GamificationProvider>
+            {children}
+            <CompassNav />
+          </GamificationProvider>
         </Providers>
       </body>
     </html>

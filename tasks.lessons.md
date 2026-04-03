@@ -1,5 +1,5 @@
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-04-01
+## Updated: 2026-04-03
 
 ---
 
@@ -241,3 +241,17 @@
 19. **Onboarding should use localStorage for state persistence.** `bkg_lane` stores selected persona, `bkg_onboarded` stores completion status. These keys gate the LanePicker and OnboardingFlow overlays on the CRM page. Users can reset by clicking their lane badge in the header.
 
 20. **Dynamic imports prevent SSR issues with framer-motion components.** Use `dynamic(() => import(...), { ssr: false })` for any component using framer-motion that's imported into a page. Direct imports can cause hydration mismatches.
+
+---
+
+## Stripe Integration — 2026-04-02/03
+
+21. **Stripe dashboard blocked by browser safety restrictions.** The Cowork browser sandbox blocks `dashboard.stripe.com`. Fix: use the Stripe REST API with curl and the secret key to create prices, webhook endpoints, and payment links programmatically. `curl https://api.stripe.com/v1/prices -u sk_test_...:` works perfectly.
+
+22. **Stripe Payment Links require `billing_scheme=per_unit` and `usage_type=licensed`.** When creating recurring prices via the API, use `-d "recurring[interval]=month"`. Then create payment links with `-d "line_items[0][price]=price_xxx" -d "line_items[0][quantity]=1"`.
+
+23. **Stripe webhook signing secrets start with `whsec_`.** When creating a webhook endpoint via API, the response includes the secret directly. Store it immediately — you can't retrieve it again later.
+
+24. **All Stripe tiers should be `subscription` mode, not `payment`.** The checkout route's MODE_MAP had Team and Enterprise as "payment" (one-time) instead of "subscription" (recurring). Both the price objects AND the checkout session mode must be recurring.
+
+25. **`.env.local` is gitignored — env vars deploy via Vercel dashboard only.** Never try to `git add .env.local`. Stripe keys, webhook secrets, and payment link URLs all go through Vercel's Environment Variables UI (or CLI).

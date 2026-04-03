@@ -1,5 +1,5 @@
 # Builder's Knowledge Garden — Tasks & Status
-## Updated: 2026-04-02 (strategic reorientation)
+## Updated: 2026-04-03 (dream builders + gamification sprint)
 
 ---
 
@@ -7,13 +7,20 @@
 
 ### What's Live (builders.theknowledgegardens.com)
 - **Branch:** `main` | **Deploy:** Vercel auto-deploys on push
-- **15 Dream Machine interfaces** — all with FLUX-generated branded logos
+- **16 Dream Machine interfaces** — all with FLUX-generated branded logos (+ Garden hub)
 - **Command Center** — AI COO war room at /crm
 - **Dream State persistence** — Supabase table + API route live
 - **Killer App nav** — 7 module pills with status badges
 - **Stub pages** — Field Ops, Finances, Clients, Documents, Site Intel (preview only)
+- **Stripe payments** — Full subscription billing (Pro $49/mo, Team $199/mo, Enterprise $499+/mo)
+  - Checkout Sessions API + Payment Links
+  - Webhook handler (checkout.session.completed, subscription.updated/deleted)
+  - Billing portal for self-serve subscription management
+  - Subscription tier gating in auth context
+- **PM Modules** — RFI, Submittal, Change Order, Punch List, Budget (components + API routes)
+- **Pricing page** — 4-tier pricing at /pricing with Stripe Payment Links
 
-### Dream Machine Routes (15 total, all returning 200)
+### Dream Machine Routes (16+ total, all returning 200)
 | Route | Interface | Logo |
 |-------|-----------|------|
 | /dream/describe | Describe Your Dream | ✅ Golden quill |
@@ -31,6 +38,18 @@
 | /dream/collider | The Collider | ✅ Particle beams |
 | /dream/sandbox | The Sandbox | ✅ Golden blocks |
 | /dream/voice | The Voice Architect | ✅ Golden microphone |
+| /dream/garden | My Dream Garden | ✅ Saved dreams library |
+
+### Stripe Billing Infrastructure
+| Component | Status |
+|-----------|--------|
+| Checkout Sessions API | ✅ All tiers = recurring monthly subscriptions |
+| Payment Links (Pro/Team/Enterprise) | ✅ Live in test mode |
+| Webhook handler | ✅ checkout.session.completed, subscription.updated/deleted |
+| Billing portal route | ✅ Self-serve subscription management |
+| Subscription gating in auth | ✅ BuildGate + AIRateLimit components |
+| Vercel env vars | ✅ All 12 Stripe vars deployed |
+| Webhook secret | ✅ whsec_* configured |
 
 ### Database (Supabase)
 - `dream_states` table ✅ (26 columns, indexes, RLS)
@@ -103,6 +122,9 @@ These are what professionals ask about in the first 5 minutes of evaluating PM s
 - [x] Database population: 500 → 2,204 entities ✅ DONE
 - [x] PM Modules: RFI, Submittal, Change Order, Punch List, Budget ✅ DONE
 - [x] Stripe infrastructure: checkout/webhook/portal routes, pricing page ✅ DONE
+- [x] Stripe recurring subscriptions: Team + Enterprise fixed to monthly recurring ✅ DONE
+- [x] Stripe webhook endpoint + signing secret configured ✅ DONE
+- [x] All 12 Stripe env vars deployed to Vercel ✅ DONE
 - [ ] Knowledge browse: rich cards, search-as-you-type, jurisdiction filtering
 - [ ] Knowledge detail pages: SEO-optimized, deep content, related entities
 - [ ] AI Copilot: RAG with real Supabase data, citation links
