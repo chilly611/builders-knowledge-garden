@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ProjectProvider, useProject } from '../dream-shared/ProjectContext';
+import SaveLoadPanel from '../dream-shared/SaveLoadPanel';
+import ProjectPicker from '../dream-shared/ProjectPicker';
+import type { OracleState, DreamProject } from '../dream-shared/types';
 
 type Phase = 'intro' | 'questions' | 'processing' | 'profile' | 'renders';
 
@@ -39,7 +43,7 @@ const PROCESSING_STEPS = [
   'Generating renders...',
 ];
 
-export default function OraclePage() {
+function OraclePageInner() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<string[]>(Array(7).fill(''));
@@ -183,17 +187,7 @@ export default function OraclePage() {
       const profileResponse = await fetch('/api/v1/oracle/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          answers: {
-            morning: answers[0],
-            entertain: answers[1],
-            nature: answers[2],
-            beautiful_place: answers[3],
-            safety: answers[4],
-            recharge: answers[5],
-            identity: answers[6],
-          },
-        }),
+        body: JSON.stringify({ answers }),
       });
 
       if (!profileResponse.ok) {
@@ -279,6 +273,43 @@ export default function OraclePage() {
     setError(null);
     setProcessingStep(0);
   };
+
+  // ─── Save/Load Integration ───
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleSerialize = useCallback(() => {
+    const interfaceData: OracleState = {
+      phase,
+      currentQuestion,
+      answers,
+      profile,
+    };
+    return {
+      interfaceData,
+      essence: {
+        freeformNotes: answers.filter(a => a.trim()).join(' | '),
+        profileSummary: profile?.overallVibe || '',
+        styles: profile?.aestheticDNA ? [profile.aestheticDNA] : [],
+      },
+    };
+  }, [phase, currentQuestion, answers, profile]);
+
+  const handleDeserialize = useCallback((data: { interfaceData: unknown; essence: DreamProject['dreamEssence'] }) => {
+    const state = data.interfaceData as OracleState | null;
+    if (state) {
+      setPhase(state.phase || 'intro');
+      setCurrentQuestion(state.currentQuestion || 0);
+      setAnswers(state.answers || Array(7).fill(''));
+      setProfile(state.profile || null);
+    } else if (data.essence) {
+      // Seed from dream essence (cross-interface import)
+      if (data.essence.freeformNotes) {
+        const notes = data.essence.freeformNotes.split(' | ');
+        setAnswers(prev => notes.map((n, i) => n || prev[i] || ''));
+      }
+      setPhase('questions');
+    }
+  }, []);
 
   return (
     <div style={{ ...styles.container, '--phase': '#D85A30' } as React.CSSProperties}>
@@ -384,6 +415,25 @@ export default function OraclePage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Save/Load System */}
+      <SaveLoadPanel
+        interfaceType="oracle"
+        accentColor="#D85A30"
+        onSerialize={handleSerialize}
+        onDeserialize={handleDeserialize}
+        onOpenPicker={() => setShowPicker(true)}
+      />
+      <ProjectPicker
+        isOpen={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelectProject={(project) => {
+          const iData = project.interfaceData.oracle;
+          handleDeserialize({ interfaceData: iData || null, essence: project.dreamEssence });
+        }}
+        currentInterfaceType="oracle"
+        accentColor="#D85A30"
+      />
     </div>
   );
 }
@@ -400,7 +450,7 @@ function IntroPhase({ onBegin }: { onBegin: () => void }) {
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -531,13 +581,13 @@ function QuestionsPhase({
 }) {
   // Different background atmospheres for each question
   const backgroundGradients = [
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #2d1810 100%)',
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a1a3d 100%)',
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1d2b1a 100%)',
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #2b1d1d 100%)',
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f2e 100%)',
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #2d2310 100%)',
-    'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a2a2d 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #2d1810 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #1a1a3d 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #1d2b1a 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #2b1d1d 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #2d2310 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #1a2a2d 100%)',
   ];
 
   return (
@@ -765,7 +815,7 @@ function ProcessingPhase({
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -917,7 +967,7 @@ function ProfilePhase({
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1080,7 +1130,7 @@ function RendersPhase({
       exit={{ opacity: 0 }}
       style={{
         ...styles.fullScreen,
-        background: 'linear-gradient(135deg, var(--bg, #ffffff) 0%, #1a0f05 100%)',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0f05 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -1234,7 +1284,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     minHeight: '100vh',
     width: '100%',
-    background: 'var(--bg, #ffffff)',
+    background: '#0a0a0a',
     color: 'white',
     fontFamily: 'var(--font-archivo)',
   },
@@ -1254,3 +1304,11 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.3s ease',
   },
 };
+
+export default function OraclePage() {
+  return (
+    <ProjectProvider>
+      <OraclePageInner />
+    </ProjectProvider>
+  );
+}
