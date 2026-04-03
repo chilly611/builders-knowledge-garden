@@ -252,11 +252,9 @@ function MobileFAB() {
 /* âââ MAIN EXPORT â switches between desktop sidebar and mobile FAB âââ */
 
 function AuthButton() {
-  const { user, loading, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
   const [showMenu, setShowMenu] = useState(false);
-
-  if (loading) return null;
 
   if (!user) {
     return (
@@ -271,8 +269,8 @@ function AuthButton() {
     );
   }
 
-  const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Builder";
-  const avatarUrl = user.user_metadata?.avatar_url;
+  const displayName = user.name || user.email?.split("@")[0] || "Builder";
+  const avatarUrl = null; // User interface does not include avatar_url
 
   return (
     <div className="relative">
@@ -295,7 +293,7 @@ function AuthButton() {
           <hr className="border-white/10 my-1" />
           <a href="/profile" className="block px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10">My Profile</a>
           <button
-            onClick={() => { signOut(); setShowMenu(false); }}
+            onClick={() => { logout(); setShowMenu(false); }}
             className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-white/10"
           >
             Sign out
