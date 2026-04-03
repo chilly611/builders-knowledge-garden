@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/';
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +66,22 @@ export default function LoginPage() {
 
   const handleContinueAsExplorer = () => {
     router.push('/crm');
+  };
+
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setError('');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/auth/callback?redirectTo=' + encodeURIComponent(redirectTo),
+      },
+    });
+    if (error) {
+      setError(error.message);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -150,7 +168,37 @@ export default function LoginPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <button
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              type="button"
+              style={{
+                width: '100%',
+                padding: 12,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'white',
+                color: '#333',
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginBottom: 16,
+              }}
+            >
+              Continue with Google
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 16px" }}>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              <span style={{ fontSize: 12, color: "var(--fg-secondary, #999)" }}>or</span>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Email */}
           <div>
             <label
@@ -205,7 +253,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••"
+              placeholder="â¢â¢â¢â¢â¢â¢â¢â¢"
               style={{
                 width: '100%',
                 padding: '10px 12px',
