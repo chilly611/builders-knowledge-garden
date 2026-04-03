@@ -255,3 +255,16 @@
 24. **All Stripe tiers should be `subscription` mode, not `payment`.** The checkout route's MODE_MAP had Team and Enterprise as "payment" (one-time) instead of "subscription" (recurring). Both the price objects AND the checkout session mode must be recurring.
 
 25. **`.env.local` is gitignored — env vars deploy via Vercel dashboard only.** Never try to `git add .env.local`. Stripe keys, webhook secrets, and payment link URLs all go through Vercel's Environment Variables UI (or CLI).
+
+
+## Cowork Session — 2026-04-03: Universal Save/Load System
+
+26. **Next.js App Router import paths: count directory depth carefully.** Pages at `src/app/dream/[interface]/page.tsx` need `../../dream-shared/` to reach `src/app/dream-shared/`. Using `../dream-shared/` resolves to `src/app/dream/dream-shared/` which doesn't exist. The rule: count the directories between the file and its target, then use that many `../` segments. Always verify with `path.resolve()` mentally before deploying.
+
+27. **GitHub Contents API creates one commit per file — batch carefully.** Pushing 8+ files via individual API PUT calls triggers 8+ Vercel deploys. Intermediate deploys with partial file sets WILL fail (missing imports). Options: (a) push all files rapidly so only the last deploy matters, (b) use git push for multi-file changes, (c) accept that Vercel will show failed intermediate deploys and only the final one matters.
+
+28. **StorageAdapter pattern enables zero-effort backend swap.** The save/load system uses `StorageAdapter` interface with `list/get/save/remove` methods. `LocalStorageAdapter` implements it with localStorage. When auth ships, swap in `ApiStorageAdapter` in one file (`ProjectContext.tsx`). This pattern should be used for ALL features that start with local storage and will later need server persistence.
+
+29. **DreamEssence as portable project format.** Instead of each interface having incompatible save formats, extract a universal "essence" (styles, materials, features, moods, constraints, freeformNotes) that any interface can read. Each interface implements serialize (state → essence) and deserialize (essence → state) with fuzzy matching against its own entities. This lets projects flow between Oracle → Alchemist → Cosmos seamlessly.
+
+30. **Verify Vercel build logs after deployment, not just the status page.** A deployment marked "Ready" on Vercel's list might have a different deployment as "Current". Always check that the latest deployment shows both "Ready" AND "Current" to confirm it's actually serving traffic.
