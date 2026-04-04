@@ -6,10 +6,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface DreamState {
   id?: string;
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (body.id) {
       // Update existing dream
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from("dream_states")
         .update(dreamData)
         .eq("id", body.id)
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ dream: data, updated: true });
     } else {
       // Create new dream
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from("dream_states")
         .insert({
           ...dreamData,
@@ -103,7 +105,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("user");
 
     if (id) {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from("dream_states")
         .select("*")
         .eq("id", id)
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (userId) {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from("dream_states")
         .select("*")
         .eq("user_id", userId)
@@ -126,7 +128,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return recent public dreams
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("dream_states")
       .select("id, title, growth_stage, interfaces_used, inferred_style, renders, created_at, updated_at")
       .order("updated_at", { ascending: false })
