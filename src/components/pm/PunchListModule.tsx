@@ -407,7 +407,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
   }
 
   return (
-    <div style={{ backgroundColor: '#FAFAF8' }>, padding: '24px', borderRadius: '8px' }}>
+    <div style={{ backgroundColor: '#FAFAF8', padding: '24px', borderRadius: '8px' }}>
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -561,7 +561,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
           >
             {completionPercentage}%
           </div>
-          <p style={{ margin: "8px 0 0 0', color: '#666', fontSize: '12px' }}>
+          <p style={{ margin: "8px 0 0 0", color: "#666", fontSize: "12px" }}>
             Completion
           </p>
         </div>
@@ -652,6 +652,20 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
             fontFamily: 'system-ui',
             fontSize: '14px',
             cursor: 'pointer',
+          }}
+        >
+          {viewMode === 'list' ? '📍 Location View' : '📋 List View'}
+        </button>
+      </div>
+
+      {/* Items by Location */}
+      {filteredItems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px', color: '#888' }}>
+          <p style={{ margin: 0, fontSize: '14px' }}>No punch items found.</p>
+        </div>
+      ) : (
+        <div>
+          {groupedByLocation.map(([location, locationItems]) => (
             <div key={location}>
                 <h3
                   style={{
@@ -791,8 +805,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
                   ))}
                 </div>
               </div>
-            ))
-          )}
+            ))}
         </div>
       )}
 
@@ -997,7 +1010,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
                         objectFit: 'cover',
                       }}
                     />
-                  |}
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -1055,7 +1068,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
                     cursor: creating ? 'not-allowed' : 'pointer',
                     fontFamily: 'system-ui',
                     fontSize: '14px',
-                    fontWeight: '500	,
+                    fontWeight: '500',
                     opacity: creating ? 0.6 : 1,
                   }}
                 >
