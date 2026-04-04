@@ -1,508 +1,963 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { CompletionRing } from "@/components/Gamification";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  Plus,
+  Filter,
+  SortAsc,
+  Trash2,
+  Download,
+  MapPin,
+  Wrench,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Check,
+  X,
+  Edit3,
+  Camera,
+  List,
+  LayoutGrid,
+} from 'lucide-react';
 
 interface PunchItem {
   id: string;
-  location: string;
+  project_id: string;
   description: string;
-  assigned_trade: string;
-  priority: "low" | "medium" | "high" | "critical";
-  status: "open" | "in_progress" | "complete" | "verified";
+  location?: string;
+  assigned_trade?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'in_progress' | 'ready_for_inspection' | 'closed' | 'deferred';
+  photo_url?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 interface PunchListModuleProps {
   projectId: string;
 }
 
-const statusColors: Record<PunchItem["status"], { bg: string; text: string; label: string; emoji: string }> = {
-  open: { bg: "#f8d7da", text: "#721c24", label: "Open", emoji: "🔴" },
-  in_progress: { bg: "#fff3cd", text: "#856404", label: "In Progress", emoji: "🟠" },
-  complete: { bg: "#cfe2ff", text: "#0c63e4", label: "Complete", emoji: "🔵" },
-  verified: { bg: "#d1e7dd", text: "#0f5132", label: "Verified", emoji: "✅" },
+const priorityColors: Record<string, { bg: string; text: string }> = {
+  low: { bg: '#e9ecef', text: '#495057' },
+  medium: { bg: '#fff3cd', text: '#856404' },
+  high: { bg: '#f8d7da', text: '#721c24' },
+  critical: { bg: '#dc3545', text: '#ffffff' },
 };
 
-const priorityColors: Record<PunchItem["priority"], { bg: string; text: string }> = {
-  low: { bg: "#e9ecef", text: "#555555" },
-  medium: { bg: "#fff3cd", text: "#856404" },
-  high: { bg: "#f8d7da", text: "#721c24" },
-  critical: { bg: "#dc3545", text: "#ffffff" },
+const statusColors: Record<string, string> = {
+  open: '#cfe2ff',
+  in_progress: '#fff3cd',
+  ready_for_inspection: '#ffeeba',
+  closed: '#d1e7dd',
+  deferred: '#e9ecef',
 };
 
-const tradeCategories = [
-  "Carpentry",
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Painting",
-  "Drywall",
-  "Flooring",
-  "Masonry",
-  "Landscaping",
-  "General Labor",
-];
+const statusLabels: Record<string, string> = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  ready_for_inspection: 'Ready for Inspection',
+  closed: 'Closed',
+  deferred: 'Deferred',
+};
 
-const mockPunchItems: PunchItem[] = [
-  {
-    id: "pi-1",
-    location: "Main Lobby - East Wall",
-    description: "Paint touch-ups needed on drywall seams",
-    assigned_trade: "Painting",
-    priority: "low",
-    status: "open",
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "pi-2",
-    location: "Conference Room A",
-    description: "Install missing outlet covers in southeast corner",
-    assigned_trade: "Electrical",
-    priority: "medium",
-    status: "in_progress",
-    created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "pi-3",
-    location: "2nd Floor Corridor",
-    description: "Fix alignment of ceiling tiles above door frame",
-    assigned_trade: "General Labor",
-    priority: "medium",
-    status: "complete",
-    created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "pi-4",
-    location: "Mechanical Room",
-    description: "Seal gaps around ductwork penetrations",
-    assigned_trade: "HVAC",
-    priority: "high",
-    status: "open",
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "pi-5",
-    location: "Exterior - North Side",
-    description: "Caulk gaps between storefront and building facade",
-    assigned_trade: "Carpentry",
-    priority: "high",
-    status: "in_progress",
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "pi-6",
-    location: "Main Restrooms",
-    description: "Repair leaking toilet in stall 2",
-    assigned_trade: "Plumbing",
-    priority: "critical",
-    status: "open",
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-export default function PunchListModule({ projectId }: PunchListModuleProps) {
-  const [punchItems, setPunchItems] = useState<PunchItem[]>(mockPunchItems);
+const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
+  const [items, setItems] = useState<PunchItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<PunchItem["status"] | "all">("all");
-  const [filterTrade, setFilterTrade] = useState<string>("all");
-
-  const [formData, setFormData] = useState({
-    location: "",
-    description: "",
-    assigned_trade: "General Labor",
-    priority: "medium" as PunchItem["priority"],
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<{
+    itemId: string;
+    field: 'assigned_trade' | 'location';
+  } | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'location'>('date');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [createForm, setCreateForm] = useState({
+    description: '',
+    location: '',
+    assigned_trade: '',
+    priority: 'medium' as const,
+    photo_url: '',
   });
+  const [creating, setCreating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredItems = punchItems.filter((item) => {
-    const statusMatch = filterStatus === "all" ? true : item.status === filterStatus;
-    const tradeMatch = filterTrade === "all" ? true : item.assigned_trade === filterTrade;
-    return statusMatch && tradeMatch;
-  });
-
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-    const statusOrder = { open: 0, in_progress: 1, complete: 2, verified: 3 };
-    if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
+  const fetchItems = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(
+        `/api/v1/projects/punch-items?projectId=${projectId}`
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch punch items: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load punch items');
+    } finally {
+      setLoading(false);
     }
-    return statusOrder[a.status] - statusOrder[b.status];
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  const handleCreateItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.description.trim()) {
+      alert('Description is required');
+      return;
+    }
+
+    try {
+      setCreating(true);
+      const response = await fetch('/api/v1/projects/punch-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          ...createForm,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create punch item');
+      }
+
+      const newItem = await response.json();
+      setItems((prev) => [newItem, ...prev]);
+      setShowCreateModal(false);
+      setCreateForm({
+        description: '',
+        location: '',
+        assigned_trade: '',
+        priority: 'medium',
+        photo_url: '',
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to create item');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleStatusChange = async (
+    itemId: string,
+    newStatus: PunchItem['status']
+  ) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    try {
+      const response = await fetch('/api/v1/projects/punch-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: itemId,
+          status: newStatus,
+          assigned_trade: item.assigned_trade,
+          priority: item.priority,
+          photo_url: item.photo_url,
+          location: item.location,
+          description: item.description,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      const updated = await response.json();
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? updated : i))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update status');
+    }
+  };
+
+  const handleInlineEdit = async (
+    itemId: string,
+    field: 'assigned_trade' | 'location',
+    value: string
+  ) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    try {
+      const updatePayload: Record<string, any> = {
+        id: itemId,
+        status: item.status,
+        priority: item.priority,
+        photo_url: item.photo_url,
+        description: item.description,
+      };
+      updatePayload[field] = value;
+
+      const response = await fetch('/api/v1/projects/punch-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update item');
+      }
+
+      const updated = await response.json();
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? updated : i))
+      );
+      setEditingField(null);
+      setEditValue('');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update item');
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      const response = await fetch('/api/v1/projects/punch-items', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete item');
+      }
+
+      setItems((prev) => prev.filter((i) => i.id !== itemId));
+      setShowDeleteConfirm(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete item');
+    }
+  };
+
+  const handlePhotoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    itemId?: string
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // For demo purposes, using data URL. In production, upload to cloud storage.
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (itemId) {
+        // Update existing item
+        const item = items.find((i) => i.id === itemId);
+        if (item) {
+          handleInlineEdit(itemId, 'location', item.location || '');
+          // This would need to also update the photo_url
+        }
+      } else {
+        // Update form
+        setCreateForm((prev) => ({ ...prev, photo_url: dataUrl }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const exportToCSV = () => {
+    const headers = [
+      'ID',
+      'Description',
+      'Location',
+      'Assigned Trade',
+      'Priority',
+      'Status',
+      'Created',
+    ];
+    const rows = filteredItems.map((item) => [
+      item.id,
+      item.description,
+      item.location || '',
+      item.assigned_trade || '',
+      item.priority,
+      item.status,
+      new Date(item.created_at).toLocaleDateString(),
+    ]);
+
+    const csv =
+      [headers, ...rows]
+        .map((row) => row.map((cell) => `"${cell}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `punch-list-${projectId}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  let filteredItems = items.filter((item) => {
+    if (filterStatus && item.status !== filterStatus) return false;
+    if (filterPriority && item.priority !== filterPriority) return false;
+    return true;
   });
 
-  // Calculate completion stats
-  const totalItems = punchItems.length;
-  const completedItems = punchItems.filter((item) => item.status === "verified").length;
-  const completionPercent = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+  filteredItems = [...filteredItems].sort((a, b) => {
+    if (sortBy === 'date') {
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+    if (sortBy === 'priority') {
+      const priorityOrder: Record<string, number> = {
+        critical: 0,
+        high: 1,
+        medium: 2,
+        low: 3,
+      };
+      return (
+        priorityOrder[a.priority] - priorityOrder[b.priority]
+      );
+    }
+    if (sortBy === 'location') {
+      return (a.location || '').localeCompare(b.location || '');
+    }
+    return 0;
+  });
 
-  const openCount = punchItems.filter((item) => item.status === "open").length;
-  const inProgressCount = punchItems.filter((item) => item.status === "in_progress").length;
-  const completeCount = punchItems.filter((item) => item.status === "complete").length;
-
-  const handleCreateItem = () => {
-    if (!formData.location.trim() || !formData.description.trim()) return;
-
-    const newItem: PunchItem = {
-      id: `pi-${Date.now()}`,
-      location: formData.location,
-      description: formData.description,
-      assigned_trade: formData.assigned_trade,
-      priority: formData.priority,
-      status: "open",
-      created_at: new Date().toISOString(),
-    };
-
-    setPunchItems([...punchItems, newItem]);
-    setFormData({
-      location: "",
-      description: "",
-      assigned_trade: "General Labor",
-      priority: "medium",
-    });
-    setShowCreateModal(false);
+  const stats = {
+    total: items.length,
+    open: items.filter((i) => i.status === 'open').length,
+    inProgress: items.filter((i) => i.status === 'in_progress').length,
+    closed: items.filter((i) => i.status === 'closed').length,
   };
 
-  const updateItemStatus = (id: string, newStatus: PunchItem["status"]) => {
-    setPunchItems(punchItems.map((item) => (item.id === id ? { ...item, status: newStatus } : item)));
-  };
+  const completionPercentage =
+    stats.total > 0 ? Math.round((stats.closed / stats.total) * 100) : 0;
 
-  const cardStyle = {
-    backgroundColor: "#ffffff",
-    border: "1px solid #e2e4e8",
-    borderRadius: "8px",
-    padding: "14px",
-    marginBottom: "10px",
-  };
+  const groupedByLocation = Array.from(
+    filteredItems.reduce(
+      (acc, item) => {
+        const location = item.location || 'Unassigned';
+        if (!acc.has(location)) {
+          acc.set(location, []);
+        }
+        acc.get(location)!.push(item);
+        return acc;
+      },
+      new Map<string, PunchItem[]>()
+    )
+  ).sort(([a], [b]) => a.localeCompare(b));
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '400px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '8px',
+          border: '1px solid #E5E5E0',
+        }}
+      >
+        <Loader2 size={32} style={{ color: '#1D9E75', animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: '24px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '8px',
+          border: '1px solid #E5E5E0',
+          textAlign: 'center',
+        }}
+      >
+        <AlertTriangle size={32} style={{ color: '#dc3545', marginBottom: '12px' }} />
+        <p style={{ color: '#495057', marginBottom: '16px' }}>{error}</p>
+        <button
+          onClick={() => fetchItems()}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#1D9E75',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontFamily: 'system-ui',
+            fontSize: '14px',
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      {/* Header with completion ring */}
-      <div style={{ marginBottom: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: "18px", fontWeight: 600, color: "var(--fg)", marginBottom: "4px" }}>Punch List</h3>
-            <p style={{ fontSize: "12px", color: "var(--fg-secondary)" }}>{completedItems} of {totalItems} items verified</p>
-          </div>
+    <div style={{ backgroundColor: '#FAFAF8' }>, padding: '24px', borderRadius: '8px' }}>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        input, select, textarea {
+          font-family: system-ui;
+        }
+        input::placeholder, textarea::placeholder {
+          color: #999;
+        }
+      `}</style>
 
-          {/* Completion Ring */}
-          <div style={{ marginRight: "16px" }}>
-            <CompletionRing percent={completionPercent} size={56} strokeWidth={3}>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)" }}>
-                {Math.round(completionPercent)}%
-              </span>
-            </CompletionRing>
-          </div>
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+        }}
+      >
+        <h1 style={{ fontSize: '28px', color: '#1a1a1a', margin: 0, fontWeight: '600' }}>
+          Punch List
+        </h1>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          style={{
+            padding: '10px 16px',
+            backgroundColor: '#1D9E75',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: 'system-ui',
+            fontSize: '14px',
+            fontWeight: '500',
+          }}
+        >
+          <Plus size={18} />
+          New Item
+        </button>
+      </div>
 
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: "10px 16px",
-              background: "var(--accent)",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            + Add Item
-          </button>
+      {/* Summary Cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '16px',
+          marginBottom: '24px',
+        }}
+      >
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '8px',
+            border: '1px solid #E5E5E0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          }}
+        >
+          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '12px' }}>
+            Total Items
+          </p>
+          <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#1D9E75' }}>
+            {stats.total}
+          </p>
         </div>
 
-        {/* Status Summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "12px", marginBottom: "16px" }}>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Open</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#721c24" }}>{openCount}</div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>In Progress</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#856404" }}>{inProgressCount}</div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Complete</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#0c63e4" }}>{completeCount}</div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Verified</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#0f5132" }}>{completedItems}</div>
-          </div>
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '8px',
+            border: '1px solid #E5E5E0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          }}
+        >
+          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '12px' }}>
+            Open
+          </p>
+          <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#dc3545' }}>
+            {stats.open}
+          </p>
         </div>
 
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as PunchItem["status"] | "all")}
-            style={{
-              padding: "8px 12px",
-              fontSize: "12px",
-              border: "1px solid #e2e4e8",
-              borderRadius: "6px",
-              background: "#ffffff",
-              cursor: "pointer",
-            }}
-          >
-            <option value="all">All Status</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="complete">Complete</option>
-            <option value="verified">Verified</option>
-          </select>
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '8px',
+            border: '1px solid #E5E5E0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          }}
+        >
+          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '12px' }}>
+            In Progress
+          </p>
+          <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#ffc107' }}>
+            {stats.inProgress}
+          </p>
+        </div>
 
-          <select
-            value={filterTrade}
-            onChange={(e) => setFilterTrade(e.target.value)}
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '8px',
+            border: '1px solid #E5E5E0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          }}
+        >
+          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '12px' }}>
+            Closed
+          </p>
+          <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#28a745' }}>
+            {stats.closed}
+          </p>
+        </div>
+
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '8px',
+            border: '1px solid #E5E5E0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <div
             style={{
-              padding: "8px 12px",
-              fontSize: "12px",
-              border: "1px solid #e2e4e8",
-              borderRadius: "6px",
-              background: "#ffffff",
-              cursor: "pointer",
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: `conic-gradient(#28a745 ${completionPercentage * 3.6}deg, #E5E5E0 0deg)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px',
+              fontWeight: '700',
+              color: '#1a1a1a',
             }}
           >
-            <option value="all">All Trades</option>
-            {tradeCategories.map((trade) => (
-              <option key={trade} value={trade}>
-                {trade}
-              </option>
-            ))}
-          </select>
+            {completionPercentage}%
+          </div>
+          <p style={{ margin: "8px 0 0 0', color: '#666', fontSize: '12px' }}>
+            Completion
+          </p>
         </div>
       </div>
 
-      {/* Punch Items List */}
-      {sortedItems.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "32px 16px",
-            background: "var(--bg-secondary)",
-            borderRadius: "8px",
-            border: "1px dashed #e2e4e8",
-          }}
-        >
-          <div style={{ fontSize: "28px", marginBottom: "8px" }}>✓</div>
-          <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--fg)", marginBottom: "4px" }}>All punches cleared!</p>
-          <p style={{ fontSize: "12px", color: "var(--fg-secondary)" }}>Great job! No items to track.</p>
+      {/* Filters & Controls */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '24px',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Filter size={18} style={{ color: '#666' }} />
+          <select
+            value={filterStatus || ''}
+            onChange={(e) => setFilterStatus(e.target.value || null)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #E5E5E0',
+              backgroundColor: '#FFFFFF',
+              fontFamily: 'system-ui',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="">All Statuses</option>
+            {Object.entries(statusLabels).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filterPriority || ''}
+            onChange={(e) => setFilterPriority(e.target.value || null)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #E5E5E0',
+              backgroundColor: '#FFFFFF',
+              fontFamily: 'system-ui',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="">All Priorities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
         </div>
-      ) : (
-        sortedItems.map((item) => {
-          const statusColor = statusColors[item.status];
-          const priorityColor = priorityColors[item.priority];
 
-          return (
-            <div key={item.id} style={cardStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
-                    <span style={{ fontSize: "16px" }}>{statusColor.emoji}</span>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 8px",
-                        fontSize: "10px",
-                        fontWeight: 500,
-                        background: statusColor.bg,
-                        color: statusColor.text,
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {statusColor.label}
-                    </span>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 8px",
-                        fontSize: "10px",
-                        fontWeight: 500,
-                        background: priorityColor.bg,
-                        color: priorityColor.text,
-                        borderRadius: "4px",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {item.priority}
-                    </span>
-                  </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <SortAsc size={18} style={{ color: '#666' }} />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'date' | 'priority' | 'location')}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #E5E5E0',
+              backgroundColor: '#FFFFFF',
+              fontFamily: 'system-ui',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="date">Date</option>
+            <option value="priority">Priority</option>
+            <option value="location">Location</option>
+          </select>
+        </div>
 
-                  <h4 style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg)", marginBottom: "4px" }}>{item.description}</h4>
-
-                  <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: "var(--fg-secondary)" }}>
-                    <div>📍 {item.location}</div>
-                    <div>🔨 {item.assigned_trade}</div>
-                  </div>
-                </div>
-
-                {/* Quick status update */}
-                <select
-                  value={item.status}
-                  onChange={(e) => updateItemStatus(item.id, e.target.value as PunchItem["status"])}
+        <button
+          onClick={() => setViewMode(viewMode === 'list' ? 'kanban' : 'list')}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid #E5E5E0',
+            backgroundColor: '#FFFFFF',
+            fontFamily: 'system-ui',
+            fontSize: '14px',
+            cursor: 'pointer',
+            <div key={location}>
+                <h3
                   style={{
-                    padding: "4px 6px",
-                    fontSize: "10px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "4px",
-                    background: "#ffffff",
-                    cursor: "pointer",
-                    marginLeft: "12px",
-                    minWidth: "100px",
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1a1a1a',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
                   }}
                 >
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="complete">Complete</option>
-                  <option value="verified">Verified</option>
-                </select>
+                  <MapPin size={16} style={{ color: '#1D9E75' }} />
+                  {location}
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      backgroundColor: '#f0f0f0',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      color: '#666',
+                    }}
+                  >
+                    {locationItems.length}
+                  </span>
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  {locationItems.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: '12px',
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '8px',
+                        border: `2px solid ${statusColors[item.status]}`,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      {item.photo_url && (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '120px',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          <img
+                            src={item.photo_url}
+                            alt={item.description}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                      )}
+
+                      <h4
+                        style={{
+                          margin: '0 0 8px 0',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: '#1a1a1a',
+                        }}
+                      >
+                        {item.description}
+                      </h4>
+
+                      {item.assigned_trade && (
+                        <p
+                          style={{
+                            margin: '0 0 8px 0',
+                            fontSize: '12px',
+                            color: '#666',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Wrench size={14} />
+                          {item.assigned_trade}
+                        </p>
+                      )}
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '6px',
+                          marginBottom: '8px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: priorityColors[item.priority].bg,
+                            color: priorityColors[item.priority].text,
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            textTransform: 'capitalize',
+                          }}
+                        >
+                          {item.priority}
+                        </span>
+
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: statusColors[item.status],
+                            fontSize: '11px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          {statusLabels[item.status]}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setShowDeleteConfirm(item.id)}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '4px',
+                          border: '1px solid #E5E5E0',
+                          backgroundColor: '#fff5f5',
+                          cursor: 'pointer',
+                          fontFamily: 'system-ui',
+                          fontSize: '12px',
+                          color: '#dc3545',
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })
+            ))
+          )}
+        </div>
       )}
 
       {/* Create Modal */}
       {showCreateModal && (
         <div
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
           }}
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              maxWidth: "500px",
-              width: "90%",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-            }}
             onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '8px',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '500px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            }}
           >
-            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--fg)", marginBottom: "16px" }}>Add Punch Item</h3>
+            <h2
+              style={{
+                margin: '0 0 16px 0',
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#1a1a1a',
+              }}
+            >
+              New Punch Item
+            </h2>
 
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                Location
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g., Main Lobby - East Wall"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  fontSize: "13px",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the punch item"
-                rows={3}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  fontSize: "13px",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  boxSizing: "border-box",
-                  fontFamily: "inherit",
-                }}
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                  Trade
-                </label>
-                <select
-                  value={formData.assigned_trade}
-                  onChange={(e) => setFormData({ ...formData, assigned_trade: e.target.value })}
+            <form onSubmit={handleCreateItem}>
+              <div style={{ marginBottom: '16px' }}>
+                <label
                   style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "6px",
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '6px',
+                    color: '#1a1a1a',
                   }}
                 >
-                  {tradeCategories.map((trade) => (
-                    <option key={trade} value={trade}>
-                      {trade}
-                    </option>
-                  ))}
-                </select>
+                  Description *
+                </label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E5E0',
+                    fontFamily: 'system-ui',
+                    fontSize: '14px',
+                    minHeight: '80px',
+                    boxSizing: 'border-box',
+                  }}
+                />
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '6px',
+                    color: '#1a1a1a',
+                  }}
+                >
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={createForm.location}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({ ...prev, location: e.target.value }))
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E5E0',
+                    fontFamily: 'system-ui',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '6px',
+                    color: '#1a1a1a',
+                  }}
+                >
+                  Assigned Trade
+                </label>
+                <input
+                  type="text"
+                  value={createForm.assigned_trade}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      assigned_trade: e.target.value,
+                    }))
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E5E0',
+                    fontFamily: 'system-ui',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                 />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '6px',
+                    color: '#1a1a1a',
+                  }}
+                >
                   Priority
                 </label>
                 <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as PunchItem["priority"] })}
+                  value={createForm.priority}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      priority: e.target.value as 'low' | 'medium' | 'high' | 'critical',
+                    }))
+                  }
                   style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "6px",
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E5E0',
+                    fontFamily: 'system-ui',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer',
                   }}
                 >
                   <option value="low">Low</option>
@@ -511,39 +966,176 @@ export default function PunchListModule({ projectId }: PunchListModuleProps) {
                   <option value="critical">Critical</option>
                 </select>
               </div>
-            </div>
 
-            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    marginBottom: '6px',
+                    color: '#1a1a1a',
+                  }}
+                >
+                  Photo
+                </label>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '8px',
+                    alignItems: 'center',
+                  }}
+                >
+                  {createForm.photo_url && (
+                    <img
+                      src={createForm.photo_url}
+                      alt="Preview"
+                      style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '6px',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  |}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handlePhotoUpload(e)}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #E5E5E0',
+                      backgroundColor: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontFamily: 'system-ui',
+                      fontSize: '14px',
+                    }}
+                  >
+                    <Camera size={16} />
+                    Upload
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '6px',
+                    border: '1px solid #E5E5E0',
+                    backgroundColor: '#FFFFFF',
+                    cursor: 'pointer',
+                    fontFamily: 'system-ui',
+                    fontSize: '14px',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '6px',
+                    backgroundColor: '#1D9E75',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    cursor: creating ? 'not-allowed' : 'pointer',
+                    fontFamily: 'system-ui',
+                    fontSize: '14px',
+                    fontWeight: '500	,
+                    opacity: creating ? 0.6 : 1,
+                  }}
+                >
+                  {creating ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1001,
+          }}
+          onClick={() => setShowDeleteConfirm(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '8px',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '400px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            }}
+          >
+            <h2
+              style={{
+                margin: '0 0 12px 0',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1a1a1a',
+              }}
+            >
+              Delete Item?
+            </h2>
+            <p style={{ color: '#666', marginBottom: '20px' }}>
+              This action cannot be undone. Are you sure you want to delete this punch item?
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => setShowDeleteConfirm(null)}
                 style={{
-                  padding: "8px 16px",
-                  background: "#f8f9fa",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  color: "var(--fg)",
+                  padding: '10px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #E5E5E0',
+                  backgroundColor: '#FFFFFF',
+                  cursor: 'pointer',
+                  fontFamily: 'system-ui',
+                  fontSize: '14px',
                 }}
               >
                 Cancel
               </button>
               <button
-                onClick={handleCreateItem}
-                disabled={!formData.location.trim() || !formData.description.trim()}
+                onClick={() => handleDeleteItem(showDeleteConfirm)}
                 style={{
-                  padding: "8px 16px",
-                  background: formData.location.trim() && formData.description.trim() ? "var(--accent)" : "#ccc",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: formData.location.trim() && formData.description.trim() ? "pointer" : "not-allowed",
+                  padding: '10px 16px',
+                  borderRadius: '6px',
+                  backgroundColor: '#dc3545',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'system-ui',
+                  fontSize: '14px',
+                  fontWeight: '500',
                 }}
               >
-                Add Item
+                Delete
               </button>
             </div>
           </div>
@@ -552,3 +1144,5 @@ export default function PunchListModule({ projectId }: PunchListModuleProps) {
     </div>
   );
 }
+
+export default PunchListModule;
