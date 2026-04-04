@@ -408,7 +408,7 @@ export default function ChangeOrderModule({ projectId }: ChangeOrderModuleProps)
       borderRadius: '6px',
       fontSize: '12px',
       fontWeight: 500,
-      display: 'inline-block",
+      display: 'inline-block',
     }),
     editableCell: {
       cursor: 'pointer',
