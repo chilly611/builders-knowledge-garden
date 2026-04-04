@@ -1,519 +1,886 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Plus,
+  Filter,
+  SortAsc,
+  Trash2,
+  Download,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  AlertCircle,
+  Loader2,
+  Check,
+  X,
+  Edit3,
+} from 'lucide-react';
 
+// Type definitions
 interface ChangeOrder {
   id: string;
+  project_id: string;
   number: number;
   description: string;
-  reason: "owner_request" | "field_condition" | "code_requirement" | "design_error";
+  reason?: string;
   cost_impact: number;
   schedule_impact_days: number;
-  status: "proposed" | "under_review" | "approved" | "executed" | "rejected";
+  status: 'pending' | 'submitted' | 'approved' | 'rejected' | 'void';
   created_at: string;
+  updated_at?: string;
 }
 
+interface CreateChangeOrderPayload {
+  projectId: string;
+  description: string;
+  reason: string;
+  cost_impact: number;
+  schedule_impact_days: number;
+}
+
+interface UpdateChangeOrderPayload {
+  id: string;
+  status?: 'pending' | 'submitted' | 'approved' | 'rejected' | 'void';
+  cost_impact?: number;
+  schedule_impact_days?: number;
+  description?: string;
+}
+
+type FilterStatus = 'all' | 'pending' | 'submitted' | 'approved' | 'rejected' | 'void';
+type SortField = 'date' | 'number' | 'cost';
+
+// Status styling
+const statusColors: Record<ChangeOrder['status'], string> = {
+  pending: '#e9ecef',
+  submitted: '#cfe2ff',
+  approved: '#d1e7dd',
+  rejected: '#f8d7da',
+  void: '#ccc',
+};
+
+const statusTextColors: Record<ChangeOrder['status'], string> = {
+  pending: '#495057',
+  submitted: '#004085',
+  approved: '#155724',
+  rejected: '#721c24',
+  void: '#666',
+};
+
+// Component Props
 interface ChangeOrderModuleProps {
   projectId: string;
 }
 
-const statusColors: Record<ChangeOrder["status"], { bg: string; text: string; label: string }> = {
-  proposed: { bg: "#e9ecef", text: "#555555", label: "Proposed" },
-  under_review: { bg: "#fff3cd", text: "#856404", label: "Under Review" },
-  approved: { bg: "#cfe2ff", text: "#0c63e4", label: "Approved" },
-  executed: { bg: "#d1e7dd", text: "#0f5132", label: "Executed" },
-  rejected: { bg: "#f8d7da", text: "#721c24", label: "Rejected" },
-};
-
-const reasonLabels: Record<ChangeOrder["reason"], string> = {
-  owner_request: "Owner Request",
-  field_condition: "Field Condition",
-  code_requirement: "Code Requirement",
-  design_error: "Design Error",
-};
-
-const mockChangeOrders: ChangeOrder[] = [
-  {
-    id: "co-1",
-    number: 1,
-    description: "Additional insulation in west-facing walls due to energy code update",
-    reason: "code_requirement",
-    cost_impact: 18500,
-    schedule_impact_days: 3,
-    status: "executed",
-    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "co-2",
-    number: 2,
-    description: "Structural reinforcement required due to soil bearing capacity findings",
-    reason: "field_condition",
-    cost_impact: 42000,
-    schedule_impact_days: 7,
-    status: "approved",
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "co-3",
-    number: 3,
-    description: "Upgrade HVAC system to variable refrigerant flow per client request",
-    reason: "owner_request",
-    cost_impact: 65000,
-    schedule_impact_days: 5,
-    status: "under_review",
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-const originalBudget = 2500000;
-
 export default function ChangeOrderModule({ projectId }: ChangeOrderModuleProps) {
-  const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>(mockChangeOrders);
+  // State management
+  const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<ChangeOrder["status"] | "all">("all");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [editingCell, setEditingCell] = useState<{ id: string; field: 'cost_impact' | 'schedule_impact_days' } | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
+  // Form state for create modal
   const [formData, setFormData] = useState({
-    description: "",
-    reason: "owner_request" as ChangeOrder["reason"],
-    cost_impact: 0,
-    schedule_impact_days: 0,
+    description: '',
+    reason: '',
+    cost_impact: '',
+    schedule_impact_days: '',
   });
 
-  const filteredCOs = changeOrders.filter((co) => (filterStatus === "all" ? true : co.status === filterStatus));
-  const sortedCOs = [...filteredCOs].sort((a, b) => b.number - a.number);
+  // Fetch change orders
+  const fetchChangeOrders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/v1/projects/change-orders?projectId=${projectId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch change orders: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setChangeOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId]);
 
-  // Calculate budget impact
-  const approvedCostImpact = changeOrders.filter((co) => co.status === "executed").reduce((sum, co) => sum + co.cost_impact, 0);
-  const pendingCostImpact = changeOrders
-    .filter((co) => ["approved", "under_review"].includes(co.status))
-    .reduce((sum, co) => sum + co.cost_impact, 0);
-  const totalScheduleImpact = changeOrders
-    .filter((co) => ["approved", "executed"].includes(co.status))
-    .reduce((sum, co) => sum + co.schedule_impact_days, 0);
+  // Initial fetch
+  useEffect(() => {
+    fetchChangeOrders();
+  }, [fetchChangeOrders]);
 
-  const handleCreateCO = () => {
-    if (!formData.description.trim()) return;
+  // Create change order
+  const handleCreateChangeOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.description.trim()) {
+      setError('Description is required');
+      return;
+    }
+    if (formData.cost_impact === '' || formData.schedule_impact_days === '') {
+      setError('Cost impact and schedule impact are required');
+      return;
+    }
 
-    const newCO: ChangeOrder = {
-      id: `co-${Date.now()}`,
-      number: Math.max(...changeOrders.map((co) => co.number), 0) + 1,
-      description: formData.description,
-      reason: formData.reason,
-      cost_impact: formData.cost_impact,
-      schedule_impact_days: formData.schedule_impact_days,
-      status: "proposed",
-      created_at: new Date().toISOString(),
-    };
+    setIsSaving(true);
+    try {
+      const payload: CreateChangeOrderPayload = {
+        projectId,
+        description: formData.description,
+        reason: formData.reason,
+        cost_impact: parseFloat(formData.cost_impact),
+        schedule_impact_days: parseInt(formData.schedule_impact_days, 10),
+      };
 
-    setChangeOrders([...changeOrders, newCO]);
-    setFormData({
-      description: "",
-      reason: "owner_request",
-      cost_impact: 0,
-      schedule_impact_days: 0,
-    });
-    setShowCreateModal(false);
+      const response = await fetch('/api/v1/projects/change-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create change order: ${response.statusText}`);
+      }
+
+      const newChangeOrder = await response.json();
+      setChangeOrders([newChangeOrder, ...changeOrders]);
+      setShowCreateModal(false);
+      setFormData({ description: '', reason: '', cost_impact: '', schedule_impact_days: '' });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create change order');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const updateCOStatus = (id: string, newStatus: ChangeOrder["status"]) => {
-    setChangeOrders(changeOrders.map((co) => (co.id === id ? { ...co, status: newStatus } : co)));
+  // Update change order status
+  const handleStatusChange = async (id: string, newStatus: ChangeOrder['status']) => {
+    setIsSaving(true);
+    try {
+      const payload: UpdateChangeOrderPayload = { id, status: newStatus };
+      const response = await fetch('/api/v1/projects/change-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update change order: ${response.statusText}`);
+      }
+
+      const updated = await response.json();
+      setChangeOrders(changeOrders.map((co) => (co.id === id ? updated : co)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const cardStyle = {
-    backgroundColor: "#ffffff",
-    border: "1px solid #e2e4e8",
-    borderRadius: "8px",
-    padding: "16px",
-    marginBottom: "12px",
+  // Start inline edit
+  const startEdit = (id: string, field: 'cost_impact' | 'schedule_impact_days') => {
+    const co = changeOrders.find((c) => c.id === id);
+    if (co) {
+      setEditingCell({ id, field });
+      setEditValue(String(co[field]));
+    }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+  // Save inline edit
+  const saveEdit = async (id: string) => {
+    if (!editingCell) return;
+
+    const value = editingCell.field === 'cost_impact' ? parseFloat(editValue) : parseInt(editValue, 10);
+    if (isNaN(value)) {
+      setError('Invalid input');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const payload: UpdateChangeOrderPayload = { id, [editingCell.field]: value };
+      const response = await fetch('/api/v1/projects/change-orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update change order: ${response.statusText}`);
+      }
+
+      const updated = await response.json();
+      setChangeOrders(changeOrders.map((co) => (co.id === id ? updated : co)));
+      setEditingCell(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // Delete change order
+  const handleDelete = async (id: string) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/v1/projects/change-orders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete change order: ${response.statusText}`);
+      }
+
+      setChangeOrders(changeOrders.filter((co) => co.id !== id));
+      setShowDeleteConfirm(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Export to CSV
+  const handleExportCSV = () => {
+    const headers = ['Number', 'Description', 'Reason', 'Cost Impact', 'Schedule Impact (days)', 'Status', 'Created'];
+    const rows = filteredAndSortedOrders.map((co) => [
+      co.number,
+      co.description,
+      co.reason || '',
+      `$${co.cost_impact}`,
+      co.schedule_impact_days,
+      co.status,
+      new Date(co.created_at).toLocaleDateString(),
+    ]);
+
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `change-orders-${projectId}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Filter and sort
+  const filteredOrders = changeOrders.filter((co) => filterStatus === 'all' || co.status === filterStatus);
+  const filteredAndSortedOrders = [...filteredOrders].sort((a, b) => {
+    if (sortField === 'date') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortField === 'number') return b.number - a.number;
+    if (sortField === 'cost') return b.cost_impact - a.cost_impact;
+    return 0;
+  });
+
+  // Calculate summary
+  const summary = {
+    totalCount: changeOrders.length,
+    approvedCostImpact: changeOrders
+      .filter((co) => co.status === 'approved')
+      .reduce((sum, co) => sum + co.cost_impact, 0),
+    pendingCostImpact: changeOrders
+      .filter((co) => co.status === 'pending' || co.status === 'submitted')
+      .reduce((sum, co) => sum + co.cost_impact, 0),
+    totalScheduleImpact: changeOrders.reduce((sum, co) => sum + co.schedule_impact_days, 0),
+  };
+
+  // Styles
+  const styles = {
+    container: {
+      padding: '24px',
+      backgroundColor: '#FFFFFF',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+    },
+    header: {
+      display: 'flex' as const,
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '24px',
+      borderBottom: '1px solid #E5E5E0',
+      paddingBottom: '16px',
+    },
+    title: {
+      fontSize: '24px',
+      fontWeight: 600,
+      color: '#000',
+      margin: 0,
+    },
+    headerActions: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'center',
+    },
+    button: (variant: 'primary' | 'secondary' = 'secondary') => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '8px 12px',
+      backgroundColor: variant === 'primary' ? '#1D9E75' : '#FAFAF8',
+      color: variant === 'primary' ? '#FFFFFF' : '#000',
+      border: variant === 'primary' ? 'none' : '1px solid #E5E5E0',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: 500,
+      transition: 'all 0.2s',
+    }),
+    summaryGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '16px',
+      marginBottom: '24px',
+    },
+    summaryCard: {
+      padding: '16px',
+      backgroundColor: '#FAFAF8',
+      borderRadius: '8px',
+      border: '1px solid #E5E5E0',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+    },
+    summaryLabel: {
+      fontSize: '12px',
+      color: '#666',
+      fontWeight: 500,
+      marginBottom: '8px',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+    },
+    summaryValue: {
+      fontSize: '28px',
+      fontWeight: 700,
+      color: '#000',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+    },
+    filterBar: {
+      display: 'flex',
+      gap: '16px',
+      alignItems: 'center',
+      marginBottom: '20px',
+      flexWrap: 'wrap' as const,
+    },
+    select: {
+      padding: '8px 12px',
+      backgroundColor: '#FAFAF8',
+      border: '1px solid #E5E5E0',
+      borderRadius: '6px',
+      fontSize: '14px',
+      cursor: 'pointer',
+      fontFamily: 'system-ui',
+    },
+    tableWrapper: {
+      overflowX: 'auto' as const,
+      marginBottom: '24px',
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse' as const,
+      fontSize: '14px',
+    },
+    th: {
+      textAlign: 'left' as const,
+      padding: '12px',
+      backgroundColor: '#FAFAF8',
+      borderBottom: '1px solid #E5E5E0',
+      fontWeight: 600,
+      color: '#000',
+    },
+    td: {
+      padding: '12px',
+      borderBottom: '1px solid #E5E5E0',
+      color: '#333',
+    },
+    statusBadge: (status: ChangeOrder['status']) => ({
+      padding: '4px 8px',
+      backgroundColor: statusColors[status],
+      color: statusTextColors[status],
+      borderRadius: '6px',
+      fontSize: '12px',
+      fontWeight: 500,
+      display: 'inline-block",
+    }),
+    editableCell: {
+      cursor: 'pointer',
+      padding: '4px 8px',
+      borderRadius: '4px',
+      transition: 'background-color 0.2s',
+      '&:hover': { backgroundColor: '#f0f0f0' },
+    },
+    editInput: {
+      padding: '6px 8px',
+      border: '1px solid #1D9E75',
+      borderRadius: '4px',
+      fontSize: '14px',
+      fontFamily: 'system-ui',
+    },
+    modal: {
+      position: 'fixed' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+    },
+    modalContent: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: '8px',
+      padding: '32px',
+      maxWidth: '500px',
+      width: '90%',
+      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+    },
+    modalTitle: {
+      fontSize: '20px',
+      fontWeight: 600,
+      marginBottom: '20px',
+      color: '#000',
+    },
+    formGroup: {
+      marginBottom: '16px',
+    },
+    label: {
+      display: 'block',
+      fontSize: '14px',
+      fontWeight: 500,
+      marginBottom: '6px',
+      color: '#000',
+    },
+    input: {
+      width: '100%',
+      padding: '10px 12px',
+      border: '1px solid #E5E5E0',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontFamily: 'system-ui',
+      boxSizing: 'border-box' as const,
+    },
+    textarea: {
+      width: '100%',
+      padding: '10px 12px',
+      border: '1px solid #E5E5E0',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontFamily: 'system-ui',
+      boxSizing: 'border-box' as const,
+      minHeight: '80px',
+      resize: 'vertical' as const,
+    },
+    formActions: {
+      display: 'flex',
+      gap: '12px',
+      justifyContent: 'flex-end',
+      marginTop: '24px',
+    },
+    errorMessage: {
+      padding: '12px',
+      backgroundColor: '#f8d7da',
+      color: '#721c24',
+      borderRadius: '6px',
+      display: 'flex',
+      gap: '8px',
+      alignItems: 'center',
+      marginBottom: '16px',
+    },
+    emptyState: {
+      textAlign: 'center' as const,
+      padding: '48px 24px',
+      color: '#666',
+    },
+    emptyIcon: {
+      fontSize: '48px',
+      marginBottom: '16px',
+    },
+  };
+
+  if (loading) {
+    return (
+      <div style={{ ...styles.container, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#1D9E75' }} />
+      </div>
+    );
+  }
 
   return (
-    <div>
-      {/* Header with budget summary */}
-      <div style={{ marginBottom: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <div>
-            <h3 style={{ fontSize: "18px", fontWeight: 600, color: "var(--fg)", marginBottom: "4px" }}>Change Orders</h3>
-            <p style={{ fontSize: "12px", color: "var(--fg-secondary)" }}>Track cost and schedule impacts</p>
-          </div>
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>Change Orders</h1>
+        <div style={styles.headerActions}>
           <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: "10px 16px",
-              background: "var(--accent)",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            style={{ ...styles.button('secondary'), cursor: 'pointer' }}
+            onClick={handleExportCSV}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FAFAF8')}
           >
-            + Create CO
+            <Download size={16} />
+            Export CSV
           </button>
-        </div>
-
-        {/* Budget Impact Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginBottom: "16px" }}>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-            }}
+          <button
+            style={{ ...styles.button('primary'), cursor: 'pointer' }}
+            onClick={() => setShowCreateModal(true)}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#168668')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1D9E75')}
           >
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Original Budget</div>
-            <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--fg)" }}>{formatCurrency(originalBudget)}</div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-            }}
-          >
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Executed COs</div>
-            <div
-              style={{
-                fontSize: "16px",
-                fontWeight: 700,
-                color: approvedCostImpact > 0 ? "#dc3545" : "var(--accent)",
-              }}
-            >
-              {approvedCostImpact > 0 ? "+" : ""}{formatCurrency(approvedCostImpact)}
-            </div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-            }}
-          >
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Pending COs</div>
-            <div
-              style={{
-                fontSize: "16px",
-                fontWeight: 700,
-                color: pendingCostImpact > 0 ? "#f0a500" : "var(--fg-secondary)",
-              }}
-            >
-              {pendingCostImpact > 0 ? "+" : ""}{formatCurrency(pendingCostImpact)}
-            </div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid #e2e4e8",
-              borderRadius: "8px",
-              padding: "12px",
-            }}
-          >
-            <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "4px" }}>Schedule Impact</div>
-            <div
-              style={{
-                fontSize: "16px",
-                fontWeight: 700,
-                color: totalScheduleImpact > 0 ? "#dc3545" : "var(--accent)",
-              }}
-            >
-              {totalScheduleImpact > 0 ? "+" : ""}{totalScheduleImpact} days
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as ChangeOrder["status"] | "all")}
-            style={{
-              padding: "8px 12px",
-              fontSize: "12px",
-              border: "1px solid #e2e4e8",
-              borderRadius: "6px",
-              background: "#ffffff",
-              cursor: "pointer",
-            }}
-          >
-            <option value="all">All Status</option>
-            <option value="proposed">Proposed</option>
-            <option value="under_review">Under Review</option>
-            <option value="approved">Approved</option>
-            <option value="executed">Executed</option>
-            <option value="rejected">Rejected</option>
-          </select>
+            <Plus size={16} />
+            New Change Order
+          </button>
         </div>
       </div>
 
-      {/* Change Orders List */}
-      {sortedCOs.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "32px 16px",
-            background: "var(--bg-secondary)",
-            borderRadius: "8px",
-            border: "1px dashed #e2e4e8",
-          }}
+      {/* Error message */}
+      {error && (
+        <div style={styles.errorMessage}>
+          <AlertCircle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Summary cards */}
+      <div style={styles.summaryGrid}>
+        <div style={styles.summaryCard}>
+          <div style={styles.summaryLabel}>Total Change Orders</div>
+          <div style={styles.summaryValue}>{summary.totalCount}</div>
+        </div>
+        <div style={styles.summaryCard}>
+          <div style={styles.summaryLabel}>Approved Cost Impact</div>
+          <div style={{ ...styles.summaryValue, color: summary.approvedCostImpact < 0 ? '#28a745' : '#dc3545' }}>
+            {summary.approvedCostImpact < 0 ? <TrendingDown size={24} /> : <TrendingUp size={24} />}
+            ${Math.abs(summary.approvedCostImpact).toLocaleString()}
+          </div>
+        </div>
+        <div style={styles.summaryCard}>
+          <div style={styles.summaryLabel}>Pending Cost Impact</div>
+          <div style={{ ...styles.summaryValue, color: summary.pendingCostImpact < 0 ? '#28a745' : '#dc3545' }}>
+            {summary.pendingCostImpact < 0 ? <TrendingDown size={24} /> : <TrendingUp size={24} />}
+            ${Math.abs(summary.pendingCostImpact).toLocaleString()}
+          </div>
+        </div>
+        <div style={styles.summaryCard}>
+          <div style={styles.summaryLabel}>Total Schedule Impact</div>
+          <div style={{ ...styles.summaryValue, gap: '4px' }}>
+            <Clock size={24} />
+            {summary.totalScheduleImpact} days
+          </div>
+        </div>
+      </div>
+
+      {/* Filter and sort */}
+      <div style={styles.filterBar}>
+        <Filter size={16} style={{ color: '#666' }} />
+        <select
+          style={styles.select}
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
         >
-          <div style={{ fontSize: "28px", marginBottom: "8px" }}>📋</div>
-          <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--fg)", marginBottom: "4px" }}>No change orders yet</p>
-          <p style={{ fontSize: "12px", color: "var(--fg-secondary)" }}>Create a change order to track cost and schedule impacts</p>
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="submitted">Submitted</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="void">Void</option>
+        </select>
+
+        <SortAsc size={16} style={{ color: '#666', marginLeft: '12px' }} />
+        <select
+          style={styles.select}
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value as SortField)}
+        >
+          <option value="date">Sort by Date (Newest)</option>
+          <option value="number">Sort by Number</option>
+          <option value="cost">Sort by Cost Impact</option>
+        </select>
+      </div>
+
+      {/* Table */}
+      {filteredAndSortedOrders.length === 0 ? (
+        <div style={styles.emptyState}>
+          <div style={styles.emptyIcon}>📋</div>
+          <p>No change orders found</p>
         </div>
       ) : (
-        sortedCOs.map((co) => {
-          const statusColor = statusColors[co.status];
-
-          return (
-            <div key={co.id} style={cardStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--fg-secondary)" }}>CO #{co.number}</span>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 8px",
-                        fontSize: "10px",
-                        fontWeight: 500,
-                        background: statusColor.bg,
-                        color: statusColor.text,
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {statusColor.label}
-                    </span>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 8px",
-                        fontSize: "10px",
-                        fontWeight: 500,
-                        background: "#f3f4f6",
-                        color: "#555555",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {reasonLabels[co.reason]}
-                    </span>
-                  </div>
-                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "var(--fg)", marginBottom: "12px" }}>{co.description}</h4>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
-                    <div>
-                      <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "2px" }}>Cost Impact</div>
-                      <div
-                        style={{
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: co.cost_impact > 0 ? "#dc3545" : "var(--accent)",
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Number</th>
+                <th style={styles.th}>Description</th>
+                <th style={styles.th}>Reason</th>
+                <th style={styles.th}>Cost Impact</th>
+                <th style={styles.th}>Schedule Impact</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAndSortedOrders.map((co) => (
+                <tr key={co.id}>
+                  <td style={styles.td}>
+                    <strong>CO-{String(co.number).padStart(4, '0')}</strong>
+                  </td>
+                  <td style={styles.td}>{co.description}</td>
+                  <td style={styles.td}>{co.reason || '—'}</td>
+                  <td
+                    style={{
+                      ...styles.td,
+                      cursor: editingCell?.id === co.id && editingCell?.field === 'cost_impact' ? 'default' : 'pointer',
+                      color: co.cost_impact < 0 ? '#28a745' : co.cost_impact > 0 ? '#dc3545' : '#666',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {editingCell?.id === co.id && editingCell?.field === 'cost_impact' ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={() => saveEdit(co.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit(co.id);
+                          if (e.key === 'Escape') setEditingCell(null);
                         }}
-                      >
-                        {co.cost_impact > 0 ? "+" : ""}{formatCurrency(co.cost_impact)}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--fg-secondary)", marginBottom: "2px" }}>Schedule</div>
-                      <div
+                        style={{ ...styles.editInput, width: '100px' }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span
                         style={{
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: co.schedule_impact_days > 0 ? "#dc3545" : "var(--accent)",
+                          ...styles.editableCell,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
                         }}
+                        onClick={() => startEdit(co.id, 'cost_impact')}
                       >
-                        {co.schedule_impact_days > 0 ? "+" : ""}{co.schedule_impact_days} days
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick status update */}
-                <select
-                  value={co.status}
-                  onChange={(e) => updateCOStatus(co.id, e.target.value as ChangeOrder["status"])}
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "11px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "4px",
-                    background: "#ffffff",
-                    cursor: "pointer",
-                    marginLeft: "12px",
-                  }}
-                >
-                  <option value="proposed">Proposed</option>
-                  <option value="under_review">Under Review</option>
-                  <option value="approved">Approved</option>
-                  <option value="executed">Executed</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-            </div>
-          );
-        })
+                        {co.cost_impact < 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
+                        ${co.cost_impact}
+                        <Edit3 size={12} style={{ opacity: 0.5 }} />
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    style={{
+                      ...styles.td,
+                      cursor: editingCell?.id === co.id && editingCell?.field === 'schedule_impact_days' ? 'default' : 'pointer',
+                    }}
+                  >
+                    {editingCell?.id === co.id && editingCell?.field === 'schedule_impact_days' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={() => saveEdit(co.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit(co.id);
+                          if (e.key === 'Escape') setEditingCell(null);
+                        }}
+                        style={{ ...styles.editInput, width: '80px' }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          ...styles.editableCell,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                        onClick={() => startEdit(co.id, 'schedule_impact_days')}
+                      >
+                        <Clock size={14} />
+                        {co.schedule_impact_days} days
+                        <Edit3 size={12} style={{ opacity: 0.5 }} />
+                      </span>
+                    )}
+                  </td>
+                  <td style={styles.td}>
+                    <select
+                      style={{
+                        ...styles.statusBadge(co.status),
+                        border: `1px solid ${statusTextColors[co.status]}`,
+                        cursor: 'pointer',
+                        padding: '6px',
+                      }}
+                      value={co.status}
+                      onChange={(e) => handleStatusChange(co.id, e.target.value as ChangeOrder['status'])}
+                      disabled={isSaving}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="submitted">Submitted</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="void">Void</option>
+                    </select>
+                  </td>
+                  <td style={styles.td}>
+                    <button
+                      style={{
+                        ...styles.button('secondary'),
+                        padding: '6px 8px',
+                        color: '#dc3545',
+                        cursor: 'pointer',
+                        border: '1px solid #f8d7da',
+                      }}
+                      onClick={() => setShowDeleteConfirm(co.id)}
+                      disabled={isSaving}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8d7da')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FAFAF8')}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-          onClick={() => setShowCreateModal(false)}
-        >
+        <div style={styles.modal} onClick={() => setShowCreateModal(false)}>
           <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              maxWidth: "500px",
-              width: "90%",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-            }}
+            style={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--fg)", marginBottom: "16px" }}>Create Change Order</h3>
+            <h2 style={styles.modalTitle}>Create Change Order</h2>
 
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the change"
-                rows={4}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  fontSize: "13px",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  boxSizing: "border-box",
-                  fontFamily: "inherit",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                Reason
-              </label>
-              <select
-                value={formData.reason}
-                onChange={(e) => setFormData({ ...formData, reason: e.target.value as ChangeOrder["reason"] })}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  fontSize: "13px",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                }}
-              >
-                <option value="owner_request">Owner Request</option>
-                <option value="field_condition">Field Condition</option>
-                <option value="code_requirement">Code Requirement</option>
-                <option value="design_error">Design Error</option>
-              </select>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                  Cost Impact ($)
-                </label>
-                <input
-                  type="number"
-                  value={formData.cost_impact}
-                  onChange={(e) => setFormData({ ...formData, cost_impact: parseFloat(e.target.value) || 0 })}
-                  placeholder="0"
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "6px",
-                    boxSizing: "border-box",
-                  }}
+            <form onSubmit={handleCreateChangeOrder}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Description *</label>
+                <textarea
+                  style={styles.textarea}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter change order description"
                 />
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                  Schedule Impact (days)
-                </label>
-                <input
-                  type="number"
-                  value={formData.schedule_impact_days}
-                  onChange={(e) => setFormData({ ...formData, schedule_impact_days: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "6px",
-                    boxSizing: "border-box",
-                  }}
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Reason</label>
+                <textarea
+                  style={styles.textarea}
+                  value={formData.reason}
+                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                  placeholder="Enter reason for change (optional)"
                 />
               </div>
-            </div>
 
-            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Cost Impact $ *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    style={styles.input}
+                    value={formData.cost_impact}
+                    onChange={(e) => setFormData({ ...formData, cost_impact: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Schedule Impact (days) *</label>
+                  <input
+                    type="number"
+                    style={styles.input}
+                    value={formData.schedule_impact_days}
+                    onChange={(e) => setFormData({ ...formData, schedule_impact_days: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formActions}>
+                <button
+                  type="button"
+                  style={{ ...styles.button('secondary'), cursor: 'pointer' }}
+                  onClick={() => setShowCreateModal(false)}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FAFAF8')}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ ...styles.button('primary'), cursor: 'pointer' }}
+                  disabled={isSaving}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#168668')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1D9E75')}
+                >
+                  {isSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Plus size={16} />}
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div style={styles.modal} onClick={() => setShowDeleteConfirm(null)}>
+          <div
+            style={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={styles.modalTitle}>Delete Change Order?</h2>
+            <p style={{ color: '#666', marginBottom: '24px' }}>
+              This action cannot be undone. The change order will be permanently deleted.
+            </p>
+
+            <div style={styles.formActions}>
               <button
-                onClick={() => setShowCreateModal(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#f8f9fa",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  color: "var(--fg)",
-                }}
+                style={{ ...styles.button('secondary'), cursor: 'pointer' }}
+                onClick={() => setShowDeleteConfirm(null)}
+                disabled={isSaving}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FAFAF8')}
               >
+                <X size={16} />
                 Cancel
               </button>
               <button
-                onClick={handleCreateCO}
-                disabled={!formData.description.trim()}
                 style={{
-                  padding: "8px 16px",
-                  background: formData.description.trim() ? "var(--accent)" : "#ccc",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: formData.description.trim() ? "pointer" : "not-allowed",
+                  ...styles.button('primary'),
+                  backgroundColor: '#dc3545',
+                  cursor: 'pointer',
                 }}
+                onClick={() => handleDelete(showDeleteConfirm)}
+                disabled={isSaving}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#c82333')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#dc3545')}
               >
-                Create CO
+                {isSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={16} />}
+                Delete
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* CSS for animations */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
