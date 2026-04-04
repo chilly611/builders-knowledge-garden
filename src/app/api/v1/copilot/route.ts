@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
               type: "meta",
               entities_retrieved: retrieval.entities.map((e) => ({
                 id: e.id,
+                slug: e.slug,
                 title: e.title,
                 type: e.entity_type,
               })),
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
 // ---------------------------------------------------------------------------
 function streamMockResponse(
   query: string,
-  entities: { id: string; title: string; entity_type: string }[],
+  entities: { id: string; slug: string; title: string; entity_type: string }[],
   startTime: number
 ) {
   const encoder = new TextEncoder();
@@ -206,6 +207,7 @@ function streamMockResponse(
             type: "meta",
             entities_retrieved: entities.map((e) => ({
               id: e.id,
+              slug: e.slug,
               title: e.title,
               type: e.entity_type,
             })),
@@ -276,7 +278,7 @@ function streamMockResponse(
 
 function generateMockAnswer(
   query: string,
-  entities: { id: string; title: string; entity_type: string }[]
+  entities: { id: string; slug: string; title: string; entity_type: string }[]
 ): string {
   const q = query.toLowerCase();
 
