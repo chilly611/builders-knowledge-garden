@@ -1,5 +1,5 @@
 # Builder's Knowledge Garden — Tasks & Status
-## Updated: 2026-04-03 (dream builders + gamification sprint)
+## Updated: 2026-04-03 (auth system + build error fixes)
 
 ---
 
@@ -17,6 +17,10 @@
   - Webhook handler (checkout.session.completed, subscription.updated/deleted)
   - Billing portal for self-serve subscription management
   - Subscription tier gating in auth context
+- **Auth system** — Supabase Auth (email/password + Google OAuth), user profiles with RLS
+  - AuthModal, AuthButton in CompassNav, login page with Google OAuth
+  - Server-side auth helpers, session API, user profile API
+  - Dream persistence tied to authenticated users
 - **PM Modules** — RFI, Submittal, Change Order, Punch List, Budget (components + API routes)
 - **Pricing page** — 4-tier pricing at /pricing with Stripe Payment Links
 
@@ -55,6 +59,8 @@
 - `dream_states` table ✅ (26 columns, indexes, RLS)
 - `command_center_projects` + `command_center_attention` ✅
 - Dream State API at `/api/v1/dreams/state` ✅
+- `user_profiles` table + `saved_projects` table ✅ (with RLS policies)
+- Auth callback route + session API + profile API ✅
 - ~500 knowledge entities, 315+ relationships, 20+ jurisdictions
 
 ---
@@ -125,6 +131,10 @@ These are what professionals ask about in the first 5 minutes of evaluating PM s
 - [x] Stripe recurring subscriptions: Team + Enterprise fixed to monthly recurring ✅ DONE
 - [x] Stripe webhook endpoint + signing secret configured ✅ DONE
 - [x] All 12 Stripe env vars deployed to Vercel ✅ DONE
+- [x] Auth system: Supabase Auth with email/password + Google OAuth ✅ DONE
+- [x] Auth UI: AuthModal, CompassNav AuthButton, login page with Suspense ✅ DONE
+- [x] User profiles + saved projects tables with RLS policies ✅ DONE
+- [x] Auth API routes: session, profile, callback, saved-projects ✅ DONE
 - [ ] Knowledge browse: rich cards, search-as-you-type, jurisdiction filtering
 - [ ] Knowledge detail pages: SEO-optimized, deep content, related entities
 - [ ] AI Copilot: RAG with real Supabase data, citation links
