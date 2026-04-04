@@ -1,96 +1,150 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-export async function GET(request: NextRequest) {
+// GET - fetch punch items for a project
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const project_id = searchParams.get('project_id');
-    if (!project_id) {
-      return NextResponse.json({ error: 'project_id query parameter is required' }, { status: 400 });
+    const projectId = searchParams.get("projectId");
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "projectId query parameter is required" },
+        { status: 400 }
+      );
     }
-    const { data, error } = await getSupabase()
-      .from('project_punch_items')
-      .select('*')
-      .eq('project_id', project_id)
-      .order('created_at', { ascending: false });
+
+    const { data, error } = await supabase
+      .from("project_punch_items")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("priority", { ascending: true })
+      .order("created_at", { ascending: true });
+
     if (error) throw error;
-    return NextResponse.json({ punch_items: data || [] });
-  } catch (e) {
-    console.error('Punch Items GET error:', e);
-    return NextResponse.json({ punch_items: [] });
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("GET /api/v1/projects/punch-items error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch punch items" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: NextRequest) {
+// POST - create new punch item
+export async function POST(request: Request) {
   try {
     const body = await request.json();
-    if (!body.project_id?.trim()) {
-      return NextResponse.json({ error: 'project_id is required' }, { status: 400 });
+    const { projectId, description, location, assigned_trade, priority, photo_url } = body;
+
+    if (!projectId || !description) {
+      return NextResponse.json(
+        { error: "projectId and description are required" },
+        { status: 400 }
+      );
     }
-    if (!body.title?.trim()) {
-      return NextResponse.json({ error: 'title is required' }, { status: 400 });
-    }
-    const { data, error } = await getSupabase()
-      .from('project_punch_items')
-      .insert([{
-        project_id: body.project_id.trim(),
-        title: body.title.trim(),
-        description: body.description || null,
-        status: body.status || 'open',
-        location: body.location || null,
-        assigned_to: body.assigned_to || null,
-        priority: body.priority || 'medium',
-        due_date: body.due_date || null,
-        completed_at: body.completed_at || null,
-      }])
+
+    const { data, error } = await supabase
+      .from("project_punch_items")
+      .insert({
+        project_id: projectId,
+        description,
+        location: location || null,
+        assigned_trade: assigned_trade || null,
+        priority: priority || "medium",
+        photo_url: photo_url || null,
+        status: "open",
+        created_at: new Date().toISOString(),
+      })
       .select()
       .single();
+
     if (error) throw error;
-    return NextResponse.json({ punch_item: data }, { status: 201 });
-  } catch (e) {
-    console.error('Punch Items POST error:', e);
-    return NextResponse.json({ error: 'Failed to create punch item' }, { status: 500 });
+
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/v1/projects/punch-items error:", error);
+    return NextResponse.json(
+      { error: "Failed to create punch item" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request: NextRequest) {
+// PATCH - update punch item
+export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-    const { data, error } = await getSupabase()
-      .from('project_punch_items')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
+    const { id, status, assigned_trade, priority, photo_url, location, description } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "id is required" },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, any> = {};
+    if (status !== undefined) updateData.status = status;
+    if (assigned_trade !== undefined) updateData.assigned_trade = assigned_trade;
+    if (priority !== undefined) updateData.priority = priority;
+    if (photo_url !== undefined) updateData.photo_url = photo_url;
+    if (location !== undefined) updateData.location = location;
+    if (description !== undefined) updateData.description = description;
+    updateData.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("project_punch_items")
+      .update(updateData)
+      .eq("id", id)
       .select()
       .single();
+
     if (error) throw error;
-    return NextResponse.json({ punch_item: data });
-  } catch (e) {
-    console.error('Punch Items PATCH error:', e);
-    return NextResponse.json({ error: 'Failed to update punch item' }, { status: 500 });
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("PATCH /api/v1/projects/punch-items error:", error);
+    return NextResponse.json(
+      { error: "Failed to update punch item" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+// DELETE - remove punch item
+export async function DELETE(request: Request) {
   try {
-    const { error } = await getSupabase()
-      .from('project_punch_items')
+    const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "id is required" },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("project_punch_items")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
+
     if (error) throw error;
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    return NextResponse.json({ error: 'Failed to delete punch item' }, { status: 500 });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/v1/projects/punch-items error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete punch item" },
+      { status: 500 }
+    );
   }
 }
