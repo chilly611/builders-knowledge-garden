@@ -288,7 +288,7 @@ export default function BudgetModule({ projectId }: BudgetModuleProps) {
           <div style={{ fontSize: "13px", flex: 1 }}>
             <strong>Budget Alerts:</strong> {overBudgetLines.map((l) => l.name).join(", ")} {overBudgetLines.length === 1 ? "is" : "are"} over 10% budget variance.
           </div>
-        </diw>
+        </div>
       )}
 
       {/* BUDGET OVERVIEW CARD */}
@@ -667,7 +667,8 @@ export default function BudgetModule({ projectId }: BudgetModuleProps) {
               borderRadius: "6px",
               cursor: "pointer",
               display: "flex",
-              alignItems: "centergap: "8px",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
             <Plus size={16} />
@@ -736,7 +737,7 @@ export default function BudgetModule({ projectId }: BudgetModuleProps) {
                 <div style={{ marginBottom: "8px" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <tbody>
-                      <tr" style={{ borderBottom: "1px solid var(--border)" }}>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
                         <td style={{ padding: "8px", fontWeight: 500 }}>Actual Spent</td>
                         <td style={{ padding: "8px", textAlign: "right" }}>
                           {editingCell?.id === budgetLine.id && editingCell.field === "actual_spent" ? (
@@ -879,8 +880,17 @@ marginBottom: "8px" }}>Division</label>
                   }}
                 />
               </div>
-  
-              fontSize: "13px",
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
+              <button
+                onClick={() => setShowAddLineModal(false)}
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--bg-secondary)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  fontSize: "13px",
                   fontWeight: 500,
                   cursor: "pointer",
                   color: "var(--fg)",
