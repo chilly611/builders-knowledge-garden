@@ -567,3 +567,10 @@
 29. **DreamEssence as portable project format.** Instead of each interface having incompatible save formats, extract a universal "essence" (styles, materials, features, moods, constraints, freeformNotes) that any interface can read. Each interface implements serialize (state → essence) and deserialize (essence → state) with fuzzy matching against its own entities. This lets projects flow between Oracle → Alchemist → Cosmos seamlessly.
 
 30. **Verify Vercel build logs after deployment, not just the status page.** A deployment marked "Ready" on Vercel's list might have a different deployment as "Current". Always check that the latest deployment shows both "Ready" AND "Current" to confirm it's actually serving traffic.
+
+## 2026-04-04: PM Module Corruption Pattern
+- BudgetModule, PunchListModule, SubmittalModule, and ChangeOrderModule all had scattered syntax corruption
+- Corruption types: binary chars (0x06), merged CSS properties, stray quotes, JSX spliced into style objects, mismatched quote types, tab chars replacing quotes
+- Turbopack stops at the first error per file - fixing one reveals the next. Must iterate builds until clean.
+- When corruption is extensive (binary garbage), full rewrite from interfaces/state is faster than patching
+- Always verify state variable names match when reconstructing missing code (e.g. setShowAddLineModal not setShowAddLineItem)
