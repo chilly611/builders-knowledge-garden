@@ -1,204 +1,280 @@
-# Builder's Knowledge Garden — Tasks & Status
-## Updated: 2026-04-03 (auth system + build error fixes)
+# Builder's Knowledge Garden — MLP Task Tracker
+> Single source of truth. Rebuilt: 2026-04-04
+> Repo: github.com/chilly611/builders-knowledge-garden | Live: builders.theknowledgegardens.com
+> Strategic framework: Phase 0 → Phase 1 → Phase 2 → Phase 3 (see below)
+> Three target audiences: CONTRACTORS · DREAMERS · AI AGENTS
 
 ---
 
-## CURRENT STATE SUMMARY
+## STRATEGIC CONTEXT (read before every session)
 
-### What's Live (builders.theknowledgegardens.com)
-- **Branch:** `main` | **Deploy:** Vercel auto-deploys on push
-- **16 Dream Machine interfaces** — all with FLUX-generated branded logos (+ Garden hub)
-- **Command Center** — AI COO war room at /crm
-- **Dream State persistence** — Supabase table + API route live
-- **Killer App nav** — 7 module pills with status badges
-- **Stub pages** — Field Ops, Finances, Clients, Documents, Site Intel (preview only)
-- **Stripe payments** — Full subscription billing (Pro $49/mo, Team $199/mo, Enterprise $499+/mo)
-  - Checkout Sessions API + Payment Links
-  - Webhook handler (checkout.session.completed, subscription.updated/deleted)
-  - Billing portal for self-serve subscription management
-  - Subscription tier gating in auth context
-- **Auth system** — Supabase Auth (email/password + Google OAuth), user profiles with RLS
-  - AuthModal, AuthButton in CompassNav, login page with Google OAuth
-  - Server-side auth helpers, session API, user profile API
-  - Dream persistence tied to authenticated users
-- **PM Modules** — RFI, Submittal, Change Order, Punch List, Budget (components + API routes)
-- **Pricing page** — 4-tier pricing at /pricing with Stripe Payment Links
+**The MLP goal:** Three audiences must each feel a distinct superpower on first use.
+- **Contractors** → "In 60 seconds it knew my project better than I did." (COO wizard)
+- **Dreamers** → "I was standing inside my dream in 30 seconds." (Worldwalker / Oracle)
+- **AI Agents** → "When I asked Claude about building codes, it cited BKG." (structured data + MCP)
 
-### Dream Machine Routes (16+ total, all returning 200)
-| Route | Interface | Logo |
-|-------|-----------|------|
-| /dream/describe | Describe Your Dream | ✅ Golden quill |
-| /dream/inspire | Show Me Inspiration | ✅ Crystal prism |
-| /dream/sketch | Sketch It Out | ✅ Golden compass |
-| /dream/explore | Surprise Me | ✅ Golden dice |
-| /dream/browse | Browse & Discover | ✅ Gallery frames |
-| /dream/plans | I Have Plans | ✅ Rolled blueprints |
-| /dream/oracle | The Oracle | ✅ Sacred eye |
-| /dream/alchemist | The Alchemist | ✅ Golden crucible |
-| /dream/quest | The Quest | ✅ Sword & cornerstone |
-| /dream/genome | The Genome | ✅ DNA helix |
-| /dream/cosmos | The Cosmos | ✅ Golden orrery |
-| /dream/narrator | The Narrator | ✅ Book & architecture |
-| /dream/collider | The Collider | ✅ Particle beams |
-| /dream/sandbox | The Sandbox | ✅ Golden blocks |
-| /dream/voice | The Voice Architect | ✅ Golden microphone |
-| /dream/garden | My Dream Garden | ✅ Saved dreams library |
+**The three moats:** Knowledge compounds (RSI loops), AI-native distribution (LLMs cite us), full lifecycle lock-in (nobody else covers the whole journey).
 
-### Stripe Billing Infrastructure
-| Component | Status |
-|-----------|--------|
-| Checkout Sessions API | ✅ All tiers = recurring monthly subscriptions |
-| Payment Links (Pro/Team/Enterprise) | ✅ Live in test mode |
-| Webhook handler | ✅ checkout.session.completed, subscription.updated/deleted |
-| Billing portal route | ✅ Self-serve subscription management |
-| Subscription gating in auth | ✅ BuildGate + AIRateLimit components |
-| Vercel env vars | ✅ All 12 Stripe vars deployed |
-| Webhook secret | ✅ whsec_* configured |
-
-### Database (Supabase)
-- `dream_states` table ✅ (26 columns, indexes, RLS)
-- `command_center_projects` + `command_center_attention` ✅
-- Dream State API at `/api/v1/dreams/state` ✅
-- `user_profiles` table + `saved_projects` table ✅ (with RLS policies)
-- Auth callback route + session API + profile API ✅
-- ~500 knowledge entities, 315+ relationships, 20+ jurisdictions
+**Non-negotiable rules:**
+- Run `npm run build` before EVERY push. Zero TypeScript errors, ever.
+- Light backgrounds globally on all surfaces. Never dark.
+- Archivo / Archivo Black fonts. Three-chrome brand: Green #1D9E75 (Knowledge), Gold #D85A30/#C4A44A (Dream), Red #E8443A (Killer App).
+- API first, UI second. Every feature is an endpoint before it's a page.
+- MLP not MVP — every release must make users feel something.
+- After every session: check boxes, append to `docs/session-log.md`, push to main.
 
 ---
 
-## DESIGN MANDATE (effective 2026-04-02)
+## PHASE 0 — MAKE THE PLANE FLYABLE
+> Unblock everything. Nothing else ships until this is done.
+> Status: IN PROGRESS (TypeScript fix underway)
 
-**LIGHT backgrounds globally. No exceptions.**
-- Page canvas: #FFFFFF (pure white)
-- Card surfaces: #FAFAF8 (warm white)
-- Recessed surfaces: #F5F5F0 (inputs, sidebars, metric cards)
-- Hover: #EEEDE8 | Active: #E8E7E2
-- Three chromes for color identity: Green #1D9E75 / Warm #D85A30 / Red #E8443A
-- Typography: Archivo (body) + Archivo Black (display)
-- Photography provides depth — not dark surfaces
-- No dark backgrounds on any page unless explicitly requested for a specific context
+### 0A. Build Health (DOING NOW)
+- [ ] Run `npm run build` — capture every TypeScript error
+- [ ] Fix all broken imports / type errors in PM pages (`/projects/new`, `/projects/[id]`)
+- [ ] Verify `/projects/new` renders in production (not just that the site loads)
+- [ ] Verify `/projects/[id]` and all 7 tabs render in production
+- [ ] Confirm PunchListModule is updated version (554+ lines)
+- [ ] `npm run build` passes with zero errors — push to main — verify Vercel deploy
 
----
+### 0B. Real Auth
+- [ ] Flip mock auth to real Supabase Auth in `src/lib/auth.tsx`
+- [ ] Email/password signup + login working end-to-end
+- [ ] RLS policies on all project tables scoped to `auth.uid()`
+- [ ] User-scoped projects — no more shared test data across sessions
+- [ ] Onboarding flow persists until user is subscribed (gate is real, not mock)
 
-## COMPETITIVE GAP ANALYSIS (2026-04-02)
-Full Procore vs Oracle Smart Construction Platform report analyzed. 37 features mapped.
+### 0C. Real Payments
+- [ ] Add Stripe secret key + publishable key to `.env.local` AND Vercel env vars
+- [ ] Wire `/api/v1/stripe/checkout` — creates real checkout session
+- [ ] Wire `/api/v1/stripe/webhook` — updates subscription status in DB
+- [ ] Wire `/api/v1/stripe/portal` — lets users manage subscription
+- [ ] BuildGate tied to real Stripe subscription status (not mock boolean)
+- [ ] Pricing page `/pricing` — Explorer (free) / Pro $49 / Team $199 / Enterprise $499+
 
-### 11 Critical Gaps (table-stakes features we must build)
-These are what professionals ask about in the first 5 minutes of evaluating PM software:
-
-| # | Gap | Why Critical | Sprint |
-|---|-----|-------------|--------|
-| 1 | RFI management | Every GC manages RFIs daily. Procore links RFIs to drawing callouts. | S3 |
-| 2 | Submittal tracking | Log, review, approve submittals — specs compliance. | S3 |
-| 3 | Change order management | CO creation, financial impact, approval workflows. | S3 |
-| 4 | Punch list / closeout | Photo capture, assign, resolve — project handoff. | S3 |
-| 5 | Budget tracking | Real-time budget vs actual. Procore draws from field data. | S3 |
-| 6 | Invoice / pay apps | AIA G702/G703. Textura charges 0.22% of contract value for this. | S4 |
-| 7 | Daily log module | Site conditions, weather, workforce, equipment. Voice-first. | P2 |
-| 8 | Drawing management | PDF upload, OCR extraction (Claude Vision), revision tracking. | P2 |
-| 9 | Document CDE | Centralized storage with audit trail, cross-module linking. | P2 |
-| 10 | Inspection forms | Customizable quality/safety templates, field capture. | P2 |
-| 11 | Bid management | Distribute packages, collect proposals, track coverage. | P2 |
-
-### 12 Structural Advantages (competitors cannot replicate)
-1. Construction knowledge engine (40K+ entities)
-2. Dream → plan in 60 seconds
-3. $49/mo transparent published pricing
-4. Voice as universal layer (30+ languages)
-5. AI-native architecture with RAG + citations
-6. 7 self-improving RSI loops
-7. Global jurisdiction awareness (142+)
-8. Machine/AI agent MCP integration
-9. Construction-specific CRM
-10. Supplier marketplace (Stripe Connect)
-11. Gamified onboarding (28 strategies, 5-min target)
-12. Procore takes 4-6 weeks to onboard. Oracle takes 3-6 months. We target 5 minutes.
+### 0D. Mobile Baseline
+- [ ] Homepage: grids collapse to single column below 768px
+- [ ] `/projects/new` wizard usable on phone
+- [ ] `/projects/[id]` tabs navigable on phone
+- [ ] CompassNav FAB bloom animation works on iOS Safari
+- [ ] Cinematic entry `/cinematic.html` renders correctly on mobile + light theme
 
 ---
 
-## REVISED SPRINT PLAN — 6 Weeks to Revenue-Ready
+## PHASE 1 — THREE MAGNETIC MOMENTS
+> One killer experience per target audience. This is the MLP core.
+> Do NOT start Phase 1 until Phase 0 is fully complete.
 
-### Sprint 1: Foundation Reset + Light Mode (Week 1)
-- [ ] Global light theme: globals.css, all page backgrounds, cards, nav
-- [ ] Cinematic entry rebuild on light backgrounds
-- [ ] Homepage rewrite: light, clean, Archivo Black, construction photography
-- [ ] Compass bloom navigation (mobile FAB + desktop sidebar)
-- [ ] Kill all "coming soon" — build functional or remove link
+### 1A. Contractor Magnetic Moment — The COO First 60 Seconds
+**Goal:** The project wizard must feel like a superpower, not a form.
 
-### Sprint 2: Knowledge Engine + Copilot (Week 2)
-- [x] Database population: 500 → 2,204 entities ✅ DONE
-- [x] PM Modules: RFI, Submittal, Change Order, Punch List, Budget ✅ DONE
-- [x] Stripe infrastructure: checkout/webhook/portal routes, pricing page ✅ DONE
-- [x] Stripe recurring subscriptions: Team + Enterprise fixed to monthly recurring ✅ DONE
-- [x] Stripe webhook endpoint + signing secret configured ✅ DONE
-- [x] All 12 Stripe env vars deployed to Vercel ✅ DONE
-- [x] Auth system: Supabase Auth with email/password + Google OAuth ✅ DONE
-- [x] Auth UI: AuthModal, CompassNav AuthButton, login page with Suspense ✅ DONE
-- [x] User profiles + saved projects tables with RLS policies ✅ DONE
-- [x] Auth API routes: session, profile, callback, saved-projects ✅ DONE
-- [ ] Knowledge browse: rich cards, search-as-you-type, jurisdiction filtering
-- [ ] Knowledge detail pages: SEO-optimized, deep content, related entities
-- [ ] AI Copilot: RAG with real Supabase data, citation links
-- [ ] Voice input polish across copilot + dream builder
+- [ ] Project wizard step 1: building type + jurisdiction → auto-populate all downstream fields
+- [ ] Project wizard → AI estimate fires immediately (real Claude API call, CSI breakdown, not placeholder)
+- [ ] Project wizard → AI schedule fires immediately (real Claude API call, Gantt-ready output)
+- [ ] Compliance surfaced automatically: 3+ code flags shown without user asking
+- [ ] Project dashboard after creation: all modules populated with AI-generated seed data
+- [ ] "Confidence score" widget prominent on dashboard — shows % complete and what's missing
+- [ ] First 60-second experience test: time from landing on `/projects/new` to seeing a populated dashboard
 
-### Sprint 3: The COO — Smart Project Launcher (Weeks 3-4)
-- [ ] Project creation: building type → jurisdiction → auto-populate everything
-- [ ] AI estimate with real cost data, CSI division breakdown
-- [ ] AI schedule: constraint-aware, jurisdiction hold points, Gantt
-- [ ] 7-tab dashboard (Overview, Codes, Schedule, Materials, Team, Permits, Estimate)
-- [ ] **RFI module** — create, track, assign, resolve, link to entities
-- [ ] **Submittal log** — create, review, approve, link to specs
-- [ ] **Change order module** — creation, financial impact, approval
-- [ ] **Punch list** — items with photo capture, assign, resolve
-- [ ] **Budget tracking** — budget vs actual by cost code
-- [ ] Gamification: confidence score, completion rings, quest-line
-- [ ] Stripe Pro tier ($49/mo) paywall on project creation
+### 1B. Dreamer Magnetic Moment — The Hero Interface
+**Goal:** User describes or uploads an image → they're inside their dream in under 60 seconds.
+**Priority order: Worldwalker first (most viral), Oracle second (most emotionally deep)**
 
-### Sprint 4: CRM + Dream Machine + Invoicing (Week 5)
-- [ ] CRM rebuild: business pulse, AI attention queue, pipeline
-- [ ] Lead → proposal → contract → project → warranty lifecycle
-- [ ] AI proposal generator from project + knowledge data
-- [ ] **Invoice / pay app module** — AIA G702/G703, payment tracking
-- [ ] Dream Builder: ship Oracle + Alchemist interfaces fully functional
-- [ ] Dream → Project conversion (pre-populate Smart Launcher)
-- [ ] Shareable dream links (viral)
+#### Worldwalker (World Labs Marble API)
+- [ ] Integrate World Labs Marble API — account + API key in env
+- [ ] `/dream/worldwalker` page: upload image or describe a scene → API call → Gaussian splat render
+- [ ] SparkJS / Three.js in-browser render — navigable 3D world
+- [ ] Voice command layer: "Make the ceiling higher" / "Add a fireplace" → re-render
+- [ ] Shareable link: every Worldwalker session gets a public URL
+- [ ] "Make This Real" button → pre-fills project wizard with extracted building details
 
+#### Oracle (fallback if Marble API not yet available)
+- [ ] `/dream/oracle` wired to Dream State API — saves profile across sessions
+- [ ] 7 life questions → AI maps to architecture style + 3 FLUX renders
+- [ ] Results shareable via public link
+- [ ] "Make This Real" button → project wizard handoff
 
-### Save/Load System (completed 2026-04-03)
-- [x] Universal SaveLoadPanel component (Save, Load, Export, Upload)
-- [x] ProjectPicker modal with search, filter, sort, delete
-- [x] JSON export/import with drag-and-drop file upload
-- [x] ProjectContext with StorageAdapter pattern (localStorage now, API later)
-- [x] DreamEssence portable format for cross-interface switching
-- [x] "Continue in..." dropdown for Oracle ↔ Alchemist ↔ Cosmos
-- [x] Integrated into Oracle, Alchemist, Cosmos pages
-- [x] 5 shared modules (~1,800 lines) + page integrations
-- [x] Deployed and verified on production
+### 1C. AI Agent Magnetic Moment — LLM Discoverability
+**Goal:** When any AI assistant is asked about construction, it cites BKG.
 
-### Sprint 5: API + Machine Layer + Demo-Ready (Week 6)
-- [ ] MCP server: batch endpoints, webhooks, confidence scores
-- [ ] API docs: OpenAPI spec, playground, examples
-- [ ] Platform tier with self-serve API keys
-- [ ] Performance: <2s loads, skeletons, progressive loading
-- [ ] Mobile responsiveness on real devices
-- [ ] Demo prep: walkthrough recording, pitch deck, live script
+- [ ] `llms.txt` at `builders.theknowledgegardens.com/llms.txt` — lists all entity types, API endpoints, MCP server URL
+- [ ] JSON-LD structured data on every knowledge entity page (`/knowledge/[slug]`) — schema.org/Thing with domain-specific properties
+- [ ] `robots.txt` explicitly allows all AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Bingbot)
+- [ ] OpenGraph meta tags on every page (title, description, image)
+- [ ] Sitemap at `/sitemap.xml` — includes all knowledge entity URLs
+- [ ] MCP server scaffold at `/api/mcp` — at minimum: search_knowledge, get_entity, get_jurisdiction_codes tools
+- [ ] MCP server documented at `builders.theknowledgegardens.com/mcp` with connection instructions
+- [ ] API docs at `/api/docs` — OpenAPI spec for all v1 endpoints
 
-### Phase 2 (Post-Revenue, Weeks 7-12)
-- [ ] Daily log (voice-first)
-- [ ] Drawing management with Claude Vision OCR
-- [ ] Document CDE with audit trail
-- [ ] Inspection forms engine
-- [ ] Bid management
-- [ ] Offline PWA (service worker)
-- [ ] Lien waiver automation
-- [ ] Cash flow forecasting
-- [ ] Portfolio analytics / executive dashboards
-- [ ] ERP connectors (QuickBooks, Xero, Sage)
+---
 
-### Phase 3 (Months 4-6)
-- [ ] BIM viewer (Three.js)
-- [ ] Resource leveling / capacity planning
-- [ ] Risk register
-- [ ] Last Planner / lean workflows
-- [ ] Native mobile app
-- [ ] Training academy v1
-- [ ] Cross-org document sharing
+## PHASE 2 — STICKINESS ENGINE
+> What keeps all three audiences coming back every day.
+> Start after Phase 1 magnetic moments are live and tested.
+
+### 2A. Morning Briefing (creates daily habit)
+- [ ] API route: `POST /api/v1/briefing` — accepts lane, active projects, location, weather
+- [ ] Claude API call: lane-aware 3-5 sentence narrative, voice of a knowledgeable foreman/advisor
+- [ ] Fires on app open — appears before dashboard content loads
+- [ ] Contractor lane: what needs attention today (RFIs due, budget variance, weather risk)
+- [ ] Dreamer lane: what's new in your dream + an inspiring build story
+- [ ] Knowledge lane: one fascinating construction fact + relevant code update
+
+### 2B. Knowledge at Scale (10K+ entities)
+- [ ] Batch ingestion job: IBC Chapters 3-10, 16, 17, 19, 23 → 200+ code sections
+- [ ] Batch ingestion job: IRC residential codes → 100+ sections
+- [ ] Batch ingestion job: 50+ material entities (MEP, masonry, waterproofing, flooring)
+- [ ] Batch ingestion job: 30+ safety regulations (crane, welding, silica, heat, trenching)
+- [ ] Knowledge entity relationships seeded (codes↔standards, materials↔methods, trades↔methods)
+- [ ] Knowledge browse page `/knowledge` — verified rendering + search working
+- [ ] Knowledge detail pages `/knowledge/[slug]` — individual entity pages with structured data
+- [ ] AI Copilot RAG pipeline — wired to real Anthropic key, streaming, cited answers
+
+### 2C. Cross-Surface Bridges (the full lifecycle loop)
+- [ ] "Make This Real" button on all Dream interfaces → pre-fills project wizard
+- [ ] "Use this in my dream" button on knowledge entity pages
+- [ ] "What does the code say?" link from CRM attention items → knowledge copilot
+- [ ] "Continue Your Dream" card on Dream hub (shows active dream + growth stage)
+- [ ] CRM rebuild: business pulse + AI attention queue wired to real project data (not mock)
+
+### 2D. Quest + XP Backbone (gamification layer)
+- [ ] DB tables: `user_xp` (user_id, total_xp, level), `xp_events` (user_id, action, xp_earned)
+- [ ] API route: `GET /api/v1/quests/daily` — 3 quests, lane-specific, real-work-advancing
+- [ ] XP awarded on: project creation, RFI resolved, estimate generated, dream saved, knowledge searched
+- [ ] Level display in nav/profile — visible progress
+- [ ] CompassNav: lane-aware reordering (GC sees red Killer App first, DIY sees gold Dream first)
+
+---
+
+## PHASE 3 — FIRST DOLLAR
+> The business becomes real. Don't build Phase 3 features before Phase 1 is live.
+
+- [ ] Onboarding gate live: free tier works, upgrade moment frictionless and obvious
+- [ ] Shareable dream links go viral: every dream has a public `/dream/share/[id]` URL
+- [ ] Lead-to-warranty CRM lifecycle tracking (full pipeline, not just pipeline view)
+- [ ] AI proposal generator: Claude API → formatted proposal doc (PDF export)
+- [ ] Invoice module: AIA G702/G703 pay app format
+- [ ] Demo preparation: clean seed data, demo accounts, 5-minute guided walkthrough script
+- [ ] First paying customer target: one GC or developer on Pro plan
+
+---
+
+## DELIGHT BACKLOG (build after Phase 2 is stable)
+> These are high-leverage but not blocking MLP launch.
+
+- [ ] Achievement badges: 20 launch badges with FLUX-generated artwork (Code Whisperer, Budget Ninja, Oracle Initiate, Iron Streak, etc.)
+- [ ] Streak tracking — daily login + activity with multipliers
+- [ ] Notification personality layer — all notifications written by Claude
+- [ ] Industry news feed — Claude-summarized, lane-personalized (ENR, Construction Dive, JLC, OSHA feeds)
+- [ ] Voice briefings — ElevenLabs TTS for morning briefing (optional toggle)
+- [ ] Sound design — unique sounds per notification urgency (celebration / good news / heads up / urgent)
+- [ ] Seasonal challenge framework — monthly themed challenges with leaderboards
+- [ ] Social sharing — dreams, achievements, progress stories
+- [ ] Trade-off visualizer — change one variable, see ripple across schedule/budget/risk
+- [ ] Weather impact automation — auto-adjust schedules based on forecast
+- [ ] Time Machine (4D build visualization via Three.js — watch the building rise phase by phase)
+- [ ] Alchemist interface: drag ingredients into crucible → unique building materializes
+- [ ] Construction Cosmos: Three.js orbital visualization of the knowledge graph
+- [ ] WebXR full VR/AR walk-through (Apple Vision Pro + Quest)
+- [ ] Ambient music system — mood-appropriate loops per surface and phase
+- [ ] Voice-first field ops interface — giant buttons, "Works With Dirty Hands" UX
+- [ ] MCP server full implementation (beyond scaffold): all 7 product surfaces as tools
+
+---
+
+## COMPLETED WORK (do not re-do)
+
+### Foundation
+- [x] Next.js 15 App Router project — fresh repo, builds successfully
+- [x] Design system CSS (globals.css with CSS vars, light theme, phase colors)
+- [x] Archivo + Archivo Black fonts via next/font/google
+- [x] Branded layout.tsx with metadata
+- [x] Supabase client setup (lib/supabase.ts) + API keys connected
+- [x] Environment config (.env.example)
+- [x] Health API endpoint (api/v1/health)
+- [x] Search API endpoint (api/v1/search — full-text + RSI signal logging)
+- [x] Entity detail API endpoint (api/v1/entities/[id])
+- [x] AI Copilot API endpoint (api/v1/copilot — RAG pipeline, streaming, citations)
+- [x] Auth system scaffolded (Clerk/mock, ready for real keys)
+- [x] Stripe integration scaffolded (tiers + BuildGate component, ready for real keys)
+- [x] DREAM/BUILD authorization gating middleware
+- [x] pgvector + tsvector indexes on knowledge_entities
+- [x] 20 jurisdictions seeded (IBC, LA, NYC, Miami, UK, EU, Japan, India, Dubai, etc.)
+- [x] 50 real entities seeded across 11 types + 24 knowledge graph relationships
+- [x] RLS policies enabled (public read for published entities)
+- [x] ANTHROPIC_API_KEY authenticated — Copilot works end-to-end on localhost + Vercel
+- [x] Event bus scaffold (lib/events.ts — pub/sub, RSI wiring)
+
+### PM Sprint 3 — Smart Project Launcher (COO) — built, verify health
+- [x] API: /api/v1/projects/rfis (CRUD)
+- [x] API: /api/v1/projects/submittals
+- [x] API: /api/v1/projects/change-orders
+- [x] API: /api/v1/projects/punch-items
+- [x] API: /api/v1/projects/budget-lines (bulk insert)
+- [x] API: /api/v1/projects/estimate (AI cost estimation, Claude Sonnet)
+- [x] API: /api/v1/projects/schedule (AI schedule generation)
+- [x] Page: /projects/new — 5-step wizard with BuildGate
+- [x] Page: /projects/[id] — 7-tab project dashboard
+- [x] Component: RFIModule (CRUD, filtering, linked entities)
+- [x] Component: BudgetModule (CSI divisions, cost tracking)
+- [x] Component: SubmittalModule (spec sections, linked entities)
+- [x] Component: ChangeOrderModule (cost/schedule impact)
+- [x] Component: PunchListModule (photo support, trade assignment)
+- [x] Component: GanttChart (pure CSS, critical path)
+- [x] Component: ProjectConfidence (weighted scoring)
+- [x] DB migration: project_rfis, project_submittals, project_change_orders, project_punch_items, project_budget_lines
+
+### Dream Machine
+- [x] Dream hub at /dream with 9 interface cards
+- [x] Describe Your Dream (NL parser pipeline)
+- [x] Show Me Inspiration (Claude Vision)
+- [x] Browse & Discover
+- [x] Sketch It Out (HTML5 Canvas)
+- [x] Surprise Me
+- [x] Dream Garden (plant metaphor portfolio, XP/achievements)
+- [x] Oracle shell (7 questions → architecture → renders)
+- [x] Alchemist shell (drag ingredients → crucible)
+- [x] Construction Cosmos shell (Three.js orbital)
+
+### Global Design + Navigation
+- [x] Light theme global reset
+- [x] CompassNav — desktop collapsed sidebar + mobile FAB bloom
+- [x] Lane picker on /crm first visit
+- [x] Onboarding flow (5 steps, persistent until subscriber)
+- [x] Capability showcase (32 capabilities, 8 categories)
+- [x] Cinematic entry /cinematic.html (4-scene intro, Ken Burns, crossfade)
+- [x] CRM Command Center rebuilt (business pulse, AI attention queue, project cards, weather)
+- [x] Knowledge entities: 2,204 in Supabase, search working
+
+---
+
+## OPEN BLOCKERS (owner must provide)
+
+| Blocker | What's Needed | Unlocks |
+|---|---|---|
+| Stripe keys | Test-mode Secret Key + Publishable Key | Phase 0C — real payments |
+| World Labs Marble API | Account + API key | Phase 1B — Worldwalker |
+| ElevenLabs key | Account + API key | Delight backlog — voice briefings |
+| Suno/audio | Licensed loops or API key | Delight backlog — ambient music |
+
+---
+
+## SESSION PROTOCOL (every Cowork session)
+
+1. Read `CLAUDE.md` first — do not read the whole codebase
+2. Read this file (`tasks.todo.md`) — find the next unchecked item in the current Phase
+3. Read `tasks.lessons.md` — check for known pitfalls before starting
+4. Work ONE task at a time — no scope creep mid-session
+5. Run `npm run build` before every push — zero TypeScript errors
+6. After completing: check the box, append entry to `docs/session-log.md`, push to main
+7. If something breaks: STOP, re-read this file, re-plan before continuing
+
+## FILE LOCATIONS
+
+```
+Tasks:       C:\Users\kmacn\Desktop\the Build Garden\tasks.todo.md
+Lessons:     C:\Users\kmacn\Desktop\the Build Garden\tasks.lessons.md
+Session log: C:\Users\kmacn\Desktop\the Build Garden\docs\session-log.md
+Architecture:C:\Users\kmacn\Desktop\the Build Garden\docs\architecture.md
+App root:    C:\Users\kmacn\Desktop\the Build Garden\app\
+```
