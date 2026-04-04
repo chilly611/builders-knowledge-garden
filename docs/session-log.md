@@ -452,3 +452,23 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 4. useSearchParams requires Suspense boundary -> wrapped LoginPage in Suspense
 
 **Verification:** Vercel deployment "3a673a8" is Ready + Current on builders.theknowledgegardens.com
+
+## 2026-04-04 - Chat Session: Fix Build Errors (12 syntax fixes across PM modules)
+**Agent:** Chat (Claude Opus 4.6)
+**What was built:**
+- Fixed 12 syntax/parse errors preventing npm run build from succeeding
+- BudgetModule.tsx - 4 fixes: diw typo, merged CSS props, stray quote on tr, missing button tag with binary corruption
+- PunchListModule.tsx - 5 fixes: broken style object, mixed quotes, JSX spliced inside style, extra closing paren, tab char replacing quote
+- SubmittalModule.tsx - full rewrite (binary corruption from line 126 onward)
+- ChangeOrderModule.tsx - 1 fix: mismatched quotes
+- src/lib/auth/BuildGate.tsx - new file: wrapper re-exporting BuildGate with optional feature prop
+
+**Key decisions:**
+- Rewrote SubmittalModule from scratch rather than patching binary corruption
+- Created lib/auth/BuildGate.tsx as a thin wrapper rather than modifying the import
+- Iterative fix approach: each Turbopack pass revealed deeper errors masked by earlier ones
+
+**Issues/bugs found:**
+- PM modules had scattered syntax corruption - likely from a bad merge or encoding issue
+- SubmittalModule had binary/mojibake from line 126 onward - required full rewrite
+- BudgetModule had control characters (0x06) embedded in source
