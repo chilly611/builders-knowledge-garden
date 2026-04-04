@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Plus, Filter, SortAsc, Trash2, Link as LinkIcon, Download, Search, FileCheck, BookOpen, AlertCircle, Loader2, Check, X, MessageSquare } from "lucide-react";
 
 interface Submittal {
   id: string;
-  number: number;
-  spec_section: string;
+  project_id: string;
+  spec_section?: string;
   description: string;
-  status: "required" | "submitted" | "under_review" | "approved" | "revise_resubmit" | "rejected";
   subcontractor?: string;
+  status: "pending" | "submitted" | "under_review" | "approved" | "approved_as_noted" | "rejected" | "resubmit";
   due_date?: string;
   review_notes?: string;
+  linked_entities?: string[];
   created_at: string;
+  updated_at?: string;
+}
+
+interface KnowledgeEntity {
+  id: string;
+  title: string;
+  type: string;
+  icon?: string;
 }
 
 interface SubmittalModuleProps {
@@ -19,434 +29,164 @@ interface SubmittalModuleProps {
 }
 
 const statusColors: Record<Submittal["status"], { bg: string; text: string; label: string }> = {
-  required: { bg: "#e9ecef", text: "#555555", label: "Required" },
+  pending: { bg: "#e9ecef", text: "#555555", label: "Pending" },
   submitted: { bg: "#cfe2ff", text: "#0c63e4", label: "Submitted" },
   under_review: { bg: "#fff3cd", text: "#856404", label: "Under Review" },
   approved: { bg: "#d1e7dd", text: "#0f5132", label: "Approved" },
-  revise_resubmit: { bg: "#ffe5b4", text: "#d97706", label: "Revise & Resubmit" },
-  rejected: { bg: "#f8d7da", text: "#721c24", label: "Rejected" },
+  approved_as_noted: { bg: "#c3e6cb", text: "#0f5132", label: "Approved as Noted" },
+  rejected: { bg: "#f8d7da", text: "#842029", label: "Rejected" },
+  resubmit: { bg: "#ffeeba", text: "#856404", label: "Resubmit" },
 };
 
-const mockSubmittals: Submittal[] = [
-  {
-    id: "sub-1",
-    number: 1,
-    spec_section: "06 10 00",
-    description: "Structural Steel Shapes and Plates - Shop Drawings",
-    status: "approved",
-    subcontractor: "Steel Fabricators Inc",
-    due_date: "2025-04-10",
-    review_notes: "Approved as submitted. Fabrication can begin.",
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "sub-2",
-    number: 2,
-    spec_section: "07 21 13",
-    description: "Board Insulation - Product Data and Installation Details",
-    status: "under_review",
-    subcontractor: "Building Envelope Systems",
-    due_date: "2025-04-12",
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "sub-3",
-    number: 3,
-    spec_section: "08 11 13",
-    description: "Aluminum Storefront Frames - Shop Drawings",
-    status: "revise_resubmit",
-    subcontractor: "Window & Door Specialists",
-    due_date: "2025-04-08",
-    review_notes: "Revision needed: Confirm mullion sizing calculations and horizontal bracing layout.",
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "sub-4",
-    number: 4,
-    spec_section: "22 13 16",
-    description: "Sanitary Waste and Vent Piping - Shop Drawings",
-    status: "submitted",
-    subcontractor: "Mechanical Systems",
-    due_date: "2025-04-20",
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+const priorityColors: Record<string, { bg: string; text: string }> = {
+  low: { bg: "#e9ecef", text: "#555555" },
+  medium: { bg: "#fff3cd", text: "#856404" },
+  high: { bg: "#f8d7da", text: "#721c24" },
+  urgent: { bg: "#dc3545", text: "#ffffff" },
+};
 
 export default function SubmittalModule({ projectId }: SubmittalModuleProps) {
-  const [submittals, setSubmittals] = useState<Submittal[]>(mockSubmittals);
+  const [submittals, setSubmittals] = useState<Submittal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<Submittal["status"] | "all">("all");
+  const [sortBy, setSortBy] = useState<"date" | "status" | "due_date">("date");
+  const [entitySearchQuery, setEntitySearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<KnowledgeEntity[]>([]);
+  const [showEntitySearch, setShowEntitySearch] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editingReviewText, setEditingReviewText] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
 
   const [formData, setFormData] = useState({
     spec_section: "",
     description: "",
     subcontractor: "",
+    priority: "medium",
     due_date: "",
+    linked_entities: [] as string[],
   });
 
-  const approvedCount = submittals.filter((s) => s.status === "approved").length;
-  const pendingCount = submittals.filter((s) => ["required", "submitted", "under_review", "revise_resubmit"].includes(s.status)).length;
+  // Fetch submittals on mount
+  useEffect(() => {
+    fetchSubmittals();
+  }, [projectId]);
 
-  const filteredSubmittals = submittals.filter((s) => (filterStatus === "all" ? true : s.status === filterStatus));
+  const fetchSubmittals = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/v1/projects/submittals?projectId=${projectId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch submittals");
+      }
+      const data = await response.json();
+      setSubmittals(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load submittals");
+      setSubmittals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const sortedSubmittals = [...filteredSubmittals].sort((a, b) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  const handleSearchEntities = async (query: string) => {
+    setEntitySearchQuery(query);
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
 
-  const handleCreateSubmittal = () => {
-    if (!formData.description.trim() || !formData.spec_section.trim()) return;
+    try {
+      const response = await fetch(`/api/v1/copilot?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.entities || []);
+      }
+    } catch (err) {
+      console.error("Entity search failed:", err);
+    }
+  };
 
-    const newSubmittal: Submittal = {
-      id: `sub-${Date.now()}`,
-      number: Math.max(...submittals.map((s) => s.number), 0) + 1,
-      spec_section: formData.spec_section,
-      description: formData.description,
-      status: "required",
-      subcontractor: formData.subcontractor || undefined,
-      due_date: formData.due_date || undefined,
-      created_at: new Date().toISOString(),
-    };
+  const addLinkedEntity = (entity: KnowledgeEntity) => {
+    if (!formData.linked_entities.includes(entity.id)) {
+      setFormData({
+        ...formData,
+        linked_entities: [...formData.linked_entities, entity.id],
+      });
+    }
+    setEntitySearchQuery("");
+    setSearchResults([]);
+  };
 
-    setSubmittals([...submittals, newSubmittal]);
+  const removeLinkedEntity = (entityId: string) => {
     setFormData({
-      spec_section: "",
-      description: "",
-      subcontractor: "",
-      due_date: "",
-    });
-    setShowCreateModal(false);
-  };
-
-  const updateSubmittalStatus = (id: string, newStatus: Submittal["status"]) => {
-    setSubmittals(submittals.map((s) => (s.id === id ? { ...s, status: newStatus } : s)));
-  };
-
-  const cardStyle = {
-    backgroundColor: "#ffffff",
-    border: "1px solid #e2e4e8",
-    borderRadius: "8px",
-    padding: "16px",
-    marginBottom: "12px",
-  };
-
-  return (
-    <div>
-      {/* Header with count badges */}
-      <div style={{ marginBottom: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <div>
-            <h3 style={{ fontSize: "18px", fontWeight: 600, color: "var(--fg)", marginBottom: "4px" }}>Submittals</h3>
-            <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "var(--fg-secondary)" }}>
-              <span>{approvedCount} approved</span>
-              <span>{pendingCount} pending</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: "10px 16px",
-              background: "var(--accent)",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            + Add Submittal
-          </button>
-        </div>
-
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as Submittal["status"] | "all")}
-            style={{
-              padding: "8px 12px",
-              fontSize: "12px",
-              border: "1px solid #e2e4e8",
-              borderRadius: "6px",
-              background: "#ffffff",
-              cursor: "pointer",
-            }}
-          >
-            <option value="all">All Status</option>
-            <option value="required">Required</option>
-            <option value="submitted">Submitted</option>
-            <option value="under_review">Under Review</option>
-            <option value="approved">Approved</option>
-            <option value="revise_resubmit">Revise & Resubmit</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Submittal List */}
-      {sortedSubmittals.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "32px 16px",
-            background: "var(--bg-secondary)",
-            borderRadius: "8px",
-            border: "1px dashed #e2e4e8",
-          }}
-        >
-          <div style={{ fontSize: "28px", marginBottom: "8px" }}>📋</div>
-          <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--fg)", marginBottom: "4px" }}>No submittals yet</p>
-          <p style={{ fontSize: "12px", color: "var(--fg-secondary)" }}>Add a submittal to track shop drawings and product data</p>
-        </div>
-      ) : (
-        sortedSubmittals.map((submittal) => {
-          const statusColor = statusColors[submittal.status];
-          const daysOverdue =
-            submittal.due_date && new Date(submittal.due_date) < new Date()
-              ? Math.floor(
-                  (new Date().getTime() - new Date(submittal.due_date).getTime()) /
-                    (1000 * 60 * 60 * 24)
-                )
-              : 0;
-
-          return (
-            <div key={submittal.id} style={cardStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 700, background: "#e9ecef", padding: "2px 6px", borderRadius: "3px" }}>
-                      {submittal.spec_section}
-                    </span>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 8px",
-                        fontSize: "10px",
-                        fontWeight: 500,
-                        background: statusColor.bg,
-                        color: statusColor.text,
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {statusColor.label}
-                    </span>
-                    {daysOverdue > 0 && (
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "2px 8px",
-                          fontSize: "10px",
-                          fontWeight: 500,
-                          background: "#dc3545",
-                          color: "#ffffff",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        {daysOverdue}d overdue
-                      </span>
-                    )}
-                  </div>
-                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "var(--fg)", marginBottom: "8px" }}>{submittal.description}</h4>
-
-                  <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "var(--fg-secondary)", marginBottom: "8px" }}>
-                    {submittal.subcontractor && <div>🏢 {submittal.subcontractor}</div>}
-                    {submittal.due_date && <div>📅 {new Date(submittal.due_date).toLocaleDateString()}</div>}
-                  </div>
-
-                  {submittal.review_notes && (
-                    <div
-                      style={{
-                        padding: "10px 12px",
-                        background:
-                          submittal.status === "revise_resubmit" ? "#fff3cd" : submittal.status === "approved" ? "#d1e7dd" : "#f8f9fa",
-                        borderLeft: `3px solid ${statusColor.text}`,
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        color: "var(--fg-secondary)",
-                      }}
-                    >
-                      <strong>Note:</strong> {submittal.review_notes}
-                    </div>
-                  )}
-                </div>
-
-                {/* Quick status update */}
-                <select
-                  value={submittal.status}
-                  onChange={(e) => updateSubmittalStatus(submittal.id, e.target.value as Submittal["status"])}
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "11px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "4px",
-                    background: "#ffffff",
-                    cursor: "pointer",
-                    marginLeft: "12px",
-                  }}
-                >
-                  <option value="required">Required</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="under_review">Under Review</option>
-                  <option value="approved">Approved</option>
-                  <option value="revise_resubmit">Revise & Resubmit</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-            </div>
-          );
-        })
-      )}
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              maxWidth: "500px",
-              width: "90%",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--fg)", marginBottom: "16px" }}>Add New Submittal</h3>
-
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                Spec Section (e.g., 06 10 00)
-              </label>
-              <input
-                type="text"
-                value={formData.spec_section}
-                onChange={(e) => setFormData({ ...formData, spec_section: e.target.value })}
-                placeholder="Specification section number"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  fontSize: "13px",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Submittal description (e.g., Shop Drawings, Product Data)"
-                rows={4}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  fontSize: "13px",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  boxSizing: "border-box",
-                  fontFamily: "inherit",
-                }}
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                  Subcontractor
-                </label>
-                <input
-                  type="text"
-                  value={formData.subcontractor}
-                  onChange={(e) => setFormData({ ...formData, subcontractor: e.target.value })}
-                  placeholder="Subcontractor name"
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "6px",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--fg)", marginBottom: "6px" }}>
-                  Due Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    fontSize: "13px",
-                    border: "1px solid #e2e4e8",
-                    borderRadius: "6px",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#f8f9fa",
-                  border: "1px solid #e2e4e8",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  color: "var(--fg)",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateSubmittal}
-                disabled={!formData.description.trim() || !formData.spec_section.trim()}
-                style={{
-                  padding: "8px 16px",
-                  background: formData.description.trim() && formData.spec_section.trim() ? "var(--accent)" : "#ccc",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: formData.description.trim() && formData.spec_section.trim() ? "pointer" : "not-allowed",
-                }}
-              >
-                Add Submittal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+      ...formData,
+      linked_entities: formData.linked_entities.filter((id) => id !== entityId),(�������(����((������Ё������
+ɕ�ѕMՉ���х����幌��������(�����������ɵ�ф���͍ɥ�ѥ����ɥ�����ɕ��ɸ�((��������(����������Ёɕ����͔��݅�Ё��э���������Ľ�ɽ����̽�Չ���х�̀���(����������ѡ��耉A=MP��(����������������쀉
+��ѕ�еQ����耉�������ѥ����ͽ�����(�������������)M=8���ɥ������(�����������ɽ����%��(��������������}͕�ѥ��聙�ɵ�ф�����}͕�ѥ�������ձ��(������������͍ɥ�ѥ��聙�ɵ�ф���͍ɥ�ѥ���(�����������Չ����Ʌ�ѽ�聙�ɵ�ф��Չ����Ʌ�ѽȁ����ձ��(�����������Օ}��є聙�ɵ�ф��Օ}��є�����ձ��(����������������}��ѥѥ��聙�ɵ�ф�������}��ѥѥ�̰(�����������(���������((�����������ɕ����͔������(��������ѡɽ܁��܁�ɽȠ�������Ѽ��ɕ�є��Չ���х����(�������((����������Ё��ф��݅�Ёɕ����͔��ͽ����(������͕�MՉ���х�̡l����Չ���х�̰���хt��(������͕��ɵ�ф��(������������}͕�ѥ��耈��(����������͍ɥ�ѥ��耈��(���������Չ����Ʌ�ѽ�耈��(���������ɥ�ɥ��耉����մ��(���������Օ}��є耈��(��������������}��ѥѥ���mt�(���������(������͕�M���
+ɕ�ѕ5��������͔��(����􁍅э�����Ȥ��(������͕��ɽȡ��ȁ���х�������ɽȀ����ȹ���ͅ���耉������Ѽ��ɕ�є��Չ���х����(�����(����((������Ё����ѕMՉ���х�Mх��̀��幌�������ɥ�������Mх����MՉ���х�l��х��̉t������(��������(����������Ёɕ����͔��݅�Ё��э���������Ľ�ɽ����̽�Չ���х�̀���(����������ѡ��耉AQ
+ ��(����������������쀉
+��ѕ�еQ����耉�������ѥ����ͽ�����(�������������)M=8���ɥ������(�������������(�����������х���聹��Mх��̰(�����������(���������((�����������ɕ����͔������(��������ѡɽ܁��܁�ɽȠ�������Ѽ�����є��Չ���х���х��̈��(�������((������͕�MՉ���х�̠(���������Չ���х�̹�����̤�����̹�����􁥐���쀸��̰��х���聹��Mх��́��̤�(��������(����􁍅э�����Ȥ��(������͕��ɽȡ��ȁ���х�������ɽȀ����ȹ���ͅ���耉������Ѽ�����є��Չ���х����(�����(����((������ЁٕͅI�٥��9�ѕ̀��幌�������ɥ��������(������������ѥ��I�٥��Q��й�ɥ�����ɕ��ɸ�((����͕�M�٥��I�٥�ܡ��Ք��(��������(����������Ёɕ����͔��݅�Ё��э���������Ľ�ɽ����̽�Չ���х�̀���(����������ѡ��耉AQ
+ ��(����������������쀉
+��ѕ�еQ����耉�������ѥ����ͽ�����(�������������)M=8���ɥ������(�������������(����������ɕ٥��}��ѕ�聕��ѥ��I�٥��Q��а(�����������(���������((�����������ɕ����͔������(��������ѡɽ܁��܁�ɽȠ�������Ѽ�ٔͅ�ɕ٥�܁��ѕ̈��(�������((������͕�MՉ���х�̠(���������Չ���х�̹�����̤���(����������̹�����􁥐���쀸��̰�ɕ٥��}��ѕ�聕��ѥ��I�٥��Q��Ё���(���������(��������(������͕���ѥ��I�٥��%���ձ���(������͕���ѥ��I�٥��Q��Р����(����􁍅э�����Ȥ��(������͕��ɽȡ��ȁ���х�������ɽȀ����ȹ���ͅ���耉������Ѽ�ٔͅ�ɕ٥�܁��ѕ̈��(����􁙥������(������͕�M�٥��I�٥�ܡ���͔��(�����(����((������Ё����ѕMՉ���х����幌�������ɥ��������(��������������ɴ��ɔ��ԁ��ɔ��ԁ݅�ЁѼ�����є�ѡ�́�Չ���х������ɕ��ɸ�((��������(����������Ёɕ����͔��݅�Ё��э���������Ľ�ɽ����̽�Չ���х�̀���(����������ѡ��耉5Q��(����������������쀉
+��ѕ�еQ����耉�������ѥ����ͽ�����(�������������)M=8���ɥ�����쁥�����(���������((�����������ɕ����͔������(��������ѡɽ܁��܁�ɽȠ�������Ѽ�����є��Չ���х����(�������((������͕�MՉ���х�̡�Չ���х�̹���ѕȠ�̤����̹�����􁥐���(����􁍅э�����Ȥ��(������͕��ɽȡ��ȁ���х�������ɽȀ����ȹ���ͅ���耉������Ѽ�����є��Չ���х����(����􀀁�(����((������Ё������Q�
+MX�􀠤�����(��������Ё������̀�l�M����M��ѥ�������͍ɥ�ѥ������MՉ����Ʌ�ѽȈ���Mх��̈���Ք��є����I�٥�܁9�ѕ̉t�(��������Ёɽ�̀��Չ���х�̹�����̤����l(������̹����}͕�ѥ���������(������̹��͍ɥ�ѥ���(������̹�Չ����Ʌ�ѽȁ������(�������х���
+�����m̹�х���t�������(������̹�Օ}��є�����܁�є�̹�Օ}��є��ѽ1������ѕM�ɥ�����耈��(������̹ɕ٥��}��ѕ́������(����t��((��������Ё��؀�l(������������̹����������(���������ɽ�̹�����ɽܤ���(��������ɽܹ������������������M�ɥ���������ɕ�����������������􉀤����������(��������(����t�������q����((��������Ё�����􁹕܁	����m���t�������耉ѕ�н��؈����(��������Ё�ɰ��ݥ���ܹUI0��ɕ�ѕ=�����UI0�������(��������Ё��􁑽�յ��й�ɕ�ѕ�����Р�����(�������ɕ����ɰ�(��������ݹ�������Չ���х�̴���ɽ����%�������܁�є���ѽ%M=M�ɥ���������Р�P��l�u����ـ�(�������յ��й���久�����
+��������(��������������(�������յ��й����ɕ��ٕ
+��������(����ݥ���ܹUI0�ɕٽ��=�����UI0��ɰ��(����((������Ё�������MՉ���х�̀��Չ���х�̹���ѕȠ�̤����̹�х��̀�����������������Ѡ�(������Ёչ���I�٥��MՉ���х�̀��Չ���х�̹���ѕȠ�̤����̹�х��̀���չ���}ɕ٥�܈������Ѡ�((������Ё���ѕɕ�MՉ���х�̀��Չ���х�̹���ѕȠ�̤���(�������ѕ�Mх��̀��􀉅��������Ք��̹�х��̀��􁙥�ѕ�Mх���(����((������Ёͽ�ѕ�MՉ���х�̀�l������ѕɕ�MՉ���х��t�ͽ�Р�����������(��������ͽ��	���􀉑�є����(������ɕ��ɸ���܁�є����ɕ�ѕ�}�Ф����Q����������܁�є����ɕ�ѕ�}�Ф����Q������(�����(��������ͽ��	���􀉑Օ}��є����(����������Ё��ѕ�􁄹�Օ}��є�����܁�є����Օ}��є�����Q�������9յ��ȹ5a}M}%9QH�(����������Ё��ѕ�􁈹�Օ}��є�����܁�є����Օ}��є�����Q�������9յ��ȹ5a}M}%9QH�(������ɕ��ɸ���ѕ�����ѕ�(�����(��������ͽ��	�����х��̈���(����������Ё�х���=ɑ���I���ɐ�MՉ���х�l��х��̉t���յ�������(������������������(���������Չ���ѕ��İ(��������չ���}ɕ٥���Ȱ(��������ɕ�Չ����̰(��������ɕ���ѕ��а(�����������ɽٕ�}��}��ѕ��԰(�����������ɽٕ��ذ(��������(������ɕ��ɸ��х���=ɑ��m���х���t����х���=ɑ��m���х���t�(�����(����ɕ��ɸ���(�����((������Ё��ɑM�屔���(���������ɽչ�
+����耈���������(������ɑ��耈����ͽ����������(������ɑ��I�����耈�����(�����������耈������(������ɝ��	��ѽ�耈������(�������M�����耈����������ɝ������������ؤ��(����((����������������(����ɕ��ɸ��(��������(����������屔���(�����������������耉������(���������������%ѕ��耉���ѕȈ�(�������������ѥ��
+��ѕ��耉���ѕȈ�(�����������������耈�����������(���������������耈���؈�(����������(�������(���������1�����ȁͥ��������屔��쁵�ɝ��I����耈�����������ѥ��耉������́�����ȁ������є�����(��������1��������Չ���х�̸��(������𽑥��(������(���((��ɕ��ɸ��(�������(���������屔��(�����������Ʌ��́������(�����������ɽ����Ʌ�͙�ɴ�ɽхє��������(����������Ѽ���Ʌ�͙�ɴ�ɽхє����������(���������(�����������屔�((������켨��ɽȁ�����Ȁ���(��������ɽȀ����(����������(������������屔���(�������������������耉������(�����������������%ѕ��耉���ѕȈ�(���������������耈������(��������������ɝ��	��ѽ�耈������(�������������������耈�����������(�����������������ɽչ�
+����耈���ݑ���(��������������ɑ��耈����ͽ������ՌɌ܈�(��������������ɑ��I�����耈�����(�����������������耈������䈰(������������(���������(���������������
+�ɍ���ͥ�������(������������������屔��쁙���M��耈�����������ɽ��������(�������������ѽ�(��������������
+�����젤����͕��ɽȡ�ձ���(��������������屔���(����������������ɝ��1���耉��Ѽ��(�������������������ɽչ�耉������(����������������ɑ��耉������(�������������������耈������䈰(�����������������ͽ�耉����ѕȈ�(������������������M��耈������(��������������(�����������(������������\(�������������ѽ��(��������𽑥��(��������((������켨�!����ȁݥѠ���չЁ�����̀���(�������؁��屔��쁵�ɝ��	��ѽ�耈���������(����������(������������屔���(�������������������耉������(���������������ѥ��
+��ѕ��耉���������ݕ����(�����������������%ѕ��耉���ѕȈ�(��������������ɝ��	��ѽ�耈������(������������(���������(�������������(��������������(����������������屔���(��������������������M��耈������(��������������������]����������(���������������������耈������(������������������ɝ��	��ѽ�耈�����(����������������(�������������(��������������MՉ���х��(���������������(�����������������屔��쁙���M��耈������������耈���؈����(����������������������MՉ���х�������������չ���I�٥��MՉ���х���չ��ȁɕ٥��(���������������(����������𽑥��(�����������؁��屔��쁑������耉����������耈��������(���������������ѽ�(����������������
+�����������Q�
+MY�(����������������屔���(�����������������������耈�����������(���������������������ɽչ�耈����(���������������������耈������(������������������ɑ��耈����ͽ����������(������������������ɑ��I�����耈�����(��������������������M��耈������(��������������������]����������(�������������������ͽ�耉����ѕȈ�(�����������������������耉������(���������������������%ѕ��耉���ѕȈ�(�������������������耈�����(�����������������Ʌ�ͥѥ��耉�������̈�(����������������(����������������5��͕�ѕ��졔�����������ɕ��Q�ɝ�й��屔������ɽչ��􀈍�啍�����(����������������5��͕1��ٔ�졔�����������ɕ��Q�ɝ�й��屔������ɽչ��􀈍����(�������������(����������������ݹ�����ͥ�������(������������������Ё
+MX(���������������ѽ��(���������������ѽ�(����������������
+�����젤����͕�M���
+ɕ�ѕ5�������Ք��(����������������屔���(�����������������������耈�����������(���������������������ɽչ�耈����Ԉ�(���������������������耈���������(������������������ɑ��耉������(������������������ɑ��I�����耈�����(��������������������M��耈������(��������������������]����������(�������������������ͽ�耉����ѕȈ�(�����������������������耉������(���������������������%ѕ��耉���ѕȈ�(�������������������耈�����(�����������������Ʌ�ͥѥ��耉�������̈�(����������������(����������������5��͕�ѕ��졔�����������ɕ��Q�ɝ�й��屔�����������䈥�(����������������5��͕1��ٔ�졔�����������ɕ��Q�ɝ�й��屔���������Ĉ��(�������������(���������������A��́ͥ�������(��������������
+ɕ�є�MՉ���х�(���������������ѽ��(����������𽑥��(��������𽑥��((��������켨���ѕ�̀���(���������؁��屔��쁑������耉����������耈���������ɝ��	��ѽ�耈�����������]Ʌ�耉�Ʌ������(�����������͕����(������������م�Ք�홥�ѕ�Mх����(��������������
+������졔�����͕���ѕ�Mх��̡��хɝ�йم�Ք��́MՉ���х�l��х��̉t����������(��������������屔���(���������������������耈����������(������������������M��耈������(����������������ɑ��耈����ͽ����������(����������������ɑ��I�����耈�����(�������������������ɽչ�耈���������(�����������������ͽ�耉����ѕȈ�(�����������������������耉���ѕ��դ��(��������������(�����������(��������������ѥ���م�Ք􉅱������Mх�����ѥ���(��������������ѥ���م�Ք����������A��������ѥ���(��������������ѥ���م�Ք��Չ���ѕ���MՉ���ѕ���ѥ���(��������������ѥ���م�Ք�չ���}ɕ٥�܈�U���ȁI�٥����ѥ���(��������������ѥ���م�Ք���ɽٕ�����ɽٕ���ѥ���(��������������ѥ���م�Ք���ɽٕ�}��}��ѕ�����ɽٕ���́9�ѕ���ѥ���(��������������ѥ���م�Ք�ɕ���ѕ���I����ѕ���ѥ���(��������������ѥ���م�Ք�ɕ�Չ��Ј�I��Չ�����ѥ���(�����������͕�����((�����������͕����(������������م�Ք��ͽ��	��(��������������
+������졔�����͕�M���	䡔�хɝ�йم�Ք��̀���є������х��̈�����Օ}��є���(��������������屔���(���������������������耈����������(������������������M��耈������(����������������ɑ��耈����ͽ����������(����������������ɑ��I�����耈�����(�������������������ɽչ�耈���������(�����������������ͽ�耉����ѕȈ�(�����������������������耉���ѕ��դ��(��������������(�����������(��������������ѥ���م�Ք􉑅є��M��Ё���є��ѥ���(��������������ѥ���م�Ք�Օ}��є��M��Ё��Ք��є��ѥ���(��������������ѥ���م�Ք��х��̈�M��Ё��Mх�����ѥ���(�����������͕�����(��������𽑥��(������𽑥��((������켨�MՉ���х��1��Ѐ���(�������ͽ�ѕ�MՉ���х�̹����Ѡ���������(����������(������������屔���(������������ѕ������耉���ѕȈ�(�������������������耈�����������(�����������������ɽչ�耈����(��������������ɑ��I�����耈�����(��������������ɑ��耈������͡���������(������������(���������(�����������؁��屔��쁙���M��耈���������ɝ��	��ѽ�耈���������~N𽑥��(������������(��������������屔���(������������������M��耈������(������������������]����������(�������������������耈������(����������������ɝ��	��ѽ�耈�����(��������������(�����������(������������9���Չ���х�́��(�������������(���������������屔��쁙���M��耈������������耈���؈����(������������
+ɕ�є���ȁ����Ё�Չ���х��Ѽ��Ʌ����ɽ���Ё�Չ���ͥ���(�������������(��������𽑥��(��������耠(��������ͽ�ѕ�MՉ���х�̹������Չ���х�������(��������������Ё�х���
+���Ȁ��х���
+�����m�Չ���х���х���t�((����������ɕ��ɸ��(�������������؁������Չ���х�������屔�퍅ɑM�展��(����������������(������������������屔���(�������������������������耉������(���������������������ѥ��
+��ѕ��耉���������ݕ����(�����������������������%ѕ��耉�����х�Ј�(��������������������ɝ��	��ѽ�耈������(������������������(���������������(�����������������؁��屔��쁙����ā���(��������������������(����������������������屔���(�����������������������������耉������(�������������������������耈�����(���������������������������%ѕ��耉���ѕȈ�(������������������������ɝ��	��ѽ�耈�����(��������������������������]Ʌ�耉�Ʌ���(����������������������(�������������������(����������������������Չ���х������}͕�ѥ�������(���������������������������(��������������������������屔���(������������������������������M��耈������(������������������������������]����������(�������������������������������耈���؈�(��������������������������(�����������������������(��������������������������Չ���х������}͕�ѥ���(����������������������������(����������������������(�������������������������(������������������������屔���(�������������������������������耉��������������(�������������������������������耈���������(����������������������������M��耈������(����������������������������]����������(�����������������������������ɽչ���х���
+���ȹ���(�������������������������������х���
+���ȹѕ�а(��������������������������ɑ��I�����耈�����(������������������������(���������������������(������������������������х���
+���ȹ������(��������������������������(������������������𽑥��(��������������������(����������������������屔���(��������������������������M��耈������(��������������������������]����������(���������������������������耈������(������������������������ɝ��	��ѽ�耈�����(����������������������(�������������������(����������������������Չ���х����͍ɥ�ѥ���(���������������������((��������������������(����������������������屔���(�����������������������������耉������(�������������������������耈������(��������������������������M��耈������(���������������������������耈���؈�(������������������������ɝ��	��ѽ�耈�����(��������������������������]Ʌ�耉�Ʌ���(����������������������(�������������������(����������������������Չ���х���Չ����Ʌ�ѽȀ�������~>����Չ���х���Չ����Ʌ�ѽ��𽑥���(����������������������Չ���х���Օ}��є�����(��������������������������~N����܁�є��Չ���х���Օ}��є��ѽ1������ѕM�ɥ�����𽑥��(����������������������(������������������𽑥��((��������������������Չ���х��������}��ѥѥ�̀����Չ���х��������}��ѥѥ�̹����Ѡ���������(����������������������(������������������������屔���(�������������������������������耉������(���������������������������耈�����(�����������������������������%ѕ��耉���ѕȈ�(��������������������������ɝ��	��ѽ�耈�����(����������������������������]Ʌ�耉�Ʌ���(������������������������(���������������������(�����������������������1���%����ͥ��������屔��쁍����耈���؈����(������������������������Չ���х��������}��ѥѥ�̹�������ѥ��%�������(�����������������������������(������������������������������핹ѥ��%��(����������������������������屔���(��������������������������������M��耈������(�����������������������������������耈���������(���������������������������������ɽչ�耈����(������������������������������ɑ��耈����ͽ����������(������������������������������ɑ��I�����耈�����(���������������������������������耈���؈�(����������������������������(�������������������������(��������������������������핹ѥ��%��(������������������������������(�������������������������(��������������������𽑥��(��������������������((��������������������Չ���х���х��̀���չ���}ɕ٥�܈�����Չ���х���х��̀��􀉅��ɽٕ�}��}��ѕ�������Չ���х���х��̀���ɕ���ѕ������(�����������������������(����������������������핑�ѥ��I�٥��%������Չ���х��������(�������������������������؁��屔��쁵�ɝ��Q��耈���������(���������������������������ѕ�хɕ�(����������������������������م�Ք�핑�ѥ��I�٥��Q����(������������������������������
+������졔�����͕���ѥ��I�٥��Q��С��хɝ�йم�Ք��(������������������������������屔���(������������������������������ݥ�Ѡ耈������(�������������������������������������耈����������(����������������������������������M��耈������(��������������������������������ɑ��耈����ͽ����������(��������������������������������ɑ��I�����耈�����(���������������������������������������耉����ɥЈ�(��������������������������������ɝ��	��ѽ�耈�����(���������������������������������M�饹�耉��ɑ�ȵ�����(������������������������������(����������������������������ɽ������(�������������������������������������������ɕ٥�܁��ѕ̸���(����������������������������(���������������������������؁��屔��쁑������耉����������耈��������(�������������������������������ѽ�(��������������������������������
+�����젤����ٕͅI�٥��9�ѕ̡�Չ���х������(��������������������������������ͅ������ͅ٥��I�٥���(��������������������������������屔���(���������������������������������������耈����������(������������������������������������M��耈������(�������������������������������������ɽչ�耈����Ԉ�(�������������������������������������耈���������(����������������������������������ɑ��耉������(����������������������������������ɑ��I�����耈�����(�����������������������������������ͽ��ͅ٥��I�٥�܀�����е����ݕ���耉����ѕȈ�(����������������������������������������ͅ٥��I�٥�܀����؀�İ(��������������������������������(�����������������������������(������������������������������M�ٔ�9�ѕ�(�������������������������������ѽ��(�������������������������������ѽ�(��������������������������������
+�����젤�����(��������������������������������͕���ѥ��I�٥��%���ձ���(��������������������������������͕���ѥ��I�٥��Q��Р����(��������������������������������(��������������������������������屔���(���������������������������������������耈����������(������������������������������������M��耈������(�������������������������������������ɽչ�耈���噄��(�������������������������������������耈������(����������������������������������ɑ��耈����ͽ����������(����������������������������������ɑ��I�����耈�����(�����������������������������������ͽ�耉����ѕȈ�(��������������������������������(�����������������������������(������������������������������
+�����(�������������������������������ѽ��(��������������������������𽑥��(������������������������𽑥��(��������������������������Չ���х��ɕ٥��}��ѕ̀���(��������������������������(����������������������������屔���(������������������������������ɝ��Q��耈������(�����������������������������������耈�����������(���������������������������������ɽչ�耈�����Ԉ�(������������������������������ɑ��1���耈����ͽ��������Ԉ�(������������������������������ɑ��I�����耈�����(��������������������������������M��耈������(���������������������������������耈������(����������������������������(�������������������������(�����������������������������ɽ���I�٥�܁9�ѕ�����ɽ������Չ���х��ɕ٥��}��ѕ��(�����������������������������ѽ�(������������������������������
+�����젤�����(������������������������������͕���ѥ��I�٥��%���Չ���х������(������������������������������͕���ѥ��I�٥��Q��С�Չ���х��ɕ٥��}��ѕ́�������(������������������������������(������������������������������屔���(��������������������������������ɝ��1���耈�����(����������������������������������M��耈������(�����������������������������������ɽչ�耉������(��������������������������������ɑ��耉������(�����������������������������������耈����Ԉ�(������������������������������ѕ�����Ʌѥ��耉չ��ɱ�����(���������������������������������ͽ�耉����ѕȈ�(������������������������������(���������������������������(��������������������������������(�����������������������������ѽ��(������������������������𽑥��(������������������������耠(���������������������������ѽ�(����������������������������
+�����젤�����(����������������������������͕���ѥ��I�٥��%���Չ���х������(����������������������������͕���ѥ��I�٥��Q��Р����(����������������������������(����������������������������屔���(������������������������������ɝ��Q��耈�����(��������������������������������M��耈������(���������������������������������ɽչ�耉������(������������������������������ɑ��耉������(���������������������������������耈����Ԉ�(�������������������������������ͽ�耉����ѕȈ�(�����������������������������������耉������(���������������������������������%ѕ��耉���ѕȈ�(�������������������������������耈�����(��������������������������������������(����������������������������(�������������������������(���������������������������5��ͅ��M�Յɔ�ͥ�������(�����������������������������I�٥�܁9�ѕ�(���������������������������ѽ��(������������������������(��������������������𽑥��((����������������������(������������������������屔���(�������������������������������耉������(���������������������������耈�����(�����������������������������%ѕ��耉�����х�Ј�(��������������������������ɝ��1���耈������(������������������������(���������������������(�����������������������͕����(������������������������م�Ք���Չ���х���х����(��������������������������
+������졔����(������������������������������ѕMՉ���х�Mх��̡�Չ���х��������хɝ�йم�Ք��́MՉ���х�l��х��̉t�(�������������������������(��������������������������屔���(���������������������������������耈���������(������������������������������M��耈������(����������������������������ɑ��耈����ͽ����������(����������������������������ɑ��I�����耈�����(�������������������������������ɽչ�耈���������(�����������������������������ͽ�耉����ѕȈ�(�����������������������������������耉���ѕ��դ��(��������������������������(�����������������������(��������������������������ѥ���م�Ք����������A��������ѥ���(��������������������������ѥ���م�Ք��Չ���ѕ���MՉ���ѕ���ѥ���(��������������������������ѥ���م�Ք�չ���}ɕ٥�܈�U���ȁI�٥����ѥ���(��������������������������ѥ���م�Ք���ɽٕ�����ɽٕ���ѥ���(��������������������������ѥ���م�Ք���ɽٕ�}��}��ѕ�����ɽٕ���́9�ѕ���ѥ���(��������������������������ѥ���م�Ք�ɕ���ѕ���I����ѕ���ѥ���(��������������������������ѥ���م�Ք�ɕ�Չ��Ј�I��Չ�����ѥ���(�����������������������͕�����(�������������������������ѽ�(��������������������������
+�����젤��������ѕMՉ���х���Չ���х������(��������������������������屔���(���������������������������������耈���������(�������������������������������ɽչ�耈����՘Ԉ�(����������������������������ɑ��耈����ͽ�������ݑ���(����������������������������ɑ��I�����耈�����(�����������������������������ͽ�耉����ѕȈ�(�������������������������������耈������䈰(���������������������������������耉������(�������������������������������%ѕ��耉���ѕȈ�(�����������������������������ѥ��
+��ѕ��耉���ѕȈ�(��������������������������(������������������������ѥѱ�����є��Չ���х��(�����������������������(�������������������������QɅ͠ȁͥ�������(�������������������������ѽ��(��������������������𽑥��(����������������𽑥��(��������������𽑥��(������������(����������(��������((������켨�
+ɕ�є�5��������(�������͡��
+ɕ�ѕ5���������(����������(������������屔���(��������������ͥѥ��耉��ᕐ��(������������ѽ����(�������������������(������������ɥ������(���������������ѽ����(�����������������ɽչ�耉ɝ��������������Ԥ��(�������������������耉������(�����������������%ѕ��耉���ѕȈ�(���������������ѥ��
+��ѕ��耉���ѕȈ�(�������������%��������(������������(������������
+�����젤����͕�M���
+ɕ�ѕ5��������͔��(���������(������������(��������������屔���(�������������������ɽչ�耈���������(����������������ɑ��I�����耈������(���������������������耈������(�����������������]��Ѡ耈�������(��������������ݥ�Ѡ耈�����(�����������������!�����耈��٠��(���������������ٕə���d耉��Ѽ��(�����������������M�����耈�����������������ɝ��������������Ĥ��(�����������������������耉���ѕ��դ��(��������������(��������������
+�����졔��������ѽ�Aɽ����ѥ�����(�����������(��������������(����������������屔���(��������������������M��耈������(��������������������]����������(���������������������耈������(������������������ɝ��	��ѽ�耈������(����������������(�������������(��������������
+ɕ�є�9�܁MՉ���х�(���������������((�������������؁��屔��쁵�ɝ��	��ѽ�耈���������(��������������񱅉��(������������������屔���(�������������������������耉�������(����������������������M��耈������(����������������������]����������(�����������������������耈������(��������������������ɝ��	��ѽ�耈�����(������������������(���������������(�����������������͍ɥ�ѥ����(��������������𽱅����(���������������ѕ�хɕ�(����������������م�Ք�홽ɵ�ф���͍ɥ�ѥ���(������������������
+������졔�����͕��ɵ�ф�쀸����ɵ�ф����͍ɥ�ѥ��联�хɝ�йم�Ք����(����������������������������]��Ё�́�������Չ���ѕ���(����������������ɽ������(������������������屔���(������������������ݥ�Ѡ耈������(�������������������������耈����������(����������������������M��耈������(��������������������ɑ��耈����ͽ����������(��������������������ɑ��I�����耈�����(���������������������M�饹�耉��ɑ�ȵ�����(���������������������������耉����ɥЈ�(������������������(����������������(������������𽑥��((�������������؁��屔��쁵�ɝ��	��ѽ�耈���������(��������������񱅉��(������������������屔���(�������������������������耉�������(����������������������M��耈������(����������������������]����������(�����������������������耈������(��������������������ɝ��	��ѽ�耈�����(������������������(���������������(����������������M����M��ѥ��(��������������𽱅����(������������������(���������������������ѕ�Ј(����������������م�Ք�홽ɵ�ф�����}͕�ѥ���(������������������
+������졔�����͕��ɵ�ф�쀸����ɵ�ф������}͕�ѥ��联�хɝ�йم�Ք����(���������������������������􉔹����������
+��е���A�����
+���ɕє�(������������������屔���(������������������ݥ�Ѡ耈������(�������������������������耈����������(����������������������M��耈������(��������������������ɑ��耈����ͽ����������(��������������������ɑ��I�����耈�����(���������������������M�饹�耉��ɑ�ȵ�����(������������������(����������������(������������𽑥��((�������������؁��屔��쁑������耉�ɥ�����ɥ�Q�����ѕ
+��յ��耈řȀřȈ�����耈���������ɝ��	��ѽ�耈���������(�����������������(����������������񱅉��(��������������������屔���(���������������������������耉�������(������������������������M��耈������(������������������������]����������(�������������������������耈������(����������������������ɝ��	��ѽ�耈�����(��������������������(�����������������(������������������MՉ����Ʌ�ѽ�(����������������𽱅����(��������������������(�����������������������ѕ�Ј(������������������م�Ք�홽ɵ�ф��Չ����Ʌ�ѽ��(��������������������
+������졔�����͕��ɵ�ф�쀸����ɵ�ф���Չ����Ʌ�ѽ�联�хɝ�йم�Ք����(������������������������������
+�����䁹����(��������������������屔���(��������������������ݥ�Ѡ耈������(���������������������������耈����������(������������������������M��耈������(����������������������ɑ��耈����ͽ����������(����������������������ɑ��I�����耈�����(�����������������������M�饹�耉��ɑ�ȵ�����(��������������������(������������������(��������������𽑥��(�����������������(����������������񱅉��(��������������������屔���(���������������������������耉�������(������������������������M��耈������(������������������������]����������(�������������������������耈������(����������������������ɝ��	��ѽ�耈�����(��������������������(�����������������(������������������Ք��є(����������������𽱅����(��������������������(����������������������􉑅є�(������������������م�Ք�홽ɵ�ф��Օ}��ѕ�(��������������������
+������졔�����͕��ɵ�ф�쀸����ɵ�ф���Օ}��є联�хɝ�йم�Ք����(��������������������屔���(��������������������ݥ�Ѡ耈������(���������������������������耈����������(������������������������M��耈������(����������������������ɑ��耈����ͽ����������(����������������������ɑ��I�����耈�����(�����������������������M�饹�耉��ɑ�ȵ�����(��������������������(������������������(��������������𽑥��(������������𽑥��((�������������؁��屔��쁵�ɝ��	��ѽ�耈���������(��������������񱅉��(������������������屔���(�������������������������耉�������(����������������������M��耈������(����������������������]����������(�����������������������耈������(��������������������ɝ��	��ѽ�耈�����(������������������(���������������(����������������1����-��ݱ������ѥѥ��(��������������𽱅����(���������������؁��屔�����ͥѥ��耉ɕ��ѥٔ�����(������������������(��������������������屔���(���������������������������耉������(�����������������������耈�����(�������������������������%ѕ��耉���ѕȈ�(���������������������������耈����������(����������������������ɑ��耈����ͽ����������(����������������������ɑ��I�����耈�����(�������������������������ɽչ�耈���������(����������������������ɝ��	��ѽ�耈�����(������������������������]Ʌ�耉�Ʌ���(��������������������(�����������������(������������������홽ɵ�ф�������}��ѥѥ�̹�������ѥ��%�������(�������������������������(��������������������������핹ѥ��%��(������������������������屔���(����������������������������M��耈������(�������������������������������耈���������(�����������������������������ɽչ�耈����(��������������������������ɑ��耈����ͽ����������(��������������������������ɑ��I�����耈�����(�������������������������������耉������(�����������������������������%ѕ��耉���ѕȈ�(���������������������������耈�����(������������������������(���������������������(�����������������������핹ѥ��%��(�������������������������ѽ�(��������������������������
+�����젤����ɕ��ٕ1������ѥ�䡕�ѥ��%���(��������������������������屔���(�������������������������������ɽչ�耉������(����������������������������ɑ��耉������(�������������������������������耈���؈�(�����������������������������ͽ�耉����ѕȈ�(������������������������������M��耈������(������������������������������������(��������������������������(�����������������������(������������������������\(�������������������������ѽ��(��������������������������(���������������������(����������������������(�������������������������ѕ�Ј(��������������������م�Ք�핹ѥ��M��ɍ�EՕ���(����������������������
+������졔�����������M��ɍ��ѥѥ�̡��хɝ�йم�Ք��(���������������������������젤����͕�M����ѥ��M��ɍ����Ք��(��������������������������������M��ɍ����ѥѥ�̸���(����������������������屔���(���������������������������İ(�������������������������]��Ѡ耈�������(������������������������ɑ��耉������(������������������������ѱ���耉������(��������������������������M��耈������(����������������������(��������������������(����������������𽑥��((�����������������͡���ѥ��M��ɍ�����͕�ɍ�I��ձ�̹����Ѡ���������(��������������������(����������������������屔���(������������������������ͥѥ��耉��ͽ��є��(����������������������ѽ�耈������(�����������������������������(����������������������ɥ������(���������������������������ɽչ�耈���������(������������������������ɑ��耈����ͽ����������(������������������������ɑ��I�����耈�����(�������������������������!�����耈�������(�����������������������ٕə���d耉��Ѽ��(�����������������������%��������(�������������������������M�����耈����������ɝ��������������Ĥ��(����������������������(�������������������(���������������������͕�ɍ�I��ձ�̹�������ѥ�䤀����(�������������������������ѽ�(����������������������������핹ѥ�乥��(��������������������������
+�����젤�������1������ѥ�䡕�ѥ���(��������������������������屔���(��������������������������ݥ�Ѡ耈������(���������������������������������耈�����������(����������������������������ɑ��耉������(�������������������������������ɽչ�耉������(��������������������������ѕ������耉���Ј�(�����������������������������ͽ�耉����ѕȈ�(������������������������������M��耈������(�������������������������������耈������(����������������������������ɑ��	��ѽ�耈����ͽ����������(��������������������������(��������������������������5��͕�ѕ��졔�����������ɕ��Q�ɝ�й��屔������ɽչ��􀈍����(��������������������������5��͕1��ٔ�졔�����������ɕ��Q�ɝ�й��屔������ɽչ��􀉹������(�����������������������(�������������������������؁��屔��쁙���]�������������핹ѥ��ѥѱ��𽑥��(�������������������������؁��屔��쁙���M��耈������������耈���؈����핹ѥ�������𽑥��(�������������������������ѽ��(�����������������������(������������������𽑥��(������������������(��������������𽑥��(������������𽑥��((�������������؁��屔��쁑������耉����������耈����������ѥ��
+��ѕ��耉���ൕ�������(�����������������ѽ�(������������������
+�����젤����͕�M���
+ɕ�ѕ5��������͔��(������������������屔���(�������������������������耈����������(�����������������������ɽչ�耈���噄��(��������������������ɑ��耈����ͽ����������(��������������������ɑ��I�����耈�����(����������������������M��耈������(����������������������]����������(���������������������ͽ�耉����ѕȈ�(�����������������������耈������(���������������������������耉���ѕ��դ��(������������������(���������������(����������������
+�����(�����������������ѽ��(�����������������ѽ�(������������������
+������������
+ɕ�ѕMՉ���х��(������������������ͅ�����셙�ɵ�ф���͍ɥ�ѥ����ɥ����(������������������屔���(�������������������������耈����������(�����������������������ɽչ�聙�ɵ�ф���͍ɥ�ѥ����ɥ�����������Ԉ�耈������(�����������������������耈���������(��������������������ɑ��耉������(��������������������ɑ��I�����耈�����(����������������������M��耈������(����������������������]����������(���������������������ͽ�聙�ɵ�ф���͍ɥ�ѥ����ɥ�����������ѕȈ�耉��е����ݕ���(���������������������������耉���ѕ��դ��(�����������������
