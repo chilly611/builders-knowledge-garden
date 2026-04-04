@@ -30,6 +30,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
   const [streamText, setStreamText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const metaRef = useRef<{ entities_retrieved?: { id: string; slug: string; title: string; type: string }[] } | null>(null);
 
   // Voice input state
   const [isListening, setIsListening] = useState(false);
@@ -44,7 +45,10 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
 
   const toggleVoice = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
+    if (!SR) {
+      alert("Voice input is not supported in this browser. Try Chrome or Edge.");
+      return;
+    }
 
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
@@ -71,7 +75,15 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
       }
     };
 
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      setIsListening(false);
+      if (event.error === "not-allowed") {
+        alert("Microphone access denied. Please enable it in your browser settings.");
+      } else if (event.error !== "aborted" && event.error !== "no-speech") {
+        console.warn("[Voice] Recognition error:", event.error);
+      }
+    };
+
     recognition.onend = () => setIsListening(false);
 
     recognitionRef.current = recognition;
@@ -161,6 +173,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
             const data = JSON.parse(line.slice(6));
             if (data.type === "meta") {
               meta = data;
+              metaRef.current = data;
             } else if (data.type === "chunk") {
               fullText += data.text;
               setStreamText(fullText);
@@ -208,9 +221,12 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
     setMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, feedback } : m))
     );
-    // RSI Loop 5: Log feedback signal
-    // In production, POST to /api/v1/copilot/feedback
-    console.log("[RSI Loop 5] Feedback:", { msgId, feedback });
+    // Persist feedback
+    fetch("/api/v1/copilot/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId: msgId, feedback, timestamp: new Date().toISOString() }),
+    }).catch(() => {}); // Fire-and-forget
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -228,15 +244,30 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
       const match = part.match(/\[([^\]]+)\]\(entity:(\d+)\)/);
       if (match) {
         return (
-          <span
-            key={i}
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium cursor-help"
-            style={{ background: "var(--accent-bg)", color: "var(--accent)" }}
-            title={`Knowledge Entity: ${match[1]}`}
-          >
-            <BookOpen size={10} />
-            {match[1]}
-          </span>
+          (() => {
+            const entityIndex = parseInt(match[2], 10);
+            const entityMeta = metaRef.current?.entities_retrieved?.[entityIndex];
+            const slug = entityMeta?.slug;
+            if (slug) {
+              return (
+                <a key={i} href={`/knowledge/${slug}`}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium no-underline hover:opacity-80 transition-opacity"
+                  style={{ background: "var(--accent-bg)", color: "var(--accent)" }}
+                  title={`View: ${match[1]}`}
+                >
+                  <BookOpen size={10} /> {match[1]} ↗
+                </a>
+              );
+            }
+            return (
+              <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium cursor-help"
+                style={{ background: "var(--accent-bg)", color: "var(--accent)" }}
+                title={`Knowledge Entity: ${match[1]}`}
+              >
+                <BookOpen size={10} /> {match[1]}
+              </span>
+            );
+          })()
         );
       }
       // Handle markdown bold
