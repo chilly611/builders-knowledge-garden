@@ -69,13 +69,14 @@
 ### 1A. Contractor Magnetic Moment — The COO First 60 Seconds
 **Goal:** The project wizard must feel like a superpower, not a form.
 
-- [ ] Project wizard step 1: building type + jurisdiction → auto-populate all downstream fields
-- [ ] Project wizard → AI estimate fires immediately (real Claude API call, CSI breakdown, not placeholder)
-- [ ] Project wizard → AI schedule fires immediately (real Claude API call, Gantt-ready output)
-- [ ] Compliance surfaced automatically: 3+ code flags shown without user asking
-- [ ] Project dashboard after creation: all modules populated with AI-generated seed data
-- [ ] "Confidence score" widget prominent on dashboard — shows % complete and what's missing
+- [x] Project wizard step 1: building type + jurisdiction → auto-populate all downstream fields
+- [x] Project wizard → AI estimate fires immediately (real Claude API call, CSI breakdown, not placeholder)
+- [x] Project wizard → AI schedule fires immediately (real Claude API call, Gantt-ready output)
+- [x] Compliance surfaced automatically: 3+ code flags shown without user asking
+- [x] Project dashboard after creation: all modules populated with AI-generated seed data
+- [x] "Confidence score" widget prominent on dashboard — shows % complete and what's missing
 - [ ] First 60-second experience test: time from landing on `/projects/new` to seeing a populated dashboard
+- [ ] **BLOCKER:** Run `supabase/migrations/phase1a_schema.sql` on live Supabase DB (adds project_schedules + project_compliance tables, jurisdiction/start_date columns)
 
 ### 1B. Dreamer Magnetic Moment — The Hero Interface
 **Goal:** User describes or uploads an image → they're inside their dream in under 60 seconds.

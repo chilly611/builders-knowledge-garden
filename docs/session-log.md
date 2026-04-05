@@ -523,3 +523,42 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Set up Stripe webhook endpoint in Stripe dashboard pointing to `/api/v1/stripe/webhook`
 - Wire BuildGate to real subscription status (reads from `subscriptions` table)
 - Phase 1 is now unblocked — start with 1A (Contractor Magnetic Moment) or 1C (AI Agent Discoverability)
+
+---
+
+### Session: 2026-04-05 — Phase 1A: Contractor Magnetic Moment (Cowork)
+**Context:** Continuing from Phase 0 completion. Starting Phase 1A — The COO First 60 Seconds.
+
+**What was built:**
+
+1. **Fixed wizard → API field mapping:** `client→client_name`, `estimatedBudget→budget_amount`, `buildingType→project_type`. Added `jurisdiction` + `start_date` to the projects API.
+
+2. **Parallel AI analysis in wizard:** Step 3 (details) → "Create Project" now fires three Claude Sonnet 4 API calls simultaneously:
+   - `/api/v1/projects/estimate` — CSI division cost breakdown (already existed, now wired)
+   - `/api/v1/projects/schedule` — Gantt-ready timeline with phases, milestones, critical path (already existed, now wired + persists to DB)
+   - `/api/v1/projects/compliance` — **NEW** endpoint: building code flags, applicable codes, inspection requirements, permit timeline
+
+3. **Live Step 4 analysis display:** Wizard Step 4 is no longer a static spinner. It shows three cards that animate from "loading" → "done" as each AI call completes, with key metrics (total cost, duration, code flags) appearing in real time.
+
+4. **Schedule + compliance persistence:** Both endpoints now save results to `project_schedules` and `project_compliance` tables (created in new migration).
+
+5. **Dashboard wired to real data:** GET `/api/v1/projects?id=` now returns enriched project data (budget_lines, schedule, compliance). Dashboard tabs use real AI-generated data: Estimate tab shows actual CSI breakdown, Schedule tab shows AI-generated milestones, Permits tab derives from compliance inspection requirements, Materials tab uses real budget lines.
+
+6. **Dynamic confidence score:** Overview tab now calculates confidence based on available data (has estimate? has milestones? completion %) instead of hardcoded 92%.
+
+**Files changed:**
+- `src/app/projects/new/page.tsx` — Revamped wizard flow (3-step → create → live analysis)
+- `src/app/api/v1/projects/route.ts` — Added `?id=` enriched fetch, jurisdiction/building_type/start_date fields
+- `src/app/api/v1/projects/schedule/route.ts` — Added Supabase persistence
+- `src/app/api/v1/projects/compliance/route.ts` — **NEW** compliance endpoint
+- `src/app/projects/[id]/page.tsx` — Dashboard wired to real data
+- `supabase/migrations/phase1a_schema.sql` — **NEW** migration for project_schedules + project_compliance tables
+
+**Commit:** `5d64cee` — pushed to main, Vercel auto-deploy triggered
+
+**Open items for next session:**
+- **BLOCKER:** Run `supabase/migrations/phase1a_schema.sql` on live Supabase DB
+- Run end-to-end 60-second test once migration is applied
+- Stripe webhook setup in Stripe dashboard
+- Wire BuildGate to real subscription status
+- Phase 1B (Dreamer) and 1C (AI Agent) still pending
