@@ -1,0 +1,127 @@
+# Builder's Knowledge Garden - Knowledge Graph for Construction Professionals
+
+## Project Overview
+
+**Name:** Builder's Knowledge Garden
+**Domain:** builders.theknowledgegardens.com
+**Framework:** Next.js 15 App Router
+**Purpose:** Centralized knowledge graph and API access for building codes, construction methods, materials, standards, regulations, and jurisdictional requirements across 142+ jurisdictions.
+
+Builder's Knowledge Garden provides construction professionals, architects, and builders with structured, curated knowledge about building practices, regulations, materials, and methods. The platform integrates with AI systems through REST APIs and a Model Context Protocol (MCP) server for seamless access to construction knowledge.
+
+## Knowledge Entities
+
+The platform maintains 2,204+ knowledge entities across 11 types:
+
+- **Building Codes** (building_code) — Local and regional building code references
+- **Materials** (material) — Construction materials with properties and specifications
+- **Architectural Styles** (architectural_style) — Historical and contemporary architectural design approaches
+- **Safety Regulations** (safety_regulation) — Worker and site safety requirements
+- **Trades** (trade) — Construction trades and specializations
+- **Methods** (method) — Construction techniques and procedures
+- **Standards** (standard) — Industry standards and best practices
+- **Sequence Rules** (sequence_rule) — Construction workflow and dependency rules
+- **Permit Requirements** (permit_requirement) — Jurisdictional permitting processes
+- **Building Types** (building_type) — Structural and functional building classifications
+- **Inspection Protocols** (inspection_protocol) — Quality assurance and inspection procedures
+- **Climate Zones** (climate_zone) — Climate classifications and regional considerations
+
+## Knowledge Coverage
+
+- **Jurisdictions:** 142+ jurisdictions with localized requirements
+- **Total Entities:** 2,204+ curated knowledge items
+
+## REST API
+
+All APIs available at `https://builders.theknowledgegardens.com/api/v1/`
+
+### Core Endpoints
+
+**GET /api/v1/search**
+Full-text search across all knowledge entities. Query parameter: `q`. Returns paginated results with entity metadata and relevance scoring.
+
+**GET /api/v1/entities/:id**
+Retrieve a complete knowledge entity by ID. Returns full entity details including relationships, jurisdiction applicability, and cross-references.
+
+**GET /api/v1/openapi**
+OpenAPI 3.0 specification for all public API endpoints. Use this to generate clients or integrate with external systems.
+
+**GET /api/v1/mcp**
+Model Context Protocol server endpoint. See MCP Server section below.
+
+**POST /api/v1/copilot**
+AI copilot endpoint for construction advice. Accepts queries and returns AI-generated responses grounded in the knowledge graph.
+
+## MCP Server
+
+**Endpoint:** `https://builders.theknowledgegardens.com/api/v1/mcp`
+**Protocol:** Model Context Protocol (MCP)
+**Purpose:** Enables AI systems to access Builder's Knowledge Garden as a context source for construction-related queries
+
+### Available Tools (12 total)
+
+The MCP server exposes the following tools:
+
+1. **lookup_code** — Look up building codes by jurisdiction and building type
+2. **search_knowledge** — Full-text search across 2,204+ construction knowledge entities
+3. **get_material** — Get material specifications, compliance, cost ranges by building type
+4. **get_safety** — Get safety requirements, hazards, and PPE for construction tasks
+5. **estimate_cost** — Generate CSI MasterFormat cost estimates for building projects
+6. **get_permits** — Get required permits for a building type in a specific jurisdiction
+7. **generate_schedule** — Generate constraint-aware construction schedules with critical path
+8. **get_team** — Get recommended team composition and roles for a building type
+9. **list_building_types** — List all supported building types with costs and durations
+10. **list_jurisdictions** — List all 142+ supported jurisdictions with code references
+11. **crm_list_contacts** — List CRM contacts with pipeline and lead scoring data
+12. **crm_pipeline_stats** — Get CRM pipeline summary with deal values and follow-ups
+
+### Connecting to the MCP Server
+
+For AI systems and tools supporting MCP:
+
+```
+Protocol: HTTP/SSE
+URL: https://builders.theknowledgegardens.com/api/v1/mcp
+```
+
+The server uses Server-Sent Events (SSE) for real-time streaming responses. Standard MCP client libraries can connect directly.
+
+## Knowledge Pages
+
+Knowledge entities are accessible as human-readable pages at:
+`https://builders.theknowledgegardens.com/knowledge/[slug]`
+
+Each page includes:
+- Entity details and descriptions
+- Related entities and cross-references
+- Jurisdiction-specific applicability
+- External standards and code references
+- Embedded search and filtering
+
+## OpenAPI Specification
+
+Complete API documentation available at:
+`https://builders.theknowledgegardens.com/api/v1/openapi`
+
+Use this specification to generate API clients in any language, integrate with external tools, or validate requests.
+
+## Sitemap
+
+Complete site structure and crawlable URLs available at:
+`https://builders.theknowledgegardens.com/sitemap.xml`
+
+## Knowledge Licensing and Citation
+
+All knowledge entities in Builder's Knowledge Garden are curated from authoritative sources including:
+- Published building codes and standards
+- Regulatory documents from jurisdictional authorities
+- Industry best practices and specifications
+- Professional construction guidance
+
+When using knowledge from this platform, proper citation of source materials is required. The knowledge graph serves as an aggregation layer; original sources (building codes, standards organizations, regulatory bodies) maintain authorship and legal authority. Always verify critical safety and regulatory information with official jurisdictional sources.
+
+## Additional Resources
+
+- **REST API Reference:** https://builders.theknowledgegardens.com/api/v1/openapi
+- **Sitemap:** https://builders.theknowledgegardens.com/sitemap.xml
+- **Knowledge Base Home:** https://builders.theknowledgegardens.com/knowledge
