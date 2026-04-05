@@ -20,58 +20,76 @@ interface LanePickerProps {
 
 const LANES: Lane[] = [
   {
-    id: "gc",
+    id: "dreamer",
+    icon: "🏠",
+    label: "Dreamer",
+    tagline: "I'm dreaming about what to build",
+    savings: "Save $50K+ on your build",
+    replaces: "Angi, Houzz, guesswork",
+    color: "#1D9E75",
+  },
+  {
+    id: "builder",
     icon: "🏗️",
-    label: "General Contractor",
+    label: "Builder",
     tagline: "I manage the whole build",
     savings: "Save 12+ hrs/week on paperwork",
     replaces: "Procore, Excel, QuickBooks",
     color: "#E8443A",
   },
   {
-    id: "diy",
-    icon: "🏠",
-    label: "Homeowner / DIY",
-    tagline: "I'm building or renovating my own place",
-    savings: "Save $50K+ on your build",
-    replaces: "Angi, Houzz, guesswork",
-    color: "#1D9E75",
-  },
-  {
-    id: "specialty",
+    id: "specialist",
     icon: "⚡",
-    label: "Specialty Contractor",
+    label: "Specialist",
     tagline: "Electrical, plumbing, HVAC, roofing...",
     savings: "Win 40% more bids",
     replaces: "XBuild, pen & paper estimates",
     color: "#D85A30",
   },
   {
-    id: "developer",
-    icon: "📊",
-    label: "Developer / Investor",
-    tagline: "I fund and develop projects",
-    savings: "Track ROI across your portfolio",
-    replaces: "Spreadsheets, Buildertrend",
-    color: "#378ADD",
-  },
-  {
-    id: "supplier",
+    id: "merchant",
     icon: "🚛",
-    label: "Supplier / Vendor",
+    label: "Merchant",
     tagline: "I sell materials or equipment",
     savings: "Reach contractors who need you now",
     replaces: "Cold calls, trade shows",
     color: "#BA7517",
   },
   {
-    id: "ai",
+    id: "ally",
+    icon: "📊",
+    label: "Ally",
+    tagline: "I fund and develop projects",
+    savings: "Track ROI across your portfolio",
+    replaces: "Spreadsheets, Buildertrend",
+    color: "#378ADD",
+  },
+  {
+    id: "crew",
+    icon: "👷",
+    label: "Crew",
+    tagline: "I work on build sites daily",
+    savings: "Coordinate easier on site",
+    replaces: "Paper forms, phone calls",
+    color: "#6B7280",
+  },
+  {
+    id: "fleet",
+    icon: "🛠️",
+    label: "Fleet",
+    tagline: "I manage multiple projects or teams",
+    savings: "Oversee 10+ projects at once",
+    replaces: "Scattered spreadsheets",
+    color: "#7F77DD",
+  },
+  {
+    id: "machine",
     icon: "🤖",
-    label: "AI Agent / Robot",
+    label: "Machine",
     tagline: "I'm a machine accessing structured data",
     savings: "MCP-native API, structured for agents",
     replaces: "Scraping, unstructured data",
-    color: "#7F77DD",
+    color: "#4B5563",
   },
 ];
 
@@ -104,8 +122,8 @@ export default function LanePicker({ onSelect, onDismiss }: LanePickerProps) {
 
     const particles: Particle[] = [];
 
-    // Create sparkle dots in brand colors
-    const colors = ["#1D9E75", "#D85A30", "#E8443A", "#378ADD", "#BA7517", "#7F77DD"];
+    // Create sparkle dots in brand colors (all 8 lane colors)
+    const colors = ["#1D9E75", "#E8443A", "#D85A30", "#BA7517", "#378ADD", "#6B7280", "#7F77DD", "#4B5563"];
     for (let i = 0; i < 80; i++) {
       const angle = (Math.PI * 2 * i) / 80;
       const distance = 50 + Math.random() * 100;
