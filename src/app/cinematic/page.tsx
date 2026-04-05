@@ -128,11 +128,12 @@ export default function CinematicPage() {
   const scene = SCENES[sceneIndex];
 
   return (
+    /* Force dark background — this page is always dark/cinematic */
     <div
       style={{
         fontFamily: "'Archivo', sans-serif",
-        background: 'var(--bg, #ffffff)',
-        color: 'var(--fg, #111111)',
+        background: '#0a0a0a',
+        color: '#f0f0f0',
         minHeight: '100vh',
         overflowX: 'hidden',
       }}
@@ -324,7 +325,7 @@ export default function CinematicPage() {
               fontSize: 'clamp(2rem, 4.5vw, 3.4rem)',
               lineHeight: 1.08,
               marginBottom: 18,
-              background: 'linear-gradient(135deg, #fff 40%, #5DCAA5)',
+              background: 'linear-gradient(135deg, #ffffff 40%, #5DCAA5)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -336,7 +337,7 @@ export default function CinematicPage() {
           <p
             style={{
               fontSize: '1.1rem',
-              color: 'rgba(255,255,255,0.6)',
+              color: 'rgba(255,255,255,0.55)',
               maxWidth: 560,
               margin: '0 auto',
               fontWeight: 300,
@@ -358,11 +359,11 @@ export default function CinematicPage() {
                 animate={phase === 'main' ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.9, delay: 0.35 + i * 0.15 }}
                 onClick={() => navigate(card.href)}
-                whileHover={{ y: -5, boxShadow: '0 24px 64px -16px rgba(0,0,0,0.5)' }}
+                whileHover={{ y: -5, boxShadow: '0 24px 64px -16px rgba(0,0,0,0.8)' }}
                 style={{
                   position: 'relative',
-                  background: 'var(--bg-secondary, #f8f9fa)',
-                  border: '1px solid var(--border, #e2e4e8)',
+                  background: '#181818',
+                  border: '1px solid rgba(255,255,255,0.07)',
                   borderRadius: 20,
                   cursor: 'pointer',
                   overflow: 'hidden',
@@ -389,7 +390,7 @@ export default function CinematicPage() {
                       left: 0,
                       right: 0,
                       height: 60,
-                      background: 'linear-gradient(to top, var(--bg-secondary, #f8f9fa), transparent)',
+                      background: 'linear-gradient(to top, #181818, transparent)',
                     }}
                   />
                   <div
@@ -420,6 +421,7 @@ export default function CinematicPage() {
                       fontSize: '1.25rem',
                       marginBottom: 8,
                       lineHeight: 1.2,
+                      color: '#f0f0f0',
                     }}
                   >
                     {card.title}
@@ -427,7 +429,7 @@ export default function CinematicPage() {
                   <div
                     style={{
                       fontSize: '0.88rem',
-                      color: 'rgba(255,255,255,0.6)',
+                      color: 'rgba(255,255,255,0.5)',
                       lineHeight: 1.55,
                       fontWeight: 300,
                     }}
@@ -467,13 +469,13 @@ export default function CinematicPage() {
             onClick={() => navigate('/knowledge')}
             whileHover={{
               y: -3,
-              borderColor: 'rgba(29,158,117,0.15)',
-              boxShadow: '0 32px 80px -24px rgba(0,0,0,0.5), 0 0 120px -40px rgba(29,158,117,0.35)',
+              borderColor: 'rgba(29,158,117,0.3)',
+              boxShadow: '0 32px 80px -24px rgba(0,0,0,0.8), 0 0 120px -40px rgba(29,158,117,0.25)',
             }}
             style={{
               position: 'relative',
-              background: 'var(--bg-secondary, #f8f9fa)',
-              border: '1px solid var(--border, #e2e4e8)',
+              background: '#181818',
+              border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 20,
               height: 300,
               cursor: 'pointer',
@@ -486,7 +488,7 @@ export default function CinematicPage() {
                 position: 'absolute',
                 inset: 0,
                 background:
-                  'linear-gradient(90deg, var(--bg-secondary, #f8f9fa) 0%, var(--bg-secondary, #f8f9fa) 12%, rgba(248,249,250,0.95) 22%, rgba(248,249,250,0.75) 38%, rgba(248,249,250,0.3) 60%, transparent 85%)',
+                  'linear-gradient(90deg, #181818 0%, #181818 12%, rgba(24,24,24,0.95) 22%, rgba(24,24,24,0.75) 38%, rgba(24,24,24,0.3) 60%, transparent 85%)',
                 zIndex: 2,
               }}
             />
@@ -533,7 +535,7 @@ export default function CinematicPage() {
                   fontSize: '1.7rem',
                   lineHeight: 1.12,
                   marginBottom: 12,
-                  background: 'linear-gradient(135deg, #fff 30%, #5DCAA5)',
+                  background: 'linear-gradient(135deg, #ffffff 30%, #5DCAA5)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}
@@ -543,7 +545,7 @@ export default function CinematicPage() {
               <div
                 style={{
                   fontSize: '0.92rem',
-                  color: 'rgba(255,255,255,0.6)',
+                  color: 'rgba(255,255,255,0.5)',
                   lineHeight: 1.6,
                   fontWeight: 300,
                   marginBottom: 22,
@@ -562,10 +564,10 @@ export default function CinematicPage() {
                       gap: 5,
                       padding: '5px 13px',
                       background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: 100,
                       fontSize: '0.76rem',
-                      color: 'rgba(255,255,255,0.6)',
+                      color: 'rgba(255,255,255,0.55)',
                       fontWeight: 400,
                     }}
                   >
@@ -585,7 +587,7 @@ export default function CinematicPage() {
           style={{
             textAlign: 'center',
             padding: '40px 48px 28px',
-            color: 'rgba(255,255,255,0.35)',
+            color: 'rgba(255,255,255,0.25)',
             fontSize: '0.75rem',
             fontWeight: 400,
             letterSpacing: '0.08em',
