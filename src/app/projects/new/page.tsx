@@ -59,6 +59,15 @@ interface WizardData {
   notes: string;
 }
 
+interface AIAnalysis {
+  estimateStatus: 'idle' | 'loading' | 'done' | 'error';
+  scheduleStatus: 'idle' | 'loading' | 'done' | 'error';
+  complianceStatus: 'idle' | 'loading' | 'done' | 'error';
+  estimateData: any | null;
+  scheduleData: any | null;
+  complianceData: any | null;
+}
+
 interface ValidationErrors {
   [key: string]: string;
 }
@@ -81,10 +90,37 @@ export default function ProjectCreationWizard() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showJurisdictionDropdown, setShowJurisdictionDropdown] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis>({
+    estimateStatus: 'idle',
+    scheduleStatus: 'idle',
+    complianceStatus: 'idle',
+    estimateData: null,
+    scheduleData: null,
+    complianceData: null,
+  });
 
   const filteredJurisdictions = JURISDICTIONS.filter((j) =>
     j.label.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Auto-redirect once all AI analyses are done (or errored)
+  const allAIDone =
+    aiAnalysis.estimateStatus !== 'idle' &&
+    aiAnalysis.estimateStatus !== 'loading' &&
+    aiAnalysis.scheduleStatus !== 'idle' &&
+    aiAnalysis.scheduleStatus !== 'loading' &&
+    aiAnalysis.complianceStatus !== 'idle' &&
+    aiAnalysis.complianceStatus !== 'loading';
+
+  useEffect(() => {
+    if (allAIDone && projectId && currentStep === 4) {
+      const timer = setTimeout(() => {
+        router.push(`/projects/${projectId}`);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [allAIDone, projectId, currentStep, router]);
 
   const validateStep = (step: number): boolean => {
     const newErrors: ValidationErrors = {};
@@ -121,7 +157,8 @@ export default function ProjectCreationWizard() {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep === 4) {
+      if (currentStep === 3) {
+        // Step 3 → triggers project creation + AI analysis (Step 4)
         handleCreateProject();
       } else {
         setCurrentStep(currentStep + 1);
@@ -138,47 +175,119 @@ export default function ProjectCreationWizard() {
 
   const handleCreateProject = async () => {
     setIsLoading(true);
-    try {
-      const projectPayload = {
-        name: wizardData.projectName,
-        client: wizardData.clientName,
-        buildingType: wizardData.buildingType,
-        jurisdiction: wizardData.jurisdiction,
-        location: wizardData.location,
-        estimatedBudget: parseFloat(wizardData.budget),
-        targetStartDate: wizardData.startDate,
-        notes: wizardData.notes,
-      };
+    setCurrentStep(4);
+    setAiAnalysis({
+      estimateStatus: 'loading',
+      scheduleStatus: 'loading',
+      complianceStatus: 'loading',
+      estimateData: null,
+      scheduleData: null,
+      complianceData: null,
+    });
 
+    try {
+      // Step 1: Create the project with correct field mapping
       const createResponse = await fetch('/api/v1/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectPayload),
+        body: JSON.stringify({
+          name: wizardData.projectName,
+          client_name: wizardData.clientName,
+          building_type: wizardData.buildingType,
+          project_type: wizardData.buildingType,
+          jurisdiction: wizardData.jurisdiction,
+          location: wizardData.location,
+          budget_amount: parseFloat(wizardData.budget) || 0,
+          start_date: wizardData.startDate,
+          notes: wizardData.notes,
+        }),
       });
 
       if (!createResponse.ok) {
         throw new Error('Failed to create project');
       }
 
-      const project = await createResponse.json();
+      const { project } = await createResponse.json();
+      const createdProjectId = project.id;
+      setProjectId(createdProjectId);
 
-      await fetch('/api/v1/projects/estimate', {
+      // Step 2: Fire AI calls in parallel
+      const aiPayload = {
+        projectId: createdProjectId,
+        buildingType: wizardData.buildingType,
+        jurisdiction: wizardData.jurisdiction,
+        budget: parseFloat(wizardData.budget) || undefined,
+        startDate: wizardData.startDate,
+        projectName: wizardData.projectName,
+      };
+
+      // Estimate
+      fetch('/api/v1/projects/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(aiPayload),
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error('Estimate failed');
+          const data = await res.json();
+          setAiAnalysis((prev) => ({
+            ...prev,
+            estimateStatus: 'done',
+            estimateData: data.estimate,
+          }));
+        })
+        .catch(() => {
+          setAiAnalysis((prev) => ({ ...prev, estimateStatus: 'error' }));
+        });
+
+      // Schedule
+      fetch('/api/v1/projects/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(aiPayload),
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error('Schedule failed');
+          const data = await res.json();
+          setAiAnalysis((prev) => ({
+            ...prev,
+            scheduleStatus: 'done',
+            scheduleData: data.schedule,
+          }));
+        })
+        .catch(() => {
+          setAiAnalysis((prev) => ({ ...prev, scheduleStatus: 'error' }));
+        });
+
+      // Compliance
+      fetch('/api/v1/projects/compliance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId: project.id,
-          ...projectPayload,
+          projectId: createdProjectId,
+          buildingType: wizardData.buildingType,
+          jurisdiction: wizardData.jurisdiction,
+          budget: parseFloat(wizardData.budget) || undefined,
         }),
-      });
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error('Compliance failed');
+          const data = await res.json();
+          setAiAnalysis((prev) => ({
+            ...prev,
+            complianceStatus: 'done',
+            complianceData: data.compliance,
+          }));
+        })
+        .catch(() => {
+          setAiAnalysis((prev) => ({ ...prev, complianceStatus: 'error' }));
+        });
 
-      setCurrentStep(5);
-      setTimeout(() => {
-        router.push(`/projects/${project.id}`);
-      }, 2000);
     } catch (error) {
       console.error('Error creating project:', error);
       setErrors({ submit: 'Failed to create project. Please try again.' });
       setIsLoading(false);
+      setCurrentStep(3);
     }
   };
 
@@ -198,14 +307,14 @@ export default function ProjectCreationWizard() {
               justifyContent: 'space-between',
               marginBottom: '1rem',
             }}>
-              {[1, 2, 3, 4, 5].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div
                   key={step}
                   style={{
                     flex: 1,
                     height: '4px',
                     background: step <= currentStep ? 'var(--accent)' : 'var(--border)',
-                    marginRight: step < 5 ? '0.5rem' : '0',
+                    marginRight: step < 4 ? '0.5rem' : '0',
                     borderRadius: '2px',
                     transition: 'background-color 0.3s ease',
                   }}
@@ -222,8 +331,7 @@ export default function ProjectCreationWizard() {
               <span>Building Type</span>
               <span>Jurisdiction</span>
               <span>Details</span>
-              <span>Analysis</span>
-              <span>Complete</span>
+              <span>AI Analysis</span>
             </div>
           </div>
 
@@ -675,89 +783,195 @@ export default function ProjectCreationWizard() {
             </div>
           )}
 
-          {/* Step 4: AI Analysis */}
+          {/* Step 4: Live AI Analysis */}
           {currentStep === 4 && (
             <div style={{
               animation: 'fadeIn 0.3s ease',
               animationFillMode: 'forwards',
-              textAlign: 'center',
-              padding: '3rem 1rem',
             }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '80px',
-                height: '80px',
-                background: 'var(--bg-secondary)',
-                borderRadius: '50%',
-                marginBottom: '1.5rem',
-                animation: 'spin 2s linear infinite',
-              }}>
-                <Sparkles size={40} color="var(--accent)" />
+              <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {allAIDone ? 'Your Project is Ready' : 'AI Analyzing Your Project'}
+                </h1>
+                <p style={{ fontSize: '1rem', opacity: 0.7 }}>
+                  {allAIDone
+                    ? 'Redirecting to your dashboard in a moment...'
+                    : `Building type: ${wizardData.buildingType} · Jurisdiction: ${wizardData.jurisdiction}`}
+                </p>
               </div>
-              <h1 style={{
-                fontSize: '2rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem',
-              }}>
-                AI Analyzing Your Project
-              </h1>
-              <p style={{
-                fontSize: '1rem',
-                opacity: 0.7,
-                marginBottom: '1rem',
-              }}>
-                Creating initial estimates and analyzing project requirements...
-              </p>
-              <div style={{
-                fontSize: '0.875rem',
-                opacity: 0.6,
-              }}>
-                This may take a few moments
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Estimate Card */}
+                <div style={{
+                  border: `2px solid ${aiAnalysis.estimateStatus === 'done' ? 'var(--accent)' : aiAnalysis.estimateStatus === 'error' ? '#dc2626' : 'var(--border)'}`,
+                  borderRadius: '0.75rem',
+                  padding: '1.25rem',
+                  background: aiAnalysis.estimateStatus === 'done' ? '#f0fdf4' : 'white',
+                  transition: 'all 0.3s ease',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: aiAnalysis.estimateData ? '1rem' : '0' }}>
+                    <DollarSign size={24} color={aiAnalysis.estimateStatus === 'done' ? 'var(--accent)' : '#9ca3af'} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, fontSize: '1rem' }}>Cost Estimate</p>
+                      <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        {aiAnalysis.estimateStatus === 'loading' && 'Generating CSI breakdown...'}
+                        {aiAnalysis.estimateStatus === 'done' && 'Complete'}
+                        {aiAnalysis.estimateStatus === 'error' && 'Failed — will retry on dashboard'}
+                      </p>
+                    </div>
+                    {aiAnalysis.estimateStatus === 'loading' && (
+                      <div style={{ width: 24, height: 24, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    )}
+                    {aiAnalysis.estimateStatus === 'done' && <CheckCircle size={24} color="var(--accent)" />}
+                  </div>
+                  {aiAnalysis.estimateData && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', fontSize: '0.85rem' }}>
+                      <div style={{ background: 'white', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', border: '1px solid var(--border)' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>Total Cost</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--fg)' }}>
+                          ${(aiAnalysis.estimateData.totalCost / 1000000).toFixed(1)}M
+                        </p>
+                      </div>
+                      <div style={{ background: 'white', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', border: '1px solid var(--border)' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>Per Sq Ft</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--fg)' }}>
+                          ${aiAnalysis.estimateData.costPerSqFt?.toFixed(0) || '—'}
+                        </p>
+                      </div>
+                      <div style={{ background: 'white', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', border: '1px solid var(--border)' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>CSI Divisions</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--fg)' }}>
+                          {aiAnalysis.estimateData.csiDivisions?.length || 0}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Schedule Card */}
+                <div style={{
+                  border: `2px solid ${aiAnalysis.scheduleStatus === 'done' ? 'var(--accent)' : aiAnalysis.scheduleStatus === 'error' ? '#dc2626' : 'var(--border)'}`,
+                  borderRadius: '0.75rem',
+                  padding: '1.25rem',
+                  background: aiAnalysis.scheduleStatus === 'done' ? '#f0fdf4' : 'white',
+                  transition: 'all 0.3s ease',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: aiAnalysis.scheduleData ? '1rem' : '0' }}>
+                    <Calendar size={24} color={aiAnalysis.scheduleStatus === 'done' ? 'var(--accent)' : '#9ca3af'} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, fontSize: '1rem' }}>Project Schedule</p>
+                      <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        {aiAnalysis.scheduleStatus === 'loading' && 'Building Gantt-ready timeline...'}
+                        {aiAnalysis.scheduleStatus === 'done' && 'Complete'}
+                        {aiAnalysis.scheduleStatus === 'error' && 'Failed — will retry on dashboard'}
+                      </p>
+                    </div>
+                    {aiAnalysis.scheduleStatus === 'loading' && (
+                      <div style={{ width: 24, height: 24, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    )}
+                    {aiAnalysis.scheduleStatus === 'done' && <CheckCircle size={24} color="var(--accent)" />}
+                  </div>
+                  {aiAnalysis.scheduleData && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', fontSize: '0.85rem' }}>
+                      <div style={{ background: 'white', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', border: '1px solid var(--border)' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>Duration</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--fg)' }}>
+                          {aiAnalysis.scheduleData.totalDurationWeeks}w
+                        </p>
+                      </div>
+                      <div style={{ background: 'white', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', border: '1px solid var(--border)' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>Phases</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--fg)' }}>
+                          {aiAnalysis.scheduleData.phases?.length || 0}
+                        </p>
+                      </div>
+                      <div style={{ background: 'white', borderRadius: '0.5rem', padding: '0.75rem', textAlign: 'center', border: '1px solid var(--border)' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>Hold Points</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--fg)' }}>
+                          {aiAnalysis.scheduleData.jurisdictionHoldPoints?.length || 0}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Compliance Card */}
+                <div style={{
+                  border: `2px solid ${aiAnalysis.complianceStatus === 'done' ? 'var(--accent)' : aiAnalysis.complianceStatus === 'error' ? '#dc2626' : 'var(--border)'}`,
+                  borderRadius: '0.75rem',
+                  padding: '1.25rem',
+                  background: aiAnalysis.complianceStatus === 'done' ? '#f0fdf4' : 'white',
+                  transition: 'all 0.3s ease',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: aiAnalysis.complianceData ? '1rem' : '0' }}>
+                    <FileText size={24} color={aiAnalysis.complianceStatus === 'done' ? 'var(--accent)' : '#9ca3af'} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, fontSize: '1rem' }}>Compliance Check</p>
+                      <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        {aiAnalysis.complianceStatus === 'loading' && 'Scanning building codes...'}
+                        {aiAnalysis.complianceStatus === 'done' && 'Complete'}
+                        {aiAnalysis.complianceStatus === 'error' && 'Failed — will retry on dashboard'}
+                      </p>
+                    </div>
+                    {aiAnalysis.complianceStatus === 'loading' && (
+                      <div style={{ width: 24, height: 24, border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    )}
+                    {aiAnalysis.complianceStatus === 'done' && <CheckCircle size={24} color="var(--accent)" />}
+                  </div>
+                  {aiAnalysis.complianceData && (
+                    <div style={{ fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                        {aiAnalysis.complianceData.flags?.slice(0, 4).map((flag: any, i: number) => (
+                          <span key={i} style={{
+                            display: 'inline-block',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '1rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            background: flag.severity === 'critical' ? '#fef2f2' : flag.severity === 'warning' ? '#fffbeb' : '#f0fdf4',
+                            color: flag.severity === 'critical' ? '#dc2626' : flag.severity === 'warning' ? '#d97706' : '#16a34a',
+                            border: `1px solid ${flag.severity === 'critical' ? '#fecaca' : flag.severity === 'warning' ? '#fde68a' : '#bbf7d0'}`,
+                          }}>
+                            {flag.title}
+                          </span>
+                        ))}
+                      </div>
+                      <p style={{ color: '#6b7280', fontSize: '0.8rem' }}>
+                        Permit timeline: {aiAnalysis.complianceData.estimatedPermitTimeline} · {aiAnalysis.complianceData.flags?.length || 0} code flags found
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Go to dashboard button once done */}
+              {allAIDone && projectId && (
+                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                  <button
+                    onClick={() => router.push(`/projects/${projectId}`)}
+                    style={{
+                      padding: '0.75rem 2rem',
+                      background: 'var(--accent)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'opacity 0.2s',
+                    }}
+                  >
+                    Go to Project Dashboard →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Step 5: Success */}
-          {currentStep === 5 && (
-            <div style={{
-              animation: 'fadeIn 0.3s ease',
-              animationFillMode: 'forwards',
-              textAlign: 'center',
-              padding: '3rem 1rem',
-            }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '80px',
-                height: '80px',
-                background: 'var(--bg-secondary)',
-                borderRadius: '50%',
-                marginBottom: '1.5rem',
-              }}>
-                <CheckCircle size={40} color="var(--accent)" />
-              </div>
-              <h1 style={{
-                fontSize: '2rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem',
-              }}>
-                Project Created Successfully
-              </h1>
-              <p style={{
-                fontSize: '1rem',
-                opacity: 0.7,
-                marginBottom: '2rem',
-              }}>
-                Redirecting to your project dashboard...
-              </p>
-            </div>
-          )}
+          {/* Step 5 removed — Step 4 now handles completion + redirect */}
 
           {/* Navigation Buttons */}
-          {currentStep < 5 && (
+          {currentStep < 4 && (
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -826,7 +1040,7 @@ export default function ProjectCreationWizard() {
                   }
                 }}
               >
-                {currentStep === 4 ? 'Create Project' : 'Next'}
+                {currentStep === 3 ? 'Create Project' : 'Next'}
                 <ArrowRight size={18} />
               </button>
             </div>

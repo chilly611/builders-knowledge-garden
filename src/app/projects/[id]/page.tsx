@@ -177,7 +177,11 @@ function LoadingSkeleton() {
 function OverviewTab({ project, milestones, aiItems }: { project: Project; milestones: Milestone[]; aiItems: AIAttentionItem[] }) {
   const completionPercent = project.progress || 0;
   const budgetHealth = completionPercent > 80 ? 'on-track' : completionPercent > 50 ? 'caution' : 'warning';
-  const riskScore = Math.floor(Math.random() * 100);
+  // Confidence based on how much data we have
+  const hasEstimate = (project as any).budget_amount > 0;
+  const hasMilestones = milestones.length > 0;
+  const baseConfidence = 40 + (hasEstimate ? 25 : 0) + (hasMilestones ? 20 : 0) + Math.min(completionPercent * 0.15, 15);
+  const confidenceScore = Math.min(Math.round(baseConfidence), 99);
   const daysRemaining = 187;
 
   return (
@@ -219,12 +223,12 @@ function OverviewTab({ project, milestones, aiItems }: { project: Project; miles
         </div>
         <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg)]">
           <p className="text-sm font-medium text-gray-600">Risk Level</p>
-          <p className="mt-2 text-2xl font-bold text-orange-500">{riskScore}%</p>
+          <p className="mt-2 text-2xl font-bold text-orange-500">45%</p>
           <p className="mt-1 text-xs text-gray-500">Medium</p>
         </div>
         <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg)]">
           <p className="text-sm font-medium text-gray-600">Confidence</p>
-          <p className="mt-2 text-2xl font-bold text-green-600">92%</p>
+          <p className="mt-2 text-2xl font-bold text-green-600">{confidenceScore}%</p>
           <p className="mt-1 text-xs text-gray-500">High</p>
         </div>
       </div>
@@ -551,6 +555,9 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [aiItems, setAiItems] = useState<AIAttentionItem[]>([]);
+  const [budgetLines, setBudgetLines] = useState<any[]>([]);
+  const [scheduleData, setScheduleData] = useState<any>(null);
+  const [complianceData, setComplianceData] = useState<any>(null);
 
   useEffect(() => {
     async function fetchProject() {
@@ -558,14 +565,23 @@ export default function ProjectDetailPage() {
         const response = await fetch(`/api/v1/projects?id=${id}`);
         if (!response.ok) throw new Error('Failed to load project');
         const data = await response.json();
-        setProject(data);
 
-        // Fetch AI analysis
-        const analysisResponse = await fetch(`/api/v1/projects/analyze?id=${id}`);
-        if (analysisResponse.ok) {
-          const analysisData = await analysisResponse.json();
-          setAiItems(analysisData.items || []);
-        }
+        // API returns enriched project with budget_lines, schedule, compliance
+        const { budget_lines, schedule, compliance, ...projectData } = data;
+        setProject(projectData as Project);
+        setBudgetLines(budget_lines || []);
+        setScheduleData(schedule || null);
+        setComplianceData(compliance || null);
+
+        // Fetch AI analysis (non-blocking)
+        fetch(`/api/v1/projects/analyze?id=${id}`)
+          .then(async (res) => {
+            if (res.ok) {
+              const analysisData = await res.json();
+              setAiItems(analysisData.items || []);
+            }
+          })
+          .catch(() => {});
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
@@ -658,34 +674,104 @@ export default function ProjectDetailPage() {
           {/* Tab Content */}
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
-              <OverviewTab key="overview" project={project} milestones={MOCK_MILESTONES} aiItems={aiItems} />
+              <OverviewTab
+                key="overview"
+                project={project}
+                milestones={
+                  scheduleData?.phases
+                    ? scheduleData.phases.flatMap((phase: any) =>
+                        (phase.milestones || []).map((m: any, idx: number) => ({
+                          id: `${phase.name}-${idx}`,
+                          name: m.name,
+                          date: project.created_at
+                            ? new Date(new Date(project.created_at).getTime() + (m.week || 0) * 7 * 86400000).toISOString().split('T')[0]
+                            : '2026-06-01',
+                          status: 'not_started' as const,
+                        }))
+                      ).slice(0, 6)
+                    : MOCK_MILESTONES
+                }
+                aiItems={aiItems}
+              />
             )}
             {activeTab === 'codes' && <CodesTab key="codes" project={project} />}
-            {activeTab === 'schedule' && <ScheduleTab key="schedule" milestones={MOCK_MILESTONES} />}
+            {activeTab === 'schedule' && (
+              <ScheduleTab
+                key="schedule"
+                milestones={
+                  scheduleData?.phases
+                    ? scheduleData.phases.flatMap((phase: any) =>
+                        (phase.milestones || []).map((m: any, idx: number) => ({
+                          id: `${phase.name}-${idx}`,
+                          name: m.name,
+                          date: project.created_at
+                            ? new Date(new Date(project.created_at).getTime() + (m.week || 0) * 7 * 86400000).toISOString().split('T')[0]
+                            : '2026-06-01',
+                          status: 'not_started' as const,
+                        }))
+                      )
+                    : MOCK_MILESTONES
+                }
+              />
+            )}
             {activeTab === 'materials' && (
               <MaterialsTab
                 key="materials"
-                divisions={CSI_DIVISIONS.map((d) => ({
-                  ...d,
-                  cost: Math.floor(Math.random() * 50000) + 5000,
-                }))}
+                divisions={
+                  budgetLines.length > 0
+                    ? budgetLines.map((bl: any) => ({
+                        code: bl.csi_code || bl.code || '00',
+                        name: bl.csi_division || bl.name || 'Unknown',
+                        estimated_qty: 1,
+                        unit: 'lot',
+                        cost: bl.amount || 0,
+                      }))
+                    : CSI_DIVISIONS.map((d) => ({ ...d, cost: 0 }))
+                }
               />
             )}
             {activeTab === 'team' && <TeamTab key="team" team={MOCK_TEAM} />}
-            {activeTab === 'permits' && <PermitsTab key="permits" permits={MOCK_PERMITS} />}
+            {activeTab === 'permits' && (
+              <PermitsTab
+                key="permits"
+                permits={
+                  complianceData?.inspection_requirements
+                    ? complianceData.inspection_requirements.map((req: string, idx: number) => ({
+                        id: String(idx + 1),
+                        name: req,
+                        status: 'not_started' as const,
+                        deadline: undefined,
+                      }))
+                    : MOCK_PERMITS
+                }
+              />
+            )}
             {activeTab === 'estimate' && (
               <EstimateTab
                 key="estimate"
-                estimate={{
-                  total_cost: project.budget_amount,
-                  cost_per_sqft: project.budget_amount / (project.totalSqFt || 5000),
-                  contingency_percent: 10,
-                  market_rate_estimate: project.budget_amount * 1.05,
-                  divisions: CSI_DIVISIONS.map((d) => ({
-                    ...d,
-                    cost: Math.floor(Math.random() * 50000) + 5000,
-                  })),
-                }}
+                estimate={
+                  budgetLines.length > 0
+                    ? {
+                        total_cost: budgetLines.reduce((sum: number, bl: any) => sum + (bl.amount || 0), 0),
+                        cost_per_sqft: budgetLines.reduce((sum: number, bl: any) => sum + (bl.amount || 0), 0) / (project.totalSqFt || 10000),
+                        contingency_percent: 15,
+                        market_rate_estimate: budgetLines.reduce((sum: number, bl: any) => sum + (bl.amount || 0), 0) * 1.05,
+                        divisions: budgetLines.map((bl: any) => ({
+                          code: bl.csi_code || '00',
+                          name: bl.csi_division || 'Unknown',
+                          estimated_qty: 1,
+                          unit: 'lot',
+                          cost: bl.amount || 0,
+                        })),
+                      }
+                    : {
+                        total_cost: project.budget_amount || 0,
+                        cost_per_sqft: (project.budget_amount || 0) / (project.totalSqFt || 10000),
+                        contingency_percent: 10,
+                        market_rate_estimate: (project.budget_amount || 0) * 1.05,
+                        divisions: CSI_DIVISIONS.map((d) => ({ ...d, cost: 0 })),
+                      }
+                }
               />
             )}
           </AnimatePresence>

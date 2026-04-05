@@ -8,11 +8,43 @@ function getSupabase() {
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request);
-    // If authenticated, scope to user's projects; otherwise return empty
     if (!user) {
       return NextResponse.json({ projects: [] });
     }
 
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('id');
+
+    // Single project fetch by ID
+    if (projectId) {
+      const { data: project, error } = await getSupabase()
+        .from('command_center_projects')
+        .select('*')
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error || !project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+
+      // Fetch related data in parallel
+      const supabase = getSupabase();
+      const [budgetRes, scheduleRes, complianceRes] = await Promise.all([
+        supabase.from('project_budget_lines').select('*').eq('project_id', projectId),
+        supabase.from('project_schedules').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(1),
+        supabase.from('project_compliance').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(1),
+      ]);
+
+      return NextResponse.json({
+        ...project,
+        budget_lines: budgetRes.data || [],
+        schedule: scheduleRes.data?.[0] || null,
+        compliance: complianceRes.data?.[0] || null,
+      });
+    }
+
+    // List all projects
     const { data, error } = await getSupabase()
       .from('command_center_projects')
       .select('*')
@@ -49,10 +81,12 @@ export async function POST(request: NextRequest) {
         risk_level: body.risk_level || 'medium',
         next_milestone: body.next_milestone || null,
         milestone_date: body.milestone_date || null,
-        project_type: body.project_type || null,
+        project_type: body.project_type || body.building_type || null,
         location: body.location || null,
         client_name: body.client_name || null,
         notes: body.notes || null,
+        jurisdiction: body.jurisdiction || null,
+        start_date: body.start_date || null,
       }])
       .select()
       .single();

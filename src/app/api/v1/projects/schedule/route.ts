@@ -1,10 +1,18 @@
 import { Anthropic } from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 function getAnthropic() {
   return new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
+}
+
+function getSupabase() {
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 }
 
 interface ScheduleRequest {
@@ -179,6 +187,28 @@ Calculate total duration based on building type and complexity. Include all crit
       tasks: Array.isArray(phase.tasks) ? phase.tasks : [],
       milestones: Array.isArray(phase.milestones) ? phase.milestones : [],
     }));
+
+    // Persist schedule to Supabase
+    try {
+      const supabase = getSupabase();
+      // Upsert: delete old schedule for this project, insert new
+      await supabase
+        .from("project_schedules")
+        .delete()
+        .eq("project_id", projectId);
+
+      await supabase
+        .from("project_schedules")
+        .insert({
+          project_id: projectId,
+          total_duration_weeks: scheduleData.totalDurationWeeks,
+          phases: scheduleData.phases,
+          critical_path: scheduleData.criticalPath,
+          jurisdiction_hold_points: scheduleData.jurisdictionHoldPoints,
+        });
+    } catch (dbError) {
+      console.error("Schedule DB persist error (non-fatal):", dbError);
+    }
 
     const response: ScheduleResponse = {
       schedule: {
