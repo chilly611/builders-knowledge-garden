@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return getServiceClient();
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
-
-    let query = getSupabase()
-      .from('command_center_projects')
-      .select('*');
-
-    // Filter by user_id if provided
-    if (userId) {
-      query = query.eq('user_id', userId);
+    const user = await getAuthUser(request);
+    // If authenticated, scope to user's projects; otherwise return empty
+    if (!user) {
+      return NextResponse.json({ projects: [] });
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await getSupabase()
+      .from('command_center_projects')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return NextResponse.json({ projects: data || [] });
@@ -34,21 +29,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
+
     const body = await request.json();
     if (!body.name?.trim()) {
       return NextResponse.json({ error: 'name is required' }, { status: 400 });
     }
 
-    // Extract user_id from request body
-    const userId = body.user_id;
-    if (!userId) {
-      return NextResponse.json({ error: 'user_id is required' }, { status: 400 });
-    }
-
     const { data, error } = await getSupabase()
       .from('command_center_projects')
       .insert([{
-        user_id: userId,
+        user_id: user.id,
         name: body.name.trim(),
         phase: body.phase || 'PLAN',
         progress: Number(body.progress) || 0,
@@ -74,12 +66,14 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { id, user_id, ...updates } = body;
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-    if (!user_id) return NextResponse.json({ error: 'user_id required' }, { status: 400 });
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
 
-    // Verify ownership: fetch the record and check user_id matches
+    const body = await request.json();
+    const { id, ...updates } = body;
+    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    // Verify ownership via auth token (not client-passed user_id)
     const { data: existingProject, error: fetchError } = await getSupabase()
       .from('command_center_projects')
       .select('user_id')
@@ -90,9 +84,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (existingProject.user_id !== user_id) {
+    if (existingProject.user_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
     }
+
+    // Remove user_id from updates to prevent ownership transfer
+    delete updates.user_id;
 
     const { data, error } = await getSupabase()
       .from('command_center_projects')
@@ -109,15 +106,15 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  const userId = searchParams.get('user_id');
-
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-  if (!userId) return NextResponse.json({ error: 'user_id required' }, { status: 400 });
-
   try {
-    // Verify ownership: fetch the record and check user_id matches
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    // Verify ownership via auth token
     const { data: existingProject, error: fetchError } = await getSupabase()
       .from('command_center_projects')
       .select('user_id')
@@ -128,7 +125,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (existingProject.user_id !== userId) {
+    if (existingProject.user_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
     }
 
