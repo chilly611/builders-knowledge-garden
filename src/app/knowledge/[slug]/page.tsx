@@ -35,7 +35,6 @@ async function fetchRelated(entity: Record<string, unknown>) {
     const entityType = entity.entity_type as string;
     const domain = entity.domain as string;
     const id = entity.id as string;
-    // Fetch same-type or same-domain entities
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/knowledge_entities?select=id,slug,title,summary,entity_type,domain&status=eq.published&id=neq.${id}&or=(entity_type.eq.${entityType},domain.eq.${domain})&limit=6`,
       {
@@ -53,6 +52,93 @@ async function fetchRelated(entity: Record<string, unknown>) {
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
+
+// Helper to determine appropriate schema.org type based on entity_type
+function getSchemaType(entityType: string): string {
+  switch (entityType) {
+    case "building_code":
+      return "Legislation";
+    case "material":
+      return "Product";
+    case "safety_regulation":
+      return "Legislation";
+    case "method":
+      return "HowTo";
+    case "trade":
+      return "Occupation";
+    default:
+      return "Article";
+  }
+}
+
+// Helper to generate JSON-LD structured data
+function generateJsonLd(
+  entity: Record<string, unknown>,
+  slug: string
+): Record<string, unknown>[] {
+  const title = jsonText(entity.title);
+  const summary = jsonText(entity.summary);
+  const entityType = entity.entity_type as string;
+  const updatedAt = entity.updated_at as string | null;
+  const tags = (entity.tags as string[]) || [];
+  const schemaType = getSchemaType(entityType);
+  const entityUrl = `https://builders.theknowledgegardens.com/knowledge/${slug}`;
+
+  // Main entity schema
+  const mainSchema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": schemaType,
+    name: title,
+    description: summary,
+    url: entityUrl,
+    publisher: {
+      "@type": "Organization",
+      name: "Builder's Knowledge Garden",
+    },
+  };
+
+  if (updatedAt) {
+    mainSchema.dateModified = updatedAt;
+  }
+
+  if (tags.length > 0) {
+    mainSchema.keywords = tags.join(", ");
+  }
+
+  // Breadcrumb schema
+  const breadcrumbSchema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://builders.theknowledgegardens.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Knowledge",
+        item: "https://builders.theknowledgegardens.com/knowledge",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: entityType.replace(/_/g, " "),
+        item: `https://builders.theknowledgegardens.com/knowledge?type=${entityType}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: title,
+        item: entityUrl,
+      },
+    ],
+  };
+
+  return [mainSchema, breadcrumbSchema];
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -79,36 +165,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
     },
-    other: {
-      "entity:type": entity.entity_type || "",
-      "entity:domain": entity.domain || "",
-    },
   };
 }
 
-export default async function EntityDetailPage({ params }: PageProps) {
+export default async function EntityPage({ params }: PageProps) {
   const { slug } = await params;
   const entity = await fetchEntity(slug);
-
   if (!entity) {
     return (
-      <div style={{
-        minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", flexDirection: "column", gap: 12,
-      }}>
-        <div style={{ fontSize: 48 }}>🌿</div>
-        <h1 style={{ fontSize: 18, fontWeight: 600 }}>Entity Not Found</h1>
-        <p style={{ fontSize: 13, color: "#888" }}>
-          The knowledge entity &ldquo;{slug}&rdquo; could not be found.
-        </p>
-        <a href="/knowledge" style={{ color: "#1D9E75", fontSize: 13 }}>
-          ← Back to Knowledge Garden
-        </a>
-      </div>
+      <main style={{ padding: "2rem", textAlign: "center", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div>
+          <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Entity Not Found</h1>
+          <p>The knowledge entity &quot;{slug}&quot; could not be found.</p>
+        </div>
+      </main>
     );
   }
-
   const relatedEntities = await fetchRelated(entity);
+  const jsonLdScripts = generateJsonLd(entity, slug);
 
-  return <EntityDetailClient entity={entity} relatedEntities={relatedEntities} />;
+  return (
+    <>
+      {jsonLdScripts.map((schema, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+      <EntityDetailClient entity={entity} relatedEntities={relatedEntities} />
+    </>
+  );
 }
