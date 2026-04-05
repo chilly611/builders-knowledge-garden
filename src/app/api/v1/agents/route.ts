@@ -187,15 +187,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/v1/agents/:id — Update agent
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+// PATCH /api/v1/agents?id=xxx — Update agent
+export async function PATCH(request: NextRequest) {
   try {
     const userId = await getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const agentId = params.id;
+    const agentId = request.nextUrl.searchParams.get('id');
+    if (!agentId) {
+      return NextResponse.json({ error: 'Missing agent id parameter' }, { status: 400 });
+    }
 
     // Verify agent belongs to user
     const { data: agent, error: fetchError } = await supabase
@@ -252,15 +255,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-// DELETE /api/v1/agents/:id — Deactivate agent
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+// DELETE /api/v1/agents?id=xxx — Deactivate agent
+export async function DELETE(request: NextRequest) {
   try {
     const userId = await getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const agentId = params.id;
+    const agentId = request.nextUrl.searchParams.get('id');
+    if (!agentId) {
+      return NextResponse.json({ error: 'Missing agent id parameter' }, { status: 400 });
+    }
 
     // Verify agent belongs to user
     const { data: agent, error: fetchError } = await supabase
