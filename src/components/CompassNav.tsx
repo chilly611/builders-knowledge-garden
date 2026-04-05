@@ -38,14 +38,14 @@ function getLaneOrder(lane: string | null): typeof DESTINATIONS {
   if (!lane) return DESTINATIONS;
   // Reorder: put lane-relevant destination first
   const priorities: Record<string, string[]> = {
-    gc: ["/launch", "/", "/dream"],
-    diy: ["/dream", "/", "/launch"],
-    specialty: ["/launch", "/", "#copilot"],
-    supplier: ["/marketplace", "/", "/profile"],
-    equipment: ["/marketplace", "/", "/profile"],
-    service: ["/profile", "/", "/marketplace"],
-    worker: ["/profile", "/", "#copilot"],
-    robot: ["#copilot", "/", "/marketplace"],
+    dreamer: ["/dream", "/knowledge", "/marketplace"],
+    builder: ["/killerapp", "/dream", "/marketplace"],
+    specialist: ["/killerapp", "/marketplace", "#copilot"],
+    merchant: ["/marketplace", "/knowledge", "/profile"],
+    ally: ["/killerapp", "/knowledge", "/dream"],
+    crew: ["#copilot", "/killerapp", "/profile"],
+    fleet: ["/killerapp", "/dream", "/profile"],
+    machine: ["#copilot", "/knowledge", "/marketplace"],
   };
   const order = priorities[lane] || [];
   return [...DESTINATIONS].sort((a, b) => {
