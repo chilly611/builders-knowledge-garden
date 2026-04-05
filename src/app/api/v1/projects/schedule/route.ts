@@ -1,9 +1,11 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getAnthropic() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
 
 interface ScheduleRequest {
   projectId: string;
@@ -123,7 +125,7 @@ ${budget ? `- Budget: $${budget}` : ""}
 Return ONLY valid JSON. Include realistic phases with tasks, dependencies, milestones, and jurisdiction-specific hold points.
 Calculate total duration based on building type and complexity. Include all critical path dependencies.`;
 
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 3000,
       system: systemPrompt,

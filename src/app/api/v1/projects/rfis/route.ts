@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // GET - fetch RFIs for a project
 export async function GET(request: Request) {
@@ -19,7 +21,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_rfis")
       .select("*")
       .eq("project_id", projectId)
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_rfis")
       .insert({
         project_id: projectId,
@@ -100,7 +102,7 @@ export async function PATCH(request: Request) {
     if (linked_entities !== undefined) updateData.linked_entities = linked_entities;
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_rfis")
       .update(updateData)
       .eq("id", id)
@@ -132,7 +134,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from("project_rfis")
       .delete()
       .eq("id", id);

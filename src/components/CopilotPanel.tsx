@@ -53,7 +53,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
-      return,
+      return;
     }
 
     const recognition = new SR();
@@ -334,7 +334,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
           <div>
             <div className="text-sm font-semibold leading-tight">AI Construction Copilot</div>
             <div className="text-[10px]" style={{ color: "var(--fg-tertiary)" }}>
-              40K+ entities · 142+ jwurisdictions · cited answers
+              40K+ entities · 142+ jurisdictions · cited answers
             </div>
           </div>
         </div>
@@ -367,7 +367,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
               <MessageSquare size={24} style={{ color: "var(--accent)" }} />
             </div>
             <div className="text-sm font-medium mb-1">Ask me anything about construction</div>
-            <div className="text-[11px]"mb-6" style={{ color: "var(--fg-tertiary)" }}>
+            <div className="text-[11px] mb-6" style={{ color: "var(--fg-tertiary)" }}>
               Codes, materials, methods, safety, permits — any jurisdiction, any building type
             </div>
             <div className="w-full space-y-2">
@@ -385,7 +385,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
                     color: "var(--fg-secondary)",
                   }}
                 >
-                  <span style={{ color: "var(--accent)" }}>→</span> {3}
+                  <span style={{ color: "var(--accent)" }}>→</span> {s}
                 </button>
               ))}
             </div>
@@ -394,8 +394,8 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
           <>
             {messages.map((msg) => (
               <div
-                 key={msg.id}
-                 className={`mb-3 ${msg.role === "user" ? "flex justify-end" : ""}`}
+                key={msg.id}
+                className={`mb-3 ${msg.role === "user" ? "flex justify-end" : ""}`}
               >
                 {msg.role === "user" ? (
                   <div

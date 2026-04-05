@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia" as any,
-});
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2024-12-18.acacia" as any,
+  });
+}
 
 function getSupabase() {
   return createClient(
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
     // If webhook secret is configured, verify signature
     if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
       try {
-        event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
       } catch (err: any) {
         console.error("Webhook signature verification failed:", err.message);
         return NextResponse.json({ error: "Signature verification failed" }, { status: 400 });

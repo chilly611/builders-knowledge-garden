@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function GET(req: Request) {
   try {
@@ -18,7 +20,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_budget_lines")
       .select("*")
       .eq("project_id", projectId)
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_budget_lines")
       .insert([
         {
@@ -116,7 +118,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_budget_lines")
       .update(updatePayload)
       .eq("id", id)
@@ -156,7 +158,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from("project_budget_lines")
       .delete()
       .eq("id", id);
@@ -208,7 +210,7 @@ async function handleBulkInsert(body: any) {
       notes: line.notes || null,
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_budget_lines")
       .insert(insertPayload)
       .select();

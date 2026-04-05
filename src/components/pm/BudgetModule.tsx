@@ -668,138 +668,394 @@ export default function BudgetModule({ projectId }: BudgetModuleProps) {
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "8px",
+              gap: "6px",
             }}
           >
-            <Plus size={16} />
+            <Plus size={14} />
             Add Line Item
           </button>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-            gap: "16px",
-          }}
-        >
-          {budgetLines.map((budgetLine) => (
-            <div
-              key={budgetLine.id}
+        {budgetLines.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "32px 16px",
+              background: "var(--bg-secondary)",
+              borderRadius: "8px",
+              border: "1px dashed var(--border)",
+            }}
+          >
+            <BarChart3 size={32} style={{ margin: "0 auto 12px", color: "var(--fg-secondary)" }} />
+            <p
               style={{
-                padding: "12px",
-                background: "var(--bg-secondary)",
-                borderRadius: "6px",
-                border: "1px solid var(--border)",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "var(--fg)",
+                marginBottom: "8px",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "8px",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      color: "var(--fg)",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {budgetLine.name} ({budgetLine.division})
-                  </div>
-                  <p style={{ fontSize: "11px", color: "var(--fg-secondary)", margin: 0 }}>
-                   Budgeted: ${(budgetLine.budgeted / 1000).toFixed(0)}K
-                  </p>
-                </div>
-                <div>
-                  <button
-                    onClick={() => setExpandedDivision(expandedDivision === budgetLine.division ? null : budgetLine.division)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--fg-secondary)",
-                      cursor: "pointer",
-                      padding: 0,
-                      transform: expandedDivision === budgetLine.division ? "rotateZ(90deg)" : "rotateZ(0deg)",
-                      transition: "transform 0.2s",
-                    }}
-                  >
-                    <Check size={16} />
-                  </button>
-                </div>
-              </div>
+              No budget lines yet
+            </p>
+            <p style={{ fontSize: "12px", color: "var(--fg-secondary)", marginBottom: "16px" }}>
+              Add line items or generate an AI estimate to get started
+            </p>
+            <button
+              onClick={generateAIEstimate}
+              disabled={refreshing}
+              style={{
+                padding: "8px 16px",
+                fontSize: "12px",
+                fontWeight: 500,
+                background: "var(--accent)",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: refreshing ? "not-allowed" : "pointer",
+                opacity: refreshing ? 0.6 : 1,
+              }}
+            >
+              {refreshing ? "Generating..." : "Generate AI Estimate"}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {budgetLines.map((line) => {
+              const isExpanded = expandedDivision === line.division;
+              const varColor = getVarianceColor(line.budgeted, line.actual_spent, line.committed);
+              const varPercent = getVariancePercent(line.budgeted, line.actual_spent, line.committed);
 
-              {expandedDivision === budgetLine.division && (
-                <div style={{ marginBottom: "8px" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <tbody>
-                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td style={{ padding: "8px", fontWeight: 500 }}>Actual Spent</td>
-                        <td style={{ padding: "8px", textAlign: "right" }}>
-                          {editingCell?.id === budgetLine.id && editingCell.field === "actual_spent" ? (
-                            <div style={{ display: "flex", gap: "8px" }}>
-                              <input
-                                type="number"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                style={{ width: "60px", padding: "4px", border: "1px solid var(--border)", borderRadius: "4px" }}
-                                />
-                                <button
-                                  onClick={() => saveEditedCell(budgetLine.id, "actual_spent")}
-                                  style={{ padding: "4px 8px", background: "var(--accent)", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
-                                >
-                                  <Check size={14} />
-                                </button>
-                                <button
-                                  onClick={cancelEdit}
-                                  style={{ padding: "4px 8px", background: "#eee", border: "none", borderRadius: "4px", cursor: "pointer" }}
-                                >
-                                  <X size={14} />
-                                </button>
-                              </div>
-                            ) : (
-                              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                <span style={{ color: getVarianceColor(budgetLine.budgeted, budgetLine.actual_spent, budgetLine.committed) }}>
-                                  ${(budgetLine.actual_spent / 1000).toFixed(0)}K
-                                </span>
-                                <button
-                                  onClick={() => handleEditCell(budgetLine.id, "actual_spent", budgetLine.actual_spent)}
-                                  style={{ background: "none", border: "none", color: "var(--fg-secondary)", cursor: "pointer", padding: 0 }}
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                </div>
-                              )}
-                          </td>
-                        </tr>
-                        <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                          <td style={{ padding: "8px", fontWeight: 500 }}>Committed COs</td>
-                          <td style={{ padding: "8px", textAlign: "right" }}>
-                            ${(committed / 1000).toFixed(0)}K
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style={{ padding: "8px", fontWeight: 500 }}>Variance</td>
-                          <td style={{ padding: "8px", textAlign: "right" }}>
-                            <span style={{ color: getVarianceColor(budgetLine.budgeted, budgetLine.actual_spent, budgetLine.committed), fontWeight: 600 }}>
-                              {getVariancePercent(budgetLine.budgeted, budgetLine.actual_spent, budgetLine.committed)}%
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-              )}
-            </div>
-          ))}
-        </div>
+              return (
+                <div key={line.id}>
+                  <button
+                    onClick={() => setExpandedDivision(isExpanded ? null : line.division)}
+                    style={{
+                      width: "100%",
+                      background: "var(--bg-secondary)",
+                      border: `1px solid ${varColor}`,
+                      borderLeft: `4px solid ${varColor}`,
+                      borderRadius: "6px",
+                      padding: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "var(--bg)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background = "var(--bg-secondary)";
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flex: 1,
+                        textAlign: "left",
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            color: "var(--fg)",
+                          }}
+                        >
+                          Div {line.division} — {line.name}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--fg-tertiary)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          ${(line.budgeted / 1000).toFixed(0)}K budgeted
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        textAlign: "right",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: varColor,
+                        }}
+                      >
+                        {varPercent > 0 ? "+" : ""}{varPercent}%
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--fg-tertiary)",
+                        }}
+                      >
+                        {isExpanded ? "▼" : "▶"}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div
+                      style={{
+                        background: "var(--bg-secondary)",
+                        borderLeft: `4px solid ${varColor}`,
+                        borderBottom: `1px solid var(--border)`,
+                        borderRight: `1px solid var(--border)`,
+                        borderBottomLeftRadius: "6px",
+                        borderBottomRightRadius: "6px",
+                        padding: "12px",
+                        marginTop: "-1px",
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gap: "12px",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {/* Budgeted */}
+                      <div>
+                        <div
+                          style={{
+                            color: "var(--fg-tertiary)",
+                            fontSize: "10px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Budgeted
+                        </div>
+                        {editingCell?.id === line.id && editingCell?.field === "budgeted" ? (
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            <input
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              style={{
+                                flex: 1,
+                                padding: "4px 6px",
+                                fontSize: "12px",
+                                border: "1px solid var(--accent)",
+                                borderRadius: "4px",
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => saveEditedCell(line.id, "budgeted")}
+                              style={{
+                                padding: "4px 6px",
+                                background: "var(--accent)",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Check size={12} />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              style={{
+                                padding: "4px 6px",
+                                background: "#ccc",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleEditCell(line.id, "budgeted", line.budgeted)}
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--fg)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: 0,
+                            }}
+                          >
+                            ${(line.budgeted / 1000).toFixed(0)}K
+                            <Edit3 size={12} style={{ opacity: 0 }} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Committed */}
+                      <div>
+                        <div
+                          style={{
+                            color: "var(--fg-tertiary)",
+                            fontSize: "10px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Committed
+                        </div>
+                        {editingCell?.id === line.id && editingCell?.field === "committed" ? (
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            <input
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              style={{
+                                flex: 1,
+                                padding: "4px 6px",
+                                fontSize: "12px",
+                                border: "1px solid var(--accent)",
+                                borderRadius: "4px",
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => saveEditedCell(line.id, "committed")}
+                              style={{
+                                padding: "4px 6px",
+                                background: "var(--accent)",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Check size={12} />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              style={{
+                                padding: "4px 6px",
+                                background: "#ccc",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleEditCell(line.id, "committed", line.committed)}
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--fg)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: 0,
+                            }}
+                          >
+                            ${(line.committed / 1000).toFixed(0)}K
+                            <Edit3 size={12} style={{ opacity: 0 }} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Spent */}
+                      <div>
+                        <div
+                          style={{
+                            color: "var(--fg-tertiary)",
+                            fontSize: "10px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Actual Spent
+                        </div>
+                        {editingCell?.id === line.id && editingCell?.field === "actual_spent" ? (
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            <input
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              style={{
+                                flex: 1,
+                                padding: "4px 6px",
+                                fontSize: "12px",
+                                border: "1px solid var(--accent)",
+                                borderRadius: "4px",
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => saveEditedCell(line.id, "actual_spent")}
+                              style={{
+                                padding: "4px 6px",
+                                background: "var(--accent)",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Check size={12} />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              style={{
+                                padding: "4px 6px",
+                                background: "#ccc",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleEditCell(line.id, "actual_spent", line.actual_spent)}
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--fg)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: 0,
+                            }}
+                          >
+                            ${(line.actual_spent / 1000).toFixed(0)}K
+                            <Edit3 size={12} style={{ opacity: 0 }} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* ADD LINE MODAL ＇ ＇＇ */}
+      {/* Add Line Item Modal */}
       {showAddLineModal && (
         <div
           style={{
@@ -808,87 +1064,189 @@ export default function BudgetModule({ projectId }: BudgetModuleProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            background: "rgba(0, 0, 0, 0.5)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1000,
+            zIndex: 50,
           }}
+          onClick={() => setShowAddLineModal(false)}
         >
           <div
             style={{
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "8px",
+              background: "#ffffff",
+              borderRadius: "12px",
               padding: "24px",
               maxWidth: "500px",
               width: "90%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, color: "var(--fg)" }}>Add Budget Line</h3>
-              <button
-                onClick={() => setShowAddLineModal(false)}
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "var(--fg)",
+                marginBottom: "16px",
+              }}
+            >
+              Add Budget Line Item
+            </h3>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--fg-secondary)",
-                  cursor: "pointer",
-                  fontSize: "18px",
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  color: "var(--fg)",
+                  marginBottom: "6px",
                 }}
               >
-                <X />
-              </button>
+                CSI Division
+              </label>
+              <input
+                type="text"
+                value={newLineData.division}
+                onChange={(e) => setNewLineData({ ...newLineData, division: e.target.value })}
+                placeholder="e.g., 05, 07, 09"
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  fontSize: "13px",
+                  border: "1px solid #e2e4e8",
+                  borderRadius: "6px",
+                  boxSizing: "border-box",
+                }}
+              />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  color: "var(--fg)",
+                  marginBottom: "6px",
+                }}
+              >
+                Name
+              </label>
+              <input
+                type="text"
+                value={newLineData.name}
+                onChange={(e) => setNewLineData({ ...newLineData, name: e.target.value })}
+                placeholder="e.g., Electrical"
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  fontSize: "13px",
+                  border: "1px solid #e2e4e8",
+                  borderRadius: "6px",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "16px" }}>
               <div>
-                <label style={{ display: "block", fontWeight: 500,
-marginBottom: "8px" }}>Division</label>
-                <select
-                  value={newLineData.division}
-                  onChange={(e) => setNewLineData({ ...newLineData, division: e.target.value })}
+                <label
                   style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid var(--border)",
-                    borderRadius: "6px",
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "var(--fg)",
+                    marginBottom: "6px",
                   }}
                 >
-                  <option value="">Select a Division</option>
-                  <option value="03">Concrete (C03)</option>
-                  <option value="04">Structural (C04)</option>
-                  <option value="05">Mechanical (C05)</option>
-                  <option value="08">Electrical (C08)</option>
-                  <option value="14">Other (C14)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontWeight: 500,
-  marginBottom: "8px" }}>Line Item Name</label>
+                  Budgeted
+                </label>
                 <input
-                  type="text"
-                  placeholder="Enter name"
-                  value={newLineData.name}
-                  onChange={(e) => setNewLineData({ ...newLineData, name: e.target.value })}
+                  type="number"
+                  value={newLineData.budgeted}
+                  onChange={(e) =>
+                    setNewLineData({ ...newLineData, budgeted: parseFloat(e.target.value) || 0 })
+                  }
+                  placeholder="0"
                   style={{
                     width: "100%",
-                    padding: "8px",
-                    border: "1px solid var(--border)",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    border: "1px solid #e2e4e8",
                     borderRadius: "6px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "var(--fg)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Committed
+                </label>
+                <input
+                  type="number"
+                  value={newLineData.committed}
+                  onChange={(e) =>
+                    setNewLineData({ ...newLineData, committed: parseFloat(e.target.value) || 0 })
+                  }
+                  placeholder="0"
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    border: "1px solid #e2e4e8",
+                    borderRadius: "6px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "var(--fg)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Actual Spent
+                </label>
+                <input
+                  type="number"
+                  value={newLineData.actual_spent}
+                  onChange={(e) =>
+                    setNewLineData({ ...newLineData, actual_spent: parseFloat(e.target.value) || 0 })
+                  }
+                  placeholder="0"
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    fontSize: "13px",
+                    border: "1px solid #e2e4e8",
+                    borderRadius: "6px",
+                    boxSizing: "border-box",
                   }}
                 />
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "16px" }}>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
               <button
                 onClick={() => setShowAddLineModal(false)}
                 style={{
                   padding: "8px 16px",
-                  background: "var(--bg-secondary)",
-                  border: "1px solid var(--border)",
+                  background: "#f8f9fa",
+                  border: "1px solid #e2e4e8",
                   borderRadius: "6px",
                   fontSize: "13px",
                   fontWeight: 500,

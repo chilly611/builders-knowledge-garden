@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // GET - fetch change orders for a project
 export async function GET(request: Request) {
@@ -19,7 +21,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_change_orders")
       .select("*")
       .eq("project_id", projectId)
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     // Get the next change order number
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from("project_change_orders")
       .select("number")
       .eq("project_id", projectId)
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
 
     const nextNumber = (existing && existing.length > 0 ? existing[0].number : 0) + 1;
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_change_orders")
       .insert({
         project_id: projectId,
@@ -107,7 +109,7 @@ export async function PATCH(request: Request) {
     if (description !== undefined) updateData.description = description;
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("project_change_orders")
       .update(updateData)
       .eq("id", id)
@@ -139,7 +141,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from("project_change_orders")
       .delete()
       .eq("id", id);

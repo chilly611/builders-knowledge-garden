@@ -76,11 +76,17 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'location'>('date');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-  const [createForm, setCreateForm] = useState({
+  const [createForm, setCreateForm] = useState<{
+    description: string;
+    location: string;
+    assigned_trade: string;
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    photo_url: string;
+  }>({
     description: '',
     location: '',
     assigned_trade: '',
-    priority: 'medium' as const,
+    priority: 'medium',
     photo_url: '',
   });
   const [creating, setCreating] = useState(false);
@@ -561,7 +567,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
           >
             {completionPercentage}%
           </div>
-          <p style={{ margin: "8px 0 0 0", color: "#666", fontSize: "12px" }}>
+          <p style={{ margin: '8px 0 0 0', color: '#666', fontSize: '12px' }}>
             Completion
           </p>
         </div>
@@ -652,21 +658,306 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
             fontFamily: 'system-ui',
             fontSize: '14px',
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
           }}
+          title={viewMode === 'list' ? 'Switch to Kanban' : 'Switch to List'}
         >
-          {viewMode === 'list' ? '📍 Location View' : '📋 List View'}
+          {viewMode === 'list' ? <LayoutGrid size={18} /> : <List size={18} />}
+        </button>
+
+        <button
+          onClick={exportToCSV}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid #E5E5E0',
+            backgroundColor: '#FFFFFF',
+            fontFamily: 'system-ui',
+            fontSize: '14px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+          title="Export to CSV"
+        >
+          <Download size={18} />
+          Export
         </button>
       </div>
 
-      {/* Items by Location */}
-      {filteredItems.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '32px', color: '#888' }}>
-          <p style={{ margin: 0, fontSize: '14px' }}>No punch items found.</p>
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {filteredItems.length === 0 ? (
+            <div
+              style={{
+                padding: '24px',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '8px',
+                border: '1px solid #E5E5E0',
+                textAlign: 'center',
+                color: '#666',
+              }}
+            >
+              No punch items found
+            </div>
+          ) : (
+            filteredItems.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  padding: '16px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '8px',
+                  border: '1px solid #E5E5E0',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                  display: 'flex',
+                  gap: '16px',
+                  alignItems: 'flex-start',
+                }}
+              >
+                {/* Left: Photo */}
+                <div
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    minWidth: '80px',
+                    borderRadius: '6px',
+                    backgroundColor: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    border: '1px solid #E5E5E0',
+                  }}
+                >
+                  {item.photo_url ? (
+                    <img
+                      src={item.photo_url}
+                      alt={item.description}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Camera size={32} style={{ color: '#ccc' }} />
+                  )}
+                </div>
+
+                {/* Center: Content */}
+                <div style={{ flex: 1 }}>
+                  <h3
+                    style={{
+                      margin: '0 0 8px 0',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1a1a1a',
+                    }}
+                  >
+                    {item.description}
+                  </h3>
+
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+                    {/* Location */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '14px',
+                        color: '#666',
+                      }}
+                    >
+                      <MapPin size={16} style={{ color: '#1D9E75' }} />
+                      {editingField?.itemId === item.id &&
+                      editingField.field === 'location' ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => {
+                            if (editValue !== item.location) {
+                              handleInlineEdit(item.id, 'location', editValue);
+                            } else {
+                              setEditingField(null);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleInlineEdit(item.id, 'location', editValue);
+                            } else if (e.key === 'Escape') {
+                              setEditingField(null);
+                            }
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #1D9E75',
+                            fontFamily: 'system-ui',
+                            fontSize: '14px',
+                          }}
+                        />
+                      ) : (
+                        <span
+                          onClick={() => {
+                            setEditingField({ itemId: item.id, field: 'location' });
+                            setEditValue(item.location || '');
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {item.location || 'Unassigned'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Trade */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '14px',
+                        color: '#666',
+                      }}
+                    >
+                      <Wrench size={16} style={{ color: '#1D9E75' }} />
+                      {editingField?.itemId === item.id &&
+                      editingField.field === 'assigned_trade' ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => {
+                            if (editValue !== item.assigned_trade) {
+                              handleInlineEdit(item.id, 'assigned_trade', editValue);
+                            } else {
+                              setEditingField(null);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleInlineEdit(item.id, 'assigned_trade', editValue);
+                            } else if (e.key === 'Escape') {
+                              setEditingField(null);
+                            }
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #1D9E75',
+                            fontFamily: 'system-ui',
+                            fontSize: '14px',
+                          }}
+                        />
+                      ) : (
+                        <span
+                          onClick={() => {
+                            setEditingField({ itemId: item.id, field: 'assigned_trade' });
+                            setEditValue(item.assigned_trade || '');
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {item.assigned_trade || 'Unassigned'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Badges */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: priorityColors[item.priority].bg,
+                        color: priorityColors[item.priority].text,
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {item.priority}
+                    </span>
+
+                    <select
+                      value={item.status}
+                      onChange={(e) =>
+                        handleStatusChange(
+                          item.id,
+                          e.target.value as PunchItem['status']
+                        )
+                      }
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: statusColors[item.status],
+                        border: '1px solid #E5E5E0',
+                        fontFamily: 'system-ui',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {Object.entries(statusLabels).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right: Actions */}
+                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                  <button
+                    onClick={() => {
+                      setShowDeleteConfirm(item.id);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #E5E5E0',
+                      backgroundColor: '#fff5f5',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontFamily: 'system-ui',
+                      fontSize: '13px',
+                      color: '#dc3545',
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      ) : (
-        <div>
-          {groupedByLocation.map(([location, locationItems]) => (
-            <div key={location}>
+      )}
+
+      {/* Kanban View */}
+      {viewMode === 'kanban' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {groupedByLocation.length === 0 ? (
+            <div
+              style={{
+                padding: '24px',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '8px',
+                border: '1px solid #E5E5E0',
+                textAlign: 'center',
+                color: '#666',
+              }}
+            >
+              No punch items found
+            </div>
+          ) : (
+            groupedByLocation.map(([location, locationItems]) => (
+              <div key={location}>
                 <h3
                   style={{
                     fontSize: '14px',
@@ -805,7 +1096,8 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
                   ))}
                 </div>
               </div>
-            ))}
+            ))
+          )}
         </div>
       )}
 
@@ -939,7 +1231,7 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
                     fontSize: '14px',
                     boxSizing: 'border-box',
                   }}
-                 />
+                />
               </div>
 
               <div style={{ marginBottom: '16px' }}>
@@ -1156,6 +1448,6 @@ const PunchListModule: React.FC<PunchListModuleProps> = ({ projectId }) => {
       )}
     </div>
   );
-}
+};
 
 export default PunchListModule;

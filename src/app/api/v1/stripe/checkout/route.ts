@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia" as any,
-});
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2024-12-18.acacia" as any,
+  });
+}
 
 const PRICE_MAP: Record<string, string> = {
   pro: process.env.STRIPE_PRICE_PRO || "",
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
       sessionParams.customer_email = email;
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const session = await getStripe().checkout.sessions.create(sessionParams);
     return NextResponse.json({ url: session.url, sessionId: session.id });
   } catch (error: any) {
     console.error("Stripe checkout error:", error);

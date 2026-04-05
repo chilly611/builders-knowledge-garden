@@ -2,14 +2,18 @@ import { Anthropic } from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getAnthropic() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const CSI_DIVISIONS = [
   { code: "01", name: "General" },
@@ -119,7 +123,7 @@ ${budget ? `- Budget Target: $${budget}` : ""}
 
 Return ONLY valid JSON. Include all CSI divisions relevant to this building type.`;
 
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2000,
       system: systemPrompt,
@@ -159,7 +163,7 @@ Return ONLY valid JSON. Include all CSI divisions relevant to this building type
         created_at: new Date().toISOString(),
       }));
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getSupabase()
         .from("project_budget_lines")
         .insert(budgetLines);
 
