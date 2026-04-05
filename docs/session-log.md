@@ -630,3 +630,36 @@ Six files pushed to main:
 
 ---
 
+## Session: 2026-04-05 (Phase 2 Strategy Overhaul)
+
+### Completed
+- Executed full Phase 2 strategy-driven rewrite aligned to "Strategic Architecture and Lifecycle Alignment for AI-Native Construction Platforms" document
+- Expanded from 6-lane to 8-lane navigation system (dreamer, builder, specialist, merchant, ally, crew, fleet, machine)
+- Created 13 new files and updated 4 existing files
+
+### New Components
+- **ProgressiveProfiler.tsx** — 3-question onboarding replacing 5-step flow
+- **MorningBriefing.tsx** + CSS — Claude-generated lane-aware daily narrative with quests
+- **NotificationOrchestra.tsx** — 4-tier emotional notification system (celebration/good_news/heads_up/needs_you)
+- **XPEngine.tsx** — Gamification widget with level ring, streak tracking, quest dots
+- **CrossSurfaceBridges.tsx** — 6 bridge components connecting Dream↔Knowledge↔KillerApp
+
+### New API Routes
+- POST /api/v1/briefing — Morning briefing generation via Claude API
+- GET/POST/PATCH /api/v1/notifications — Notification orchestra
+- GET/POST /api/v1/xp — XP engine with lane-aware progression
+- GET/POST /api/v1/quests — Daily quest system with Claude generation
+- CRUD /api/v1/agents — Agent RBAC registration and management
+
+### Infrastructure
+- **src/lib/mcp-auth.ts** — MCP agent authentication middleware
+- **Database migration** — 10 new tables, 5 enums, 20 seed achievements, RLS policies, triggers
+- **tasks.todo.md** — Full roadmap rewrite aligned to 4 strategic imperatives
+
+### Updated Files
+- **LanePicker.tsx** — Expanded to 8-lane system
+- **auth.tsx** — Added UserLane type and lane context
+- **CompassNav.tsx** — Updated lane priorities for 8 lanes
+
+---
+
