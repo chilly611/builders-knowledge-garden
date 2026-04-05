@@ -72,14 +72,19 @@ function LoginPageContent() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/auth/callback?redirectTo=' + encodeURIComponent(redirectTo),
-      },
-    });
-    if (error) {
-      setError(error.message);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/auth/callback?redirectTo=' + encodeURIComponent(redirectTo),
+        },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
       setIsLoading(false);
     }
   };
