@@ -574,3 +574,21 @@
 - Turbopack stops at the first error per file - fixing one reveals the next. Must iterate builds until clean.
 - When corruption is extensive (binary garbage), full rewrite from interfaces/state is faster than patching
 - Always verify state variable names match when reconstructing missing code (e.g. setShowAddLineModal not setShowAddLineItem)
+
+### TWO Supabase projects — ALWAYS verify which one Vercel uses
+**Date:** 2026-04-05
+**What happened:** `.env.local` has Supabase project `gtmjcslcerakkgftozfy` but the live Vercel deployment uses `vlezoyalutexenbnzzui` (knowledge-gardens-prod). Ran the Phase 1A migration and inserted subscriptions on the wrong project first. All DB work had to be redone on the correct project.
+**Fix:** Check Vercel env vars to confirm which Supabase project is live. For this repo: production = `vlezoyalutexenbnzzui`.
+**Rule:** ALWAYS verify the Supabase project URL in Vercel environment variables before running any migration or DB operation.
+
+### RLS policies: user_id text vs auth.uid() uuid type mismatch
+**Date:** 2026-04-05
+**What happened:** RLS policies using `WHERE user_id = auth.uid()` failed with "operator does not exist: text = uuid".
+**Fix:** Cast with `auth.uid()::text` in RLS policies.
+**Rule:** Always check the column type of `user_id` before writing RLS policies. If it's `text`, cast `auth.uid()::text`.
+
+### Login page: Google OAuth sets isLoading but never resets on redirect
+**Date:** 2026-04-05
+**What happened:** `handleGoogleSignIn` called `setIsLoading(true)` but only reset on error path. Button stayed stuck on "Loading..." forever.
+**Fix:** Wrapped in try/catch/finally to always reset loading state.
+**Rule:** Any async function that sets a loading state MUST reset it in a `finally` block, not just on error paths.
