@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { Anthropic } from '@anthropic-ai/sdk';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getServiceClient();
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -126,7 +123,7 @@ Return ONLY a JSON array with 3 quest objects, each with: { title, description, 
 Do NOT include any markdown or explanation, just the JSON array.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-1-20250805',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [
         {
