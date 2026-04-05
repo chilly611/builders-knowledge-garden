@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import BuildGate from '@/lib/auth/BuildGate';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 const BUILDING_TYPES = [
   { id: 'residential', label: 'Residential', icon: Building2 },
@@ -70,6 +71,17 @@ interface AIAnalysis {
 
 interface ValidationErrors {
   [key: string]: string;
+}
+
+// Helper to get auth headers for API calls
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = getSupabaseBrowser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+  return headers;
 }
 
 export default function ProjectCreationWizard() {
@@ -186,10 +198,13 @@ export default function ProjectCreationWizard() {
     });
 
     try {
+      // Get auth headers with session token
+      const headers = await getAuthHeaders();
+
       // Step 1: Create the project with correct field mapping
       const createResponse = await fetch('/api/v1/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           name: wizardData.projectName,
           client_name: wizardData.clientName,
@@ -224,7 +239,7 @@ export default function ProjectCreationWizard() {
       // Estimate
       fetch('/api/v1/projects/estimate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(aiPayload),
       })
         .then(async (res) => {
@@ -243,7 +258,7 @@ export default function ProjectCreationWizard() {
       // Schedule
       fetch('/api/v1/projects/schedule', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(aiPayload),
       })
         .then(async (res) => {
@@ -262,7 +277,7 @@ export default function ProjectCreationWizard() {
       // Compliance
       fetch('/api/v1/projects/compliance', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           projectId: createdProjectId,
           buildingType: wizardData.buildingType,

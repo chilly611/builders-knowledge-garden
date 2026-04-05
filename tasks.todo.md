@@ -76,7 +76,7 @@
 - [x] Project dashboard after creation: all modules populated with AI-generated seed data
 - [x] "Confidence score" widget prominent on dashboard — shows % complete and what's missing
 - [ ] First 60-second experience test: time from landing on `/projects/new` to seeing a populated dashboard
-- [ ] **BLOCKER:** Run `supabase/migrations/phase1a_schema.sql` on live Supabase DB (adds project_schedules + project_compliance tables, jurisdiction/start_date columns)
+- [x] **DONE:** Ran `supabase/migrations/phase1a_schema.sql` on live Supabase DB (project_schedules + project_compliance tables, jurisdiction/start_date columns)
 
 ### 1B. Dreamer Magnetic Moment — The Hero Interface
 **Goal:** User describes or uploads an image → they're inside their dream in under 60 seconds.

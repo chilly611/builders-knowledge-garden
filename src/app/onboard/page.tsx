@@ -60,18 +60,18 @@ const GOALS_BY_LANE: Record<string, GoalOption[]> = {
     { id: "launch", label: "Launch a project", desc: "Building type → jurisdiction → full dashboard in seconds", icon: "🚀", route: "/launch" },
     { id: "estimate", label: "Quick estimate", desc: "Get a CSI MasterFormat cost breakdown", icon: "📊", route: "/launch" },
     { id: "codes", label: "Look up a code", desc: "Search IBC, NEC, OSHA across jurisdictions", icon: "📋", route: "/knowledge" },
-    { id: "crm", label: "Manage my pipeline", desc: "Track leads, proposals, and projects", icon: "⚡", route: "/crm" },
+    { id: "crm", label: "Manage my pipeline", desc: "Track leads, proposals, and projects", icon: "⚡", route: "/killerapp" },
   ],
   specialty: [
     { id: "launch", label: "Start a project", desc: "Set up your next job with codes and scheduling", icon: "🚀", route: "/launch" },
     { id: "codes", label: "Check trade codes", desc: "NEC, IPC, IMC — jurisdiction-specific", icon: "📋", route: "/knowledge" },
     { id: "safety", label: "Safety briefing", desc: "Generate a task-specific safety briefing", icon: "⛑️", route: "/knowledge" },
-    { id: "crm", label: "Track my leads", desc: "Pipeline from conversation to completion", icon: "⚡", route: "/crm" },
+    { id: "crm", label: "Track my leads", desc: "Pipeline from conversation to completion", icon: "⚡", route: "/killerapp" },
   ],
   supplier: [
     { id: "list", label: "List my products", desc: "Get in front of contractors and builders", icon: "🏪", route: "/marketplace" },
     { id: "browse", label: "See what's needed", desc: "Browse active projects and material needs", icon: "🔍", route: "/marketplace" },
-    { id: "connect", label: "Find contractors", desc: "Connect with builders who need your products", icon: "🤝", route: "/crm" },
+    { id: "connect", label: "Find contractors", desc: "Connect with builders who need your products", icon: "🤝", route: "/killerapp" },
     { id: "learn", label: "Explore the knowledge base", desc: "500+ entities of construction intelligence", icon: "📚", route: "/knowledge" },
   ],
 };

@@ -53,7 +53,7 @@ const PATH_CARDS = [
     desc: 'Launch projects, look up codes by jurisdiction, manage your pipeline, generate estimates, and run operations from one place.',
     cta: 'Start building',
     accent: 'build',
-    href: '/crm',
+    href: '/killerapp',
   },
   {
     id: 'supply',

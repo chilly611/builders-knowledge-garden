@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       line_items: [{ price: PRICE_MAP[tier], quantity: 1 }],
       mode: MODE_MAP[tier],
-      success_url: `${appUrl}/crm?checkout=success&tier=${tier}&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/killerapp?checkout=success&tier=${tier}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/pricing?checkout=cancelled`,
       metadata: { tier, userId: userId || "" },
     };

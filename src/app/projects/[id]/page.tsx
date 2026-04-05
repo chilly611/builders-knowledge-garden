@@ -598,7 +598,7 @@ export default function ProjectDetailPage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--bg)] p-6">
         <AlertTriangle className="text-red-600 mb-4" size={48} />
         <p className="text-lg font-semibold text-[var(--fg)]">{error || 'Project not found'}</p>
-        <Link href="/crm" className="mt-4 text-[var(--accent)] hover:underline">
+        <Link href="/killerapp" className="mt-4 text-[var(--accent)] hover:underline">
           ← Back to Projects
         </Link>
       </div>
@@ -612,7 +612,7 @@ export default function ProjectDetailPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <Link
-              href="/crm"
+              href="/killerapp"
               className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline"
             >
               <ArrowLeft size={20} />

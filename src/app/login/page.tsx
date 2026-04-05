@@ -39,7 +39,7 @@ function LoginPageContent() {
         } else {
           setSuccessMessage('Sign up successful! Check your email to confirm.');
           setTimeout(() => {
-            router.push('/crm');
+            router.push('/killerapp');
           }, 2000);
         }
       } else {
@@ -53,7 +53,7 @@ function LoginPageContent() {
         } else {
           setSuccessMessage('Signed in successfully!');
           setTimeout(() => {
-            router.push('/crm');
+            router.push('/killerapp');
           }, 500);
         }
       }
@@ -65,7 +65,7 @@ function LoginPageContent() {
   };
 
   const handleContinueAsExplorer = () => {
-    router.push('/crm');
+    router.push('/killerapp');
   };
 
 

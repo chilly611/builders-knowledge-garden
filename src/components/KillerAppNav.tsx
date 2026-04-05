@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 const MODULES = [
-  { id: 'crm',       label: 'Command Center', icon: '⚡', href: '/crm',       status: 'live', color: '#E8443A', hint: 'Your AI COO war room' },
+  { id: 'crm',       label: 'Command Center', icon: '⚡', href: '/killerapp',       status: 'live', color: '#E8443A', hint: 'Your AI COO war room' },
   { id: 'launch',    label: 'Projects',       icon: '🚀', href: '/launch',    status: 'live', color: '#E8443A', hint: 'Launch & manage projects' },
   { id: 'field',     label: 'Field Ops',      icon: '🦺', href: '/field',     status: 'beta', color: '#F59E0B', hint: 'Voice logs, safety, progress' },
   { id: 'finances',  label: 'Finances',       icon: '💰', href: '/finances',  status: 'soon', color: '#22C55E', hint: 'Invoices, job costing, AIA' },

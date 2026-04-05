@@ -47,7 +47,7 @@ const PRODUCTS = [
     img: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80&fit=crop" },
   { name: "AI Copilot", tag: "VOICE + TEXT", desc: "Any construction question, cited jurisdiction-aware answer. Lane-aware personality. Hands-free.", color: "#7F77DD", href: "#copilot",
     img: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80&fit=crop" },
-  { name: "AEC CRM", tag: "KILLER APP", desc: "Lead → proposal → contract → project → warranty. Pipeline dashboard, lead scoring, full lifecycle.", color: "#E8443A", href: "/crm",
+  { name: "AEC CRM", tag: "KILLER APP", desc: "Lead → proposal → contract → project → warranty. Pipeline dashboard, lead scoring, full lifecycle.", color: "#E8443A", href: "/killerapp",
     img: "https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=600&q=80&fit=crop" },
   { name: "Marketplace", tag: "COMING", desc: "Every material connects to real suppliers. RFQ system. Stripe Connect marketplace.", color: "#639922", href: "/marketplace",
     img: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80&fit=crop" },
@@ -235,7 +235,7 @@ export default function Home() {
               ] : [
                 { icon: "🚀", label: "Launch a project", href: "/launch", color: "#1D9E75" },
                 { icon: "📋", label: "Look up a code", href: "/knowledge", color: "#D85A30" },
-                { icon: "⚡", label: "Manage pipeline", href: "/crm", color: "#E8443A" },
+                { icon: "⚡", label: "Manage pipeline", href: "/killerapp", color: "#E8443A" },
                 { icon: "🧠", label: "Ask AI Copilot", href: "#copilot", color: "#7F77DD" },
               ]).map(a => (
                 <Link key={a.href} href={a.href} style={{
