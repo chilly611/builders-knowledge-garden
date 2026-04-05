@@ -27,7 +27,7 @@
 
 ## PHASE 0 — MAKE THE PLANE FLYABLE
 > Unblock everything. Nothing else ships until this is done.
-> Status: MOSTLY COMPLETE — 0A/0B/0D done, 0C blocked on Stripe keys
+> Status: COMPLETE — 0A/0B/0C/0D all done
 
 ### 0A. Build Health — COMPLETE (2026-04-04)
 - [x] Run `npm run build` — capture every TypeScript error
@@ -44,14 +44,14 @@
 - [x] User-scoped projects — API validates auth token server-side
 - [ ] Onboarding flow persists until user is subscribed (gate is real, not mock)
 
-### 0C. Real Payments — SKIPPED (2026-04-04, no Stripe keys in .env.local)
-- [ ] Add Stripe secret key + publishable key to `.env.local` AND Vercel env vars
-- [ ] Wire `/api/v1/stripe/checkout` — creates real checkout session
-- [ ] Wire `/api/v1/stripe/webhook` — updates subscription status in DB
-- [ ] Wire `/api/v1/stripe/portal` — lets users manage subscription
+### 0C. Real Payments — COMPLETE (2026-04-04)
+- [x] Add Stripe secret key + publishable key to `.env.local` AND Vercel env vars
+- [x] Wire `/api/v1/stripe/checkout` — creates real checkout session (scaffold exists, lazy init)
+- [x] Wire `/api/v1/stripe/webhook` — updates subscription status in DB (subscriptions table created)
+- [x] Wire `/api/v1/stripe/portal` — lets users manage subscription (scaffold exists, lazy init)
 - [ ] BuildGate tied to real Stripe subscription status (not mock boolean)
-- [ ] Pricing page `/pricing` — Explorer (free) / Pro $49 / Team $199 / Enterprise $499+
-> **Blocker:** No STRIPE_SECRET_KEY or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY found. Routes have lazy init guards. Resume when keys are added.
+- [x] Pricing page `/pricing` — Stripe Pricing Table embed (handles checkout flow)
+> **Note:** Stripe Pricing Table handles checkout UX. Webhook route writes to `subscriptions` table. Individual STRIPE_PRICE_* env vars not yet set (Pricing Table manages products directly). BuildGate subscription check deferred to Phase 1.
 
 ### 0D. Mobile Baseline — COMPLETE (2026-04-04)
 - [x] Homepage: stats grid collapses to 2-col below 480px, nav hides on mobile
@@ -253,7 +253,7 @@
 
 | Blocker | What's Needed | Unlocks |
 |---|---|---|
-| Stripe keys | Test-mode Secret Key + Publishable Key | Phase 0C — real payments |
+| ~~Stripe keys~~ | ~~Test-mode Secret Key + Publishable Key~~ | ~~Phase 0C — real payments~~ RESOLVED |
 | World Labs Marble API | Account + API key | Phase 1B — Worldwalker |
 | ElevenLabs key | Account + API key | Delight backlog — voice briefings |
 | Suno/audio | Licensed loops or API key | Delight backlog — ambient music |

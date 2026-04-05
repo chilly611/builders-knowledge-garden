@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { TIERS, Tier } from "@/lib/auth";
+import Script from "next/script";
 
 export default function PricingPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  const pricingTableId = process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID || "prctbl_1TIhBFBi6fLCy4K9dipVUfSn";
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_51TBsfWBi6fLCy4K9pKPFJpf1guZCgNkvWKicNlKAzYagdpJ5abXJQQNQKdsvWHyFirXcaHh64VWQleT2MzgpzQzH00qEkSW64b";
 
   const faqItems = [
     {
@@ -30,27 +32,6 @@ export default function PricingPage() {
     },
   ];
 
-  const handleCheckout = (tier: Tier) => {
-    if (tier === "explorer") {
-      window.location.href = "/dream";
-      return;
-    }
-
-    const links: Record<string, string | undefined> = {
-      pro: process.env.NEXT_PUBLIC_STRIPE_LINK_PRO,
-      team: process.env.NEXT_PUBLIC_STRIPE_LINK_TEAM,
-      enterprise: process.env.NEXT_PUBLIC_STRIPE_LINK_ENTERPRISE,
-    };
-
-    const link = links[tier];
-    if (link) {
-      window.open(link, '_blank');
-    } else {
-      // Fallback to API checkout
-      window.location.href = `/api/v1/stripe/checkout?tier=${tier}`;
-    }
-  };
-
   return (
     <div
       style={{
@@ -59,6 +40,9 @@ export default function PricingPage() {
         paddingTop: "40px",
         paddingBottom: "80px",
       }}>
+      {/* Stripe Pricing Table Script */}
+      <Script src="https://js.stripe.com/v3/pricing-table.js" strategy="lazyOnload" />
+
       {/* Header */}
       <div
         style={{
@@ -88,7 +72,7 @@ export default function PricingPage() {
             marginLeft: "auto",
             marginRight: "auto",
           }}>
-          We publish our prices. They don't.
+          We publish our prices. They don&apos;t.
         </p>
         <p
           style={{
@@ -100,7 +84,7 @@ export default function PricingPage() {
         </p>
       </div>
 
-      {/* Pricing Tiers */}
+      {/* Stripe Pricing Table */}
       <div
         style={{
           maxWidth: "1200px",
@@ -108,473 +92,11 @@ export default function PricingPage() {
           paddingLeft: "20px",
           paddingRight: "20px",
           marginBottom: "60px",
-        }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "24px",
-          }}>
-          {/* EXPLORER */}
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-              padding: "28px",
-              display: "flex",
-              flexDirection: "column",
-              transition: "all 0.2s ease",
-              boxShadow: "var(--shadow-sm)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-lg)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-            }}>
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 8px 0",
-                }}>
-                Explorer
-              </h3>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Dream it first
-              </p>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <p
-                style={{
-                  fontSize: "32px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 4px 0",
-                }}>
-                Free
-              </p>
-              <p
-                style={{
-                  fontSize: "11px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Forever, no credit card needed
-              </p>
-            </div>
-
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 24px 0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                flex: 1,
-              }}>
-              {TIERS.explorer.features.map((feature, i) => (
-                <li
-                  key={i}
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--fg-secondary)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "8px",
-                  }}>
-                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>✓</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => handleCheckout("explorer")}
-              style={{
-                width: "100%",
-                padding: "12px",
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "var(--fg)",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-tertiary)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-secondary)";
-              }}>
-              Start Free →
-            </button>
-          </div>
-
-          {/* PRO — HIGHLIGHTED */}
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "2px solid var(--accent)",
-              borderRadius: "var(--radius-lg)",
-              padding: "28px",
-              display: "flex",
-              flexDirection: "column",
-              transition: "all 0.2s ease",
-              boxShadow: "0 12px 40px rgba(29, 158, 117, 0.15)",
-              position: "relative",
-              transform: "scale(1.02)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow =
-                "0 16px 50px rgba(29, 158, 117, 0.2)";
-              (e.currentTarget as HTMLElement).style.transform = "scale(1.04) translateY(-4px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow =
-                "0 12px 40px rgba(29, 158, 117, 0.15)";
-              (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
-            }}>
-            <div
-              style={{
-                position: "absolute",
-                top: "-12px",
-                right: "20px",
-                background: "var(--accent)",
-                color: "white",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                fontSize: "10px",
-                fontWeight: 700,
-              }}>
-              MOST POPULAR
-            </div>
-
-            <div style={{ marginBottom: "24px", marginTop: "8px" }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 8px 0",
-                }}>
-                Pro
-              </h3>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Build it faster
-              </p>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <p
-                style={{
-                  fontSize: "32px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 4px 0",
-                }}>
-                $49<span style={{ fontSize: "16px", color: "var(--fg-tertiary)" }}>/mo</span>
-              </p>
-              <p
-                style={{
-                  fontSize: "11px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Save 20% with annual billing
-              </p>
-            </div>
-
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 24px 0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                flex: 1,
-              }}>
-              {TIERS.pro.features.map((feature, i) => (
-                <li
-                  key={i}
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--fg-secondary)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "8px",
-                  }}>
-                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>✓</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => handleCheckout("pro")}
-              style={{
-                width: "100%",
-                padding: "12px",
-                background: "var(--accent)",
-                border: "none",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "white",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--accent)";
-              }}>
-              Start Building →
-            </button>
-          </div>
-
-          {/* TEAM */}
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-              padding: "28px",
-              display: "flex",
-              flexDirection: "column",
-              transition: "all 0.2s ease",
-              boxShadow: "var(--shadow-sm)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-lg)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-            }}>
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 8px 0",
-                }}>
-                Team
-              </h3>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Scale it together
-              </p>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <p
-                style={{
-                  fontSize: "32px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 4px 0",
-                }}>
-                $199<span style={{ fontSize: "16px", color: "var(--fg-tertiary)" }}>/mo</span>
-              </p>
-              <p
-                style={{
-                  fontSize: "11px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Save 20% with annual billing
-              </p>
-            </div>
-
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 24px 0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                flex: 1,
-              }}>
-              {TIERS.team.features.map((feature, i) => (
-                <li
-                  key={i}
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--fg-secondary)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "8px",
-                  }}>
-                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>✓</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => handleCheckout("team")}
-              style={{
-                width: "100%",
-                padding: "12px",
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "var(--fg)",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-tertiary)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-secondary)";
-              }}>
-              Start Team →
-            </button>
-          </div>
-
-          {/* ENTERPRISE */}
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-lg)",
-              padding: "28px",
-              display: "flex",
-              flexDirection: "column",
-              transition: "all 0.2s ease",
-              boxShadow: "var(--shadow-sm)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-lg)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-            }}>
-            <div style={{ marginBottom: "24px" }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 8px 0",
-                }}>
-                Enterprise
-              </h3>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Custom everything
-              </p>
-            </div>
-
-            <div style={{ marginBottom: "24px" }}>
-              <p
-                style={{
-                  fontSize: "32px",
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  margin: "0 0 4px 0",
-                }}>
-                $499+<span style={{ fontSize: "16px", color: "var(--fg-tertiary)" }}>/mo</span>
-              </p>
-              <p
-                style={{
-                  fontSize: "11px",
-                  color: "var(--fg-tertiary)",
-                  margin: 0,
-                }}>
-                Custom quotes available
-              </p>
-            </div>
-
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 24px 0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                flex: 1,
-              }}>
-              {TIERS.enterprise.features.map((feature, i) => (
-                <li
-                  key={i}
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--fg-secondary)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "8px",
-                  }}>
-                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>✓</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => handleCheckout("enterprise")}
-              style={{
-                width: "100%",
-                padding: "12px",
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "var(--fg)",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-tertiary)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-secondary)";
-              }}>
-              Contact Us →
-            </button>
-          </div>
-        </div>
-      </div>
+        }}
+        dangerouslySetInnerHTML={{
+          __html: `<stripe-pricing-table pricing-table-id="${pricingTableId}" publishable-key="${publishableKey}"></stripe-pricing-table>`,
+        }}
+      />
 
       {/* COMPARISON SECTION */}
       <div
