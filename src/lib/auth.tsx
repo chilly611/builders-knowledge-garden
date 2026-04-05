@@ -60,6 +60,9 @@ export const TIERS: Record<Tier, TierConfig> = {
   },
 };
 
+// ─── USER LANES ───
+export type UserLane = 'dreamer' | 'builder' | 'specialist' | 'merchant' | 'ally' | 'crew' | 'fleet' | 'machine';
+
 // ─── USER STATE ───
 export interface User {
   id: string;
@@ -68,6 +71,7 @@ export interface User {
   tier: Tier;
   orgId?: string;
   orgName?: string;
+  lane?: UserLane;
 }
 
 export interface AuthContextType {
@@ -80,6 +84,8 @@ export interface AuthContextType {
   canUseAI: boolean;
   canCreateProject: boolean;
   projectCount: number;
+  lane: UserLane | null;
+  setLane: (lane: UserLane) => void;
   login: () => void;
   logout: () => void;
   upgrade: (tier: Tier) => void;
@@ -102,6 +108,8 @@ export function useAuth(): AuthContextType {
       canUseAI: true,
       canCreateProject: false,
       projectCount: 0,
+      lane: null,
+      setLane: () => {},
       login: () => {},
       logout: () => {},
       upgrade: () => {},
@@ -117,11 +125,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [aiQueries, setAIQueries] = useState(0);
   const [projectCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [lane, setLaneState] = useState<UserLane | null>(null);
 
-  // Initialize auth state from Supabase session
+  // Initialize auth state from Supabase session and lane from localStorage
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Initialize lane from localStorage
+        const storedLane = localStorage.getItem('bkg-lane') as UserLane | null;
+        if (storedLane) {
+          setLaneState(storedLane);
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser({
@@ -131,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             tier: "explorer", // Default to explorer; Stripe integration will upgrade tiers
             orgId: session.user.user_metadata?.orgId,
             orgName: session.user.user_metadata?.orgName,
+            lane: storedLane || undefined,
           });
         }
       } catch (error) {
@@ -146,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
+          const storedLane = localStorage.getItem('bkg-lane') as UserLane | null;
           setUser({
             id: session.user.id,
             email: session.user.email || "",
@@ -153,10 +170,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             tier: "explorer",
             orgId: session.user.user_metadata?.orgId,
             orgName: session.user.user_metadata?.orgName,
+            lane: storedLane || undefined,
           });
         } else {
           setUser(null);
           setAIQueries(0);
+          setLaneState(null);
         }
       }
     );
@@ -204,10 +223,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       setUser(null);
       setAIQueries(0);
+      setLaneState(null);
+      localStorage.removeItem('bkg-lane');
     } catch (error) {
       console.error("Failed to sign out:", error);
     }
   }, []);
+
+  const setLane = useCallback((newLane: UserLane) => {
+    setLaneState(newLane);
+    localStorage.setItem('bkg-lane', newLane);
+    if (user) {
+      setUser({ ...user, lane: newLane });
+    }
+  }, [user]);
 
   const upgrade = useCallback((newTier: Tier) => {
     // Stripe checkout will handle tier upgrades
@@ -225,6 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user, tier, isAuthenticated, isDreamMode, isBuildMode,
       aiQueriesUsedToday: aiQueries, canUseAI, canCreateProject, projectCount,
+      lane, setLane,
       login, logout, upgrade, incrementAIQuery,
     }}>
       {children}
