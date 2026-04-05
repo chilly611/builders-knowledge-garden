@@ -1,9 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcryptjs';
+import { getServiceClient } from '@/lib/supabase';
+import bcryptjs from 'bcryptjs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = getServiceClient();
 
 // Type definitions
 export interface AuthenticatedAgent {
@@ -65,7 +63,7 @@ export async function authenticateAgent(request: Request): Promise<Authenticated
 
     // Find matching agent by comparing hashed key
     for (const agent of agents) {
-      const isMatch = await bcrypt.compare(providedKey, agent.api_key_hash);
+      const isMatch = await bcryptjs.compare(providedKey, agent.api_key_hash);
       if (isMatch) {
         return {
           id: agent.id,
