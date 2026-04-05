@@ -1,0 +1,143 @@
+# Builder's Knowledge Garden robots.txt
+# Serves construction knowledge to AI systems and search engines
+
+User-agent: GPTBot
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: ClaudeBot
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: PerplexityBot
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: Bingbot
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: Googlebot
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: CCBot
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: ChatGPT-User
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: anthropic-ai
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: Google-Extended
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /api/v1/mcp
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+User-agent: facebookexternalhit
+Allow: /knowledge/
+Allow: /api/v1/search
+Allow: /api/v1/entities/
+Allow: /api/v1/openapi
+Allow: /sitemap.xml
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+# Default policy for other crawlers
+User-agent: *
+Allow: /knowledge/
+Disallow: /api/v1/stripe/
+Disallow: /api/v1/auth/
+Disallow: /login
+Disallow: /profile
+Disallow: /projects/
+
+# Sitemap reference
+Sitemap: https://builders.theknowledgegardens.com/sitemap.xml
