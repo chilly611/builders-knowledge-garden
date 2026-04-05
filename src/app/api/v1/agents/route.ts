@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcryptjs';
+import { getServiceClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import bcryptjs from 'bcryptjs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = getServiceClient();
 
 // Type definitions
 interface Agent {
@@ -90,7 +88,7 @@ function generateApiKey(): string {
 
 // Helper: Hash API key
 async function hashApiKey(key: string): Promise<string> {
-  return bcrypt.hash(key, 10);
+  return bcryptjs.hash(key, 10);
 }
 
 // GET /api/v1/agents — List user's agents
