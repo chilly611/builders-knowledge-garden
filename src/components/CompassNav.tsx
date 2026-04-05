@@ -8,12 +8,12 @@ import { useAuth } from "@/lib/auth";
 import { useAuthModal } from "@/components/AuthModal";
 
 const DESTINATIONS = [
-  { icon: "ð¿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
-  { icon: "ð­", label: "Dream Builder", desc: "Describe what you want to build", href: "/dream", color: "#D85A30" },
-  { icon: "â¡", label: "Killer App", desc: "Projects, CRM, finances", href: "/crm", color: "#E8443A" },
-  { icon: "ð§ ", label: "AI Copilot", desc: "Ask anything about building", href: "#copilot", color: "#7F77DD" },
-  { icon: "ðª", label: "Marketplace", desc: "Suppliers, subs, equipment", href: "/marketplace", color: "#378ADD" },
-  { icon: "ð¤", label: "My Profile", desc: "Settings, team, billing", href: "/profile", color: "#BA7517" },
+  { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
+  { icon: "🏗️", label: "Dream Builder", desc: "Describe what you want to build", href: "/dream", color: "#D85A30" },
+  { icon: "⚡", label: "Killer App", desc: "Projects, CRM, finances", href: "/crm", color: "#E8443A" },
+  { icon: "🧠", label: "AI Copilot", desc: "Ask anything about building", href: "#copilot", color: "#7F77DD" },
+  { icon: "🪓", label: "Marketplace", desc: "Suppliers, subs, equipment", href: "/marketplace", color: "#378ADD" },
+  { icon: "👤", label: "My Profile", desc: "Settings, team, billing", href: "/profile", color: "#BA7517" },
 ];
 
 function useIsDesktop() {
@@ -58,7 +58,7 @@ function getLaneOrder(lane: string | null): typeof DESTINATIONS {
   });
 }
 
-/* âââ DESKTOP SIDEBAR âââ */
+/* --- DESKTOP SIDEBAR --- */
 function DesktopSidebar() {
   const [expanded, setExpanded] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -145,14 +145,14 @@ function DesktopSidebar() {
           transition: "all 0.15s",
         }}
       >
-        <span style={{ fontSize: 14 }}>{pinned ? "ð" : "ð"}</span>
+        <span style={{ fontSize: 14 }}>{pinned ? "📌" : "📍"}</span>
         {showExpanded && <span>{pinned ? "Unpin" : "Pin open"}</span>}
       </button>
     </nav>
   );
 }
 
-/* âââ MOBILE FAB + BLOOM âââ */
+/* --- MOBILE FAB + BLOOM --- */
 function MobileFAB() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -236,7 +236,7 @@ function MobileFAB() {
         onMouseEnter={e => { if (!open) e.currentTarget.style.transform = "scale(1.08)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
       >
-        {open ? "â" : "ð§­"}
+        {open ? "✕" : "🧭"}
       </button>
 
       <style>{`
@@ -249,7 +249,7 @@ function MobileFAB() {
   );
 }
 
-/* âââ MAIN EXPORT â switches between desktop sidebar and mobile FAB âââ */
+/* --- MAIN EXPORT - switches between desktop sidebar and mobile FAB --- */
 
 function AuthButton() {
   const { user, logout } = useAuth();

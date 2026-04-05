@@ -632,7 +632,7 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      <div className="flex gap-6 p-6">
+      <div className="flex gap-4 p-4 sm:gap-6 sm:p-6">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
           {/* Tab Bar */}
@@ -642,7 +642,7 @@ export default function ProjectDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition ${
+                  className={`flex items-center gap-1.5 px-2.5 py-2.5 sm:gap-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition ${
                     activeTab === tab.id
                       ? 'border-[var(--accent)] text-[var(--accent)]'
                       : 'border-transparent text-gray-600 hover:text-[var(--fg)]'

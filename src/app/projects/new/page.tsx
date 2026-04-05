@@ -249,7 +249,7 @@ export default function ProjectCreationWizard() {
               </p>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
                 gap: '1rem',
               }}>
                 {BUILDING_TYPES.map((type) => {
@@ -458,7 +458,7 @@ export default function ProjectCreationWizard() {
 
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
                 gap: '1.5rem',
               }}>
                 <div>

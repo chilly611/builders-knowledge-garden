@@ -142,15 +142,15 @@ export default function Home() {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.85) 100%)", zIndex: 1 }} />
 
         {/* Nav overlay */}
-        <nav style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", zIndex: 10 }}>
+        <nav className="hero-nav" style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Image src="/logo/b_transparent_512.png" alt="B" width={36} height={36} style={{ borderRadius: 8 }} />
-            <span style={{ color: "#fff", fontWeight: 600, fontSize: 14, letterSpacing: "0.3px" }}>Builder&apos;s Knowledge Garden</span>
+            <span className="hero-nav-title" style={{ color: "#fff", fontWeight: 600, fontSize: 14, letterSpacing: "0.3px" }}>Builder&apos;s Knowledge Garden</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Link href="/knowledge" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, textDecoration: "none" }}>Knowledge</Link>
-            <Link href="/dream" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, textDecoration: "none" }}>Dream</Link>
-            <Link href="/launch" style={{ padding: "8px 20px", borderRadius: 24, background: "#1D9E75", color: "#fff", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
+            <Link href="/knowledge" className="hero-nav-link" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, textDecoration: "none" }}>Knowledge</Link>
+            <Link href="/dream" className="hero-nav-link" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, textDecoration: "none" }}>Dream</Link>
+            <Link href="/launch" style={{ padding: "8px 16px", borderRadius: 24, background: "#1D9E75", color: "#fff", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
               Launch Project
             </Link>
           </div>
@@ -258,7 +258,7 @@ export default function Home() {
 
       {/* ═══ STATS ═══ */}
       <section ref={stats.ref} style={{ padding: "80px 24px", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
+        <div className="stats-grid" style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
           {STATS.map((s, i) => (
             <motion.div key={i}
               initial={{ opacity: 0, y: 20 }}
@@ -463,6 +463,16 @@ export default function Home() {
       </footer>
 
       <CopilotPanel />
+
+      {/* Mobile responsive overrides */}
+      <style>{`
+        @media (max-width: 480px) {
+          .hero-nav { padding: 12px 16px !important; }
+          .hero-nav-title { display: none !important; }
+          .hero-nav-link { display: none !important; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+        }
+      `}</style>
     </div>
   );
 }
