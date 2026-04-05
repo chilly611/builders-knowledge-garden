@@ -472,3 +472,27 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - PM modules had scattered syntax corruption - likely from a bad merge or encoding issue
 - SubmittalModule had binary/mojibake from line 126 onward - required full rewrite
 - BudgetModule had control characters (0x06) embedded in source
+
+---
+
+## Session: 2026-04-04 (Phase 0 completion)
+
+**Commits pushed:**
+1. `9a1e07f` — Phase 0A: Fix all TypeScript build errors (19 files, 78 routes, zero errors)
+2. `a3c4e74` — Phase 0B: User-scoped RLS policies + auth-validated project API
+3. `84474ca` — Phase 0D: Mobile audit fixes at 390px viewport
+
+**What was done:**
+- **Phase 0A:** Restored clean PM modules from pre-browser-edit commit (browser automation had corrupted UTF-8 in entity-detail-client.tsx and CopilotPanel.tsx). Fixed `SpeechRecognitionErrorEvent` type, `Entity` type mismatch with `getImageForEntity`. All 15 API routes have lazy `getSupabase()/getStripe()/getAnthropic()` wrappers. Build passes clean.
+- **Phase 0B:** Auth was already real Supabase (no mock flag). Created `supabase/migrations/rls_user_scoped.sql`: added `user_id` column to `command_center_projects`, replaced "Allow all" RLS on 6 PM tables with ownership chain (`command_center_projects.user_id = auth.uid()`), tightened `dream_states` RLS. Refactored `/api/v1/projects` to validate auth token server-side via `getAuthUser()` instead of trusting client-passed `user_id`.
+- **Phase 0C:** SKIPPED — no `STRIPE_SECRET_KEY` or `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in `.env.local`. Routes have lazy init guards so build is safe. Resume when keys are added.
+- **Phase 0D:** Fixed double-encoded UTF-8 emoji corruption in CompassNav.tsx (sidebar showed garbled `ð` chars). Added mobile responsive CSS: homepage nav hides title/links under 480px, stats grid 2-col, projects/new grid min reduced to 120px, projects/[id] tab padding responsive with `sm:` breakpoints.
+
+**Vercel deployment:** Green checkmark, commit `9a1e07f` deployed to production.
+
+**Open items for next session:**
+- Run RLS migration on Supabase (SQL in `supabase/migrations/rls_user_scoped.sql`)
+- Add Stripe keys to .env.local + Vercel to unblock Phase 0C
+- Onboarding gate needs real subscription check (Phase 0B remaining item)
+- Cinematic entry mobile/light theme check (Phase 0D remaining item)
+- DO NOT start Phase 1 until Phase 0C is complete
