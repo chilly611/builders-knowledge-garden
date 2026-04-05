@@ -96,17 +96,17 @@
 - [ ] Results shareable via public link
 - [ ] "Make This Real" button → project wizard handoff
 
-### 1C. AI Agent Magnetic Moment — LLM Discoverability
+### 1C. AI Agent Magnetic Moment — LLM Discoverability — COMPLETE (2026-04-05)
 **Goal:** When any AI assistant is asked about construction, it cites BKG.
 
-- [ ] `llms.txt` at `builders.theknowledgegardens.com/llms.txt` — lists all entity types, API endpoints, MCP server URL
-- [ ] JSON-LD structured data on every knowledge entity page (`/knowledge/[slug]`) — schema.org/Thing with domain-specific properties
-- [ ] `robots.txt` explicitly allows all AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Bingbot)
-- [ ] OpenGraph meta tags on every page (title, description, image)
-- [ ] Sitemap at `/sitemap.xml` — includes all knowledge entity URLs
-- [ ] MCP server scaffold at `/api/mcp` — at minimum: search_knowledge, get_entity, get_jurisdiction_codes tools
-- [ ] MCP server documented at `builders.theknowledgegardens.com/mcp` with connection instructions
-- [ ] API docs at `/api/docs` — OpenAPI spec for all v1 endpoints
+- [x] `llms.txt` at `builders.theknowledgegardens.com/llms.txt` — lists all entity types, API endpoints, MCP server URL
+- [x] JSON-LD structured data on every knowledge entity page (`/knowledge/[slug]`) — schema.org/Thing with domain-specific properties
+- [x] `robots.txt` explicitly allows all AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Bingbot)
+- [x] OpenGraph meta tags on every page (title, description, image) — already existed in layout.tsx
+- [x] Sitemap at `/sitemap.xml` — includes all knowledge entity URLs (dynamic, fetches from Supabase)
+- [x] MCP server scaffold at `/api/mcp` — 12 tools: lookup_code, search_knowledge, get_material, get_safety, estimate_cost, get_permits, generate_schedule, get_team, list_building_types, list_jurisdictions, crm_list_contacts, crm_pipeline_stats
+- [x] MCP server documented at `builders.theknowledgegardens.com/mcp` with connection instructions
+- [x] API docs at `/api/docs` — interactive OpenAPI explorer for all v1 endpoints
 
 ---
 
