@@ -562,3 +562,38 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - Stripe webhook setup in Stripe dashboard
 - Wire BuildGate to real subscription status
 - Phase 1B (Dreamer) and 1C (AI Agent) still pending
+
+
+---
+
+## Session: 2026-04-05 (overnight)
+**Focus:** Phase 1A migration execution + Phase 1C AI Agent Discoverability
+
+### Phase 1A — Migration Executed
+- Ran `supabase/migrations/phase1a_schema.sql` on live Supabase DB via SQL Editor
+- Added `jurisdiction` and `start_date` columns to `command_center_projects`
+- Created `project_schedules` and `project_compliance` tables with RLS policies
+- Fixed "policy already exists" error by wrapping with `DROP POLICY IF EXISTS` (idempotent)
+
+### Phase 1C — AI Agent Discoverability — COMPLETE
+Six files pushed to main:
+1. `public/llms.txt` — Machine-readable file following llms.txt spec, lists all 11 entity types, REST API endpoints, MCP server with all 12 tool names
+2. `public/robots.txt` — Explicit Allow rules for 10 AI crawlers (GPTBot, ClaudeBot, PerplexityBot, etc.), sitemap reference
+3. `src/app/sitemap.ts` — Dynamic Next.js sitemap fetching published entity slugs from Supabase REST API
+4. `src/app/knowledge/[slug]/page.tsx` — Updated with JSON-LD structured data (schema.org types: Legislation, Product, HowTo, Occupation, Article + BreadcrumbList)
+5. `src/app/mcp/page.tsx` — MCP server documentation page with connection instructions, code examples, tool reference, pricing tiers
+6. `src/app/api/docs/page.tsx` — Interactive API documentation page fetching OpenAPI spec, sticky sidebar navigation, color-coded method badges
+
+**Existing assets leveraged (already in repo):**
+- MCP server at `/api/v1/mcp/route.ts` with 12 tools already implemented
+- OpenAPI spec at `/api/v1/openapi/route.ts`
+- OpenGraph meta tags in `layout.tsx`
+
+**Commits:** Multiple commits via GitHub Contents API, all on main branch
+
+**Open items for next session:**
+- Phase 1B (Dreamer Worldwalker) — BLOCKED on World Labs API key
+- Verify Vercel deployment of Phase 1C pages
+- Run `npm run build` to confirm zero TypeScript errors
+- End-to-end 60-second project wizard test
+- Stripe webhook setup + BuildGate wiring
