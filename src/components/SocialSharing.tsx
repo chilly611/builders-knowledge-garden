@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import html2canvas from 'html2canvas';
 
 interface ShareCard {
   id: string;
@@ -293,7 +294,7 @@ export default function SocialSharing() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [composerText, setComposerText] = useState('');
-  const [userReactions, setUserReactions] = useState<Record<string, Set<string>>>(new Map());
+  const [userReactions, setUserReactions] = useState<Record<string, Set<string>>>({});
   const cardRefMap = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [cardForm, setCardForm] = useState({
@@ -402,7 +403,7 @@ export default function SocialSharing() {
   };
 
   const handleReaction = (shareId: string, reactionKey: string) => {
-    const existing = userReactions.get(shareId) || new Set();
+    const existing = userReactions[shareId] || new Set();
     const newSet = new Set(existing);
 
     if (newSet.has(reactionKey)) {
@@ -411,11 +412,10 @@ export default function SocialSharing() {
       newSet.add(reactionKey);
     }
 
-    setUserReactions((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(shareId, newSet);
-      return newMap;
-    });
+    setUserReactions((prev) => ({
+      ...prev,
+      [shareId]: newSet,
+    }));
 
     setCommunityShares((prev) =>
       prev.map((share) => {
@@ -831,7 +831,7 @@ export default function SocialSharing() {
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       <button
-                        onClick={() => handleCopyLink({ ...cardForm, id: 'preview', createdAt: new Date(), isPublic: true, views: 0, clicks: 0, reactions: { celebrate: 0, love: 0, inspire: 0, wow: 0 } })}
+                        onClick={() => handleCopyLink({ ...cardForm, id: 'preview', createdAt: new Date(), isPublic: true, views: 0, clicks: 0, reactions: { celebrate: 0, love: 0, inspire: 0, wow: 0 }, metadata: {} } as unknown as ShareCard)}
                         style={{
                           padding: '0.75rem',
                           fontSize: '0.9rem',
@@ -1172,7 +1172,7 @@ export default function SocialSharing() {
                   {/* Reactions */}
                   <div style={{ padding: '1rem', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {REACTION_TYPES.map((reaction) => {
-                      const isActive = userReactions.get(share.id)?.has(reaction.key) || false;
+                      const isActive = userReactions[share.id]?.has(reaction.key) || false;
                       return (
                         <button
                           key={reaction.key}
@@ -1283,7 +1283,7 @@ export default function SocialSharing() {
                                 fontWeight: 600,
                               }}
                             >
-                              {reaction.icon} {analytics.reactions[reaction.key]}
+                              {reaction.icon} {analytics.reactions[reaction.key as keyof typeof analytics.reactions]}
                             </span>
                           ))}
                         </div>

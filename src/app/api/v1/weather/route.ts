@@ -231,7 +231,7 @@ const resolveLocation = (locationParam: string | null, lat: string | null, lng: 
 
     if (!isNaN(latitude) && !isNaN(longitude)) {
       // Find nearest city or use generic coordinates
-      let nearest = { city: 'Unknown Location', state: undefined, country: 'Unknown' };
+      let nearest = { city: 'Unknown Location', state: undefined as string | undefined, country: 'Unknown' };
 
       if (latitude > 25 && latitude < 50 && longitude > -130 && longitude < -65) {
         // USA bounds

@@ -552,7 +552,7 @@ const AmbientMusicPlayer: React.FC = () => {
                       borderRadius: '6px',
                     }}
                   >
-                    {frequencyData.map((value, idx) => (
+                    {Array.from(frequencyData).map((value, idx) => (
                       <motion.div
                         key={idx}
                         style={{

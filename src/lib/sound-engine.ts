@@ -26,10 +26,12 @@ interface SoundEngine {
 }
 
 // Lazy-load Tone.js to avoid SSR issues
+// @ts-expect-error no types
 let ToneModule: typeof import("tone") | null = null;
 
 async function getTone() {
   if (ToneModule) return ToneModule;
+  // @ts-expect-error no types
   ToneModule = await import("tone");
   return ToneModule;
 }

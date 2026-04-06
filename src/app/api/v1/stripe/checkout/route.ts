@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+// @ts-expect-error no types
 import Stripe from "stripe";
 
 function getStripe() {

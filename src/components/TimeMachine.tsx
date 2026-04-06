@@ -79,7 +79,7 @@ const TimeMachine: React.FC = () => {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -376,7 +376,7 @@ const TimeMachine: React.FC = () => {
 
     // Hide all meshes first
     Object.values(geo).forEach((meshes) => {
-      meshes.forEach((mesh) => {
+      meshes.forEach((mesh: any) => {
         mesh.visible = false;
       });
     });
@@ -394,7 +394,7 @@ const TimeMachine: React.FC = () => {
     if (phase < 5) {
       const nextPhaseGeo = Object.entries(geo)[phase + 1][1];
       if (nextPhaseGeo) {
-        nextPhaseGeo.forEach((mesh) => {
+        nextPhaseGeo.forEach((mesh: any) => {
           if (mesh.material instanceof THREE.Material) {
             if ('opacity' in mesh.material) {
               mesh.material.opacity = transitionAlpha * 0.8 + 0.2;
