@@ -8,7 +8,7 @@ interface PaymentIntent {
   payment_method: 'card' | 'ach' | 'net30';
   amount: number;
   currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'simulated';
   stripe_payment_intent_id?: string;
   fee: number;
   net_amount: number;
@@ -25,7 +25,7 @@ interface Transaction {
   currency: string;
   fee: number;
   net_amount: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'simulated';
   stripe_charge_id?: string;
   idempotency_key?: string;
   due_date?: string;
@@ -54,7 +54,7 @@ interface CreatePaymentIntentRequest {
 }
 
 interface UpdateTransactionRequest {
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'simulated';
   notes?: string;
 }
 
