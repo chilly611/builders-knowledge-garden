@@ -750,17 +750,17 @@ export const BuilderDashboard: React.FC = () => {
           <EmptyState />
         );
       case 'WBS':
-        return <WBSEditor />;
+        return selectedProject ? <WBSEditor projectId={selectedProject} /> : <EmptyState />;
       case 'Timeline':
-        return <GanttTimeline />;
+        return selectedProject ? <GanttTimeline projectId={selectedProject} /> : <EmptyState />;
       case 'Budget':
         return <BudgetModule />;
       case 'Team':
         return <ResourceManagement />;
       case 'RFIs':
-        return <RFITracker />;
+        return selectedProject ? <RFITracker projectId={selectedProject} /> : <EmptyState />;
       case 'Inspections':
-        return <InspectionCheckpoints />;
+        return selectedProject ? <InspectionCheckpoints projectId={selectedProject} /> : <EmptyState />;
       case 'Permits':
         return <PermitsCompliance />;
       default:
