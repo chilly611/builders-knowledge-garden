@@ -163,10 +163,10 @@
 - [ ] "Surprise Me" random ingredient generator
 
 ### 4D. Construction Cosmos
-- [ ] Three.js orbital visualization of the knowledge graph
-- [ ] Navigate entities as stars, relationships as orbital paths
-- [ ] Click a node → zoom in → entity detail
-- [ ] Beautiful enough to be the screensaver/ambient mode
+- [x] Three.js orbital visualization of the knowledge graph
+- [x] Navigate entities as stars, relationships as orbital paths
+- [x] Click a node → zoom in → entity detail
+- [x] Beautiful enough to be the screensaver/ambient mode
 
 ---
 
@@ -186,8 +186,8 @@
 - [x] Auth middleware: validate agent API keys on MCP requests
 - [x] Tool-level permission checking
 - [x] Audit logging: every tool call logged with input/output/duration
-- [ ] Semantic caching: identical queries return cached results (5-min TTL)
-- [ ] LLM-based query routing to authorized pathways only
+- [x] Semantic caching: identical queries return cached results (5-min TTL)
+- [x] LLM-based query routing to authorized pathways only
 
 ### 5C. Shared Autonomy Interface
 - [x] Agent activity feed: real-time view of what agents are doing
@@ -212,9 +212,9 @@
 - [x] Shareable dream links go viral: every dream has public `/dream/share/[id]` URL
 - [x] Lead-to-warranty CRM lifecycle tracking (full pipeline)
 - [x] AI proposal generator: Claude API → formatted proposal doc (PDF export)
-- [ ] Invoice module: AIA G702/G703 pay app format
+- [x] Invoice module: AIA G702/G703 pay app format
 - [ ] Marketplace transactions: suppliers can list, contractors can order
-- [ ] Demo preparation: clean seed data, demo accounts, 5-minute guided walkthrough
+- [x] Demo preparation: clean seed data, demo accounts, 8-step guided walkthrough
 - [ ] First paying customer target: one GC or developer on Pro plan
 
 ---
@@ -229,8 +229,8 @@
 - [x] Trade-off visualizer — change one variable, see ripple across schedule/budget/risk
 - [ ] Weather impact automation — auto-adjust schedules based on forecast
 - [ ] Time Machine (4D build visualization via Three.js)
-- [ ] Industry news feed — Claude-summarized, lane-personalized (ENR, Construction Dive, OSHA)
-- [ ] Voice-first field ops — "Works With Dirty Hands" giant-button UX for Crew lane
+- [x] Industry news feed — Claude-summarized, lane-personalized (ENR, Construction Dive, OSHA)
+- [x] Voice-first field ops — "Works With Dirty Hands" giant-button UX for Crew lane
 - [ ] WebXR full VR/AR walkthrough (Apple Vision Pro + Quest)
 
 ---
