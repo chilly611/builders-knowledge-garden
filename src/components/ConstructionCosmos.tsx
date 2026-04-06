@@ -30,12 +30,12 @@ interface StarData {
   index: number;
 }
 
-const BRAND_COLORS = {
-  materials: new THREE.Color('#1D9E75'),
-  techniques: new THREE.Color('#D85A30'),
-  suppliers: new THREE.Color('#378ADD'),
-  standards: new THREE.Color('#7F77DD'),
-  regulations: new THREE.Color('#E8443A'),
+const BRAND_COLORS: Record<string, THREE.Color> = {
+  material: new THREE.Color('#1D9E75'),
+  technique: new THREE.Color('#D85A30'),
+  supplier: new THREE.Color('#378ADD'),
+  standard: new THREE.Color('#7F77DD'),
+  regulation: new THREE.Color('#E8443A'),
 };
 
 const getEntityColor = (type: Entity['type']): THREE.Color => {
