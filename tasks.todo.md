@@ -140,18 +140,21 @@
 > Blocked on World Labs API key — build the pipeline, ready to connect.
 
 ### 4A. Worldwalker Pipeline
-- [ ] BLOCKER: World Labs Marble API key
-- [ ] Image upload → API call → Gaussian splat generation
-- [ ] Three.js + SparkJS renderer for browser-based 3D walkthrough
-- [ ] Voice-activated modification: "raise the ceiling", "add a fireplace"
-- [ ] Semantic understanding: materials, styles, dimensions detected automatically
-- [ ] WebXR export for Apple Vision Pro / Meta Quest
+- [x] Image upload UI with drag-and-drop and processing pipeline visualization
+- [x] Three.js 3D viewer with placeholder house model and manual orbit controls
+- [x] Voice command panel UI (microphone button + example commands)
+- [x] Material detection sidebar with confidence scores
+- [x] Dimension overlay on 3D model
+- [x] API route with mock processing pipeline (ready for World Labs API key)
+- [ ] PENDING: World Labs Marble API key — will activate real 3D generation
 
 ### 4B. Capture-First Reconstruction
-- [ ] Mobile video recording (30-second walkthrough)
-- [ ] Photogrammetry → point cloud → spatial model
-- [ ] "Strip to studs" digital sandbox mode
-- [ ] Material/style identification from existing space
+- [x] Camera/video capture interface with 30-second recording timer
+- [x] Photo mode: snap multiple photos for photogrammetry (min 8)
+- [x] Point cloud preview: Three.js animated particle cloud
+- [x] "Strip to studs" digital sandbox mode with demolition level slider
+- [x] Material/style identification panel with confidence scores
+- [ ] PENDING: Photogrammetry API — will activate real point cloud generation
 
 ### 4C. Alchemist Combinatorial Design
 - [x] Drag-and-drop ingredient crucible (style word + texture + mood → synthesis)
@@ -229,7 +232,7 @@
 - [x] Time Machine (4D build visualization via Three.js)
 - [x] Industry news feed — Claude-summarized, lane-personalized (ENR, Construction Dive, OSHA)
 - [x] Voice-first field ops — "Works With Dirty Hands" giant-button UX for Crew lane
-- [ ] WebXR full VR/AR walkthrough (Apple Vision Pro + Quest)
+- [x] WebXR viewer: VR/AR with measurement tools, annotations, hotspots (Apple Vision Pro + Quest ready)
 
 ---
 
@@ -296,20 +299,29 @@
 - Alchemist Crucible: drag-and-drop ingredient combinatorial design
 - Weather API: mock forecast with construction activity flags
 
+### Wave 6 — Worldwalker, CaptureFirst, WebXR, Marketplace API, Dashboards (2026-04-06)
+- Worldwalker: full spatial intelligence pipeline UI with 3D viewer and voice commands
+- Worldwalker API: job processing pipeline with World Labs integration path
+- CaptureFirst: camera/video capture, point cloud preview, strip-to-studs demolition
+- WebXR Viewer: VR/AR-ready Three.js room with measurements, annotations, hotspots
+- Marketplace API: products, quotes, orders with full CRUD
+- Marketplace Transactions: Stripe integration path with fee calculation and webhooks
+- Builder Dashboard: Command Center integrating all 8 Phase 1B tabs
+- Platform Dashboard: lane-aware landing with XP, notifications, cross-surface bridges
+
 ---
 
 ## OPEN BLOCKERS
 
 1. **World Labs Marble API Key** — Required for:
-   - Image → Gaussian splat generation (Worldwalker)
-   - Photogrammetry reconstruction pipeline
-   - FLUX-based image synthesis in Alchemist
-   - Status: Awaiting API access
+   - Real 3D generation in Worldwalker (pipeline UI ready)
+   - Real photogrammetry in CaptureFirst (UI ready)
+   - FLUX-based image synthesis in Alchemist (UI ready)
+   - Status: Awaiting API access — all UI/pipeline code is deployed and waiting
 
-2. **Domain & SSL** — Production deployment needs custom domain setup
-   - Status: Pending business decision
-
-3. **Payment Infrastructure** — Stripe integration for Phase 6
+2. **Stripe API Key** — Required for:
+   - Real payment processing in Marketplace transactions
+   - Status: Transaction API deployed with mock mode, real payments activate when STRIPE_SECRET_KEY is set
    - Status: Not yet started
 
 ---
