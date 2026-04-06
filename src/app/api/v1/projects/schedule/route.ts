@@ -1,18 +1,11 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
 
 function getAnthropic() {
   return new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
-}
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 }
 
 interface ScheduleRequest {
@@ -64,6 +57,9 @@ interface ScheduleResponse {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
+
     const body: ScheduleRequest = await request.json();
     const {
       projectId,
@@ -190,7 +186,7 @@ Calculate total duration based on building type and complexity. Include all crit
 
     // Persist schedule to Supabase
     try {
-      const supabase = getSupabase();
+      const supabase = getServiceClient();
       // Upsert: delete old schedule for this project, insert new
       await supabase
         .from("project_schedules")

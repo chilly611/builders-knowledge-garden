@@ -1,18 +1,11 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
 
 function getAnthropic() {
   return new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
-}
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 }
 
 const CSI_DIVISIONS = [
@@ -72,6 +65,9 @@ interface EstimateResponse {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
+
     const body: EstimateRequest = await request.json();
     const {
       projectId,
@@ -151,19 +147,22 @@ Return ONLY valid JSON. Include all CSI divisions relevant to this building type
       estimateData = JSON.parse(jsonMatch[0]);
     }
 
-    // Save budget lines to Supabase
+    // Save budget lines to Supabase (schema: csi_division, budgeted, committed, actual_spent)
     if (estimateData.csiDivisions && Array.isArray(estimateData.csiDivisions)) {
+      const supabase = getServiceClient();
+      // Clear old budget lines for this project
+      await supabase.from("project_budget_lines").delete().eq("project_id", projectId);
+
       const budgetLines = estimateData.csiDivisions.map((division: CSIDivision) => ({
         project_id: projectId,
-        csi_code: division.code,
-        csi_division: division.division,
+        csi_division: `${division.code} - ${division.division}`,
         description: division.description,
-        amount: division.amount,
-        percent_of_total: division.percentOfTotal,
-        created_at: new Date().toISOString(),
+        budgeted: division.amount,
+        committed: 0,
+        actual_spent: 0,
       }));
 
-      const { error: insertError } = await getSupabase()
+      const { error: insertError } = await supabase
         .from("project_budget_lines")
         .insert(budgetLines);
 

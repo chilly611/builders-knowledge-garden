@@ -1,18 +1,11 @@
 import { Anthropic } from "@anthropic-ai/sdk";
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
 
 function getAnthropic() {
   return new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
-}
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 }
 
 interface ComplianceRequest {
@@ -42,6 +35,9 @@ interface ComplianceResponse {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
+
     const body: ComplianceRequest = await request.json();
     const { projectId, buildingType, jurisdiction, squareFootage = 10000, budget } = body;
 
@@ -114,7 +110,7 @@ Return ONLY valid JSON. Include jurisdiction-specific code requirements, fire sa
     // Persist to Supabase if projectId provided
     if (projectId) {
       try {
-        const supabase = getSupabase();
+        const supabase = getServiceClient();
         await supabase.from("project_compliance").delete().eq("project_id", projectId);
         await supabase.from("project_compliance").insert({
           project_id: projectId,
