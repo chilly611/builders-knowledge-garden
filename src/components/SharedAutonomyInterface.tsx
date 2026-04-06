@@ -380,7 +380,7 @@ const AssistModePanel: React.FC<AssistModePanelProps> = ({ proposals, loading, o
       <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
         <h3 className="font-bold text-gray-900 mb-1">Pending Approvals</h3>
         <p className="text-sm text-gray-700">
-          Review agent proposals and approve or reject them. Proposals awaiting >5 min are
+          Review agent proposals and approve or reject them. Proposals awaiting more than 5 min are
           highlighted.
         </p>
       </div>
@@ -651,7 +651,7 @@ export const SharedAutonomyInterface: React.FC = () => {
 
   const { activities, loading: activitiesLoading, refetch: refetchActivities } =
     useAgentActivityFeed();
-  const { proposals, loading: proposalsLoading, onRespond } = useAgentProposals();
+  const { proposals, loading: proposalsLoading, respondToProposal: onRespond } = useAgentProposals();
 
   // Mock stats and anomalies (in production, fetch these)
   const stats: AgentStats = {
