@@ -872,4 +872,4 @@ export default function CommandCenterPage() {
       `}</style>
     </div>
   );
-  }
+}
