@@ -882,7 +882,6 @@ export default function CaptureFirst() {
                       background: BRAND_COLORS.green,
                       marginTop: '-15px',
                       marginLeft: '55px',
-                      arrow: 'right',
                     }}
                   >
                     →
