@@ -193,13 +193,24 @@ const GamificationContext = createContext<GamificationContextType | undefined>(
   undefined
 );
 
+// Safe default for SSG / pages rendered outside the provider
+const GAMIFICATION_DEFAULTS: GamificationContextType = {
+  xp: 0,
+  level: "Apprentice",
+  xpToNextLevel: 500,
+  streak: 0,
+  achievements: [],
+  addXP: () => {},
+  unlockAchievement: () => {},
+  showToast: () => {},
+  soundEnabled: false,
+  toggleSound: () => {},
+};
+
 export function useGamification() {
   const context = useContext(GamificationContext);
-  if (!context) {
-    throw new Error(
-      "useGamification must be used within GamificationProvider"
-    );
-  }
+  // Return safe defaults during SSG or when rendered outside provider
+  if (!context) return GAMIFICATION_DEFAULTS;
   return context;
 }
 
