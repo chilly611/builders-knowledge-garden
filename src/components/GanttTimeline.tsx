@@ -7,8 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  ChevronLeftDouble,
-  ChevronRightDouble,
+  ChevronsLeft,
+  ChevronsRight,
   ZoomIn,
   ZoomOut,
   Calendar,
@@ -596,7 +596,7 @@ export default function GanttTimeline({ projectId }: { projectId: string }) {
               color: '#64748b',
             }}
           >
-            <ChevronLeftDouble size={18} />
+            <ChevronsLeft size={18} />
           </button>
           <button
             onClick={() => {
@@ -655,7 +655,7 @@ export default function GanttTimeline({ projectId }: { projectId: string }) {
               color: '#64748b',
             }}
           >
-            <ChevronRightDouble size={18} />
+            <ChevronsRight size={18} />
           </button>
 
           <div style={{ width: '1px', height: '24px', backgroundColor: '#d1d5db' }} />
