@@ -108,7 +108,6 @@ const MOCK_COMMUNITY_SHARES: CommunityShare[] = [
 ];
 
 const generateQRCode = (text: string): string => {
-  const qr = require('qrcode');
   const encoded = encodeURIComponent(text);
   const size = 200;
   const margin = 2;
