@@ -482,7 +482,7 @@ export default function Worldwalker() {
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
                     }}
-                    onHoverStart={{ transform: 'translateX(4px)' }}
+                    whileHover={{ x: 4 }}
                   >
                     <div
                       style={{
@@ -973,7 +973,7 @@ export default function Worldwalker() {
                       position: 'relative',
                       borderRadius: '8px',
                       overflow: 'hidden',
-                      aspect: '1',
+                      aspectRatio: '1',
                       background: '#f5f5f5',
                       border: '2px solid #e0e0e0',
                     }}
