@@ -36,7 +36,7 @@
 - [x] Resource Management: crew assignment, skill matching, capacity planning
 - [x] RFI Tracker: open request management with auto-assignment logic
 - [x] Inspection Checkpoint System: pass/fail gates with documentation
-- [ ] Build-to-Dream Linkage: projects reference original dream(s)
+- [x] Build-to-Dream Linkage: projects reference original dream(s) with lifecycle pipeline
 - [x] Permits & Compliance: checklist tracking with jurisdiction awareness
 
 ---
@@ -154,11 +154,11 @@
 - [ ] Material/style identification from existing space
 
 ### 4C. Alchemist Combinatorial Design
-- [ ] Drag-and-drop ingredient crucible (style word + texture + photo → unique building)
-- [ ] Claude maps semantic relationships between ingredients
-- [ ] FLUX/Marble renders the synthesis
-- [ ] Recipe sharing: community gallery of unique combinations
-- [ ] "Surprise Me" random ingredient generator
+- [x] Drag-and-drop ingredient crucible (style word + texture + mood → synthesis)
+- [x] Compatibility scoring and semantic relationships between ingredients
+- [ ] FLUX/Marble renders the synthesis (blocked on World Labs API)
+- [x] Recipe sharing: community gallery of unique combinations
+- [x] "Surprise Me" random ingredient generator
 
 ### 4D. Construction Cosmos
 - [x] Three.js orbital visualization of the knowledge graph
@@ -221,12 +221,12 @@
 
 - [x] Voice briefings — ElevenLabs TTS for morning briefing
 - [x] Sound design — unique sounds per notification tier (celebration/good/heads-up/urgent)
-- [ ] Ambient music — mood-appropriate loops per surface and phase
-- [ ] Seasonal challenges — monthly themed challenges with leaderboards
-- [ ] Social sharing — dreams, achievements, progress stories
+- [x] Ambient music — Web Audio synthesis with 3 mood profiles (Dream/Build/Knowledge)
+- [x] Seasonal challenges — monthly themed challenges with leaderboards
+- [x] Social sharing — dreams, achievements, progress stories with card generator
 - [x] Trade-off visualizer — change one variable, see ripple across schedule/budget/risk
-- [ ] Weather impact automation — auto-adjust schedules based on forecast
-- [ ] Time Machine (4D build visualization via Three.js)
+- [x] Weather impact automation — auto-adjust schedules based on forecast
+- [x] Time Machine (4D build visualization via Three.js)
 - [x] Industry news feed — Claude-summarized, lane-personalized (ENR, Construction Dive, OSHA)
 - [x] Voice-first field ops — "Works With Dirty Hands" giant-button UX for Crew lane
 - [ ] WebXR full VR/AR walkthrough (Apple Vision Pro + Quest)
@@ -285,6 +285,16 @@
 - Inspection Checkpoints: jurisdiction-aware checklists, digital signatures
 - Permits & Compliance: tracker with expiry alerts, AHJ contacts
 - Marketplace: supplier directory, product catalog, quote requests
+
+### Wave 5 — Delight + Phase 4C + Dream Linkage (2026-04-05)
+- Time Machine: 4D Three.js construction phase visualization with manual orbit
+- Ambient Music: Web Audio procedural synthesis, 3 mood profiles (Dream/Build/Knowledge)
+- Seasonal Challenges: 12 monthly themes with leaderboards and lane bonuses
+- Social Sharing: card generator, QR codes, community feed, reactions
+- Weather Impact: 7-day forecast with construction safety assessment
+- Build-to-Dream Linkage: lifecycle pipeline (Dream→Design→Build→Complete)
+- Alchemist Crucible: drag-and-drop ingredient combinatorial design
+- Weather API: mock forecast with construction activity flags
 
 ---
 
