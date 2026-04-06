@@ -276,8 +276,8 @@ async function fetchAuditTrail(
 
     return {
       entries: verifiedEntries,
-      agents: [...new Set(agents)],
-      action_types: [...new Set(actionTypes)],
+      agents: [...new Set(agents)] as string[],
+      action_types: [...new Set(actionTypes)] as string[],
       has_more: hasMore,
     };
   } catch (error) {
