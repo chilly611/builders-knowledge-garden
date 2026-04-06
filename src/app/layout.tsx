@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Archivo_Black } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import CompassNav from "@/components/CompassNav";
+import CompassBloom from "@/components/CompassBloom";
 import { GamificationProvider } from "@/components/GamificationProvider";
 
 const archivo = Archivo({
@@ -62,7 +62,7 @@ export default function RootLayout({
         <Providers>
           <GamificationProvider>
             {children}
-            <CompassNav />
+            <CompassBloom />
           </GamificationProvider>
         </Providers>
       </body>
