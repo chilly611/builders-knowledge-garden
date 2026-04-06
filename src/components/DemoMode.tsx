@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DEMO_USERS, getDemoDataForLane, Lane, DEMO_PROJECTS, DEMO_KNOWLEDGE_ENTITIES } from './demo-seed-data';
+import { DEMO_USERS, getDemoDataForLane, Lane, DEMO_PROJECTS, DEMO_KNOWLEDGE_ENTITIES } from '@/lib/demo-seed-data';
 
 // ─────────────────────────────────────────────────────────────
 // COLOR PALETTE & CONSTANTS
