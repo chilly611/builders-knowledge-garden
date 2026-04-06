@@ -103,6 +103,7 @@ export default function WebXRViewer() {
   const cameraDistanceRef = useRef(6);
   const cameraThetaRef = useRef(Math.PI / 4);
   const cameraPhiRef = useRef(Math.PI / 3);
+  const animateCameraToRef = useRef<(target: [number, number, number]) => void>(() => {});
 
   // Check WebXR availability
   useEffect(() => {
@@ -157,7 +158,7 @@ export default function WebXRViewer() {
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     rendererRef.current = renderer;
     containerRef.current.appendChild(canvas);
     canvasRef.current = canvas;
@@ -440,7 +441,7 @@ export default function WebXRViewer() {
           if (hotspot) {
             setActiveHotspot(hotspotId);
             const targetPos = hotspot.userData.cameraTarget;
-            animateCameraTo(targetPos);
+            animateCameraToRef.current(targetPos);
           }
         }
       } else if (isMeasuring) {
@@ -513,7 +514,7 @@ export default function WebXRViewer() {
       cameraRef.current.lookAt(orbitCenterRef.current);
     };
 
-    const animateCameraTo = (target: [number, number, number]) => {
+    animateCameraToRef.current = (target: [number, number, number]) => {
       const startPos = camera.position.clone();
       const targetPos = new THREE.Vector3(target[0], target[1], target[2]);
       const duration = 1000;
@@ -1206,7 +1207,7 @@ export default function WebXRViewer() {
                     setActiveHotspot(hotspot.id);
                     const group = hotspotsRef.current.get(hotspot.id);
                     if (group) {
-                      animateCameraTo(group.userData.cameraTarget);
+                      animateCameraToRef.current(group.userData.cameraTarget);
                     }
                   }}
                   style={{
