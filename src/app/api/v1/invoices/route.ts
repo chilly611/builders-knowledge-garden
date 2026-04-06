@@ -86,13 +86,13 @@ async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
 
   // Title
   doc.setFontSize(16);
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text('AIA G702 - Application and Certificate for Payment', pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 10;
 
   // Header Info
   doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
   const headerInfo = [
     [`Project: ${invoice.project_name}`, `Application #: ${invoice.application_number}`],
     [`Contractor: ${invoice.contractor_info.name}`, `Period: ${invoice.period_from} to ${invoice.period_to}`],
@@ -107,11 +107,11 @@ async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
   yPosition += 4;
 
   // Contract Values Section
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text('Contract Values', margin, yPosition);
   yPosition += 6;
 
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
   const contractSum = invoice.original_contract_sum + invoice.net_change_by_orders;
   const contractData = [
     ['Original Contract Sum', `$${invoice.original_contract_sum.toFixed(2)}`],
@@ -170,11 +170,11 @@ async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
   }
 
   // Payment Calculation
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text('Payment Calculation', margin, yPosition);
   yPosition += 6;
 
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
   const paymentData = [
     ['Total Completed & Stored to Date', `$${invoice.total_completed_and_stored.toFixed(2)}`],
     [`Less Retainage (${(invoice.retainage_percent * 100).toFixed(1)}%)`, `($${invoice.retainage_amount.toFixed(2)})`],
@@ -186,7 +186,7 @@ async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
 
   paymentData.forEach((row, index) => {
     if (index === 4) {
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.setFillColor(29, 158, 117);
       doc.setTextColor(255, 255, 255);
       doc.rect(margin - 2, yPosition - 3, contentWidth + 4, 6, 'F');
@@ -423,7 +423,7 @@ export async function GET(req: NextRequest) {
       const fullInvoice = { ...invoice, line_items: lineItems || [] };
       const pdfBuffer = await generateInvoicePDF(fullInvoice);
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="invoice-${invoiceId}.pdf"`,
