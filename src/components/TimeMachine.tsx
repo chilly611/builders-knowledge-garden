@@ -375,8 +375,8 @@ const TimeMachine: React.FC = () => {
     const phase = Math.floor(phaseIndex);
 
     // Hide all meshes first
-    Object.values(geo).forEach((meshes) => {
-      meshes.forEach((mesh: any) => {
+    Object.values(geo).forEach((meshes: THREE.Mesh[]) => {
+      meshes.forEach((mesh: THREE.Mesh) => {
         mesh.visible = false;
       });
     });
@@ -394,7 +394,7 @@ const TimeMachine: React.FC = () => {
     if (phase < 5) {
       const nextPhaseGeo = Object.entries(geo)[phase + 1][1];
       if (nextPhaseGeo) {
-        nextPhaseGeo.forEach((mesh: any) => {
+        (nextPhaseGeo as THREE.Mesh[]).forEach((mesh: THREE.Mesh) => {
           if (mesh.material instanceof THREE.Material) {
             if ('opacity' in mesh.material) {
               mesh.material.opacity = transitionAlpha * 0.8 + 0.2;
