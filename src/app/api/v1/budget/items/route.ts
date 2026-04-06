@@ -4,7 +4,7 @@
 // DELETE /api/v1/budget/items?id=xxx       — delete item
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser, getServiceClient, unauthorizedResponse } from "A/lib/auth-server";
+import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
 
 const VALID_PHASES = ["DREAM", "DESIGN", "PLAN", "BUILD", "DELIVER", "GROW"];
 const VALID_CATEGORIES = ["materials", "labor", "permits", "equipment", "subcontractor", "overhead", "other"];
