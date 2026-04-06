@@ -429,9 +429,9 @@ async function handlePost(request: NextRequest): Promise<NextResponse<unknown>> 
     if (action === 'order') {
       // Place an order from a quote
       const body = await request.json() as Record<string, unknown>;
-      const quoteId = body.quote_id;
-      const shippingAddress = body.shipping_address;
-      const notes = body.notes;
+      const quoteId = body.quote_id as string | undefined;
+      const shippingAddress = body.shipping_address as string | undefined;
+      const notes = body.notes as string | undefined;
 
       if (!quoteId) {
         return NextResponse.json(
