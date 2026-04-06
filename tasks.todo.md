@@ -28,18 +28,16 @@
 ---
 
 ## PHASE 1B — BUILDER SURFACE
-> Status: BLOCKED
+> Status: COMPLETE (Wave 4)
 
-**Blocker:** World Labs API key (needed for image generation pipeline)
-
-- [ ] Project Editor: WBS (Work Breakdown Structure) with phases, tasks, resources
-- [ ] Gantt Timeline: calendar view with critical path highlighting
-- [ ] Budget Module: line-item estimates, labor rates, material costs
-- [ ] Resource Management: crew assignment, skill matching, capacity planning
-- [ ] RFI Tracker: open request management with auto-assignment logic
-- [ ] Inspection Checkpoint System: pass/fail gates with documentation
+- [x] Project Editor: WBS (Work Breakdown Structure) with phases, tasks, resources
+- [x] Gantt Timeline: calendar view with critical path highlighting
+- [x] Budget Module: line-item estimates, labor rates, material costs
+- [x] Resource Management: crew assignment, skill matching, capacity planning
+- [x] RFI Tracker: open request management with auto-assignment logic
+- [x] Inspection Checkpoint System: pass/fail gates with documentation
 - [ ] Build-to-Dream Linkage: projects reference original dream(s)
-- [ ] Permits & Compliance: checklist tracking with jurisdiction awareness
+- [x] Permits & Compliance: checklist tracking with jurisdiction awareness
 
 ---
 
@@ -213,7 +211,7 @@
 - [x] Lead-to-warranty CRM lifecycle tracking (full pipeline)
 - [x] AI proposal generator: Claude API → formatted proposal doc (PDF export)
 - [x] Invoice module: AIA G702/G703 pay app format
-- [ ] Marketplace transactions: suppliers can list, contractors can order
+- [x] Marketplace transactions: suppliers can list, contractors can order
 - [x] Demo preparation: clean seed data, demo accounts, 8-step guided walkthrough
 - [ ] First paying customer target: one GC or developer on Pro plan
 
@@ -268,6 +266,25 @@
 - AI Proposal Generator with streaming Claude
 - Trade-off Visualizer with ripple effects
 - Database: 10 new tables, 5 enums, 20 seed achievements, full RLS
+
+### Wave 3 — Cosmos, Cache, Invoice, Demo, News, FieldOps (2026-04-05)
+- Construction Cosmos: Three.js orbital knowledge graph visualization
+- Semantic Cache: LRU with 5-min TTL and cosine similarity
+- Query Router: classification, permission checking, rate limiting
+- Invoice Module: AIA G702/G703 with PDF generation (jsPDF)
+- Demo Mode: 8-step guided walkthrough with seed data
+- Industry News Feed: lane-personalized with 4-hour cache
+- Voice-first FieldOps: giant-button UX for Crew lane
+
+### Wave 4 — Phase 1B Builder Surface + Marketplace (2026-04-05)
+- WBS Editor: hierarchical project breakdown with inline editing
+- Gantt Timeline: critical path, dependencies, zoom levels
+- Budget Module: CSI divisions, change orders, variance tracking
+- Resource Management: crew roster, capacity planning, skill matching
+- RFI Tracker: auto-assignment, response workflow, metrics
+- Inspection Checkpoints: jurisdiction-aware checklists, digital signatures
+- Permits & Compliance: tracker with expiry alerts, AHJ contacts
+- Marketplace: supplier directory, product catalog, quote requests
 
 ---
 
