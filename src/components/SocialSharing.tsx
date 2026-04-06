@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import html2canvas from 'html2canvas';
 
 interface ShareCard {
   id: string;
@@ -403,7 +402,7 @@ export default function SocialSharing() {
   };
 
   const handleReaction = (shareId: string, reactionKey: string) => {
-    const existing = userReactions[shareId] || new Set();
+    const existing = userReactions[shareId] || new Set<string>();
     const newSet = new Set(existing);
 
     if (newSet.has(reactionKey)) {
@@ -438,11 +437,20 @@ export default function SocialSharing() {
     if (!cardElement) return;
 
     try {
-      const canvas = await html2canvas(cardElement);
+      // Use SVG foreignObject approach for card capture (no external library)
+      const { width, height } = cardElement.getBoundingClientRect();
+      const clone = cardElement.cloneNode(true) as HTMLElement;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+        <foreignObject width="100%" height="100%">
+          <div xmlns="http://www.w3.org/1999/xhtml">${clone.outerHTML}</div>
+        </foreignObject>
+      </svg>`;
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
       const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `${cardId}.png`;
+      link.href = URL.createObjectURL(blob);
+      link.download = `${cardId}.svg`;
       link.click();
+      URL.revokeObjectURL(link.href);
     } catch (err) {
       console.error('Error capturing card:', err);
       alert('Could not capture card image');
@@ -831,7 +839,7 @@ export default function SocialSharing() {
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       <button
-                        onClick={() => handleCopyLink({ ...cardForm, id: 'preview', createdAt: new Date(), isPublic: true, views: 0, clicks: 0, reactions: { celebrate: 0, love: 0, inspire: 0, wow: 0 }, metadata: {} } as unknown as ShareCard)}
+                        onClick={() => handleCopyLink({ ...cardForm, id: 'preview', createdAt: new Date(), isPublic: true, views: 0, clicks: 0, reactions: { celebrate: 0, love: 0, inspire: 0, wow: 0 }, metadata: {} } as ShareCard)}
                         style={{
                           padding: '0.75rem',
                           fontSize: '0.9rem',
@@ -1283,7 +1291,7 @@ export default function SocialSharing() {
                                 fontWeight: 600,
                               }}
                             >
-                              {reaction.icon} {analytics.reactions[reaction.key as keyof typeof analytics.reactions]}
+                              {reaction.icon} {(analytics.reactions as Record<string, number>)[reaction.key]}
                             </span>
                           ))}
                         </div>
