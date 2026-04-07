@@ -695,4 +695,30 @@ Six files pushed to main:
 - **CompassNav.tsx** — Updated lane priorities for 8 lanes
 
 ---
+## Session — 2026-04-07
+
+### B Logo Vapor Particle Animation — Cinematic Page
+
+**Completed:**
+- Extracted 6,000 vertices + normals from b_logo_3D.glb (358,975 total verts, took ~60ms)
+- Encoded as Float16 base64, pushed to /public/bkg/p6k.txt and /public/bkg/n6k.txt (48KB each)
+- Built new /cinematic page with canvas-based Three.js-style renderer:
+  - Phase 0 (0–5s): 11k particle vapor cloud, tool colors, slow drift + rotation
+  - Phase 1 (5–10.5s): Spiral convergence to real GLB vertex positions via fetch()
+  - Phase 2 (10.5–15.5s): B fully formed, camera sweep, green glow pulse
+  - Phase 3 (15.5–22s): Breathing green rim light, slow rotation, then transitions to main landing
+- Background set to #030308
+- Graceful fallback to procedural B if vertex files fail to load
+- Main landing page after animation: 3 path cards (Dream/Build/Supply)
+
+**Files changed:**
+- src/app/cinematic/page.tsx (full rewrite)
+- public/bkg/p6k.txt (new — Float16 positions)
+- public/bkg/n6k.txt (new — Float16 normals)
+
+**Lessons:**
+- Spline particles are Pro-plan only — not viable for free automation
+- Canvas 2D with depth-sorted particles renders well at 11k pts ~60fps
+- Float16 encoding keeps 6k vertices under 48KB (fetch in ~50ms on fast connection)
+- GitHub Contents API reliable for binary files via base64 -w 0
 
