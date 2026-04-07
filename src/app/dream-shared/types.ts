@@ -6,6 +6,8 @@ export type DreamInterfaceType =
   | 'oracle'
   | 'alchemist'
   | 'cosmos'
+  | 'imagine'
+  | 'design'
   | 'upload'
   | 'sim'
   | 'timemachine'
@@ -104,6 +106,67 @@ export interface CosmosState {
   selectedId: string | null;
 }
 
+/** Imagination Sandbox-specific serialized state */
+export interface ImagineState {
+  phase: 'starter' | 'sandbox' | 'realizing' | 'complete';
+  starterAnswers: {
+    buildingType?: string;
+    vibe?: string;
+    scale?: number;       // 0-100
+  };
+  canvasElements: CanvasElement[];
+  dreamScore: number;     // 0-100 feasibility/completeness
+}
+
+export interface CanvasElement {
+  id: string;
+  elementId: string;      // reference to palette element
+  label: string;
+  category: string;
+  emoji: string;
+  color: string;
+  x: number;              // canvas position
+  y: number;
+}
+
+/** Design Studio-specific serialized state */
+export interface DesignStudioState {
+  phase: 'brief' | 'generating' | 'board' | 'specs';
+  brief: string;
+  styleControls: {
+    architecturalStyle: number;  // 0=Traditional, 100=Avant-Garde
+    colorWarmth: number;         // 0=Cool, 100=Warm
+    materialPreference: number;  // 0=Natural, 100=Synthetic
+    budgetLevel: number;         // 0=Economy, 100=Luxury
+    eraInfluence: number;        // 0=Classic, 100=Futuristic
+  };
+  generations: {
+    id: string;
+    prompt: string;
+    imageUrl: string;
+    timestamp: string;
+    refinements: string[];
+    saved: boolean;
+  }[];
+  board: {
+    id: string;
+    generationId: string;
+    imageUrl: string;
+    room: string;
+    label: string;
+    x: number;
+    y: number;
+  }[];
+  extractedElements: {
+    id: string;
+    label: string;
+    category: string;
+    color: string;
+    sourceGenerationId: string;
+    description: string;
+  }[];
+}
+
 /** Upload Studio-specific serialized state */
 export interface UploadStudioState {
   phase: 'upload' | 'analyze' | 'brief' | 'blueprint';
@@ -168,9 +231,11 @@ export const DREAM_INTERFACES: InterfaceInfo[] = [
   { type: 'oracle', label: 'The Oracle', emoji: '🔮', color: '#D85A30', route: '/dream/oracle', description: 'AI Dream Profiler — 7 life questions become architecture', available: true },
   { type: 'alchemist', label: 'The Alchemist', emoji: '⚗️', color: '#C4A44A', route: '/dream/alchemist', description: 'Mix ingredients to create dream homes', available: true },
   { type: 'cosmos', label: 'The Cosmos', emoji: '🌌', color: '#1D9E75', route: '/dream/cosmos', description: 'Explore the building universe in orbit', available: true },
-  { type: 'upload', label: 'Upload Studio', emoji: '📐', color: '#2C5282', route: '/dream/upload', description: 'Upload photos, plans, and documents \u2014 AI turns them into a buildable dream', available: true },
+  { type: 'imagine', label: 'The Sandbox', emoji: '✨', color: '#6366F1', route: '/dream/imagine', description: 'Imagination Sandbox — drag, dream, and design from pure imagination', available: true },
+  { type: 'design', label: 'Design Studio', emoji: '✏️', color: '#00D4FF', route: '/dream/design', description: 'AI Design Studio — generate, refine, and specify architectural designs', available: true },
+  { type: 'upload', label: 'Upload Studio', emoji: '📐', color: '#2C5282', route: '/dream/upload', description: 'Upload photos, plans, and documents — AI turns them into a buildable dream', available: true },
   { type: 'sim', label: 'The Sim', emoji: '🏗️', color: '#3B82F6', route: '/dream/sim', description: 'Simulate and walk through your dream', available: false },
-  { type: 'timemachine', label: 'Time Machine', emoji: '⏳', color: '#8B5CF6', route: '/dream/timemachine', description: 'See your project across decades', available: false },
+  { type: 'timemachine', label: 'Time Machine', emoji: '⌛', color: '#8B5CF6', route: '/dream/timemachine', description: 'See your project across decades', available: false },
   { type: 'elements', label: 'Elements', emoji: '🧩', color: '#EC4899', route: '/dream/elements', description: 'Build room by room, element by element', available: false },
   { type: 'worldwalker', label: 'WorldWalker', emoji: '🌍', color: '#0EA5E9', route: '/dream/worldwalker', description: 'Walk through buildings around the world', available: false },
   { type: 'narrator', label: 'The Narrator', emoji: '📖', color: '#F59E0B', route: '/dream/narrator', description: 'Tell the story of your dream home', available: false },
