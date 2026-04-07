@@ -6,6 +6,7 @@ export type DreamInterfaceType =
   | 'oracle'
   | 'alchemist'
   | 'cosmos'
+  | 'upload'
   | 'sim'
   | 'timemachine'
   | 'elements'
@@ -103,6 +104,54 @@ export interface CosmosState {
   selectedId: string | null;
 }
 
+/** Upload Studio-specific serialized state */
+export interface UploadStudioState {
+  phase: 'upload' | 'analyze' | 'brief' | 'blueprint';
+  files: {
+    id: string;
+    name: string;
+    type: 'image' | 'pdf' | 'audio' | 'video' | 'sketch' | 'document';
+    size: number;
+    mimeType: string;
+    aiLabel?: string;
+    aiDescription?: string;
+    uploadedAt: string;
+  }[];
+  analyses: {
+    fileId: string;
+    rooms: string[];
+    dimensions: string[];
+    styles: string[];
+    materials: string[];
+    structuralElements: string[];
+    issues: string[];
+    summary: string;
+  }[];
+  voiceNotes: {
+    id: string;
+    fileId?: string;
+    transcript: string;
+    duration: number;
+    createdAt: string;
+  }[];
+  projectBrief: {
+    scope: string;
+    estimatedBudgetLow: number;
+    estimatedBudgetHigh: number;
+    timeline: string;
+    keyDecisions: string[];
+    summary: string;
+  } | null;
+  blueprintData: {
+    projectName: string;
+    rooms: { name: string; sqft: number; features: string[] }[];
+    materials: string[];
+    phases: { name: string; duration: string; tasks: string[] }[];
+    totalEstimateLow: number;
+    totalEstimateHigh: number;
+  } | null;
+}
+
 /** Metadata for the interface registry */
 export interface InterfaceInfo {
   type: DreamInterfaceType;
@@ -119,6 +168,7 @@ export const DREAM_INTERFACES: InterfaceInfo[] = [
   { type: 'oracle', label: 'The Oracle', emoji: '🔮', color: '#D85A30', route: '/dream/oracle', description: 'AI Dream Profiler — 7 life questions become architecture', available: true },
   { type: 'alchemist', label: 'The Alchemist', emoji: '⚗️', color: '#C4A44A', route: '/dream/alchemist', description: 'Mix ingredients to create dream homes', available: true },
   { type: 'cosmos', label: 'The Cosmos', emoji: '🌌', color: '#1D9E75', route: '/dream/cosmos', description: 'Explore the building universe in orbit', available: true },
+  { type: 'upload', label: 'Upload Studio', emoji: '📐', color: '#2C5282', route: '/dream/upload', description: 'Upload photos, plans, and documents \u2014 AI turns them into a buildable dream', available: true },
   { type: 'sim', label: 'The Sim', emoji: '🏗️', color: '#3B82F6', route: '/dream/sim', description: 'Simulate and walk through your dream', available: false },
   { type: 'timemachine', label: 'Time Machine', emoji: '⏳', color: '#8B5CF6', route: '/dream/timemachine', description: 'See your project across decades', available: false },
   { type: 'elements', label: 'Elements', emoji: '🧩', color: '#EC4899', route: '/dream/elements', description: 'Build room by room, element by element', available: false },
