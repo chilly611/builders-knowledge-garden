@@ -304,7 +304,7 @@ export default function DashboardPage() {
     setNow(d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
   }, []);
 
-  const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Builder';
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Builder';
   const greeting = getGreeting();
 
   // Demo gamification data
