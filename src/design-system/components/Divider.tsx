@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { colors, fonts, fontSizes, fontWeights, letterSpacing, spacing } from '../designSystem';
+import { colors, fonts, fontSizes, fontWeights, letterSpacing, spacing } from '../tokens';
 
 /**
  * Blueprint Divider
