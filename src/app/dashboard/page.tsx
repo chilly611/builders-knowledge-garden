@@ -351,7 +351,7 @@ export default function DashboardPage() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 22 }}›Leaf Emoji</span>
+          <span style={{ fontSize: 22 }}🌿</span>
           <span style={{
             fontFamily: T.fontDisplay, fontSize: 17, fontWeight: 700,
             color: '#0B1D33', letterSpacing: '-0.01em',
