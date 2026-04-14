@@ -722,3 +722,34 @@ Six files pushed to main:
 - Float16 encoding keeps 6k vertices under 48KB (fetch in ~50ms on fast connection)
 - GitHub Contents API reliable for binary files via base64 -w 0
 
+
+### 2026-04-14 (Chat): Dream Machine Consolidation — Architecture + Build + Push
+**Unified dream landing replaces 6-card hub with 3-ramp entry**
+
+Analysis:
+- Audited 6 existing dream interfaces (Oracle, Alchemist, Cosmos, Sandbox, Design Studio, Upload Studio)
+- Audited 3 currently live pages (/dream/upload, /dream/design, /dream/imagine)
+- Identified 3 user intents: Discover ("help me figure it out"), Express ("I know what I want"), Upload ("I have something")
+
+Decisions locked (12/12 — all Chilly-approved):
+1. Discover lives AT /dream (replaces hub)
+2. 5 Oracle questions: feel, priorities, style, outdoor, scale
+3. Dream palette chips + progress ring during discovery
+4. Real Web Speech API voice input
+5. Same questions for all; trade-aware placeholder prompts
+6. Real Claude API call at reveal + template fallback
+7. DreamEssence handoff via localStorage → Design Studio
+8. Paid gate after refinement ("Start this project")
+9. Shareable links show refined output
+10. Mobile swipe via AnimatePresence
+11. GreenFlash at 4 moments
+12. Old routes 301 redirect to /dream
+
+Files pushed to main:
+- `src/lib/hooks/useSpeechRecognition.ts` — Web Speech API hook
+- `src/app/dream/components/DiscoverFlow.tsx` — 5-question Oracle flow
+- `src/app/dream/components/DreamReveal.tsx` — AI synthesis + profile card
+- `src/app/dream/page.tsx` — unified 3-ramp landing (replaces old hub)
+- `COWORK-BUILD-SPEC.md` — complete wiring instructions for Cowork
+
+Next Cowork session: wire redirects in next.config.ts, archive old dream sub-pages, integrate GreenFlash, wire Design Studio handoff, verify build, deploy.
