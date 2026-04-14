@@ -592,3 +592,17 @@
 **What happened:** `handleGoogleSignIn` called `setIsLoading(true)` but only reset on error path. Button stayed stuck on "Loading..." forever.
 **Fix:** Wrapped in try/catch/finally to always reset loading state.
 **Rule:** Any async function that sets a loading state MUST reset it in a `finally` block, not just on error paths.
+
+### 2026-04-14: Dream Consolidation Lessons
+
+**Audit before you architect.** Fetch the actual live pages before proposing changes. The brainstorm doc listed 6 interfaces; the live site had 3 different ones. Ground truth > documentation.
+
+**Three intents, not N interfaces.** Users have three intents: "help me figure it out," "I know what I want," and "I have something already." Every interface maps to one of these. Consolidation means reducing to intents, not averaging interfaces.
+
+**Template fallback for AI calls.** Always build a non-AI fallback profile. If the Claude API is slow (>2s), the template renders instantly and gets overwritten when the real response arrives. Users never see a blank screen.
+
+**localStorage is the dream handoff mechanism.** DreamEssence transfers between dream phases via localStorage with keys like `bkg-dream-profile` and `bkg-dream-express`. Design Studio reads on mount and clears after hydration. Simple, works offline, no auth required.
+
+**Voice input is 20 lines of code.** Web Speech API is free, works in Chrome+Safari (85%+ of users), and the useSpeechRecognition hook is fully reusable. No excuse not to have voice everywhere. Hide the mic button on unsupported browsers instead of showing "coming soon."
+
+**Redirects, not 404s.** When consolidating routes, 301 redirect old paths to the new unified page. Never leave dead ends — someone has those old URLs bookmarked.
