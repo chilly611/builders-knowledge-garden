@@ -1,325 +1,324 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Archivo_Black, Archivo } from "next/font/google";
-import CopilotPanel from "@/components/CopilotPanel";
-import { useSound } from "@/lib/sound-engine";
+import { useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import DiscoverFlow, { type DiscoverSelections } from './components/DiscoverFlow';
+import DreamReveal, { type DreamProfile } from './components/DreamReveal';
+import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
 
-const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400" });
-const archivo = Archivo({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
+// ═══ Design tokens ═══
+const WARM = '#D85A30';
+const GOLD = '#C4A44A';
+const CREAM = '#FDF8F0';
+const INK = '#2C1810';
+const MUTED = '#8B7355';
+const GREEN = '#1D9E75';
 
-interface DreamPath {
-  id: string; route: string; icon: string; name: string;
-  tagline: string; time: string; color: string;
-  image: string; // gradient placeholder for visual card
-  laneWeights: Record<string, number>;
+// ═══ Trade-aware placeholder prompts ═══
+function getPlaceholder(lane?: string | null): string {
+  const prompts: Record<string, string[]> = {
+    gc: ['3-story mixed-use in downtown Portland...', '40-unit apartment complex with underground parking...', 'Tenant improvement for a 5,000 SF dental office...'],
+    roofer: ['Standing seam metal roof replacement, 2,400 SF ranch...', 'Flat roof commercial repair, EPDM to TPO conversion...'],
+    hvac: ['Mini-split install for a 1,800 SF ADU...', 'Ductwork replacement for a 3-story townhome...'],
+    electrician: ['200A panel upgrade, 1960s bungalow...', 'EV charger install, detached garage...'],
+    plumber: ['Whole-house repipe, copper to PEX...', 'Bathroom addition with tankless water heater...'],
+    remodeler: ['Full kitchen remodel, open concept...', 'Master bath renovation, walk-in shower...'],
+    default: ['Modern farmhouse in Asheville...', 'Kitchen remodel with an island and skylight...', 'ADU in the backyard for my parents...', 'A treehouse my kids will never forget...'],
+  };
+  const pool = prompts[lane || 'default'] || prompts.default;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
-const DREAM_PATHS: DreamPath[] = [
-  { id: "describe", route: "/dream/describe", icon: "✦", name: "Describe Your Dream",
-    tagline: "Tell us in your own words", time: "~60 sec",
-    color: "#E8A83E", image: "url(/logos/dream/describe.webp)",
-    laneWeights: { diy: 10, gc: 8, specialty: 7, supplier: 5, equipment: 5, service: 6, worker: 6, robot: 4 } },
-  { id: "inspire", route: "/dream/inspire", icon: "◈", name: "Show Me Inspiration",
-    tagline: "Upload photos — AI analyzes everything", time: "~2 min",
-    color: "#D85A30", image: "url(/logos/dream/inspire.webp)",
-    laneWeights: { diy: 9, gc: 6, specialty: 6, supplier: 4, equipment: 3, service: 5, worker: 5, robot: 3 } },
-  { id: "sketch", route: "/dream/sketch", icon: "△", name: "Sketch It Out",
-    tagline: "Draw your floor plan — AI interprets live", time: "~5 min",
-    color: "#C4A44A", image: "url(/logos/dream/sketch.webp)",
-    laneWeights: { diy: 6, gc: 7, specialty: 8, supplier: 3, equipment: 3, service: 4, worker: 4, robot: 5 } },
-  { id: "explore", route: "/dream/explore", icon: "⬡", name: "Surprise Me",
-    tagline: "Answer 5 questions — AI generates concepts", time: "~90 sec",
-    color: "#E07B3A", image: "url(/logos/dream/explore.webp)",
-    laneWeights: { diy: 8, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 6 } },
-  { id: "browse", route: "/dream/browse", icon: "◉", name: "Browse & Discover",
-    tagline: "Infinite visual scroll — save what you love", time: "Open-ended",
-    color: "#B8873B", image: "url(/logos/dream/browse.webp)",
-    laneWeights: { diy: 7, gc: 4, specialty: 6, supplier: 7, equipment: 4, service: 5, worker: 5, robot: 3 } },
-  { id: "plans", route: "/dream/plans", icon: "⊞", name: "I Have Plans",
-    tagline: "Upload DWG, PDF — we add intelligence", time: "~10 min",
-    color: "#9C7832", image: "url(/logos/dream/plans.webp)",
-    laneWeights: { diy: 3, gc: 10, specialty: 9, supplier: 6, equipment: 7, service: 8, worker: 4, robot: 8 } },
-  { id: "oracle", route: "/dream/oracle", icon: "🔮", name: "The Oracle",
-    tagline: "7 life questions — AI reveals your dream home", time: "~3 min",
-    color: "#D85A30", image: "url(/logos/dream/oracle.webp)",
-    laneWeights: { diy: 10, gc: 6, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 4 } },
-  { id: "alchemist", route: "/dream/alchemist", icon: "⚗️", name: "The Alchemist",
-    tagline: "Mix ingredients — a unique building materializes", time: "~2 min",
-    color: "#C4A44A", image: "url(/logos/dream/alchemist.webp)",
-    laneWeights: { diy: 9, gc: 7, specialty: 6, supplier: 5, equipment: 4, service: 6, worker: 6, robot: 5 } },
-  { id: "quest", route: "/dream/quest", icon: "⚔️", name: "The Quest",
-    tagline: "RPG adventure — collect tokens, build your dream", time: "~5 min",
-    color: "#E07B3A", image: "url(/logos/dream/quest.webp)",
-    laneWeights: { diy: 8, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 8, robot: 6 } },
-  { id: "genome", route: "/dream/genome", icon: "🧬", name: "The Genome",
-    tagline: "Evolve your design with DNA sliders", time: "~3 min",
-    color: "#1D9E75", image: "url(/logos/dream/genome.webp)",
-    laneWeights: { diy: 7, gc: 8, specialty: 8, supplier: 5, equipment: 6, service: 6, worker: 5, robot: 7 } },
-  { id: "cosmos", route: "/dream/cosmos", icon: "🌌", name: "The Cosmos",
-    tagline: "3D orbital universe of building possibilities", time: "Open-ended",
-    color: "#1D9E75", image: "url(/logos/dream/cosmos.webp)",
-    laneWeights: { diy: 6, gc: 7, specialty: 7, supplier: 8, equipment: 6, service: 6, worker: 5, robot: 8 } },
-  { id: "narrator", route: "/dream/narrator", icon: "📖", name: "The Narrator",
-    tagline: "A story of your future home — rendered scene by scene", time: "~4 min",
-    color: "#B8873B", image: "url(/logos/dream/narrator.webp)",
-    laneWeights: { diy: 9, gc: 5, specialty: 4, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 4 } },
-  { id: "collider", route: "/dream/collider", icon: "⚡", name: "The Collider",
-    tagline: "Two dreams enter — one building leaves", time: "~5 min",
-    color: "#E8443A", image: "url(/logos/dream/collider.webp)",
-    laneWeights: { diy: 10, gc: 5, specialty: 5, supplier: 4, equipment: 3, service: 5, worker: 7, robot: 4 } },
-  { id: "sandbox", route: "/dream/sandbox", icon: "🧱", name: "The Sandbox",
-    tagline: "Place blocks — AI builds architecture", time: "~5 min",
-    color: "#E07B3A", image: "url(/logos/dream/sandbox.webp)",
-    laneWeights: { diy: 9, gc: 6, specialty: 6, supplier: 5, equipment: 4, service: 5, worker: 8, robot: 7 } },
-  { id: "voice", route: "/dream/voice", icon: "🎙️", name: "The Voice Architect",
-    tagline: "Talk your dream into existence", time: "Open-ended",
-    color: "#C4A44A", image: "url(/logos/dream/voice.webp)",
-    laneWeights: { diy: 10, gc: 7, specialty: 6, supplier: 5, equipment: 4, service: 6, worker: 8, robot: 5 } },
-  { id: "sim", route: "/dream/sim", icon: "🏙️", name: "The Sim",
-    tagline: "SimCity meets your dream home — place rooms, watch AI build", time: "~5 min",
-    color: "#1D9E75", image: "url(/logos/dream/sandbox.webp)",
-    laneWeights: { diy: 10, gc: 8, specialty: 7, supplier: 6, equipment: 5, service: 6, worker: 9, robot: 8 } },
-  { id: "timemachine", route: "/dream/timemachine", icon: "⏳", name: "The Time Machine",
-    tagline: "Watch your building rise phase by phase — 4D construction", time: "~3 min",
-    color: "#D85A30", image: "url(/logos/dream/plans.webp)",
-    laneWeights: { diy: 8, gc: 9, specialty: 9, supplier: 7, equipment: 8, service: 7, worker: 6, robot: 7 } },
-  { id: "elements", route: "/dream/elements", icon: "⚛️", name: "The Periodic Table",
-    tagline: "Combine building elements like a scientist — synthesize architecture", time: "Open-ended",
-    color: "#7F77DD", image: "url(/logos/dream/genome.webp)",
-    laneWeights: { diy: 7, gc: 8, specialty: 9, supplier: 8, equipment: 6, service: 6, worker: 5, robot: 7 } },
-  { id: "worldwalker", route: "/dream/worldwalker", icon: "🚶", name: "The Worldwalker",
-    tagline: "Walk through your dream in 3D — explore every room", time: "Open-ended",
-    color: "#E8443A", image: "url(/logos/dream/cosmos.webp)",
-    laneWeights: { diy: 10, gc: 7, specialty: 6, supplier: 5, equipment: 4, service: 6, worker: 8, robot: 9 } },
-];
+// ═══ Phases ═══
+type Phase = 'welcome' | 'discover' | 'reveal';
 
-interface SavedDream {
-  id: string; title: string; createdAt: string;
-  growthStage: "seed" | "sprout" | "sapling" | "bloom"; path: string;
-}
-const GROWTH_ICONS: Record<string, string> = { seed: "🌱", sprout: "🌿", sapling: "🌳", bloom: "🌸" };
-
-function getOrderedPaths(lane: string | null): DreamPath[] {
-  if (!lane) return DREAM_PATHS;
-  return [...DREAM_PATHS].sort((a, b) => (b.laneWeights[lane] ?? 5) - (a.laneWeights[lane] ?? 5));
-}
-
-export default function DreamMachinePage() {
+export default function DreamPage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [lane, setLane] = useState<string | null>(null);
-  const { play } = useSound();
-  const [dreams, setDreams] = useState<SavedDream[]>([]);
-  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+  const [phase, setPhase] = useState<Phase>('welcome');
+  const [selections, setSelections] = useState<DiscoverSelections>({});
+  const [expressInput, setExpressInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-    const storedLane = localStorage.getItem("bkg-lane");
-    if (storedLane) setLane(storedLane);
-    try { const raw = localStorage.getItem("bkg-dreams"); if (raw) setDreams(JSON.parse(raw)); } catch {}
+  // Read lane from localStorage (set during /onboarding)
+  const lane = typeof window !== 'undefined' ? localStorage.getItem('bkg-lane') : null;
+
+  const { isListening, transcript, isSupported, startListening, stopListening } = useSpeechRecognition();
+
+  // ═══ Express path: type/voice → straight to /dream/design ═══
+  const handleExpressSubmit = useCallback(() => {
+    const text = expressInput.trim() || transcript.trim();
+    if (!text) return;
+
+    // Save to localStorage for Design Studio to pick up
+    localStorage.setItem('bkg-dream-express', JSON.stringify({
+      prompt: text,
+      timestamp: Date.now(),
+      lane,
+    }));
+
+    router.push('/dream/design?source=express');
+  }, [expressInput, transcript, lane, router]);
+
+  const handleVoiceToggle = useCallback(() => {
+    if (isListening) {
+      stopListening();
+      // If we got a transcript, submit it
+      setTimeout(() => {
+        if (transcript.trim()) {
+          setExpressInput(transcript);
+          handleExpressSubmit();
+        }
+      }, 300);
+    } else {
+      startListening();
+    }
+  }, [isListening, stopListening, startListening, transcript, handleExpressSubmit]);
+
+  // ═══ Discover path callbacks ═══
+  const handleDiscoverComplete = useCallback((sels: DiscoverSelections) => {
+    setSelections(sels);
+    setPhase('reveal');
   }, []);
 
-  const orderedPaths = getOrderedPaths(lane);
-  if (!mounted) return <div style={{ minHeight: "100vh", background: "#fff" }} />;
+  const handleRefine = useCallback((profile: DreamProfile) => {
+    // Save dream profile for Design Studio
+    localStorage.setItem('bkg-dream-profile', JSON.stringify({
+      ...profile,
+      selections,
+      timestamp: Date.now(),
+      source: 'discover',
+    }));
+    router.push('/dream/design?source=discover');
+  }, [selections, router]);
 
+  const handleStartOver = useCallback(() => {
+    setSelections({});
+    setPhase('welcome');
+  }, []);
+
+  // ═══ Render by phase ═══
   return (
-    <>
-      <style jsx global>{`
-        @keyframes heroFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @keyframes cardEnter { 0% { opacity: 0; transform: translateY(24px) scale(0.97); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .dream-path-card {
-          position: relative; border-radius: 20px; overflow: hidden; cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
-          box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-          animation: cardEnter 0.6s cubic-bezier(0.34,1.56,0.64,1) backwards;
-        }
-        .dream-path-card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
-        .dream-path-card .card-visual {
-          height: 200px; display: flex; align-items: flex-end; padding: 16px;
-          position: relative; overflow: hidden;
-          background-size: cover !important; background-position: center !important;
-        }
-        .dream-path-card .card-visual::after {
-          content: ''; position: absolute; inset: 0;
-          background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
-        }
-      `}</style>
+    <AnimatePresence mode="wait">
+      {phase === 'welcome' && (
+        <motion.div
+          key="welcome"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '40px 20px',
+            background: `linear-gradient(180deg, ${CREAM} 0%, #FFF8F0 100%)`,
+            position: 'relative', overflow: 'hidden',
+          }}
+        >
+          {/* Floating particles */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -20, 0],
+                opacity: [0.2, 0.5, 0.2],
+              }}
+              transition={{
+                duration: 3 + i * 0.7,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              style={{
+                position: 'absolute', width: 5, height: 5, borderRadius: '50%',
+                background: i % 2 === 0 ? WARM : GOLD,
+                top: `${15 + (i * 13) % 70}%`,
+                left: `${8 + (i * 19) % 84}%`,
+              }}
+            />
+          ))}
 
-      <div style={{ minHeight: "100vh", background: "#fff" }}>
-
-        {/* ── HERO — Full-width visual with text overlay ────── */}
-        <div style={{
-          position: "relative", height: "clamp(300px, 45vh, 480px)", overflow: "hidden",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {/* Real architecture photo background */}
-          <div style={{
-            position: "absolute", inset: 0,
-            backgroundImage: "url(https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1400&q=85&fit=crop)",
-            backgroundSize: "cover", backgroundPosition: "center",
-          }} />
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(180deg, rgba(42,31,20,0.3) 0%, rgba(42,31,20,0.7) 60%, rgba(42,31,20,0.92) 100%)",
-          }} />
-          <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "0 20px" }}>
-            <p className={archivo.className} style={{ fontSize: "0.72rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Builder&rsquo;s Knowledge Garden</p>
-            <h1 className={archivoBlack.className} style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", fontWeight: 900, color: "#fff", lineHeight: 1.1, marginBottom: 14 }}>
-              The Dream Machine
-            </h1>
-            <p className={archivo.className} style={{ fontSize: "clamp(0.95rem, 2vw, 1.15rem)", color: "rgba(255,255,255,0.7)", maxWidth: 480, margin: "0 auto", fontWeight: 300 }}>
-              Every great building begins as a feeling. Choose how you want to begin.
-            </p>
-          </div>
-        </div>
-
-        {/* ── PATH CARDS — Visual grid ──────────────────────── */}
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 20px 60px" }}>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-          }}>
-            {orderedPaths.map((path, i) => (
-              <div
-                key={path.id}
-                className="dream-path-card"
-                onClick={() => { play("navigate"); router.push(path.route); }}
-                onMouseEnter={() => setHoveredPath(path.id)}
-                onMouseLeave={() => setHoveredPath(null)}
-                role="button" tabIndex={0} data-sound="select"
-                onKeyDown={(e) => e.key === "Enter" && router.push(path.route)}
-                style={{ animationDelay: `${i * 0.08 + 0.1}s`, background: "#fff" }}
-              >
-                {/* Visual area with gradient image placeholder */}
-                <div className="card-visual" style={{ background: path.image }}>
-                  <div style={{
-                    position: "absolute", top: 16, left: 16, zIndex: 2,
-                    fontSize: "2.4rem", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))",
-                    animation: hoveredPath === path.id ? "heroFloat 2s ease-in-out infinite" : "none",
-                  }}>{path.icon}</div>
-                  <div style={{ position: "relative", zIndex: 2 }}>
-                    <span className={archivo.className} style={{
-                      padding: "4px 10px", borderRadius: 8,
-                      background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
-                      fontSize: "0.68rem", color: path.color, fontWeight: 600,
-                    }}>{path.time}</span>
-                  </div>
-                </div>
-                {/* Text area */}
-                <div style={{ padding: "16px 18px 20px" }}>
-                  <h3 className={archivo.className} style={{
-                    fontSize: "1.1rem", fontWeight: 700, color: "#222", marginBottom: 4,
-                  }}>{path.name}</h3>
-                  <p className={archivo.className} style={{
-                    fontSize: "0.82rem", color: "#666", fontWeight: 300, lineHeight: 1.4,
-                  }}>{path.tagline}</p>
-                </div>
-                {lane && (path.laneWeights[lane] ?? 5) >= 9 && (
-                  <div style={{
-                    position: "absolute", top: 12, right: 12, zIndex: 3,
-                    padding: "3px 10px", borderRadius: 8,
-                    background: path.color, color: "#222",
-                    fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em",
-                  }} className={archivo.className}>RECOMMENDED</div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* ── KNOWLEDGE GARDEN — THE FOUNDATION ─────────────── */}
-          <div
-            className="dream-path-card"
-            onClick={() => { play("navigate"); router.push("/knowledge"); }}
-            role="button" tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && router.push("/knowledge")}
-            style={{
-              marginTop: 24, gridColumn: "1 / -1", background: "var(--bg, #ffffff)",
-              borderRadius: 20, overflow: "hidden", cursor: "pointer",
-              position: "relative", minHeight: 200,
-              display: "flex", alignItems: "center",
-              border: "1px solid rgba(29,158,117,0.15)",
-            }}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{ textAlign: 'center', maxWidth: 480, width: '100%', position: 'relative', zIndex: 1 }}
           >
-            {/* Background image with blend */}
+            {/* Brand mark */}
             <div style={{
-              position: "absolute", inset: 0,
-              backgroundImage: "url(https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200&q=80&fit=crop)",
-              backgroundSize: "cover", backgroundPosition: "center",
-              opacity: 0.3, mixBlendMode: "lighten",
-            }} />
-            {/* Gradient overlay */}
+              fontSize: 11, fontWeight: 700, letterSpacing: 3, color: WARM,
+              textTransform: 'uppercase', marginBottom: 20,
+            }}>
+              The Dream Machine
+            </div>
+
+            {/* Headline */}
+            <h1 style={{
+              fontSize: 34, fontWeight: 900, color: INK,
+              margin: '0 0 12px', lineHeight: 1.1,
+            }}>
+              What do you want<br />to build?
+            </h1>
+
+            <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, margin: '0 0 36px' }}>
+              Type it, say it, or let us help you discover it.<br />
+              No wrong answers. Dreams grow.
+            </p>
+
+            {/* ═══ Main input (Express ramp) ═══ */}
             <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(90deg, var(--bg, #ffffff) 0%, var(--bg, #ffffff) 15%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.4) 70%, transparent 100%)",
-            }} />
-            {/* Content */}
-            <div style={{ position: "relative", zIndex: 2, padding: "36px 40px", maxWidth: 520 }}>
-              <div className={archivo.className} style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase",
-                letterSpacing: "0.14em", color: "#5DCAA5", marginBottom: 12,
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1D9E75", animation: "pulse 2.5s ease-in-out infinite" }} />
-                The Knowledge Garden
-              </div>
-              <h3 className={archivoBlack.className} style={{
-                fontSize: "clamp(1.4rem, 3vw, 1.8rem)", color: "#fff", lineHeight: 1.15, marginBottom: 10,
-              }}>
-                Explore the Garden
-              </h3>
-              <p className={archivo.className} style={{
-                fontSize: "0.9rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.6, fontWeight: 300, marginBottom: 18,
-              }}>
-                The scientific foundation beneath everything. Browse knowledge entities, study codes, discover materials, and let AI guide you through the construction universe.
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {["Browse Knowledge", "AI Copilot", "Architecture Styles", "Codes & Standards"].map(tag => (
-                  <span key={tag} className={archivo.className} style={{
-                    padding: "5px 13px", background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 100,
-                    fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", fontWeight: 400,
-                  }}>{tag}</span>
-                ))}
-              </div>
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: '#fff', border: `1.5px solid ${GOLD}44`,
+              borderRadius: 14, padding: '12px 16px',
+              marginBottom: 16, width: '100%',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+            }}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={isListening ? transcript : expressInput}
+                onChange={(e) => setExpressInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleExpressSubmit(); }}
+                placeholder={getPlaceholder(lane)}
+                style={{
+                  flex: 1, border: 'none', outline: 'none', fontSize: 16, color: INK,
+                  background: 'transparent',
+                }}
+              />
+              {/* Voice button */}
+              {isSupported && (
+                <motion.button
+                  onClick={handleVoiceToggle}
+                  whileTap={{ scale: 0.92 }}
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%', border: 'none',
+                    background: isListening ? WARM : WARM,
+                    color: '#fff', cursor: 'pointer', fontSize: 16,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, position: 'relative',
+                  }}
+                >
+                  {isListening && (
+                    <motion.div
+                      animate={{ scale: [1, 1.4, 1] }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                      style={{
+                        position: 'absolute', inset: -4, borderRadius: '50%',
+                        border: `2px solid ${WARM}44`,
+                      }}
+                    />
+                  )}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M12 1v11M12 1a3 3 0 0 0-3 3v4a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8" />
+                  </svg>
+                </motion.button>
+              )}
+              {/* Submit arrow */}
+              {(expressInput.trim() || transcript.trim()) && (
+                <motion.button
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  onClick={handleExpressSubmit}
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%', border: 'none',
+                    background: GREEN, color: '#fff', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </motion.button>
+              )}
             </div>
-          </div>
 
-          {/* ── YOUR GARDEN ─────────────────────────────────────── */}
-          {dreams.length > 0 && (
-            <div style={{ marginTop: 48, padding: "24px", borderRadius: 20, background: "#f8faf8", border: "1px solid #e0e8e0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 className={archivo.className} style={{ fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#1D9E75", fontWeight: 600 }}>Your Garden</h3>
-                <Link href="/dream/garden" className={archivo.className} style={{ fontSize: "0.72rem", color: "#1D9E75", textDecoration: "none" }}>View Full Garden →</Link>
-              </div>
-              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
-                {dreams.slice(0, 6).map((dream) => (
-                  <Link key={dream.id} href={`/dream/${dream.path}`} style={{
-                    flex: "0 0 auto", display: "flex", alignItems: "center", gap: 8,
-                    padding: "10px 16px", borderRadius: 12, background: "#fff",
-                    border: "1px solid #e0e8e0", textDecoration: "none", transition: "all 0.2s",
-                  }}>
-                    <span style={{ fontSize: "1.2rem" }}>{GROWTH_ICONS[dream.growthStage] || "🌱"}</span>
-                    <div>
-                      <div className={archivo.className} style={{ fontSize: "0.78rem", color: "#222", fontWeight: 500 }}>{dream.title?.slice(0, 25) || "Untitled"}</div>
-                      <div className={archivo.className} style={{ fontSize: "0.62rem", color: "#555" }}>{dream.growthStage}</div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 0 24px' }}>
+              <div style={{ flex: 1, height: 1, background: '#DDD5C8' }} />
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>or</span>
+              <div style={{ flex: 1, height: 1, background: '#DDD5C8' }} />
             </div>
-          )}
 
-          <p className={archivo.className} style={{ textAlign: "center", marginTop: 40, fontSize: "0.75rem", color: "#666" }}>
-            Dream big. We&rsquo;ll get realistic later.
-          </p>
-        </div>
-      </div>
-      <CopilotPanel />
-    </>
+            {/* ═══ Two secondary ramps ═══ */}
+            <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+              {/* Discover ramp */}
+              <motion.button
+                onClick={() => setPhase('discover')}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  flex: 1, padding: '20px 16px', borderRadius: 14, cursor: 'pointer',
+                  background: '#fff', border: `1.5px solid ${GOLD}33`,
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                }}
+              >
+                <div style={{ fontSize: 24, marginBottom: 8 }}>✦</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 4 }}>
+                  Help me discover
+                </div>
+                <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.4 }}>
+                  5 quick questions, zero jargon
+                </div>
+              </motion.button>
+
+              {/* Upload ramp */}
+              <motion.button
+                onClick={() => router.push('/dream/upload')}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  flex: 1, padding: '20px 16px', borderRadius: 14, cursor: 'pointer',
+                  background: '#fff', border: `1.5px solid ${GREEN}33`,
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                }}
+              >
+                <div style={{ fontSize: 24, marginBottom: 8 }}>📎</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 4 }}>
+                  I have files
+                </div>
+                <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.4 }}>
+                  Photos, plans, sketches, links
+                </div>
+              </motion.button>
+            </div>
+
+            {/* Footer note */}
+            <p style={{ fontSize: 11, color: MUTED, marginTop: 32, opacity: 0.5 }}>
+              Everything here is free. Dream as big as you want.
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {phase === 'discover' && (
+        <motion.div
+          key="discover"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <DiscoverFlow
+            onComplete={handleDiscoverComplete}
+            onBack={() => setPhase('welcome')}
+          />
+        </motion.div>
+      )}
+
+      {phase === 'reveal' && (
+        <motion.div
+          key="reveal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <DreamReveal
+            selections={selections}
+            onRefine={handleRefine}
+            onStartOver={handleStartOver}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
