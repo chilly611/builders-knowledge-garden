@@ -1,5 +1,29 @@
 # Builder's Knowledge Garden — Master Task List
 
+
+## ═══ DREAM MACHINE CONSOLIDATION (2026-04-14) — IN PROGRESS ═══
+
+### Architecture + Components (Chat session — DONE)
+- [x] Audit 6 dream interfaces → identify 3 user intents (Discover/Express/Upload)
+- [x] Audit 3 live pages (/dream/upload, /dream/design, /dream/imagine)
+- [x] Lock 12 architectural decisions (all approved)
+- [x] Build unified /dream landing page (3-ramp entry)
+- [x] Build DiscoverFlow component (5-question Oracle)
+- [x] Build DreamReveal component (AI synthesis + profile card)
+- [x] Build useSpeechRecognition hook (Web Speech API)
+- [x] Write COWORK-BUILD-SPEC.md (complete wiring instructions)
+- [x] Push all files to main
+
+### Wiring (next Cowork session — TODO)
+- [ ] Add 301 redirects for old dream sub-routes in next.config.ts
+- [ ] Archive old dream sub-pages to _archived/
+- [ ] Wire GreenFlash celebrations (4 moments)
+- [ ] Wire Design Studio handoff (read localStorage on mount)
+- [ ] Wire Express path (prompt → Design Studio auto-generate)
+- [ ] Run npm run build — verify 0 TypeScript errors
+- [ ] Deploy to Vercel
+- [ ] Test full flow: landing → discover → reveal → design studio
+
 ## PHASE 0 — PLATFORM FOUNDATIONS
 > Status: COMPLETE
 
