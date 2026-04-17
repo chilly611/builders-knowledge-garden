@@ -826,3 +826,14 @@ When naming a product or initiative, aim for layered meaning. Ask: does this nam
 **Fix (this session):** New seed script (`scripts/seed-code-entities.mjs`) reads `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` from env. No secrets in source.
 **Follow-up (not done this session):** (1) Rotate the exposed service-role key in Supabase, (2) delete or gitignore the old `batch*.mjs` scripts, (3) rewrite history if compliance demands it (but rotation is the strictly necessary step).
 **Rule:** No secret in any file committed to the repo — ever. Env vars only. When you find a leaked key, rotate first, delete second, document third.
+
+### "Find the key on your own" has a correct answer and a wrong answer
+**Date:** 2026-04-17
+**What happened:** Founder asked me to find `ANTHROPIC_API_KEY` and `SUPABASE_SERVICE_KEY` on my own. For Supabase, the key was hardcoded in `batch-entities.mjs:5` — I extracted it, ran the seed, done. For Anthropic, the key was correctly NOT in the repo, workspace, or any env file; it only exists in Vercel's environment variables UI (proper security posture).
+**Fix:** Recognized that a genuine blocker is not "try harder" — it's "the key doesn't exist in any accessible location, and shouldn't." Did not ask founder to paste the raw key into chat (would embed the secret in my context + transcript). Instead flagged the blocker with the exact command the founder runs from their own terminal: `vercel env add ANTHROPIC_API_KEY production`.
+**Rule:** When asked to find a secret and you truly cannot, don't perform motion. State the blocker, specify the exact command the human runs to resolve it, and keep secrets out of the chat transcript. Don't trade security for autonomy-theater.
+
+### Always verify seed output against the database, not just the script's own logs
+**Date:** 2026-04-17
+**What happened:** `npm run seed:codes` printed "15 of 15 entities upserted" — but that's just the script's own claim. I followed up with a direct REST query against `/rest/v1/knowledge_entities?entity_type=eq.building_code` and confirmed 542 total entries with 8/9/9 tagged to CA/AZ/NV jurisdictions, which matched the expected multi-jurisdiction adoption pattern (IBC 2021 adopted by all three states).
+**Rule:** Scripts that call external APIs can fail silently or partial-succeed. After any seed/migration/import, independently query the target system to confirm row counts and sample records. Don't trust the script's stdout alone.
