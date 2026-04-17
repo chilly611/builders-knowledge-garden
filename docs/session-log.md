@@ -753,3 +753,59 @@ Files pushed to main:
 - `COWORK-BUILD-SPEC.md` — complete wiring instructions for Cowork
 
 Next Cowork session: wire redirects in next.config.ts, archive old dream sub-pages, integrate GreenFlash, wire Design Studio handoff, verify build, deploy.
+
+
+## 2026-04-16 — Chat — Design Constitution v1.0 Locked
+
+**Type:** Strategic / architectural (no code shipped this session)
+**Outcome:** The Knowledge Gardens Design Constitution v1.0 is committed to the repo as `docs/design-constitution.md`. This is now the inviolable reference for every surface, every primitive, and every future Knowledge Gardens domain.
+
+### What happened
+
+The session started from a narrow complaint: the SCOUT section of the Killer App uses contractor-fluent jargon ("Pre-Bid Risk Score," "AI Estimating Gate," "CRM Client Lookup") that gates newcomers and leads with risk before inspiration. That surface-level issue opened into a platform-wide problem:
+
+- Every BKG surface currently speaks with a voice that assumes expertise.
+- The order of operations follows project-manager workflow, not the human emotional arc.
+- No pattern exists for ambient onboarding, fearless navigation, or lane-agnostic welcome.
+
+Rather than fix SCOUT locally, we designed a ten-goal constitution that applies to every Knowledge Gardens surface globally.
+
+### The ten goals (locked)
+
+1. Plain Language First, Pro Language Available
+2. Emotional Sequencing Is the Default
+3. Invitation, Not Instruction
+4. Ambient Onboarding (Not Zero Onboarding)
+5. Fearless Navigation (Time Machine)
+6. Designed for the Most Constrained User First
+7. Reusable Primitives, Platform-Wide
+8. Machine-Legible Everything
+9. Voice Is Equal
+10. All Eight Lanes, Always
+
+### Three binding decisions (load-bearing)
+
+1. The Pro Toggle is visible on every screen. Not in settings. Not buried.
+2. The Time Machine is platform infrastructure, not a feature. Built once, inherited everywhere.
+3. The human arc is the default. Pros opt into the operational arc; everyone else sees the human arc.
+
+### The seven primitives
+
+Invitation Card · Emotional Arc · Whisper · Time Machine · Ask Anything · Pro Toggle · Progressive Reveal.
+
+Every surface across every Knowledge Gardens domain is assembled from these seven primitives. Full specs to be written in the next session as `docs/design-primitives.md`.
+
+### Files committed this session
+
+- `docs/design-constitution.md` (new) — the ten goals, binding decisions, primitives manifest, build plan
+- `docs/session-log.md` (appended) — this entry
+- `tasks.todo.md` (updated) — constitutional work items added
+- `tasks.lessons.md` (updated) — "constitution before surface" pattern recorded
+
+### Next session
+
+All seven primitives specified in detail — visual, interaction, voice, machine-legible, Pro Toggle behavior, Time Machine behavior. Output: `docs/design-primitives.md`. After that, three pilots ship in parallel: SCOUT redesign, Dream Machine landing, and a clean-slate surface (candidate: First Lead or Morning Briefing).
+
+### Founder decision rationale (preserved for posterity)
+
+When asked to pick just one pilot to ship first rather than all three in parallel, the founder chose "all three in parallel — don't chicken out." The parallel approach is explicitly to stress-test whether the primitives scale across chromes (red/warm/green) and contexts (operational/emotional/clean-slate), not just whether they solve the original SCOUT complaint.

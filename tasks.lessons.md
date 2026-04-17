@@ -606,3 +606,46 @@
 **Voice input is 20 lines of code.** Web Speech API is free, works in Chrome+Safari (85%+ of users), and the useSpeechRecognition hook is fully reusable. No excuse not to have voice everywhere. Hide the mic button on unsupported browsers instead of showing "coming soon."
 
 **Redirects, not 404s.** When consolidating routes, 301 redirect old paths to the new unified page. Never leave dead ends — someone has those old URLs bookmarked.
+
+
+## Lesson — Constitution Before Surface (learned 2026-04-16)
+
+### The pattern
+
+When a user points out a UX problem on a single surface, the fix is almost never a single-surface fix. It is a platform-level pattern problem that shows up first on that surface.
+
+**SCOUT case:** The founder complained that SCOUT's three gates ("Pre-Bid Risk Score," "AI Estimating Gate," "CRM Client Lookup") used jargon and led with risk. The naive fix would have been to rename those three labels. The correct fix was to locate the underlying pattern violation — every BKG surface uses expert-voice labels and operational ordering — and write a constitution that prevents the same failure on every other surface.
+
+### The rule
+
+Before fixing a surface-level UX complaint, ask: **is this pattern violated elsewhere on the platform?** If yes, the fix is at the platform pattern level, not the surface level. Fix the pattern; the surface falls out.
+
+### The corollary
+
+Fixing the single surface without fixing the pattern is technical debt in disguise. Every other surface that violates the same pattern is now inconsistent with the fixed one, and the inconsistency itself becomes a second UX problem on top of the original.
+
+### Applied check for future sessions
+
+When a user reports a UX issue:
+
+1. Restate the complaint.
+2. Ask: "does this pattern show up on more than one surface?"
+3. If yes → escalate to pattern-level work (constitution, primitives, shared components).
+4. If no → fix the surface locally.
+5. Either way, record the decision in `docs/session-log.md` so future sessions can see whether pattern vs. surface was the right call.
+
+---
+
+## Lesson — The Founder Will Reject Cowardly Scope (learned 2026-04-16)
+
+When offered the chance to scope down from three parallel pilots to one, the founder chose "all three in parallel — don't chicken out." The instruction is: when the work is strategically important, do not pre-emptively scope it down to make it easier. Present the ambitious plan; let the founder scope down if needed.
+
+The corollary: "don't chicken out" is a live phrase the founder uses to reject false-humility scoping. Recognize it as a signal that the more ambitious path is the correct path.
+
+---
+
+## Lesson — Load-Bearing Decisions Must Be Named (learned 2026-04-16)
+
+The Design Constitution names three "binding decisions" explicitly — Pro Toggle visible on every screen, Time Machine as platform infrastructure, human arc as default. These are called out separately from the ten goals because they are the specific tradeoffs that can be softened under pressure and must not be.
+
+**The rule:** When a session makes a strategic decision that has implementation cost (real estate, engineering complexity, philosophy), name it explicitly as a "binding decision" with the cost written in plain language next to it. This makes it harder to quietly walk back later.

@@ -375,3 +375,41 @@ Key project files referenced in this task list:
 - `/app/api/v1/notifications/route.ts` — Notification orchestra (Phase 2C)
 - `/app/api/v1/quests/route.ts` — Quest system (Phase 3B)
 - `/app/api/v1/agents/route.ts` — Agent RBAC (Phase 5A)
+
+
+## Design Constitution Work (opened 2026-04-16)
+
+### Phase A — Primitive Specs (next session, single pass)
+- [ ] Write `docs/design-primitives.md` with all seven primitives specified across six dimensions (visual, interaction, voice, machine-legible, Pro Toggle behavior, Time Machine behavior)
+- [ ] Invitation Card spec
+- [ ] Emotional Arc spec
+- [ ] Whisper spec
+- [ ] Time Machine spec (platform-level; highest priority, blocks most other work)
+- [ ] Ask Anything spec
+- [ ] Pro Toggle spec
+- [ ] Progressive Reveal spec
+
+### Phase B — Three Parallel Pilots
+- [ ] **Pilot 1 — SCOUT redesign** (Killer App, red chrome). Three gates become Invitation Cards in a curiosity → possibility → judgment arc. Pro Toggle visible top-right. Whispers on first use. Time Machine on every action.
+- [ ] **Pilot 2 — Dream Machine landing rebuild** (warm/gold chrome). Three-intent entry (Discover / Express / Upload) rebuilt as Invitation Cards wired into the Time Machine.
+- [ ] **Pilot 3 — Clean-slate surface** built from primitives only. Candidate surfaces: "First Lead" (SCOUT-adjacent) or "Morning Briefing" (field ops). Founder to pick before Phase B starts.
+
+### Phase C — Extract and Codify
+- [ ] Create `src/components/primitives/` shared library
+- [ ] Extract Invitation Card, Emotional Arc, Whisper, Ask Anything, Pro Toggle, Progressive Reveal into reusable React components
+- [ ] Wire Time Machine as platform infrastructure (global undo stack + drafts tray + stateful breadcrumbs + skip-and-return)
+- [ ] Expose structured data for every primitive (Goal 8 — MCP / `llms.txt` consumable)
+- [ ] Write `docs/design-primitives-usage.md` teaching the pattern for future sessions
+
+### Phase D — Instrument and Iterate
+- [ ] Add telemetry for confusion signals (rage clicks, rapid backtracks, abandoned flows, hover-without-click)
+- [ ] Add invitation acceptance rate tracking per Invitation Card
+- [ ] Add Pro Toggle usage tracking (where, how often, who)
+- [ ] Add Whisper dismissal pattern tracking
+- [ ] Add Time Machine usage tracking (undo depth, drafts recovered, skips deferred)
+- [ ] Scaffold RSI Loop #8 — Design Constitution Fitness — that surfaces which surfaces are failing which goals
+
+### Cross-cutting
+- [ ] Audit every existing surface against the ten goals; produce a gap report per surface
+- [ ] Retrofit surfaces incrementally — not a big-bang rewrite, one primitive at a time
+- [ ] Update `docs/architecture.md` with a link to the constitution and a note that all UI decisions flow from it
