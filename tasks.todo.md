@@ -413,3 +413,80 @@ Key project files referenced in this task list:
 - [ ] Audit every existing surface against the ten goals; produce a gap report per surface
 - [ ] Retrofit surfaces incrementally — not a big-bang rewrite, one primitive at a time
 - [ ] Update `docs/architecture.md` with a link to the constitution and a note that all UI decisions flow from it
+
+
+## Killer App Direction + 6-Week Revenue Plan (opened 2026-04-17)
+
+Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This section is the actionable task list.
+
+### Immediate — within 24 hours
+- [ ] Founder reviews `docs/presentation-for-team.md` in the morning with fresh eyes; edits or flags before sharing with team
+- [ ] Founder shares `docs/design-draft-v0.1.md` + `docs/presentation-for-team.md` with John Bou and the trusted contractor as pre-read
+- [ ] Founder schedules team discussion meeting for later this week (45-60 min, in person if possible)
+
+### Phase 0 — Foundation (this week, parallel to customer conversations)
+- [ ] Cowork session: read prototype lines 1600-3322, extract all remaining workflows to `docs/workflows.json`
+- [ ] Cowork session: extract all AI specialist prompts to `docs/ai-prompts/*.md` (one file per specialist)
+- [ ] Cowork session: build `src/components/primitives/StepCard.tsx` as the first reusable primitive from the direction doc
+- [ ] Cowork session: verify Anthropic Claude API key is wired and accessible from production build
+- [ ] Engage a construction attorney to review the six contract templates before first paid use
+
+### Week 1 (Apr 17-23) — Code Compliance Lookup Live
+- [ ] Ship `/killer-app/workflows/code-compliance` as a live, wired workflow
+- [ ] Wire `compliance-structural` and `compliance-electrical` specialist prompts to Claude API
+- [ ] Load one jurisdiction's codes fully into the BKG database (contractor's jurisdiction)
+- [ ] Ensure AI citations link to real BKG entity IDs with updated_at timestamps
+- [ ] Basic auth + user session (Clerk)
+- [ ] Step-card primitive in use
+
+### Week 2 (Apr 24-30) — First Paying Customer
+- [ ] Ship Contract Templates workflow: 6 templates (Client, Sub, Lien Waivers x2, NDA, Change Order)
+- [ ] PDF generation for contracts
+- [ ] Stripe subscription billing wired end-to-end at $99/mo Pro tier
+- [ ] Trusted contractor onboarded as customer #1 (locked in for 1 year)
+- [ ] Paywall flow: third Code Compliance Lookup in 30-day window prompts upgrade
+- [ ] Receipt + activation emails + basic customer success path
+
+### Week 3 (May 1-7) — Size Up Workflow + Grow to 3 Customers
+- [ ] Ship Size Up workflow rebuilt from prototype q1+q2 with risk-first framing stripped
+- [ ] Wire `estimating-job-size`, `sourcing-local-suppliers`, `sourcing-online-sales` specialist prompts
+- [ ] Supplier database populated with local sources for contractor's area
+- [ ] Voice-to-scope-description flow polished
+- [ ] Trusted contractor refers 2 more paying customers at $149/mo Pro+
+
+### Week 4 (May 8-14) — Journey Map + Multi-Project
+- [ ] Ship journey map visualization with seven lifecycle stages
+- [ ] Skip/done/pending states per workflow
+- [ ] Multi-project support in project selector
+- [ ] Team collaboration: shared project view, who-did-what visibility
+- [ ] Weekly customer success check-ins with the 3 paying users
+
+### Week 5 (May 15-21) — Launch Building Intelligence API
+- [ ] Package 5 specialists as MCP server endpoints: Code Compliance, Estimating, Bid Analysis, Crew Sizing, Supply Sourcing
+- [ ] REST API alternative at `api.theknowledgegardens.com/building-intelligence`
+- [ ] Documentation at `docs.theknowledgegardens.com/building-intelligence`
+- [ ] Public `llms.txt` at `theknowledgegardens.com/llms.txt` describing available specialists
+- [ ] Pricing published: free tier (50 calls/mo), $0.50/call pay-as-you-go, $500/mo enterprise
+- [ ] Announcement to Claude dev community, OpenAI dev community, Perplexity dev community
+- [ ] Target first API customer signed
+
+### Week 6 (May 22-28) — Polish + Pitch
+- [ ] Polish any rough edges from Weeks 1-5
+- [ ] Port one additional workflow (candidate: Sub Management from prototype q9)
+- [ ] Write case studies for each paying customer (with permission)
+- [ ] Update fundraising pitch deck with revenue slide: ARR $10-20k, growing 50%+ month-over-month
+- [ ] Friday May 29: review against the plan; if milestones hit, plan next 6 weeks post-raise
+
+### Cross-cutting (parallel track, not blocking Weeks 1-6)
+- [ ] Port remaining workflows from the prototype over 8-12 weeks
+- [ ] Build full XP reputation system (not the week-6 plan; ships later)
+- [ ] Name and design initial set of badge-of-honor titles (candidates: Code Scholar, Estimator, Template Maker, Knowledge Contributor, etc.)
+- [ ] Explore certification partnerships: AGC, NAHB, state licensing boards — or self-issued with BKG authority
+- [ ] Trademark check for "Building Intelligence"
+- [ ] Audit existing surfaces against design draft's eleven goals once the team locks v1.0
+
+### Legal prerequisites (MUST complete before first paid Contract Templates use)
+- [ ] Construction attorney reviews all six templates
+- [ ] Output framed as "starting draft for attorney review," NOT "ready-to-sign"
+- [ ] Terms of service includes real liability limitation reviewed by the same attorney
+- [ ] Cannot sell Contract Templates until this is done

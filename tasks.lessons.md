@@ -649,3 +649,108 @@ The corollary: "don't chicken out" is a live phrase the founder uses to reject f
 The Design Constitution names three "binding decisions" explicitly — Pro Toggle visible on every screen, Time Machine as platform infrastructure, human arc as default. These are called out separately from the ten goals because they are the specific tradeoffs that can be softened under pressure and must not be.
 
 **The rule:** When a session makes a strategic decision that has implementation cost (real estate, engineering complexity, philosophy), name it explicitly as a "binding decision" with the cost written in plain language next to it. This makes it harder to quietly walk back later.
+
+
+## Lesson — Content vs. Container (learned 2026-04-17)
+
+### The pattern
+
+When critiquing an existing artifact (prototype, document, feature), the right move is to separate **what's genuinely good** (the underlying content, IP, craft, decisions that are sound) from **what's wrong** (the framing, wrapper, implementation, surface-level choices). Most critiques lose both. "This is bad, rebuild it" throws out the good content with the bad container.
+
+### The rule
+
+Before rebuilding anything, explicitly name:
+1. What's the content (the part worth preserving)?
+2. What's the container (the part that needs to change)?
+3. Which is the critique actually aimed at?
+
+### Applied to the prototype analysis
+
+The BKG Killer App prototype had a quest/XP/level gamification wrapper over genuinely excellent contractor workflow content (11+ workflows, 15+ AI specialists, thoughtful step structures). The initial framing ("the gamification is wrong") risked throwing out the workflows too. The correct frame: keep the content (workflows, specialists, step primitive), replace the container (quest-ladder navigation, enforced sequence, earn-to-unlock framing).
+
+### Applied check for future sessions
+
+When reviewing existing work:
+1. State what's good before stating what's wrong
+2. Identify the container vs. content split explicitly
+3. When in doubt about whether something is container or content, preserve it and decide later
+4. Decisions to "keep" something are just as important to record as decisions to discard
+
+---
+
+## Lesson — Post-Revenue Before Fundraising Changes the Story (learned 2026-04-17)
+
+### The pattern
+
+The binary flip from "zero paying customers" to "any paying customers" changes fundraising meaningfully. Pre-revenue → post-revenue transitions are worth 50-70% in valuation and significantly better terms (liquidation preference, participation rights, anti-dilution). The effort to get to even 3-5 paying customers at small MRR may be proportionally small compared to the fundraising upside.
+
+### The rule
+
+Plan revenue in parallel with building. Not "build the whole thing then monetize" — "ship the thinnest possible paywall-crossing MLP and get first dollars in while the big build continues."
+
+### Applied to BKG
+
+Committed to a 6-week post-revenue plan:
+- Weeks 1-2: Ship Code Compliance + Contract Templates, onboard trusted contractor at $99/mo
+- Weeks 3-4: Ship Size Up, grow to 3 consumer customers at $99-149/mo
+- Week 5: Launch Building Intelligence API at $500/mo enterprise
+- Week 6: Polish, case studies, updated fundraising pitch
+
+Target ARR by Week 6: $10-20k. Not large but binary-flip-crossing.
+
+### Applied check for future sessions
+
+When planning any build of significant scope:
+1. Ask: what's the thinnest MLP that could cross a paywall?
+2. Can we ship that in 2-6 weeks while continuing the big build?
+3. If yes, add a parallel revenue track with weekly accountability checkpoints
+4. If no (e.g., paywall requires features that won't be ready for months), question whether the scope is right
+
+---
+
+## Lesson — Stop When Marginal Return Drops (learned 2026-04-17)
+
+### The pattern
+
+Line-by-line reading of the prototype was high-leverage through the first ~1600 lines because the content was novel, dense, and decision-triggering. Past line 1600, returns diminished — the remaining code was implementation detail that doesn't port (we're rebuilding in Next.js anyway) plus residual data that can be extracted mechanically by an agent.
+
+Continuing to read past the diminishing-return threshold at 2am would have produced mostly tired decisions and worse output. Stopping and consolidating was the right move.
+
+### The rule
+
+At regular intervals in a long session, ask: **Is the next hour going to produce more value than the last hour?** If no, stop. Consolidate what's been learned. Sleep if it's late.
+
+### Applied check for future sessions
+
+- Every 60-90 minutes in a dense working session, check: "Is the marginal return still high?"
+- If yes, continue
+- If no, consolidate — write up decisions, commit work, close the session
+- Don't mistake activity for progress; once decisions get mushier and more hand-wavy, you've crossed the line
+
+### Corollary — delegate mechanical work to agents
+
+Reading 1700 more lines of code to extract structured data is mechanical. Delegate to a Cowork session with clear instructions ("read file X, produce JSON at path Y"). Founder time is too expensive for mechanical extraction.
+
+---
+
+## Lesson — Name Products With Layered Meaning (learned 2026-04-17)
+
+### The pattern
+
+Names that carry multiple meanings simultaneously are more brandable and memorable than names that have a single meaning. "Building Intelligence" as a product name carries:
+- The *intelligence* of the act of building (craft, expertise)
+- *AI intelligence* that powers the specialist library
+- *Building intelligence* as an ongoing act (constructing knowledge)
+
+Any one of those three meanings would produce an okay name. All three make it a great name.
+
+### The rule
+
+When naming a product or initiative, aim for layered meaning. Ask: does this name work on at least 2-3 different levels?
+
+### Applied check for future sessions
+
+- When a name surfaces as a candidate, probe it for alternative interpretations
+- Good names survive being read as a noun, a verb, a literal, a metaphor
+- Bad names work on exactly one level
+- When in doubt, check: would a smart reader find depth in this name on second glance?

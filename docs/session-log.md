@@ -809,3 +809,77 @@ All seven primitives specified in detail — visual, interaction, voice, machine
 ### Founder decision rationale (preserved for posterity)
 
 When asked to pick just one pilot to ship first rather than all three in parallel, the founder chose "all three in parallel — don't chicken out." The parallel approach is explicitly to stress-test whether the primitives scale across chromes (red/warm/green) and contexts (operational/emotional/clean-slate), not just whether they solve the original SCOUT complaint.
+
+
+## 2026-04-16 / 17 — Chat — Prototype Analysis, Killer App Direction, 6-Week Revenue Plan
+
+**Type:** Strategic + product architectural
+**Duration:** ~7 hours, ran from early evening April 16 past 2am April 17
+**Outcome:** Complete direction for the Killer App, full analysis of the prototype at `chilly611/bkg-killer-app`, and a 6-week plan to cross the paywall to post-revenue before fundraising.
+
+### What happened
+
+After the Design Draft v0.1 commit earlier in the session, attention turned to the existing prototype at `chilly611.github.io/bkg-killer-app/`. The prototype was cloned locally and read chunk-by-chunk. Through line 1600 of a 3322-line `index.html` file, the following became clear:
+
+- The prototype is React-via-CDN (no build system) — implementation does not port
+- Underneath the quest/XP/level gamification wrapper, the prototype contains **11+ real contractor workflows** with 4-6 steps each
+- **15+ AI specialist prompts** are drafted but not wired to any LLM
+- The gamification as implemented (linear quest ladder grouped by level) conflicts with how construction actually works — networked, non-linear, multi-entry-point
+
+The critical pivot: **content is gold, container is wrong.** Keep the workflows. Keep the specialists. Rebuild the container. 
+
+Later in the session, founder made a strategic move: commit to a **6-week path to post-revenue** before fundraising, so BKG raises as "post-revenue with customers in two markets" rather than "pre-revenue with vision." This became the `docs/revenue-plan.md`.
+
+### Eighteen decisions locked
+
+UX: fluid workflow paths not quest ladder, journey map keeper, workflow picker replaces quest list, step-card primitive ports clean, voice on every textarea, inline AI result, template cards.
+
+Gamification: XP as lifetime tally not progress bar, XP converts to certifications, rank becomes badge-of-honor titles, discard quest-list + level-groups + unlock framing + blue-ink palette.
+
+Visual: muted gray / warm orange (`#D85A30`) / teal (`#14B8A6`) for task status; green `#1D9E75` stays as brand chrome.
+
+AI: specialists wired to Claude API, cite real database entities with timestamps, rewritten with BKG voice, exposed via MCP server as new product named **Building Intelligence**.
+
+Lifecycle: **Size Up** → Lock → Plan → Build → Adapt → Collect → Reflect. "Size Up" replaces "Scout" because builders don't open with risk assessment — that's lawyer work; builders open with estimating and sourcing.
+
+Product architecture: BKG is Dream ↔ Design ↔ Killer App with freedom to navigate between. Killer App lifecycle applies to Killer App only.
+
+Port all 11+ workflows eventually, prioritize three for the contractor demo: Code Compliance (the $55K pain), Contract Templates, Size Up (rebuilt opening).
+
+### The 6-week revenue plan
+
+- Week 1-2: Ship Code Compliance + Contract Templates, onboard trusted contractor as customer #1 at $99/mo
+- Week 3-4: Ship Size Up, get 3 paying consumer customers at $99-149/mo
+- Week 5: Launch Building Intelligence API with 5 specialists, target first B2B/developer customer at $500/mo
+- Week 6: Polish, case studies, fundraising pitch updated with revenue slide
+- Target ARR by May 29: $10-20k
+
+Full detail in `docs/revenue-plan.md`.
+
+### Files committed this session
+
+- `docs/killer-app-direction.md` (new) — engineering-grade inventory and decisions log
+- `docs/presentation-for-team.md` (new) — clean version for John Bou and team discussion
+- `docs/revenue-plan.md` (new) — week-by-week build-and-ship plan
+- `docs/session-log.md` (appended) — this entry
+- `tasks.todo.md` (appended) — work items flowing from the Killer App direction and revenue plan
+- `tasks.lessons.md` (appended) — lessons about content-vs-container, post-revenue strategy, and pacing
+
+### What did NOT happen
+
+- The prototype lines 1600-3322 were NOT read this session (diminishing returns past 2am). Extraction of remaining workflows and specialist prompts scheduled for next Cowork session as agent work.
+- No code was written or committed this session. Everything is still design decisions in markdown.
+- John Bou and the contractor have NOT been sent the design draft link yet. That's the next external action once the founder reviews the presentation doc in the morning.
+
+### Next session
+
+**Cowork session (tomorrow):** Read lines 1600-3322 of the prototype and extract all remaining workflows to `docs/workflows.json` and all remaining specialist prompts to `docs/ai-prompts/*.md`. No UI work yet.
+
+**Subsequent Chat/Cowork session:** Start Week 1 build — step-card primitive in `src/components/primitives/StepCard.tsx` + Claude API integration + first Code Compliance workflow live.
+
+### Lessons recorded
+
+1. **Content vs. container** — when critiquing a prototype, separate what's genuinely good (content, IP, craft) from what's wrong (framing, wrapper, implementation). Keep the first, replace the second.
+2. **Post-revenue before fundraising** — the binary flip from zero customers to any customers changes investor terms meaningfully. Plan for revenue parallel to building, not after.
+3. **Stop reading when the marginal return drops** — line-by-line reading was valuable through ~1600 lines. Past that, agent extraction is more efficient. Don't chase completeness at 2am.
+4. **"Lock" applies to founder decisions too** — even founder-unilateral decisions should be explicit about what's locked and what's open for team input. Prevents the v1.0-premature-lock pattern.
