@@ -425,10 +425,14 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Founder schedules team discussion meeting for later this week (45-60 min, in person if possible)
 
 ### Phase 0 — Foundation (this week, parallel to customer conversations)
-- [ ] Cowork session: read prototype lines 1600-3322, extract all remaining workflows to `docs/workflows.json`
-- [ ] Cowork session: extract all AI specialist prompts to `docs/ai-prompts/*.md` (one file per specialist)
+- [x] Cowork session: read prototype (3322 lines, v3.2), extract all 27 workflows to `app/docs/workflows.json` — shipped 2026-04-17 (commit 498c961)
+- [x] Cowork session: extract all 22 AI specialist prompts to `app/docs/ai-prompts/*.md` (one file per specialist) — shipped 2026-04-17 (commit 498c961)
+- [x] Cowork session: design specialist consolidation (22 → 18 production specialists, no capability loss) at `app/docs/consolidation-plan.md` — shipped 2026-04-17 (commit 498c961)
+- [x] Cowork session: ship extraction report at `app/docs/prototype-extraction-report.md` with CA/AZ/NV jurisdiction audit — shipped 2026-04-17 (commit 498c961)
 - [ ] Cowork session: build `src/components/primitives/StepCard.tsx` as the first reusable primitive from the direction doc
 - [ ] Cowork session: verify Anthropic Claude API key is wired and accessible from production build
+- [ ] Cowork session: load Nevada jurisdiction data into `src/lib/knowledge-data.ts` (add `nv-lv` Southern Nevada + `nv-ro` Reno; CA and Phoenix AZ already present)
+- [ ] Founder: rotate the GitHub PAT shared in chat on 2026-04-17 (Settings → Developer settings → Personal access tokens)
 - [ ] Engage a construction attorney to review the six contract templates before first paid use
 
 ### Week 1 (Apr 17-23) — Code Compliance Lookup Live

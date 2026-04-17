@@ -754,3 +754,40 @@ When naming a product or initiative, aim for layered meaning. Ask: does this nam
 - Good names survive being read as a noun, a verb, a literal, a metaphor
 - Bad names work on exactly one level
 - When in doubt, check: would a smart reader find depth in this name on second glance?
+
+---
+
+## Autonomous extraction sessions — paths, repos, PATs
+
+### Brief-referenced paths may not match mounted workspace paths
+**Date:** 2026-04-17
+**What happened:** Task brief referenced `/Users/chillydahlgren/Desktop/The Builder Garden/app/docs/...` for context docs and for the git repo. The mounted workspace was named `Builder's Knowledge Garden`, not `The Builder Garden`. No `.git` existed anywhere on the mount. The session spent real time looking in the wrong places before realizing the Mac-side path was unreachable from Cowork entirely and the repo lived remotely on GitHub.
+**Fix:** Stop searching the mount after one negative result. Ask the founder once for the right path or the GitHub repo name, then either clone or switch to structured-deliverables-only (saved to the workspace for the founder to commit locally).
+**Rule:** When a brief's filesystem paths fail on the first check, treat the paths as possibly referring to the founder's machine (unreachable) rather than the mounted workspace. Ask before searching further. One clarifying question is always cheaper than three wrong paths.
+
+### Founder-shared PATs belong in a single push and then in the bin
+**Date:** 2026-04-17
+**What happened:** Chilly shared a fine-grained PAT in plaintext in a chat message to unblock commit/push. The push worked. Scrubbing afterward required: (a) resetting `origin` to the unauthenticated URL, (b) checking for `.git-credentials` in `$HOME`, (c) grep'ing the full PAT across the session filesystem, and (d) explicitly reminding the founder to rotate the token in GitHub settings.
+**Rule:** When a PAT arrives in-band:
+1. Clone with `https://PAT@github.com/...` URL.
+2. Do the work.
+3. `git remote set-url origin https://github.com/OWNER/REPO.git` (strip the PAT).
+4. Verify no `.git-credentials` file was written to `$HOME`.
+5. Grep the full PAT string across the session FS to confirm scrub.
+6. Remind the founder to rotate the token — chat transcripts are effectively public.
+**Rule extension:** Never store a PAT in any written artifact (extraction report, commit message, test fixture, env file committed to the repo). PATs go to shell state only, and shell state dies with the session.
+
+### Verbatim extraction ≠ rewrite; keep the two phases clean
+**Date:** 2026-04-17
+**What happened:** The extraction brief was explicit: preserve prompt text verbatim, don't rewrite in production voice, flag ambiguities. Temptation during the session was to start "improving" prompts while extracting them — adding BKG voice hooks, lane awareness, database citation instructions. Resisted. The 22 prompt files in `app/docs/ai-prompts/` preserve the prototype's exact language; the production rewrite checklist lives as a TODO list inside each file and the consolidation design lives in `app/docs/consolidation-plan.md`.
+**Rule:** Extraction and rewrite are separate phases with separate artifacts. Extraction produces a faithful record; rewrite produces production content. Mixing them destroys both the historical value (you can't tell what the prototype actually said) and the production value (the rewrite never gets a clean slate).
+
+### Consolidation requires an explicit "demographic check"
+**Date:** 2026-04-17
+**What happened:** Chilly approved collapsing 22 prompts toward ~16 production specialists but with the directive "make sure that we aren't leaving any demographic behind." The consolidation plan at `app/docs/consolidation-plan.md` added a "Demographic check — no loss" subsection under each merge, walking through all eight lanes (GC, DIY, specialty, worker, supplier, equipment, service provider, robot/AI agent) and every affected trade to confirm each is still served.
+**Rule:** When collapsing N specialists into M, require a written check for every user lane and every trade that the source specialists served. If any lane or trade ends up underserved by the consolidation, the merge is wrong. "No demographic left behind" is a commit-gate, not a feel-good principle.
+
+### Data coverage is a feasibility input, not a shipping detail
+**Date:** 2026-04-17
+**What happened:** Chilly said "Let's do California, Arizona, and Nevada" for Week 1 jurisdiction coverage. Audit of `src/lib/knowledge-data.ts` showed CA had three cities catalogued, AZ had Phoenix, NV had zero. Shipping NV in Week 1 was not feasible without half a day of data population. The realistic answer was CA + Phoenix AZ Week 1, NV in Week 2 parallel to legal review.
+**Rule:** Before accepting a scope commitment for code/data-backed features, audit the actual data in the repo. Jurisdictions, code editions, template inventories, supplier databases — these are feasibility constraints, not shipping details. Answer "is that doable?" with what the data supports, not with what would be nice.
