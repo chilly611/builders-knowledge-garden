@@ -431,7 +431,8 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [x] Cowork session: ship extraction report at `app/docs/prototype-extraction-report.md` with CA/AZ/NV jurisdiction audit — shipped 2026-04-17 (commit 498c961)
 - [ ] Cowork session: build `src/components/primitives/StepCard.tsx` as the first reusable primitive from the direction doc
 - [ ] Cowork session: verify Anthropic Claude API key is wired and accessible from production build
-- [ ] Cowork session: load Nevada jurisdiction data into `src/lib/knowledge-data.ts` (add `nv-lv` Southern Nevada + `nv-ro` Reno; CA and Phoenix AZ already present)
+- [x] Cowork session: load Nevada jurisdiction data into `src/lib/knowledge-data.ts` — shipped 2026-04-17 (added nv-lv, nv-ro, nv-hen, plus az-tuc and az-flag for full CA/AZ/NV Week 1 coverage)
+- [ ] Payroll Classification (q23/s23-2) — **DEFERRED WITH LEGAL REVIEW GATE.** The prototype's analysis step for 1099-vs-W-2 classification is not being shipped in v1. DOL/IRS rules vary by state and worker; an AI suggesting "3 contractors may qualify as employees" creates real legal exposure. Revisit only after (a) a construction-employment attorney reviews the scope, (b) the output is framed as "questions to discuss with your CPA," never a recommendation, (c) explicit user-facing disclaimer approved by counsel.
 - [ ] Founder: rotate the GitHub PAT shared in chat on 2026-04-17 (Settings → Developer settings → Personal access tokens)
 - [ ] Engage a construction attorney to review the six contract templates before first paid use
 

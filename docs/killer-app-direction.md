@@ -136,7 +136,7 @@ The 15+ drafted system prompts (code compliance, estimating, crew analysis, supp
 Every prompt is rewritten to instruct the AI to cite entities from the BKG structured database (with entity IDs, updated timestamps, jurisdictions) rather than hallucinate code sections or prices. This honors Goal 11 of the design draft (Database Is the Moat).
 
 **17. AI specialist prompts become a permanent prompt library.**
-Saved at `docs/ai-prompts/` with each specialist getting its own file. Original prototype draft preserved as history; rewritten production version is the active prompt.
+Saved at `app/docs/ai-prompts/` with each specialist getting its own file (path updated 2026-04-17 from the original `docs/ai-prompts/` to match the extraction commit). Verbatim prototype prompts preserved at `{specialistId}.md`; production rewrites live at `{specialistId}.production.md` so both can be introspected by `src/lib/specialists.ts` at call time.
 
 **18. The specialist library becomes a product: Building Intelligence.**
 Packaged and exposed via MCP server + REST API, sold as a B2B developer product. Any AI agent, design firm, or contech startup can integrate a BKG specialist (code compliance, estimating, crew sizing, etc.) into their own product. Pricing and commercial model defined in `docs/revenue-plan.md`.

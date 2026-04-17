@@ -1,9 +1,11 @@
 # Prototype Extraction Report
 
 **Date:** 2026-04-17
-**Source:** chilly611/bkg-killer-app v3.2 at `killer-app/bkg-killer-app-v3.html` (3322 lines, build tag `bkg-killer-app-v3.2-2026-04-16`)
+**Source:** chilly611/bkg-killer-app v3.2 — served live at `https://chilly611.github.io/bkg-killer-app/` (a separate `gh-pages` repo, not a file in this repo). The local snapshot used for extraction lives in the founder's workspace at `killer-app/bkg-killer-app-v3.html` (3322 lines, build tag `bkg-killer-app-v3.2-2026-04-16`). If a reviewer 404s on `builders-knowledge-garden/killer-app/bkg-killer-app-v3.html`: that's expected — the prototype does not live in this repo.
 **Extracted by:** Cowork autonomous session
 **Output location:** `app/docs/workflows.json`, `app/docs/ai-prompts/*.md`
+
+**Field naming convention:** `workflows.json` uses **camelCase** matching the prototype's JavaScript source (`promptId`, `analysisTitle`, `exampleOutput`, `stageId`, `totalXp`, `lifecycleStages`, `rankTiers`, `orphanAnalysisSteps`). A reviewer grep'ing for `promptId` will find 23 hits (matching the 23 analysis_result steps with attached specialists). A grep for snake_case `prompt_id` returns zero — the file was renamed from snake_case to camelCase on 2026-04-17 for source fidelity with the prototype.
 
 ## Environment notes (read this first)
 
