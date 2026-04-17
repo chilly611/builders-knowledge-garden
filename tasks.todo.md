@@ -429,7 +429,11 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [x] Cowork session: extract all 22 AI specialist prompts to `app/docs/ai-prompts/*.md` (one file per specialist) — shipped 2026-04-17 (commit 498c961)
 - [x] Cowork session: design specialist consolidation (22 → 18 production specialists, no capability loss) at `app/docs/consolidation-plan.md` — shipped 2026-04-17 (commit 498c961)
 - [x] Cowork session: ship extraction report at `app/docs/prototype-extraction-report.md` with CA/AZ/NV jurisdiction audit — shipped 2026-04-17 (commit 498c961)
-- [ ] Cowork session: build `src/components/primitives/StepCard.tsx` as the first reusable primitive from the direction doc
+- [x] Cowork session: build `src/design-system/components/StepCard.tsx` as the first reusable primitive from the direction doc — shipped 2026-04-17 (commit 1b29e2b, 893 lines, all 10 step types, voice, time-machine events, hidden JSON)
+- [x] Cowork session: build specialist runner infrastructure — shipped 2026-04-17 (commit 1b29e2b: `src/lib/specialists.ts`, `src/app/api/v1/specialists/[id]/route.ts`, `src/lib/specialists.client.ts`, vitest coverage)
+- [x] Cowork session: write production-grade prompts for `compliance-structural` and `compliance-electrical` — shipped 2026-04-17 (commit 1b29e2b, BKG voice + entity citations + lane awareness + 3 example runs each)
+- [x] Cowork session: normalize `workflows.json` field naming to camelCase for source fidelity with prototype JS — shipped 2026-04-17 (commit 1b29e2b; 23 of 27 analysis steps have `promptId`, 4 orphans documented)
+- [x] Cowork session: fix Decision #17 path drift — ai-prompts live at `app/docs/ai-prompts/` not `docs/ai-prompts/` — shipped 2026-04-17 (commit 1b29e2b)
 - [ ] Cowork session: verify Anthropic Claude API key is wired and accessible from production build
 - [x] Cowork session: load Nevada jurisdiction data into `src/lib/knowledge-data.ts` — shipped 2026-04-17 (added nv-lv, nv-ro, nv-hen, plus az-tuc and az-flag for full CA/AZ/NV Week 1 coverage)
 - [ ] Payroll Classification (q23/s23-2) — **DEFERRED WITH LEGAL REVIEW GATE.** The prototype's analysis step for 1099-vs-W-2 classification is not being shipped in v1. DOL/IRS rules vary by state and worker; an AI suggesting "3 contractors may qualify as employees" creates real legal exposure. Revisit only after (a) a construction-employment attorney reviews the scope, (b) the output is framed as "questions to discuss with your CPA," never a recommendation, (c) explicit user-facing disclaimer approved by counsel.
@@ -437,12 +441,12 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Engage a construction attorney to review the six contract templates before first paid use
 
 ### Week 1 (Apr 17-23) — Code Compliance Lookup Live
-- [ ] Ship `/killer-app/workflows/code-compliance` as a live, wired workflow
-- [ ] Wire `compliance-structural` and `compliance-electrical` specialist prompts to Claude API
-- [ ] Load one jurisdiction's codes fully into the BKG database (contractor's jurisdiction)
-- [ ] Ensure AI citations link to real BKG entity IDs with updated_at timestamps
+- [ ] Ship `/killer-app/workflows/code-compliance` as a live, wired workflow (needs workflow renderer that maps `workflows.json` → StepCard instances)
+- [~] Wire `compliance-structural` and `compliance-electrical` specialist prompts to Claude API — **prompts + runner + API route shipped 2026-04-17 (commit 1b29e2b); still needs `ANTHROPIC_API_KEY` in prod env to flip from mock mode**
+- [ ] Load one jurisdiction's codes fully into the BKG database (contractor's jurisdiction) — CA/AZ/NV metadata added to `knowledge-data.ts`; real entity bodies still need to land in Supabase `knowledge_entities`
+- [ ] Ensure AI citations link to real BKG entity IDs with updated_at timestamps (runner queries `knowledge_entities` already — just needs real rows)
 - [ ] Basic auth + user session (Clerk)
-- [ ] Step-card primitive in use
+- [x] Step-card primitive shipped — now needs to be used in a live workflow route
 
 ### Week 2 (Apr 24-30) — First Paying Customer
 - [ ] Ship Contract Templates workflow: 6 templates (Client, Sub, Lien Waivers x2, NDA, Change Order)
