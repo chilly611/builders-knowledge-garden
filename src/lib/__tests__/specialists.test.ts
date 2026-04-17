@@ -19,11 +19,31 @@ vi.mock("../rag", () => ({
   }),
 }));
 
+// Default prompt content used when a test doesn't set its own mockReturnValue.
+// Keeps tests #2 and #6 (which just want a mock-mode result) from accidentally
+// exercising the "prompt file not found" error path.
+const DEFAULT_PROMPT_CONTENT = `---
+specialist_id: compliance-structural
+status: production
+---
+
+# compliance-structural — Test fixture
+
+## System Prompt
+
+\`\`\`
+You are a structural code expert. For tests only.
+\`\`\`
+`;
+
 describe("Specialist Runner", () => {
   beforeEach(() => {
     // Clear environment
     delete process.env.ANTHROPIC_API_KEY;
     vi.clearAllMocks();
+    // Default readFileSync so specialists that don't set their own mock can still load a prompt.
+    // Individual tests override this with mockReturnValue/mockImplementation as needed.
+    (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(DEFAULT_PROMPT_CONTENT);
   });
 
   afterEach(() => {
@@ -73,7 +93,8 @@ Your job is to take the scope description and map it to IBC/IRC sections.`;
     expect(result.confidence).toBe("medium");
     expect(result.narrative).toContain("mock response");
     expect(result.model).toBe("claude-sonnet-4-20250514");
-    expect(result.latency_ms).toBeGreaterThan(0);
+    // Same invariant as schema test — mock work can finish within a single ms.
+    expect(result.latency_ms).toBeGreaterThanOrEqual(0);
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -181,6 +202,8 @@ You are a structural code expert. Your job is to identify applicable IBC/IRC sec
     expect(["high", "medium", "low"]).toContain(result.confidence);
     expect(typeof result.model).toBe("string");
     expect(typeof result.latency_ms).toBe("number");
-    expect(result.latency_ms).toBeGreaterThan(0);
+    // Latency is measured by Date.now() diff; in mock mode the synthetic work
+    // can complete within the same millisecond, so >=0 is the correct invariant.
+    expect(result.latency_ms).toBeGreaterThanOrEqual(0);
   });
 });

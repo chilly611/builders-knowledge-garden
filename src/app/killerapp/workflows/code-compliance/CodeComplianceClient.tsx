@@ -1,0 +1,241 @@
+'use client';
+
+/**
+ * CodeComplianceClient
+ * =====================
+ * Client Component for /killerapp/workflows/code-compliance.
+ *
+ * Owns:
+ * - Jurisdiction selection (drives context injection for analysis_result steps)
+ * - Trade + lane selection
+ * - Pro Toggle state (visible top-right, Decision #1)
+ * - Time Machine event log buffer
+ *
+ * Delegates rendering to <WorkflowRenderer>. Does NOT reimplement step logic.
+ */
+
+import React, { useState, useCallback } from 'react';
+import Link from 'next/link';
+import { WorkflowRenderer } from '@/design-system/components';
+import type { Workflow, WorkflowContext } from '@/design-system/components';
+import type { StepResult } from '@/design-system/components';
+import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
+
+interface Jurisdiction {
+  id: string;
+  name: string;
+  code: string;
+  year: number;
+  state?: string;
+}
+
+interface CodeComplianceClientProps {
+  workflow: Workflow;
+  jurisdictions: Jurisdiction[];
+}
+
+const TRADES = [
+  { id: 'general', label: 'General / GC' },
+  { id: 'structural', label: 'Structural' },
+  { id: 'electrical', label: 'Electrical' },
+  { id: 'plumbing', label: 'Plumbing' },
+  { id: 'mechanical', label: 'Mechanical' },
+] as const;
+
+const LANES = [
+  { id: 'gc', label: 'General Contractor' },
+  { id: 'diy', label: 'DIY / Owner-Builder' },
+  { id: 'specialty', label: 'Specialty Trade' },
+  { id: 'worker', label: 'Crew / Field' },
+] as const;
+
+export default function CodeComplianceClient({ workflow, jurisdictions }: CodeComplianceClientProps) {
+  const [jurisdictionId, setJurisdictionId] = useState<string>(jurisdictions[0]?.id ?? 'ibc-2024');
+  const [trade, setTrade] = useState<string>('general');
+  const [lane, setLane] = useState<WorkflowContext['lane']>('gc');
+  const [proMode, setProMode] = useState(false);
+  const [eventCount, setEventCount] = useState(0);
+
+  const context: WorkflowContext = {
+    jurisdiction: jurisdictionId,
+    trade,
+    lane,
+    projectPhase: 'preconstruction',
+  };
+
+  const handleEvent = useCallback((event: StepResult & { workflowId: string }) => {
+    setEventCount((n) => n + 1);
+    // In Time Machine implementation: pipe to event store here.
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('bkg:workflow:event', { detail: event })
+      );
+    }
+  }, []);
+
+  return (
+    <div
+      style={{
+        maxWidth: '900px',
+        margin: '0 auto',
+        padding: `${spacing[8]} ${spacing[4]}`,
+        fontFamily: fonts.body,
+      }}
+    >
+      {/* Top bar — breadcrumb + Pro Toggle */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: spacing[6],
+        }}
+      >
+        <nav style={{ fontSize: fontSizes.sm, color: colors.ink[500] }}>
+          <Link href="/killerapp" style={{ color: colors.ink[500], textDecoration: 'none' }}>
+            Killer App
+          </Link>
+          <span style={{ margin: `0 ${spacing[2]}` }}>/</span>
+          <span>Workflows</span>
+          <span style={{ margin: `0 ${spacing[2]}` }}>/</span>
+          <span style={{ color: colors.ink[900], fontWeight: fontWeights.medium }}>
+            Code Compliance Lookup
+          </span>
+        </nav>
+
+        <button
+          type="button"
+          onClick={() => setProMode((p) => !p)}
+          aria-pressed={proMode}
+          style={{
+            padding: `${spacing[2]} ${spacing[3]}`,
+            fontSize: fontSizes.xs,
+            fontWeight: fontWeights.semibold,
+            fontFamily: fonts.mono,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            border: `1px solid ${proMode ? '#1D9E75' : colors.ink[200]}`,
+            backgroundColor: proMode ? '#1D9E75' : 'transparent',
+            color: proMode ? '#FFFFFF' : colors.ink[700],
+            borderRadius: radii.full,
+            cursor: 'pointer',
+            transition: '150ms ease',
+          }}
+        >
+          {proMode ? 'Pro: On' : 'Pro: Off'}
+        </button>
+      </div>
+
+      {/* Context chooser */}
+      <section
+        aria-label="Workflow context"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: spacing[4],
+          padding: spacing[4],
+          marginBottom: spacing[6],
+          backgroundColor: colors.ink[50],
+          borderRadius: radii.md,
+          border: `1px solid ${colors.ink[100]}`,
+        }}
+      >
+        <label style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
+          <span style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Jurisdiction
+          </span>
+          <select
+            value={jurisdictionId}
+            onChange={(e) => setJurisdictionId(e.target.value)}
+            style={{
+              padding: spacing[2],
+              fontSize: fontSizes.sm,
+              fontFamily: fonts.body,
+              border: `1px solid ${colors.ink[200]}`,
+              borderRadius: radii.sm,
+              backgroundColor: '#FFFFFF',
+              color: colors.ink[900],
+            }}
+          >
+            {jurisdictions.map((j) => (
+              <option key={j.id} value={j.id}>
+                {j.name} ({j.code} {j.year})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
+          <span style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Trade
+          </span>
+          <select
+            value={trade}
+            onChange={(e) => setTrade(e.target.value)}
+            style={{
+              padding: spacing[2],
+              fontSize: fontSizes.sm,
+              fontFamily: fonts.body,
+              border: `1px solid ${colors.ink[200]}`,
+              borderRadius: radii.sm,
+              backgroundColor: '#FFFFFF',
+              color: colors.ink[900],
+            }}
+          >
+            {TRADES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
+          <span style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Lane
+          </span>
+          <select
+            value={lane}
+            onChange={(e) => setLane(e.target.value as WorkflowContext['lane'])}
+            style={{
+              padding: spacing[2],
+              fontSize: fontSizes.sm,
+              fontFamily: fonts.body,
+              border: `1px solid ${colors.ink[200]}`,
+              borderRadius: radii.sm,
+              backgroundColor: '#FFFFFF',
+              color: colors.ink[900],
+            }}
+          >
+            {LANES.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
+
+      <WorkflowRenderer
+        workflow={workflow}
+        context={context}
+        onEvent={handleEvent}
+        proMode={proMode}
+      />
+
+      {/* Footer — Time Machine signal */}
+      <footer
+        style={{
+          marginTop: spacing[8],
+          padding: spacing[4],
+          fontSize: fontSizes.xs,
+          color: colors.ink[400],
+          fontFamily: fonts.mono,
+          textAlign: 'center',
+        }}
+      >
+        {eventCount} action{eventCount === 1 ? '' : 's'} recorded · Time Machine replay available
+      </footer>
+    </div>
+  );
+}

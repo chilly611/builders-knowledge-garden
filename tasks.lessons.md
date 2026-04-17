@@ -791,3 +791,38 @@ When naming a product or initiative, aim for layered meaning. Ask: does this nam
 **Date:** 2026-04-17
 **What happened:** Chilly said "Let's do California, Arizona, and Nevada" for Week 1 jurisdiction coverage. Audit of `src/lib/knowledge-data.ts` showed CA had three cities catalogued, AZ had Phoenix, NV had zero. Shipping NV in Week 1 was not feasible without half a day of data population. The realistic answer was CA + Phoenix AZ Week 1, NV in Week 2 parallel to legal review.
 **Rule:** Before accepting a scope commitment for code/data-backed features, audit the actual data in the repo. Jurisdictions, code editions, template inventories, supplier databases — these are feasibility constraints, not shipping details. Answer "is that doable?" with what the data supports, not with what would be nice.
+
+---
+
+## Session — 2026-04-17 (afternoon): Week 1 Route + Seed
+
+### Server-side workflows.json load beats bundler import
+**Date:** 2026-04-17
+**What happened:** `workflows.json` lives at `app/docs/workflows.json` — outside `src/`. Attempting to `import` it into a Client Component would have required either (a) moving it into `src/data/` and maintaining two copies, or (b) getting Next.js bundler config to pick it up.
+**Fix:** Made the page a Server Component that `fs.readFileSync`s the JSON at `process.cwd() + 'app/docs/workflows.json'`, selects the target workflow (q5), and passes it as a prop to a Client Component (`CodeComplianceClient`). JSON stays as a single source of truth; no duplicated copies.
+**Rule:** When consuming a repo data artifact from a page, prefer Server Component + fs read over moving the artifact into src/ or reconfiguring the bundler. One source of truth, zero drift.
+
+### Server-only libs break client imports even when only types are used
+**Date:** 2026-04-17
+**What happened:** `src/lib/specialists.ts` imports `fs` and `path` (server-only). `AnalysisPane.tsx` is a Client Component that needs `SpecialistContext` and `SpecialistResult` types. `import type { ... } from '../../lib/specialists'` works because `import type` is erased by tsc/SWC — but only if the import site never needs the runtime module.
+**Fix:** Verified erasure by compiling with `--noEmit`. Safe as long as we never do `import { something } from '../lib/specialists'` in a Client Component.
+**Rule:** Server-only modules that export both values and types: always import types into client components via `import type`. If the graph ever needs the runtime, introduce a server action or API route boundary.
+
+### Async-in-render requires a dedicated component, not a callback body
+**Date:** 2026-04-17
+**What happened:** StepCard's `renderAnalysis(step, input)` callback is synchronous — it returns React nodes per render. The specialist call is async. First approach was to useState+useEffect inside the callback body, which React refuses (hooks must be called at top level).
+**Fix:** Built `AnalysisPane` as its own component with its own hooks. The callback just returns `<AnalysisPane … />` and each analysis_result step gets its own independent lifecycle.
+**Rule:** When a parent exposes a render callback and the child needs async state, return a dedicated child component from the callback, not inline JSX with hooks. Hooks need a component; callbacks alone don't satisfy that.
+
+### Default mock for fs in unit tests — prevents "prompt not found" red herring
+**Date:** 2026-04-17
+**What happened:** `src/lib/__tests__/specialists.test.ts` had two failing tests on `main`. Root cause: `vi.mock("fs")` auto-mocks all methods to return undefined. Tests that didn't set their own `mockReturnValue` hit the "prompt not found" error path and failed with a misleading message. Not a regression — pre-existing bug exposed by running `npx vitest run` instead of cherry-picking test #1.
+**Fix:** Added a `DEFAULT_PROMPT_CONTENT` fixture and set it in `beforeEach` via `(fs.readFileSync as …).mockReturnValue(...)`. Individual tests can still override.
+**Rule:** When mocking a module with `vi.mock("module")` without a factory, always set a safe default in `beforeEach` so tests that don't explicitly mock don't fall through to error paths.
+
+### Don't leak service-role keys in repo scripts — use env vars
+**Date:** 2026-04-17
+**What happened:** Pre-existing `batch-entities.mjs`, `batch-rels.mjs`, `batch2.mjs`, `batch3.mjs` at repo root have a hardcoded Supabase service role key in cleartext. This key has admin power over the production database and is now in git history.
+**Fix (this session):** New seed script (`scripts/seed-code-entities.mjs`) reads `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` from env. No secrets in source.
+**Follow-up (not done this session):** (1) Rotate the exposed service-role key in Supabase, (2) delete or gitignore the old `batch*.mjs` scripts, (3) rewrite history if compliance demands it (but rotation is the strictly necessary step).
+**Rule:** No secret in any file committed to the repo — ever. Env vars only. When you find a leaked key, rotate first, delete second, document third.

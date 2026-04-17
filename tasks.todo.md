@@ -441,12 +441,17 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Engage a construction attorney to review the six contract templates before first paid use
 
 ### Week 1 (Apr 17-23) — Code Compliance Lookup Live
-- [ ] Ship `/killer-app/workflows/code-compliance` as a live, wired workflow (needs workflow renderer that maps `workflows.json` → StepCard instances)
-- [~] Wire `compliance-structural` and `compliance-electrical` specialist prompts to Claude API — **prompts + runner + API route shipped 2026-04-17 (commit 1b29e2b); still needs `ANTHROPIC_API_KEY` in prod env to flip from mock mode**
-- [ ] Load one jurisdiction's codes fully into the BKG database (contractor's jurisdiction) — CA/AZ/NV metadata added to `knowledge-data.ts`; real entity bodies still need to land in Supabase `knowledge_entities`
-- [ ] Ensure AI citations link to real BKG entity IDs with updated_at timestamps (runner queries `knowledge_entities` already — just needs real rows)
+- [x] Ship `/killerapp/workflows/code-compliance` as a live, wired workflow — shipped 2026-04-17: Server Component loads q5 from workflows.json; Client Component owns jurisdiction/trade/lane pickers + Pro Toggle; `WorkflowRenderer` + `AnalysisPane` render 6 StepCards with live specialist calls
+- [x] Build `WorkflowRenderer` + `AnalysisPane` primitives — shipped 2026-04-17: `src/design-system/components/WorkflowRenderer.tsx` + `AnalysisPane.tsx` + types; 5 smoke tests passing
+- [~] Wire `compliance-structural` and `compliance-electrical` specialist prompts to Claude API — **prompts + runner + API route + live route shipped 2026-04-17; still needs `ANTHROPIC_API_KEY` in prod env to flip from mock mode**
+- [~] Load one jurisdiction's codes fully into the BKG database — **seed script shipped 2026-04-17 at `scripts/seed-code-entities.mjs` with 15 real IBC/IRC/CBC/NEC/CEC/SNV sections across CA/AZ/NV; founder runs via `SUPABASE_URL=… SUPABASE_SERVICE_KEY=… npm run seed:codes`**
+- [ ] Ensure AI citations link to real BKG entity IDs with updated_at timestamps — runner queries `knowledge_entities` already; will return citations with timestamps once the seed script runs in prod
 - [ ] Basic auth + user session (Clerk)
-- [x] Step-card primitive shipped — now needs to be used in a live workflow route
+- [x] Step-card primitive shipped — now in live use at `/killerapp/workflows/code-compliance`
+
+### Security — discovered 2026-04-17
+- [ ] **ROTATE** the Supabase service-role key exposed in `batch-entities.mjs`, `batch-rels.mjs`, `batch2.mjs`, `batch3.mjs` at repo root (hardcoded in cleartext; in git history). Rotate in Supabase → delete or gitignore the old scripts → optionally rewrite history.
+- [ ] Audit repo for other leaked secrets (`grep -r 'eyJ\|sk_\|pk_\|whsec_' --include='*.mjs' --include='*.ts' --include='*.md'`)
 
 ### Week 2 (Apr 24-30) — First Paying Customer
 - [ ] Ship Contract Templates workflow: 6 templates (Client, Sub, Lien Waivers x2, NDA, Change Order)
