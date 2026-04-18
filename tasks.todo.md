@@ -1,6 +1,37 @@
 # Builder's Knowledge Garden — Master Task List
 
 
+## ═══ PICK UP HERE TOMORROW (2026-04-17 handoff) ═══
+
+**State of the world:** Site is stable. `/manifesto` serves to John and anyone else. The rolled-back deployment is live and safe. A pile of great work is committed to `main` but NOT serving because the latest prod build (commit `abb7600`) failed with a TypeScript error during `next build` on Vercel.
+
+**Today's big wins (already in `main`, just not yet on a successful build):**
+- Prototype fully extracted → `docs/workflows.json` + 23 specialist prompts under `docs/ai-prompts/`
+- StepCard primitive (893 lines), specialist runner, specialist API route, 2 production-grade prompts (compliance-structural, compliance-electrical)
+- WorkflowRenderer + AnalysisPane primitives
+- `/killerapp/workflows/code-compliance` route wired end-to-end (Server + Client Components, Pro Toggle, Time Machine events)
+- 15 real CA/AZ/NV code sections seeded into prod Supabase — verified 542 `building_code` rows live
+- Root-cause fix for the outage: root-level `app/` folder → renamed to `docs/` (Next.js was auto-detecting `app/` as the App Router)
+- 7 lessons captured in `tasks.lessons.md`
+
+**Step 1 — paste me the build log.** In Vercel dashboard → Deployments → click the failed `abb7600` deployment → click "Logs" or "Build Logs" tab → copy-paste the last ~40 lines (especially anything red or anything in the "Running TypeScript" block). That pinpoints the broken file + line. Likely a small TS error I couldn't catch locally because `tsc --noEmit` was timing out in sandbox.
+
+**Step 2 — I ship the fix in one commit, ~5 min.** Whatever the TS error is, it's small (the logic is sound; path move is clean). I push the fix, then tell you exactly which deployment to promote.
+
+**Step 3 — click "Promote to Production" on the fixed deployment.** Vercel disabled auto-promote after your manual rollback (safety feature). Promoting the fixed deployment re-arms auto-promote for future `main` pushes AND brings `/killerapp/workflows/code-compliance` online. Both things in one click.
+
+**Step 4 — smoke test.** Visit `/killerapp/workflows/code-compliance`. Fill q5 with a real scope ("new 12x16 residential deck") + jurisdiction LA/CA + trade framing + lane GC. If you see real AI narrative with citations like `ibc-2021-section-1609`, Week 1 is shipped. If you see "mock response," the `ANTHROPIC_API_KEY` isn't reaching the build — fix by redeploying once more (the env var needs a fresh build to attach).
+
+**Then Week 1 is DONE** and we move to Clerk auth → Week 2 Contract Templates → first paying customer.
+
+**Background items that don't block ship** (do anytime):
+- Rotate Anthropic API key (it's in this chat transcript)
+- Rotate Supabase service-role key (in `batch*.mjs` at repo root, in git history)
+- Delete or `.gitignore` the `batch*.mjs` scripts after rotation
+- Wire Clerk for basic auth
+
+---
+
 ## ═══ DREAM MACHINE CONSOLIDATION (2026-04-14) — IN PROGRESS ═══
 
 ### Architecture + Components (Chat session — DONE)
