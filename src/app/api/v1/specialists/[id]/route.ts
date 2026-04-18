@@ -31,9 +31,9 @@ async function checkRateLimit(userId: string, specialistId: string): Promise<Rat
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const specialistId = params.id;
+  const { id: specialistId } = await params;
 
   // Only POST
   if (request.method !== "POST") {
