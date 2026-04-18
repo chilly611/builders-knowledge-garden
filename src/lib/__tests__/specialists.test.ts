@@ -72,7 +72,7 @@ Your job is to take the scope description and map it to IBC/IRC sections.`;
     // Test the loader by checking mock behavior
     // Note: Full integration test requires mocking Anthropic SDK
     // For now we test that the file would be read correctly
-    const mockPath = "app/docs/ai-prompts/compliance-structural.production.md";
+    const mockPath = "docs/ai-prompts/compliance-structural.production.md";
     const content = fs.readFileSync(mockPath, "utf-8") as string;
     expect(content).toContain("Production system prompt");
   });

@@ -1,7 +1,7 @@
 /**
  * WorkflowRenderer Primitive — Type Definitions
  *
- * Consumes the shape exported by `app/docs/workflows.json` (camelCase)
+ * Consumes the shape exported by `docs/workflows.json` (camelCase)
  * and renders a sequence of StepCard instances.
  *
  * Kept deliberately close to the JSON shape so source fidelity with the

@@ -187,7 +187,7 @@ export async function callSpecialist(
 function loadSpecialistPrompt(specialistId: string, preferProduction: boolean): string {
   // Try production version first
   if (preferProduction) {
-    const prodPath = resolve(process.cwd(), `app/docs/ai-prompts/${specialistId}.production.md`);
+    const prodPath = resolve(process.cwd(), `docs/ai-prompts/${specialistId}.production.md`);
     try {
       const content = readFileSync(prodPath, "utf-8");
       return extractSystemPrompt(content, "production");
@@ -197,7 +197,7 @@ function loadSpecialistPrompt(specialistId: string, preferProduction: boolean): 
   }
 
   // Fall back to prototype version
-  const prototypePath = resolve(process.cwd(), `app/docs/ai-prompts/${specialistId}.md`);
+  const prototypePath = resolve(process.cwd(), `docs/ai-prompts/${specialistId}.md`);
   try {
     const content = readFileSync(prototypePath, "utf-8");
     return extractSystemPrompt(content, "prototype");

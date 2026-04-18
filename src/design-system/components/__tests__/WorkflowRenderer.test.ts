@@ -17,7 +17,7 @@ interface WorkflowsJson {
 }
 
 function loadWorkflows(): WorkflowsJson {
-  const path = resolve(process.cwd(), "app/docs/workflows.json");
+  const path = resolve(process.cwd(), "docs/workflows.json");
   const raw = readFileSync(path, "utf-8");
   return JSON.parse(raw) as WorkflowsJson;
 }

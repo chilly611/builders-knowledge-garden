@@ -4,7 +4,7 @@
  * The first live wired workflow in the Killer App.
  *
  * Server Component:
- * - Loads workflow q5 ("Code Compliance Lookup") from app/docs/workflows.json
+ * - Loads workflow q5 ("Code Compliance Lookup") from docs/workflows.json
  * - Loads available jurisdictions from knowledge-data.ts
  * - Hands off to the Client Component which owns interactive state
  *
@@ -26,7 +26,7 @@ interface WorkflowsJson {
 }
 
 function loadCodeComplianceWorkflow(): Workflow {
-  const path = resolve(process.cwd(), 'app/docs/workflows.json');
+  const path = resolve(process.cwd(), 'docs/workflows.json');
   const raw = readFileSync(path, 'utf-8');
   const parsed = JSON.parse(raw) as WorkflowsJson;
   const wf = parsed.workflows.find((w) => w.id === WORKFLOW_ID);
