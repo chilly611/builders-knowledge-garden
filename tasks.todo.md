@@ -1,36 +1,62 @@
 # Builder's Knowledge Garden — Master Task List
 
 
-## ═══ PICK UP HERE TOMORROW (2026-04-17 handoff) ═══
+## ═══ WEEK 2 PUSH — CORRECTING THE FORK (2026-04-18) ═══
 
-**Start a fresh Claude session with the prompt at `/mnt/Builder's Knowledge Garden/SESSION-RESUME-PROMPT.md` (also versioned at `docs/session-resume-prompt.md`).** It boots a new instance directly into the right context.
+**Status:** Week 1 shipped and is live. Commit `a7bcca4` fixed the Next.js 15 params-Promise bug. `/killerapp/workflows/code-compliance` is reachable, renders the q5 workflow, and the specialist is wired (ANTHROPIC_API_KEY confirmed set in Vercel since Mar 24).
 
-**State of the world:** Site is stable. `/manifesto` serves to John and anyone else. The rolled-back deployment is live and safe. A pile of great work is committed to `main` but NOT serving because the latest prod build (commit `abb7600`) failed with a TypeScript error during `next build` on Vercel.
+**The fork:** The shell around that route (nav with "Command Center" tabs, hardcoded XP+streak, SOON placeholder modules) directly contradicts Decisions #1, #3, #8, and #11 from `docs/killer-app-direction.md` (authored April 17 — founder-locked). A visitor from `/manifesto` who clicks into the killer app lands in a container the direction doc explicitly deleted. This Week 2 push reunites the shipped route with that direction.
 
-**Today's big wins (already in `main`, just not yet on a successful build):**
-- Prototype fully extracted → `docs/workflows.json` + 23 specialist prompts under `docs/ai-prompts/`
-- StepCard primitive (893 lines), specialist runner, specialist API route, 2 production-grade prompts (compliance-structural, compliance-electrical)
-- WorkflowRenderer + AnalysisPane primitives
-- `/killerapp/workflows/code-compliance` route wired end-to-end (Server + Client Components, Pro Toggle, Time Machine events)
-- 15 real CA/AZ/NV code sections seeded into prod Supabase — verified 542 `building_code` rows live
-- Root-cause fix for the outage: root-level `app/` folder → renamed to `docs/` (Next.js was auto-detecting `app/` as the App Router)
-- 7 lessons captured in `tasks.lessons.md`
+**Scope (~3–4 days, shipping as one coherent push so nothing is half-right in prod):**
 
-**Step 1 — paste me the build log.** In Vercel dashboard → Deployments → click the failed `abb7600` deployment → click "Logs" or "Build Logs" tab → copy-paste the last ~40 lines (especially anything red or anything in the "Running TypeScript" block). That pinpoints the broken file + line. Likely a small TS error I couldn't catch locally because `tsc --noEmit` was timing out in sandbox.
+### 1. Replace KillerAppNav.tsx with minimal AppChrome (Decisions #1, #3, #8, #11)
+- [ ] Build `src/components/AppChrome.tsx`: wordmark + single "Workflows" link + "Ask…" search affordance + profile avatar menu
+- [ ] Move XP tally and streak into profile avatar dropdown (reputation, not wayfinding)
+- [ ] Point `KillerAppNav.tsx` at the new chrome (preserve export name so 8 route groups don't break: `/killerapp`, `/field`, `/finances`, `/clients`, `/documents`, `/site`, `/challenges`, `/social`)
+- [ ] Delete the hardcoded 7-module tab array
+- [ ] Smoke test all 8 route groups render without errors after the swap
 
-**Step 2 — I ship the fix in one commit, ~5 min.** Whatever the TS error is, it's small (the logic is sound; path move is clean). I push the fix, then tell you exactly which deployment to promote.
+### 2. Build `/killerapp` landing page = workflow picker (Decision #3)
+- [ ] Replace current `src/app/killerapp/page.tsx` with a searchable workflow grid
+- [ ] Read `docs/workflows.json`, render all 27 workflows as cards grouped by lifecycle stage
+- [ ] Each card: title, 1-line description, stage chip, step count, status pill (`live` / `in progress` / `planned`)
+- [ ] Search input: fuzzy substring match across title + description + stage + trade tags
+- [ ] Click card → route to `/killerapp/workflows/[id]` (code-compliance is live; others show a polite "coming soon, watch list available" page)
 
-**Step 3 — click "Promote to Production" on the fixed deployment.** Vercel disabled auto-promote after your manual rollback (safety feature). Promoting the fixed deployment re-arms auto-promote for future `main` pushes AND brings `/killerapp/workflows/code-compliance` online. Both things in one click.
+### 3. Add journey-map header (Decision #2)
+- [ ] `src/design-system/components/JourneyMap.tsx` — horizontal strip with the 7 locked stages: Size Up → Lock → Plan → Build → Adapt → Collect → Reflect
+- [ ] Render above the workflow picker on `/killerapp` landing
+- [ ] Click stage → filters picker to that stage only (URL param `?stage=lock`)
+- [ ] Color state: not-started muted gray, in-progress `#D85A30`, complete `#14B8A6` (per Decision #12)
 
-**Step 4 — smoke test.** Visit `/killerapp/workflows/code-compliance`. Fill q5 with a real scope ("new 12x16 residential deck") + jurisdiction LA/CA + trade framing + lane GC. If you see real AI narrative with citations like `ibc-2021-section-1609`, Week 1 is shipped. If you see "mock response," the `ANTHROPIC_API_KEY` isn't reaching the build — fix by redeploying once more (the env var needs a fresh build to attach).
+### 4. Hierarchical jurisdiction picker — CA counties/cities (UI-only pass)
+- [ ] Extend `src/lib/knowledge-data.ts` with 11 CA counties (Ventura, Riverside, Santa Barbara, Orange, San Bernardino, Los Angeles, San Diego, Alameda, Santa Clara, Contra Costa, Sacramento)
+- [ ] Under each county, 5–8 major cities (Temecula under Riverside; Oxnard, Thousand Oaks under Ventura; etc.)
+- [ ] New `JurisdictionPicker.tsx` component — type-ahead search across state/county/city
+- [ ] Replace the `<select>` on `/killerapp/workflows/code-compliance` with the new picker
+- [ ] Fallback copy when no local data: "Using CBC 2022 + IBC 2024 — no local amendments in our database yet"
+- [ ] Data debt (county amendments) remains deferred to Week 3
 
-**Then Week 1 is DONE** and we move to Clerk auth → Week 2 Contract Templates → first paying customer.
+### 5. Voice button on every textarea in Code Compliance (Decision #5)
+- [ ] Audit every `<textarea>` in the live workflow (StepCard variants)
+- [ ] Wire `useSpeechRecognition` hook (already exists from /dream work) onto each one
+- [ ] Mic button right-anchored inside each textarea; tap → dictate → transcript appends
+- [ ] Recording indicator (pulsing dot) while listening
 
-**Background items that don't block ship** (do anytime):
-- Rotate Anthropic API key (it's in this chat transcript)
+### 6. Smoke tests + deploy
+- [ ] `npm run build` local — must pass
+- [ ] Visual check `/killerapp`, `/killerapp/workflows/code-compliance`, `/manifesto`, `/field`, `/finances` in dev
+- [ ] Commit + push to main
+- [ ] Wait for Vercel green, promote newest deploy (auto-promote is re-armed since `a7bcca4` was promoted)
+- [ ] Production smoke: picker loads with 27 workflows, journey map renders, jurisdiction picker surfaces Temecula, Code Compliance still works inside new chrome, `/manifesto` unchanged
+
+**Definition of done:** A visitor lands on `/killerapp`, sees a searchable workflow picker under a journey-map header with clean chrome, types "code compliance" OR clicks the card, lands on the Code Compliance workflow with a jurisdiction picker that has Temecula in it, uses voice on a textarea, and triggers a real specialist call with cited output. `/manifesto` and the other route groups still render.
+
+**Background items that don't block this push** (do anytime):
+- Rotate Anthropic API key
 - Rotate Supabase service-role key (in `batch*.mjs` at repo root, in git history)
 - Delete or `.gitignore` the `batch*.mjs` scripts after rotation
-- Wire Clerk for basic auth
+- Wire Clerk basic auth on `/killerapp/*` (scheduled for the Week 2 Stripe push)
 
 ---
 
