@@ -16,16 +16,21 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
+import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import { JURISDICTIONS } from '@/lib/knowledge-data';
 import CodeComplianceClient from './CodeComplianceClient';
 
 const WORKFLOW_ID = 'q5';
 
 interface WorkflowsJson {
+  lifecycleStages: LifecycleStage[];
   workflows: Workflow[];
 }
 
-function loadCodeComplianceWorkflow(): Workflow {
+function loadCodeComplianceData(): {
+  workflow: Workflow;
+  stages: LifecycleStage[];
+} {
   const path = resolve(process.cwd(), 'docs/workflows.json');
   const raw = readFileSync(path, 'utf-8');
   const parsed = JSON.parse(raw) as WorkflowsJson;
@@ -36,7 +41,7 @@ function loadCodeComplianceWorkflow(): Workflow {
         `If the extraction ID changed, update src/app/killerapp/workflows/code-compliance/page.tsx.`
     );
   }
-  return wf;
+  return { workflow: wf, stages: parsed.lifecycleStages };
 }
 
 export const metadata = {
@@ -46,7 +51,7 @@ export const metadata = {
 };
 
 export default function CodeCompliancePage() {
-  const workflow = loadCodeComplianceWorkflow();
+  const { workflow, stages } = loadCodeComplianceData();
 
   // Filter jurisdictions to CA/AZ/NV + IBC fallback for Week 1 coverage
   const week1Jurisdictions = JURISDICTIONS.filter((j) =>
@@ -59,6 +64,7 @@ export default function CodeCompliancePage() {
     <CodeComplianceClient
       workflow={workflow}
       jurisdictions={jurisdictions}
+      stages={stages}
     />
   );
 }

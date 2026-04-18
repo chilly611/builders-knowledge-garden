@@ -20,6 +20,7 @@ import { WorkflowRenderer } from '@/design-system/components';
 import type { Workflow, WorkflowContext } from '@/design-system/components';
 import type { StepResult } from '@/design-system/components';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
+import JourneyMapHeader, { type LifecycleStage } from '@/components/JourneyMapHeader';
 
 interface Jurisdiction {
   id: string;
@@ -32,6 +33,7 @@ interface Jurisdiction {
 interface CodeComplianceClientProps {
   workflow: Workflow;
   jurisdictions: Jurisdiction[];
+  stages: LifecycleStage[];
 }
 
 const TRADES = [
@@ -49,7 +51,7 @@ const LANES = [
   { id: 'worker', label: 'Crew / Field' },
 ] as const;
 
-export default function CodeComplianceClient({ workflow, jurisdictions }: CodeComplianceClientProps) {
+export default function CodeComplianceClient({ workflow, jurisdictions, stages }: CodeComplianceClientProps) {
   const [jurisdictionId, setJurisdictionId] = useState<string>(jurisdictions[0]?.id ?? 'ibc-2024');
   const [trade, setTrade] = useState<string>('general');
   const [lane, setLane] = useState<WorkflowContext['lane']>('gc');
@@ -74,15 +76,21 @@ export default function CodeComplianceClient({ workflow, jurisdictions }: CodeCo
   }, []);
 
   return (
-    <div
-      style={{
-        maxWidth: '900px',
-        margin: '0 auto',
-        padding: `${spacing[8]} ${spacing[4]}`,
-        fontFamily: fonts.body,
-      }}
-    >
-      {/* Top bar — breadcrumb + Pro Toggle */}
+    <>
+      <JourneyMapHeader
+        stages={stages}
+        currentStageId={workflow.stageId ?? 1}
+        workflowLabel={workflow.label}
+      />
+      <div
+        style={{
+          maxWidth: '900px',
+          margin: '0 auto',
+          padding: `${spacing[8]} ${spacing[4]}`,
+          fontFamily: fonts.body,
+        }}
+      >
+        {/* Top bar — breadcrumb + Pro Toggle */}
       <div
         style={{
           display: 'flex',
@@ -236,6 +244,7 @@ export default function CodeComplianceClient({ workflow, jurisdictions }: CodeCo
       >
         {eventCount} action{eventCount === 1 ? '' : 's'} recorded · Time Machine replay available
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
