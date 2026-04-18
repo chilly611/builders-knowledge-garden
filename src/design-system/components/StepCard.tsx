@@ -150,13 +150,25 @@ export default function StepCard({
     }
   };
 
-  // Apply voice transcript to textarea
+  // Apply voice transcript to whichever input state this step uses.
+  // Appends the transcript to existing text so users can dictate in chunks
+  // and correct between utterances.
   const handleApplyVoiceTranscript = () => {
-    if (textareaRef.current) {
-      textareaRef.current.value = voiceState.transcript;
-      setInputValue(voiceState.transcript);
-      setVoiceState({ isListening: false, transcript: '', error: null });
+    const transcript = voiceState.transcript.trim();
+    if (!transcript) return;
+
+    if (step.type === 'analysis_result') {
+      setAnalysisInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    } else {
+      // text_input, voice_input, number_input all use inputValue
+      setInputValue((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      if (textareaRef.current) {
+        textareaRef.current.value = textareaRef.current.value
+          ? `${textareaRef.current.value} ${transcript}`
+          : transcript;
+      }
     }
+    setVoiceState({ isListening: false, transcript: '', error: null });
   };
 
   // Handle step submission
@@ -215,7 +227,7 @@ export default function StepCard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
             <textarea
               ref={textareaRef}
-              placeholder={step.placeholder || 'Enter text here...'}
+              placeholder={step.placeholder || 'Type or speak — in your own words. Tap 🎤 to dictate.'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               style={{
@@ -285,7 +297,7 @@ export default function StepCard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
             <textarea
               ref={textareaRef}
-              placeholder={step.placeholder || 'Record or type voice input...'}
+              placeholder={step.placeholder || 'Speak or type in your own words — whichever feels natural.'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               style={{
@@ -669,9 +681,9 @@ export default function StepCard({
               </div>
             )}
 
-            {/* Input field for analysis */}
+            {/* Input field for analysis — natural language + voice */}
             <textarea
-              placeholder="Paste or describe the input for analysis..."
+              placeholder="Describe the project in your own words, or paste plans/specs. Voice works too — tap 🎤."
               value={analysisInput}
               onChange={(e) => setAnalysisInput(e.target.value)}
               style={{
@@ -680,6 +692,76 @@ export default function StepCard({
                 resize: 'vertical',
               }}
             />
+            {/* Voice button — always visible on every textarea (Goal 6 / Goal 9) */}
+            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={handleVoiceToggle}
+                title={
+                  voiceAvailable
+                    ? 'Click to record voice input'
+                    : 'Voice not available in this browser'
+                }
+                aria-pressed={voiceState.isListening}
+                aria-label={voiceState.isListening ? 'Stop voice input' : 'Start voice input'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  padding: 0,
+                  borderRadius: radii.full,
+                  border: `${borders.thin} ${colors.ink[300]}`,
+                  backgroundColor: voiceState.isListening
+                    ? colors.status.warning
+                    : colors.paper.white,
+                  color: voiceState.isListening ? colors.paper.white : colors.ink[600],
+                  cursor: voiceAvailable ? 'pointer' : 'not-allowed',
+                  opacity: voiceAvailable ? 1 : 0.6,
+                  transition: `all ${transitions.base}`,
+                  fontSize: fontSizes.lg,
+                }}
+                disabled={!voiceAvailable}
+              >
+                🎤
+              </button>
+              <span style={{ fontSize: fontSizes.xs, color: colors.ink[500] }}>
+                {voiceState.isListening
+                  ? 'Listening… tap again to stop.'
+                  : voiceState.transcript
+                    ? 'Ready to apply transcript.'
+                    : voiceAvailable
+                      ? 'Speak instead of typing — your words go in the box above.'
+                      : 'Voice not supported here — type instead.'}
+              </span>
+              {voiceState.transcript && (
+                <button
+                  type="button"
+                  onClick={handleApplyVoiceTranscript}
+                  style={{
+                    padding: `${spacing[2]} ${spacing[3]}`,
+                    borderRadius: radii.md,
+                    border: 'none',
+                    backgroundColor: colors.cyan.main,
+                    color: colors.paper.white,
+                    fontFamily: fonts.body,
+                    fontSize: fontSizes.sm,
+                    fontWeight: fontWeights.semibold,
+                    cursor: 'pointer',
+                    transition: `background-color ${transitions.base}`,
+                    marginLeft: 'auto',
+                  }}
+                >
+                  Apply transcript
+                </button>
+              )}
+            </div>
+            {voiceState.error && (
+              <div style={{ color: colors.status.error, fontSize: fontSizes.xs }}>
+                {voiceState.error}
+              </div>
+            )}
           </div>
         );
 
