@@ -3,6 +3,8 @@
 
 ## ═══ PICK UP HERE TOMORROW (2026-04-17 handoff) ═══
 
+**Start a fresh Claude session with the prompt at `/mnt/Builder's Knowledge Garden/SESSION-RESUME-PROMPT.md` (also versioned at `docs/session-resume-prompt.md`).** It boots a new instance directly into the right context.
+
 **State of the world:** Site is stable. `/manifesto` serves to John and anyone else. The rolled-back deployment is live and safe. A pile of great work is committed to `main` but NOT serving because the latest prod build (commit `abb7600`) failed with a TypeScript error during `next build` on Vercel.
 
 **Today's big wins (already in `main`, just not yet on a successful build):**
