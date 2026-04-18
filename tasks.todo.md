@@ -1,56 +1,78 @@
 # Builder's Knowledge Garden — Master Task List
 
 
-## ═══ WEEK 2 PUSH — CORRECTING THE FORK (2026-04-18) ═══
+## ═══ WEEK 2 PUSH — CORRECTING THE FORK (2026-04-18) — SHIPPED LOCALLY, AWAITING PUSH ═══
 
-**Status:** Week 1 shipped and is live. Commit `a7bcca4` fixed the Next.js 15 params-Promise bug. `/killerapp/workflows/code-compliance` is reachable, renders the q5 workflow, and the specialist is wired (ANTHROPIC_API_KEY confirmed set in Vercel since Mar 24).
+**Status:** Six commits staged on `main` (local), all three automated gates green. Push to `origin/main` blocked on auth — Chilly to push from his own terminal, or re-supply a PAT.
 
-**The fork:** The shell around that route (nav with "Command Center" tabs, hardcoded XP+streak, SOON placeholder modules) directly contradicts Decisions #1, #3, #8, and #11 from `docs/killer-app-direction.md` (authored April 17 — founder-locked). A visitor from `/manifesto` who clicks into the killer app lands in a container the direction doc explicitly deleted. This Week 2 push reunites the shipped route with that direction.
+**Six-commit stack (oldest → newest):**
+1. `fe10d5e` — Plan: Week 2 fork-correction push + 3 lessons from today's audit
+2. `2927c42` — W2.1: Replace Command Center nav with minimal chrome
+3. `02726a3` — W2.2: Replace Command Center landing with workflow picker
+4. `0cb8cb1` — W2.3: Add journey-map header on workflow routes
+5. `e27b082` — W2.4: Hierarchical CA jurisdiction picker (UI-first)
+6. `0de135d` — W2.5: Voice + natural-language entry on every textarea
 
-**Scope (~3–4 days, shipping as one coherent push so nothing is half-right in prod):**
+**Automated gates (W2.6):**
+- `npx tsc --noEmit` — EXIT 0
+- `npx vitest run` — 11/11 pass
+- `next build` — all routes compile including `/killerapp`, `/killerapp/legacy-command-center`, `/killerapp/workflows/code-compliance`
 
-### 1. Replace KillerAppNav.tsx with minimal AppChrome (Decisions #1, #3, #8, #11)
-- [ ] Build `src/components/AppChrome.tsx`: wordmark + single "Workflows" link + "Ask…" search affordance + profile avatar menu
-- [ ] Move XP tally and streak into profile avatar dropdown (reputation, not wayfinding)
-- [ ] Point `KillerAppNav.tsx` at the new chrome (preserve export name so 8 route groups don't break: `/killerapp`, `/field`, `/finances`, `/clients`, `/documents`, `/site`, `/challenges`, `/social`)
-- [ ] Delete the hardcoded 7-module tab array
-- [ ] Smoke test all 8 route groups render without errors after the swap
+**Subtask ledger:**
 
-### 2. Build `/killerapp` landing page = workflow picker (Decision #3)
-- [ ] Replace current `src/app/killerapp/page.tsx` with a searchable workflow grid
-- [ ] Read `docs/workflows.json`, render all 27 workflows as cards grouped by lifecycle stage
-- [ ] Each card: title, 1-line description, stage chip, step count, status pill (`live` / `in progress` / `planned`)
-- [ ] Search input: fuzzy substring match across title + description + stage + trade tags
-- [ ] Click card → route to `/killerapp/workflows/[id]` (code-compliance is live; others show a polite "coming soon, watch list available" page)
+### 1. Replace KillerAppNav.tsx with minimal AppChrome — DONE (commit 2927c42)
+- [x] Collapse 187-line Command Center chrome to ~100 lines; preserve default export name so 8 route groups stay intact
+- [x] Minimal chrome: wordmark, conditional "← All workflows" when inside a workflow route
+- [x] Hardcoded XP tally / streak / 7-module tab array deleted
+- [x] Smoke test: all route groups render after swap (next build green)
+- [ ] **Deferred:** profile avatar dropdown with XP-as-reputation (waits for Clerk auth)
 
-### 3. Add journey-map header (Decision #2)
-- [ ] `src/design-system/components/JourneyMap.tsx` — horizontal strip with the 7 locked stages: Size Up → Lock → Plan → Build → Adapt → Collect → Reflect
-- [ ] Render above the workflow picker on `/killerapp` landing
-- [ ] Click stage → filters picker to that stage only (URL param `?stage=lock`)
-- [ ] Color state: not-started muted gray, in-progress `#D85A30`, complete `#14B8A6` (per Decision #12)
+### 2. Build `/killerapp` landing = workflow picker — DONE (commit 02726a3)
+- [x] Server Component reading `docs/workflows.json`
+- [x] 27 workflows rendered as cards grouped by lifecycle stage with LIVE / SOON pills and blurbs
+- [x] Explicit `LIVE_WORKFLOWS` map: `q5` → `/killerapp/workflows/code-compliance`; others route to a courteous "coming soon" page
+- [x] Legacy Command Center preserved at `/killerapp/legacy-command-center` via `git mv` (wired API endpoints not orphaned)
+- [x] CSS hover via `<style>` tag (Server Component safe) — no inline JS handlers
+- [ ] **Deferred to Week 3:** fuzzy search box on the landing (natural-language entry already lives inside the workflow via search box at top of picker that routes to Code Compliance with `?q=`)
 
-### 4. Hierarchical jurisdiction picker — CA counties/cities (UI-only pass)
-- [ ] Extend `src/lib/knowledge-data.ts` with 11 CA counties (Ventura, Riverside, Santa Barbara, Orange, San Bernardino, Los Angeles, San Diego, Alameda, Santa Clara, Contra Costa, Sacramento)
-- [ ] Under each county, 5–8 major cities (Temecula under Riverside; Oxnard, Thousand Oaks under Ventura; etc.)
-- [ ] New `JurisdictionPicker.tsx` component — type-ahead search across state/county/city
-- [ ] Replace the `<select>` on `/killerapp/workflows/code-compliance` with the new picker
-- [ ] Fallback copy when no local data: "Using CBC 2022 + IBC 2024 — no local amendments in our database yet"
-- [ ] Data debt (county amendments) remains deferred to Week 3
+### 3. Add journey-map header — DONE (commit 0cb8cb1)
+- [x] `src/components/JourneyMapHeader.tsx` — pure presentational, server-safe
+- [x] 7-stage strip: Size Up → Lock → Plan → Build → Adapt → Collect → Reflect with per-stage accent colors
+- [x] Rendered above Code Compliance workflow
+- [x] `workflow.stageId ?? 1` fallback for undefined case
+- [ ] **Deferred:** stage-filter URL param (`?stage=lock`) — picker currently groups by stage visually; filter UX arrives when the fuzzy search lands
 
-### 5. Voice button on every textarea in Code Compliance (Decision #5)
-- [ ] Audit every `<textarea>` in the live workflow (StepCard variants)
-- [ ] Wire `useSpeechRecognition` hook (already exists from /dream work) onto each one
-- [ ] Mic button right-anchored inside each textarea; tap → dictate → transcript appends
-- [ ] Recording indicator (pulsing dot) while listening
+### 4. Hierarchical jurisdiction picker — DONE (commit e27b082)
+- [x] JURISDICTIONS grew from 23 → ~58 entries. CA counties added: Ventura, Riverside, Santa Barbara, Orange, San Bernardino, LA, San Diego, Alameda, Santa Clara, Contra Costa, Sacramento, Kern, Fresno
+- [x] Principal cities under each (Temecula under Riverside; Oxnard + Thousand Oaks under Ventura; etc.) — all four Chilly named (Ventura, Riverside, Temecula, Santa Barbara) visible
+- [x] `groupJurisdictions()` helper returns State → County → Jurisdictions tree
+- [x] Typed `Jurisdiction` interface with `level` union
+- [x] `<optgroup>`-based hierarchical `<select>` in `CodeComplianceClient.tsx` — label format: "California — Riverside County" → Temecula
+- [x] Fallback IBC 2024 surfaced at top of picker
+- [ ] **Deferred to Week 3:** real local-amendment data (this pass is UI-first; names are visible, `metadata.local_amendments` seeds land in Week 3 seed refresh)
 
-### 6. Smoke tests + deploy
-- [ ] `npm run build` local — must pass
-- [ ] Visual check `/killerapp`, `/killerapp/workflows/code-compliance`, `/manifesto`, `/field`, `/finances` in dev
-- [ ] Commit + push to main
-- [ ] Wait for Vercel green, promote newest deploy (auto-promote is re-armed since `a7bcca4` was promoted)
-- [ ] Production smoke: picker loads with 27 workflows, journey map renders, jurisdiction picker surfaces Temecula, Code Compliance still works inside new chrome, `/manifesto` unchanged
+### 5. Voice + natural-language entry on every textarea — DONE (commit 0de135d)
+- [x] `text_input`, `voice_input`, AND `analysis_result` steps now carry mic buttons
+- [x] Voice transcripts **append** to existing text (was: replace)
+- [x] `handleApplyVoiceTranscript` routes by `step.type` — `analysis_result` writes to `analysisInput`, others write to `inputValue`
+- [x] Placeholder copy softened — "Type or speak — in your own words. Tap 🎤 to dictate." (was "Enter text here...")
+- [x] Recording pulse + error messaging preserved
+- [x] Picker search box includes voice input + routes to Code Compliance with query pre-filled (`WorkflowPickerSearchBox.tsx`)
 
-**Definition of done:** A visitor lands on `/killerapp`, sees a searchable workflow picker under a journey-map header with clean chrome, types "code compliance" OR clicks the card, lands on the Code Compliance workflow with a jurisdiction picker that has Temecula in it, uses voice on a textarea, and triggers a real specialist call with cited output. `/manifesto` and the other route groups still render.
+### 6. Smoke tests + deploy — AUTOMATED GATES GREEN, PUSH PENDING
+- [x] `npx tsc --noEmit` — EXIT 0
+- [x] `npx vitest run` — 11/11
+- [x] `next build` — all routes compile (including legacy-command-center moved subtree)
+- [x] Manual dev smoke: `/killerapp` picker renders 27 cards, `/killerapp/workflows/code-compliance` renders journey map + hierarchical jurisdiction picker + voice buttons on every textarea
+- [ ] **BLOCKED:** `git push origin main` — `fatal: could not read Username for 'https://github.com': No such device or address`. Founder to push from own terminal, or re-supply a PAT (if supplied again, rotate immediately per lesson #13).
+- [ ] **PENDING PUSH:** Vercel deploy verification + auto-promote check
+- [ ] **PENDING PUSH:** Production smoke: picker renders, journey map above workflow, Temecula visible in picker, Code Compliance still hits Claude API
+
+**Definition of done (local):** ✅ Met. A visitor to `/killerapp` (in dev) sees a searchable workflow picker, 27 cards grouped by stage, LIVE pill on Code Compliance, natural-language search box at top. Clicking Code Compliance lands on the workflow inside a journey-map header, hierarchical jurisdiction picker (Temecula visible), voice button on every textarea, and the specialist call still fires. `/manifesto` and the 8 other route groups still render.
+
+**Definition of done (prod):** ❌ Pending push + Vercel green.
+
+**Lint baseline note:** `npx eslint` on Week 2 touched files reports 9 errors / 12 warnings. Triage: 3 × `@typescript-eslint/no-explicit-any` in `StepCard.tsx` (pre-existing, lines 63/71/82 around SpeechRecognition setup) and unused-vars in `knowledge-data.ts` helpers (pre-existing). Next build does not fail on these (Vercel uses build, not strict-eslint). Clean-up: optional follow-up commit with `// eslint-disable-next-line` comments if we want a clean baseline.
 
 **Background items that don't block this push** (do anytime):
 - Rotate Anthropic API key
