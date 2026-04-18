@@ -837,3 +837,16 @@ When naming a product or initiative, aim for layered meaning. Ask: does this nam
 **Date:** 2026-04-17
 **What happened:** `npm run seed:codes` printed "15 of 15 entities upserted" — but that's just the script's own claim. I followed up with a direct REST query against `/rest/v1/knowledge_entities?entity_type=eq.building_code` and confirmed 542 total entries with 8/9/9 tagged to CA/AZ/NV jurisdictions, which matched the expected multi-jurisdiction adoption pattern (IBC 2021 adopted by all three states).
 **Rule:** Scripts that call external APIs can fail silently or partial-succeed. After any seed/migration/import, independently query the target system to confirm row counts and sample records. Don't trust the script's stdout alone.
+
+### Next.js 16: root-level `app/` folder silently hijacks the App Router detection
+**Date:** 2026-04-17 (production outage)
+**What happened:** We had `src/app/` with the real Next.js routes (`/manifesto`, `/killerapp/*`, `/dream/*`) AND a root-level `app/` folder that only held documentation data (`app/docs/workflows.json`, `app/docs/ai-prompts/`). Next.js 16.2.1 auto-detected the root `app/` as the App Router directory, found zero pages inside, and shipped a deployment with ONLY `/404`. Every production route went dark. John (a real contractor) hit `/manifesto` during the outage and got 404.
+**Fix:** `git mv app/docs/* docs/ && rmdir app/` — consolidated the two docs folders into one at repo root, updated four path references in source (`src/lib/specialists.ts`, `src/app/killerapp/workflows/code-compliance/page.tsx`, and two test files). Commit `5aaf167`.
+**Rule:** **Never create a folder named `app/` at the repo root unless it contains Next.js App Router pages.** Next.js treats `app/` and `src/app/` as equivalent candidates, and if both exist, the root-level `app/` wins. Non-routing data (docs, configs, seeds) goes in `docs/`, `data/`, `content/`, or `scripts/` — never `app/`.
+
+### Vercel "Promote to Production" disables auto-promote — you must re-enable by promoting a new deploy
+**Date:** 2026-04-17 (same outage, recovery phase)
+**What happened:** After rolling back to a known-good deployment via Vercel dashboard → Deployments → Promote to Production, I pushed a hotfix (`5aaf167`, then `77126b4`) expecting Vercel to auto-deploy and auto-promote. It auto-deployed both but did NOT auto-promote either one. The rolled-back (older) deployment kept serving `/` and `/manifesto` (200 OK) while the new route `/killerapp/workflows/code-compliance` returned 404 for 15+ minutes.
+**Root cause:** Manual promotion PINS production. Vercel deliberately halts auto-promote on main after a manual intervention, so you don't accidentally overwrite the deployment you just chose. It's a safety feature, not a bug. Auto-promote resumes only after someone manually promotes a newer deploy.
+**Fix:** Promote the most-recent green-checkmark deployment in the Deployments list. That both fixes the current issue AND re-arms auto-promote for future `main` pushes.
+**Rule:** After any manual Vercel rollback, the very next step is to promote the fresh build that contains the fix. Don't push more commits hoping auto-promote will kick in — it won't. One click, not more commits.
