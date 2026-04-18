@@ -21,14 +21,7 @@ import type { Workflow, WorkflowContext } from '@/design-system/components';
 import type { StepResult } from '@/design-system/components';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
 import JourneyMapHeader, { type LifecycleStage } from '@/components/JourneyMapHeader';
-
-interface Jurisdiction {
-  id: string;
-  name: string;
-  code: string;
-  year: number;
-  state?: string;
-}
+import { groupJurisdictions, type Jurisdiction } from '@/lib/knowledge-data';
 
 interface CodeComplianceClientProps {
   workflow: Workflow;
@@ -165,11 +158,27 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
               color: colors.ink[900],
             }}
           >
-            {jurisdictions.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.name} ({j.code} {j.year})
-              </option>
-            ))}
+            {groupJurisdictions(jurisdictions).map((stateGroup) =>
+              stateGroup.counties.map((countyGroup) => {
+                // Hierarchical label: "California — Riverside County" so
+                // users can scan state + county in one glance. Use a
+                // plain dash for counties that have only a statewide
+                // fallback entry.
+                const label =
+                  countyGroup.county === '(statewide)'
+                    ? stateGroup.state
+                    : `${stateGroup.state} — ${countyGroup.county} County`;
+                return (
+                  <optgroup key={`${stateGroup.state}-${countyGroup.county}`} label={label}>
+                    {countyGroup.jurisdictions.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.name} ({j.code} {j.year})
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })
+            )}
           </select>
         </label>
 

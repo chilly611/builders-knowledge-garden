@@ -53,7 +53,9 @@ export const metadata = {
 export default function CodeCompliancePage() {
   const { workflow, stages } = loadCodeComplianceData();
 
-  // Filter jurisdictions to CA/AZ/NV + IBC fallback for Week 1 coverage
+  // Scope: CA/AZ/NV + IBC fallback. CA now includes ~30 county + city
+  // entries (see knowledge-data.ts). Real local-amendment data arrives
+  // in Week 3; this pass is UI-first so the names show up correctly.
   const week1Jurisdictions = JURISDICTIONS.filter((j) =>
     ['California', 'Arizona', 'Nevada'].includes(j.state ?? '')
   );

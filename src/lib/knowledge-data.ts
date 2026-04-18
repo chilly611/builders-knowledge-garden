@@ -40,11 +40,117 @@ export const BUILDING_TYPES = [
     typical_cost: "$200-$500/sf", typical_duration: "3-8 months" },
 ];
 
-export const JURISDICTIONS = [
+// Jurisdiction catalog.
+//
+// UI-first pass: entries include `state` and (for US cities) `county`,
+// so the Code Compliance picker can render a hierarchical State → County
+// → City view using optgroups. Real local amendment data still needs
+// to be ingested (Week 3).
+//
+// Type is kept open so we can add new fields (metro area, ahj slug, etc.)
+// without touching every importer.
+export interface Jurisdiction {
+  id: string;
+  name: string;
+  code: string;
+  year: number;
+  level: "international" | "country" | "state" | "county" | "city";
+  state?: string;
+  county?: string;
+}
+
+export const JURISDICTIONS: Jurisdiction[] = [
+  // International / fallback
   { id: "ibc-2024", name: "IBC 2024 (International)", code: "IBC", year: 2024, level: "international" },
-  { id: "ca-la", name: "Los Angeles, CA", code: "LAMC + CBC", year: 2022, level: "city", state: "California" },
-  { id: "ca-sf", name: "San Francisco, CA", code: "SFBC", year: 2022, level: "city", state: "California" },
-  { id: "ca-sd", name: "San Diego, CA", code: "CBC", year: 2022, level: "city", state: "California" },
+
+  // ── California ────────────────────────────────────────────────────────
+  // State baseline
+  { id: "ca-state", name: "California (statewide)", code: "CBC", year: 2022, level: "state", state: "California" },
+
+  // Los Angeles County
+  { id: "ca-la-county", name: "Los Angeles County", code: "CBC + LA County amendments", year: 2022, level: "county", state: "California", county: "Los Angeles" },
+  { id: "ca-la", name: "Los Angeles, CA", code: "LAMC + CBC", year: 2022, level: "city", state: "California", county: "Los Angeles" },
+  { id: "ca-long-beach", name: "Long Beach, CA", code: "LBMC + CBC", year: 2022, level: "city", state: "California", county: "Los Angeles" },
+  { id: "ca-pasadena", name: "Pasadena, CA", code: "CBC + Pasadena amendments", year: 2022, level: "city", state: "California", county: "Los Angeles" },
+  { id: "ca-santa-monica", name: "Santa Monica, CA", code: "CBC + Santa Monica amendments", year: 2022, level: "city", state: "California", county: "Los Angeles" },
+  { id: "ca-burbank", name: "Burbank, CA", code: "CBC + Burbank amendments", year: 2022, level: "city", state: "California", county: "Los Angeles" },
+
+  // San Francisco (city-county)
+  { id: "ca-sf", name: "San Francisco, CA", code: "SFBC", year: 2022, level: "city", state: "California", county: "San Francisco" },
+
+  // San Diego County
+  { id: "ca-sd-county", name: "San Diego County", code: "CBC + SD County amendments", year: 2022, level: "county", state: "California", county: "San Diego" },
+  { id: "ca-sd", name: "San Diego, CA", code: "CBC + SD amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
+  { id: "ca-chula-vista", name: "Chula Vista, CA", code: "CBC + Chula Vista amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
+  { id: "ca-oceanside", name: "Oceanside, CA", code: "CBC + Oceanside amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
+  { id: "ca-carlsbad", name: "Carlsbad, CA", code: "CBC + Carlsbad amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
+  { id: "ca-encinitas", name: "Encinitas, CA", code: "CBC + Encinitas amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
+
+  // Ventura County
+  { id: "ca-ventura-county", name: "Ventura County", code: "CBC + Ventura County amendments", year: 2022, level: "county", state: "California", county: "Ventura" },
+  { id: "ca-ventura", name: "Ventura, CA", code: "CBC + Ventura amendments", year: 2022, level: "city", state: "California", county: "Ventura" },
+  { id: "ca-oxnard", name: "Oxnard, CA", code: "CBC + Oxnard amendments", year: 2022, level: "city", state: "California", county: "Ventura" },
+  { id: "ca-thousand-oaks", name: "Thousand Oaks, CA", code: "CBC + Thousand Oaks amendments", year: 2022, level: "city", state: "California", county: "Ventura" },
+  { id: "ca-simi-valley", name: "Simi Valley, CA", code: "CBC + Simi Valley amendments", year: 2022, level: "city", state: "California", county: "Ventura" },
+  { id: "ca-camarillo", name: "Camarillo, CA", code: "CBC + Camarillo amendments", year: 2022, level: "city", state: "California", county: "Ventura" },
+
+  // Riverside County
+  { id: "ca-riverside-county", name: "Riverside County", code: "CBC + Riverside County amendments", year: 2022, level: "county", state: "California", county: "Riverside" },
+  { id: "ca-riverside", name: "Riverside, CA", code: "CBC + Riverside amendments", year: 2022, level: "city", state: "California", county: "Riverside" },
+  { id: "ca-temecula", name: "Temecula, CA", code: "CBC + Temecula amendments", year: 2022, level: "city", state: "California", county: "Riverside" },
+  { id: "ca-palm-springs", name: "Palm Springs, CA", code: "CBC + Palm Springs amendments", year: 2022, level: "city", state: "California", county: "Riverside" },
+  { id: "ca-palm-desert", name: "Palm Desert, CA", code: "CBC + Palm Desert amendments", year: 2022, level: "city", state: "California", county: "Riverside" },
+  { id: "ca-moreno-valley", name: "Moreno Valley, CA", code: "CBC + Moreno Valley amendments", year: 2022, level: "city", state: "California", county: "Riverside" },
+  { id: "ca-corona", name: "Corona, CA", code: "CBC + Corona amendments", year: 2022, level: "city", state: "California", county: "Riverside" },
+
+  // Santa Barbara County
+  { id: "ca-sb-county", name: "Santa Barbara County", code: "CBC + SB County amendments", year: 2022, level: "county", state: "California", county: "Santa Barbara" },
+  { id: "ca-santa-barbara", name: "Santa Barbara, CA", code: "CBC + Santa Barbara amendments", year: 2022, level: "city", state: "California", county: "Santa Barbara" },
+  { id: "ca-santa-maria", name: "Santa Maria, CA", code: "CBC + Santa Maria amendments", year: 2022, level: "city", state: "California", county: "Santa Barbara" },
+  { id: "ca-goleta", name: "Goleta, CA", code: "CBC + Goleta amendments", year: 2022, level: "city", state: "California", county: "Santa Barbara" },
+
+  // Orange County
+  { id: "ca-oc-county", name: "Orange County", code: "CBC + OC amendments", year: 2022, level: "county", state: "California", county: "Orange" },
+  { id: "ca-anaheim", name: "Anaheim, CA", code: "CBC + Anaheim amendments", year: 2022, level: "city", state: "California", county: "Orange" },
+  { id: "ca-santa-ana", name: "Santa Ana, CA", code: "CBC + Santa Ana amendments", year: 2022, level: "city", state: "California", county: "Orange" },
+  { id: "ca-irvine", name: "Irvine, CA", code: "CBC + Irvine amendments", year: 2022, level: "city", state: "California", county: "Orange" },
+  { id: "ca-huntington-beach", name: "Huntington Beach, CA", code: "CBC + HB amendments", year: 2022, level: "city", state: "California", county: "Orange" },
+  { id: "ca-newport-beach", name: "Newport Beach, CA", code: "CBC + Newport Beach amendments", year: 2022, level: "city", state: "California", county: "Orange" },
+  { id: "ca-costa-mesa", name: "Costa Mesa, CA", code: "CBC + Costa Mesa amendments", year: 2022, level: "city", state: "California", county: "Orange" },
+
+  // San Bernardino County
+  { id: "ca-sbd-county", name: "San Bernardino County", code: "CBC + San Bernardino County amendments", year: 2022, level: "county", state: "California", county: "San Bernardino" },
+  { id: "ca-san-bernardino", name: "San Bernardino, CA", code: "CBC + San Bernardino amendments", year: 2022, level: "city", state: "California", county: "San Bernardino" },
+  { id: "ca-fontana", name: "Fontana, CA", code: "CBC + Fontana amendments", year: 2022, level: "city", state: "California", county: "San Bernardino" },
+  { id: "ca-ontario", name: "Ontario, CA", code: "CBC + Ontario amendments", year: 2022, level: "city", state: "California", county: "San Bernardino" },
+
+  // Bay Area overflow (Alameda, Santa Clara, Contra Costa)
+  { id: "ca-alameda-county", name: "Alameda County", code: "CBC + Alameda County amendments", year: 2022, level: "county", state: "California", county: "Alameda" },
+  { id: "ca-oakland", name: "Oakland, CA", code: "CBC + Oakland amendments", year: 2022, level: "city", state: "California", county: "Alameda" },
+  { id: "ca-berkeley", name: "Berkeley, CA", code: "CBC + Berkeley amendments", year: 2022, level: "city", state: "California", county: "Alameda" },
+  { id: "ca-santa-clara-county", name: "Santa Clara County", code: "CBC + SC County amendments", year: 2022, level: "county", state: "California", county: "Santa Clara" },
+  { id: "ca-san-jose", name: "San Jose, CA", code: "CBC + San Jose amendments", year: 2022, level: "city", state: "California", county: "Santa Clara" },
+  { id: "ca-contra-costa-county", name: "Contra Costa County", code: "CBC + CC County amendments", year: 2022, level: "county", state: "California", county: "Contra Costa" },
+
+  // Sacramento
+  { id: "ca-sacramento-county", name: "Sacramento County", code: "CBC + Sacramento County amendments", year: 2022, level: "county", state: "California", county: "Sacramento" },
+  { id: "ca-sacramento", name: "Sacramento, CA", code: "CBC + Sacramento amendments", year: 2022, level: "city", state: "California", county: "Sacramento" },
+
+  // ── Arizona ───────────────────────────────────────────────────────────
+  { id: "az-state", name: "Arizona (statewide)", code: "IBC + state amendments", year: 2021, level: "state", state: "Arizona" },
+  { id: "az-phx", name: "Phoenix, AZ", code: "IBC + local", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-tuc", name: "Tucson, AZ", code: "IBC + local", year: 2021, level: "city", state: "Arizona", county: "Pima" },
+  { id: "az-flag", name: "Flagstaff, AZ", code: "IBC + local (climate zone 5)", year: 2021, level: "city", state: "Arizona", county: "Coconino" },
+
+  // ── Nevada ────────────────────────────────────────────────────────────
+  { id: "nv-state", name: "Nevada (statewide)", code: "IBC + state amendments", year: 2018, level: "state", state: "Nevada" },
+  { id: "nv-clark-county", name: "Clark County, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "county", state: "Nevada", county: "Clark" },
+  { id: "nv-lv", name: "Las Vegas, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada", county: "Clark" },
+  { id: "nv-hen", name: "Henderson, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada", county: "Clark" },
+  { id: "nv-washoe-county", name: "Washoe County, NV", code: "IBC + Washoe County amendments", year: 2018, level: "county", state: "Nevada", county: "Washoe" },
+  { id: "nv-ro", name: "Reno, NV", code: "IBC + Washoe County amendments", year: 2018, level: "city", state: "Nevada", county: "Washoe" },
+
+  // ── Other US (kept from prior list) ───────────────────────────────────
   { id: "ny-nyc", name: "New York City, NY", code: "NYC BC", year: 2022, level: "city", state: "New York" },
   { id: "tx-aus", name: "Austin, TX", code: "IBC + local", year: 2021, level: "city", state: "Texas" },
   { id: "tx-hou", name: "Houston, TX", code: "IBC 2021", year: 2021, level: "city", state: "Texas" },
@@ -53,18 +159,49 @@ export const JURISDICTIONS = [
   { id: "co-den", name: "Denver, CO", code: "DBC", year: 2021, level: "city", state: "Colorado" },
   { id: "wa-sea", name: "Seattle, WA", code: "SBC", year: 2021, level: "city", state: "Washington" },
   { id: "il-chi", name: "Chicago, IL", code: "MBC", year: 2022, level: "city", state: "Illinois" },
-  { id: "az-phx", name: "Phoenix, AZ", code: "IBC + local", year: 2021, level: "city", state: "Arizona" },
-  { id: "az-tuc", name: "Tucson, AZ", code: "IBC + local", year: 2021, level: "city", state: "Arizona" },
-  { id: "az-flag", name: "Flagstaff, AZ", code: "IBC + local (climate zone 5)", year: 2021, level: "city", state: "Arizona" },
-  { id: "nv-lv", name: "Las Vegas, NV (Clark County)", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada" },
-  { id: "nv-ro", name: "Reno, NV (Washoe County)", code: "IBC + Washoe County amendments", year: 2018, level: "city", state: "Nevada" },
-  { id: "nv-hen", name: "Henderson, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada" },
+
+  // ── International ─────────────────────────────────────────────────────
   { id: "uk-london", name: "London, UK", code: "UK Building Regs", year: 2024, level: "city", state: "England" },
   { id: "eu-berlin", name: "Berlin, Germany", code: "Eurocodes + BauO", year: 2024, level: "city", state: "Germany" },
   { id: "jp-tokyo", name: "Tokyo, Japan", code: "BSL Japan", year: 2024, level: "city", state: "Japan" },
   { id: "au-sydney", name: "Sydney, Australia", code: "NCC 2024", year: 2024, level: "city", state: "NSW" },
   { id: "ae-dubai", name: "Dubai, UAE", code: "DM Code", year: 2023, level: "city", state: "UAE" },
 ];
+
+/**
+ * Group jurisdictions hierarchically by state and (where present) county.
+ * Used by the Code Compliance picker to render optgroups.
+ *
+ * Entries with no county are returned under a "(statewide)" synthetic bucket
+ * so they still appear in the grouped picker.
+ */
+export function groupJurisdictions(
+  entries: Jurisdiction[] = JURISDICTIONS
+): Array<{
+  state: string;
+  counties: Array<{ county: string; jurisdictions: Jurisdiction[] }>;
+}> {
+  const states = new Map<string, Map<string, Jurisdiction[]>>();
+  for (const j of entries) {
+    const stateKey = j.state ?? "Other";
+    const countyKey = j.county ?? "(statewide)";
+    if (!states.has(stateKey)) states.set(stateKey, new Map());
+    const countyMap = states.get(stateKey)!;
+    if (!countyMap.has(countyKey)) countyMap.set(countyKey, []);
+    countyMap.get(countyKey)!.push(j);
+  }
+  return Array.from(states.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([state, countyMap]) => ({
+      state,
+      counties: Array.from(countyMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([county, jurisdictions]) => ({
+          county,
+          jurisdictions: [...jurisdictions].sort((a, b) => a.name.localeCompare(b.name)),
+        })),
+    }));
+}
 
 export const PROJECT_PHASES = [
   { id: "precon", name: "Pre-Construction", color: "#7F77DD", icon: "📐",
