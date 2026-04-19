@@ -26,12 +26,13 @@
 - [ ] BudgetWidget (the dark compact pill at `src/components/BudgetWidget.tsx`) still exists for `/expenses` + legacy command center. Leave untouched until W4.3 Expenses polish pass.
 
 ### W4.2 — Compass Navigator careful iteration (founder said "carefully")
-- [ ] Audit current `CompassBloom` behavior vs what founder needs. Do NOT do another farm — one Cowork session pass-through with founder.
-- [ ] Problems known to fix:
-  - [ ] Active project ID doesn't persist across sessions
-  - [ ] Can't switch between saved projects from the Compass
-  - [ ] "Projects" destination not yet a first-class lane
-- [ ] Add project save/load/switch UI. Project ID persistence via localStorage (`bkg:active-project-id`) with graceful default for anon users.
+- [x] Audit current `CompassBloom` behavior and produce a file-by-file diff proposal. **Plan doc:** `W4.2-compass-plan.md` in Builder's Knowledge Garden folder. 348 lines, every line cite verified against CompassBloom.tsx (line 171 spot-check ✓). Read before the Cowork session and come back to the 5 open questions for the founder.
+- [ ] Cowork session pass-through with founder to decide the 5 open questions in the plan doc (chip format, which lanes show the switcher, modal vs inline, fetch timing, standalone projects route). Do NOT do another farm.
+- [ ] Ship in a single PR once questions are resolved:
+  - [ ] Integrate `useActiveProject()` into CompassBloom (no more direct localStorage).
+  - [ ] Add active-project chip to the center hub.
+  - [ ] Add Switch Project button → `ProjectPickerModal.tsx` wired to `/api/v1/saved-projects` GET.
+  - [ ] (Optional, founder's call) `/killerapp/projects/page.tsx` as first-class destination.
 
 ### W4.3 — Workflow-by-workflow polish pass (one at a time, with founder)
 Founder explicit ask: **"go through each live builder workflow to make changes on each in our next session after I sleep. One by one."** Do not batch. Do not farm. Cowork review + edit per workflow.
