@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import CompassBloom from "@/components/CompassBloom";
 import GlobalAiFab from "@/components/GlobalAiFab";
+import GlobalBudgetWidget from "@/components/GlobalBudgetWidget";
 import { GamificationProvider } from "@/components/GamificationProvider";
 
 const archivo = Archivo({
@@ -63,6 +64,12 @@ export default function RootLayout({
         <Providers>
           <GamificationProvider>
             {children}
+            {/* Ever-present chrome: budget (top-right pill), journey map
+                (lives in /killerapp/layout.tsx so it only shows inside the
+                killer app), AI fab (bottom-right above CompassBloom),
+                Compass (bottom-right corner). Order matters for z-index
+                layering when they animate. */}
+            <GlobalBudgetWidget />
             <CompassBloom />
             <GlobalAiFab />
           </GamificationProvider>
