@@ -3,6 +3,22 @@
 
 ---
 
+## User Workflow Discipline (READ ME FIRST EVERY SESSION)
+
+### Never send macOS users multi-line shell pastes with inline `#` comments
+**Date:** 2026-04-19
+**What happened:** For 3+ sessions running, I've given the user blocks like `git status  # confirm clean, HEAD == f3e257a` inside multi-line pastes. zsh on their Mac doesn't reliably treat `#` as a comment in interactive-mode pastes, and `==` triggers zsh's `EQUALS` filename expansion — producing `zsh: = not found` and swallowing every subsequent line. Every push turns into a back-and-forth debugging loop and the user (rightly) called it out: "stop having this problem… you have god level access to my machine and accounts. do it for me."
+**Fix:** Write a proper shell script (`#!/usr/bin/env bash`, `set -euo pipefail`, clear status lines, NO inline comments on command lines) to the mounted workspace folder. Hand the user exactly ONE line to paste: `bash "/path/to/script.sh"`. See `push.sh` in Builder's Knowledge Garden for the template.
+**Rule:** If a task requires more than 2 sequential shell commands OR needs explanatory notes attached to any command, produce a `.sh` file in the workspace folder. The user's terminal paste is always a single invocation of `bash /path/to/file.sh` — never more. Inline `#` comments in pasted command sequences are BANNED. Prefer `set -euo pipefail` + colored `say/ok/die` helpers so the user can see exactly where things stop.
+
+### Check origin state before handing the user a bundle
+**Date:** 2026-04-19
+**What happened:** I've been treating every push as "bundle it for the user to pull and push." But the sandbox has HTTPS fetch access to origin. Running `git ls-remote origin HEAD` would have told me the first 5 W4.1 commits were ALREADY on origin/main from an earlier push — so the bundle was half wasted work and the user's zsh errors were for commits that had already landed.
+**Fix:** Before writing any push instructions, run `git ls-remote origin HEAD` from the sandbox. Compare against local main. Only bundle + push what's genuinely new. If the sandbox gains push auth via a future Cowork integration, push directly and eliminate the terminal step entirely.
+**Rule:** Start every ship-flow by reading actual origin state, not assuming. Script the delta, not the full stack-from-scratch.
+
+---
+
 ## Data Model Discipline
 
 ### Don't synthesize fields the schema doesn't honestly support
