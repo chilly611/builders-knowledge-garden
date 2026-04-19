@@ -11,6 +11,12 @@
 **Fix:** Write a proper shell script (`#!/usr/bin/env bash`, `set -euo pipefail`, clear status lines, NO inline comments on command lines) to the mounted workspace folder. Hand the user exactly ONE line to paste: `bash "/path/to/script.sh"`. See `push.sh` in Builder's Knowledge Garden for the template.
 **Rule:** If a task requires more than 2 sequential shell commands OR needs explanatory notes attached to any command, produce a `.sh` file in the workspace folder. The user's terminal paste is always a single invocation of `bash /path/to/file.sh` — never more. Inline `#` comments in pasted command sequences are BANNED. Prefer `set -euo pipefail` + colored `say/ok/die` helpers so the user can see exactly where things stop.
 
+### Never hardcode a Vercel commit-specific URL in pickup notes or scripts
+**Date:** 2026-04-19
+**What happened:** For multiple sessions I've been writing pickup notes ending with `Check: https://app-p7hc1agho-chillyd-2693s-projects.vercel.app/killerapp` — but that hash is from a build long in the past. Every Vercel deploy gets a new hash URL. The founder kept checking the stale URL and seeing none of the new work, concluding nothing had shipped. In reality everything HAD shipped; they were looking at an archived deploy. Another loop of my making.
+**Fix:** Either (a) point them at the GitHub commit page and let them click through to Vercel's "Details" link (which always resolves to the current deploy), or (b) query GitHub deployments API from the sandbox for the per-commit deploy URL and report THAT. Never hand out a `app-<hash>-...` URL unless it was just pulled from the API for the current SHA.
+**Rule:** The phrase "check this URL: app-abcd-..." is banned. If I need to point the founder at the live build, say: "The green ✓ next to commit $SHA on GitHub links to the live deploy — click Vercel → Details." That scales forever without going stale.
+
 ### Check origin state before handing the user a bundle
 **Date:** 2026-04-19
 **What happened:** I've been treating every push as "bundle it for the user to pull and push." But the sandbox has HTTPS fetch access to origin. Running `git ls-remote origin HEAD` would have told me the first 5 W4.1 commits were ALREADY on origin/main from an earlier push — so the bundle was half wasted work and the user's zsh errors were for commits that had already landed.
