@@ -33,6 +33,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { useActiveProject } from '@/lib/hooks/use-active-project';
 
 // ─── Types — mirror src/app/api/v1/budget/route.ts ────────────────────────
 interface BudgetSummary {
@@ -82,31 +83,13 @@ function isSuppressedRoute(pathname: string): boolean {
 // ─── Component ─────────────────────────────────────────────────────────────
 export default function GlobalBudgetWidget() {
   const pathname = usePathname() ?? '';
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectId] = useActiveProject();
   const [hasSession, setHasSession] = useState(false);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
   const [budgetExists, setBudgetExists] = useState<boolean | null>(null); // null = unknown
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const cancelRef = useRef<AbortController | null>(null);
-
-  // Resolve active project from localStorage.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const read = () => {
-      try {
-        setProjectId(window.localStorage.getItem('bkg-active-project'));
-      } catch {
-        setProjectId(null);
-      }
-    };
-    read();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'bkg-active-project') read();
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
 
   // Cheap auth-presence check — we only need to know whether a bearer token
   // is available before calling the authenticated budget endpoint.

@@ -30,36 +30,26 @@ import {
   stageIdForPath,
 } from '@/lib/lifecycle-stages';
 import {
-  resolveProjectId,
   subscribeJourney,
   rollupByStage,
   type JourneyState,
 } from '@/lib/journey-progress';
+import { useActiveProject } from '@/lib/hooks/use-active-project';
 
 export default function GlobalJourneyMapHeader() {
   const pathname = usePathname() ?? '';
-  const [projectId, setProjectId] = useState<string>('default');
+  const [activeId] = useActiveProject();
+  // Fall back to 'default' so anonymous users still see an empty strip
+  // (matches the journey-progress store's anonymous bucket key).
+  const projectId = activeId ?? 'default';
   const [state, setState] = useState<JourneyState>({});
 
-  // Resolve active project once on mount + subscribe to its journey state.
+  // Subscribe to journey state for whichever project is currently active.
+  // Resubscribe when the active project changes.
   useEffect(() => {
-    const pid = resolveProjectId();
-    setProjectId(pid);
-    const unsubscribe = subscribeJourney(pid, (s) => setState(s));
+    const unsubscribe = subscribeJourney(projectId, (s) => setState(s));
     return unsubscribe;
-  }, []);
-
-  // Listen for active-project changes (future CompassBloom project switcher).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'bkg-active-project') {
-        setProjectId(resolveProjectId());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [projectId]);
 
   const currentStageId = useMemo(() => stageIdForPath(pathname), [pathname]);
 
@@ -78,8 +68,6 @@ export default function GlobalJourneyMapHeader() {
       currentStageId={currentStageId}
       progressByStage={progressByStage}
       linkStages={false}
-      // ensure projectId changes re-trigger rerender (state is already tied to pid)
-      key={projectId}
     />
   );
 }
