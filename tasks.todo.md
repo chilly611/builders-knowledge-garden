@@ -1,7 +1,69 @@
 # Builder's Knowledge Garden — Master Task List
 
 
-## ═══ WEEK 3 PUSH — 15 WORKFLOWS + BUDGET SPINE + AI FAB (2026-04-18) — SHIPPED LOCALLY, AWAITING PUSH ═══
+## ═══ WEEK 4 — GLOBAL COO SURFACES + WORKFLOW-BY-WORKFLOW POLISH (opened 2026-04-19, next session) ═══
+
+**Founder direction at end of W3 push:** smoke-testing the live deploy, noticed that JourneyMapHeader + BudgetWidget are NOT globally visible — they only render inside workflow routes. Expectation: "Budget, profit + loss, receivables, payment schedule, where we are overbudget, where we are underbudget — all super important to be visible and accessible and changeable" from ANYWHERE in the app, not just inside a workflow. Compass also "isn't working the way it needs to" — needs careful iteration, not another farm pass.
+
+**W4 scope (ordered):**
+
+### W4.0 — Ship-gate verification (first action next session)
+- [ ] Pull `origin/main` into repo (`cd "/Users/chillydahlgren/Desktop/The Builder Garden/app" && git fetch origin main && git status`). Confirm HEAD is `f3e257a`.
+- [ ] Load `https://app-p7hc1agho-chillyd-2693s-projects.vercel.app/killerapp` — confirm 17 LIVE cards (not 2). If still 2, check Vercel dashboard for build failure (likely cause: pre-existing static-export timeout on `/knowledge`, `/marketplace`, `/mcp`, `/login`, `/launch`, `/manifesto`, `/onboard`, or new `/killerapp/workflows/worker-count`). If build failed, apply `export const dynamic = 'force-dynamic'` to the failing routes as a minimal unblocker (repo-wide fix is out of W4 scope).
+- [ ] If LIVE cards show up but JourneyMapHeader + BudgetWidget don't appear on `/killerapp` picker itself, that is **expected** — it's the W4.1 work below.
+
+### W4.1 — Global COO surfaces (HIGH priority — founder headline ask) — **SHIPPED LOCALLY 2026-04-19**
+- [x] **W4.1a** `3ac9771` Universal talking turkey box (`WorkflowTurkeyInput`) rendered by `WorkflowShell` on every LIVE workflow. Mic + Cmd+Enter + SSE stream to `/api/v1/copilot`, scoped via `project_context: { workflow, label, stage }`.
+- [x] **W4.1b** `9c8d4c1` `GlobalJourneyMapHeader` mounted in `src/app/killerapp/layout.tsx` — renders across `/killerapp` picker AND every nested workflow route. Lifted out of `WorkflowShell` + dropped from two pre-shell routes (`code-compliance`, `contract-templates`) that mounted it directly. `JourneyMapHeader.currentStageId` made optional so the picker renders without a highlight. Canonical stages + stage→workflow map + pathname→stageId helper in new `src/lib/lifecycle-stages.ts`.
+- [x] **W4.1c** `326c364` `GlobalBudgetWidget` mounted in `src/app/layout.tsx` — light-themed floating pill in the top-right corner. Collapsed: total + % used + over/under delta. Expanded: spent / remaining / burn rate / projected + top-3 over-budget categories + deep link to `/budget`. Silent on landing/auth routes, silent when unauthenticated, "+ Set budget" CTA when project has no budget. Refreshes on `bkg:budget:changed` spine writes.
+- [x] **W4.1d** `dc4645b` Extracted `useActiveProject()` hook (`src/lib/hooks/use-active-project.ts`) with `useSyncExternalStore` + same-tab `bkg:active-project:changed` + cross-tab `StorageEvent`. Both global widgets now use it so a same-tab project switch (coming in W4.2) updates them together without a reload.
+- [ ] **W4.1e** Manual live-URL smoke test once pushed: confirm journey strip + budget pill visible on `/killerapp`, confirm they update when a spine write happens in `/killerapp/workflows/expenses`.
+
+**W4.1 follow-ups parked for a later session (not blocking):**
+- [ ] GlobalBudgetWidget: add P&L running + receivables outstanding + next-7-days payment schedule. Current summary shape (`/api/v1/budget`) doesn't expose payments or receivables — needs either an endpoint extension OR a new `GET /api/v1/budget/forecast?project_id=` that joins `budget_items` with client-payment rows. One-engineer day of work.
+- [ ] BudgetWidget (the dark compact pill at `src/components/BudgetWidget.tsx`) still exists for `/expenses` + legacy command center. Leave untouched until W4.3 Expenses polish pass.
+
+### W4.2 — Compass Navigator careful iteration (founder said "carefully")
+- [ ] Audit current `CompassBloom` behavior vs what founder needs. Do NOT do another farm — one Cowork session pass-through with founder.
+- [ ] Problems known to fix:
+  - [ ] Active project ID doesn't persist across sessions
+  - [ ] Can't switch between saved projects from the Compass
+  - [ ] "Projects" destination not yet a first-class lane
+- [ ] Add project save/load/switch UI. Project ID persistence via localStorage (`bkg:active-project-id`) with graceful default for anon users.
+
+### W4.3 — Workflow-by-workflow polish pass (one at a time, with founder)
+Founder explicit ask: **"go through each live builder workflow to make changes on each in our next session after I sleep. One by one."** Do not batch. Do not farm. Cowork review + edit per workflow.
+
+Ordered 1-by-1 punch list (17 LIVE workflows). Skip to the ones founder flags first; default order is the DREAM → BUILD lifecycle:
+
+- [ ] q2 Estimating (Size Up)
+- [ ] q4 Contract Templates (Lock)
+- [ ] q5 Code Compliance (Lock)
+- [ ] q6 Job Sequencing (Plan)
+- [ ] q7 Worker Count (Plan)
+- [ ] q8 Permit Applications (Plan)
+- [ ] q9 Sub Management (Plan)
+- [ ] q10 Equipment (Plan)
+- [ ] q11 Supply Ordering (Plan)
+- [ ] q12 Services Todos (Plan)
+- [ ] q13 Hiring (Plan)
+- [ ] q14 Weather Scheduling (Build)
+- [ ] q15 Daily Log (Build)
+- [ ] q16 OSHA Toolbox (Build)
+- [ ] q17 Expenses (Build)
+- [ ] q18 Outreach (Build)
+- [ ] q19 Compass Nav (Build) — may merge into W4.2 instead
+
+For each workflow: open it on the live URL, walk through with founder feedback, note the changes, apply as a small commit, tsc gate, push. Do NOT batch multiple workflows into one commit — founder wants per-workflow atomic changes for clean rollback.
+
+### W4 deferred / parked
+- Pre-existing static-export timeouts (7 client routes) — repo-wide follow-up after W4.1 lands. Minimal W4.0 unblocker: `export const dynamic = 'force-dynamic'` on any route failing Vercel build.
+- Clerk auth + Stripe paywall — still scheduled post-W4 per prior planning.
+- Orphan `analysis_result` promptId wiring for q9/q10/q16 — picked up during the per-workflow pass.
+
+---
+
+## ═══ WEEK 3 PUSH — 15 WORKFLOWS + BUDGET SPINE + AI FAB (2026-04-18) — SHIPPED TO PROD 2026-04-19 ═══
 
 **Status:** 15 new live workflows (q2 + q6–q19) behind a locked spine (WorkflowShell + budget-spine + journey-progress + Global AI FAB). Farm pass ran 5 agents in parallel; integrator pass corrected 10 client files whose agents had invented property names on `StepResult`. `tsc --noEmit` green; `npm test` 11/11 green; `next build` compiles + typechecks all 130 routes in 205s combined. Static-export stage has pre-existing timeouts on 7 client-component routes (see below) — not introduced by Week 3 and out of scope.
 
