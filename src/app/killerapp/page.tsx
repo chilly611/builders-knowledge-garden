@@ -46,9 +46,31 @@ interface WorkflowsJson {
 
 // Live, wired workflows. Extend this map as each q-id ships a route.
 // Kept explicit so "Coming soon" never lies.
+//
+// Week 3 farm (W3.7 integrator pass): wired q2 + q6-q19 in one edit per
+// docs/week3-integration-worksheet.md.
 const LIVE_WORKFLOWS: Record<string, string> = {
+  // Week 2
   q4: '/killerapp/workflows/contract-templates',
   q5: '/killerapp/workflows/code-compliance',
+  // Week 3 — Size Up
+  q2: '/killerapp/workflows/estimating',
+  // Week 3 — Plan
+  q6: '/killerapp/workflows/job-sequencing',
+  q7: '/killerapp/workflows/worker-count',
+  q8: '/killerapp/workflows/permit-applications',
+  q9: '/killerapp/workflows/sub-management',
+  q10: '/killerapp/workflows/equipment',
+  q11: '/killerapp/workflows/supply-ordering',
+  q12: '/killerapp/workflows/services-todos',
+  q13: '/killerapp/workflows/hiring',
+  // Week 3 — Build
+  q14: '/killerapp/workflows/weather-scheduling',
+  q15: '/killerapp/workflows/daily-log',
+  q16: '/killerapp/workflows/osha-toolbox',
+  q17: '/killerapp/workflows/expenses',
+  q18: '/killerapp/workflows/outreach',
+  q19: '/killerapp/workflows/compass-nav',
 };
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
