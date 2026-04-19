@@ -1,5 +1,23 @@
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-04-03
+## Updated: 2026-04-19
+
+---
+
+## Data Model Discipline
+
+### Don't synthesize fields the schema doesn't honestly support
+**Date:** 2026-04-19
+**What happened:** Planning the W4.1f forecast extension, the natural field list was {P&L after payments, receivables outstanding, next-7-days scheduled}. Two of those (P&L + next-7-days) are cleanly computable from existing `budget_items` rows (is_estimate + amount sign + date window). The third (receivables) is NOT — it would require conflating `total_budget` (cost-to-build) with "contract value" (what the client will pay). Those are different numbers in most real builds. Shipping receivables as `total_budget − clientPaymentsReceived` would render wrong the moment a contractor's build budget ≠ their contract price.
+**Fix:** Shipped only the two honest fields. Parked receivables with an explicit note that the real solution is adding a `contract_value` column to `project_budgets` (migration) — not a UI trick.
+**Rule:** Before extending an API summary, enumerate each new field and ask "what column or derivation makes this exact? If I'm reaching for 'close enough' — STOP and either (a) propose a migration or (b) park the field with a clear reason." Fake accuracy is worse than an absent field because the user will base decisions on it.
+
+### Extend summaries additively — don't reshape legacy fields
+**Date:** 2026-04-19
+**What happened:** Discovered during W4.1f that `BudgetSummary.totalSpent` already sums client-payment rows (which are stored as negative amounts), effectively meaning "cash out minus cash in". Fixing it to pure expenses would change what `BudgetWidget.tsx` (legacy dark pill on /expenses) shows today. Low-traffic surface, but still a semantic change.
+**Fix:** Left `totalSpent` alone, added a JSDoc explaining the quirk, and introduced clean new fields `actualExpenses` and `clientPaymentsReceived` that future surfaces should prefer. The legacy widget keeps its behavior; new widget (GlobalBudgetWidget) uses the split fields.
+**Rule:** When a field's semantics are muddy but it has consumers, add-a-clean-sibling beats rename-and-break. Tag the old field with a JSDoc "legacy — prefer X" note so the next engineer knows which one to pick.
+
+---
 
 ---
 
@@ -881,3 +899,9 @@ When naming a product or initiative, aim for layered meaning. Ask: does this nam
 **Fix:** Read `StepCard.types.ts` and `StepCard.tsx` to learn the actual shape — event is `{ type: 'step_opened' | 'step_saved' | 'step_skipped' | 'step_completed', stepId, payload?: unknown, timestamp }`. Payload varies by step type: `{ value }` for text/voice/number_input, `{ selected }` for select/multi_select, `{ checked }` for checklist, `{ input }` for analysis_result. The AI response for analysis_result is NOT piped through the event bus — only the user's input text. Rewrote the 8 broken handlers to narrow payload via `as { value?: string } | undefined` and derive stepIndex via `workflow.steps.findIndex(s => s.id === event.stepId)`.
 
 **Rule:** When farming out N parallel workflow-shaped tasks to subagents, the spec handed to each agent MUST include either (a) the full text of the event-type / payload-shape source files inlined, or (b) an explicit instruction "read `<exact path>` before writing the onEvent handler" combined with at least one copy-pasteable example handler that shows the real payload narrowing pattern. Prose descriptions like "emit completion on step_completed" are not enough — agents will invent plausible-looking property names (`stepIndex`, `analysisOutput`) that don't exist. Also: every farm spec needs a local tsc gate per-agent before they report "ready" to the worksheet — otherwise the integrator pass becomes the first compile and catches a pile of same-shape errors at once. The farm worksheet status `ready` is a lie without tsc passing.
+
+### Global chrome vs per-workflow chrome — be explicit with the founder about which is which
+**Date:** 2026-04-19
+**What happened:** Right after the Week 3 push (17 LIVE workflows + budget spine + journey spine + Global AI FAB), founder smoke-tested the live `/killerapp` URL and flagged: "I still don't see the journey map or the budget widget that would be visible and work in an integrated way anytime. That's important. Budget, profit + loss, receivables, payment schedule, where we are overbudget, where we are underbudget — all super important to be visible and accessible and changeable." This was an expectation mismatch. Week 3 mounted `CompassBloom` + `GlobalAiFab` in `src/app/layout.tsx` as global chrome, but `JourneyMapHeader` lives ONLY inside `WorkflowShell` (per-workflow) and `BudgetWidget` is only imported by `/workflows/expenses`. The architecture diagram I delivered before the push said "BudgetWidget pre-existing" in the always-on lane — implying it was mounted globally when it wasn't. Founder saw the diagram, approved the push based on it, and then found the real state didn't match.
+
+**Rule:** When describing architecture to the founder, every component shown in an "always-on" / "global chrome" section MUST be verified as actually imported in `src/app/layout.tsx` (or equivalent root mount point) before labeling it that way. Run `grep -r ComponentName src/app/layout` before making the claim. If a component is mounted per-route or per-workflow-shell only, call it "per-workflow chrome" and say so explicitly — don't lump it with the global FAB. COO-for-construction expectations are that budget + journey visibility travel with the user everywhere, not just inside a workflow; this is a product-level default the founder has, and any architecture doc that doesn't match that default will produce a mismatch after ship. Related rule: when a new "spine" module (data layer that emits events to any subscriber) is shipped, the UI surface that consumes those events needs a matching global mount in the same push, or the data work feels invisible to the user and reads as "didn't integrate." The data spine without the UI surface at the root layout is a gap, not a feature.

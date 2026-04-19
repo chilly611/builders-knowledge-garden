@@ -1,8 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
 
+/**
+ * Scheduled payment = an estimate row whose `date` lands inside the next
+ * 7 days. Lets the widget surface "what's coming up" without a new table.
+ * Until a workflow writes future-dated estimates, this array will be empty.
+ */
+interface ScheduledPayment {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  phase: string;
+  date: string;
+  vendor: string | null;
+}
+
 interface BudgetSummary {
   totalBudget: number;
+  /**
+   * NOTE: sums EVERY `is_estimate=false` row — including the negative-amount
+   * client-payment rows written by `recordClientPayment` in budget-spine.
+   * So `totalSpent` is effectively "cash out the door MINUS cash in".
+   * Kept for back-compat with the legacy `BudgetWidget.tsx` which reads it
+   * directly. New surfaces should prefer `actualExpenses` + `clientPaymentsReceived`
+   * below, which split these cleanly.
+   */
   totalSpent: number;
   totalEstimated: number;
   remaining: number;
@@ -12,6 +35,19 @@ interface BudgetSummary {
   percentUsed: number;
   byPhase: Record<string, { spent: number; estimated: number; count: number }>;
   byCategory: Record<string, { spent: number; estimated: number; count: number }>;
+
+  // ── W4.1e global COO additions ───────────────────────────────────────────
+  /** Sum of `is_estimate=false AND amount > 0` rows. True cash out. */
+  actualExpenses: number;
+  /** Abs sum of `is_estimate=false AND amount < 0` rows. True cash in
+   *  (client payments), represented as a POSITIVE number. */
+  clientPaymentsReceived: number;
+  /** `clientPaymentsReceived - actualExpenses`. Negative ⇒ project has spent
+   *  more than it has collected from the client so far. */
+  plAfterPayments: number;
+  /** Estimates with `date` in `[now, now+7d]`, up to 10 items, ascending date.
+   *  Empty until a workflow starts writing future-dated estimates. */
+  next7DaysScheduled: ScheduledPayment[];
 }
 
 interface BudgetItem {
@@ -44,17 +80,40 @@ interface ProjectBudget {
 function computeBudgetSummary(budget: ProjectBudget, items: BudgetItem[]): BudgetSummary {
   let totalSpent = 0;
   let totalEstimated = 0;
+  let actualExpenses = 0;
+  let clientPaymentsReceived = 0;
   const byPhase: Record<string, { spent: number; estimated: number; count: number }> = {};
   const byCategory: Record<string, { spent: number; estimated: number; count: number }> = {};
   let earliestDate = Date.now();
+
+  // 7-day window for upcoming-scheduled detection. Computed once, not per-item.
+  const now = Date.now();
+  const sevenDays = now + 7 * 24 * 60 * 60 * 1000;
+  const upcoming: ScheduledPayment[] = [];
 
   items.forEach((item) => {
     const amount = parseFloat(item.amount.toString());
 
     if (item.is_estimate) {
       totalEstimated += amount;
+      // Within the rolling 7-day window? Surface as scheduled.
+      const itemTs = new Date(item.date).getTime();
+      if (!Number.isNaN(itemTs) && itemTs >= now && itemTs <= sevenDays) {
+        upcoming.push({
+          id: item.id,
+          description: item.description,
+          amount,
+          category: item.category,
+          phase: item.phase,
+          date: item.date,
+          vendor: item.vendor ?? null,
+        });
+      }
     } else {
       totalSpent += amount;
+      // Clean split: positive ⇒ expense, negative ⇒ client payment received.
+      if (amount >= 0) actualExpenses += amount;
+      else clientPaymentsReceived += Math.abs(amount);
     }
 
     // Track by phase
@@ -101,6 +160,14 @@ function computeBudgetSummary(budget: ProjectBudget, items: BudgetItem[]): Budge
   const projectedTotal = totalSpent + totalEstimated;
   const overUnder = budgetAmount - projectedTotal;
 
+  // Sort upcoming ascending by date and cap at 10 to keep payload small.
+  upcoming.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const next7DaysScheduled = upcoming.slice(0, 10);
+
+  const plAfterPayments = clientPaymentsReceived - actualExpenses;
+
   return {
     totalBudget: budgetAmount,
     totalSpent,
@@ -112,6 +179,11 @@ function computeBudgetSummary(budget: ProjectBudget, items: BudgetItem[]): Budge
     percentUsed: Math.round(percentUsed * 100) / 100,
     byPhase,
     byCategory,
+    // W4.1e additions
+    actualExpenses,
+    clientPaymentsReceived,
+    plAfterPayments,
+    next7DaysScheduled,
   };
 }
 

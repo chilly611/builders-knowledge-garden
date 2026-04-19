@@ -36,6 +36,16 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { useActiveProject } from '@/lib/hooks/use-active-project';
 
 // ─── Types — mirror src/app/api/v1/budget/route.ts ────────────────────────
+interface ScheduledPayment {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  phase: string;
+  date: string;
+  vendor: string | null;
+}
+
 interface BudgetSummary {
   totalBudget: number;
   totalSpent: number;
@@ -47,6 +57,12 @@ interface BudgetSummary {
   percentUsed: number;
   byPhase: Record<string, { spent: number; estimated: number; count: number }>;
   byCategory: Record<string, { spent: number; estimated: number; count: number }>;
+
+  // W4.1e additions (optional so older deployments don't break the client)
+  actualExpenses?: number;
+  clientPaymentsReceived?: number;
+  plAfterPayments?: number;
+  next7DaysScheduled?: ScheduledPayment[];
 }
 
 // ─── Supabase browser client (shared pattern across the app) ──────────────
@@ -71,6 +87,17 @@ function formatCurrency(amount: number): string {
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
   return `${sign}$${abs.toFixed(0)}`;
+}
+
+/** "Apr 24" style for scheduled-payment rows. Local-TZ — the contractor
+ *  reads these next to a calendar, so locale matters more than ISO. */
+function shortDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 /** Pathnames where the widget should stay silent. */
@@ -290,6 +317,50 @@ export default function GlobalBudgetWidget() {
             />
           </div>
 
+          {/* Cash flow strip — P&L after client payments. Only render when
+              something has actually moved (either side non-zero) so the panel
+              doesn't show a noisy "$0 / $0 / $0" row for fresh projects. */}
+          {(() => {
+            const actual = summary.actualExpenses ?? 0;
+            const received = summary.clientPaymentsReceived ?? 0;
+            const pl = summary.plAfterPayments ?? 0;
+            if (actual === 0 && received === 0) return null;
+            const plColor = pl < 0 ? '#D85A30' : '#1D9E75';
+            return (
+              <div style={STYLES.cashSection}>
+                <span style={STYLES.sectionLabel}>Cash flow</span>
+                <div style={STYLES.cashRow}>
+                  <Metric label="In" value={formatCurrency(received)} />
+                  <Metric label="Out" value={formatCurrency(actual)} />
+                  <Metric
+                    label="Net"
+                    value={`${pl < 0 ? '-' : '+'}${formatCurrency(Math.abs(pl))}`}
+                    color={plColor}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Next 7 days scheduled (estimates dated within the upcoming week) */}
+          {summary.next7DaysScheduled && summary.next7DaysScheduled.length > 0 && (
+            <div style={STYLES.overSection}>
+              <span style={STYLES.sectionLabel}>Next 7 days</span>
+              <ul style={STYLES.overList}>
+                {summary.next7DaysScheduled.slice(0, 5).map((p) => (
+                  <li key={p.id} style={STYLES.overItem}>
+                    <span style={STYLES.overCat}>
+                      {shortDate(p.date)} · {p.description}
+                    </span>
+                    <span style={STYLES.scheduledAmt}>
+                      {formatCurrency(p.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Categories running over */}
           {overBudgetCategories.length > 0 && (
             <div style={STYLES.overSection}>
@@ -472,6 +543,26 @@ const STYLES = {
     fontWeight: 700 as const,
     letterSpacing: '-0.2px',
   },
+  cashSection: {
+    borderTop: '1px solid #F0F0EC',
+    paddingTop: 10,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  cashRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: 10,
+  },
+  sectionLabel: {
+    display: 'block',
+    fontSize: 9,
+    fontWeight: 700 as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.6px',
+    color: '#777',
+    marginBottom: 6,
+  },
   overSection: {
     borderTop: '1px solid #F0F0EC',
     paddingTop: 10,
@@ -486,6 +577,7 @@ const STYLES = {
     color: '#D85A30',
     marginBottom: 6,
   },
+  scheduledAmt: { color: '#333', fontWeight: 600 as const },
   overList: {
     listStyle: 'none' as const,
     padding: 0,
