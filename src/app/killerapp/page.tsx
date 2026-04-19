@@ -44,9 +44,10 @@ interface WorkflowsJson {
   workflows: WorkflowSummary[];
 }
 
-// The single live workflow today. When W2.3+ wires more, extend this map
-// or swap to a manifest file. Kept explicit so "Coming soon" never lies.
+// Live, wired workflows. Extend this map as each q-id ships a route.
+// Kept explicit so "Coming soon" never lies.
 const LIVE_WORKFLOWS: Record<string, string> = {
+  q4: '/killerapp/workflows/contract-templates',
   q5: '/killerapp/workflows/code-compliance',
 };
 
@@ -56,7 +57,7 @@ const WORKFLOW_BLURBS: Record<string, string> = {
   q1: 'Score a project for risk before you bid — red/yellow/green with reasons.',
   q2: 'Fast AI estimate from plans, specs, or a photo. Sanity-check before quoting.',
   q3: 'Look up a client: past projects, outstanding balances, notes.',
-  q4: 'Contract templates tuned to your trade and jurisdiction.',
+  q4: 'Six starter contracts — agreement, sub, lien waivers, NDA, change order — filled and downloaded as PDFs in one pass.',
   q5: 'Structural, electrical, plumbing, fire — which codes apply and where they bite.',
   q6: 'Sequence the job so trades don\'t trip over each other.',
   q7: 'How many workers you need per phase, based on scope and schedule.',
