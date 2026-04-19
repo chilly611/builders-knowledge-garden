@@ -37,6 +37,7 @@ import type { ReactNode } from 'react';
 import WorkflowRenderer from './WorkflowRenderer';
 import type { Workflow, WorkflowContext } from './WorkflowRenderer.types';
 import type { StepResult } from './StepCard.types';
+import WorkflowTurkeyInput from './WorkflowTurkeyInput';
 import JourneyMapHeader, { type LifecycleStage } from '@/components/JourneyMapHeader';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
 import { emitJourneyEvent, resolveProjectId } from '@/lib/journey-progress';
@@ -232,6 +233,15 @@ export default function WorkflowShell({
             {proMode ? 'Pro: On' : 'Pro: Off'}
           </button>
         </div>
+
+        {/* Universal "talking turkey" natural-language box — always rendered
+            per founder direction 2026-04-19. Scoped to the current workflow
+            context so Claude can give a Pro result for this specific step. */}
+        <WorkflowTurkeyInput
+          workflowId={workflow.id}
+          workflowLabel={workflow.label}
+          stageId={workflow.stageId}
+        />
 
         {/* Optional workflow-specific panel above the step list */}
         {topPanel && (
