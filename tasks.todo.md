@@ -34,6 +34,14 @@
   - [ ] Add Switch Project button → `ProjectPickerModal.tsx` wired to `/api/v1/saved-projects` GET.
   - [ ] (Optional, founder's call) `/killerapp/projects/page.tsx` as first-class destination.
 
+### W4.2b — Budget surface redesign (founder-flagged 2026-04-19 after live review)
+Founder quote on live deploy: *"If that budget widget belongs anywhere it needs to be part of the workflow UX and aesthetic and same command vocabularies as the killerapp page we have been working on. I don't think it should look anything like the legacy one."*
+
+- [x] Capture the direction in `W4-budget-redesign.md` (Builder's Knowledge Garden folder). 4 candidate redesign options (A: inside WorkflowShell, B: budget-as-a-stage, C: inline CostSlot per StepCard, D: journey-chip markers + on-demand panel), 5 open founder-decision questions.
+- [ ] Cowork session to pick an option (or define E). Do NOT build until chosen — the corner `GlobalBudgetWidget` stays live as a fallback in the meantime so the W4.1f surfaces (P&L, cash flow, next-7-days) are not erased from the product.
+- [ ] Decide priority vs W4.2 Compass: blocker / parallel / park-until-W5.
+- [ ] After option is chosen: add concrete build sub-tasks here and ship in a single PR with tsc gate.
+
 ### W4.3 — Workflow-by-workflow polish pass (one at a time, with founder)
 Founder explicit ask: **"go through each live builder workflow to make changes on each in our next session after I sleep. One by one."** Do not batch. Do not farm. Cowork review + edit per workflow.
 
