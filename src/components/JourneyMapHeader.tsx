@@ -13,6 +13,7 @@
 
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import type { StageProgress } from '@/lib/journey-progress';
 
 export interface LifecycleStage {
   id: number;
@@ -45,6 +46,12 @@ interface JourneyMapHeaderProps {
    * filter route yet.
    */
   linkStages?: boolean;
+  /**
+   * Optional rollup of per-stage journey state (Week 3). When provided,
+   * each chip renders a small dot: green = any worked, amber = any
+   * needs_attention, check = all done. Absent → stays presentational.
+   */
+  progressByStage?: Record<number, StageProgress>;
 }
 
 export default function JourneyMapHeader({
@@ -52,6 +59,7 @@ export default function JourneyMapHeader({
   currentStageId,
   workflowLabel,
   linkStages = false,
+  progressByStage,
 }: JourneyMapHeaderProps) {
   const sorted = [...stages].sort((a, b) => a.id - b.id);
   const currentStage = sorted.find((s) => s.id === currentStageId);
@@ -104,10 +112,40 @@ export default function JourneyMapHeader({
               textDecoration: 'none',
               fontFamily: 'inherit',
             };
+            const progress = progressByStage?.[stage.id];
+            const dot = progress && progress.worked > 0
+              ? progress.needsAttention > 0
+                ? { color: '#F59E0B', glyph: '•' } // amber = attention
+                : progress.done === progress.total
+                  ? { color: '#22C55E', glyph: '✓' } // emerald = all done
+                  : { color: '#1D9E75', glyph: '•' } // green = working
+              : null;
             const label = (
               <>
                 <span style={{ fontSize: 12 }}>{stage.emoji}</span>
                 <span>{stage.name}</span>
+                {dot && (
+                  <span
+                    aria-label={`${progress!.done}/${progress!.total} workflows done${
+                      progress!.needsAttention > 0 ? ', needs attention' : ''
+                    }`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 14,
+                      height: 14,
+                      borderRadius: 7,
+                      background: isCurrent ? 'rgba(255,255,255,0.25)' : `${dot.color}22`,
+                      color: isCurrent ? '#fff' : dot.color,
+                      fontSize: 9,
+                      fontWeight: 800,
+                      marginLeft: 2,
+                    }}
+                  >
+                    {dot.glyph}
+                  </span>
+                )}
               </>
             );
             const node =

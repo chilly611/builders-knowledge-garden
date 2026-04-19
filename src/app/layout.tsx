@@ -3,6 +3,7 @@ import { Archivo, Archivo_Black } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import CompassBloom from "@/components/CompassBloom";
+import GlobalAiFab from "@/components/GlobalAiFab";
 import { GamificationProvider } from "@/components/GamificationProvider";
 
 const archivo = Archivo({
@@ -63,6 +64,7 @@ export default function RootLayout({
           <GamificationProvider>
             {children}
             <CompassBloom />
+            <GlobalAiFab />
           </GamificationProvider>
         </Providers>
       </body>
