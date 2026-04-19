@@ -20,7 +20,7 @@ import { WorkflowRenderer } from '@/design-system/components';
 import type { Workflow, WorkflowContext } from '@/design-system/components';
 import type { StepResult } from '@/design-system/components';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
-import JourneyMapHeader, { type LifecycleStage } from '@/components/JourneyMapHeader';
+import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import { groupJurisdictions, type Jurisdiction } from '@/lib/knowledge-data';
 
 interface CodeComplianceClientProps {
@@ -68,13 +68,13 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
     }
   }, []);
 
+  // JourneyMapHeader is mounted globally in src/app/killerapp/layout.tsx
+  // since W4.1b; no longer rendered per workflow. `stages` prop still
+  // accepted for back-compat but unused here.
+  void stages;
+
   return (
     <>
-      <JourneyMapHeader
-        stages={stages}
-        currentStageId={workflow.stageId ?? 1}
-        workflowLabel={workflow.label}
-      />
       <div
         style={{
           maxWidth: '900px',

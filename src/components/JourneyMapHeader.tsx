@@ -33,7 +33,12 @@ const STAGE_COLORS: Record<number, string> = {
 
 interface JourneyMapHeaderProps {
   stages: LifecycleStage[];
-  currentStageId: number;
+  /**
+   * Stage id of the active workflow. When omitted (e.g. the `/killerapp`
+   * picker itself), no chip is highlighted as "current" — the strip acts
+   * purely as wayfinding.
+   */
+  currentStageId?: number | null;
   /**
    * Optional workflow label shown beneath the strip (e.g. "Code
    * Compliance Lookup"). Keeps the header self-explanatory without
@@ -62,8 +67,10 @@ export default function JourneyMapHeader({
   progressByStage,
 }: JourneyMapHeaderProps) {
   const sorted = [...stages].sort((a, b) => a.id - b.id);
-  const currentStage = sorted.find((s) => s.id === currentStageId);
-  const currentColor = STAGE_COLORS[currentStageId] ?? '#555';
+  const currentStage =
+    currentStageId != null ? sorted.find((s) => s.id === currentStageId) : undefined;
+  const currentColor =
+    currentStageId != null ? STAGE_COLORS[currentStageId] ?? '#555' : '#555';
 
   return (
     <div

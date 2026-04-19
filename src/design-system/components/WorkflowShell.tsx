@@ -38,7 +38,7 @@ import WorkflowRenderer from './WorkflowRenderer';
 import type { Workflow, WorkflowContext } from './WorkflowRenderer.types';
 import type { StepResult } from './StepCard.types';
 import WorkflowTurkeyInput from './WorkflowTurkeyInput';
-import JourneyMapHeader, { type LifecycleStage } from '@/components/JourneyMapHeader';
+import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
 import { emitJourneyEvent, resolveProjectId } from '@/lib/journey-progress';
 
@@ -66,8 +66,15 @@ export type ContextField = 'trade' | 'lane';
 
 export interface WorkflowShellProps {
   workflow: Workflow;
-  stages: LifecycleStage[];
-  /** Shown as the last breadcrumb segment and on the journey map header. */
+  /**
+   * Lifecycle stages were previously used to render a per-workflow
+   * JourneyMapHeader inside the shell. Since W4.1b the header is mounted
+   * globally in `src/app/killerapp/layout.tsx`, so this prop is accepted
+   * for backwards-compatibility with the 17 existing callers but no
+   * longer used here. Will be removed in W4.3.
+   */
+  stages?: LifecycleStage[];
+  /** Shown as the last breadcrumb segment. */
   breadcrumbLabel: string;
   /** Which context fields render in the standard chooser. Default: both. */
   contextFields?: ContextField[];
@@ -87,7 +94,7 @@ export interface WorkflowShellProps {
 
 export default function WorkflowShell({
   workflow,
-  stages,
+  stages: _stages, // accepted for back-compat; global layout renders the header
   breadcrumbLabel,
   contextFields = ['trade', 'lane'],
   defaultContext,
@@ -166,11 +173,9 @@ export default function WorkflowShell({
 
   return (
     <>
-      <JourneyMapHeader
-        stages={stages}
-        currentStageId={workflow.stageId ?? 1}
-        workflowLabel={workflow.label}
-      />
+      {/* JourneyMapHeader moved to src/app/killerapp/layout.tsx in W4.1b so
+          it's ever-present across the picker and every workflow route
+          (not re-mounted per workflow). */}
       <main
         data-bkg-surface={surfaceId ?? `workflow-${workflow.id}`}
         style={{

@@ -20,7 +20,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import JourneyMapHeader, { type LifecycleStage } from '@/components/JourneyMapHeader';
+import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import {
   colors,
@@ -120,13 +120,13 @@ export default function ContractTemplatesClient({
     }
   };
 
+  // JourneyMapHeader is mounted globally in src/app/killerapp/layout.tsx
+  // since W4.1b; no longer rendered per workflow. `stages` prop still
+  // accepted for back-compat but unused here.
+  void stages;
+
   return (
     <>
-      <JourneyMapHeader
-        stages={stages}
-        currentStageId={workflow.stageId ?? 2}
-        workflowLabel={workflow.label}
-      />
       <div
         style={{
           maxWidth: '900px',
