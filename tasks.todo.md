@@ -1,9 +1,51 @@
 # Builder's Knowledge Garden — Master Task List
 
 
-## ═══ WEEK 2 PUSH — CORRECTING THE FORK (2026-04-18) — SHIPPED LOCALLY, AWAITING PUSH ═══
+## ═══ WEEK 2B PUSH — CONTRACT TEMPLATES (2026-04-18) — SHIPPED LOCALLY, AWAITING PUSH ═══
 
-**Status:** Six commits staged on `main` (local), all three automated gates green. Push to `origin/main` blocked on auth — Chilly to push from his own terminal, or re-supply a PAT.
+**Status:** Contract Templates workflow (q4) is now live. Six starter contracts — Client Agreement, Subcontractor Agreement, Lien Waiver (Conditional + Unconditional), Mutual NDA, Change Order — each available as a DRAFT-watermarked PDF. Three automated gates green.
+
+**What ships:**
+- 6 markdown templates under `src/lib/contract-templates/*.md` with `{{variable}}` placeholders and state-aware DRAFT NOTICE footers (statutory-form state warnings for lien waivers: CA, TX, AZ, NV, FL, GA, MA, MI, MS, MO, UT, WY).
+- Isomorphic registry + `fillTemplate()` substitution in `src/lib/contract-templates.ts` (metadata, per-template `requiredFields`, humanized-placeholder fallback for missing values).
+- Server-only filesystem loader in `src/lib/contract-templates.server.ts` — keeps `node:fs` off the client bundle.
+- jsPDF generator in `src/lib/pdf/contract-pdf.ts` — BKG wordmark header, diagonal DRAFT watermark on every page, minimal markdown→PDF (headings, paragraphs, bullets, pipe tables, courier signature blocks), attorney-review disclaimer footer, per-page numbering.
+- Live route at `/killerapp/workflows/contract-templates` — journey-map header, breadcrumb + Pro Toggle, prominent amber DRAFT disclaimer banner, multi-select template picker, merged field form (dedupes across selected templates), one-click "Download N drafts (PDF)" button, Pro-mode inspect-filled-body panel.
+- `LIVE_WORKFLOWS` map in `src/app/killerapp/page.tsx` now includes `q4 → /killerapp/workflows/contract-templates`; blurb rewritten.
+
+**Automated gates (W2B.6):**
+- `npx tsc --noEmit` — EXIT 0
+- `npx vitest run` — 11/11 pass
+- `next build` — all 120+ routes compile, contract-templates listed as static
+- Markdown ↔ registry key parity smoke — 6/6 templates pass (60 total keys accounted for)
+- `fillTemplate` end-to-end smoke — 0 unresolved `{{curly}}` placeholders, missing fields humanized to `[Client Address]` style brackets
+
+**Locked at draft-only.** Per `docs/killer-app-direction.md § Legal prerequisites`, no pathway in the UI flips `draft: false` until a construction attorney has reviewed the template language for the user's state. Every PDF is watermarked DRAFT and carries the attorney-review disclaimer in its footer.
+
+**Subtask ledger (W2B):**
+- [x] **W2B.1** Draft 6 contract templates with `{{variable}}` placeholders
+- [x] **W2B.2** `src/lib/contract-templates.ts` — types, TEMPLATE_META, fillTemplate, extractTemplateKeys
+- [x] **W2B.3** `src/lib/pdf/contract-pdf.ts` — jsPDF renderer + DRAFT watermark
+- [x] **W2B.4** `/killerapp/workflows/contract-templates` route — page.tsx + ContractTemplatesClient.tsx
+- [x] **W2B.5** Wire q4 into `LIVE_WORKFLOWS` + updated blurb
+- [x] **W2B.6** Smoke tests green; commit + bundle + push instructions in hand
+
+**Pending:**
+- [ ] `git push origin main` — Chilly to run from own terminal (bundle delivered via `Builder's Knowledge Garden/week2b-push.bundle`)
+- [ ] Vercel auto-deploy verification
+- [ ] Prod smoke: `/killerapp` shows q4 as LIVE; route loads; pick 1 template, fill fields, download PDF; DRAFT watermark visible; attorney-review disclaimer in footer
+- [ ] **Legal gate (EXTERNAL):** construction attorney review in at least CA (first paid-user jurisdiction) before flipping `draft: false`. Until then, UI ships draft-only.
+
+**Deferred (intentional):**
+- Stripe paywall around contract generation — next push per Chilly's direction
+- Per-state statutory-form overrides for lien waivers — currently shown as amber warning in draft notice only
+- Saving filled contracts to the user's account — waits for Clerk auth (scheduled with Stripe push)
+
+---
+
+## ═══ WEEK 2 PUSH — CORRECTING THE FORK (2026-04-18) — SHIPPED ═══
+
+**Status:** Six commits pushed to `origin/main`, Vercel auto-deployed. Chilly confirmed "all set".
 
 **Six-commit stack (oldest → newest):**
 1. `fe10d5e` — Plan: Week 2 fork-correction push + 3 lessons from today's audit
