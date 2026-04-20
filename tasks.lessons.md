@@ -1,5 +1,5 @@
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-04-19
+## Updated: 2026-04-20
 
 ---
 
@@ -26,6 +26,18 @@
 ---
 
 ## Data Model Discipline
+
+### Trust the code, not the audit, when diagnosing a workflow
+**Date:** 2026-04-20
+**What happened:** The W4.3 workflow audit called q2 Estimating "clean as shipped, good first-session confidence win" and flagged only one cosmetic nit. When I opened the client file to start the polish commit, I found three real bugs stacked on top of each other: no `analysis_result` step at all (so "AI Estimating Gate" never produced an AI estimate), a `recordMaterialCost()` call gated by an `estimatedTotal` state variable that no step handler ever set (permanent dead code), and a `categoryCount` that was counting API field names (`Object.keys(summary).length - 1`) instead of budget categories. The audit had inventoried structure but hadn't traced state flow or actually read what each handler did.
+**Fix:** Read the client file end-to-end BEFORE deciding scope — don't accept the audit's "clean" verdict without tracing each state variable and branching path through at least once. Present the findings to the founder (via AskUserQuestion) before choosing between "full fix / surgical / show me first" so they can decide the commit's ambition level.
+**Rule:** Audits are triage, not verdict. Before committing to "small change expected" on any workflow, trace every state variable from declaration → setter calls → usage. Dead state (declared, read, never set) is almost always a load-bearing dead write downstream.
+
+### The naive `.replace('k','000')` pattern for `$X.Xk` is wrong
+**Date:** 2026-04-20
+**What happened:** Four workflows (q7, q11, q13, q17) and my first draft of q2 all parse dollar figures from AI output via `match[0].replace('k', '000').replace(/[\$,]/g, '')`. For `$52,350` this works. For `$48.2k` it produces `48.2000` → `parseFloat` returns `48.2`, not `48200`. So any AI output that uses k-suffix decimals (very common for estimates) will silently record a cost 1000x too small.
+**Fix:** Detect-and-multiply, don't string-replace: `const hasK = /k$/i.test(raw); const numeric = parseFloat(raw.replace(/k$/i,'').replace(/[\$,]/g,'')); return hasK ? numeric * 1000 : numeric;`. Applied in q2's new parser. Queued W4.3b-polish cross-cutting commit to sweep the same fix into q7/q11/q13/q17.
+**Rule:** When normalizing unit suffixes, separate "does this have the suffix?" from "strip it" from "apply the multiplier." String-replace on a formatted number is almost always a bug for values >=10 with decimals.
 
 ### Don't synthesize fields the schema doesn't honestly support
 **Date:** 2026-04-19

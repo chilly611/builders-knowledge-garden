@@ -101,7 +101,7 @@ Founder explicit ask: **"go through each live builder workflow to make changes o
 
 Ordered 1-by-1 punch list (17 LIVE workflows). Audit-recommended first-session targets marked **★**; default order is the DREAM → BUILD lifecycle:
 
-- [ ] q2 Estimating (Size Up) — audit: clean as shipped, good confidence-win walkthrough
+- [x] q2 Estimating (Size Up) — SHIPPED W4.3b (`a70bb16`). Audit undersold this one: workflow had no `analysis_result` step (so "AI Estimating Gate" produced no AI estimate), budget write was dead code (`estimatedTotal` state never set), categoryCount counted API fields not categories. Added `s2-6` + new `estimating-takeoff` specialist prompt (canonical shape, 2588 chars extracted by primary regex), wired `Rough total:` parser on step completion → `recordMaterialCost`, fixed categoryCount via `summary.byCategory`. Also caught `$48.2k → 48.2` parser bug (naive `replace('k','000')`) — same bug lives in q7/q11/q13/q17, queued as W4.3b-polish cross-cutting sweep.
 - [ ] q4 Contract Templates (Lock) — audit: 614 lines, pre-shell architectural outlier, founder design decision needed (migrate or accept exception)
 - [ ] q5 Code Compliance (Lock) — audit: 259 lines pre-shell, paired design decision with q4
 - [ ] q6 Job Sequencing (Plan) — audit: clean, minimal change expected
