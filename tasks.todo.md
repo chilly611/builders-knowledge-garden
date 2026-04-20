@@ -45,25 +45,29 @@ Founder quote on live deploy: *"If that budget widget belongs anywhere it needs 
 ### W4.3 — Workflow-by-workflow polish pass (one at a time, with founder)
 Founder explicit ask: **"go through each live builder workflow to make changes on each in our next session after I sleep. One by one."** Do not batch. Do not farm. Cowork review + edit per workflow.
 
-Ordered 1-by-1 punch list (17 LIVE workflows). Skip to the ones founder flags first; default order is the DREAM → BUILD lifecycle:
+**Pre-session diagnostic:** `W4.3-workflow-audit.md` in Builder's Knowledge Garden folder. Read that first — it flags real inconsistencies (verified against source) including 3 orphan specialist steps (q9/q10/q16), a hardcoded `amount: 0` stub in q10, an unused import in q9, and 3 pre-shell architectural outliers (q4/q5 + the legacy BudgetWidget in q17). Recommended session priority order is at the bottom of that doc.
 
-- [ ] q2 Estimating (Size Up)
-- [ ] q4 Contract Templates (Lock)
-- [ ] q5 Code Compliance (Lock)
-- [ ] q6 Job Sequencing (Plan)
-- [ ] q7 Worker Count (Plan)
-- [ ] q8 Permit Applications (Plan)
-- [ ] q9 Sub Management (Plan)
-- [ ] q10 Equipment (Plan)
-- [ ] q11 Supply Ordering (Plan)
-- [ ] q12 Services Todos (Plan)
-- [ ] q13 Hiring (Plan)
-- [ ] q14 Weather Scheduling (Build)
-- [ ] q15 Daily Log (Build)
-- [ ] q16 OSHA Toolbox (Build)
-- [ ] q17 Expenses (Build)
-- [ ] q18 Outreach (Build)
-- [ ] q19 Compass Nav (Build) — may merge into W4.2 instead
+Ordered 1-by-1 punch list (17 LIVE workflows). Audit-recommended first-session targets marked **★**; default order is the DREAM → BUILD lifecycle:
+
+- [ ] q2 Estimating (Size Up) — audit: clean as shipped, good confidence-win walkthrough
+- [ ] q4 Contract Templates (Lock) — audit: 614 lines, pre-shell architectural outlier, founder design decision needed (migrate or accept exception)
+- [ ] q5 Code Compliance (Lock) — audit: 259 lines pre-shell, paired design decision with q4
+- [ ] q6 Job Sequencing (Plan) — audit: clean, minimal change expected
+- [ ] q7 Worker Count (Plan) — audit: W4.1f priority caller, needs future-date arg in budget writes
+- [ ] q8 Permit Applications (Plan) — audit: direct `localStorage` access, extract to `resolveJurisdiction()` helper
+- [ ] ★ q9 Sub Management (Plan) — audit: **imports `recordSubcontractorCost` but never calls it** + **orphan analysis step s9-3** (promptId missing, prompt file exists). Two gaps stacked.
+- [ ] ★ q10 Equipment (Plan) — audit: **`amount: 0` hardcoded stub line 29** + **orphan analysis step s10-3** (promptId missing). Same fix pattern as q9.
+- [ ] q11 Supply Ordering (Plan) — audit: clean, brittle regex parse (cross-cutting, not urgent)
+- [ ] q12 Services Todos (Plan) — audit: smallest client file, likely no-op
+- [ ] q13 Hiring (Plan) — audit: `weeklyCost * 4` monthly assumption, ask founder if it holds
+- [ ] q14 Weather Scheduling (Build) — audit: location input wired but unused — kill or wire a forecast API
+- [ ] q15 Daily Log (Build) — audit: W4.1f priority caller, writes nothing to budget spine
+- [ ] ★ q16 OSHA Toolbox (Build) — audit: **orphan analysis step s16-1** (promptId missing, prompt file exists). Batch with q9/q10.
+- [ ] q17 Expenses (Build) — audit: only user of legacy `BudgetWidget`, leave alone until W4.2b redesign direction is set
+- [ ] q18 Outreach (Build) — audit: W4.1f priority caller, writes nothing
+- [ ] q19 Compass Nav (Build) — audit: `useState<any>`, may merge into W4.2
+
+**★ = audit-recommended first-session targets.** q9 + q10 + q16 share the same orphan-specialist fix pattern (one `promptId` line in `docs/workflows.json` per step) — single commit, tsc-clean, activates real AI output in three workflows simultaneously. Highest-ROI starting point per the audit.
 
 For each workflow: open it on the live URL, walk through with founder feedback, note the changes, apply as a small commit, tsc gate, push. Do NOT batch multiple workflows into one commit — founder wants per-workflow atomic changes for clean rollback.
 
