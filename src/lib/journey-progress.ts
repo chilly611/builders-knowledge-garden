@@ -97,6 +97,19 @@ export function resolveProjectId(): string {
   }
 }
 
+/**
+ * Resolve the current jurisdiction from localStorage, or fall back to 'Local AHJ'.
+ * Safe for SSR and protected storage access. Always returns a usable value.
+ */
+export function resolveJurisdiction(): string {
+  if (!isBrowser()) return 'Local AHJ';
+  try {
+    return window.localStorage.getItem('bkg-jurisdiction') ?? 'Local AHJ';
+  } catch {
+    return 'Local AHJ';
+  }
+}
+
 function readState(projectId: string): JourneyState {
   if (!isBrowser()) return {};
   try {

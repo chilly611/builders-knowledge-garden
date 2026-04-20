@@ -6,7 +6,7 @@ import type { Workflow } from '@/design-system/components/WorkflowRenderer.types
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import type { StepResult } from '@/design-system/components/StepCard.types';
 import { recordPermitCost } from '@/lib/budget-spine';
-import { emitJourneyEvent, resolveProjectId } from '@/lib/journey-progress';
+import { emitJourneyEvent, resolveProjectId, resolveJurisdiction } from '@/lib/journey-progress';
 import { spacing, colors, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
 
 interface Props {
@@ -39,7 +39,7 @@ export default function PermitApplicationsClient({ workflow, stages }: Props) {
         's8-5': 'All approved',
       };
 
-      const jurisdiction = localStorage?.getItem('bkg-jurisdiction') || 'Local AHJ';
+      const jurisdiction = resolveJurisdiction();
       const permitName = permitNames[stepId] || 'Permit';
 
       if (
