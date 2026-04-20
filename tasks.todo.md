@@ -42,6 +42,46 @@ Founder quote on live deploy: *"If that budget widget belongs anywhere it needs 
 - [ ] Decide priority vs W4.2 Compass: blocker / parallel / park-until-W5.
 - [ ] After option is chosen: add concrete build sub-tasks here and ship in a single PR with tsc gate.
 
+### W4.4 — ProjectCompass: merge journey map + budget into one living surface (founder-in-room 2026-04-20)
+Founder vision (verbatim from AskUserQuestion 2026-04-20):
+> *"I want to see the decision tree, what had been done partially(teal), fully (green) or grayed out an not seen, or gray - seen but not touched or red (needs attention) and I want it by marked by a dream cloud at the beginning, a finished building at the end and some other design elements that represent the milestones in the along the timeline of the project. The timeline should be linked somehow, And there should be a $ river that has little pools where there needs to be funding/ payment (by client or contractor) and a waterfall animating at the end. from left to right along the top."*
+>
+> *Coupling: "one is right on top of the other and they are totally linked"*
+
+**Decision:** supersedes W4.2b (4-option plan in `W4-budget-redesign.md`). Corner pill `GlobalBudgetWidget` dies. Chip-strip `JourneyMapHeader` output gets replaced. One combined SVG component — the ProjectCompass — replaces both.
+
+**Design:**
+- **Bottom band (timeline):** continuous path left→right. Flanked by a ☁️ dream cloud (pre-Size-Up) and a 🏠 finished-building (post-Reflect). Each of the 7 stages rendered as a themed SVG milestone. Status color per stage:
+  - **green** = `done === total` (all stage workflows complete)
+  - **teal** = `worked > 0 && done < total` (partial)
+  - **red** = `needsAttention > 0` (any workflow flagged)
+  - **gray-seen (darker)** = visited but no work yet (requires visited-stages tracker)
+  - **gray-unseen (lighter)** = never visited
+  - **focus ring** = current stage
+- **Top band ($ river):** horizontal wavy SVG path filled blue. Pool circles sit at stages with known payments (client draws IN, contractor outflows OUT) sized by amount. Close-out waterfall on the right end — green if profit, amber if break-even, red if loss.
+- Two bands share the same x-axis so pools align above their stage.
+
+**Demo-mode fallback:** when `useActiveProject()` returns null, the compass renders canned demo data (so live deploy is alive for first-time visitors). Small "Set up a real project" CTA → CompassBloom when in demo mode.
+
+**Punch list (W4.4 first cut):**
+- [x] `src/lib/visited-stages.ts` — new helper: `markStageVisited(projectId, stageId)`, `getVisitedStages(projectId)`, `subscribeVisitedStages(projectId, cb)`. localStorage key `bkg:visited-stages:<user>:<project>`.
+- [x] `src/components/ProjectCompass.tsx` — new SVG component. Props: `stages, currentStageId, progressByStage, visitedStageIds, stagePayments, profitSignal, isDemo, onDemoCtaClick`.
+- [x] `src/lib/project-compass-data.ts` — new helper that derives `stagePayments` + `profitSignal` from budget-spine API summary (or returns demo data if no project). Honest about heuristic: inflow split 25/75 across stages 1 and 6 since the API byPhase rollup doesn't expose per-phase client_payments.
+- [x] Rewrite `src/components/GlobalJourneyMapHeader.tsx` → renders `<ProjectCompass>` with real journey + visited-stages + budget subscriptions. Re-fetches on `bkg:budget:changed`.
+- [x] `src/app/layout.tsx` — `<GlobalBudgetWidget>` mount removed (corner pill dies).
+- [x] `scripts/render-compass.mjs` — offline SVG preview tool for layout eyeballing. Not wired into build. Useful for future layout tweaks.
+- [x] Preview rendered to `Builder's Knowledge Garden/W4.4-compass-preview.{html,svg}` — structural review passed.
+- [x] Verification gates: `npx tsc --noEmit` exit 0, `npm test` 11/11.
+- [x] Single commit `W4.4: ProjectCompass — journey map + $ river merged (kills corner pill)`.
+- [x] Regenerate bundle + update W4.1-pickup.md with the new commit.
+
+**Follow-ups parked for W4.4b:**
+- [ ] `src/components/JourneyMapHeader.tsx` — now unreferenced. Delete in a cleanup commit once live deploy confirms nothing regressed.
+- [ ] Per-phase `client_payments` on `/api/v1/budget` summary — replaces the 25/75 deposit/close-out heuristic in `deriveCompassData` with honest per-stage inflow.
+- [ ] Per-payment `due_date` on budget items → lets the compass mark pools 'overdue' (red pulse) vs just 'scheduled'.
+- [ ] Replace emoji milestones with hand-drawn SVG icons (permit, foundation, hammer, gears, coins) — emoji rendering is inconsistent across OSes.
+- [ ] Click-to-drill: clicking a milestone opens a per-stage panel (workflows in that stage + cost contributions + click to walk in).
+
 ### W4.3a — Wire the three orphan specialists (single commit, in-session)
 Founder-in-room: yes. Scope: `docs/workflows.json` + three `docs/ai-prompts/*.md` files. Pipeline traced: `StepCard.promptId` → `WorkflowRenderer.renderAnalysis` → `AnalysisPane` → `runSpecialist()` → `/api/v1/specialists/[id]` → `loadSpecialistPrompt()` reads `docs/ai-prompts/<id>.md`.
 

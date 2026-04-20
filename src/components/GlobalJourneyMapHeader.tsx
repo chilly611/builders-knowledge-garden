@@ -1,29 +1,32 @@
 'use client';
 
 /**
- * GlobalJourneyMapHeader
- * ======================
- * Journey Map chip strip mounted ONCE at `/killerapp/layout.tsx` so it
- * renders across the picker AND every workflow child route. Replaces the
- * per-workflow mount that used to live inside `WorkflowShell`.
+ * GlobalJourneyMapHeader (W4.4)
+ * =============================
+ * Hosts the ProjectCompass — the combined journey-map + budget-river
+ * surface — on every `/killerapp/*` route. Replaces what used to mount
+ * the thin chip-strip JourneyMapHeader.
  *
  * Responsibilities:
- *   1. Resolve the active project id (from localStorage `bkg-active-project`).
- *   2. Subscribe to journey-state changes for that project.
- *   3. Roll per-workflow state up to per-stage counters via `rollupByStage`.
- *   4. Detect the current route and highlight the matching stage.
- *   5. Render the pure `JourneyMapHeader` component.
+ *   1. Resolve the active project id (fall back to demo bucket).
+ *   2. Subscribe to journey-state for the project (drives stage colors).
+ *   3. Subscribe to visited-stages for the project (distinguishes
+ *      "gray-seen" from "gray-unseen").
+ *   4. Mark the current stage as visited whenever the user walks in.
+ *   5. Fetch budget summary from `/api/v1/budget` (when authenticated +
+ *      real project) and derive per-stage payment pools + profit signal.
+ *      When that round-trip fails or returns nothing, fall through to
+ *      the DEMO compass payload so the surface always has life.
+ *   6. Render <ProjectCompass/>.
  *
  * Per the W4 lesson ("Global chrome vs per-workflow chrome — be explicit"),
- * this is now the ONE place where the journey map gets rendered inside
- * /killerapp/*. Anything inside a workflow page that previously rendered
- * its own header must rely on this one instead.
+ * this is still the ONE mount point for journey chrome inside /killerapp/*.
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
-import JourneyMapHeader from '@/components/JourneyMapHeader';
+import ProjectCompass from '@/components/ProjectCompass';
 import {
   LIFECYCLE_STAGES,
   STAGE_WORKFLOWS,
@@ -34,40 +37,114 @@ import {
   rollupByStage,
   type JourneyState,
 } from '@/lib/journey-progress';
+import {
+  markStageVisited,
+  subscribeVisitedStages,
+} from '@/lib/visited-stages';
 import { useActiveProject } from '@/lib/hooks/use-active-project';
+import {
+  DEMO_COMPASS_DATA,
+  deriveCompassData,
+  type ProjectCompassData,
+  type BudgetApiSummary,
+} from '@/lib/project-compass-data';
+import { getProjectBudget } from '@/lib/budget-spine';
 
 export default function GlobalJourneyMapHeader() {
   const pathname = usePathname() ?? '';
+  const router = useRouter();
   const [activeId] = useActiveProject();
-  // Fall back to 'default' so anonymous users still see an empty strip
-  // (matches the journey-progress store's anonymous bucket key).
+  // Fall back to 'default' so anonymous users still see a coherent
+  // compass (keyed to the journey-progress anonymous bucket).
   const projectId = activeId ?? 'default';
-  const [state, setState] = useState<JourneyState>({});
+  const hasRealProject = Boolean(activeId);
 
-  // Subscribe to journey state for whichever project is currently active.
-  // Resubscribe when the active project changes.
+  const [state, setState] = useState<JourneyState>({});
+  const [visited, setVisited] = useState<number[]>([]);
+  const [compassData, setCompassData] = useState<ProjectCompassData>(DEMO_COMPASS_DATA);
+
+  // Subscribe to journey state for the active project.
   useEffect(() => {
     const unsubscribe = subscribeJourney(projectId, (s) => setState(s));
     return unsubscribe;
   }, [projectId]);
 
+  // Subscribe to visited stages for the active project.
+  useEffect(() => {
+    const unsubscribe = subscribeVisitedStages(projectId, (v) => setVisited(v));
+    return unsubscribe;
+  }, [projectId]);
+
   const currentStageId = useMemo(() => stageIdForPath(pathname), [pathname]);
+
+  // Mark the current stage as visited on every route change.
+  useEffect(() => {
+    if (currentStageId != null) {
+      markStageVisited(projectId, currentStageId);
+    }
+  }, [currentStageId, projectId]);
+
+  // Fetch budget summary → derive compass data. Fall through to demo on
+  // any miss. Re-fetch when the active project changes OR when a budget
+  // write event fires.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (!hasRealProject) {
+        if (!cancelled) setCompassData(DEMO_COMPASS_DATA);
+        return;
+      }
+      try {
+        const result = await getProjectBudget(projectId);
+        if (cancelled) return;
+        if (!result.ok) {
+          setCompassData(DEMO_COMPASS_DATA);
+          return;
+        }
+        const derived = deriveCompassData(result.summary as BudgetApiSummary);
+        setCompassData(derived);
+      } catch {
+        if (!cancelled) setCompassData(DEMO_COMPASS_DATA);
+      }
+    }
+
+    load();
+
+    const onBudgetChange = () => {
+      load();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('bkg:budget:changed', onBudgetChange);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('bkg:budget:changed', onBudgetChange);
+      }
+    };
+  }, [projectId, hasRealProject]);
 
   const progressByStage = useMemo(
     () => rollupByStage(state, STAGE_WORKFLOWS),
     [state]
   );
 
-  // Don't render on non-killerapp routes (defensive — we're already mounted
-  // inside /killerapp/layout.tsx, but this keeps the component safe to reuse).
+  // Don't render on non-killerapp routes (defensive — the mount point is
+  // /killerapp/layout.tsx, but this keeps the component safe to reuse).
   if (!pathname.startsWith('/killerapp')) return null;
 
   return (
-    <JourneyMapHeader
+    <ProjectCompass
       stages={LIFECYCLE_STAGES}
       currentStageId={currentStageId}
       progressByStage={progressByStage}
-      linkStages={false}
+      visitedStageIds={visited}
+      stagePayments={compassData.stagePayments}
+      profitSignal={compassData.profitSignal}
+      isDemo={compassData.isDemo}
+      onDemoCtaClick={() => router.push('/killerapp/workflows/compass-nav')}
     />
   );
 }
