@@ -14,7 +14,6 @@ interface Props {
 
 interface CrewAnalysisData {
   crewSize?: number;
-  duration?: number;
   estimatedLaborCost?: number;
 }
 
@@ -25,6 +24,23 @@ export default function WorkerCountClient({ workflow, stages }: Props) {
   useEffect(() => {
     setProjectId(resolveProjectId());
   }, []);
+
+  /**
+   * Parse labor cost from analysis text using detect-and-multiply for k-suffix.
+   * Matches the pattern in EstimatingClient.parseRoughTotal but scoped to q7.
+   * W4.1f follow-up: thread `date` arg when the step UX asks for scheduled start.
+   */
+  function parseLaborCost(text: string): number | null {
+    const costMatch = text.match(/\$[\d,]+\.?\d*k?/);
+    if (!costMatch) return null;
+    const raw = costMatch[0];
+    // $48.2k means 48,200 — not 48.2 with trailing zeros. Handle k suffix
+    // by detect-and-multiply, not blind string replace.
+    const hasK = /k$/i.test(raw);
+    const numeric = parseFloat(raw.replace(/k$/i, '').replace(/[$,]/g, ''));
+    if (!Number.isFinite(numeric) || numeric <= 0) return null;
+    return hasK ? numeric * 1000 : numeric;
+  }
 
   async function handleStepComplete(stepResult: StepResult & { workflowId: string }) {
     const valuePayload = stepResult.payload as { value?: string } | undefined;
@@ -43,28 +59,25 @@ export default function WorkerCountClient({ workflow, stages }: Props) {
     if (stepResult.stepId === 's7-2' && analysisPayload?.input) {
       const analysisText = String(analysisPayload.input);
       // Parse estimated labor cost from analysis output if available
-      const costMatch = analysisText.match(/\$[\d,]+k?/);
-      if (costMatch) {
-        const costStr = costMatch[0].replace('$', '').replace('k', '000').replace(/,/g, '');
-        const cost = parseFloat(costStr);
-        if (!isNaN(cost)) {
-          setCrewAnalysisData((prev) => ({
-            ...prev,
-            estimatedLaborCost: cost,
-          }));
+      const cost = parseLaborCost(analysisText);
+      if (cost !== null) {
+        setCrewAnalysisData((prev) => ({
+          ...prev,
+          estimatedLaborCost: cost,
+        }));
 
-          // Record the labor cost estimate
-          if (crewAnalysisData.crewSize && crewAnalysisData.duration) {
-            const result = await recordLaborCost({
-              description: `Estimated labor — ${crewAnalysisData.crewSize} workers × ${crewAnalysisData.duration} weeks`,
-              amount: cost,
-              lifecycleStageId: 3,
-              isEstimate: true,
-            });
+        // Record the labor cost estimate (guarded on crewSize only;
+        // no duration is captured in q7 workflow steps).
+        if (crewAnalysisData.crewSize) {
+          const result = await recordLaborCost({
+            description: `Estimated labor — ${crewAnalysisData.crewSize} workers`,
+            amount: cost,
+            lifecycleStageId: 3,
+            isEstimate: true,
+          });
 
-            if (!result.ok && result.reason !== 'no-active-project') {
-              console.error('Labor cost recording failed:', result);
-            }
+          if (!result.ok && result.reason !== 'no-active-project') {
+            console.error('Labor cost recording failed:', result);
           }
         }
       }
