@@ -591,9 +591,10 @@
           "id": "s9-3",
           "label": "Compare bids",
           "type": "analysis_result",
+          "promptId": "sub-bid-analysis",
           "analysisTitle": "Bid Analysis",
           "exampleOutput": "Electrical: 3 quotes, range $12k-$16k, mid-range $13.5k recommended. Plumbing: 4 quotes, $8k-$11k, recommend lowest at $8k (verified bonding). HVAC: 2 quotes, $9k-$10.5k.",
-          "notes": "No prompt_id defined in prototype \u2014 orphan analysis step."
+          "notes": "Wired to sub-bid-analysis specialist (W4.3a)."
         },
         {
           "id": "s9-4",
@@ -641,9 +642,10 @@
           "id": "s10-3",
           "label": "Get rental quotes",
           "type": "analysis_result",
+          "promptId": "equipment-rent-vs-buy",
           "analysisTitle": "Equipment Rental Costs",
           "exampleOutput": "Scissor lift 12 weeks: $2,400 rental vs $2,800 purchase. Scaffolding: $1,800 rental. Dumpster 16-week service: $2,200. Total estimated: $6,400.",
-          "notes": "No prompt_id defined in prototype \u2014 orphan analysis step."
+          "notes": "Wired to equipment-rent-vs-buy specialist (W4.3a)."
         },
         {
           "id": "s10-4",
@@ -879,9 +881,10 @@
           "id": "s16-1",
           "label": "Generate talk",
           "type": "analysis_result",
+          "promptId": "osha-toolbox-talk",
           "analysisTitle": "Weekly Toolbox Talk",
           "exampleOutput": "Topic: Fall Protection. Outline: OSHA 1926.500, harness inspection, anchor point identification, rescue plan. Duration: 10-15 min. Attendees: 8 required.",
-          "notes": "No prompt_id defined in prototype \u2014 orphan analysis step."
+          "notes": "Wired to osha-toolbox-talk specialist (W4.3a)."
         },
         {
           "id": "s16-2",

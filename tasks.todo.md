@@ -42,6 +42,18 @@ Founder quote on live deploy: *"If that budget widget belongs anywhere it needs 
 - [ ] Decide priority vs W4.2 Compass: blocker / parallel / park-until-W5.
 - [ ] After option is chosen: add concrete build sub-tasks here and ship in a single PR with tsc gate.
 
+### W4.3a — Wire the three orphan specialists (single commit, in-session)
+Founder-in-room: yes. Scope: `docs/workflows.json` + three `docs/ai-prompts/*.md` files. Pipeline traced: `StepCard.promptId` → `WorkflowRenderer.renderAnalysis` → `AnalysisPane` → `runSpecialist()` → `/api/v1/specialists/[id]` → `loadSpecialistPrompt()` reads `docs/ai-prompts/<id>.md`.
+
+- [x] `docs/workflows.json` — add `"promptId": "sub-bid-analysis"` to step s9-3
+- [x] `docs/workflows.json` — add `"promptId": "equipment-rent-vs-buy"` to step s10-3
+- [x] `docs/workflows.json` — add `"promptId": "osha-toolbox-talk"` to step s16-1
+- [x] `docs/ai-prompts/sub-bid-analysis.md` — reformat prompt body into `## Original prototype system prompt` + fenced code block (matches `compliance-structural.md` shape that the extractor on line 228 expects)
+- [x] `docs/ai-prompts/equipment-rent-vs-buy.md` — same reformat
+- [x] `docs/ai-prompts/osha-toolbox-talk.md` — same reformat
+- [x] Verification gates: `npx tsc --noEmit` (must exit 0), `npm test` (must pass 11/11) — **verified 2026-04-20: tsc exit 0, tests 11/11, node regex probe extracts 909/917/1251 chars from the three reformatted prompts**
+- [x] Single commit, no scope creep (q10's `amount: 0` stub stays for a separate commit — don't mix concerns)
+
 ### W4.3 — Workflow-by-workflow polish pass (one at a time, with founder)
 Founder explicit ask: **"go through each live builder workflow to make changes on each in our next session after I sleep. One by one."** Do not batch. Do not farm. Cowork review + edit per workflow.
 
