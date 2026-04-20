@@ -274,6 +274,14 @@
           "label": "Upload documents",
           "type": "file_upload",
           "accept": "PDF, JPG, PNG, DWG"
+        },
+        {
+          "id": "s2-6",
+          "label": "AI estimate",
+          "type": "analysis_result",
+          "promptId": "estimating-takeoff",
+          "analysisTitle": "AI Takeoff & Rough Total",
+          "exampleOutput": "Itemized takeoff:\n- Demo + dumpster — $3,200\n- Framing tweaks — $4,800\n- Electrical (3 circuits) — $5,400\n- Plumbing rough-in — $3,900\n- Cabinetry + quartz — $18,500\n- Flooring (320 sqft) — $6,400\n- Paint + trim — $3,600\n- GC overhead + margin — $6,550\n\nRough total: $52,350\n\nAssumptions: existing HVAC stays, no PE needed, owner-grade appliances.\nConfidence: medium.\nNext step: site walk to confirm bearing-wall header."
         }
       ]
     },
