@@ -39,14 +39,26 @@ export interface SpecialistResult {
   raw_response: string;
   model: string;
   latency_ms: number;
+  promptVersion: "v1" | "v2";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN RUNNER
+// CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MODEL = "claude-sonnet-4-20250514";
 const MAX_TOKENS = 2500;
+
+// Specialists that default to v2 prompts; all others default to v1
+const DEFAULT_VERSION_BY_SPECIALIST: Record<string, "v1" | "v2"> = {
+  "estimating-takeoff": "v2", // q2
+  "compliance-structural": "v2", // q5
+  "sub-bid-analysis": "v2", // q9
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN RUNNER
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function callSpecialist(
   specialistId: string,
@@ -56,7 +68,9 @@ export async function callSpecialist(
   const start = Date.now();
   const mockIfNoKey = options?.mockIfNoKey !== false;
   const preferProductionPrompt = options?.preferProductionPrompt !== false;
-  const version = options?.version || "v1";
+  // Resolve version: use explicit option if provided, otherwise use default for this specialist
+  const version =
+    options?.version || DEFAULT_VERSION_BY_SPECIALIST[specialistId] || "v1";
 
   // 1. LOAD THE PROMPT
   const systemPrompt = loadSpecialistPrompt(specialistId, preferProductionPrompt, version);
@@ -113,7 +127,7 @@ export async function callSpecialist(
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey && mockIfNoKey) {
-    return generateMockResult(specialistId, context, start);
+    return generateMockResult(specialistId, context, start, version);
   }
 
   if (!apiKey) {
@@ -174,6 +188,7 @@ export async function callSpecialist(
       raw_response: rawResponse,
       model: MODEL,
       latency_ms: Date.now() - start,
+      promptVersion: version,
     };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -270,7 +285,8 @@ function extractSystemPrompt(
 function generateMockResult(
   specialistId: string,
   context: SpecialistContext,
-  startTime: number
+  startTime: number,
+  version: "v1" | "v2" = "v1"
 ): SpecialistResult {
   const mockResponses: Record<string, { narrative: string; structured: Record<string, unknown> }> = {
     "compliance-structural": {
@@ -341,6 +357,7 @@ Please configure ANTHROPIC_API_KEY to get real LLM-powered analysis.`,
     raw_response: mockResponse.narrative,
     model: MODEL,
     latency_ms: Date.now() - startTime,
+    promptVersion: version,
   };
 }
 

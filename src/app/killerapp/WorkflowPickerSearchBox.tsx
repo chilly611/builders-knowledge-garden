@@ -94,7 +94,7 @@ export default function WorkflowPickerSearchBox() {
           marginBottom: 8,
         }}
       >
-        Tell me what you&apos;re working on (optional)
+        What are you working on (optional)
       </label>
       <textarea
         id="workflow-picker-search"
@@ -107,7 +107,7 @@ export default function WorkflowPickerSearchBox() {
           }
         }}
         rows={3}
-        placeholder="e.g. ADU in Temecula, 800 sqft, single story — which codes matter? Or just describe the project in your own words."
+        placeholder="e.g., ADU in Temecula, 800 sqft, single-story. Which codes matter? Or just describe the job."
         style={{
           width: '100%',
           border: 'none',
@@ -145,7 +145,7 @@ export default function WorkflowPickerSearchBox() {
             aria-label={listening ? 'Stop voice input' : 'Start voice input'}
           >
             <span>{listening ? '⏺' : '🎤'}</span>
-            <span>{listening ? 'Listening…' : 'Speak'}</span>
+            <span>{listening ? 'Listening…' : 'speak'}</span>
           </button>
         ) : (
           <span
@@ -156,7 +156,7 @@ export default function WorkflowPickerSearchBox() {
               fontFamily: 'inherit',
             }}
           >
-            Voice not supported in this browser.
+            Voice unavailable in this browser.
           </span>
         )}
 
@@ -187,7 +187,7 @@ export default function WorkflowPickerSearchBox() {
             transition: 'all 0.15s ease',
           }}
         >
-          Find my codes →
+          Pull the codes →
         </button>
       </div>
     </div>

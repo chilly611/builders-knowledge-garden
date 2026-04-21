@@ -104,7 +104,7 @@ export default function KillerAppNav() {
             }}
           >
             <span style={{ fontSize: 11 }}>‹</span>
-            <span>All workflows</span>
+            <span>All Workflows</span>
           </Link>
         </>
       )}

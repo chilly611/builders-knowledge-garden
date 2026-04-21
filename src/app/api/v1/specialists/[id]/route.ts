@@ -87,12 +87,21 @@ export async function POST(
   const workflowId = (body.extra?.workflow_id as string) || "unknown";
   const stepId = (body.extra?.step_id as string) || undefined;
 
+  // Determine the prompt version that will be used (same logic as specialists.ts)
+  const DEFAULT_VERSION_BY_SPECIALIST: Record<string, "v1" | "v2"> = {
+    "estimating-takeoff": "v2",
+    "compliance-structural": "v2",
+    "sub-bid-analysis": "v2",
+  };
+  const expectedPromptVersion =
+    DEFAULT_VERSION_BY_SPECIALIST[specialistId] || "v1";
+
   // Start instrumentation (returns run_id or null if RSI unavailable)
   const runId = await logSpecialistRunStart({
     workflow_id: workflowId,
     step_id: stepId,
     specialist_id: specialistId,
-    prompt_version: "v1",
+    prompt_version: expectedPromptVersion,
     input_json: body as unknown,
   });
 

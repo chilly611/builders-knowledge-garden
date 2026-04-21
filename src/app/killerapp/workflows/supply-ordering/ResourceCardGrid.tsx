@@ -103,7 +103,7 @@ export default function ResourceCardGrid({
             <line x1="50" y1="40" x2="50" y2="80" strokeWidth="1" />
             <line x1="40" y1="60" x2="80" y2="60" strokeWidth="1" />
           </svg>
-          <p style={styles.emptyText}>Dispatching search…</p>
+          <p style={styles.emptyText}>Searching vendors…</p>
         </div>
       </div>
     );
@@ -137,7 +137,7 @@ export default function ResourceCardGrid({
             onClick={() => window.location.reload()}
             style={styles.retryButton}
           >
-            Retry
+            retry
           </button>
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function ResourceCardGrid({
     return (
       <div style={styles.container}>
         <div style={styles.emptyState}>
-          <p style={styles.emptyText}>No results found. Try a different query.</p>
+          <p style={styles.emptyText}>No matches. Broaden the query or try a different material.</p>
         </div>
       </div>
     );
@@ -307,7 +307,7 @@ function ResourceCard({
             borderColor: '#B6873A',
           }}
         >
-          {selected ? 'Added' : 'Add to Cart'}
+          {selected ? 'Added' : 'add to cart'}
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 /**
- * /killerapp  —  Workflow picker landing.
+ * /killerapp  —  Workflow picker landing (W7.B dramatic hero pass).
  *
  * Per killer-app-direction.md Decisions #1, #3, #11:
  *   - Fluid paths: no quest-driven nav, no level-group headers,
@@ -8,11 +8,17 @@
  *   - Browse by the 7-stage lifecycle (Size Up → Lock → Plan → Build →
  *     Adapt → Collect → Reflect). Start anywhere.
  *
+ * W7.B Redesign:
+ *   - Hero section: Large 96-120px display text + oversized Logomark (180px)
+ *   - Blueprint grid background (32px, 6% opacity, --faded-rule)
+ *   - Typographic TOC treatment: stage headers in small-caps brass tracking,
+ *     workflow entries as numbered rows (q2, q4, q11) with 60%-opacity blurbs
+ *   - Natural-language entry (SearchBox) styled as engraved field beneath hero
+ *
  * Server Component:
  *   - Reads docs/workflows.json at render time.
- *   - Renders a static list grouped by stage.
- *   - Only the live workflow (q5 Code Compliance) links out; others
- *     render as muted "Coming soon" cards.
+ *   - Renders static list grouped by stage.
+ *   - Only live workflows link out; others render as muted "Coming soon".
  *
  * The old Command Center page moved to /killerapp/legacy-command-center
  * to preserve its project / attention-queue / heartbeat wiring for a
@@ -22,7 +28,9 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import Link from 'next/link';
+import Logomark from '@/components/Logomark';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
+import styles from './landing.module.css';
 
 interface LifecycleStage {
   id: number;
@@ -81,7 +89,7 @@ const WORKFLOW_BLURBS: Record<string, string> = {
   q3: 'Look up a client: past projects, outstanding balances, notes.',
   q4: 'Six starter contracts — agreement, sub, lien waivers, NDA, change order — filled and downloaded as PDFs in one pass.',
   q5: 'Structural, electrical, plumbing, fire — which codes apply and where they bite.',
-  q6: 'Sequence the job so trades don\'t trip over each other.',
+  q6: "Sequence the job so trades don't trip over each other.",
   q7: 'How many workers you need per phase, based on scope and schedule.',
   q8: 'Draft permit applications from the scope you already described.',
   q9: 'Compare subcontractor bids with apples-to-apples line items.',
@@ -90,18 +98,22 @@ const WORKFLOW_BLURBS: Record<string, string> = {
   q12: 'Services & utilities to-do list — who to call, when, and for what.',
   q13: 'Find, screen, and onboard workers into a lane on your crew.',
   q14: 'Schedule around the weather forecast for your site.',
-  q15: 'Speak your daily log. We\'ll structure it, tag it, and file it.',
-  q16: 'Weekly OSHA toolbox talk, tailored to what you\'re actually doing this week.',
+  q15: "Speak your daily log. We'll structure it, tag it, and file it.",
+  q16: "Weekly OSHA toolbox talk, tailored to what you're actually doing this week.",
   q17: 'Receipt → coded expense, job-costed correctly.',
   q18: 'Outreach to your contacts — mass, tailored, or one-to-one.',
-  q19: 'Compass: show me where I am, what\'s next, what I\'m missing.',
-  q20: 'Draft the change order with reasons, cost breakdown, and schedule impact.',
-  q21: 'Auto-fill the draw request against AIA formats + your GC\'s template.',
+  q19: "Compass: show me where I am, what's next, what I'm missing.",
+  q20:
+    'Draft the change order with reasons, cost breakdown, and schedule impact.',
+  q21:
+    "Auto-fill the draw request against AIA formats + your GC's template.",
   q22: 'Lien waivers: who still owes one, and which form each needs.',
   q23: 'Review 1099 vs W-2 classifications on your current crew.',
-  q24: 'Send a jobsite photo; get a punch-list entry with location and trade.',
+  q24:
+    'Send a jobsite photo; get a punch-list entry with location and trade.',
   q25: 'Chase retainage politely and repeatedly until it shows up.',
-  q26: 'Warranty reminders to the owner at the right intervals, in your voice.',
+  q26:
+    'Warranty reminders to the owner at the right intervals, in your voice.',
   q27: 'Post-job retrospective — what to do the same and what to change next time.',
 };
 
@@ -138,230 +150,113 @@ export default function KillerAppPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--trace)',
-        color: 'var(--graphite)',
-        fontFamily: 'var(--font-archivo), sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Hero */}
-      <header
-        style={{
-          padding: '60px 28px 48px',
-          maxWidth: 1100,
-          margin: '0 auto',
-          width: '100%',
-        }}
-      >
-        {/* Blueprint-aesthetic hairline rule */}
-        <div
-          style={{
-            height: '0.5px',
-            background: 'var(--faded-rule)',
-            marginBottom: 32,
-          }}
-        />
+    <div className={styles.pageContainer}>
+      {/* Hero with blueprint grid background */}
+      <header className={styles.heroSection}>
+        {/* Blueprint 32px grid background */}
+        <div className={styles.blueprintGrid} />
 
-        {/* Pitch: short, direct */}
-        <h1
-          style={{
-            fontSize: 48,
-            fontWeight: 700,
-            letterSpacing: '-1px',
-            margin: '0 0 16px',
-            lineHeight: 1.1,
-            color: 'var(--navy)',
-          }}
-        >
-          The operating system for your build.
-        </h1>
+        {/* Hairline rule — architectural aesthetic */}
+        <div className={styles.hairlineRule} />
 
-        {/* Subhead: expands the vision */}
-        <p
-          style={{
-            fontSize: 18,
-            color: 'var(--graphite)',
-            maxWidth: 620,
-            lineHeight: 1.6,
-            margin: '0 0 40px',
-            fontWeight: 500,
-          }}
-        >
-          Every tool a builder needs. Talking to each other. Learning as you go.
-        </p>
+        {/* Hero content: Logomark + text stack */}
+        <div className={styles.heroContent}>
+          {/* Large Logomark (180px) anchors the hero */}
+          <div className={styles.heroLogomark}>
+            <Logomark size={180} alt="Builder's Knowledge Garden" />
+          </div>
 
-        <WorkflowPickerSearchBox />
+          {/* Display text: large scale (96-120px), tight leading */}
+          <h1 className={styles.heroHeading}>
+            The operating system for your build.
+          </h1>
+
+          {/* Subhead: expands the vision */}
+          <p className={styles.heroSubhead}>
+            Every tool a builder needs. Talking to each other. Learning as you
+            go.
+          </p>
+        </div>
+
+        {/* Natural-language entry: styled as engraved field */}
+        <div className={styles.searchBoxWrapper}>
+          <WorkflowPickerSearchBox />
+        </div>
       </header>
 
-      {/* Stage groups */}
-      <main style={{ padding: '0 28px 80px', maxWidth: 1100, margin: '0 auto', width: '100%', flex: 1 }}>
+      {/* Stage groups: typographic TOC treatment */}
+      <main className={styles.mainContent}>
         {stages.map((stage) => {
           const list = (byStage.get(stage.id) ?? []).sort((a, b) =>
             a.id.localeCompare(b.id, undefined, { numeric: true })
           );
           const color = STAGE_COLORS[stage.id] ?? '#555';
           if (list.length === 0) return null;
+
           return (
-            <section key={stage.id} style={{ marginBottom: 56 }}>
-              <header
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: 12,
-                  marginBottom: 24,
-                  paddingBottom: 12,
-                  borderBottom: '0.5px solid var(--faded-rule)',
-                }}
-              >
-                <span style={{ fontSize: 20 }}>{stage.emoji}</span>
-                <h2
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1.5px',
-                    margin: 0,
-                  }}
-                >
+            <section key={stage.id} className={styles.stageSection}>
+              {/* Stage header: small-caps brass tracking */}
+              <header className={styles.stageHeader}>
+                <span className={styles.stageEmoji}>{stage.emoji}</span>
+                <h2 className={styles.stageName} style={{ color }}>
                   {stage.id}. {stage.name}
                 </h2>
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--graphite)',
-                    opacity: 0.5,
-                    marginLeft: 'auto',
-                  }}
-                >
+                <span className={styles.stageCount}>
                   {list.length} workflow{list.length === 1 ? '' : 's'}
                 </span>
               </header>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: 12,
-                }}
-              >
+              {/* Workflow entries: numbered TOC rows */}
+              <div className={styles.workflowList}>
                 {list.map((wf) => {
                   const href = LIVE_WORKFLOWS[wf.id];
                   const isLive = Boolean(href);
                   const blurb = WORKFLOW_BLURBS[wf.id];
-                  // Supply Ordering (q11) gets special prominence
                   const isSupplyOrdering = wf.id === 'q11';
 
-                  const cardBase: React.CSSProperties = {
-                    background: '#fff',
-                    border: isSupplyOrdering ? '2px solid var(--robin)' : `1px solid ${isLive ? 'var(--brass)' : 'var(--faded-rule)'}`,
-                    borderRadius: 12,
-                    padding: isSupplyOrdering ? '20px 16px' : '14px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    minHeight: isSupplyOrdering ? 140 : 120,
-                    transition: 'all 0.15s ease',
-                    position: 'relative',
-                    gridColumn: isSupplyOrdering ? 'span 2' : 'auto',
-                  };
-                  const cardInactive: React.CSSProperties = {
-                    ...cardBase,
-                    opacity: 0.6,
-                  };
+                  const rowContent = (
+                    <div
+                      className={`${styles.workflowRow} ${
+                        isSupplyOrdering ? styles.workflowRowPeakMoment : ''
+                      }`}
+                    >
+                      {/* Workflow ID / code */}
+                      <div className={styles.workflowCode}>
+                        {wf.id.toUpperCase()}
+                      </div>
 
-                  // Left accent line for LIVE workflows
-                  const cardWithAccent: React.CSSProperties = {
-                    ...cardBase,
-                    borderLeft: isSupplyOrdering ? 'none' : '3px solid var(--brass)',
-                    paddingLeft: isSupplyOrdering ? undefined : 14,
-                  };
-                  const title = (
-                    <>
-                      {isSupplyOrdering && (
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            letterSpacing: '0.8px',
-                            color: 'var(--robin)',
-                            textTransform: 'uppercase',
-                            marginBottom: 8,
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: '6px',
-                              height: '6px',
-                              background: 'var(--robin)',
-                              borderRadius: '50%',
-                            }}
-                          />
-                          New — broker-powered
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <h3
-                          style={{
-                            fontSize: isSupplyOrdering ? 16 : 14,
-                            fontWeight: 700,
-                            margin: 0,
-                            color: 'var(--navy)',
-                            lineHeight: 1.3,
-                            flex: 1,
-                          }}
-                        >
+                      {/* Workflow name and blurb */}
+                      <div className={styles.workflowDetails}>
+                        <h3 className={styles.workflowName}>
                           {wf.label}
+                          {isSupplyOrdering && (
+                            <span className={styles.supplyOrderingBadge}>
+                              ● broker-powered
+                            </span>
+                          )}
                         </h3>
-                        {!isSupplyOrdering && (
-                          <span
-                            style={{
-                              fontSize: 8,
-                              fontWeight: 800,
-                              letterSpacing: '0.7px',
-                              color: isLive ? 'var(--brass)' : 'var(--graphite)',
-                              opacity: isLive ? 1 : 0.5,
-                              textTransform: 'uppercase',
-                              whiteSpace: 'nowrap',
-                              paddingTop: 2,
-                            }}
-                          >
-                            {isLive ? '●' : '○'} {isLive ? 'LIVE' : 'SOON'}
-                          </span>
+                        <p className={styles.workflowBlurb}>{blurb ?? ' '}</p>
+                        <p className={styles.workflowMeta}>
+                          {wf.steps.length} step
+                          {wf.steps.length === 1 ? '' : 's'}
+                        </p>
+                      </div>
+
+                      {/* Live/Soon indicator */}
+                      <div className={styles.workflowStatus}>
+                        {isLive ? (
+                          <>
+                            <span className={styles.liveIndicator}>●</span>
+                            <span className={styles.liveLabel}>LIVE</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className={styles.soonIndicator}>○</span>
+                            <span className={styles.soonLabel}>SOON</span>
+                          </>
                         )}
                       </div>
-                      <p
-                        style={{
-                          fontSize: isSupplyOrdering ? 14 : 12,
-                          color: 'var(--graphite)',
-                          margin: 0,
-                          lineHeight: 1.5,
-                          flex: 1,
-                        }}
-                      >
-                        {blurb ?? ' '}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 10,
-                          color: 'var(--graphite)',
-                          opacity: 0.5,
-                          margin: 0,
-                          fontWeight: 500,
-                          letterSpacing: '0.3px',
-                        }}
-                      >
-                        {wf.id.toUpperCase()} · {wf.steps.length} step
-                        {wf.steps.length === 1 ? '' : 's'}
-                      </p>
-                    </>
+                    </div>
                   );
 
                   if (isLive && href) {
@@ -369,19 +264,17 @@ export default function KillerAppPage() {
                       <Link
                         key={wf.id}
                         href={href}
-                        className={isSupplyOrdering ? 'bkg-supply-ordering-link' : 'bkg-wf-card-link'}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                        data-stage-color={color}
+                        className={styles.workflowLink}
+                        data-workflow-id={wf.id}
                       >
-                        <div className="bkg-wf-card" style={isSupplyOrdering ? cardBase : cardWithAccent}>
-                          {title}
-                        </div>
+                        {rowContent}
                       </Link>
                     );
                   }
+
                   return (
-                    <div key={wf.id} style={cardInactive} aria-disabled="true">
-                      {title}
+                    <div key={wf.id} className={styles.workflowRowDisabled}>
+                      {rowContent}
                     </div>
                   );
                 })}
@@ -392,48 +285,12 @@ export default function KillerAppPage() {
       </main>
 
       {/* Footer rail — subtle, minimal */}
-      <footer
-        style={{
-          padding: '24px 28px',
-          maxWidth: 1100,
-          margin: '0 auto',
-          width: '100%',
-          borderTop: '0.5px solid var(--faded-rule)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: 10,
-          color: 'var(--graphite)',
-          opacity: 0.5,
-        }}
-      >
+      <footer className={styles.footer}>
         <div>Builder&rsquo;s Knowledge Garden · v0.1</div>
         <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit' }}>
           Compass →
         </Link>
       </footer>
-
-      <style>{`
-        .bkg-wf-card-link .bkg-wf-card {
-          transition: all 0.15s cubic-bezier(0.33, 0.66, 0.66, 1);
-        }
-        .bkg-wf-card-link:hover .bkg-wf-card {
-          border-color: var(--navy) !important;
-          box-shadow: 0 4px 14px rgba(27, 59, 94, 0.08);
-          transform: translateY(-2px);
-        }
-        .bkg-supply-ordering-link {
-          display: block;
-          transition: all 0.15s cubic-bezier(0.33, 0.66, 0.66, 1);
-        }
-        .bkg-supply-ordering-link:hover {
-          text-decoration: none;
-        }
-        .bkg-supply-ordering-link:hover > div {
-          box-shadow: 0 8px 24px rgba(127, 207, 203, 0.12);
-          transform: translateY(-2px);
-        }
-      `}</style>
     </div>
   );
 }

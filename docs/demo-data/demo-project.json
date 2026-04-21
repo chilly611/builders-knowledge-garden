@@ -1,0 +1,152 @@
+{
+  "id": "demo-project",
+  "name": "Willow Creek ADU",
+  "address": "1432 Willow Creek Rd, Napa, CA 94558",
+  "client": {
+    "name": "Maria Hartwell",
+    "email": "maria@example.com",
+    "phone": "(707) 555-0142"
+  },
+  "contractor": "Bou Construction",
+  "projectType": "ADU — 1-story, 1,800 sqft",
+  "startDate": "2026-02-10",
+  "targetCompletion": "2026-07-15",
+  "currentStage": 4,
+  "stageProgress": {
+    "1": 100,
+    "2": 100,
+    "3": 100,
+    "4": 62,
+    "5": 0,
+    "6": 0,
+    "7": 0
+  },
+  "budget": {
+    "approved": 340000,
+    "spent": 187400,
+    "committed": 224100,
+    "byCategory": {
+      "permits": {
+        "budgeted": 8500,
+        "spent": 8500
+      },
+      "foundation": {
+        "budgeted": 34000,
+        "spent": 33150
+      },
+      "framing": {
+        "budgeted": 52000,
+        "spent": 51800
+      },
+      "rough-mechanical": {
+        "budgeted": 41000,
+        "spent": 38200
+      },
+      "roofing": {
+        "budgeted": 28000,
+        "spent": 28000
+      },
+      "exterior": {
+        "budgeted": 37000,
+        "spent": 14500
+      },
+      "interior-finish": {
+        "budgeted": 68000,
+        "spent": 4200
+      },
+      "landscape": {
+        "budgeted": 22000,
+        "spent": 0
+      },
+      "contingency": {
+        "budgeted": 49500,
+        "spent": 9050
+      }
+    }
+  },
+  "team": [
+    {
+      "name": "Carlos Medina",
+      "role": "Foreman",
+      "trade": "gc",
+      "verified": true
+    },
+    {
+      "name": "Reuben Patel",
+      "role": "Framer Lead",
+      "trade": "framing",
+      "verified": true
+    },
+    {
+      "name": "Brick & Beam HVAC",
+      "role": "Mechanical Sub",
+      "trade": "hvac",
+      "verified": false
+    },
+    {
+      "name": "West Valley Electric",
+      "role": "Electrical Sub",
+      "trade": "electrical",
+      "verified": true
+    }
+  ],
+  "recentActivity": [
+    {
+      "ts": "2026-04-20T14:22:00-07:00",
+      "type": "broker-order",
+      "summary": "Ordered 2 boxes SDS-max 3/4\" bits from Home Depot Napa — $184.50",
+      "source": "q11 Supply Ordering"
+    },
+    {
+      "ts": "2026-04-20T09:15:00-07:00",
+      "type": "specialist",
+      "summary": "Estimating specialist: rough-electrical materials updated, +$1,240 vs original",
+      "source": "q2 Estimating"
+    },
+    {
+      "ts": "2026-04-19T16:44:00-07:00",
+      "type": "compliance",
+      "summary": "Permit — mechanical rough inspection scheduled for 2026-04-25",
+      "source": "q8 Permit Applications"
+    },
+    {
+      "ts": "2026-04-18T11:02:00-07:00",
+      "type": "daily-log",
+      "summary": "Framing crew: exterior sheathing 90% complete. Weather delay Thursday AM.",
+      "source": "q15 Daily Log"
+    }
+  ],
+  "openItems": [
+    {
+      "priority": "high",
+      "label": "Sign change-order for upgraded windows (+$2,400)",
+      "stage": 4,
+      "dueBy": "2026-04-22"
+    },
+    {
+      "priority": "med",
+      "label": "Order roofing materials — delivery window 2026-04-29",
+      "stage": 4
+    },
+    {
+      "priority": "med",
+      "label": "Schedule mechanical rough inspection with county",
+      "stage": 4
+    },
+    {
+      "priority": "low",
+      "label": "Weekly owner update — send photos",
+      "stage": 4
+    }
+  ],
+  "risks": [
+    {
+      "level": "yellow",
+      "text": "Contingency spent 18% — monitor vs remaining stages"
+    },
+    {
+      "level": "green",
+      "text": "On schedule for target completion"
+    }
+  ]
+}

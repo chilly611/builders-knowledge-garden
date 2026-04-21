@@ -296,7 +296,7 @@ export default function ProjectCompass({
             <text x={23} y={17} textAnchor="middle" fontSize={14} fill="#6B7280">
               ☁︎
             </text>
-            <title>Dream — where every project starts</title>
+            <title>Dream. Where every project starts.</title>
           </g>
 
           {/* 7 stage milestones */}
@@ -396,7 +396,7 @@ export default function ProjectCompass({
             <rect x={11} y={20} width={6} height={6} fill="#FEF3C7" stroke="#92400E" />
             <rect x={23} y={20} width={6} height={6} fill="#FEF3C7" stroke="#92400E" />
             <rect x={17} y={28} width={6} height={8} fill="#92400E" />
-            <title>Finished — project delivered</title>
+            <title>Finished. Project delivered.</title>
           </g>
         </svg>
 
@@ -417,13 +417,13 @@ export default function ProjectCompass({
           <span>
             {currentStage ? (
               <>
-                Currently at{' '}
+                At{' '}
                 <strong style={{ color: STATUS_COLORS.current }}>
                   Stage {currentStage.id} · {currentStage.name}
                 </strong>
               </>
             ) : (
-              'Pick a workflow below to walk into a stage.'
+              'Pick a workflow to enter a stage.'
             )}
           </span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -452,7 +452,7 @@ export default function ProjectCompass({
                 }}
                 aria-label="Close out project and celebrate"
               >
-                🎉 Close out project
+                close out project
               </button>
             )}
             {isDemo && (
@@ -471,7 +471,7 @@ export default function ProjectCompass({
                 }}
                 aria-label="Set up a real project"
               >
-                Demo data — set up a real project →
+                Demo data. Start a real project →
               </button>
             )}
           </div>
