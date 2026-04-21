@@ -59,6 +59,21 @@
   --bp-phase-grow: #639922;
   --bp-font-mono: 'Courier Prime', 'Courier New', 'SF Mono', monospace;
   --bp-font-sans: 'Space Grotesk', var(--font-archivo), sans-serif;
+
+  /* Builder's Knowledge Garden Design Tokens (v2 palette) */
+  /* Heritage ground */
+  --navy: #1B3B5E;
+  --navy-deep: #0E2A47;
+  --trace: #F4F0E6;
+  --graphite: #2E2E30;
+  --faded-rule: #C9C3B3;
+  /* Everyday warm */
+  --brass: #B6873A;
+  /* Markup alert */
+  --redline: #A1473A;
+  /* Peak pair (moment punctuation) */
+  --robin: #7FCFCB;
+  --orange: #D9642E;
 }
 
 @theme inline {

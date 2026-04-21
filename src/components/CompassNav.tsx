@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth";
 import { useAuthModal } from "@/components/AuthModal";
+import Logomark from "@/components/Logomark";
 
 const DESTINATIONS = [
   { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
@@ -93,7 +94,7 @@ function DesktopSidebar() {
           width: 36, height: 36, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={34} height={34} style={{ objectFit: "contain" }} />
+          <Logomark size={34} alt="Builder's Knowledge Garden" />
         </div>
         {showExpanded && (
           <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>

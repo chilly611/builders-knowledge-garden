@@ -33,11 +33,11 @@ export const metadata: Metadata = {
   description: "The operating system for the $17 trillion global construction economy. DREAM → DESIGN → PLAN → BUILD → DELIVER → GROW.",
   icons: {
     icon: [
-      { url: "/logo/favicon.ico", sizes: "any" },
-      { url: "/logo/b_icon_192x192.png", type: "image/png", sizes: "192x192" },
-      { url: "/logo/b_icon_512x512.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: "/logo/b_icon_192x192.png",
+    apple: "/apple-icon.png",
   },
   openGraph: {
     title: "Builder's Knowledge Garden",
