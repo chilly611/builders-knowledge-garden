@@ -34,6 +34,13 @@ const STATUS_COLORS = {
   complete: '#14B8A6',     // Decision #12: teal
 } as const;
 
+// Peak-moment step IDs — these steps get hero-treatment crowns (Deep Orange CTA, Robin's Egg confidence tag, etc.)
+// Keep this list tight; every addition dilutes the "peak pair" moment.
+const PEAK_STEP_IDS = new Set<string>([
+  's11-5', // Supply Ordering — Place Order (Deep Orange peak CTA)
+  's2-6',  // Estimating — AI estimate reveal (Robin's Egg high-confidence badge)
+]);
+
 export default function StepCard({
   step,
   status = DEFAULT_STATUS,
