@@ -2,17 +2,22 @@
  * Demo Project Seeder
  * ===================
  *
- * Loads `docs/demo-data/demo-project.json` at module init and provides
- * typed getters for the demo project's immutable shape.
+ * Static JSON import of the demo project's immutable shape, with typed
+ * getters. Static import (vs runtime `fs.readFileSync`) is REQUIRED so
+ * this module remains safe to import into `'use client'` components —
+ * the previous version pulled in Node's `fs`/`path` and broke the
+ * production `next build` bundle on Vercel.
  *
  * Used by:
- *   - /killerapp/projects/demo-project (if it exists)
+ *   - /killerapp/projects/demo-project
+ *   - ProjectDashboardClient (client component)
  *   - ProjectCompass as a fallback when no real project is active
  *   - Demo onboarding flows
  */
 
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+// Static import — Webpack/Turbopack bundle this at build time.
+// tsconfig.json has `resolveJsonModule: true` so this typechecks fine.
+import demoProjectData from '../../docs/demo-data/demo-project.json';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -80,23 +85,12 @@ export interface DemoProject {
 
 // ─── Load at module init ───────────────────────────────────────────────────
 
-let _demoProject: DemoProject | null = null;
+// Static import is already resolved at build time. Cast once through the
+// typed interface for downstream consumers.
+const _demoProject: DemoProject = demoProjectData as DemoProject;
 
 function loadDemoProject(): DemoProject {
-  if (_demoProject) return _demoProject;
-
-  try {
-    const path = resolve(process.cwd(), 'docs/demo-data/demo-project.json');
-    const raw = readFileSync(path, 'utf-8');
-    _demoProject = JSON.parse(raw) as DemoProject;
-    return _demoProject;
-  } catch (err) {
-    console.error(
-      '[demo-seeder] Failed to load demo-project.json:',
-      err instanceof Error ? err.message : String(err)
-    );
-    throw new Error('demo-project.json not found or invalid');
-  }
+  return _demoProject;
 }
 
 // ─── Typed getters ────────────────────────────────────────────────────────
