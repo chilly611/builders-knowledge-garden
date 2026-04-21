@@ -435,3 +435,88 @@ div { color: inherit; }
   align-items: center;
   gap: 4px;
 }
+
+/* ═══════════════════════════════════════════════
+   MOTION SYSTEM — Entrance, Hover, and Hero Animations
+   ═══════════════════════════════════════════════ */
+
+/* Keyframe: Fade up with subtle slide */
+@keyframes bkgFadeUp {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Keyframe: Fade in only */
+@keyframes bkgFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Keyframe: Scale in with fade */
+@keyframes bkgScaleIn {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Keyframe: Hero mark — grand entrance */
+@keyframes bkgHeroMark {
+  0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Entrance animation: Fade up (280ms, springy) */
+.bkg-fade-up {
+  animation: bkgFadeUp 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Entrance animation: Fade in (240ms, ease-out) */
+.bkg-fade-in {
+  animation: bkgFadeIn 240ms ease-out both;
+}
+
+/* Entrance animation: Scale in (220ms, springy) */
+.bkg-scale-in {
+  animation: bkgScaleIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Hero animation: Grand entrance (900ms, springy) */
+.bkg-hero-mark {
+  animation: bkgHeroMark 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Stagger delays for sequential animations */
+.bkg-stagger-1 { animation-delay: 40ms; }
+.bkg-stagger-2 { animation-delay: 80ms; }
+.bkg-stagger-3 { animation-delay: 120ms; }
+.bkg-stagger-4 { animation-delay: 160ms; }
+.bkg-stagger-5 { animation-delay: 200ms; }
+.bkg-stagger-6 { animation-delay: 240ms; }
+
+/* Hover interaction: Lift with shadow (180ms, ease-out) */
+.bkg-hover-lift {
+  transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+.bkg-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(14, 42, 71, 0.08);
+}
+
+/* ═══════════════════════════════════════════════
+   REDUCED MOTION GUARD — Disable all animations
+   ═══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .bkg-fade-up,
+  .bkg-fade-in,
+  .bkg-scale-in,
+  .bkg-hero-mark {
+    animation: none !important;
+  }
+
+  .bkg-hover-lift {
+    transition: none !important;
+  }
+  .bkg-hover-lift:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
