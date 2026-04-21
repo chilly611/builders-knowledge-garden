@@ -7,7 +7,9 @@
 //   ❌ /field-pointed Voice button + /knowledge Copilot button in chrome
 //
 // New minimal chrome:
-//   ✓ Brand pill that routes to /killerapp (the workflow picker — Decision #3)
+//   ✓ Brand pill with actual Logomark that routes to /killerapp (the workflow picker — Decision #3)
+//   ✓ Refined wordmark in graphite (not red), lowercase treatment, proper letterspacing
+//   ✓ Blueprint hairline bottom border (0.5px var(--faded-rule)) in place of red divider
 //   ✓ "Workflows" back-link when inside a workflow route (fluid, not quest-driven)
 //   ✓ Nothing else. Per-workflow journey-map lives in a separate header component.
 //
@@ -17,6 +19,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import Logomark from '@/components/Logomark';
 
 export default function KillerAppNav() {
   const pathname = usePathname();
@@ -39,7 +42,7 @@ export default function KillerAppNav() {
         zIndex: 99,
         background: 'rgba(255,255,255,0.97)',
         backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(232,68,58,0.18)',
+        borderBottom: '0.5px solid var(--faded-rule)',
         display: 'flex',
         alignItems: 'center',
         paddingLeft: 16,
@@ -55,17 +58,26 @@ export default function KillerAppNav() {
           textDecoration: 'none',
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: '1.5px',
-          textTransform: 'uppercase',
-          color: '#E8443A',
+          gap: 8,
           flexShrink: 0,
         }}
       >
-        <span>⚡</span>
-        <span>Builder&apos;s Knowledge Garden</span>
+        {/* Logomark: 28px tall, crisp */}
+        <Logomark size={28} alt="Builder's Knowledge Garden" />
+
+        {/* Wordmark: refined, graphite, lowercase treatment, proper letterspacing */}
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            letterSpacing: '0.5px',
+            textTransform: 'lowercase',
+            color: 'var(--graphite)',
+            lineHeight: 1,
+          }}
+        >
+          builder&apos;s knowledge garden
+        </span>
       </Link>
 
       {inWorkflow && (
@@ -74,7 +86,7 @@ export default function KillerAppNav() {
             style={{
               width: 1,
               height: 20,
-              background: 'var(--border, #e2e4e8)',
+              background: 'var(--faded-rule)',
               flexShrink: 0,
             }}
           />
@@ -83,12 +95,16 @@ export default function KillerAppNav() {
             style={{
               textDecoration: 'none',
               fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--fg-secondary, #555555)',
+              fontWeight: 400,
+              color: 'var(--fg-secondary)',
               flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
             }}
           >
-            ← All workflows
+            <span style={{ fontSize: 11 }}>‹</span>
+            <span>All workflows</span>
           </Link>
         </>
       )}
