@@ -1,19 +1,35 @@
 'use client';
 
-// Builder's Knowledge Garden — Natural-language entry on the workflow picker.
-// Decision #1 (fluid paths) + Decision #3 (workflow picker as primary nav):
-// The picker's hero needs a way for non-savvy users to type or speak what
-// they're working on. We don't yet have an intent-routing backend, so on
-// submit we forward to the one live workflow (Code Compliance) with the
-// query pre-filled. In Week 3 this becomes a real intent router across all
-// 27 workflows.
+/**
+ * WorkflowPickerSearchBox (W7.O redesign)
+ * =======================================
+ *
+ * A quiet, single-line engraved field that lives under the hero subhead.
+ * The TOC below is the real navigation — this box is a secondary nudge
+ * for users who want to type what they're working on instead of scanning
+ * the stage list.
+ *
+ * Pre-W7 this was a 3-row textarea with a loud "Pull the codes →" button
+ * and a "What are you working on (optional)" label. That version read as
+ * a disconnected form between the hero and the TOC, and its button label
+ * was misleading now that 17 workflows are live (submit always routes to
+ * code-compliance regardless of query).
+ *
+ * Intent routing is a post-W7 item (tracked on tasks.todo.md Week 3+);
+ * until then every submission still lands on code-compliance, but the
+ * field itself reads as an invitation, not a committed code-compliance CTA.
+ *
+ * Keep:
+ *   - voice input (mic icon on the right)
+ *   - Enter / Cmd-Enter submit
+ *   - graceful empty-submit fallback (so it never feels stuck)
+ */
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-// Narrow typing for the Web Speech API. The DOM lib defines
-// `SpeechRecognition` on webkit-prefixed browsers; we treat it loosely
-// since support is inconsistent.
+// Narrow typing for the Web Speech API — support is inconsistent across
+// browsers and we only need start/stop/onresult/onerror/onend.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySpeechRecognition = any;
 
@@ -63,133 +79,103 @@ export default function WorkflowPickerSearchBox() {
 
   const submit = () => {
     const q = value.trim();
-    if (!q) {
-      // Empty submit still routes to Code Compliance so it never feels stuck.
-      router.push('/killerapp/workflows/code-compliance');
-      return;
-    }
-    router.push(`/killerapp/workflows/code-compliance?q=${encodeURIComponent(q)}`);
+    // Until intent routing ships, we always land on code-compliance.
+    // Empty submit still routes so the field never feels stuck.
+    const href = q
+      ? `/killerapp/workflows/code-compliance?q=${encodeURIComponent(q)}`
+      : '/killerapp/workflows/code-compliance';
+    router.push(href);
   };
 
   return (
     <div
       style={{
-        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        background: 'var(--trace)',
         border: '0.5px solid var(--faded-rule)',
-        borderRadius: 12,
-        padding: 16,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        borderRadius: 10,
+        padding: '4px 6px 4px 14px',
+        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)',
       }}
     >
-      <label
-        htmlFor="workflow-picker-search"
-        style={{
-          display: 'block',
-          fontSize: 10,
-          fontWeight: 700,
-          color: 'var(--graphite)',
-          opacity: 0.6,
-          textTransform: 'uppercase',
-          letterSpacing: '0.8px',
-          marginBottom: 8,
-        }}
-      >
-        What are you working on (optional)
-      </label>
-      <textarea
+      <input
         id="workflow-picker-search"
+        type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          if (e.key === 'Enter') {
             e.preventDefault();
             submit();
           }
         }}
-        rows={3}
-        placeholder="e.g., ADU in Temecula, 800 sqft, single-story. Which codes matter? Or just describe the job."
+        placeholder="Or describe what you're working on…"
+        aria-label="Describe what you're working on"
         style={{
-          width: '100%',
+          flex: 1,
           border: 'none',
           outline: 'none',
-          resize: 'vertical',
+          background: 'transparent',
           fontFamily: 'var(--font-archivo), sans-serif',
           fontSize: 14,
           lineHeight: 1.5,
           color: 'var(--graphite)',
-          background: 'transparent',
-          boxSizing: 'border-box',
+          padding: '10px 0',
+          minWidth: 0,
         }}
       />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-        {voiceSupported ? (
-          <button
-            type="button"
-            onClick={listening ? stopVoice : startVoice}
-            style={{
-              background: listening ? 'rgba(182, 135, 58, 0.12)' : 'var(--trace)',
-              border: `0.5px solid ${listening ? 'var(--brass)' : 'var(--faded-rule)'}`,
-              borderRadius: 8,
-              padding: '8px 12px',
-              color: listening ? 'var(--brass)' : 'var(--graphite)',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontFamily: 'inherit',
-              transition: 'all 0.15s ease',
-            }}
-            aria-pressed={listening}
-            aria-label={listening ? 'Stop voice input' : 'Start voice input'}
-          >
-            <span>{listening ? '⏺' : '🎤'}</span>
-            <span>{listening ? 'Listening…' : 'speak'}</span>
-          </button>
-        ) : (
-          <span
-            style={{
-              fontSize: 10,
-              color: 'var(--graphite)',
-              opacity: 0.5,
-              fontFamily: 'inherit',
-            }}
-          >
-            Voice unavailable in this browser.
-          </span>
-        )}
 
-        <span style={{ flex: 1 }} />
-
-        <span
-          style={{
-            fontSize: 10,
-            color: 'var(--graphite)',
-            opacity: 0.5,
-          }}
-        >
-          ⌘↵ to submit
-        </span>
+      {voiceSupported && (
         <button
           type="button"
-          onClick={submit}
+          onClick={listening ? stopVoice : startVoice}
+          aria-pressed={listening}
+          aria-label={listening ? 'Stop voice input' : 'Start voice input'}
           style={{
-            background: 'var(--brass)',
+            background: listening ? 'rgba(182, 135, 58, 0.12)' : 'transparent',
             border: 'none',
-            borderRadius: 8,
-            padding: '9px 18px',
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 700,
+            borderRadius: 6,
+            padding: '6px 8px',
+            color: listening ? 'var(--brass)' : 'var(--graphite)',
+            fontSize: 14,
             cursor: 'pointer',
+            opacity: listening ? 1 : 0.55,
             fontFamily: 'inherit',
-            transition: 'all 0.15s ease',
+            transition: 'opacity 0.15s ease',
           }}
         >
-          Pull the codes →
+          {listening ? '⏺' : '🎤'}
         </button>
-      </div>
+      )}
+
+      <button
+        type="button"
+        onClick={submit}
+        aria-label="Submit"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 6,
+          padding: '6px 10px',
+          color: 'var(--graphite)',
+          fontSize: 16,
+          fontWeight: 600,
+          cursor: 'pointer',
+          opacity: 0.6,
+          fontFamily: 'inherit',
+          transition: 'opacity 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '1';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '0.6';
+        }}
+      >
+        →
+      </button>
     </div>
   );
 }
