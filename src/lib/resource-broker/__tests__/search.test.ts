@@ -183,4 +183,45 @@ describe('resource-broker/search', () => {
 
     expect(response.query).toEqual(query);
   });
+
+  it('should include reasoning for each result', async () => {
+    const query: ResourceQuery = {
+      query: 'general tool',
+      kinds: ['tool'],
+      limit: 5,
+    };
+
+    const response = await search(query);
+
+    expect(response.results.length).toBeGreaterThan(0);
+    response.results.forEach((result) => {
+      // Each result should have reasoning (either from AI or fallback)
+      expect(result.reasoning).toBeDefined();
+      expect(typeof result.reasoning).toBe('string');
+      expect(result.reasoning.length).toBeGreaterThan(0);
+      // Reasoning should be reasonably concise (max ~20 words)
+      const wordCount = result.reasoning.split(/\s+/).length;
+      expect(wordCount).toBeLessThanOrEqual(30);
+    });
+  });
+
+  it('should use demo-fixtures fallback path and still provide reasoning', async () => {
+    // This test runs with or without ANTHROPIC_API_KEY and BRAVE_API_KEY
+    // Demo fixtures should always be available and include reasoning
+    const query: ResourceQuery = {
+      query: 'lumber supply',
+      kinds: ['supply'],
+      limit: 3,
+    };
+
+    const response = await search(query);
+
+    expect(response.results.length).toBeGreaterThan(0);
+    // All demo fixture results should include reasoning
+    response.results.forEach((result) => {
+      expect(result.reasoning).toBeDefined();
+      expect(typeof result.reasoning).toBe('string');
+      expect(result.reasoning.length).toBeGreaterThan(0);
+    });
+  });
 });

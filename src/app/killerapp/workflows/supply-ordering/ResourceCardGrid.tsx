@@ -290,9 +290,9 @@ function ResourceCard({
           >
             Why this?
           </button>
-          {popoverActive && result.snippet && (
+          {popoverActive && (
             <div style={styles.popover}>
-              <p>{result.snippet}</p>
+              <p>{result.reasoning || 'Matched your query'}</p>
             </div>
           )}
         </div>

@@ -61,6 +61,34 @@ export async function search(q: ResourceQuery): Promise<ResourceResponse> {
     const limit = q.limit || 12;
     results = results.slice(0, limit);
 
+    // Generate reasoning for each result (non-blocking with timeout)
+    const reasoningPromise = generateReasoning(q.query, results);
+
+    // Race: use Promise.race with 3s timeout for AI reasoning, or fall back to rule-based
+    try {
+      const aiReasoning = await Promise.race([
+        reasoningPromise,
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('Reasoning timeout')), 3000)
+        ),
+      ]);
+
+      // Apply AI-generated reasoning if available, otherwise use fallback
+      results.forEach((result) => {
+        if (aiReasoning) {
+          const match = aiReasoning.find((r) => r.id === result.id);
+          result.reasoning = match?.reasoning || generateFallbackReasoning(result, q.query);
+        } else {
+          result.reasoning = generateFallbackReasoning(result, q.query);
+        }
+      });
+    } catch {
+      // Timeout or error: use fallback rule-based reasoning
+      results.forEach((result) => {
+        result.reasoning = generateFallbackReasoning(result, q.query);
+      });
+    }
+
     const latencyMs = Date.now() - startTime;
     const response: ResourceResponse = {
       query: q,
@@ -81,6 +109,14 @@ export async function search(q: ResourceQuery): Promise<ResourceResponse> {
   } catch (err) {
     // Absolute fallback: demo fixtures + error warning
     const fallbackResults = filterDemoFixtures(q).slice(0, q.limit || 12);
+
+    // Ensure all fallback results have reasoning
+    fallbackResults.forEach((result) => {
+      if (!result.reasoning) {
+        result.reasoning = generateFallbackReasoning(result, q.query);
+      }
+    });
+
     const latencyMs = Date.now() - startTime;
     const response: ResourceResponse = {
       query: q,
@@ -246,4 +282,94 @@ function normalizeQuery(q: ResourceQuery): string {
   }
 
   return normalized;
+}
+
+/**
+ * Generate AI-powered reasoning for results using Claude Haiku.
+ * Returns null if API key is missing or call fails (errors swallowed).
+ */
+async function generateReasoning(
+  query: string,
+  results: ResourceResult[]
+): Promise<Array<{ id: string; reasoning: string }> | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  try {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const client = new Anthropic({ apiKey });
+
+    const resultsSummary = results
+      .map(
+        (r, idx) =>
+          `${idx + 1}. "${r.title}" (${r.vendor || 'Unknown'}) - ${r.priceDisplay || 'Price TBD'} - ${r.distance?.text || 'Distance unknown'}`
+      )
+      .join('\n');
+
+    const prompt = `For each of these resource results matching the query "${query}", write one sentence (max 20 words) explaining why this was surfaced. Return a JSON array of {id, reasoning}.
+
+Results:
+${resultsSummary}
+
+Respond ONLY with valid JSON array, no other text.`;
+
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    // Extract text response
+    const textContent = message.content.find((block) => block.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      return null;
+    }
+
+    // Parse JSON response
+    const parsed = JSON.parse(textContent.text) as Array<{
+      id: string;
+      reasoning: string;
+    }>;
+    return parsed;
+  } catch (err) {
+    console.warn('[resource-broker] AI reasoning generation failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Fallback rule-based reasoning when API is unavailable or times out.
+ * Format: "{vendor} · ${priceDisplay} · ${distance.text}"
+ */
+function generateFallbackReasoning(result: ResourceResult, query: string): string {
+  const parts: string[] = [];
+
+  if (result.vendor) {
+    parts.push(result.vendor);
+  }
+
+  if (result.priceDisplay) {
+    parts.push(result.priceDisplay);
+  }
+
+  if (result.distance?.text) {
+    parts.push(result.distance.text);
+  }
+
+  const baseReasoning = parts.length > 0 ? parts.join(' · ') : 'Matched your search';
+
+  // Truncate to ~20 words max
+  const words = baseReasoning.split(' ');
+  if (words.length > 20) {
+    return words.slice(0, 20).join(' ') + '…';
+  }
+
+  return baseReasoning;
 }
