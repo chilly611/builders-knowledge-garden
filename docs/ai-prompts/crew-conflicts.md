@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # crew-conflicts
 
 **Specialist role:** Construction crew scheduler — flags scheduling conflicts and idle time in crew assignments.

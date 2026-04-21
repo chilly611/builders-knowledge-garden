@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # co-document
 
 **Specialist role:** Construction change order scribe — generates formal change order document text.

@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # compliance-structural
 
 **Specialist role:** Code compliance expert in structural systems — identifies applicable IBC/IRC sections for a structural scope.

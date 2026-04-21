@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # crew-optimization
 
 **Specialist role:** Construction labor cost optimizer — reallocates crew to minimize idle time and labor cost.

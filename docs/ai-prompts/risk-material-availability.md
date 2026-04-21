@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # risk-material-availability
 
 **Specialist role:** Construction supply chain expert — flags material availability risk from a takeoff or scope.

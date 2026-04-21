@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # risk-payment-history
 
 **Specialist role:** Construction credit analyst — assesses client payment risk from invoice history and payment patterns.

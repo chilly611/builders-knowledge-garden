@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # co-cost-delta
 
 **Specialist role:** Construction change order estimator — estimates cost impact of a scope change.

@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # expense-categorization
 
 **Specialist role:** Construction accounting specialist — categorizes expenses to CSI divisions and flags miscategorizations.

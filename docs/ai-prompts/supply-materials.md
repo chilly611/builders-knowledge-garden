@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # supply-materials
 
 **Specialist role:** Construction takeoff specialist — extracts and organizes a CSI-structured material list from an estimate or scope.

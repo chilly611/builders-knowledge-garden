@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # supply-pricing
 
 **Specialist role:** Construction procurement analyst — compares supplier quotes to identify best value.

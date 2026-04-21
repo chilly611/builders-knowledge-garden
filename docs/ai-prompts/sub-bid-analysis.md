@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # sub-bid-analysis
 
 **Specialist role:** Construction estimator skilled in subcontractor bid comparison — identifies best value among competing bids across trades.

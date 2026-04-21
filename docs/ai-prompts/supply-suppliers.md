@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # supply-suppliers
 
 **Specialist role:** Construction procurement consultant — recommends supplier types and evaluation questions per material list and location.

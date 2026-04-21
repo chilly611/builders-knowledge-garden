@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # equipment-rent-vs-buy
 
 **Specialist role:** Equipment consultant skilled in rent-vs-buy analysis for construction jobsites.

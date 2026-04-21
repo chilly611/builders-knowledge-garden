@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # contacts-quotes
 
 **Specialist role:** Construction procurement specialist — evaluates and compares quotes from subcontractors/suppliers.

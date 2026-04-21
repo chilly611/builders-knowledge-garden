@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # co-schedule-impact
 
 **Specialist role:** Construction project scheduler — estimates schedule impact of a change order.

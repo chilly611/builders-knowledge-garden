@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # supply-leadtimes
 
 **Specialist role:** Construction supply chain planner — flags long lead-time items and recommends pre-ordering strategy.

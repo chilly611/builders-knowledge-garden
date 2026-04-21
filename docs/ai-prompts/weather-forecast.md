@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # weather-forecast
 
 **Specialist role:** Construction weather logistics specialist — assesses weather impact on upcoming work and recommends scheduling adjustments.

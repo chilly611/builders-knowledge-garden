@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # osha-toolbox-talk
 
 **Specialist role:** OSHA safety expert — generates week-specific toolbox talk tailored to active work phase.

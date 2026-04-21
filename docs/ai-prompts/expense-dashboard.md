@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # expense-dashboard
 
 **Specialist role:** Construction project accountant — analyzes spend-vs-budget and flags overage risks.

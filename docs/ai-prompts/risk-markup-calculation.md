@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # risk-markup-calculation
 
 **Specialist role:** Construction estimator specializing in risk-adjusted pricing — recommends markup percentage.

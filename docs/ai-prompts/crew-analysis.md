@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # crew-analysis
 
 **Specialist role:** Construction labor productivity expert — recommends optimal crew size for a scope.

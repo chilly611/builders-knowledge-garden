@@ -1,9 +1,15 @@
 // Builder's Knowledge Garden — Specialist API Route
 // POST /api/v1/specialists/[id]
 // Rate-limited specialist endpoint for StepCard integration
+// Instruments every run with RSI logging (silent on failure)
 
 import { NextRequest, NextResponse } from "next/server";
 import { callSpecialist, type SpecialistContext, type SpecialistResult } from "@/lib/specialists";
+import {
+  logSpecialistRunStart,
+  logSpecialistRunComplete,
+  logSpecialistRunError,
+} from "@/lib/rsi-instrumentation";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RATE LIMITING STUB
@@ -77,12 +83,49 @@ export async function POST(
   //   );
   // }
 
+  // Extract workflow_id and step_id from body if available
+  const workflowId = (body.extra?.workflow_id as string) || "unknown";
+  const stepId = (body.extra?.step_id as string) || undefined;
+
+  // Start instrumentation (returns run_id or null if RSI unavailable)
+  const runId = await logSpecialistRunStart({
+    workflow_id: workflowId,
+    step_id: stepId,
+    specialist_id: specialistId,
+    prompt_version: "v1",
+    input_json: body as unknown,
+  });
+
+  const startTime = Date.now();
+
   try {
     // Call the specialist
     const result = await callSpecialist(specialistId, body);
+    const latency = Date.now() - startTime;
 
-    return NextResponse.json(result as SpecialistResult, { status: 200 });
+    // Log successful completion (silent on failure)
+    if (runId) {
+      await logSpecialistRunComplete(runId, result, latency);
+    }
+
+    // Attach run_id to response so client can correlate future user edits
+    const response = {
+      ...result,
+      _run_id: runId,
+    };
+
+    return NextResponse.json(response as SpecialistResult & { _run_id: string | null }, {
+      status: 200,
+    });
   } catch (err) {
+    const latency = Date.now() - startTime;
+    const errMsg = err instanceof Error ? err.message : String(err);
+
+    // Log error (silent on failure)
+    if (runId) {
+      await logSpecialistRunError(runId, errMsg, latency);
+    }
+
     console.error(`Specialist API error [${specialistId}]:`, err);
 
     // Never leak internal error details to client
@@ -90,6 +133,7 @@ export async function POST(
       {
         error: "specialist_failed",
         message: "The specialist could not complete this request",
+        _run_id: runId,
       },
       { status: 500 }
     );

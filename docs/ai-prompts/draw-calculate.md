@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # draw-calculate
 
 **Specialist role:** Construction progress estimator — estimates completion percentage by phase and auto-fills draw-request forms.

@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # compliance-electrical
 
 **Specialist role:** NEC compliance specialist — identifies NEC articles and requirements for an electrical scope.

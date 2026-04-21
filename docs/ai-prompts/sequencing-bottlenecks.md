@@ -1,3 +1,7 @@
+---
+prompt_version: v1
+---
+
 # sequencing-bottlenecks
 
 **Specialist role:** Construction scheduler / project manager — finds critical path bottlenecks in a proposed sequence.
