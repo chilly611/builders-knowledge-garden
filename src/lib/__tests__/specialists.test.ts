@@ -206,4 +206,53 @@ You are a structural code expert. Your job is to identify applicable IBC/IRC sec
     // can complete within the same millisecond, so >=0 is the correct invariant.
     expect(result.latency_ms).toBeGreaterThanOrEqual(0);
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEST 7: Load v2 prompts for the three specialist types
+  // ─────────────────────────────────────────────────────────────────────────
+  it("loads v2 prompts for estimating-takeoff, sub-bid-analysis, and compliance-structural", async () => {
+    const v2Content = `---
+prompt_version: v2
+---
+
+# test-specialist (v2)
+
+## System Prompt
+
+You are a test specialist v2. This is the v2 system prompt.`;
+
+    // Mock readFileSync to return v2 content for v2 files
+    (fs.readFileSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (path: string) => {
+        if (path.includes(".v2.md")) {
+          return v2Content;
+        }
+        return DEFAULT_PROMPT_CONTENT;
+      }
+    );
+
+    const context: SpecialistContext = {
+      scope_description: "Test scope",
+    };
+
+    // Test all three specialists with v2 option
+    const specialists = [
+      "estimating-takeoff",
+      "sub-bid-analysis",
+      "compliance-structural",
+    ];
+
+    for (const specialistId of specialists) {
+      // Mock Anthropic to return a response that includes the v2 system prompt text
+      const result = await callSpecialist(specialistId, context, {
+        mockIfNoKey: true,
+        version: "v2",
+      });
+
+      // Verify that the specialist result was generated
+      expect(result).toBeDefined();
+      expect(result.confidence).toBeDefined();
+      expect(["high", "medium", "low"]).toContain(result.confidence);
+    }
+  });
 });

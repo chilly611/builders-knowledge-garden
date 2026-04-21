@@ -51,14 +51,15 @@ const MAX_TOKENS = 2500;
 export async function callSpecialist(
   specialistId: string,
   context: SpecialistContext,
-  options?: { mockIfNoKey?: boolean; preferProductionPrompt?: boolean }
+  options?: { mockIfNoKey?: boolean; preferProductionPrompt?: boolean; version?: "v1" | "v2" }
 ): Promise<SpecialistResult> {
   const start = Date.now();
   const mockIfNoKey = options?.mockIfNoKey !== false;
   const preferProductionPrompt = options?.preferProductionPrompt !== false;
+  const version = options?.version || "v1";
 
   // 1. LOAD THE PROMPT
-  const systemPrompt = loadSpecialistPrompt(specialistId, preferProductionPrompt);
+  const systemPrompt = loadSpecialistPrompt(specialistId, preferProductionPrompt, version);
 
   // 2. BUILD USER MESSAGE WITH OPTIONAL RUNTIME CONTEXT
   let userMessage = context.scope_description;
@@ -184,7 +185,25 @@ export async function callSpecialist(
 // PROMPT LOADING
 // ─────────────────────────────────────────────────────────────────────────────
 
-function loadSpecialistPrompt(specialistId: string, preferProduction: boolean): string {
+function loadSpecialistPrompt(
+  specialistId: string,
+  preferProduction: boolean,
+  version: "v1" | "v2" = "v1"
+): string {
+  // Try v2 version if explicitly requested
+  if (version === "v2") {
+    const v2Path = resolve(process.cwd(), `docs/ai-prompts/${specialistId}.v2.md`);
+    try {
+      const content = readFileSync(v2Path, "utf-8");
+      return extractSystemPrompt(content, "v2");
+    } catch {
+      console.warn(
+        `v2 prompt not found for ${specialistId}, falling back to v1: ${v2Path}`
+      );
+      // Fall through to v1
+    }
+  }
+
   // Try production version first
   if (preferProduction) {
     const prodPath = resolve(process.cwd(), `docs/ai-prompts/${specialistId}.production.md`);
@@ -203,12 +222,15 @@ function loadSpecialistPrompt(specialistId: string, preferProduction: boolean): 
     return extractSystemPrompt(content, "prototype");
   } catch {
     throw new Error(
-      `Specialist prompt not found: ${specialistId} (tried ${specialistId}.production.md and ${specialistId}.md)`
+      `Specialist prompt not found: ${specialistId} (tried ${specialistId}.v2.md, ${specialistId}.production.md, and ${specialistId}.md)`
     );
   }
 }
 
-function extractSystemPrompt(mdContent: string, variant: "production" | "prototype"): string {
+function extractSystemPrompt(
+  mdContent: string,
+  variant: "production" | "prototype" | "v2"
+): string {
   // Remove frontmatter if present
   let content = mdContent;
   const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
@@ -216,9 +238,9 @@ function extractSystemPrompt(mdContent: string, variant: "production" | "prototy
     content = content.substring(frontmatterMatch[0].length);
   }
 
-  if (variant === "production") {
-    // Production prompts have "## Production system prompt" heading followed by free text
-    const match = content.match(/##\s+Production system prompt\s*\n([\s\S]*?)(?=\n##|$)/i);
+  if (variant === "v2" || variant === "production") {
+    // v2 and production prompts have "## System Prompt" heading
+    const match = content.match(/##\s+System Prompt\s*\n([\s\S]*?)(?=\n##|$)/i);
     if (match) {
       return match[1].trim();
     }
