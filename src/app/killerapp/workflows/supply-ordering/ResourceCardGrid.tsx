@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import LearningBadge from '@/components/LearningBadge';
 import type { ResourceResult } from '@/lib/resource-broker';
 
 interface ResourceCardGridProps {
@@ -84,6 +85,9 @@ export default function ResourceCardGrid({
       <style>{`
         ${styles.globalCss}
       `}</style>
+      <div style={{ paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--graphite)', fontFamily: 'var(--font-archivo)' }}>
+        This search logged · <LearningBadge variant="query" />
+      </div>
       <div
         style={{
           ...styles.grid,
