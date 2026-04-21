@@ -75,25 +75,26 @@ export default function WorkflowPickerSearchBox() {
     <div
       style={{
         background: '#fff',
-        border: '1px solid #e5e5e0',
-        borderRadius: 14,
+        border: '0.5px solid var(--faded-rule)',
+        borderRadius: 12,
         padding: 16,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
       }}
     >
       <label
         htmlFor="workflow-picker-search"
         style={{
           display: 'block',
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: 700,
-          color: '#888',
+          color: 'var(--graphite)',
+          opacity: 0.6,
           textTransform: 'uppercase',
           letterSpacing: '0.8px',
           marginBottom: 8,
         }}
       >
-        Tell me what you&apos;re working on
+        Tell me what you&apos;re working on (optional)
       </label>
       <textarea
         id="workflow-picker-search"
@@ -106,16 +107,16 @@ export default function WorkflowPickerSearchBox() {
           }
         }}
         rows={3}
-        placeholder="e.g. “ADU in Temecula, 800 sqft, single story — which codes matter?” or just describe the project in your own words."
+        placeholder="e.g. ADU in Temecula, 800 sqft, single story — which codes matter? Or just describe the project in your own words."
         style={{
           width: '100%',
           border: 'none',
           outline: 'none',
           resize: 'vertical',
           fontFamily: 'var(--font-archivo), sans-serif',
-          fontSize: 15,
+          fontSize: 14,
           lineHeight: 1.5,
-          color: '#1a1a1a',
+          color: 'var(--graphite)',
           background: 'transparent',
           boxSizing: 'border-box',
         }}
@@ -126,18 +127,19 @@ export default function WorkflowPickerSearchBox() {
             type="button"
             onClick={listening ? stopVoice : startVoice}
             style={{
-              background: listening ? 'rgba(232,68,58,0.12)' : '#f5f5f3',
-              border: `1px solid ${listening ? 'rgba(232,68,58,0.3)' : '#e5e5e0'}`,
-              borderRadius: 9,
+              background: listening ? 'rgba(182, 135, 58, 0.12)' : 'var(--trace)',
+              border: `0.5px solid ${listening ? 'var(--brass)' : 'var(--faded-rule)'}`,
+              borderRadius: 8,
               padding: '8px 12px',
-              color: listening ? '#E8443A' : '#555',
-              fontSize: 13,
+              color: listening ? 'var(--brass)' : 'var(--graphite)',
+              fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               fontFamily: 'inherit',
+              transition: 'all 0.15s ease',
             }}
             aria-pressed={listening}
             aria-label={listening ? 'Stop voice input' : 'Start voice input'}
@@ -148,12 +150,13 @@ export default function WorkflowPickerSearchBox() {
         ) : (
           <span
             style={{
-              fontSize: 11,
-              color: '#aaa',
+              fontSize: 10,
+              color: 'var(--graphite)',
+              opacity: 0.5,
               fontFamily: 'inherit',
             }}
           >
-            Voice not supported in this browser — type your question instead.
+            Voice not supported in this browser.
           </span>
         )}
 
@@ -161,8 +164,9 @@ export default function WorkflowPickerSearchBox() {
 
         <span
           style={{
-            fontSize: 11,
-            color: '#aaa',
+            fontSize: 10,
+            color: 'var(--graphite)',
+            opacity: 0.5,
           }}
         >
           ⌘↵ to submit
@@ -171,15 +175,16 @@ export default function WorkflowPickerSearchBox() {
           type="button"
           onClick={submit}
           style={{
-            background: 'linear-gradient(135deg, #E8443A, #c93328)',
+            background: 'var(--brass)',
             border: 'none',
-            borderRadius: 9,
+            borderRadius: 8,
             padding: '9px 18px',
             color: '#fff',
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 700,
             cursor: 'pointer',
             fontFamily: 'inherit',
+            transition: 'all 0.15s ease',
           }}
         >
           Find my codes →

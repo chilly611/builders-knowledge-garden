@@ -141,60 +141,64 @@ export default function KillerAppPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#FAFAF8',
-        color: '#1a1a1a',
+        background: 'var(--trace)',
+        color: 'var(--graphite)',
         fontFamily: 'var(--font-archivo), sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Hero */}
       <header
         style={{
-          padding: '40px 28px 24px',
+          padding: '60px 28px 48px',
           maxWidth: 1100,
           margin: '0 auto',
+          width: '100%',
         }}
       >
-        <p
+        {/* Blueprint-aesthetic hairline rule */}
+        <div
           style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: '#E8443A',
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            margin: 0,
+            height: '0.5px',
+            background: 'var(--faded-rule)',
+            marginBottom: 32,
           }}
-        >
-          Workflows
-        </p>
+        />
+
+        {/* Pitch: short, direct */}
         <h1
           style={{
-            fontSize: 34,
-            fontWeight: 800,
-            letterSpacing: '-0.75px',
-            margin: '6px 0 10px',
-            lineHeight: 1.15,
+            fontSize: 48,
+            fontWeight: 700,
+            letterSpacing: '-1px',
+            margin: '0 0 16px',
+            lineHeight: 1.1,
+            color: 'var(--navy)',
           }}
         >
-          Pick what you&apos;re working on. Start anywhere.
+          The operating system for your build.
         </h1>
+
+        {/* Subhead: expands the vision */}
         <p
           style={{
-            fontSize: 15,
-            color: '#666',
+            fontSize: 18,
+            color: 'var(--graphite)',
             maxWidth: 620,
-            lineHeight: 1.55,
-            margin: '0 0 24px',
+            lineHeight: 1.6,
+            margin: '0 0 40px',
+            fontWeight: 500,
           }}
         >
-          Twenty-seven builder workflows, grouped by the stage of a project they belong to.
-          No levels to unlock, no quests to finish first — jump in wherever the job is today.
+          Every tool a builder needs. Talking to each other. Learning as you go.
         </p>
 
         <WorkflowPickerSearchBox />
       </header>
 
       {/* Stage groups */}
-      <main style={{ padding: '16px 28px 80px', maxWidth: 1100, margin: '0 auto' }}>
+      <main style={{ padding: '0 28px 80px', maxWidth: 1100, margin: '0 auto', width: '100%', flex: 1 }}>
         {stages.map((stage) => {
           const list = (byStage.get(stage.id) ?? []).sort((a, b) =>
             a.id.localeCompare(b.id, undefined, { numeric: true })
@@ -202,21 +206,21 @@ export default function KillerAppPage() {
           const color = STAGE_COLORS[stage.id] ?? '#555';
           if (list.length === 0) return null;
           return (
-            <section key={stage.id} style={{ marginTop: 40 }}>
+            <section key={stage.id} style={{ marginBottom: 56 }}>
               <header
                 style={{
                   display: 'flex',
                   alignItems: 'baseline',
                   gap: 12,
-                  marginBottom: 14,
-                  paddingBottom: 8,
-                  borderBottom: `1px solid ${color}22`,
+                  marginBottom: 24,
+                  paddingBottom: 12,
+                  borderBottom: '0.5px solid var(--faded-rule)',
                 }}
               >
-                <span style={{ fontSize: 18 }}>{stage.emoji}</span>
+                <span style={{ fontSize: 20 }}>{stage.emoji}</span>
                 <h2
                   style={{
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: 800,
                     color,
                     textTransform: 'uppercase',
@@ -226,7 +230,14 @@ export default function KillerAppPage() {
                 >
                   {stage.id}. {stage.name}
                 </h2>
-                <span style={{ fontSize: 12, color: '#aaa' }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--graphite)',
+                    opacity: 0.5,
+                    marginLeft: 'auto',
+                  }}
+                >
                   {list.length} workflow{list.length === 1 ? '' : 's'}
                 </span>
               </header>
@@ -234,7 +245,7 @@ export default function KillerAppPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
                   gap: 12,
                 }}
               >
@@ -242,57 +253,94 @@ export default function KillerAppPage() {
                   const href = LIVE_WORKFLOWS[wf.id];
                   const isLive = Boolean(href);
                   const blurb = WORKFLOW_BLURBS[wf.id];
+                  // Supply Ordering (q11) gets special prominence
+                  const isSupplyOrdering = wf.id === 'q11';
+
                   const cardBase: React.CSSProperties = {
                     background: '#fff',
-                    border: `1px solid ${isLive ? `${color}40` : '#e5e5e0'}`,
+                    border: isSupplyOrdering ? '2px solid var(--robin)' : `1px solid ${isLive ? 'var(--brass)' : 'var(--faded-rule)'}`,
                     borderRadius: 12,
-                    padding: '14px 16px',
+                    padding: isSupplyOrdering ? '20px 16px' : '14px 16px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 8,
-                    minHeight: 120,
-                    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                    minHeight: isSupplyOrdering ? 140 : 120,
+                    transition: 'all 0.15s ease',
                     position: 'relative',
+                    gridColumn: isSupplyOrdering ? 'span 2' : 'auto',
                   };
                   const cardInactive: React.CSSProperties = {
                     ...cardBase,
-                    opacity: 0.55,
+                    opacity: 0.6,
+                  };
+
+                  // Left accent line for LIVE workflows
+                  const cardWithAccent: React.CSSProperties = {
+                    ...cardBase,
+                    borderLeft: isSupplyOrdering ? 'none' : '3px solid var(--brass)',
+                    paddingLeft: isSupplyOrdering ? undefined : 14,
                   };
                   const title = (
                     <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {isSupplyOrdering && (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: '0.8px',
+                            color: 'var(--robin)',
+                            textTransform: 'uppercase',
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              background: 'var(--robin)',
+                              borderRadius: '50%',
+                            }}
+                          />
+                          New — broker-powered
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                         <h3
                           style={{
-                            fontSize: 14,
+                            fontSize: isSupplyOrdering ? 16 : 14,
                             fontWeight: 700,
                             margin: 0,
-                            color: '#1a1a1a',
+                            color: 'var(--navy)',
                             lineHeight: 1.3,
                             flex: 1,
                           }}
                         >
                           {wf.label}
                         </h3>
-                        <span
-                          style={{
-                            fontSize: 9,
-                            fontWeight: 800,
-                            letterSpacing: '0.8px',
-                            color: isLive ? '#22C55E' : '#aaa',
-                            border: `1px solid ${isLive ? '#22C55E40' : '#e5e5e0'}`,
-                            borderRadius: 4,
-                            padding: '2px 5px',
-                            lineHeight: 1.2,
-                            background: isLive ? 'rgba(34,197,94,0.06)' : 'transparent',
-                          }}
-                        >
-                          {isLive ? 'LIVE' : 'SOON'}
-                        </span>
+                        {!isSupplyOrdering && (
+                          <span
+                            style={{
+                              fontSize: 8,
+                              fontWeight: 800,
+                              letterSpacing: '0.7px',
+                              color: isLive ? 'var(--brass)' : 'var(--graphite)',
+                              opacity: isLive ? 1 : 0.5,
+                              textTransform: 'uppercase',
+                              whiteSpace: 'nowrap',
+                              paddingTop: 2,
+                            }}
+                          >
+                            {isLive ? '●' : '○'} {isLive ? 'LIVE' : 'SOON'}
+                          </span>
+                        )}
                       </div>
                       <p
                         style={{
-                          fontSize: 12,
-                          color: '#666',
+                          fontSize: isSupplyOrdering ? 14 : 12,
+                          color: 'var(--graphite)',
                           margin: 0,
                           lineHeight: 1.5,
                           flex: 1,
@@ -303,7 +351,8 @@ export default function KillerAppPage() {
                       <p
                         style={{
                           fontSize: 10,
-                          color: '#aaa',
+                          color: 'var(--graphite)',
+                          opacity: 0.5,
                           margin: 0,
                           fontWeight: 500,
                           letterSpacing: '0.3px',
@@ -320,11 +369,11 @@ export default function KillerAppPage() {
                       <Link
                         key={wf.id}
                         href={href}
-                        className="bkg-wf-card-link"
+                        className={isSupplyOrdering ? 'bkg-supply-ordering-link' : 'bkg-wf-card-link'}
                         style={{ textDecoration: 'none', color: 'inherit' }}
                         data-stage-color={color}
                       >
-                        <div className="bkg-wf-card" style={cardBase}>
+                        <div className="bkg-wf-card" style={isSupplyOrdering ? cardBase : cardWithAccent}>
                           {title}
                         </div>
                       </Link>
@@ -342,14 +391,47 @@ export default function KillerAppPage() {
         })}
       </main>
 
+      {/* Footer rail — subtle, minimal */}
+      <footer
+        style={{
+          padding: '24px 28px',
+          maxWidth: 1100,
+          margin: '0 auto',
+          width: '100%',
+          borderTop: '0.5px solid var(--faded-rule)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 10,
+          color: 'var(--graphite)',
+          opacity: 0.5,
+        }}
+      >
+        <div>Builder&rsquo;s Knowledge Garden · v0.1</div>
+        <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit' }}>
+          Compass →
+        </Link>
+      </footer>
+
       <style>{`
         .bkg-wf-card-link .bkg-wf-card {
-          transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+          transition: all 0.15s cubic-bezier(0.33, 0.66, 0.66, 1);
         }
         .bkg-wf-card-link:hover .bkg-wf-card {
-          border-color: #1a1a1a !important;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.07);
-          transform: translateY(-1px);
+          border-color: var(--navy) !important;
+          box-shadow: 0 4px 14px rgba(27, 59, 94, 0.08);
+          transform: translateY(-2px);
+        }
+        .bkg-supply-ordering-link {
+          display: block;
+          transition: all 0.15s cubic-bezier(0.33, 0.66, 0.66, 1);
+        }
+        .bkg-supply-ordering-link:hover {
+          text-decoration: none;
+        }
+        .bkg-supply-ordering-link:hover > div {
+          box-shadow: 0 8px 24px rgba(127, 207, 203, 0.12);
+          transform: translateY(-2px);
         }
       `}</style>
     </div>
