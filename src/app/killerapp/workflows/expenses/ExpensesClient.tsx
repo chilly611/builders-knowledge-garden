@@ -79,12 +79,12 @@ export default function ExpensesClient({ workflow, stages }: Props) {
       style={{
         padding: spacing[4],
         marginBottom: spacing[6],
-        backgroundColor: '#F9FAFB',
+        backgroundColor: 'var(--trace)',
         borderRadius: '6px',
-        border: '1px solid #E5E7EB',
+        border: '1px solid var(--faded-rule)',
       }}
     >
-      <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', marginBottom: spacing[3] }}>
+      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--graphite)', marginBottom: spacing[3] }}>
         BUDGET OVERVIEW
       </div>
       <BudgetWidget projectId={projectId} compact={true} />

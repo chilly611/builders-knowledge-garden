@@ -108,7 +108,7 @@ export default function PermitApplicationsClient({ workflow, stages }: Props) {
                 fontFamily: fonts.body,
                 border: `1px solid ${colors.ink[200]}`,
                 borderRadius: radii.sm,
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--trace)',
               }}
             />
           </label>

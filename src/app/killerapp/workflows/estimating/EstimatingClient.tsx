@@ -145,7 +145,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
               padding: `${spacing[2]} ${spacing[3]}`,
               fontFamily: fonts.body,
               fontSize: fontSizes.sm,
-              color: '#FFFFFF',
+              color: 'var(--trace)',
               backgroundColor: colors.ink[900],
               textDecoration: 'none',
               borderRadius: radii.sm,
