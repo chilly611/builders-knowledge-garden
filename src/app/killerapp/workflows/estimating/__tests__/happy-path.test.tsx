@@ -156,9 +156,11 @@ describe('EstimatingClient — Happy Path', () => {
     const result = await getProjectBudget();
 
     expect(result.ok).toBe(true);
+    if (!result.ok) return; // narrow for tsc
     expect(result.summary).toBeDefined();
-    expect(result.summary.totalEstimated).toBeGreaterThanOrEqual(0);
-    expect(result.summary.byCategory).toBeDefined();
+    const summary = result.summary as { totalEstimated: number; byCategory: unknown };
+    expect(summary.totalEstimated).toBeGreaterThanOrEqual(0);
+    expect(summary.byCategory).toBeDefined();
   });
 
   it('recordMaterialCost can record AI estimate amounts', async () => {

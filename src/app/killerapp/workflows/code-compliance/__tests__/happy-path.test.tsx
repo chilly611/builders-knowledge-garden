@@ -178,9 +178,9 @@ describe('CodeComplianceClient — Happy Path', () => {
     const liens = templates.filter((t: any) => t.name.includes('Lien'));
     expect(liens.length).toBeGreaterThanOrEqual(2);
 
-    const liensNames = liens.map((l: any) => l.name);
+    const liensNames: string[] = liens.map((l: any) => l.name);
     // Should have both conditional and unconditional variants
-    expect(liensNames.some((n) => n.includes('Conditional'))).toBe(true);
-    expect(liensNames.some((n) => n.includes('Unconditional'))).toBe(true);
+    expect(liensNames.some((n: string) => n.includes('Conditional'))).toBe(true);
+    expect(liensNames.some((n: string) => n.includes('Unconditional'))).toBe(true);
   });
 });

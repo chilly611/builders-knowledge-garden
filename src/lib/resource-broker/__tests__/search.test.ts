@@ -198,9 +198,9 @@ describe('resource-broker/search', () => {
       // Each result should have reasoning (either from AI or fallback)
       expect(result.reasoning).toBeDefined();
       expect(typeof result.reasoning).toBe('string');
-      expect(result.reasoning.length).toBeGreaterThan(0);
+      expect(result.reasoning!.length).toBeGreaterThan(0);
       // Reasoning should be reasonably concise (max ~20 words)
-      const wordCount = result.reasoning.split(/\s+/).length;
+      const wordCount = result.reasoning!.split(/\s+/).length;
       expect(wordCount).toBeLessThanOrEqual(30);
     });
   });
@@ -221,7 +221,7 @@ describe('resource-broker/search', () => {
     response.results.forEach((result) => {
       expect(result.reasoning).toBeDefined();
       expect(typeof result.reasoning).toBe('string');
-      expect(result.reasoning.length).toBeGreaterThan(0);
+      expect(result.reasoning!.length).toBeGreaterThan(0);
     });
   });
 });

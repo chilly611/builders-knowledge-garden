@@ -34,6 +34,8 @@ export interface ResourceResult {
   imageUrl?: string;
   snippet?: string;
   tags?: string[];
+  /** One-sentence AI "why this?" reasoning (populated by broker.search). */
+  reasoning?: string;
   _raw?: unknown;
 }
 
