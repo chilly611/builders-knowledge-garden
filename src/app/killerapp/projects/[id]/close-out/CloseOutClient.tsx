@@ -226,7 +226,7 @@ export default function CloseOutClient({ projectId }: CloseOutClientProps) {
                     : 'opacity 400ms cubic-bezier(.4,.02,.2,1)',
               }}
             >
-              <h1 style={{ color: 'var(--orange)' }}>Project Complete</h1>
+              <h1 style={{ color: 'var(--orange)' }}>Complete</h1>
             </div>
           )}
         </div>
@@ -246,7 +246,7 @@ export default function CloseOutClient({ projectId }: CloseOutClientProps) {
             <div className={styles.beforeAfterPair}>
               <div className={styles.compassCard}>
                 <div className={styles.compass} style={{ opacity: 0.5 }}>
-                  📍 Before (Stage 6)
+                  Collect (Stage 6)
                 </div>
               </div>
               <div className={styles.arrow}>→</div>
@@ -255,7 +255,7 @@ export default function CloseOutClient({ projectId }: CloseOutClientProps) {
                   className={styles.compass}
                   style={{ color: 'var(--orange)' }}
                 >
-                  📍 After (Stage 7)
+                  Reflect (Stage 7)
                 </div>
               </div>
             </div>
@@ -263,21 +263,20 @@ export default function CloseOutClient({ projectId }: CloseOutClientProps) {
             {/* Stats section */}
             <div className={styles.statsSection}>
               <div className={styles.statCard}>
-                <div className={styles.statLabel}>Project Duration</div>
+                <div className={styles.statLabel}>Duration</div>
                 <div className={styles.statValue}>8 weeks</div>
               </div>
               <div className={styles.statCard}>
-                <div className={styles.statLabel}>Total XP Earned</div>
-                <div className={styles.statValue}>295 XP</div>
+                <div className={styles.statLabel}>Workflows Done</div>
+                <div className={styles.statValue}>23 of 27</div>
               </div>
             </div>
 
             {/* Summary card */}
             <div className={styles.summaryCard}>
-              <h2>Journey Complete</h2>
+              <h2>Journey archived</h2>
               <p>
-                Your project journey from planning through reflection is archived
-                and available for team review.
+                All workflows, notes, and decisions are logged for team review.
               </p>
               <button
                 className={styles.summaryButton}
@@ -286,7 +285,7 @@ export default function CloseOutClient({ projectId }: CloseOutClientProps) {
                   console.log('[close-out] summary viewed', { projectId });
                 }}
               >
-                View Full Summary
+                View full summary
               </button>
             </div>
           </div>

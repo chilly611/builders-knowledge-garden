@@ -67,10 +67,10 @@ describe('CodeComplianceClient — Happy Path', () => {
     jurisdictions = loaded.jurisdictions;
   });
 
-  it('workflow q4 loads with label "Contract Templates"', () => {
+  it('workflow q4 loads with label "Contracts"', () => {
     expect(workflow).toBeDefined();
     expect(workflow.id).toBe('q4');
-    expect(workflow.label).toBe('Contract Templates');
+    expect(workflow.label).toBe('Contracts');
   });
 
   it('workflow q4 has multiple steps for template selection', () => {

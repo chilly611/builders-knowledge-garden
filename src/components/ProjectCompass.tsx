@@ -153,12 +153,16 @@ export default function ProjectCompass({
     background: '#FAFAF8',
     borderBottom: '1px solid #eee',
     position: 'relative',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    WebkitOverflowScrolling: 'touch',
   };
 
   const innerStyle: CSSProperties = {
     maxWidth: 1100,
     margin: '0 auto',
     padding: '0 16px',
+    minWidth: '100%',
   };
 
   return (

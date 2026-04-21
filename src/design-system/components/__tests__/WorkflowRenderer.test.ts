@@ -40,7 +40,7 @@ describe("WorkflowRenderer contract", () => {
     const { workflows } = loadWorkflows();
     const q5 = workflows.find((w) => w.id === "q5");
     expect(q5, "q5 must exist in workflows.json for the code-compliance route").toBeDefined();
-    expect(q5?.label).toBe("Code Compliance Lookup");
+    expect(q5?.label).toBe("Code compliance");
     expect(q5?.steps.length).toBeGreaterThanOrEqual(4);
   });
 

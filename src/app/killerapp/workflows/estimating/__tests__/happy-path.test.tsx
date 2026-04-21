@@ -60,10 +60,10 @@ describe('EstimatingClient — Happy Path', () => {
     stages = loaded.stages;
   });
 
-  it('workflow q2 loads with label "AI Estimating Gate"', () => {
+  it('workflow q2 loads with label "Estimating"', () => {
     expect(workflow).toBeDefined();
     expect(workflow.id).toBe('q2');
-    expect(workflow.label).toBe('AI Estimating Gate');
+    expect(workflow.label).toBe('Estimating');
   });
 
   it('workflow q2 has 6 input capture steps plus AI estimate', () => {

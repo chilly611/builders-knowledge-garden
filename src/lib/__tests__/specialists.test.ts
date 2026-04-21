@@ -255,4 +255,111 @@ You are a test specialist v2. This is the v2 system prompt.`;
       expect(["high", "medium", "low"]).toContain(result.confidence);
     }
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEST 8: Default to v2 for flipped specialists (no version param)
+  // ─────────────────────────────────────────────────────────────────────────
+  it("defaults to v2 for estimating-takeoff when version is not specified", async () => {
+    const v2Content = `---
+prompt_version: v2
+---
+
+# estimating-takeoff (v2)
+
+## System Prompt
+
+You are a pragmatic construction estimator.`;
+
+    const v1Content = `---
+prompt_version: v1
+---
+
+# estimating-takeoff
+
+## Original prototype system prompt
+
+\`\`\`
+You are an estimating specialist (v1).
+\`\`\``;
+
+    // Mock readFileSync to distinguish between v1 and v2
+    (fs.readFileSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (path: string) => {
+        if (path.includes(".v2.md")) {
+          return v2Content;
+        }
+        if (path.includes(".md") && !path.includes(".production")) {
+          return v1Content;
+        }
+        return DEFAULT_PROMPT_CONTENT;
+      }
+    );
+
+    const context: SpecialistContext = {
+      scope_description: "Test scope for estimating",
+    };
+
+    // Call without specifying version — should use v2 by default
+    const result = await callSpecialist("estimating-takeoff", context, {
+      mockIfNoKey: true,
+    });
+
+    // Verify the result includes promptVersion and it's v2
+    expect(result).toBeDefined();
+    expect(result.promptVersion).toBe("v2");
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TEST 9: Override default v2 back to v1 for flipped specialists
+  // ─────────────────────────────────────────────────────────────────────────
+  it("allows override to v1 for estimating-takeoff despite v2 default", async () => {
+    const v2Content = `---
+prompt_version: v2
+---
+
+# estimating-takeoff (v2)
+
+## System Prompt
+
+You are a pragmatic construction estimator.`;
+
+    const v1Content = `---
+prompt_version: v1
+---
+
+# estimating-takeoff
+
+## Original prototype system prompt
+
+\`\`\`
+You are an estimating specialist (v1).
+\`\`\``;
+
+    // Mock readFileSync to distinguish between v1 and v2
+    (fs.readFileSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (path: string) => {
+        if (path.includes(".v2.md")) {
+          return v2Content;
+        }
+        if (path.includes(".md") && !path.includes(".production")) {
+          return v1Content;
+        }
+        return DEFAULT_PROMPT_CONTENT;
+      }
+    );
+
+    const context: SpecialistContext = {
+      scope_description: "Test scope for estimating",
+    };
+
+    // Call with explicit version: v1 to override the default v2
+    const result = await callSpecialist("estimating-takeoff", context, {
+      mockIfNoKey: true,
+      version: "v1",
+    });
+
+    // Verify the result includes promptVersion and it's v1 (override)
+    expect(result).toBeDefined();
+    expect(result.promptVersion).toBe("v1");
+  });
 });

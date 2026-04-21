@@ -24,7 +24,17 @@ import Logomark from '@/components/Logomark';
 export default function KillerAppNav() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Check if mobile on mount and listen to window resize
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   if (!mounted) return null;
 
   // Show "Workflows" back-link whenever we're nested under a workflow route.
@@ -45,8 +55,8 @@ export default function KillerAppNav() {
         borderBottom: '0.5px solid var(--faded-rule)',
         display: 'flex',
         alignItems: 'center',
-        paddingLeft: 16,
-        paddingRight: 16,
+        paddingLeft: isMobile ? 12 : 16,
+        paddingRight: isMobile ? 12 : 16,
         gap: 12,
         fontFamily: 'var(--font-archivo), sans-serif',
       }}
@@ -58,26 +68,28 @@ export default function KillerAppNav() {
           textDecoration: 'none',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: isMobile ? 6 : 8,
           flexShrink: 0,
         }}
       >
-        {/* Logomark: 28px tall, crisp */}
-        <Logomark size={28} alt="Builder's Knowledge Garden" />
+        {/* Logomark: 28px tall on desktop, 24px on mobile */}
+        <Logomark size={isMobile ? 24 : 28} alt="Builder's Knowledge Garden" />
 
-        {/* Wordmark: refined, graphite, lowercase treatment, proper letterspacing */}
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: '0.5px',
-            textTransform: 'lowercase',
-            color: 'var(--graphite)',
-            lineHeight: 1,
-          }}
-        >
-          builder&apos;s knowledge garden
-        </span>
+        {/* Wordmark: hidden on mobile (<640px), visible above */}
+        {!isMobile && (
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: '0.5px',
+              textTransform: 'lowercase',
+              color: 'var(--graphite)',
+              lineHeight: 1,
+            }}
+          >
+            builder&apos;s knowledge garden
+          </span>
+        )}
       </Link>
 
       {inWorkflow && (
@@ -85,7 +97,7 @@ export default function KillerAppNav() {
           <span
             style={{
               width: 1,
-              height: 20,
+              height: isMobile ? 16 : 20,
               background: 'var(--faded-rule)',
               flexShrink: 0,
             }}
@@ -94,17 +106,21 @@ export default function KillerAppNav() {
             href="/killerapp"
             style={{
               textDecoration: 'none',
-              fontSize: 12,
+              fontSize: isMobile ? 11 : 12,
               fontWeight: 400,
               color: 'var(--fg-secondary)',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
+              gap: isMobile ? 2 : 4,
+              minHeight: 44,
+              minWidth: 44,
+              justifyContent: 'center',
             }}
+            title="Back to all workflows"
           >
-            <span style={{ fontSize: 11 }}>‹</span>
-            <span>All Workflows</span>
+            <span style={{ fontSize: isMobile ? 14 : 11, lineHeight: 1 }}>‹</span>
+            {!isMobile && <span>All Workflows</span>}
           </Link>
         </>
       )}

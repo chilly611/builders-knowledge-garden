@@ -78,7 +78,7 @@ describe('SupplyOrderingClient — Happy Path', () => {
   it('workflow q11 loads with 5 steps', () => {
     expect(workflow).toBeDefined();
     expect(workflow.id).toBe('q11');
-    expect(workflow.label).toBe('Supply Ordering');
+    expect(workflow.label).toBe('Supply ordering');
     expect(workflow.steps.length).toBe(5);
   });
 

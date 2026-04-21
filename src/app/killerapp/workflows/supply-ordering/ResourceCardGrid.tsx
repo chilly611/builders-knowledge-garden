@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ResourceResult } from '@/lib/resource-broker';
 
 interface ResourceCardGridProps {
@@ -48,6 +48,14 @@ export default function ResourceCardGrid({
   onSearch,
 }: ResourceCardGridProps) {
   const [activePopoverId, setActivePopoverId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleToggleSelect = (id: string) => {
     const newIds = new Set(selectedIds);
@@ -160,7 +168,14 @@ export default function ResourceCardGrid({
       <style>{`
         ${styles.globalCss}
       `}</style>
-      <div style={styles.grid}>
+      <div
+        style={{
+          ...styles.grid,
+          gridTemplateColumns: isMobile
+            ? 'repeat(auto-fill, minmax(140px, 1fr))'
+            : 'repeat(auto-fill, minmax(200px, 1fr))',
+        }}
+      >
         {results.map((result) => (
           <ResourceCard
             key={result.id}
@@ -171,6 +186,7 @@ export default function ResourceCardGrid({
             onPopoverToggle={(active) =>
               setActivePopoverId(active ? result.id : null)
             }
+            isMobile={isMobile}
           />
         ))}
       </div>
@@ -195,12 +211,14 @@ function ResourceCard({
   onToggleSelect,
   popoverActive,
   onPopoverToggle,
+  isMobile,
 }: {
   result: ResourceResult;
   selected: boolean;
   onToggleSelect: () => void;
   popoverActive: boolean;
   onPopoverToggle: (active: boolean) => void;
+  isMobile: boolean;
 }) {
   return (
     <div
@@ -281,7 +299,7 @@ function ResourceCard({
           )}
         </div>
 
-        {/* "Why this?" popover */}
+        {/* "Why this?" popover — inline on mobile, floating on desktop */}
         <div style={styles.cardActions}>
           <button
             onClick={() => onPopoverToggle(!popoverActive)}
@@ -291,7 +309,15 @@ function ResourceCard({
             Why this?
           </button>
           {popoverActive && (
-            <div style={styles.popover}>
+            <div
+              style={{
+                ...styles.popover,
+                position: isMobile ? 'static' : 'absolute',
+                bottom: isMobile ? 'auto' : '100%',
+                marginBottom: isMobile ? 8 : 4,
+                marginTop: isMobile ? 8 : 0,
+              }}
+            >
               <p>{result.reasoning || 'Matched your query'}</p>
             </div>
           )}
@@ -358,9 +384,9 @@ const styles = {
   } as React.CSSProperties,
   cardImage: {
     width: '100%',
-    paddingBottom: '66.666%',
+    paddingBottom: '75%',
     position: 'relative',
-    backgroundColor: '#F4F0E6',
+    backgroundColor: 'var(--trace)',
     overflow: 'hidden',
   } as React.CSSProperties,
   cardContent: {

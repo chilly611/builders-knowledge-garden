@@ -319,3 +319,90 @@
     font-size: 18px;
   }
 }
+
+/* Extra small viewport: 375px (iPhone SE width) */
+@media (max-width: 480px) {
+  .container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .ritualSurface {
+    gap: 16px;
+    padding: 20px 0;
+  }
+
+  .frameContainer {
+    width: 85vmin;
+    height: 85vmin;
+  }
+
+  .completeText {
+    bottom: 24px;
+  }
+
+  .completeText h1 {
+    font-size: 24px;
+  }
+
+  .postRitualContent {
+    padding: 20px;
+  }
+
+  .contentWrapper {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .beforeAfterPair {
+    gap: 12px;
+  }
+
+  .compassCard {
+    padding: 12px;
+    min-width: 140px;
+  }
+
+  .compass {
+    font-size: 12px;
+  }
+
+  .arrow {
+    font-size: 20px;
+  }
+
+  .statsSection {
+    gap: 12px;
+  }
+
+  .statCard {
+    padding: 12px 16px;
+    min-width: 120px;
+  }
+
+  .statLabel {
+    font-size: 10px;
+  }
+
+  .statValue {
+    font-size: 18px;
+  }
+
+  .summaryCard {
+    padding: 16px;
+  }
+
+  .summaryCard h2 {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .summaryCard p {
+    font-size: 13px;
+  }
+
+  .summaryButton {
+    padding: 10px 18px;
+    font-size: 12px;
+  }
+}
