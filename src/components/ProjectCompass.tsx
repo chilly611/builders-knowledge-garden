@@ -48,6 +48,8 @@ export interface ProjectCompassProps {
   profitSignal: ProfitSignal;
   isDemo?: boolean;
   onDemoCtaClick?: () => void;
+  projectId?: string;
+  onCloseOutClick?: (projectId: string) => void;
 }
 
 // ─── Layout constants ────────────────────────────────────────────────────
@@ -128,12 +130,22 @@ export default function ProjectCompass({
   profitSignal,
   isDemo = false,
   onDemoCtaClick,
+  projectId,
+  onCloseOutClick,
 }: ProjectCompassProps) {
   const sorted = [...stages].sort((a, b) => a.id - b.id);
   const visited = new Set(visitedStageIds);
   const currentStage =
     currentStageId != null ? sorted.find((s) => s.id === currentStageId) : undefined;
   const profitColor = PROFIT_COLORS[profitSignal];
+
+  // Detect if project is complete (Reflect stage, all workflows done)
+  const reflectStage = sorted.find((s) => s.id === 7);
+  const isProjectComplete =
+    reflectStage &&
+    progressByStage[7] &&
+    progressByStage[7].total > 0 &&
+    progressByStage[7].done === progressByStage[7].total;
 
   const wrapperStyle: CSSProperties = {
     width: '100%',
@@ -398,6 +410,8 @@ export default function ProjectCompass({
             fontSize: 11,
             color: '#6B7280',
             letterSpacing: '0.2px',
+            gap: 12,
+            flexWrap: 'wrap',
           }}
         >
           <span>
@@ -412,25 +426,55 @@ export default function ProjectCompass({
               'Pick a workflow below to walk into a stage.'
             )}
           </span>
-          {isDemo && (
-            <button
-              type="button"
-              onClick={onDemoCtaClick}
-              style={{
-                background: 'transparent',
-                border: `1px solid ${STATUS_COLORS.current}`,
-                borderRadius: 12,
-                color: STATUS_COLORS.current,
-                fontSize: 11,
-                fontWeight: 600,
-                padding: '3px 10px',
-                cursor: 'pointer',
-              }}
-              aria-label="Set up a real project"
-            >
-              Demo data — set up a real project →
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {isProjectComplete && projectId && onCloseOutClick && (
+              <button
+                type="button"
+                onClick={() => onCloseOutClick(projectId)}
+                style={{
+                  background: '#D9642E',
+                  border: 'none',
+                  borderRadius: 12,
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '4px 12px',
+                  cursor: 'pointer',
+                  transition: 'background 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    '#c55620';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    '#D9642E';
+                }}
+                aria-label="Close out project and celebrate"
+              >
+                🎉 Close out project
+              </button>
+            )}
+            {isDemo && (
+              <button
+                type="button"
+                onClick={onDemoCtaClick}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${STATUS_COLORS.current}`,
+                  borderRadius: 12,
+                  color: STATUS_COLORS.current,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '3px 10px',
+                  cursor: 'pointer',
+                }}
+                aria-label="Set up a real project"
+              >
+                Demo data — set up a real project →
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
