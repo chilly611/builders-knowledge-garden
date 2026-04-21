@@ -106,7 +106,6 @@ export default function JourneyPills({
     return (
       <div
         key={`stage-${stage.id}`}
-        style={pillStyle}
         className="bkg-fade-up"
         style={{
           ...pillStyle,
