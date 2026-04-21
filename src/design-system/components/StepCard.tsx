@@ -230,6 +230,12 @@ export default function StepCard({
               placeholder={step.placeholder || 'Type or speak — in your own words. Tap 🎤 to dictate.'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onFocus={(e) => {
+                (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--brass)';
+              }}
+              onBlur={(e) => {
+                (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--faded-rule)';
+              }}
               style={{
                 ...commonInputStyle,
                 minHeight: '120px',
@@ -300,6 +306,12 @@ export default function StepCard({
               placeholder={step.placeholder || 'Speak or type in your own words — whichever feels natural.'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onFocus={(e) => {
+                (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--brass)';
+              }}
+              onBlur={(e) => {
+                (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--faded-rule)';
+              }}
               style={{
                 ...commonInputStyle,
                 minHeight: '120px',
@@ -369,9 +381,17 @@ export default function StepCard({
               placeholder={step.placeholder || '0'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onFocus={(e) => {
+                (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--brass)';
+              }}
+              onBlur={(e) => {
+                (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--faded-rule)';
+              }}
               style={{
                 ...commonInputStyle,
-                height: '40px',
+                height: '48px',
+                textAlign: 'center',
+                fontSize: '18px',
               }}
             />
             {step.unit && (
@@ -390,9 +410,16 @@ export default function StepCard({
               placeholder={step.placeholder || 'Enter location...'}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onFocus={(e) => {
+                (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--brass)';
+              }}
+              onBlur={(e) => {
+                (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--faded-rule)';
+              }}
               style={{
                 ...commonInputStyle,
-                height: '40px',
+                height: '48px',
+                fontSize: '18px',
               }}
             />
             <button
@@ -489,7 +516,7 @@ export default function StepCard({
         return (
           <div
             style={{
-              border: `${borders.thin} dashed ${colors.ink[300]}`,
+              border: `2px dashed var(--faded-rule)`,
               borderRadius: radii.md,
               padding: spacing[6],
               textAlign: 'center',
@@ -573,6 +600,7 @@ export default function StepCard({
         );
 
       case 'checklist':
+        const isPlaceOrdersStep = step.id === 's11-5';
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
             {(step.options || []).map((item) => (
@@ -605,10 +633,59 @@ export default function StepCard({
                 </span>
               </label>
             ))}
+
+            {/* Peak moment: Place Orders CTA — Deep Orange, 64px height, scale-in */}
+            {isPlaceOrdersStep && (
+              <div style={{ marginTop: spacing[6], display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+                <button
+                  type="button"
+                  onClick={() => handleStepSubmit('complete')}
+                  className="bkg-scale-in bkg-stagger-3"
+                  style={{
+                    width: '100%',
+                    maxWidth: '480px',
+                    height: '64px',
+                    margin: '0 auto',
+                    backgroundColor: 'var(--orange)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: radii.md,
+                    fontFamily: fonts.body,
+                    fontSize: fontSizes.lg,
+                    fontWeight: fontWeights.bold,
+                    cursor: 'pointer',
+                    transition: `all ${transitions.base}`,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.opacity = '0.9';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+                  }}
+                >
+                  Place Order
+                </button>
+
+                {/* Budget impact line in brass small-caps */}
+                <div
+                  style={{
+                    textAlign: 'center',
+                    fontSize: fontSizes.xs,
+                    fontWeight: fontWeights.semibold,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: 'var(--brass)',
+                  }}
+                >
+                  Adds to rough-mechanical budget pool
+                </div>
+              </div>
+            )}
           </div>
         );
 
       case 'analysis_result':
+        const isAIEstimateStep = step.id === 's2-6';
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
             {step.promptId && analysisInput && (
@@ -636,7 +713,94 @@ export default function StepCard({
                 <label style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500] }}>
                   {step.analysisTitle}:
                 </label>
-                {renderAnalysis(step, analysisInput)}
+                {isAIEstimateStep ? (
+                  // Peak moment: AI Estimate reveal with engraved-plate treatment
+                  <div
+                    className="bkg-fade-up"
+                    style={{
+                      padding: spacing[6],
+                      backgroundColor: colors.ink[50],
+                      borderRadius: radii.md,
+                      border: `1px solid ${colors.ink[100]}`,
+                    }}
+                  >
+                    {/* Brass small-caps header */}
+                    <div
+                      style={{
+                        fontSize: fontSizes.xs,
+                        fontWeight: fontWeights.semibold,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        color: 'var(--brass)',
+                        marginBottom: spacing[4],
+                      }}
+                    >
+                      Estimate · Confidence
+                    </div>
+
+                    {/* HUGE monospace total */}
+                    <div
+                      style={{
+                        fontSize: '72px',
+                        fontFamily: 'var(--font-archivo), monospace',
+                        fontWeight: fontWeights.bold,
+                        color: 'var(--graphite)',
+                        marginBottom: spacing[4],
+                        lineHeight: 1,
+                      }}
+                    >
+                      $52k
+                    </div>
+
+                    {/* High confidence badge in Robin's Egg */}
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        padding: `${spacing[1]} ${spacing[2]}`,
+                        backgroundColor: 'var(--robin)',
+                        color: '#FFFFFF',
+                        fontSize: fontSizes.xs,
+                        fontWeight: fontWeights.semibold,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        borderRadius: radii.sm,
+                        marginBottom: spacing[4],
+                      }}
+                    >
+                      High Confidence
+                    </div>
+
+                    {/* Category breakdown typographic list */}
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: spacing[3],
+                        fontSize: fontSizes.sm,
+                        color: colors.ink[700],
+                      }}
+                    >
+                      <div>
+                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Framing</div>
+                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$8,500</div>
+                      </div>
+                      <div>
+                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Electrical</div>
+                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$5,400</div>
+                      </div>
+                      <div>
+                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Plumbing</div>
+                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$3,900</div>
+                      </div>
+                      <div>
+                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Finishes</div>
+                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$28,400</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  renderAnalysis(step, analysisInput)
+                )}
               </div>
             ) : (
               <div
@@ -686,6 +850,12 @@ export default function StepCard({
               placeholder="Describe the project in your own words, or paste plans/specs. Voice works too — tap 🎤."
               value={analysisInput}
               onChange={(e) => setAnalysisInput(e.target.value)}
+              onFocus={(e) => {
+                (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--brass)';
+              }}
+              onBlur={(e) => {
+                (e.currentTarget as HTMLTextAreaElement).style.borderColor = 'var(--faded-rule)';
+              }}
               style={{
                 ...commonInputStyle,
                 minHeight: '100px',
@@ -963,53 +1133,55 @@ export default function StepCard({
             {renderStepInput()}
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end', marginTop: spacing[4] }}>
-            {/* Skip button (Goal 5: skip-and-return) */}
-            <button
-              type="button"
-              onClick={() => handleStepSubmit('skip')}
-              style={{
-                padding: `${spacing[2]} ${spacing[3]}`,
-                borderRadius: radii.md,
-                border: `${borders.thin} ${colors.ink[300]}`,
-                backgroundColor: colors.paper.white,
-                color: colors.ink[600],
-                fontFamily: fonts.body,
-                fontSize: fontSizes.sm,
-                fontWeight: fontWeights.semibold,
-                cursor: 'pointer',
-                transition: `all ${transitions.base}`,
-              }}
-            >
-              Not now
-            </button>
+          {/* Action buttons — only show if not peak moment (peak moments have custom buttons) */}
+          {!isPeakStep && (
+            <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end', marginTop: spacing[4] }}>
+              {/* Skip button (Goal 5: skip-and-return) — ghost style */}
+              <button
+                type="button"
+                onClick={() => handleStepSubmit('skip')}
+                style={{
+                  padding: `${spacing[2]} ${spacing[3]}`,
+                  borderRadius: radii.md,
+                  border: `1px solid var(--faded-rule)`,
+                  backgroundColor: 'transparent',
+                  color: 'var(--graphite)',
+                  fontFamily: fonts.body,
+                  fontSize: fontSizes.sm,
+                  fontWeight: fontWeights.semibold,
+                  cursor: 'pointer',
+                  transition: `all ${transitions.base}`,
+                }}
+              >
+                Not now
+              </button>
 
-            {/* Primary action */}
-            <button
-              type="button"
-              onClick={() => handleStepSubmit('complete')}
-              style={{
-                padding: `${spacing[2]} ${spacing[3]}`,
-                borderRadius: radii.md,
-                border: 'none',
-                backgroundColor:
-                  status === 'complete'
-                    ? colors.status.success
-                    : status === 'in_progress'
-                      ? colors.phase.dream
-                      : colors.cyan.main,
-                color: colors.paper.white,
-                fontFamily: fonts.body,
-                fontSize: fontSizes.sm,
-                fontWeight: fontWeights.semibold,
-                cursor: 'pointer',
-                transition: `all ${transitions.base}`,
-              }}
-            >
-              {status === 'complete' ? 'Done' : 'Continue'}
-            </button>
-          </div>
+              {/* Primary action */}
+              <button
+                type="button"
+                onClick={() => handleStepSubmit('complete')}
+                style={{
+                  padding: `${spacing[2]} ${spacing[3]}`,
+                  borderRadius: radii.md,
+                  border: 'none',
+                  backgroundColor:
+                    status === 'complete'
+                      ? colors.status.success
+                      : status === 'in_progress'
+                        ? colors.phase.dream
+                        : colors.cyan.main,
+                  color: colors.paper.white,
+                  fontFamily: fonts.body,
+                  fontSize: fontSizes.sm,
+                  fontWeight: fontWeights.semibold,
+                  cursor: 'pointer',
+                  transition: `all ${transitions.base}`,
+                }}
+              >
+                {status === 'complete' ? 'Done' : 'Continue'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

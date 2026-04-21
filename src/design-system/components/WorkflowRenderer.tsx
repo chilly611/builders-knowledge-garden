@@ -119,6 +119,11 @@ export default function WorkflowRenderer({
     [analysisContext]
   );
 
+  // Calculate progress percentage
+  const progressPercent = workflow.steps.length > 0
+    ? (completeCount / workflow.steps.length) * 100
+    : 0;
+
   return (
     <div
       data-bkg-workflow-id={workflow.id}
@@ -129,6 +134,26 @@ export default function WorkflowRenderer({
         fontFamily: fonts.body,
       }}
     >
+      {/* Progress bar — 2px graphite on faded-rule */}
+      <div
+        style={{
+          width: '100%',
+          height: '2px',
+          backgroundColor: 'var(--faded-rule)',
+          borderRadius: '1px',
+          overflow: 'hidden',
+          marginBottom: spacing[2],
+        }}
+      >
+        <div
+          style={{
+            height: '100%',
+            backgroundColor: 'var(--graphite)',
+            width: `${progressPercent}%`,
+            transition: 'width 300ms ease',
+          }}
+        />
+      </div>
       {/* Header */}
       {showHeader && (
         <header
