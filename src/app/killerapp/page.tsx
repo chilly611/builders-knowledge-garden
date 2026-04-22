@@ -159,23 +159,29 @@ export default function KillerAppPage() {
         {/* Hairline rule — architectural aesthetic */}
         <div className={styles.hairlineRule} />
 
-        {/* Hero content: Logomark + text stack */}
+        {/* Hero content: Logomark + text stack.
+            Logomark is one flex column; h1 + subhead stack vertically in
+            the second flex column. Without the text-stack wrapper, h1 and
+            subhead became siblings of the logomark (3 flex items in a
+            row), cramming the h1 into a narrow column and wrapping every
+            word with `hyphens: auto` into a vertical mess — cf. the W7.O+
+            live-site regression we fixed. */}
         <div className={styles.heroContent}>
           {/* Large Logomark (180px) anchors the hero */}
           <div className={styles.heroLogomark}>
             <Logomark size={180} alt="Builder's Knowledge Garden" />
           </div>
 
-          {/* Display text: large scale (96-120px), tight leading */}
-          <h1 className={styles.heroHeading}>
-            The operating system for your build.
-          </h1>
+          <div className={styles.heroTextStack}>
+            <h1 className={styles.heroHeading}>
+              The operating system for your build.
+            </h1>
 
-          {/* Subhead: expands the vision */}
-          <p className={styles.heroSubhead}>
-            Every tool a builder needs. Talking to each other. Learning as you
-            go.
-          </p>
+            <p className={styles.heroSubhead}>
+              Every tool a builder needs. Talking to each other. Learning as
+              you go.
+            </p>
+          </div>
         </div>
 
         {/* Natural-language entry: styled as engraved field */}

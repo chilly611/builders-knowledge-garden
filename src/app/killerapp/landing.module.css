@@ -107,10 +107,20 @@
   object-fit: contain;
 }
 
-/* Display heading: large but bounded, tight leading, graphite on trace.
-   Capped at 80px so "operating" never overruns the flex column at common
-   laptop widths. `overflow-wrap: break-word` protects against clipping by
-   `.heroSection { overflow: hidden }` if a user bumps the zoom. */
+/* Text stack: owns the h1 + subhead pair as a single flex column next to
+   the logomark. `min-width: 0` lets it shrink below its content's intrinsic
+   size so the h1 can wrap by word rather than overflow the flex row. */
+.heroTextStack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Display heading: generous but bounded, tight leading, graphite on trace.
+   Sits inside `.heroTextStack` which already owns the flex column; h1
+   just fills it. No hyphens:auto — overflow-wrap alone handles the rare
+   overflow case without splitting "operating" into "oper-ating". */
 .heroHeading {
   font-size: clamp(48px, 6vw, 80px);
   font-weight: 800;
@@ -118,19 +128,16 @@
   line-height: 1.05;
   margin: 0;
   color: var(--graphite);
-  flex: 1;
-  min-width: 0;
   overflow-wrap: break-word;
-  hyphens: auto;
 }
 
-/* Subheading */
+/* Subheading — stacks under the h1 inside the text column. */
 .heroSubhead {
   font-size: clamp(16px, 2.5vw, 20px);
   color: var(--graphite);
   line-height: 1.6;
   margin: 24px 0 0;
-  max-width: 600px;
+  max-width: 640px;
   font-weight: 500;
 }
 
