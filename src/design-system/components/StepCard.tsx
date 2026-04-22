@@ -31,7 +31,7 @@ const DEFAULT_STATUS = 'pending' as const;
 const STATUS_COLORS = {
   pending: colors.ink[200],
   in_progress: '#D85A30', // Decision #12: warm orange
-  complete: '#14B8A6',     // Decision #12: teal
+  complete: colors.robin,  // Decision #12: Robin's Egg (canonical: #7FCFCB)
 } as const;
 
 // Peak-moment step IDs — these steps get hero-treatment crowns (Deep Orange CTA, Robin's Egg confidence tag, etc.)
@@ -52,6 +52,7 @@ export default function StepCard({
   onAction,
   renderAnalysis,
   proMode = false,
+  ctaLabel = 'Next step',
 }: StepCardProps) {
   // State management
   const [isExpanded, setIsExpanded] = useState(expanded);
@@ -101,14 +102,14 @@ export default function StepCard({
 
       setVoiceState((prev) => ({
         ...prev,
-        transcript: prev.transcript + final + interim,
+        transcript: final || interim,
       }));
     };
 
     recognition.onerror = () => {
       setVoiceState((prev) => ({
         ...prev,
-        error: 'Voice recognition error. Please try again.',
+        error: 'Voice didn\'t catch that. Check your mic and try again.',
       }));
     };
 
@@ -440,7 +441,7 @@ export default function StepCard({
                     () => {
                       setVoiceState((prev) => ({
                         ...prev,
-                        error: 'Could not get location. Please enable permissions.',
+                        error: 'Location not available. Check your browser permissions.',
                       }));
                     }
                   );
@@ -714,7 +715,7 @@ export default function StepCard({
               </div>
             )}
 
-            {/* Render analysis via renderAnalysis callback if provided */}
+            {/* Render analysis via renderAnalysis callback if provided (no exampleOutput display) */}
             {renderAnalysis && analysisInput ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
                 <label style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500] }}>
@@ -809,48 +810,7 @@ export default function StepCard({
                   renderAnalysis(step, analysisInput)
                 )}
               </div>
-            ) : (
-              <div
-                style={{
-                  padding: spacing[4],
-                  backgroundColor: colors.ink[50],
-                  borderRadius: radii.md,
-                  border: `${borders.thin} ${colors.ink[200]}`,
-                  opacity: 0.7,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: fontSizes.xs,
-                    color: colors.ink[500],
-                    marginBottom: spacing[2],
-                  }}
-                >
-                  Demo output:
-                </div>
-                <div
-                  style={{
-                    fontSize: fontSizes.sm,
-                    color: colors.ink[700],
-                    lineHeight: '1.5',
-                    marginBottom: spacing[3],
-                  }}
-                >
-                  {step.exampleOutput}
-                </div>
-                <div
-                  style={{
-                    fontSize: fontSizes.xs,
-                    backgroundColor: colors.amber.glow,
-                    color: colors.ink[900],
-                    padding: `${spacing[2]} ${spacing[3]}`,
-                    borderRadius: radii.sm,
-                  }}
-                >
-                  This is example output — connect a specialist to see real analysis
-                </div>
-              </div>
-            )}
+            ) : null}
 
             {/* Input field for analysis — natural language + voice */}
             <textarea
@@ -953,7 +913,7 @@ export default function StepCard({
     status === 'in_progress'
       ? 'In Progress'
       : status === 'complete'
-        ? 'Complete'
+        ? 'Done'
         : 'Not Started';
 
   // Hero treatment: step code and peak moment detection
@@ -1041,14 +1001,16 @@ export default function StepCard({
           }}
         />
 
-        {/* Label */}
+        {/* Label — de-assert completion claims if not actually complete */}
         <div style={{ flex: 1 }}>
           <h3
             style={{
               margin: 0,
               fontSize: fontSizes.sm,
               fontWeight: fontWeights.semibold,
-              color: colors.ink[900],
+              // Neutral color if pending/in_progress, full color if complete
+              color:
+                status === 'pending' || status === 'in_progress' ? colors.ink[600] : colors.ink[900],
             }}
           >
             {step.label}
@@ -1160,7 +1122,7 @@ export default function StepCard({
                   transition: `all ${transitions.base}`,
                 }}
               >
-                Not now
+                I'll do this later
               </button>
 
               {/* Primary action */}
@@ -1185,7 +1147,7 @@ export default function StepCard({
                   transition: `all ${transitions.base}`,
                 }}
               >
-                {status === 'complete' ? 'Done' : 'Continue'}
+                {status === 'complete' ? 'Done' : ctaLabel}
               </button>
             </div>
           )}

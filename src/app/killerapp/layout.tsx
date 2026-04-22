@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import GlobalJourneyMapHeader from '@/components/GlobalJourneyMapHeader';
+import LegalFooter from '@/components/LegalFooter';
 
 export default function KillerAppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
@@ -25,6 +26,8 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
       <div style={{ paddingTop: 48 }}>
         {showJourneyStrip && <GlobalJourneyMapHeader />}
         {children}
+        {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
+        <LegalFooter />
       </div>
     </GreenFlashProvider>
   );

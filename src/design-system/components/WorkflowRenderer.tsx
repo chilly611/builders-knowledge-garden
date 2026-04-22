@@ -33,6 +33,41 @@ function xpPerStep(workflow: Workflow): number {
   return Math.round(workflow.totalXp / workflow.steps.length);
 }
 
+/**
+ * Map step types and IDs to step-specific CTA labels.
+ * Follows foreman voice: concrete action verbs, no hedging.
+ */
+function getCtaLabelForStep(step: WorkflowStep): string {
+  switch (step.type) {
+    case 'text_input':
+      // text_input on scope/code questions
+      if (step.id?.includes('code') || step.label?.toLowerCase().includes('code')) {
+        return 'Check code compliance';
+      }
+      return 'Save this';
+    case 'voice_input':
+      return 'Save this scope';
+    case 'location_input':
+      return 'Lock jurisdiction';
+    case 'number_input':
+      return 'Record it';
+    case 'multi_select':
+    case 'select':
+      return 'Pick these';
+    case 'checklist':
+      return 'Record answers';
+    case 'file_upload':
+      return 'Upload files';
+    case 'template_chooser':
+      return 'Choose one';
+    case 'analysis_result':
+      // analysis_result steps don't show CTA (read-only)
+      return '';
+    default:
+      return 'Next step';
+  }
+}
+
 function buildContextForAnalysis(context: WorkflowContext | undefined) {
   if (!context) return undefined;
   return {
@@ -215,6 +250,8 @@ export default function WorkflowRenderer({
         {workflow.steps.map((step, idx) => {
           const status = statusMap[step.id] ?? 'pending';
           const expanded = expandedMap[step.id] ?? false;
+          // Determine step-specific CTA label
+          const ctaLabel = getCtaLabelForStep(step);
           return (
             <StepCard
               key={step.id}
@@ -228,6 +265,7 @@ export default function WorkflowRenderer({
               onAction={handleStepEvent}
               renderAnalysis={renderAnalysis}
               proMode={proMode}
+              ctaLabel={ctaLabel}
             />
           );
         })}

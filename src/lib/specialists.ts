@@ -6,6 +6,12 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import Anthropic from "@anthropic-ai/sdk";
 import { retrieveEntities, type KnowledgeEntity } from "./rag";
+import {
+  queryAllSources,
+  hasMultipleSources,
+  type CodeQuery,
+  type CodeSourceResult,
+} from "./code-sources";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -30,6 +36,18 @@ export interface SpecialistCitation {
   relevance?: string;
 }
 
+export interface DisciplineHandoff {
+  detected: "electrical" | "structural" | "plumbing" | "mechanical" | "fire";
+  suggestStep: string;
+  message: string;
+}
+
+export interface SupersededNotice {
+  oldSection: string;
+  newSection: string;
+  summary: string;
+}
+
 export interface SpecialistResult {
   narrative: string;
   structured: Record<string, unknown>;
@@ -40,6 +58,10 @@ export interface SpecialistResult {
   model: string;
   latency_ms: number;
   promptVersion: "v1" | "v2";
+  disciplineHandoff?: DisciplineHandoff;
+  supersededNotice?: SupersededNotice;
+  code_sections?: { section: string; title: string; requirement: string; status?: string }[];
+  warnings?: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,6 +77,106 @@ const DEFAULT_VERSION_BY_SPECIALIST: Record<string, "v1" | "v2"> = {
   "compliance-structural": "v2", // q5
   "sub-bid-analysis": "v2", // q9
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CODE QUERY BUILDER
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Infer discipline from question text by keyword scoring
+ */
+function inferDisciplineFromText(
+  text: string
+): "electrical" | "structural" | "plumbing" | "mechanical" | "fire" {
+  const lower = text.toLowerCase();
+
+  const scores = {
+    electrical: ["plug", "outlet", "receptacle", "gfci", "afci", "wire", "nec", "circuit", "panel", "amp", "volt", "conduit", "romex"].filter(
+      (k) => lower.includes(k)
+    ).length,
+    structural: ["beam", "column", "load", "framing", "ibc", "irc", "seismic", "shear", "lateral", "foundation", "joist", "rafter"].filter(
+      (k) => lower.includes(k)
+    ).length,
+    plumbing: ["pipe", "drain", "vent", "trap", "ipc", "fixture", "gpf", "sewer", "backflow", "riser"].filter((k) => lower.includes(k))
+      .length,
+    mechanical: ["hvac", "duct", "imc", "ventilation", "cfm", "refrigerant", "heat", "pump", "ahu", "vav"].filter((k) =>
+      lower.includes(k)
+    ).length,
+    fire: ["sprinkler", "alarm", "nfpa", "smoke", "egress", "fire-rated", "life-safety"].filter((k) => lower.includes(k)).length,
+  };
+
+  let maxDiscipline: "electrical" | "structural" | "plumbing" | "mechanical" | "fire" = "electrical";
+  let maxScore = 0;
+
+  for (const [discipline, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      maxDiscipline = discipline as "electrical" | "structural" | "plumbing" | "mechanical" | "fire";
+    }
+  }
+
+  return maxDiscipline;
+}
+
+/**
+ * Build a CodeQuery from a scope description and context.
+ * Infers discipline from question text; extracts section numbers and keywords.
+ * Detects discipline mismatch (e.g., kitchen plug question in structural specialist).
+ */
+function buildCodeQuery(
+  scopeDescription: string,
+  context: SpecialistContext
+): CodeQuery & { disciplineMismatch?: { inferred: string; specialist: string } } {
+  // Extract section numbers (e.g., "210.52(C)(5)", "Article 210")
+  const sectionMatch = scopeDescription.match(/(?:Article\s+)?(\d{3}(?:\.\d+)?(?:\([A-Z]\))?(?:\(\d+\))?)/);
+  const section = sectionMatch ? sectionMatch[1] : undefined;
+
+  // Infer discipline from question text
+  const inferredDiscipline = inferDisciplineFromText(scopeDescription);
+
+  // Fallback to context.trade if no clear inference
+  let discipline: "electrical" | "structural" | "plumbing" | "mechanical" | "fire" = inferredDiscipline;
+  let specialistDiscipline = inferredDiscipline;
+
+  if (context.trade) {
+    if (context.trade.includes("structural")) specialistDiscipline = "structural";
+    else if (context.trade.includes("plumbing")) specialistDiscipline = "plumbing";
+    else if (context.trade.includes("mechanical")) specialistDiscipline = "mechanical";
+    else if (context.trade.includes("fire")) specialistDiscipline = "fire";
+    else specialistDiscipline = "electrical";
+  }
+
+  // Use inferred discipline if it differs from specialist; otherwise use specialist context
+  const disciplineMismatch =
+    inferredDiscipline !== specialistDiscipline ? { inferred: inferredDiscipline, specialist: specialistDiscipline } : undefined;
+
+  // If we detected a mismatch, prefer the inferred one (user's question intent)
+  if (disciplineMismatch) {
+    discipline = inferredDiscipline;
+  } else {
+    discipline = specialistDiscipline;
+  }
+
+  // Extract keywords from scope description, including code section-like tokens
+  const rawKeywords = scopeDescription
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(
+      (w) =>
+        w.length > 2 && !["that", "with", "from", "your", "this", "what", "when", "does", "is", "for", "the", "and", "or"].includes(w)
+    )
+    .slice(0, 10);
+
+  const keywords = Array.from(new Set(rawKeywords)); // deduplicate
+
+  return {
+    discipline,
+    section,
+    keywords,
+    jurisdiction: context.jurisdiction,
+    disciplineMismatch,
+  };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN RUNNER
@@ -87,11 +209,68 @@ export async function callSpecialist(
     userMessage += `\n\nContext: ${contextParts.join(", ")}`;
   }
 
-  // 3. RETRIEVE RELEVANT ENTITIES IF JURISDICTION PROVIDED
+  // 3. RETRIEVE RELEVANT ENTITIES / CODE SOURCES
   let entityContext = "";
   let citations: SpecialistCitation[] = [];
+  let codeSourceConfidenceData: {
+    multiSource: boolean;
+    sourceCount: number;
+    hasPrimary: boolean;
+  } | null = null;
 
-  if (context.jurisdiction) {
+  // For compliance specialists, use queryAllSources instead of retrieveEntities
+  const isComplianceSpecialist = specialistId.startsWith("compliance-");
+
+  if (context.jurisdiction && isComplianceSpecialist) {
+    // Build CodeQuery from scope description (cheap pre-parse for section numbers and keywords)
+    const codeQueryRaw = buildCodeQuery(context.scope_description, context);
+    const codeQuery = { discipline: codeQueryRaw.discipline, section: codeQueryRaw.section, keywords: codeQueryRaw.keywords, jurisdiction: codeQueryRaw.jurisdiction } as CodeQuery;
+
+    const codeResults = await queryAllSources(codeQuery);
+
+    if (codeResults.length > 0) {
+      const multiSource = hasMultipleSources(codeResults);
+      const hasPrimary = codeResults.some((r) => r.confidenceTier === "primary");
+
+      // Store confidence data for the LLM to use
+      codeSourceConfidenceData = {
+        multiSource,
+        sourceCount: new Set(codeResults.map((r) => r.source)).size,
+        hasPrimary,
+      };
+
+      // Format code sources as structured context for the model
+      entityContext =
+        "Multi-Source Code Verification (BKG + ICC + NFPA + Local Amendments):\n";
+      entityContext += codeResults
+        .map(
+          (r, idx) =>
+            `[${idx}] ${r.citation} (${r.source})\nEdition: ${r.edition} | Tier: ${r.confidenceTier}${r.historical ? " [HISTORICAL]" : ""}\n${truncate(r.text, 300)}`
+        )
+        .join("\n\n");
+
+      // Inject at the top of the user message
+      userMessage = `${entityContext}\n\n---\n\n${userMessage}`;
+
+      // Inject confidence gating instructions
+      userMessage += `\n\nCODE SOURCE SUMMARY:\n- Multiple sources present: ${multiSource ? "YES (confidence: high)" : "NO (confidence: medium)"}\n- Primary tier results: ${hasPrimary ? "YES" : "NO"}\n- Total sources: ${codeSourceConfidenceData.sourceCount}`;
+
+      // Prepare citations for later extraction
+      citations = codeResults.map((r) => ({
+        entity_id: `${r.source}/${r.section}`,
+        code_body: r.edition,
+        section: r.section,
+        jurisdiction: r.jurisdiction,
+        edition: r.edition,
+        updated_at: r.retrievedAt,
+        relevance: r.confidenceTier === "primary" ? "high" : "medium",
+      }));
+    } else {
+      userMessage += `\n\nCRITICAL: queryAllSources returned no results for this query. You MUST return confidence: low and tell the user: "I don't have a cross-verified answer; do not proceed without AHJ confirmation." Include specific questions the user should ask their AHJ.`;
+      codeSourceConfidenceData = { multiSource: false, sourceCount: 0, hasPrimary: false };
+    }
+  } else if (context.jurisdiction && !isComplianceSpecialist) {
+    // Use legacy retrieveEntities for non-compliance specialists
     const result = await retrieveEntities(context.scope_description, {
       jurisdiction: context.jurisdiction,
       limit: 10,
@@ -158,6 +337,8 @@ export async function callSpecialist(
     let narrative = rawResponse;
     let structured: Record<string, unknown> = {};
     let confidence: "high" | "medium" | "low" = "medium";
+    let disciplineHandoff: DisciplineHandoff | undefined;
+    let supersededNotice: SupersededNotice | undefined;
 
     // Try to extract JSON from <json>...</json> block (production prompt style)
     const jsonMatch = rawResponse.match(/<json>([\s\S]*?)<\/json>/);
@@ -174,6 +355,30 @@ export async function callSpecialist(
         if (structured.citations && Array.isArray(structured.citations)) {
           citations = structured.citations;
         }
+
+        // Extract disciplineHandoff if present
+        if (structured.disciplineHandoff && typeof structured.disciplineHandoff === "object") {
+          const dh = structured.disciplineHandoff as Record<string, unknown>;
+          if (dh.detected && dh.suggestStep && dh.message) {
+            disciplineHandoff = {
+              detected: dh.detected as DisciplineHandoff["detected"],
+              suggestStep: dh.suggestStep as string,
+              message: dh.message as string,
+            };
+          }
+        }
+
+        // Extract supersededNotice if present
+        if (structured.supersededNotice && typeof structured.supersededNotice === "object") {
+          const sn = structured.supersededNotice as Record<string, unknown>;
+          if (sn.oldSection && sn.newSection && sn.summary) {
+            supersededNotice = {
+              oldSection: sn.oldSection as string,
+              newSection: sn.newSection as string,
+              summary: sn.summary as string,
+            };
+          }
+        }
       } catch {
         // Fallback: treat entire response as narrative
         narrative = rawResponse;
@@ -189,6 +394,8 @@ export async function callSpecialist(
       model: MODEL,
       latency_ms: Date.now() - start,
       promptVersion: version,
+      disciplineHandoff,
+      supersededNotice,
     };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -344,9 +551,34 @@ Please configure ANTHROPIC_API_KEY to get real LLM-powered analysis.`,
         ],
       },
     },
+    "compliance-router": {
+      narrative: `Code compliance question: ${context.scope_description.substring(0, 50)}...
+
+This is a mock response because ANTHROPIC_API_KEY is not configured.
+
+The router specialist helps classify your question and route it to the right specialist. For your question, here's what to consider:
+
+1. Determine the primary discipline (electrical, structural, plumbing, fire, mechanical)
+2. Check code edition and local amendments for your jurisdiction
+3. Rate your confidence level based on available sources
+
+Please configure ANTHROPIC_API_KEY to get real LLM-powered routing and analysis.`,
+      structured: {
+        confidence: "medium",
+        detected_discipline: "electrical",
+        code_sections: [],
+        warnings: ["Mock response — configure ANTHROPIC_API_KEY for real analysis"],
+        supersededNotice: null,
+        next_step_suggestion: {
+          stepId: "s5-2",
+          label: "Electrical — NEC deep dive",
+          reason: "For deeper analysis on electrical compliance, visit the specialist step.",
+        },
+      },
+    },
   };
 
-  const mockResponse = mockResponses[specialistId] || mockResponses["compliance-structural"];
+  const mockResponse = mockResponses[specialistId] || mockResponses["compliance-router"];
 
   return {
     narrative: mockResponse.narrative,

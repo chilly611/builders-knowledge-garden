@@ -20,6 +20,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii } from '../tokens';
 import { runSpecialist } from '../../lib/specialists.client';
 import LearningBadge from '@/components/LearningBadge';
+import { sanitizeNarrative } from './utils/sanitizeNarrative';
 import type { SpecialistResult, SpecialistContext } from '../../lib/specialists';
 
 interface AnalysisPaneProps {
@@ -45,8 +46,8 @@ type PaneState =
   | { kind: 'error'; message: string };
 
 const CONFIDENCE_COLORS = {
-  high: '#14B8A6', // teal — decision #12
-  medium: '#D85A30', // warm orange
+  high: colors.robin,    // Robin's Egg (canonical: #7FCFCB) — decision #12
+  medium: '#D85A30',     // warm orange
   low: '#EF4444',
 } as const;
 
@@ -201,6 +202,25 @@ export default function AnalysisPane({
 
   // Ready
   const { result } = state;
+
+  // Sanitize narrative to remove JSON corruption
+  const sanitized = sanitizeNarrative(result.narrative);
+  const codeSectionsToRender = sanitized.codeSectionsFromJson || result.code_sections || [];
+
+  // Cap citations to 3, sorted by relevance
+  const sortedCitations = (result.citations || [])
+    .filter((c) => {
+      if (!c.relevance) return true; // Include if no relevance specified
+      return c.relevance === 'high' || c.relevance === 'medium' || c.relevance === 'low';
+    })
+    .sort((a, b) => {
+      const relevanceOrder = { high: 0, medium: 1, low: 2 };
+      const aRel = (a.relevance as keyof typeof relevanceOrder) || 'low';
+      const bRel = (b.relevance as keyof typeof relevanceOrder) || 'low';
+      return (relevanceOrder[aRel] || 2) - (relevanceOrder[bRel] || 2);
+    })
+    .slice(0, 3);
+
   return (
     <div
       style={{
@@ -214,6 +234,61 @@ export default function AnalysisPane({
         fontFamily: fonts.body,
       }}
     >
+      {/* Supersession notice — if present, render above everything */}
+      {result.supersededNotice && (
+        <div
+          style={{
+            padding: spacing[3],
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            borderRadius: radii.sm,
+            borderLeft: `4px solid #EF4444`,
+            fontSize: fontSizes.sm,
+            color: colors.ink[900],
+            lineHeight: '1.6',
+          }}
+        >
+          <span style={{ fontWeight: fontWeights.semibold }}>Code Updated:</span> NEC {result.supersededNotice.oldSection} was
+          superseded — the current rule is {result.supersededNotice.newSection}. {result.supersededNotice.summary}
+        </div>
+      )}
+
+      {/* Discipline handoff banner */}
+      {result.disciplineHandoff && (
+        <div
+          style={{
+            padding: spacing[3],
+            backgroundColor: colors.amber.glow,
+            borderRadius: radii.sm,
+            borderLeft: `4px solid var(--brass)`,
+            fontSize: fontSizes.sm,
+            color: colors.ink[900],
+            lineHeight: '1.6',
+          }}
+        >
+          <span style={{ fontWeight: fontWeights.semibold }}>
+            This looks like a {result.disciplineHandoff.detected} question
+          </span>
+          . Click{' '}
+          <a
+            href="#"
+            style={{
+              color: 'var(--brass)',
+              textDecoration: 'underline',
+              fontWeight: fontWeights.semibold,
+              cursor: 'pointer',
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              // Signal to parent to jump to that step
+              // For now, just indicate it's clickable
+            }}
+          >
+            {result.disciplineHandoff.suggestStep}
+          </a>{' '}
+          for the deep dive.
+        </div>
+      )}
+
       {/* Confidence band */}
       <div
         style={{
@@ -234,17 +309,52 @@ export default function AnalysisPane({
         {CONFIDENCE_LABELS[result.confidence]}
       </div>
 
-      {/* Narrative */}
+      {/* Narrative — sanitized, never raw JSON */}
       <div
         style={{
           fontSize: fontSizes.sm,
           color: colors.ink[900],
           lineHeight: '1.6',
-          whiteSpace: 'pre-wrap',
         }}
       >
-        {result.narrative}
+        {sanitized.prose}
       </div>
+
+      {/* Code sections rendered as clean table/list */}
+      {codeSectionsToRender && codeSectionsToRender.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2], marginTop: spacing[2] }}>
+          <div
+            style={{
+              fontSize: fontSizes.xs,
+              fontWeight: fontWeights.semibold,
+              color: colors.ink[500],
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Relevant Sections
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 1fr 1fr',
+              gap: spacing[3],
+              fontSize: fontSizes.xs,
+              color: colors.ink[700],
+            }}
+          >
+            {codeSectionsToRender.map((sec, idx) => (
+              <React.Fragment key={idx}>
+                <div style={{ fontFamily: fonts.mono, fontWeight: fontWeights.semibold, color: colors.ink[900] }}>
+                  {sec.section}
+                </div>
+                <div style={{ fontWeight: fontWeights.semibold }}>{sec.title}</div>
+                <div>{sec.requirement}</div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Deferred-to-human — goal 3 partner pattern */}
       {result.deferred_to_human && (
@@ -262,8 +372,8 @@ export default function AnalysisPane({
         </div>
       )}
 
-      {/* Citations */}
-      {result.citations && result.citations.length > 0 && (
+      {/* Citations — capped to 3, sorted by relevance */}
+      {sortedCitations && sortedCitations.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
           <div
             style={{
@@ -277,7 +387,7 @@ export default function AnalysisPane({
             Citations
           </div>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-            {result.citations.map((c) => (
+            {sortedCitations.map((c) => (
               <li
                 key={c.entity_id}
                 style={{
@@ -298,7 +408,9 @@ export default function AnalysisPane({
                   <span style={{ color: colors.ink[500] }}> · updated {new Date(c.updated_at).toLocaleDateString()}</span>
                 )}
                 {c.relevance && (
-                  <div style={{ marginTop: spacing[1], color: colors.ink[700] }}>{c.relevance}</div>
+                  <div style={{ marginTop: spacing[1], color: colors.ink[700], fontSize: fontSizes.xs }}>
+                    {c.relevance}
+                  </div>
                 )}
               </li>
             ))}
@@ -328,11 +440,17 @@ export default function AnalysisPane({
         <LearningBadge variant="run" runId={specialistId} />
       </div>
 
-      {/* Hidden machine-legible output — Goal 8 */}
+      {/* Hidden machine-legible output — Goal 8, includes extracted JSON if present */}
       <script
         type="application/json"
         data-bkg-analysis={specialistId}
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(result) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            ...result,
+            // If we extracted JSON from the narrative, include it for machine consumption
+            _extracted: sanitized.extractedJson || undefined,
+          }),
+        }}
       />
     </div>
   );

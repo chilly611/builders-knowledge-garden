@@ -20,6 +20,7 @@ const COLORS = {
 // Types for voice recognition
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
+  resultIndex: number;
   isFinal: boolean;
 }
 
@@ -94,12 +95,19 @@ export default function FieldOps() {
 
       recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         let interim = '';
-        for (let i = event.results.length - 1; i >= 0; --i) {
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            interim += event.results[i][0].transcript;
+            final += transcript + ' ';
+          } else {
+            interim += transcript;
           }
         }
-        setTranscript(interim);
+        setTranscript(final || interim);
+        if (final) {
+          recognitionRef.current?.stop();
+        }
       };
 
       recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {

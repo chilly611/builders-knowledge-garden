@@ -1,0 +1,142 @@
+{
+  "jurisdiction": "nv-washoe",
+  "jurisdictionName": "Washoe County",
+  "parent": "nevada",
+  "adoptedEdition": "IBC 2021 Washoe County",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.washoecounty.us/building/",
+  "amendments": [
+    {
+      "id": "nv-washoe-snow-load-sierra-foothills",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1608",
+      "title": "Washoe County Snow Load (Sierra Foothills)",
+      "text": "Washoe County snow load varies by elevation: Reno/Sparks (4,500 ft) 25 psf; Incline Village/Sierra (7,000+ ft) 100+ psf. Ground snow load (Pg) must be determined site-specifically per ASCE 7-22 and local observation data. Roof design must account for snow load, wind-on-snow, and rain-on-snow surcharge. Roof pitch >70° degrees may qualify for reduction factor (slippery surfaces reduce snow load). Gutters and downspouts must be designed for melting snow (water runoff during spring thaw often exceeds winter rain). Flat or low-pitch roofs in mountains require 150% of ground snow load as roof load (wind cannot clear snow). Summary — verify exact snow load for specific elevation/location with Washoe County Building Department.",
+      "citation": "Washoe County Snow Load Standards",
+      "confidenceTier": "summary",
+      "keywords": ["snow", "load", "elevation", "sierra", "roof"]
+    },
+    {
+      "id": "nv-washoe-seismic-reno-sparks-risk",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1705",
+      "title": "Washoe County Seismic Design (Reno/Sparks Area)",
+      "text": "Reno and Sparks are in seismic zone with moderate earthquake risk (Magnitude 6.0+ historic events). Seismic Design Category (SDC) is typically D or higher. All buildings >2 stories must be designed per IBC 1705 with Response Spectrum Analysis (RSA) or Equivalent Lateral Force (ELF) method. Soft stories (parking, open first floor) not permitted without special detailing. Foundation must be designed for moment transfer from structure; isolated footings may not be adequate (engineered mat or pile foundation preferred). Summary — verify current seismic design category and site-specific seismic parameters with Washoe County Building Department.",
+      "citation": "Washoe County Seismic Design Standards",
+      "confidenceTier": "summary",
+      "keywords": ["seismic", "earthquake", "design", "reno", "sparks"]
+    },
+    {
+      "id": "nv-washoe-wui-wildfire-sierra-foothills",
+      "discipline": "fire",
+      "baseEdition": "IBC 2021, CA Chapter 7A (adopted by Washoe)",
+      "baseSection": "701.3",
+      "title": "Washoe County WUI Fire-Hardening (Sierra Foothills)",
+      "text": "Properties in Wildland-Urban Interface (foothills of Reno/Sparks area, west of Interstate 80) must meet fire-hardening standards per IBC 2021 wildfire provisions: roof Class A minimum (metal, asphalt shingle rated Class A, or composite); exterior walls ≤5 feet from property line must be 1-hour fire-rated or use Class A/B materials; all vents screened 1/8-inch metal mesh; deck boards spaced ≤1/8-inch. Gutters must be metal or fire-rated. Window glazing within 10 feet of ground must be tempered or dual-pane. Propane tanks and utilities must be cleared of vegetation within 10 feet. Summary — verify WUI zone boundary and fire-hardening spec with Washoe County Fire.",
+      "citation": "Washoe County WUI Fire-Hardening Standards",
+      "confidenceTier": "summary",
+      "keywords": ["fire", "wui", "wildfire", "sierra", "hardening"]
+    },
+    {
+      "id": "nv-washoe-grading-steep-slopes-geotechnical",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "3202",
+      "title": "Washoe County Grading on Steep Slopes",
+      "text": "Projects on slopes >25% in Washoe County require geotechnical evaluation and grading plan per IBC 3202. Slopes >2:1 (horizontal:vertical) require retaining walls or soil reinforcement (geogrid, soil nailing, or terracing). Fill material must be compacted to 95% relative density. Cut slopes in granitic soils common in Sierra foothills may be prone to raveling (internal erosion); evaluation required. Drainage must prevent surface runoff into downslope properties. Undocumented fill must be removed or stabilized. Summary — verify slope trigger and compaction spec with Washoe County Building or Geotechnical Standards.",
+      "citation": "Washoe County Grading Standards",
+      "confidenceTier": "summary",
+      "keywords": ["grading", "slope", "geotechnical", "steep", "drainage"]
+    },
+    {
+      "id": "nv-washoe-energy-code-iecc-plus-amendments",
+      "discipline": "mechanical",
+      "baseEdition": "IECC 2021",
+      "baseSection": "101",
+      "title": "Washoe County Energy Code (IECC + Amendments)",
+      "text": "Washoe County adopts IECC 2021 + local amendments requiring higher efficiency: residential insulation minimum R-21 walls (vs IECC R-13), R-38 attic (vs R-30 in many zones). Windows must be U-factor ≤0.32 (vs IECC 0.35). HVAC systems must be Commission Certified per Nevada state efficiency standards (higher than federal minimum). Water heaters must be heat pump or solar (not standard electric resistance). Builders must complete energy audit and demonstrate code compliance pre-occupancy. Summary — verify current insulation R-values and HVAC efficiency requirements with Washoe County Building Department.",
+      "citation": "Washoe County Energy Code Standards",
+      "confidenceTier": "summary",
+      "keywords": ["energy", "efficiency", "insulation", "hvac", "iecc"]
+    },
+    {
+      "id": "nv-washoe-water-supply-mountain-draw-restrictions",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "312",
+      "title": "Washoe County Water Supply (Mountain Areas)",
+      "text": "Properties in mountain areas (elevation >6,000 ft) may be served by private well or limited public water supply. Water pressure often <40 psi in mountain locations; pressure-reducing valves required if >60 psi (freeze-break protection). Freeze protection required: buried water lines minimum 48 inches deep or 18 inches below max frost depth (~24-36 inches in Washoe County). Septic systems required in many mountain areas; drain-field minimum 100 feet from well. Water quality testing required for new wells. Summary — verify local water pressure and frost depth requirements with Washoe County Public Works.",
+      "citation": "Washoe County Water Supply Standards",
+      "confidenceTier": "summary",
+      "keywords": ["water", "supply", "pressure", "mountain", "freeze"]
+    },
+    {
+      "id": "nv-washoe-mechanical-high-altitude-hvac",
+      "discipline": "mechanical",
+      "baseEdition": "IECC 2021",
+      "baseSection": "402",
+      "title": "Washoe County High-Altitude HVAC Design",
+      "text": "Washoe County elevation ranges 4,500 ft (Reno valley) to 10,000+ ft (Sierra peaks). HVAC systems at elevation must be sized for reduced air density: at 7,000 ft, air density is ~25% less than sea level, reducing cooling/heating capacity. Heat pump outdoor units must be rated for 15,000+ ft (high-altitude rating). Ductwork design must account for reduced pressure drop at altitude (larger ducts may be needed). Propane pressure regulators must be set for mountain elevation (cold climates use different regulator settings). Summary — verify altitude-specific HVAC sizing and component ratings with local HVAC vendor.",
+      "citation": "Washoe County High-Altitude HVAC Standards",
+      "confidenceTier": "summary",
+      "keywords": ["altitude", "hvac", "elevation", "design", "capacity"]
+    },
+    {
+      "id": "nv-washoe-electrical-utility-pole-clearance-snow",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "225",
+      "title": "Washoe County Utility Pole / Clearance (Snow Impact)",
+      "text": "Overhead service connections in Washoe County mountain areas must maintain clearances per NEC 225.19, plus snow considerations: minimum 12 feet above finished grade over roof areas (vs NEC's minimum 8 feet for some locations) to allow snow slide overhang. Service mast must be installed at ≥45° angle to roof to shed snow/ice. Service entrance cable must use heavy-duty UV-rated insulation rated for -40°F temperature (common in winter). Utility poles must be set 6+ feet above finished grade to accommodate snow melt runoff. Summary — verify current clearance requirements and cold-temperature ratings with Washoe County DBS.",
+      "citation": "Washoe County Utility Clearance Standards",
+      "confidenceTier": "summary",
+      "keywords": ["utility", "clearance", "snow", "overhead", "service"]
+    },
+    {
+      "id": "nv-washoe-plumbing-freeze-protection-pipes",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "605",
+      "title": "Washoe County Freeze Protection (Pipe Insulation)",
+      "text": "All exposed and buried water supply pipes in Washoe County must be protected against freezing: exposed pipes must be wrapped with minimum 1-inch foam insulation or trace heating (electric heat tape for critical areas). Buried lines must be minimum 24-36 inches deep (below frost line, which varies by elevation). Outdoor hose bibs must have freeze-proof design (backflow-type, self-draining). Building exteriors on north-facing walls must have heated trace cable on cold-water supply lines. Summary — verify current frost depth and insulation R-value requirements with Washoe County Building Department.",
+      "citation": "Washoe County Freeze Protection Standards",
+      "confidenceTier": "summary",
+      "keywords": ["freeze", "protection", "pipe", "insulation", "plumbing"]
+    },
+    {
+      "id": "nv-washoe-solar-pv-snow-load-mounting",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "690",
+      "title": "Washoe County Solar PV Snow Load / Mounting",
+      "text": "Solar photovoltaic systems in Washoe County must be mounted to withstand high snow loads (100+ psf in Sierra areas). Roof-mounted arrays must have ≥6-foot spacing between rows to allow snow shedding (not standard code requirement). Module mounting rails must be rated for ultimate snow load (1.5x design load per IBC). Array installed at ≥30° pitch to encourage snow slide-off (flat arrays accumulate snow, reducing output 0-100% during winter). Ground-mounted systems in >25 psf snow zones require structural frost protection (piers, helical piles, not simple footings). Summary — verify local snow load and safe snow-shedding angle with Washoe County Building Department.",
+      "citation": "Washoe County Solar PV Snow Load Standards",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "pv", "snow", "load", "mounting"]
+    },
+    {
+      "id": "nv-washoe-building-occupancy-remote-areas",
+      "discipline": "fire",
+      "baseEdition": "IBC 2021",
+      "baseSection": "302",
+      "title": "Washoe County Remote Area / Fire Response Distance",
+      "text": "Buildings in remote mountain areas >5 miles from nearest fire station in Washoe County must meet enhanced fire safety: sprinkler system (NFPA 13R minimum for residential, NFPA 13 for commercial), fire alarm system, and emergency water supply (tank minimum 10,000 gallons or hydrant fed from reliable source). Road access must be ≥12 feet wide, year-round maintained, and marked with address numbers visible from road. Gates/locks must not impede emergency access. Summary — verify distance threshold to fire station and water supply requirements with Washoe County Fire Authority.",
+      "citation": "Washoe County Remote Area Fire Safety Standards",
+      "confidenceTier": "summary",
+      "keywords": ["fire", "remote", "sprinkler", "distance", "response"]
+    },
+    {
+      "id": "nv-washoe-mechanical-propane-tank-location",
+      "discipline": "mechanical",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1206",
+      "title": "Washoe County Propane Tank Clearance / Location",
+      "text": "Propane tanks serving Washoe County mountain homes must comply with IBC 1206 + local amendments: tank minimum 10 feet from building (not 5 feet standard), 10 feet from property line, and 10 feet from utility lines. In WUI areas, propane tank must be surrounded by 10-foot defensible space (cleared vegetation). Tank must be elevated on frost-protected foundation (not ground contact in freeze zones). Regulator and shutoff valve must be accessible year-round (not buried under snow). Summary — verify current clearance distances and freeze-protection requirements with Washoe County DBS.",
+      "citation": "Washoe County Propane Tank Standards",
+      "confidenceTier": "summary",
+      "keywords": ["propane", "tank", "location", "clearance", "fuel"]
+    }
+  ]
+}

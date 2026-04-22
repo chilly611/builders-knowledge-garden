@@ -88,4 +88,10 @@ export interface StepCardProps {
    * Documented here for future implementers.
    */
   proMode?: boolean;
+  /**
+   * Step-specific CTA label for the primary action button.
+   * Defaults to "Next step" if not provided.
+   * Examples: "Check code compliance", "Save this scope", "Lock jurisdiction"
+   */
+  ctaLabel?: string;
 }

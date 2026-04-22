@@ -1,0 +1,120 @@
+{
+  "jurisdiction": "ca-sj",
+  "jurisdictionName": "San Jose",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022",
+  "effectiveDate": "2023-06-01",
+  "sourceUrl": "https://www.sanjoseca.gov/business-development-services/building-code",
+  "amendments": [
+    {
+      "id": "ca-sj-ibc-soft-story-retrofit",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "3401",
+      "title": "San Jose Soft-Story Building Retrofit Ordinance",
+      "text": "Multi-family residential buildings with 5+ dwelling units and soft story (ground floor parking, retail, or large openings) built before 2006 must complete seismic retrofit by December 2029 (phase-in per year of construction). Retrofit must meet current IBC seismic design standards (equivalent to SDC D or higher). Open-front parking converted to shear walls with moment frames, added diagonal bracing, or concrete shear walls. Documented engineer certification required. Buildings in Alquist-Priolo fault zones must complete retrofit by 2027. New construction exempt if meeting current IBC outright.",
+      "citation": "San Jose Municipal Code §5.10.15 Soft-Story Retrofit",
+      "confidenceTier": "primary",
+      "keywords": ["soft-story", "retrofit", "seismic", "parking", "structural"]
+    },
+    {
+      "id": "ca-sj-nec-reach-code-120v-outlets",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "San Jose Reach Code: Electrical Service Sizing for Electrification",
+      "text": "New residential construction and major electrical service upgrades must size service entrance for future all-electric loads (EV charging, heat pump space heating, heat pump water heating). Minimum service size 200A for single-family homes; 400A feeder service for multi-family. Service layout must allow dedicated 60A circuits for heat pump HVAC and 60A for heat pump water heater without exceeding 80% load factor. EV charging circuit (40A-80A) must be independent of HVAC and water heater loads. Existing homes receiving service upgrade subject to same requirements.",
+      "citation": "San Jose Reach Code §22.0-24.1 Service Sizing",
+      "confidenceTier": "primary",
+      "keywords": ["service", "sizing", "electrification", "ev", "heat-pump"]
+    },
+    {
+      "id": "ca-sj-ibc-adu-setback",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "101.2",
+      "title": "San Jose Accessory Dwelling Unit (ADU) Setback and Parking Relief",
+      "text": "New ADUs (junior, primary, or secondary) may reduce setback from 10 feet to 5 feet (interior sideline to structure), and rear setback to 3 feet if adjacent property line. No on-site parking required if ADU within 0.5 miles of transit (bus, light rail) or in high-density zone. ADUs up to 1,200 sq ft exempt from Design Review. Detached ADU must use same architectural style/materials as primary dwelling (color, roofing, exterior cladding). Unit must have separate utilities (water, sewer, electrical meter). Summary — verify current zoning and transit definitions with San Jose Planning Department.",
+      "citation": "San Jose Municipal Code §20.100 et seq. ADU Standards",
+      "confidenceTier": "summary",
+      "keywords": ["adu", "setback", "parking", "residential", "zone"]
+    },
+    {
+      "id": "ca-sj-imc-heat-pump-water-heater-rebate",
+      "discipline": "mechanical",
+      "baseEdition": "IMC 2021",
+      "baseSection": "2001",
+      "title": "San Jose Heat Pump Water Heater Incentive",
+      "text": "New residential construction using heat pump water heater (air-source, ground-source, or waste-heat recovery) qualifies for building permit fee reduction (15-20% discount). Water heater must be ENERGY STAR Most Efficient or equivalent (COP ≥3.0 for space-heating mode). Tank capacity minimum 50 gallons for single-family, 75+ gallons for multi-family. HVAC and water heater must be on separate electrical circuits (see Reach Code §22.0-24.1). Gas water heater no longer code-compliant for new single-family homes as of January 2025 (natural gas phase-out).",
+      "citation": "San Jose Municipal Code §22.3.1000 Water Heater Requirements",
+      "confidenceTier": "primary",
+      "keywords": ["water-heater", "heat-pump", "mechanical", "efficiency"]
+    },
+    {
+      "id": "ca-sj-nec-solar-pv-combined-load",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705.12",
+      "title": "San Jose Solar + EV Charging Combined Load Calculation",
+      "text": "When PV system and EV charging station installed at same residence, combined load must be evaluated for service upgrade feasibility. Service must be sized for: (1) existing loads + (2) 60% of EV charging load + (3) 100% of PV inverter output capacity. Demand response capability or time-of-use load shifting (smart EV charger) may offset peak load by up to 50% with documented utility agreement. Battery storage ≥10 kWh may further offset peak. Summary — verify combined load calculations with utility and local AHJ.",
+      "citation": "San Jose Reach Code §24.2 Solar + EV Coordination",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "ev", "charging", "load", "service"]
+    },
+    {
+      "id": "ca-sj-ipc-water-service-sizing",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "604",
+      "title": "San Jose Water Service Meter Sizing (Drought Resilience)",
+      "text": "New residential buildings must size water service meter for peak demand including: drought-tolerant landscape (low water requirement), low-flow indoor fixtures (per CalGreen), and future greywater system. Meter size typically 3/4 inch for single-family (vs traditional 1 inch). Supply pressure must maintain minimum 20 psi at highest fixture during peak morning use. Pressure-reducing valve set to 60-80 psi max (80 psi exceeds California guidelines). System must accommodate future smart meter (data logging) installation. Summary — verify sizing formula with San Jose Water Department.",
+      "citation": "San Jose Water Department Guidelines + IPC 2021",
+      "confidenceTier": "summary",
+      "keywords": ["water", "meter", "sizing", "drought", "service"]
+    },
+    {
+      "id": "ca-sj-ibc-seismic-design-category",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1613",
+      "title": "San Jose Seismic Design Category (Hayward Fault Risk)",
+      "text": "San Jose area (Santa Clara Valley) classified as Seismic Design Category D or D+ (proximity to Hayward Fault, San Andreas, Calaveras). New structures in Alquist-Priolo fault zones must use higher seismic coefficients (Fa and Fv per USGS maps, typically 1.2-1.4x base IBC). Nonstructural components (MEP equipment, glazing) must be braced per IBC 1604.9. Unreinforced masonry buildings prohibited. Cast-in-place concrete moment frames required for multi-story; steel braced frames acceptable. Detailed engineering required; Design Review by city engineer mandatory.",
+      "citation": "San Jose Municipal Code §20.100 + IBC 1613 Seismic",
+      "confidenceTier": "primary",
+      "keywords": ["seismic", "hayward", "fault", "design", "structural"]
+    },
+    {
+      "id": "ca-sj-nec-grounding-fault-current",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "250",
+      "title": "San Jose High-Current Grounding for Data Centers and Facilities",
+      "text": "Buildings in Tech/Innovation Zones (downtown, North San Jose) housing data centers, server farms, or high-density commercial electrical loads must use enhanced grounding per NEC 250.4(A)(5): equipment grounding conductors copper (minimum #2 AWG), bonding all metallic enclosures, and ground rod testing to <5 ohms (vs NEC <25 ohms). Grounding electrode system must include concrete-encased electrode (ufer) plus ground rods. Facility must maintain annual grounding resistance test records. Summary — verify zone applicability and test documentation requirements with city AHJ.",
+      "citation": "San Jose Reach Code §24.5 Grounding Requirements",
+      "confidenceTier": "summary",
+      "keywords": ["grounding", "fault", "electrical", "data-center", "resistance"]
+    },
+    {
+      "id": "ca-sj-ibc-cool-roof-requirement",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1605",
+      "title": "San Jose Cool Roof Requirement for New Construction",
+      "text": "New buildings must install cool roofing material with solar reflectance (albedo) ≥0.70 and thermal emittance ≥0.75 (or Solar Reflectance Index ≥67). Exceptions: buildings with on-site solar PV (rooftop arrays) may use dark panels instead; green roofs (10%+ coverage) exempt; historic preservation exempt. Material must carry Title 24 certification. Labor and material cost premium (typically 5-10%) offsets operational cooling load reduction. Reflectance testing required at commissioning. Summary — verify SRI thresholds and cool roof product list with California Energy Commission.",
+      "citation": "San Jose + California Title 24 Cool Roof Mandate",
+      "confidenceTier": "primary",
+      "keywords": ["cool-roof", "solar-reflectance", "albedo", "roofing", "thermal"]
+    },
+    {
+      "id": "ca-sj-ipc-toilet-water-conservation",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "422.1",
+      "title": "San Jose Toilet Flush Volume (Ultra-Low-Flow)",
+      "text": "All new residential toilets must be dual-flush ultra-low-flow: max 0.8 gallons per flush (light waste), 1.28 gpf (full flush). All commercial toilets and urinals max 1.28 gpf and 0.5 gpf respectively (exceeds IPC baseline). Fixtures must be UHET certified or WaterSense labeled. Retrofit of existing toilets not required unless building undergoing major plumbing upgrade. Maintenance: facility operator must monitor flush volume annually and service fill valve if degradation detected. Non-compliance subject to water conservation citation.",
+      "citation": "San Jose Water Conservation Ordinance + IPC 2021",
+      "confidenceTier": "primary",
+      "keywords": ["toilet", "water", "conservation", "flush", "volume"]
+    }
+  ]
+}

@@ -29,7 +29,7 @@ interface MinimalSpeechRecognition {
   start: () => void;
   stop: () => void;
   onresult:
-    | ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void)
+    | ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>; resultIndex: number }) => void)
     | null;
   onerror: ((event: unknown) => void) | null;
   onend: (() => void) | null;
@@ -163,15 +163,25 @@ export default function WorkflowTurkeyInput({
       rec.interimResults = true;
       rec.lang = 'en-US';
       rec.onresult = (evt) => {
-        let transcript = '';
-        for (let i = 0; i < evt.results.length; i += 1) {
-          transcript += evt.results[i][0].transcript;
+        let interim = '';
+        let final = '';
+        for (let i = evt.resultIndex; i < evt.results.length; i += 1) {
+          const transcript = evt.results[i][0].transcript;
+          if (evt.results[i].isFinal) {
+            final += transcript + ' ';
+          } else {
+            interim += transcript;
+          }
         }
+        const currentTranscript = final || interim;
         setPrompt((prev) => {
           // Append voice to any existing typed text (don't clobber it).
           const sep = prev && !prev.endsWith(' ') ? ' ' : '';
-          return prev + sep + transcript;
+          return prev + sep + currentTranscript;
         });
+        if (final) {
+          rec.stop();
+        }
       };
       rec.onerror = (e) => {
         const err = e as { error?: string };
@@ -204,7 +214,7 @@ export default function WorkflowTurkeyInput({
         borderRadius: radii.lg,
         padding: spacing[4],
         marginBottom: spacing[6],
-        backgroundColor: '#FAFAF8',
+        backgroundColor: colors.trace,
         boxShadow: shadows.sm,
       }}
     >

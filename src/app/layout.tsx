@@ -29,28 +29,32 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Builder's Knowledge Garden — The AI COO for Construction",
-  description: "The operating system for the $17 trillion global construction economy. DREAM → DESIGN → PLAN → BUILD → DELIVER → GROW.",
+  title: {
+    default: "Builder's Knowledge Garden — The AI COO for Construction",
+    template: "%s — Builder's Knowledge Garden",
+  },
+  description: "The operating system for construction. Every phase from dream to delivery, all in one platform.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://builders.theknowledgegardens.com"),
   icons: {
     icon: [
-      { url: "/favicon.ico?v=2", sizes: "any" },
-      { url: "/icon-192.png?v=2", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png?v=2", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo/b_icon_192x192.png", type: "image/png", sizes: "192x192" },
+      { url: "/logo/b_icon_512x512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: "/apple-icon.png?v=2",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "Builder's Knowledge Garden",
-    description: "The AI COO for the $17T global construction economy. DREAM → DESIGN → PLAN → BUILD → DELIVER → GROW.",
-    images: [{ url: "/logo/og_image_dark.png", width: 1200, height: 630 }],
+    description: "The operating system for construction. Every phase from dream to delivery, all in one platform.",
+    images: [{ url: "/og/og-root.png", width: 1200, height: 630 }],
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Builder's Knowledge Garden",
-    description: "The AI COO for the $17T global construction economy.",
-    images: ["/logo/og_image_dark.png"],
+    description: "The operating system for construction.",
+    images: ["/og/og-root.png"],
   },
-  manifest: undefined,
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Builder's KG" },
 };
 

@@ -65,7 +65,7 @@ export default function CloseOutCTA({
         style={buttonStyle}
         onClick={handleClick}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#c55620';
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(217, 100, 46, 0.85)';
           (e.currentTarget as HTMLButtonElement).style.boxShadow =
             '0 6px 20px rgba(217, 100, 46, 0.3)';
         }}

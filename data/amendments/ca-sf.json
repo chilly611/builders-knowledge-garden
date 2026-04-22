@@ -1,0 +1,164 @@
+{
+  "jurisdiction": "ca-sf",
+  "jurisdictionName": "San Francisco",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022, SF Building Code",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://sfdbi.org/",
+  "amendments": [
+    {
+      "id": "ca-sf-electrical-nec-210-8-commercial-gfci",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210.8",
+      "title": "SF Commercial Kitchen GFCI Extension",
+      "text": "San Francisco Electrical Code extends NEC 210.8 GFCI requirements in commercial food service: all 120V receptacles within 10 feet of cooking surfaces, sinks, or prep areas must be GFCI protected (vs NEC's 6-foot rule). Includes island and peninsula circuits. Hand-sink stations require GFCI protection. Walk-in coolers and related service outlets also require GFCI. Summary — verify exact distance and exclusions with SF DBI.",
+      "citation": "SF Electrical Code §210.8 Commercial Amendment",
+      "confidenceTier": "summary",
+      "keywords": ["gfci", "commercial", "kitchen", "receptacle", "10-foot"]
+    },
+    {
+      "id": "ca-sf-electrical-service-panel-upgrade-trigger",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "230",
+      "title": "SF Service Panel Upgrade on Alteration",
+      "text": "Alterations, additions, or tenant improvements affecting ≥20% of a floor's electrical load must trigger service upgrade if existing service <200A for residential, <400A for commercial, or if load >80% of service capacity. SF DBI enforces this strictly for any work including HVAC, EV charging, or solar addition. Upgrade to 200A minimum (residential) or equivalent modern capacity required. Summary — verify current load threshold percentage with SF DBI.",
+      "citation": "SF Electrical Code Service Upgrade Requirement",
+      "confidenceTier": "summary",
+      "keywords": ["service", "upgrade", "alteration", "load", "capacity"]
+    },
+    {
+      "id": "ca-sf-electrical-solar-rule-21-interconnection",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "SF Solar Interconnection (Rule 21 Successor)",
+      "text": "All solar photovoltaic systems in SF ≥10 kW must comply with current Rule 21 successor (IEC 61850-90-7 or equivalent) and include advanced functionality: reactive power support, voltage/frequency ride-through to prevent nuisance disconnects, and two-way communication with utility (PG&E). Residential systems <10 kW must still include bi-directional communication port. Inverter firmware must be updatable remotely for grid services. Summary — verify current Rule 21 revision number with PG&E/SF DBI.",
+      "citation": "SF Solar Rule 21 Amendment",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "pv", "rule-21", "interconnection", "grid"]
+    },
+    {
+      "id": "ca-sf-fire-code-seismic-gas-shutoff",
+      "discipline": "fire",
+      "baseEdition": "IFC 2021",
+      "baseSection": "901",
+      "title": "SF Seismic Gas Shutoff Valve Mandate",
+      "text": "All buildings >4 stories with gas service in SF must install seismic shut-off valves (SSV) on gas supply lines. Valves must activate at ≥0.5g horizontal ground acceleration. Retrofit deadline for existing buildings was 2015; all new construction must include at point of service entry. Installation must be by licensed plumber. Valve must be accessible for inspection and maintenance. SF Fire Code strictly enforces this; failure to install blocks Certificate of Occupancy.",
+      "citation": "SF Fire Code Gas Shutoff Requirement",
+      "confidenceTier": "primary",
+      "keywords": ["gas", "shutoff", "seismic", "safety", "valve"]
+    },
+    {
+      "id": "ca-sf-fire-code-fire-alarm-high-rise",
+      "discipline": "fire",
+      "baseEdition": "IFC 2021",
+      "baseSection": "901.6",
+      "title": "SF High-Rise Fire Alarm Requirements",
+      "text": "Buildings >75 feet (typically 7+ stories in SF) must have supervised fire alarm system with emergency voice/alarm communication (EVAC) system. All stairwells must have voice speaker capability. Roof must have dedicated cell phone repeater or radio repeater for emergency responders. Elevator recall must be automatic to ground floor. Sprinkler waterflow must trigger alarm; water pressure drop sensors required. Summary — verify exact height trigger and system features with SF Fire Department.",
+      "citation": "SF Fire Code High-Rise Fire Alarm",
+      "confidenceTier": "summary",
+      "keywords": ["fire", "alarm", "high-rise", "communication", "evac"]
+    },
+    {
+      "id": "ca-sf-mechanical-gas-appliance-ban",
+      "discipline": "mechanical",
+      "baseEdition": "IFC 2021",
+      "baseSection": "301.2",
+      "title": "SF Natural Gas Appliance Ban (New Construction)",
+      "text": "New residential and commercial buildings in SF constructed after January 1, 2024, are prohibited from using natural gas for heating, cooking, or water heating. All-electric buildings required: induction cooking, electric heat pump water heaters, and electric space heating (heat pump, radiant). Exceptions: buildings <4 units with shared water heater, buildings without sufficient electrical service at time of design (hardship exemption requires SF Planning approval). Gas infrastructure stub-out prohibited. This is Ordinance 236-20 successor (Ordinance 99-20 expired).",
+      "citation": "SF Ordinance 236-20 Gas Appliance Ban",
+      "confidenceTier": "primary",
+      "keywords": ["gas", "ban", "new construction", "electric", "all-electric"]
+    },
+    {
+      "id": "ca-sf-calgreen-energy-efficiency-tier-2",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Part 11, SF Green Code",
+      "baseSection": "502",
+      "title": "SF Green Building Code Tier 2 Performance",
+      "text": "All new buildings and major renovations >5,000 sq ft must achieve SF Tier 2 green building performance: 15% better-than-code energy efficiency (vs California baseline), 20% water use reduction, 75% waste diversion during construction, renewable energy ready (solar PV or battery storage pathway). Residential must include EV charging (20% of parking) + battery-ready electrical. Commercial must include cool roof + daylighting in 75% of occupied spaces. Tier 2 is mandatory; Tier 1 is baseline.",
+      "citation": "SF Green Building Code Tier 2 Standards",
+      "confidenceTier": "primary",
+      "keywords": ["green", "energy", "efficiency", "water", "renewable"]
+    },
+    {
+      "id": "ca-sf-plumbing-low-flow-fixtures",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "603",
+      "title": "SF Low-Flow Fixture Requirement",
+      "text": "All fixtures in new and renovated buildings must exceed federal WaterSense standards: faucets ≤1.5 gpm (federal is 2.0), toilets ≤1.28 gpf (federal standard), showerheads ≤2.0 gpm (federal is 2.5). Greywater recirculation systems encouraged. Outdoor irrigation must use smart controllers (weather-based) and drip irrigation where possible. Summary — verify current fixture flow rates with SF DBI.",
+      "citation": "SF Plumbing Code Low-Flow Requirements",
+      "confidenceTier": "summary",
+      "keywords": ["plumbing", "low-flow", "fixture", "water", "conservation"]
+    },
+    {
+      "id": "ca-sf-accessibility-ada-beyond-cbc",
+      "discipline": "structural",
+      "baseEdition": "CBC Chapter 11B",
+      "baseSection": "1101",
+      "title": "SF Accessibility Beyond CBC 11B",
+      "text": "SF Building Code requires accessibility features beyond CBC minimum: all residential buildings 4+ units must have 5% of units fully accessible (vs CBC 2%). Public restrooms require family/companion accessible stall (not just standard ADA). Ramps must have 1:12 slope maximum (vs CBC's 1:12.5 in some cases). Accessible parking must have 8-foot aisle minimum in structured parking (vs 5-foot in code). Wayfinding signage must be bilingual (English/Spanish). Summary — verify current percentages and space requirements with SF DBI.",
+      "citation": "SF Accessibility Standards",
+      "confidenceTier": "summary",
+      "keywords": ["accessibility", "ada", "ramp", "parking", "universal"]
+    },
+    {
+      "id": "ca-sf-structural-seismic-dampers",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "1705",
+      "title": "SF Seismic Performance Enhancement (Optional)",
+      "text": "Buildings >12 stories in SF may receive reduced seismic design forces if equipped with tuned mass dampers, friction dampers, or lead-rubber bearings (passive systems, no active control). Systems must be certified by licensed structural engineer and approved by SF DBI. Performance-based seismic design using Response Spectrum Analysis (RSA) preferred over equivalent lateral force. Buildings meeting Tier 2 Seismic Performance are exempt from soft-story retrofit if <5 stories. Summary — verify current seismic performance tiers with SF DBI.",
+      "citation": "SF Seismic Performance Requirements",
+      "confidenceTier": "summary",
+      "keywords": ["seismic", "damper", "structural", "performance", "earthquake"]
+    },
+    {
+      "id": "ca-sf-electrical-redundant-fiber-backbone",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "800",
+      "title": "SF Data Center / High-Tech Facility Fiber Backbone",
+      "text": "Data centers and high-availability commercial facilities in SF must include redundant fiber optic backbone to at least two separate utility splice points (different buildings/carriers). Conduit must be dedicated and physically separated from power conductors per NEC 800.44. Backup power systems must include UPS + generator with ≥4-hour run time on generator fuel (not standard code requirement). Summary — verify current facility classification and redundancy requirements with SF DBI.",
+      "citation": "SF Data Center Fiber/Redundancy Standards",
+      "confidenceTier": "summary",
+      "keywords": ["data", "fiber", "redundancy", "backup", "power"]
+    },
+    {
+      "id": "ca-sf-fire-code-sprinkler-residential",
+      "discipline": "fire",
+      "baseEdition": "IFC 2021",
+      "baseSection": "903",
+      "title": "SF Sprinkler Requirement for Multi-Family Buildings",
+      "text": "All residential buildings 4+ units in SF require automatic sprinkler systems (wet-pipe or NFPA 13R). Single-family homes (1-3 units) are exempt but encouraged. Sprinkler system must cover all occupied areas including closets, attics, and storage. Water supply must be from separate municipal service or private system with adequate pressure. Sprinkler heads must not exceed 10-foot spacing in light-hazard occupancies. Summary — verify current multi-unit threshold with SF Fire.",
+      "citation": "SF Fire Code Sprinkler Mandate",
+      "confidenceTier": "summary",
+      "keywords": ["sprinkler", "fire", "residential", "automatic", "multi-family"]
+    },
+    {
+      "id": "ca-sf-building-enclosure-air-sealing",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Part 6",
+      "baseSection": "110.9",
+      "title": "SF Building Envelope Air Sealing (Tier 2 Requirement)",
+      "text": "All new buildings and major renovations must achieve blower-door test result <3 ACH50 (air changes per hour at 50 Pa pressure differential). Test must be performed by certified energy rater post-construction before CO. Ductwork must be sealed and tested to <5% leakage of design flow. Windows/doors must be installed per manufacturer detail and sealed at all penetrations. Summary — verify current ACH50 threshold and testing requirements with SF DBI.",
+      "citation": "SF Building Envelope Sealing Standards",
+      "confidenceTier": "summary",
+      "keywords": ["air sealing", "envelope", "blower door", "ach50", "energy"]
+    },
+    {
+      "id": "ca-sf-electrical-ev-charging-percentage",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "SF EV Charging Infrastructure (Parking Requirement)",
+      "text": "Commercial parking facilities >25 spaces must install EV charging at 20% of spaces (minimum), or if new construction, provide conduit/electrical readiness for future chargers at 100% of spaces. Multi-family residential ≥10 units must provide 20% EV-capable spaces (charger ready, 240V supply). Single-family ADUs must include EV-ready single space if parking provided. Summary — verify exact percentages and readiness thresholds with SF Planning/DBI.",
+      "citation": "SF EV Charging Infrastructure Requirement",
+      "confidenceTier": "summary",
+      "keywords": ["ev", "charging", "parking", "infrastructure", "commercial"]
+    }
+  ]
+}

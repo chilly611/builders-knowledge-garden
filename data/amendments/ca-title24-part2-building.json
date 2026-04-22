@@ -1,0 +1,120 @@
+{
+  "jurisdiction": "ca-statewide-building",
+  "jurisdictionName": "California (State-Level Title 24 Part 2 - Building/Structural)",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022 (CBC)",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.dgs.ca.gov/bsc/Resources/Title24/2022-Title-24",
+  "amendments": [
+    {
+      "id": "ca-cbc-seismic-table-1613",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021 (basis for CA CBC)",
+      "baseSection": "1613",
+      "title": "CA CBC Table 1613: Seismic Design Parameters",
+      "text": "California adopts and amends IBC Table 1613 seismic parameters with state-specific modifications. Uses USGS Seismic Design Category mapping (maps IBC Seismic Design Categories A-F to California geologic hazard zones). Site Class (A-F) determination requires Phase 1 ESA + geotechnical boring in most areas. Importance Factor Ie varies: hospitals + critical infrastructure = 1.5 (vs IBC 1.25); residences = 1.0. California requires 3-year updates to seismic maps (USGS vs IBC 3-year cycle). Site-specific seismic study required for buildings in Seismic Design Category D, E, F.",
+      "citation": "CA CBC §1613 Seismic Parameters",
+      "confidenceTier": "primary",
+      "keywords": ["seismic", "design category", "earthquake", "site class"]
+    },
+    {
+      "id": "ca-cbc-wildfire-wui-chapter-7a",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "Chapter 7A (WUI)",
+      "title": "CA CBC Chapter 7A: Wildfire-Urban Interface (WUI) Requirements",
+      "text": "California CBC Chapter 7A mandates fire-hardening measures for buildings in Wildfire-Urban Interface (WUI) zones. Exterior walls must use non-combustible or Class A rated materials in high/very-high fire severity zones (determined by CAL FIRE hazard mapping). Roof must be Class A (SRI ≥75, or metal/tile with <1/4 inch gaps). Eaves must be enclosed with 1/4-inch mesh or material that prevents ember entry. Vents (roof, foundation, wall) must be 1/8-inch mesh minimum. Decks and patios must use non-combustible framing + decking in very-high zones. Vegetation setbacks: 5-30 feet from building depending on vegetation type + slope. Summary — specific requirements vary by fire zone; verify with local AHJ.",
+      "citation": "CA CBC Chapter 7A WUI",
+      "confidenceTier": "summary",
+      "keywords": ["wildfire", "wui", "fire-hardening", "ember", "roof", "eaves"]
+    },
+    {
+      "id": "ca-cbc-residential-sprinkler-r313",
+      "discipline": "fire",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "Section R313",
+      "title": "CA CBC R313: Residential Automatic Fire Sprinkler Systems",
+      "text": "All new residential construction (single-family, multi-family, mobile homes) must be equipped with automatic fire sprinkler system. System must be designed per NFPA 13D (residential) or 13R (multi-family) standards. Water supply must be certified to provide 100% of sprinkler demand simultaneously (no exclusions for small homes). System must include backflow preventer (DC check valve or RPZ assembly). Sprinkler coverage required in bedrooms, living areas, hallways, kitchens. Attics/crawlspaces may be exempted if ≤55 sq ft. System must be tied to main water supply or backup tank + pump (if service area exceeds supply capacity).",
+      "citation": "CA CBC §R313 Fire Sprinklers",
+      "confidenceTier": "primary",
+      "keywords": ["sprinkler", "fire", "automatic", "residential", "nfpa13d"]
+    },
+    {
+      "id": "ca-cbc-foundation-seismic-design",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "1806, 1808",
+      "title": "CA CBC 1806/1808: Foundation Design for Seismic Loading",
+      "text": "California requires foundation design to account for seismic forces transmitted through superstructure. Shallow foundations (spread footings, slab-on-grade) must be keyed and doweled to resist lateral shear from earthquake motion. Deep foundations (piles, caissons) must extend below liquefaction-prone soils (if geotechnical report identifies liquefaction risk). Connections between foundation and above-grade structure must be designed for combined vertical + lateral loads. Sill plate bolting required every 6 feet (vs IBC every 6 feet minimum). Post-and-pier foundations must be anchored to resist uplift during earthquake.",
+      "citation": "CA CBC §1806/1808 Seismic Foundation",
+      "confidenceTier": "primary",
+      "keywords": ["foundation", "seismic", "bolt", "dowel", "lateral"]
+    },
+    {
+      "id": "ca-cbc-wood-frame-sheathing",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "2304, 2305",
+      "title": "CA CBC 2304/2305: Wood-Frame Sheathing for Seismic Resistance",
+      "text": "Residential wood-frame shear walls must use minimum 1/2-inch structural plywood or OSB sheathing (not drywall alone). Sheathing must be fastened with 8d nails at 6-inch centers around perimeter, 12-inch centers in field. Wall aspect ratio (height/width) must not exceed 3.5:1 (vs IBC allowing higher ratios). Blocking at panel joints required. Openings (windows, doors) reduce shear wall capacity; analysis required for walls with >30% openings. Summary — specific sheathing requirements vary by seismic zone; verify with structural engineer.",
+      "citation": "CA CBC §2304/2305 Wood Sheathing",
+      "confidenceTier": "summary",
+      "keywords": ["sheathing", "plywood", "seismic", "shear wall", "nailing"]
+    },
+    {
+      "id": "ca-cbc-concrete-seismic-tie",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "1912, 1913",
+      "title": "CA CBC 1912/1913: Reinforced Concrete Seismic Detailing",
+      "text": "Reinforced concrete members (columns, beams, shear walls) in Seismic Design Categories D-F must comply with ACI 318 seismic provisions plus California amendments. Transverse reinforcement (hoops/ties) must be spaced at ≤d/4 (where d = member depth) in seismic frame regions (vs non-seismic allowing d/2). Column-to-beam joints must be detailed for moment transfer (shear reinforcement required). Concrete strength minimum f'c = 3000 psi (vs IBC allowing 2500 psi in some cases). Shear reinforcement must extend full height of member. Summary — hire licensed structural engineer for concrete design in seismic zones.",
+      "citation": "CA CBC §1912/1913 Concrete Seismic",
+      "confidenceTier": "summary",
+      "keywords": ["concrete", "rebar", "seismic", "hoops", "ties"]
+    },
+    {
+      "id": "ca-cbc-steep-roof-snow-load",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "1608",
+      "title": "CA CBC 1608: Snow Load Analysis (High-Elevation Buildings)",
+      "text": "Buildings in areas with annual snowfall >50 inches must be analyzed for snow load per ASCE 7 standards using California-specific snow load maps. Ground snow load (pg) determined from USGS data + local weather records. Sloped roofs reduce design load by slope factor (warmer roofs shed snow faster). Flat roofs design for full pg. Snow load may control over wind load in Sierra Nevada, Cascade Range, high desert areas. Valleys, areas where snow drifts accumulate require higher design loads (drift surcharge). Summary — use USGS 'Snow Load Hazard' dataset + local utility data for your site.",
+      "citation": "CA CBC §1608 Snow Load",
+      "confidenceTier": "summary",
+      "keywords": ["snow", "load", "sloped roof", "drift", "elevation"]
+    },
+    {
+      "id": "ca-cbc-wind-load-coastal",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "1609",
+      "title": "CA CBC 1609: Wind Load (Coastal + Monsoon Regions)",
+      "text": "Coastal buildings (within 1 mile of Pacific Ocean) must be analyzed for enhanced wind loads per ASCE 7 (Exposure C). Monsoon-influenced areas (southern California deserts) use peak gust speeds from historical data. Wind load formula: p = qz * G * Cf where qz = dynamic pressure (depends on wind speed + exposure), G = gust response factor, Cf = pressure coefficient. Enclosed buildings in Exposure C use Cf = 0.8 to -0.5 (depends on surface). Low-rise residential in Exposure B typically experiences lower pressures. Connections (roof-to-wall, wall-to-foundation) must resist uplift forces (not just shear).",
+      "citation": "CA CBC §1609 Wind Load",
+      "confidenceTier": "primary",
+      "keywords": ["wind", "load", "coastal", "exposure", "gust"]
+    },
+    {
+      "id": "ca-cbc-foundation-frost-depth",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "1805",
+      "title": "CA CBC 1805: Foundation Frost Depth (Regional Variation)",
+      "text": "California frost depth varies by region: Coastal (San Francisco, LA): 0-12 inches; Sierra Nevada foothills: 18-36 inches; High elevation (>5000 ft): 36-48 inches. Foundation footings must be placed below frost depth to prevent frost heave (expansion/contraction damage). In permafrost areas (not common in CA), additional considerations apply. Perimeter insulation (XPS, EPS) may be used in lieu of deeper footings (requires engineer analysis). Drainage away from foundation required in all regions to prevent frost damage.",
+      "citation": "CA CBC §1805 Frost Depth",
+      "confidenceTier": "primary",
+      "keywords": ["frost", "depth", "footing", "elevation", "region"]
+    },
+    {
+      "id": "ca-cbc-hillside-grading-stability",
+      "discipline": "structural",
+      "baseEdition": "CA CBC 2022",
+      "baseSection": "1810, 3401-3407",
+      "title": "CA CBC 1810/3401-3407: Hillside Grading + Slope Stability",
+      "text": "Buildings on slopes >25% must comply with CA CBC Chapter 34 Hillside, Flood, and Wildfire Appendix. Grading must not create cut/fill slopes steeper than 2:1 (2 units horizontal for 1 unit vertical rise) without stabilization. Stability analysis required for slopes >30%. Retaining walls >4 feet must be designed by engineer + include drainage. Liquefaction analysis required in areas mapped by California Geological Survey (Bay Area, LA Basin, San Diego County). Seismic slope stability (sliding potential) must be evaluated. Vegetation preservation/restoration required per Local Coastal Program (if applicable).",
+      "citation": "CA CBC §1810 / Chapter 34 Hillside Grading",
+      "confidenceTier": "primary",
+      "keywords": ["grading", "slope", "stability", "retaining wall", "liquefaction"]
+    }
+  ]
+}

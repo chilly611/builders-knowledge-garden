@@ -1,0 +1,131 @@
+{
+  "jurisdiction": "ca-sd",
+  "jurisdictionName": "San Diego",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022, San Diego Municipal Code",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.sandiego.gov/development-services/",
+  "amendments": [
+    {
+      "id": "ca-sd-coastal-review-trigger",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "3201",
+      "title": "San Diego Coastal Review Trigger",
+      "text": "Any development within 1 mile of the Pacific Ocean shoreline or within San Diego's Coastal Zone (mapped by City/County Planning) must undergo coastal resource review per California Coastal Act and Local Coastal Program (LCP). Projects ≥10,000 sq ft or involving grading ≥2,500 sq ft in coastal areas require Coastal Development Permit (CDP). Projects must demonstrate no net loss of coastal access, habitat, or agricultural land. Setback from bluff edge typically ≥25 feet for single-story structures, increasing for taller buildings. Summary — verify current coastal zone boundary and setback requirements with San Diego Planning.",
+      "citation": "San Diego Local Coastal Program / CDP Requirements",
+      "confidenceTier": "summary",
+      "keywords": ["coastal", "review", "setback", "permit", "ocean"]
+    },
+    {
+      "id": "ca-sd-fema-flood-zone-mitigation",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "1102",
+      "title": "San Diego FEMA Flood Zone Elevated Floor",
+      "text": "Properties in FEMA 100-year floodplain (AE zones) or coastal high-hazard area (VE zone per coastal flood maps) must elevate lowest floor ≥1 foot above Base Flood Elevation (BFE) per FEMA guidelines. Wet floodproofing not allowed for residential. Mechanical systems, utilities, and HVAC must be elevated above BFE or located in floodproof enclosures. Parking structures in floodplains must use flood vents. Summary — verify current San Diego FEMA maps and elevation requirements with Development Services.",
+      "citation": "San Diego Floodplain Management Standards",
+      "confidenceTier": "summary",
+      "keywords": ["flood", "fema", "elevation", "bfe", "coastal"]
+    },
+    {
+      "id": "ca-sd-wui-chapter-7a-eastern-county",
+      "discipline": "fire",
+      "baseEdition": "IBC 2022, CA Chapter 7A",
+      "baseSection": "701.3",
+      "title": "San Diego WUI Fire-Hardening (East County)",
+      "text": "Properties in Wildland-Urban Interface zones (east San Diego County: Julian, Ramona, Poway, Escondido foothills, Ramona area) must meet Chapter 7A fire-hardening: roof Class A minimum (metal, composite, or fire-rated shingles); exterior walls ≤5 feet from property line must be 1-hour rated or use Class A/B materials; all vents screened 1/8-inch metal mesh; deck boards spaced ≤1/8-inch. Gutters must be metal or fire-rated. Window glazing within 10 feet of ground must be dual-pane or tempered. Summary — verify WUI zone boundary with San Diego Fire and Planning.",
+      "citation": "San Diego WUI Fire-Hardening Standards",
+      "confidenceTier": "summary",
+      "keywords": ["fire", "wui", "wildland", "hardening", "roof"]
+    },
+    {
+      "id": "ca-sd-electrical-solar-reach-code",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "San Diego Solar-Ready / Reach Code",
+      "text": "New residential construction in San Diego (city/unincorporated) must be solar-ready: roof areas ≥150 sq ft with south/southeast/southwest facing exposure must have structural capacity for solar PV (minimum 50 lbs/sq ft live load, or certified by structural engineer). Service panel/sub-panel must have dedicated conduit pathway to roof for solar-ready combiner box. Load calculation must account for future solar + EV charging. Service ≥200A for homes ≥2,500 sq ft (future-proofing). Summary — verify exact square footage threshold and exposure orientation with San Diego Development Services.",
+      "citation": "San Diego Solar-Ready Reach Code",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "pv", "reach code", "residential", "roof"]
+    },
+    {
+      "id": "ca-sd-electrical-ev-charging-standard",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "San Diego EV Charging Infrastructure Mandate",
+      "text": "New residential construction must include 240V, 40A EV-ready circuit in garage or carport (if provided), or at curbside location. Multi-family ≥4 units must provide 15% of parking spaces with EV chargers installed or charger-ready conduit. Commercial parking ≥10 spaces must provide 10% EV-capable spaces. Single-family ADUs not exempt if primary residence has parking. Summary — verify current percentages and conduit vs installed charger requirements with San Diego Planning.",
+      "citation": "San Diego EV Charging Infrastructure Standards",
+      "confidenceTier": "summary",
+      "keywords": ["ev", "charging", "240v", "residential", "parking"]
+    },
+    {
+      "id": "ca-sd-electrical-nec-680-pool-spa-electrical",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "680",
+      "title": "San Diego Swimming Pool / Spa Electrical Amendments",
+      "text": "Swimming pools and spas in San Diego must comply with NEC 680 + San Diego amendments: bonding perimeter extended to all metallic objects within 10 feet of pool edge (pool deck railings, diving board supports, light fixtures, equipment); bonding conductors must be #6 copper or larger; GFCI protection on all circuits within 20 feet horizontal or 8 feet vertical from pool water surface. Spa water heater must have separate disconnect within sight of equipment. Underwater lighting requires 12V maximum (vs 120V in some older installations). Summary — verify current bonding distance and voltage limits with San Diego DBS.",
+      "citation": "San Diego Pool/Spa Electrical Standards",
+      "confidenceTier": "summary",
+      "keywords": ["pool", "spa", "electrical", "gfci", "bonding"]
+    },
+    {
+      "id": "ca-sd-mechanical-solar-thermal-water-heating",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Part 6",
+      "baseSection": "110.3",
+      "title": "San Diego Solar Thermal Water Heating (Non-Residential)",
+      "text": "Non-residential buildings >10,000 sq ft with heated domestic hot water must include solar thermal collectors if economically feasible (payback <7 years). San Diego's high solar insolation makes solar thermal cost-effective. System must be sized per ASHRAE 90.1 Appendix G for ≥30% of annual hot water load (or higher if feasible). Requires roof structural assessment and system monitoring. Summary — verify current cost-effectiveness threshold and minimum solar fraction with San Diego Development Services.",
+      "citation": "San Diego Solar Thermal Requirement",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "thermal", "water heating", "non-residential", "hot water"]
+    },
+    {
+      "id": "ca-sd-grading-slope-stability-geotechnical",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "3202",
+      "title": "San Diego Grading / Slope Stability (Hills/Canyons)",
+      "text": "Projects with grading on slopes >25% or in canyonlands (common in San Diego foothills) must provide geotechnical report confirming slope stability, drainage design, and compaction testing. Slopes steeper than 2:1 (horizontal:vertical) require retaining walls or soil nailing. Fill material in canyons must be compacted to 95% relative density. Undocumented fill requires removal or stabilization. Drainage must prevent surface water runoff into neighboring properties. Summary — verify slope limits and compaction specs with San Diego Development Services.",
+      "citation": "San Diego Grading and Slope Stability Standards",
+      "confidenceTier": "summary",
+      "keywords": ["grading", "slope", "geotechnical", "stability", "canyon"]
+    },
+    {
+      "id": "ca-sd-water-supply-recycled-water-irrigation",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "610",
+      "title": "San Diego Recycled Water / Dual Plumbing for Irrigation",
+      "text": "New developments ≥2 acres or non-residential ≥5,000 sq ft in San Diego service area with landscape irrigation must design for recycled water use if recycled water infrastructure is available within 1/2 mile. Dual plumbing system (purple pipe) required if recycled water is accessible. System must include separate meter, isolation valves, and color-coded pipes. If recycled water not available at development time, infrastructure must be 'ready' for future connection. Summary — verify recycled water availability and applicability thresholds with City of San Diego Water Department.",
+      "citation": "San Diego Recycled Water Standards",
+      "confidenceTier": "summary",
+      "keywords": ["recycled water", "purple pipe", "irrigation", "dual plumbing", "landscape"]
+    },
+    {
+      "id": "ca-sd-mechanical-cool-surfaces-heat-island",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Part 6",
+      "baseSection": "140.3",
+      "title": "San Diego Cool Surface / Heat Island Mitigation",
+      "text": "All new non-residential buildings and reroofing must use cool roofing materials (solar reflectance ≥0.65) or install vegetated (green) roofs. Parking lot surfaces must use high-albedo paving (light-colored asphalt/concrete with ≥0.35 reflectance) or tree shade (1 tree per 25 sq ft of parking). Hardscape in outdoor areas must use light-colored materials. San Diego's high heat (avg 70°F) makes cooling strategy critical. Summary — verify current reflectance thresholds and tree shade percentage requirements with San Diego Planning.",
+      "citation": "San Diego Cool Surface / Heat Island Standards",
+      "confidenceTier": "summary",
+      "keywords": ["cool", "surface", "heat island", "roof", "parking"]
+    },
+    {
+      "id": "ca-sd-building-enclosure-outdoor-comfort",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Part 6",
+      "baseSection": "110.9",
+      "title": "San Diego Outdoor Thermal Comfort (Shade/Ventilation)",
+      "text": "New commercial buildings and mixed-use developments with outdoor plaza or seating areas must provide shade (trees, structures, or shade sails) covering ≥50% of outdoor pedestrian areas by 2:00 PM solar time during summer solstice. Outdoor dining and gathering spaces must have natural ventilation (air flow ≥0.3 m/s during typical wind conditions). Misters or shade cloths may supplement passive cooling. Summary — verify current shade coverage percentage and ventilation rate requirements with San Diego Planning.",
+      "citation": "San Diego Outdoor Comfort Standards",
+      "confidenceTier": "summary",
+      "keywords": ["outdoor", "comfort", "shade", "ventilation", "thermal"]
+    }
+  ]
+}

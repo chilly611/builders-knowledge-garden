@@ -1,0 +1,164 @@
+{
+  "jurisdiction": "nv-southern",
+  "jurisdictionName": "Southern Nevada",
+  "parent": "nevada",
+  "adoptedEdition": "IBC 2021 + Southern Nevada Amendments",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.clarkcountynv.us/dflsi/building/",
+  "amendments": [
+    {
+      "id": "nv-southern-wind-load-high-wind-zone",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1609",
+      "title": "Southern Nevada High Wind Load Amendment",
+      "text": "Clark County (Las Vegas, Henderson, North Las Vegas) and unincorporated Southern Nevada enforce enhanced wind load requirements: basic wind speed 115 mph (vs IBC baseline 90 mph for much of Nevada). Design wind pressures per ASCE 7 must account for high desert terrain and terrain category C (not category B). All buildings ≥35 feet must perform wind tunnel testing or use enhanced analytical methods. Roof-to-wall connections must be designed for uplift forces ≥1.5x code minimum. Roof sheathing nailing spacing reduced to 4-inch edge, 8-inch field (vs 6-inch standard).",
+      "citation": "Southern Nevada Wind Load Amendment",
+      "confidenceTier": "primary",
+      "keywords": ["wind", "load", "pressure", "asce7", "roof"]
+    },
+    {
+      "id": "nv-southern-thermal-design-extreme-heat",
+      "discipline": "mechanical",
+      "baseEdition": "IBC 2021, IECC 2021",
+      "baseSection": "1001",
+      "title": "Southern Nevada Extreme Heat Design Amendment",
+      "text": "All buildings in Southern Nevada must be designed for extreme summer heat (120°F design dry-bulb common). HVAC systems must be rated for ≥125°F ambient (condenser temperature), not standard 95°F rating. Residential cooling must provide ≥4.0 tons per 1,000 sq ft (equivalent to SEER 16+ efficiency); commercial must provide adequate capacity per Manual J calculation at 125°F outdoor design temp. Ductwork must be insulated R-8 minimum (vs R-6 code minimum). Roofs must have ≥2-inch reflective insulation (cool roof coating or equivalent). Summary — verify current heat design temperature and cooling capacity factor with Clark County.",
+      "citation": "Southern Nevada Extreme Heat Design Standards",
+      "confidenceTier": "summary",
+      "keywords": ["heat", "thermal", "hvac", "cooling", "design"]
+    },
+    {
+      "id": "nv-southern-pool-spa-electrical-strict-gfci",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "680",
+      "title": "Southern Nevada Pool/Spa Drowning Prevention (Electrical)",
+      "text": "Clark County strictly enforces NEC 680 pool/spa electrical with enhanced GFCI and bonding: all circuits within 20 feet of pool edge must be GFCI protected (ground fault circuit interrupter and ground fault equipment protector both required in series). Bonding perimeter extended to 15 feet horizontally from pool (vs standard 10 feet). All bonding conductors #4 copper or larger (vs #6 minimum in code). Underwater lighting maximum 12V with GFCI. Spa must have separate 240V disconnect within 5 feet of equipment. Summary — verify current bonding distance and circuit requirements with Clark County DBS.",
+      "citation": "Southern Nevada Pool/Spa Electrical Standards",
+      "confidenceTier": "summary",
+      "keywords": ["pool", "spa", "gfci", "bonding", "drowning prevention"]
+    },
+    {
+      "id": "nv-southern-residential-cooling-btuh-requirement",
+      "discipline": "mechanical",
+      "baseEdition": "IECC 2021",
+      "baseSection": "402",
+      "title": "Southern Nevada Residential Cooling Capacity Mandate",
+      "text": "All new residential construction in Clark County must include HVAC cooling system sized for minimum 4.0 tons per 1,000 sq ft of conditioned space (not standard code requirement, Southern Nevada specific). System must be rated for 125°F ambient condenser operation. SEER rating minimum 16 (vs IECC baseline 14-15). Cooling system capacity must be verified by licensed HVAC contractor using Manual J calculation at 120°F design dry-bulb. Undersized AC systems common cause of complaints in Southern Nevada; this standard prevents inadequate cooling.",
+      "citation": "Southern Nevada Residential Cooling Mandate",
+      "confidenceTier": "primary",
+      "keywords": ["cooling", "hvac", "btuh", "capacity", "residential"]
+    },
+    {
+      "id": "nv-southern-pool-pump-variable-speed",
+      "discipline": "mechanical",
+      "baseEdition": "IECC 2021",
+      "baseSection": "602",
+      "title": "Southern Nevada Pool Pump Energy Efficiency",
+      "text": "All residential swimming pool and spa pumps in Clark County must be variable-speed or two-speed models (not single-speed). Variable-speed pumps must be sized to provide turnover in 8 hours at low speed (not peak circulation). Two-speed minimum 1.5 hp and 0.75 hp modes. Pool equipment must be sized per hydraulic analysis and not over-specified. Energy management system for pump scheduling required. Summary — verify current pump efficiency standards and scheduling requirements with Clark County Energy Commission.",
+      "citation": "Southern Nevada Pool Pump Efficiency Standard",
+      "confidenceTier": "summary",
+      "keywords": ["pool", "pump", "variable-speed", "efficiency", "energy"]
+    },
+    {
+      "id": "nv-southern-slab-foundation-expansive-soils",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1802",
+      "title": "Southern Nevada Slab-on-Grade / Expansive Soils",
+      "text": "Clark County soils commonly contain caliche (calcium carbonate layer) and expansive clay. All residential slabs-on-grade must include: subgrade evaluation by geotechnical engineer; moisture barrier (4-mil polyethylene minimum, 6-mil under non-residential) placed below slab; post-tensioned slab reinforcement in areas of moderate to high expansion potential (PI >20); or slab-on-stem wall construction where soil conditions warrant. Perimeter drains required to control moisture. No slab-on-grade in flood-prone areas (sumps must be installed). Summary — verify current caliche depth and expansion potential classification with Clark County Building Standards.",
+      "citation": "Southern Nevada Slab Foundation Standards",
+      "confidenceTier": "summary",
+      "keywords": ["slab", "foundation", "expansive", "caliche", "moisture"]
+    },
+    {
+      "id": "nv-southern-dust-control-construction-aqmd",
+      "discipline": "fire",
+      "baseEdition": "IBC 2021",
+      "baseSection": "303",
+      "title": "Southern Nevada Construction Dust Control (AQMD)",
+      "text": "All construction projects in Clark County must implement dust control per Southern Nevada AQMD Rule 080: watering exposed soil 2x daily (or continuous misting during grading/demolition); tarping material stockpiles; cleaning truck tires leaving site; street sweeping on paved roads adjacent to site. Dust control plan required for projects >5 acres or visible dust crossing property boundary. Fines for non-compliance: $50-500 per day. Dust monitors may be required on large projects. Summary — verify current watering frequency and project size trigger with AQMD.",
+      "citation": "Southern Nevada Dust Control Standards (AQMD Rule 080)",
+      "confidenceTier": "summary",
+      "keywords": ["dust", "control", "construction", "aqmd", "air quality"]
+    },
+    {
+      "id": "nv-southern-fire-flow-pressure-altitude",
+      "discipline": "fire",
+      "baseEdition": "IFC 2021",
+      "baseSection": "507",
+      "title": "Southern Nevada Fire Flow / Water Pressure at Altitude",
+      "text": "Clark County altitude ranges from 2,000 ft (valley floor) to 11,000 ft (Mt. Charleston). Fire flow requirements per IFC 507 must account for altitude: at 5,000 ft elevation, gravity storage water supply pressure is reduced ~25% vs sea level. Pressure-reducing valves on domestic water lines may reduce fire-fighting pressure if not properly designed (common issue at higher elevations). Fire department connection (FDC) systems must be tested at local altitude/pressure conditions. Storage tanks for fire suppression must be sized larger at altitude to compensate for reduced water density. Summary — verify specific project altitude and water pressure availability with local fire authority.",
+      "citation": "Southern Nevada Altitude Fire Flow Standards",
+      "confidenceTier": "summary",
+      "keywords": ["fire", "flow", "pressure", "altitude", "supply"]
+    },
+    {
+      "id": "nv-southern-electrical-solar-pv-high-temp",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "690",
+      "title": "Southern Nevada Solar PV High-Temperature Derating",
+      "text": "All solar photovoltaic systems in Southern Nevada must be rated for high cell temperatures (75°C+ cell temperature common in Vegas summer, vs 45°C standard test condition). Inverters must be rated for ≥70°C ambient (vs 50°C standard rating). DC conductors must be sized for 125°C rated insulation (RHH or USE-2, not standard THWN). System output must account for temperature derating factor (typically 0.8-0.9 in Southern Nevada vs 0.95 in cooler climates). Roof-mounted arrays must have minimum 6-inch air gap under panels for convection cooling. Summary — verify current temperature derating factor requirements with local AHJ.",
+      "citation": "Southern Nevada High-Temperature Solar PV Standards",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "pv", "temperature", "derating", "electrical"]
+    },
+    {
+      "id": "nv-southern-landscape-xeriscaping-water-reduction",
+      "discipline": "mechanical",
+      "baseEdition": "IECC 2021",
+      "baseSection": "401",
+      "title": "Southern Nevada Xeriscaping / Landscape Water Reduction",
+      "text": "New residential and commercial landscapes in Clark County must include drought-resistant plants (native or adapted to Sonoran Desert climate) covering ≥70% of landscaped area. Turf grass limited to functional areas (play areas, gathering spaces); accent plantings only. Irrigation must use smart controllers (soil moisture sensors or weather-based scheduling) and drip irrigation minimum (vs spray). No permanent overhead sprinklers on rooftops or non-vegetated areas. Landscape plan required with plant palette and irrigation schedule. Summary — verify current drought-plant percentage and turf limitations with Clark County Planning/Water Authority.",
+      "citation": "Southern Nevada Xeriscaping / Water Conservation Standards",
+      "confidenceTier": "summary",
+      "keywords": ["landscape", "xeriscaping", "water", "drought", "conservation"]
+    },
+    {
+      "id": "nv-southern-electrical-ev-charging-multi-family",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "Southern Nevada Multi-Family EV Charging Readiness",
+      "text": "New multi-family residential buildings (4+ units) in Clark County must provide EV charging infrastructure: minimum 25% of parking spaces with installed Level 2 chargers (240V, 32A), or 100% charger-ready conduit if built in phases. Service panel sizing must accommodate future 200A sub-panel for EV charging (separate from main HVAC). On-site renewable (solar) capacity of ≥3 kW per 4-unit building recommended (not required, but encouraged by Las Vegas power company rebates). Summary — verify current EV charging percentage and solar incentive eligibility with Las Vegas Valley Electric or Clark County Planning.",
+      "citation": "Southern Nevada Multi-Family EV Charging Standards",
+      "confidenceTier": "summary",
+      "keywords": ["ev", "charging", "multi-family", "residential", "parking"]
+    },
+    {
+      "id": "nv-southern-mechanical-demand-control-ventilation",
+      "discipline": "mechanical",
+      "baseEdition": "IECC 2021",
+      "baseSection": "502",
+      "title": "Southern Nevada Demand-Control Ventilation (Commercial)",
+      "text": "All non-residential buildings >10,000 sq ft in Clark County must use CO2-based or occupancy-based demand-control ventilation (DCV) to reduce heating/cooling load in variable-occupancy spaces (conference rooms, classrooms, offices). System must include CO2 sensors (target 1,000 ppm) to modulate outdoor air dampers. DCV can reduce HVAC energy 15-25% in intermittently-occupied buildings. Commercial buildings must provide energy management system showing ventilation control. Summary — verify current CO2 setpoint and building size threshold with Clark County Energy Commission.",
+      "citation": "Southern Nevada Demand-Control Ventilation Standards",
+      "confidenceTier": "summary",
+      "keywords": ["ventilation", "dcv", "demand-control", "co2", "commercial"]
+    },
+    {
+      "id": "nv-southern-building-permit-expedite-solar",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "Southern Nevada Expedited Permit for Residential Solar",
+      "text": "Clark County offers expedited permitting for residential solar PV systems ≤25 kW: online submittal, fast-track review (5 business days), and lower fees for solar-only projects. Property must have clear roof exposure and structural capacity. System must use UL-listed components and be installed by licensed contractor. Expedited path reduces typical 30-day review to 5 days. Rebates and incentive programs available through Las Vegas Valley Electric. Summary — verify current expedite timeline and fee structure with Clark County Building Department.",
+      "citation": "Southern Nevada Expedited Solar Permit Program",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "pv", "permit", "expedite", "residential"]
+    },
+    {
+      "id": "nv-southern-structural-impact-resistance-debris",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1609",
+      "title": "Southern Nevada Wind Debris / Impact Resistance",
+      "text": "Buildings in high-wind zones (all of Clark County) with large glazing areas (>40% of facade) must use impact-resistant windows and glass doors per ASTM E1996 or equivalent. Testing includes missile impact (9 lb 2x4 at 50 mph). Glazing must resist ≥115 mph wind pressures without failure. Skylights and skylights must be impact-rated or protected with polycarbonate guards. Summary — verify current impact resistance testing standard and missile weight with Clark County DBS.",
+      "citation": "Southern Nevada Impact-Resistant Glazing Standards",
+      "confidenceTier": "summary",
+      "keywords": ["wind", "impact", "glass", "debris", "resilience"]
+    }
+  ]
+}

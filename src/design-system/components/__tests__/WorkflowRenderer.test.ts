@@ -40,17 +40,42 @@ describe("WorkflowRenderer contract", () => {
     const { workflows } = loadWorkflows();
     const q5 = workflows.find((w) => w.id === "q5");
     expect(q5, "q5 must exist in workflows.json for the code-compliance route").toBeDefined();
-    expect(q5?.label).toBe("Code compliance");
+    expect(q5?.label).toBe("Check the codes");
     expect(q5?.steps.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("q5 includes both analysis_result steps wired to production prompts", () => {
+  it("q5 analysis_result steps are all wired to production prompts", () => {
     const { workflows } = loadWorkflows();
     const q5 = workflows.find((w) => w.id === "q5")!;
     const analysisSteps = q5.steps.filter((s) => s.type === "analysis_result");
-    expect(analysisSteps.length).toBe(2);
+    // q5 was restructured (W7.S) with a router step + one step per discipline
+    // (structural, electrical, plumbing, fire) so the router can hand off.
+    expect(analysisSteps.length).toBeGreaterThanOrEqual(5);
     const promptIds = analysisSteps.map((s) => s.promptId).sort();
-    expect(promptIds).toEqual(["compliance-electrical", "compliance-structural"]);
+    expect(promptIds).toEqual([
+      "compliance-electrical",
+      "compliance-fire",
+      "compliance-plumbing",
+      "compliance-router",
+      "compliance-structural",
+    ]);
+  });
+
+  it("every q5 promptId resolves to an existing production prompt file", () => {
+    const { workflows } = loadWorkflows();
+    const q5 = workflows.find((w) => w.id === "q5")!;
+    const analysisSteps = q5.steps.filter((s) => s.type === "analysis_result");
+    for (const step of analysisSteps) {
+      if (!step.promptId) continue;
+      const prodPath = resolve(
+        process.cwd(),
+        `docs/ai-prompts/${step.promptId}.production.md`
+      );
+      expect(
+        () => readFileSync(prodPath, "utf-8"),
+        `promptId ${step.promptId} (step ${step.id}) has no production prompt at ${prodPath}`
+      ).not.toThrow();
+    }
   });
 
   it("every q5 step has a valid StepType recognized by StepCard", () => {

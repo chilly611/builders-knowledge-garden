@@ -25,12 +25,29 @@
  * later, intentional integration.
  */
 
+import type { Metadata } from 'next';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import Link from 'next/link';
 import Logomark from '@/components/Logomark';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import styles from './landing.module.css';
+
+export const metadata: Metadata = {
+  title: 'Workflows — Builder\'s Knowledge Garden',
+  description: 'Pick the workflow that matches what you\'re working on — code compliance, estimating, supply ordering, contracts, crew, and more. Start anywhere in the 7-stage lifecycle.',
+  openGraph: {
+    title: 'Workflows — Builder\'s Knowledge Garden',
+    description: 'Pick the workflow that matches what you\'re working on.',
+    images: [{ url: '/public/og/og-workflows.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Workflows — Builder\'s Knowledge Garden',
+    description: 'Pick the workflow that matches what you\'re working on.',
+    images: ['/public/og/og-workflows.png'],
+  },
+};
 
 interface LifecycleStage {
   id: number;
@@ -84,37 +101,33 @@ const LIVE_WORKFLOWS: Record<string, string> = {
 // Short human-readable blurbs per workflow. Keeps the picker scannable
 // without forcing each workflow route to export its own metadata yet.
 const WORKFLOW_BLURBS: Record<string, string> = {
-  q1: 'Score a project for risk before you bid — red/yellow/green with reasons.',
-  q2: 'Fast AI estimate from plans, specs, or a photo. Sanity-check before quoting.',
-  q3: 'Look up a client: past projects, outstanding balances, notes.',
-  q4: 'Six starter contracts — agreement, sub, lien waivers, NDA, change order — filled and downloaded as PDFs in one pass.',
-  q5: 'Structural, electrical, plumbing, fire — which codes apply and where they bite.',
-  q6: "Sequence the job so trades don't trip over each other.",
-  q7: 'How many workers you need per phase, based on scope and schedule.',
-  q8: 'Draft permit applications from the scope you already described.',
-  q9: 'Compare subcontractor bids with apples-to-apples line items.',
-  q10: 'Rent vs. buy for the equipment this job actually needs.',
-  q11: 'Ordering list from the plan, with lead times surfaced.',
-  q12: 'Services & utilities to-do list — who to call, when, and for what.',
-  q13: 'Find, screen, and onboard workers into a lane on your crew.',
-  q14: 'Schedule around the weather forecast for your site.',
-  q15: "Speak your daily log. We'll structure it, tag it, and file it.",
-  q16: "Weekly OSHA toolbox talk, tailored to what you're actually doing this week.",
-  q17: 'Receipt → coded expense, job-costed correctly.',
-  q18: 'Outreach to your contacts — mass, tailored, or one-to-one.',
-  q19: "Compass: show me where I am, what's next, what I'm missing.",
-  q20:
-    'Draft the change order with reasons, cost breakdown, and schedule impact.',
-  q21:
-    "Auto-fill the draw request against AIA formats + your GC's template.",
-  q22: 'Lien waivers: who still owes one, and which form each needs.',
-  q23: 'Review 1099 vs W-2 classifications on your current crew.',
-  q24:
-    'Send a jobsite photo; get a punch-list entry with location and trade.',
-  q25: 'Chase retainage politely and repeatedly until it shows up.',
-  q26:
-    'Warranty reminders to the owner at the right intervals, in your voice.',
-  q27: 'Post-job retrospective — what to do the same and what to change next time.',
+  q1: 'Red, yellow, or green light on the bid. Why you should or shouldn\'t bid.',
+  q2: 'Get a rough number from the plans. Sanity-check before you quote the client.',
+  q3: 'Who you\'re working for. Past projects, how they pay, what you know about them.',
+  q4: 'Six templates — contract, sub agreement, liens, NDA, change order. Filled and ready to sign.',
+  q5: 'Which codes matter here. Structural, electrical, plumbing, fire, egress.',
+  q6: 'Who works when. Demo, framing, MEP, drywall, paint. Who can run at the same time.',
+  q7: 'How many people you need, per phase. And when you\'ll peak.',
+  q8: 'Applications ready to submit. From the scope you already wrote.',
+  q9: 'Bids side-by-side. Electrical, plumbing, framing. Same categories, easy to compare.',
+  q10: 'Scissor lift, dumpster, scaffolding. Rent it or own it. Total cost.',
+  q11: 'Order the materials. Lead times, suppliers, best prices, inventory check.',
+  q12: 'Utility locates, dumpster, portable toilet, inspections. Who to call, when.',
+  q13: 'Find the crew. Screen candidates. Send offers. Lock dates.',
+  q14: 'Schedule around rain and cold. Sensitive phases get flagged. 10-day forecast.',
+  q15: 'Speak it. We log it. Structured, tagged, searchable.',
+  q16: 'Weekly safety talk. OSHA-sourced. Tailored to what your crew is doing.',
+  q17: 'Receipts coded by category. Budget vs. actual. Overages flagged.',
+  q18: 'Mass outreach to vendors. RFQ in bulk. Responses tracked.',
+  q19: 'Snapshot of where you are. Estimate, schedule, tasks. Save it. Resume later.',
+  q20: 'Scope change? Draft the CO. Cost and schedule impact. Ready for signature.',
+  q21: 'Draw request auto-filled. Lender format. Track percent complete and payment status.',
+  q22: 'Who needs to waive and when. Conditional, final. Check who\'s signed.',
+  q23: 'Employee vs. 1099. Classification review. Flag edge cases.',
+  q24: 'Photos in. Punch list out. Drywall gaps, paint drips, trim misses.',
+  q25: 'Retainage reminder sequence. Track who owes. Escalate if needed.',
+  q26: 'Warranty log. When they expire. Owner reminders on your schedule.',
+  q27: 'What worked. What didn\'t. Cost variance. Crew feedback. Lessons for next time.',
 };
 
 function loadWorkflows(): WorkflowsJson {
@@ -122,12 +135,6 @@ function loadWorkflows(): WorkflowsJson {
   const raw = readFileSync(path, 'utf-8');
   return JSON.parse(raw) as WorkflowsJson;
 }
-
-export const metadata = {
-  title: 'Workflows — Builder\'s Knowledge Garden',
-  description:
-    'Pick the workflow that matches what you\'re working on. Start anywhere in the 7-stage lifecycle.',
-};
 
 const STAGE_COLORS: Record<number, string> = {
   1: '#D85A30', // Size Up
@@ -293,9 +300,14 @@ export default function KillerAppPage() {
       {/* Footer rail — subtle, minimal */}
       <footer className={styles.footer}>
         <div>Builder&rsquo;s Knowledge Garden · v0.1</div>
-        <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit' }}>
-          Compass →
-        </Link>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
+            View your project Compass →
+          </Link>
+          <div style={{ fontSize: '9px', color: 'inherit', opacity: 0.6, maxWidth: 180, textAlign: 'right', lineHeight: 1.4 }}>
+            Your one-page project map. Open it any time.
+          </div>
+        </div>
       </footer>
     </div>
   );

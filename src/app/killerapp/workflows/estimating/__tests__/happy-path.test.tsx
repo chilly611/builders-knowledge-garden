@@ -60,10 +60,10 @@ describe('EstimatingClient — Happy Path', () => {
     stages = loaded.stages;
   });
 
-  it('workflow q2 loads with label "Estimating"', () => {
+  it('workflow q2 loads with label "Quick estimate" (brand-voice labelling)', () => {
     expect(workflow).toBeDefined();
     expect(workflow.id).toBe('q2');
-    expect(workflow.label).toBe('Estimating');
+    expect(workflow.label).toBe('Quick estimate');
   });
 
   it('workflow q2 has 6 input capture steps plus AI estimate', () => {
@@ -82,14 +82,14 @@ describe('EstimatingClient — Happy Path', () => {
   it('first step is voice input for project description', () => {
     const firstStep = workflow.steps[0];
     expect(firstStep.id).toBe('s2-1');
-    expect(firstStep.label).toContain('Project description');
+    expect(firstStep.label).toContain('Describe');
     expect(firstStep.type).toBe('voice_input');
   });
 
   it('second step is location input for job site', () => {
     const secondStep = workflow.steps[1];
     expect(secondStep.id).toBe('s2-2');
-    expect(secondStep.label).toContain('Job location');
+    expect(secondStep.label).toContain('Where');
     expect(secondStep.type).toBe('location_input');
   });
 
@@ -104,7 +104,7 @@ describe('EstimatingClient — Happy Path', () => {
   it('fourth step is multi-select for trade specialties', () => {
     const fourthStep = workflow.steps[3];
     expect(fourthStep.id).toBe('s2-4');
-    expect(fourthStep.label).toContain('Trade specialties');
+    expect(fourthStep.label).toContain('trades');
     expect(fourthStep.type).toBe('multi_select');
 
     const options = (fourthStep as any).options;
@@ -119,7 +119,7 @@ describe('EstimatingClient — Happy Path', () => {
   it('fifth step is file upload for documents', () => {
     const fifthStep = workflow.steps[4];
     expect(fifthStep.id).toBe('s2-5');
-    expect(fifthStep.label).toContain('Upload documents');
+    expect(fifthStep.label).toContain('Upload');
     expect(fifthStep.type).toBe('file_upload');
 
     const accept = (fifthStep as any).accept;
@@ -130,7 +130,7 @@ describe('EstimatingClient — Happy Path', () => {
   it('final step is analysis_result for AI estimate', () => {
     const finalStep = workflow.steps[5];
     expect(finalStep.id).toBe('s2-6');
-    expect(finalStep.label).toContain('AI estimate');
+    expect(finalStep.label).toContain('estimate');
     expect(finalStep.type).toBe('analysis_result');
     expect((finalStep as any).promptId).toBeDefined();
   });

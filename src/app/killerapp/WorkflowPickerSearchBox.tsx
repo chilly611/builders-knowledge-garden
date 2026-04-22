@@ -61,8 +61,20 @@ export default function WorkflowPickerSearchBox() {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event: AnySpeechRecognition) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript ?? '';
-      if (transcript) setValue((prev) => (prev ? `${prev} ${transcript}` : transcript));
+      let interim = '';
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i]?.[0]?.transcript ?? '';
+        if (event.results[i]?.isFinal) {
+          final += transcript + ' ';
+        } else {
+          interim += transcript;
+        }
+      }
+      const currentTranscript = final || interim;
+      if (currentTranscript) {
+        setValue((prev) => (prev ? `${prev} ${currentTranscript}` : currentTranscript));
+      }
     };
     recognition.onerror = () => setListening(false);
     recognition.onend = () => setListening(false);

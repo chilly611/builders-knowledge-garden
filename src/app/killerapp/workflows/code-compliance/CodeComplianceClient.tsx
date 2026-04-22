@@ -21,7 +21,8 @@ import type { Workflow, WorkflowContext } from '@/design-system/components';
 import type { StepResult } from '@/design-system/components';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
-import { groupJurisdictions, type Jurisdiction } from '@/lib/knowledge-data';
+import { type Jurisdiction } from '@/lib/knowledge-data';
+import JurisdictionPicker from '@/components/JurisdictionPicker';
 
 interface CodeComplianceClientProps {
   workflow: Workflow;
@@ -145,41 +146,11 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
           <span style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500], textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Jurisdiction
           </span>
-          <select
+          <JurisdictionPicker
+            jurisdictions={jurisdictions}
             value={jurisdictionId}
-            onChange={(e) => setJurisdictionId(e.target.value)}
-            style={{
-              padding: spacing[2],
-              fontSize: fontSizes.sm,
-              fontFamily: fonts.body,
-              border: `1px solid ${colors.ink[200]}`,
-              borderRadius: radii.sm,
-              backgroundColor: '#FFFFFF',
-              color: colors.ink[900],
-            }}
-          >
-            {groupJurisdictions(jurisdictions).map((stateGroup) =>
-              stateGroup.counties.map((countyGroup) => {
-                // Hierarchical label: "California — Riverside County" so
-                // users can scan state + county in one glance. Use a
-                // plain dash for counties that have only a statewide
-                // fallback entry.
-                const label =
-                  countyGroup.county === '(statewide)'
-                    ? stateGroup.state
-                    : `${stateGroup.state} — ${countyGroup.county} County`;
-                return (
-                  <optgroup key={`${stateGroup.state}-${countyGroup.county}`} label={label}>
-                    {countyGroup.jurisdictions.map((j) => (
-                      <option key={j.id} value={j.id}>
-                        {j.name} ({j.code} {j.year})
-                      </option>
-                    ))}
-                  </optgroup>
-                );
-              })
-            )}
-          </select>
+            onChange={setJurisdictionId}
+          />
         </label>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
@@ -189,6 +160,15 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
           <select
             value={trade}
             onChange={(e) => setTrade(e.target.value)}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = colors.amber.main;
+              e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.amber.glow}40`;
+              e.currentTarget.style.outline = 'none';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = colors.ink[200];
+              e.currentTarget.style.boxShadow = 'none';
+            }}
             style={{
               padding: spacing[2],
               fontSize: fontSizes.sm,
@@ -197,6 +177,8 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
               borderRadius: radii.sm,
               backgroundColor: '#FFFFFF',
               color: colors.ink[900],
+              cursor: 'pointer',
+              transition: '100ms ease',
             }}
           >
             {TRADES.map((t) => (
@@ -214,6 +196,15 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
           <select
             value={lane}
             onChange={(e) => setLane(e.target.value as WorkflowContext['lane'])}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = colors.amber.main;
+              e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.amber.glow}40`;
+              e.currentTarget.style.outline = 'none';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = colors.ink[200];
+              e.currentTarget.style.boxShadow = 'none';
+            }}
             style={{
               padding: spacing[2],
               fontSize: fontSizes.sm,
@@ -222,6 +213,8 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
               borderRadius: radii.sm,
               backgroundColor: '#FFFFFF',
               color: colors.ink[900],
+              cursor: 'pointer',
+              transition: '100ms ease',
             }}
           >
             {LANES.map((l) => (

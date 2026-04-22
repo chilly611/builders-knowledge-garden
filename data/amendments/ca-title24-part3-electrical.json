@@ -1,0 +1,164 @@
+{
+  "jurisdiction": "ca-statewide",
+  "jurisdictionName": "California (State-Level Title 24 Part 3)",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022 (CEC)",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.dgs.ca.gov/bsc/Resources/Title24/2022-Title-24",
+  "amendments": [
+    {
+      "id": "ca-cec-nec-705-solar-pv-interconnection",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "CA CEC 705: Solar PV System Interconnection Requirements",
+      "text": "California Title 24 Part 3 mandates utility-interactive solar photovoltaic systems must comply with NEC 705 plus additional California amendments. Requires two-way communication capability for residential systems ≥5 kW, mandatory inverter communication port (per Rule 21.2 successor), automatic voltage/frequency ride-through for inverters (must disconnect only on sustained voltage ≥120% or ≤88% nominal, frequency ≥61 Hz or ≤59.3 Hz for >1 second). Service entrance must be sized for PV source circuit + load calculation per Title 24 (not standard NEC 120% rule). Direct-buried conductors in conduit ≥18 inches deep (not NEC's ≥24 inches in certain zones).",
+      "citation": "CA Title 24 CEC §705 Amendments, Rule 21 Successor",
+      "confidenceTier": "primary",
+      "keywords": ["solar", "pv", "interconnection", "inverter", "utility", "grid"]
+    },
+    {
+      "id": "ca-cec-nec-210-ev-charging-circuit",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "CA CEC 210: EV Charging Branch Circuit Requirements",
+      "text": "California mandates all new residential construction and all dwelling unit additions ≥500 sq ft must include at least one dedicated branch circuit terminating at a location suitable for an EV charging station, whether or not an actual charger is installed initially. Circuit must be sized for minimum 40A at 240V (for future Level 2 readiness). Must be controlled by dedicated OCPD. Not required if structure is a single-family or multi-family dwelling in a limited-access facility (prison, military base, etc.).",
+      "citation": "CA Title 24 CEC §210 EV-Ready Requirement",
+      "confidenceTier": "primary",
+      "keywords": ["ev", "charging", "circuit", "240v", "residential"]
+    },
+    {
+      "id": "ca-cec-nec-220-service-upgrade-trigger",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "220",
+      "title": "CA CEC 220: Service Upgrade Trigger on Additions",
+      "text": "When a residential addition adds ≥25% of existing service capacity demand (as calculated per Title 24 load analysis), and existing service is <200A or <400A (depending on home size), service upgrade to 200A minimum may be required if utility deemed feasible. Adds calculations not in NEC standard (demand factors per Title 24 Table 430E differ from NEC Table 430.248). Service must accommodate future solar PV + EV + HVAC electrification loads.",
+      "citation": "CA Title 24 CEC §220, Residential Service Sizing",
+      "confidenceTier": "primary",
+      "keywords": ["service", "upgrade", "addition", "capacity", "load"]
+    },
+    {
+      "id": "ca-cec-nec-406-stepback-plug",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "406",
+      "title": "CA CEC 406: Residential Stepback Plug Requirements",
+      "text": "California requires all permanently installed receptacles in newly constructed residential buildings (except temporary construction power) to be 'stepback' or recessed plugs that prevent accidental contact with live pins during insertion. Standard NEMA 5-15 outlets must be replaced with safety-enhanced designs (twist-lock, push-in pin, or similar mechanism). Does not apply to outlets controlled by UPS or dedicated medical device circuits.",
+      "citation": "CA Title 24 CEC §406 Safety Plug Requirement",
+      "confidenceTier": "primary",
+      "keywords": ["receptacle", "plug", "safety", "residential", "stepback"]
+    },
+    {
+      "id": "ca-cec-nec-210-8-kitchen-gfci",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210.8",
+      "title": "CA CEC 210.8: Enhanced GFCI Protection in Kitchens",
+      "text": "California requires GFCI protection on all 125V, single-phase, 15A and 20A receptacles in kitchen work surfaces (at-counter and counter height). This matches current NEC 210.8(A)(6) and (7). Additional requirement: islands and peninsulas must be GFCI protected if they are dedicated work surfaces. Any receptacle within 6 feet of a sink must be GFCI protected (per NEC and California).",
+      "citation": "CA Title 24 CEC §210.8",
+      "confidenceTier": "primary",
+      "keywords": ["gfci", "kitchen", "receptacle", "water"]
+    },
+    {
+      "id": "ca-cec-nec-240-battery-storage-breaker",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "240",
+      "title": "CA CEC 240: Battery Storage System DC Disconnect and Breaker",
+      "text": "Residential energy storage systems (batteries, supercaps, flywheels) ≥10 kWh must include a dedicated main DC disconnect switch rated for the maximum system voltage and current. DC overcurrent protection must follow NEC 480 (batteries) or 706 (renewable energy) standards, plus California amendments requiring arc-flash labels on all breakers protecting battery circuits. Breaker size must be sized per Title 24 Appendix G (not standard NEC calculation for battery circuits).",
+      "citation": "CA Title 24 CEC §240 (Energy Storage)",
+      "confidenceTier": "primary",
+      "keywords": ["battery", "storage", "dc", "disconnect", "overcurrent"]
+    },
+    {
+      "id": "ca-cec-nec-705-microgrid-islanding",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "CA CEC 705: Microgrid Islanding and Black-Start Capability",
+      "text": "Multi-source renewable energy systems (solar + wind + storage) forming a microgrid capable of island mode operation must include anti-islanding detection verified by independent third party per California CEC requirements (exceeds NEC 705 anti-islanding). Systems ≥100 kW must have black-start capability to energize critical loads without utility power. All system components must have UL 1741 Supplement D (or later) certification for grid-support functions.",
+      "citation": "CA Title 24 CEC §705 Microgrid Requirements",
+      "confidenceTier": "primary",
+      "keywords": ["microgrid", "islanding", "solar", "wind", "battery", "black-start"]
+    },
+    {
+      "id": "ca-cec-nec-225-exterior-service-mast",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "225",
+      "title": "CA CEC 225: Exterior Service Mast Clearance (Residential)",
+      "text": "Service masts and overhead service conductors in residential areas must maintain clearances per NEC 225.19, plus California-specific requirements: minimum 10 feet above finished grade over driveways (vs NEC's minimum 12 feet over most areas). Mast must be supported within 3 feet of attachment point (per NEC 230.51(B)); California adds requirement that support bracket be rated for 50 lbs horizontal wind load per NEC loading tables.",
+      "citation": "CA Title 24 CEC §225 Service Mast Clearance",
+      "confidenceTier": "primary",
+      "keywords": ["service", "mast", "overhead", "clearance", "driveway"]
+    },
+    {
+      "id": "ca-cec-nec-690-solar-dc-dc",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "690",
+      "title": "CA CEC 690: Solar PV DC-DC Converters and Optimizers",
+      "text": "Module-level power electronics (DC-DC optimizers, microinverters) on rooftop solar arrays must be UL 1741 listed and carry California-specific marking indicating maximum dc-to-dc voltage and current handling. Series-connected strings with optimizers must include string-level combiner boxes with individual OCPD for each string (not optional as in some jurisdictions). Optimizers must communicate via dedicated signal wiring or integrated controller; wireless communication alone is not permitted per California.",
+      "citation": "CA Title 24 CEC §690 (Power Electronics)",
+      "confidenceTier": "primary",
+      "keywords": ["solar", "optimizer", "dc-dc", "microinverter", "pv"]
+    },
+    {
+      "id": "ca-cec-nec-312-equipment-room-minimum",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "312",
+      "title": "CA CEC 312: Electrical Equipment Room Sizing (Residential)",
+      "text": "Residential electrical rooms housing main service panel + sub-panels + solar combiner + battery inverter must have minimum usable floor space of 36 sq ft for homes ≤5000 sq ft, increasing to 50 sq ft for larger residences. Minimum 3-foot clearance on all sides of main panel (per NEC 110.26(A)(1) but California enforces strictly). Room must be at grade level or basement, not attic (unlike some jurisdictions allowing attic installations).",
+      "citation": "CA Title 24 CEC §312 Equipment Room Sizing",
+      "confidenceTier": "primary",
+      "keywords": ["equipment", "room", "panel", "clearance", "service"]
+    },
+    {
+      "id": "ca-cec-nec-110-arc-flash-marking",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "110",
+      "title": "CA CEC 110: Arc-Flash Warning Labels on Service Equipment",
+      "text": "All main service panels and sub-panels in residential and commercial buildings must have arc-flash hazard warning labels per NFPA 70E guidelines (not required by baseline NEC 110.21 for residential, but California mandates). Label must indicate estimated arc-flash boundary and incident energy level. Label must be visible before panel door is opened and must be in English and Spanish for California.",
+      "citation": "CA Title 24 CEC §110 Arc-Flash Marking",
+      "confidenceTier": "primary",
+      "keywords": ["arc-flash", "label", "warning", "panel", "safety"]
+    },
+    {
+      "id": "ca-cec-nec-680-pool-bonding-extension",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "680",
+      "title": "CA CEC 680: Pool Bonding Extended Perimeter",
+      "text": "Swimming pools and spas in California must have bonding conductors extended to all metallic objects within 12 feet horizontally of the pool's edge (NEC requires 10 feet for some objects, 5 feet for others). Bonding includes: pool deck metal railings, diving board supports, metal ladders, metal landscaping features, and utility lines within the 12-foot zone. All bonding conductors must be #8 copper or larger (vs NEC allowing #6 in some cases). Summary — verify exact current requirements with AHJ.",
+      "citation": "CA Title 24 CEC §680 Pool Bonding",
+      "confidenceTier": "summary",
+      "keywords": ["pool", "bonding", "spa", "metal", "safety"]
+    },
+    {
+      "id": "ca-cec-nec-210-6-voltage-limitation",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210.6",
+      "title": "CA CEC 210.6: Voltage Limitation in Accessible Locations",
+      "text": "Residential and commercial buildings in California must limit voltage of circuits in readily accessible areas to 277V single-phase or 480V three-phase (matching NEC 210.6). Additional California requirement: festooning and temporary power must not exceed 120V in certain occupancies (warehouses, outdoor construction). String lights and landscape power must be limited to 120V and GFCI protected.",
+      "citation": "CA Title 24 CEC §210.6 Voltage Limits",
+      "confidenceTier": "primary",
+      "keywords": ["voltage", "accessible", "residential", "temporary"]
+    },
+    {
+      "id": "ca-cec-nec-430-motor-efficiency",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "430",
+      "title": "CA CEC 430: High-Efficiency Motor Requirements",
+      "text": "All three-phase motors ≥1 hp used in HVAC, pool, and irrigation applications in new construction must meet NEMA Premium Efficiency (IE3) standards or higher (per Title 24 energy code). Single-phase motors must meet NEMA Energy Efficient (EE) classification. Motors must carry NEMA nameplate indicating efficiency class. Existing motors do not require replacement, but new equipment retrofits must use efficient motors. Summary — verify current NEMA premium classifications with vendor.",
+      "citation": "CA Title 24 CEC §430 Motor Efficiency",
+      "confidenceTier": "summary",
+      "keywords": ["motor", "efficiency", "hvac", "pool", "nema"]
+    }
+  ]
+}

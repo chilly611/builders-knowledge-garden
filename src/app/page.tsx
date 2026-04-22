@@ -449,9 +449,9 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={demo.visible ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }}
             style={{ textAlign: "center", marginBottom: 48 }}>
             <span style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#D85A30", fontWeight: 600 }}>See It In Action</span>
-            <h2 style={{ fontSize: "clamp(24px, 3.5vw, 38px)", fontWeight: 700, margin: "8px 0 12px" }}>From dream to dashboard in minutes</h2>
+            <h2 style={{ fontSize: "clamp(24px, 3.5vw, 38px)", fontWeight: 700, margin: "8px 0 12px" }}>From sketch to job site in minutes</h2>
             <p style={{ fontSize: 15, color: "var(--fg-secondary)", maxWidth: 520, margin: "0 auto" }}>
-              Watch how a single idea transforms into a fully managed construction project with AI doing the heavy lifting.
+              Watch how a single idea becomes a running project. AI handles the grunt work — you stay in control.
             </p>
           </motion.div>
 
@@ -536,7 +536,7 @@ export default function Home() {
             <span style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "#7F77DD", fontWeight: 600 }}>The Platform</span>
             <h2 style={{ fontSize: "clamp(24px, 3.5vw, 38px)", fontWeight: 700, margin: "8px 0 12px" }}>One knowledge engine. Six killer products.</h2>
             <p style={{ fontSize: 15, color: "var(--fg-secondary)", maxWidth: 520, margin: "0 auto" }}>
-              Each surface is powerful alone. Together they create something nobody else offers: the full lifecycle of building.
+              Each does the job alone. Together they cover the full build — from first dream through final invoice.
             </p>
           </motion.div>
 

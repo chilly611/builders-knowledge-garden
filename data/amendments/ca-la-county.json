@@ -1,0 +1,153 @@
+{
+  "jurisdiction": "ca-la-county",
+  "jurisdictionName": "Los Angeles County",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022, IBC 2022",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://dpw.lacounty.gov/des/standards/",
+  "amendments": [
+    {
+      "id": "ca-la-county-seismic-soft-story-retrofit",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "1403",
+      "title": "LA County Soft-Story Retrofit Mandate",
+      "text": "Residential buildings 5+ stories, pre-1978 construction, with soft stories (parking or open first floors) must retrofit to seismic safety standards. Retrofit work required per Ordinance 12-0027 includes: installing shear walls, moment frames, or bracing on soft-story levels; anchor bolts/cripple walls in older wood-frame buildings; and lateral force resistance to meet 50% of code-required forces (minimum). Work must begin by specified deadline and be completed within 5 years of notice. Summary — verify current deadline and retrofit performance requirements with LA County DBS.",
+      "citation": "LA County Ordinance 12-0027, Soft Story Retrofit",
+      "confidenceTier": "summary",
+      "keywords": ["seismic", "soft-story", "retrofit", "lateral", "building"]
+    },
+    {
+      "id": "ca-la-county-non-ductile-concrete-retrofit",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "1908",
+      "title": "LA County Non-Ductile Concrete Ordinance",
+      "text": "Buildings with non-ductile (pre-1975) concrete structural frames in seismic zones 4 must evaluate seismic risk and implement retrofit or demolition. Retrofit includes jacketing columns with steel or composite wrapping, installing shear connectors, or replacing critical frame members. LA County jurisdiction requires structural engineer certification of retrofit adequacy. Buildings 4+ stories or occupancy > 50 persons trigger retrofit mandate. Summary — verify current retrofit performance thresholds and timeline with LA County DBS.",
+      "citation": "LA County DBS Non-Ductile Concrete Guidelines",
+      "confidenceTier": "summary",
+      "keywords": ["concrete", "non-ductile", "seismic", "retrofit", "structural"]
+    },
+    {
+      "id": "ca-la-county-vhfhsz-fire-hardening",
+      "discipline": "fire",
+      "baseEdition": "IBC 2022, CA Chapter 7A",
+      "baseSection": "701.3",
+      "title": "LA County VHFHSZ Fire-Hardening Requirements",
+      "text": "Properties in LA County's Very High Fire Hazard Severity Zones (VHFHSZ) must meet stricter fire-hardening standards: roof coverings Class A minimum (IBC 707.4 + CA amendments); exterior walls within 5 feet of property line must be 1-hour fire-rated or use Class A/B materials; all vents screened 1/8-inch metal mesh; deck boards spaced ≤1/8-inch (not IBC's 1/4-inch). Gutters must be metal or fire-rated composite. Window glazing ≤4 feet of ground must be tempered or dual-pane. Summary — verify current VHFHSZ boundary and material spec with LA County Fire/DBS.",
+      "citation": "LA County VHFHSZ Fire-Hardening Standards",
+      "confidenceTier": "summary",
+      "keywords": ["fire", "vhfhsz", "hardening", "roof", "wildfire"]
+    },
+    {
+      "id": "ca-la-county-electrical-solar-reach-code",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "LA County Solar PV Ready Reach Code",
+      "text": "New residential construction in unincorporated LA County (some incorporated cities have equivalent) must include solar-ready infrastructure per reach code: roof areas ≥200 sq ft with south/southeast/southwest exposure must have load-bearing capacity certified for solar panels (min 50 lbs/sq ft live load). Main service or sub-panel must have dedicated space and conduit to roof for future solar-ready combiner box. Service must be sized per Title 24 to accommodate solar + EV charging loads. Summary — verify applicability to specific LA jurisdiction (some cities exceed reach code).",
+      "citation": "LA County Solar-Ready Reach Code",
+      "confidenceTier": "summary",
+      "keywords": ["solar", "pv", "reach code", "residential", "roof"]
+    },
+    {
+      "id": "ca-la-county-electrical-ev-charging-mandate",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "LA County EV Charging Readiness Mandate",
+      "text": "New residential construction and additions ≥500 sq ft must include EV-ready parking: minimum one 240V, 40A dedicated branch circuit terminating in garage or covered carport, or at future charging location if garage not available. Multi-family buildings must provide 20% of parking spaces with conduit/conduit pathway ready for charger installation. Summary — verify exact percentage requirements for multi-family with LA County DBS (may differ by jurisdiction).",
+      "citation": "LA County EV Charging Readiness",
+      "confidenceTier": "summary",
+      "keywords": ["ev", "charging", "residential", "240v", "parking"]
+    },
+    {
+      "id": "ca-la-county-electrical-battery-storage-ready",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "706",
+      "title": "LA County Battery Storage System Readiness",
+      "text": "New residential construction with solar PV or eligible for solar incentives must include battery storage readiness: dedicated sub-panel space in electrical room, conduit pathway from solar combiner to future battery inverter location, and separate 60A disconnect rated for DC service. Panel must have space reserved for future 200A sub-panel (battery inverter charger). Summary — verify current incentive/mandate trigger with LA County DBS.",
+      "citation": "LA County Battery Storage Readiness",
+      "confidenceTier": "summary",
+      "keywords": ["battery", "storage", "solar", "inverter", "residential"]
+    },
+    {
+      "id": "ca-la-county-grading-drainage-hillside",
+      "discipline": "structural",
+      "baseEdition": "IBC 2022",
+      "baseSection": "3202",
+      "title": "LA County Hillside Grading and Drainage Ordinance",
+      "text": "Projects on slopes ≥25% grade in LA County unincorporated areas require grading/drainage plan per Ordinance 12-0007: cut/fill slopes must not exceed 2:1 (horizontal:vertical) without retaining walls; drainage must direct runoff away from structures; settlement monuments required for fills >10 ft. Compaction testing mandatory (95% relative density, native soils). Undocumented fill in existing properties requires geo-technical evaluation before building permit issuance. Summary — verify slope limits and compaction specs with LA County DPW/DBS.",
+      "citation": "LA County Hillside Grading Ordinance 12-0007",
+      "confidenceTier": "summary",
+      "keywords": ["grading", "drainage", "slope", "hillside", "fill"]
+    },
+    {
+      "id": "ca-la-county-water-supply-pressure-test",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "312",
+      "title": "LA County Water Supply Pressure Test Requirement",
+      "text": "All new water supply piping in LA County must be pressure-tested at 100 psi for 1 hour with <5 psi drop (stricter than IPC baseline which allows 80 psi for 15 min). Test must be witnessed and documented by licensed plumber. Copper, PEX, PVC all permitted per Title 24. Test certificate required before final building inspection. Summary — verify current pressure requirement and time with LA County DPW.",
+      "citation": "LA County Water Supply Testing Standards",
+      "confidenceTier": "summary",
+      "keywords": ["plumbing", "water", "pressure", "test", "supply"]
+    },
+    {
+      "id": "ca-la-county-adu-secondary-unit-parking",
+      "discipline": "mechanical",
+      "baseEdition": "IBC 2022",
+      "baseSection": "402",
+      "title": "LA County ADU Parking Exemption (Limited)",
+      "text": "Accessory dwelling units (ADUs) in LA County unincorporated areas are partially exempt from parking requirements: single-family ADUs do not require on-site parking if located within 0.5 mile of transit. ADUs without off-street parking must post no-parking zone signage. If property has existing parking, one space may be shared between primary residence and ADU. Multi-unit ADUs require 1 space per unit. ADU design must include bike parking (2 spaces minimum). Summary — verify current exemption thresholds and transit definitions with LA County DBS.",
+      "citation": "LA County ADU Parking Standards",
+      "confidenceTier": "summary",
+      "keywords": ["adu", "parking", "accessory", "dwelling", "unit"]
+    },
+    {
+      "id": "ca-la-county-water-reclamation-purple-pipe",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "610",
+      "title": "LA County Recycled Water (Purple Pipe) Readiness",
+      "text": "New non-residential buildings ≥10,000 sq ft in LA County must design for recycled water supply readiness (purple-pipe-ready infrastructure): dedicated secondary water line stub to building entrance, separate meter pit, dual-supply plumbing for irrigation/toilet flushing capable of being connected to recycled water. Color-coded piping or labeling required. Plumbing must be isolated from potable supply. Summary — verify applicability thresholds and water source availability with LA County DPW.",
+      "citation": "LA County Recycled Water Readiness",
+      "confidenceTier": "summary",
+      "keywords": ["water", "recycled", "purple pipe", "plumbing", "secondary"]
+    },
+    {
+      "id": "ca-la-county-mechanical-cool-roof-non-residential",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Part 6",
+      "baseSection": "140.3",
+      "title": "LA County Cool Roof Requirement (Non-Residential)",
+      "text": "All new non-residential buildings and reroofing projects in LA County must install cool roofing materials: solar reflectance ≥0.65 (or ≥0.75 in high-density urban heat islands). Materials must meet CRRC (Cool Roof Rating Council) standards. Meets Title 24 baseline plus stricter enforcement. Reflective coatings allowed if re-coated every 5 years. Summary — verify current solar reflectance thresholds and exemptions with LA County DBS.",
+      "citation": "LA County Cool Roof Standards",
+      "confidenceTier": "summary",
+      "keywords": ["cool roof", "reflectance", "non-residential", "solar", "thermal"]
+    },
+    {
+      "id": "ca-la-county-mechanical-hvac-ducting-seismic",
+      "discipline": "mechanical",
+      "baseEdition": "IBC 2022",
+      "baseSection": "1906",
+      "title": "LA County HVAC Duct Seismic Restraint (Unincorporated Areas)",
+      "text": "HVAC ducts, coolers, and mechanical equipment in LA County unincorporated seismic zones must be seismically braced per IBC 1906 + CA amendments: ducts must be supported every 8 feet (not IBC's 12 feet in some cases), struts must be rated for 0.5g lateral acceleration, all connections must use mechanical fasteners (not friction-fit). Equipment connections require vibration isolation mounts rated for seismic loads. Summary — verify current bracing interval and load factor with LA County DBS.",
+      "citation": "LA County HVAC Seismic Bracing Standards",
+      "confidenceTier": "summary",
+      "keywords": ["hvac", "duct", "seismic", "bracing", "mechanical"]
+    },
+    {
+      "id": "ca-la-county-permit-expedite-green-project",
+      "discipline": "fire",
+      "baseEdition": "IBC 2022",
+      "baseSection": "101.2",
+      "title": "LA County Expedited Permit for Green Building Projects",
+      "text": "Residential and commercial projects meeting LEED Silver or equivalent California Green Building Code performance may qualify for expedited review and 20% reduction in design/plan review timeline (not fee reduction). Projects must register with green building program and meet sustainability thresholds 90+ days pre-permit. Expedited path does not waive code requirements, only streamlines review process. Summary — verify current green certification requirements and expedite eligibility with LA County DBS.",
+      "citation": "LA County Expedited Green Project Review",
+      "confidenceTier": "summary",
+      "keywords": ["permit", "expedite", "green", "leed", "review"]
+    }
+  ]
+}

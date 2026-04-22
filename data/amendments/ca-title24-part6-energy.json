@@ -1,0 +1,131 @@
+{
+  "jurisdiction": "ca-statewide-energy",
+  "jurisdictionName": "California (State-Level Title 24 Part 6 - Energy)",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022 (Energy Code)",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.dgs.ca.gov/bsc/Resources/Title24/2022-Title-24",
+  "amendments": [
+    {
+      "id": "ca-energy-solar-mandate-residential",
+      "discipline": "electrical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "130.7",
+      "title": "CA Energy: Solar PV Mandate for Residential New Construction",
+      "text": "All new residential construction, including single-family homes and residential additions ≥500 sq ft, must include roof-ready or pre-installed solar photovoltaic system with minimum nameplate capacity of 3 kW (small homes) to 5 kW (larger homes). System may be pre-wired without modules installed initially, but electrical rough-in must be completed. Exceptions: buildings with insufficient sunlight ≥5 hours/day, historic resources, or buildings <250 sq ft. Multi-family buildings ≥4 stories must have solar or solar-ready preparation on at least 15% of roof area or percentage per building size tables.",
+      "citation": "CA Title 24 Energy §130.7 Solar Mandate",
+      "confidenceTier": "primary",
+      "keywords": ["solar", "pv", "mandate", "residential", "new construction"]
+    },
+    {
+      "id": "ca-energy-battery-storage-rebate",
+      "discipline": "electrical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "140.11",
+      "title": "CA Energy: Energy Storage System Installation (Solar+Storage)",
+      "text": "Residential buildings with solar PV systems ≥5 kW may install battery energy storage (minimum 10 kWh) for self-consumption and backup power. State offers rebates (SOMAH, CTCBP programs) for qualifying residential battery systems paired with solar. Battery system must be UL 1973 listed and include DC and AC disconnects, overcurrent protection, and monitoring capable of reporting state-of-charge and power flow. AC coupling inverters must support virtual power plant (VPP) communication protocol (OpenADR 2.0 compatible) for future grid integration.",
+      "citation": "CA Title 24 Energy §140.11 Battery Storage",
+      "confidenceTier": "primary",
+      "keywords": ["battery", "storage", "solar", "rebate", "backup"]
+    },
+    {
+      "id": "ca-energy-heat-pump-water-heater",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "150.0(h)",
+      "title": "CA Energy: Heat Pump Water Heater Requirement (Residential)",
+      "text": "New residential construction must install heat pump water heaters (HPWH) as primary domestic hot water source, with electric resistance backup for peak demand. HPWH must meet ENERGY STAR Most Efficient qualification or equivalent COP ≥3.0. Natural gas water heaters permitted only in rural areas (outside typical California utility service areas). Retrofit of existing residences encourages HPWH with rebates; mandatory for homes receiving state funding. Integrated heat pump space heating + water heating systems permitted and incentivized.",
+      "citation": "CA Title 24 Energy §150.0(h) HPWH",
+      "confidenceTier": "primary",
+      "keywords": ["heat pump", "water heater", "hpwh", "energy", "cop"]
+    },
+    {
+      "id": "ca-energy-ev-charger-installation",
+      "discipline": "electrical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.2(f)",
+      "title": "CA Energy: EV Charger Level 2 Installation (Multi-Family)",
+      "text": "New residential buildings with ≥10 dwelling units must install at least one functioning Level 2 (240V, 30-40A minimum) EV charging station available to residents. For buildings with 20+ units, at least 2 stations required. Single-family homes and small buildings (≤4 units) must have wiring/conduit prepared for future Level 2 installation, but charger installation not mandated initially. Chargers must be networked, communicate charge status, and support demand response (capable of reducing charging load on grid during peak demand periods).",
+      "citation": "CA Title 24 Energy §110.2(f) EV Charger",
+      "confidenceTier": "primary",
+      "keywords": ["ev", "charger", "level2", "240v", "multi-family"]
+    },
+    {
+      "id": "ca-energy-cool-roof-mandate",
+      "discipline": "structural",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.9(c)",
+      "title": "CA Energy: Cool Roof Requirements (Low-Slope Roofs)",
+      "text": "New buildings and re-roofing projects with low-slope roofs (pitch <2:12) must use roofing materials with solar reflectance ≥0.65 and thermal emittance ≥0.75 (cool roof or solar reflectance index ≥75). Exceptions: historical buildings, roofs with integrated solar PV or green roof, roofs with slope >4:12, roofs in coastal zones where cool roofs reduce perceived glare hazard. Steep-slope residential roofs (pitch ≥2:12) must achieve solar reflectance ≥0.55 or have green roof ≥25% coverage.",
+      "citation": "CA Title 24 Energy §110.9(c) Cool Roof",
+      "confidenceTier": "primary",
+      "keywords": ["roof", "cool roof", "reflectance", "solar", "energy"]
+    },
+    {
+      "id": "ca-energy-fenestration-ufactor",
+      "discipline": "structural",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.5",
+      "title": "CA Energy: Fenestration U-Factor and Solar Heat Gain",
+      "text": "All windows, skylights, and glass doors in new residential construction must have maximum U-factor of 0.30 (colder climate zones may require 0.28). Solar Heat Gain Coefficient (SHGC) must be ≤0.25 in high-solar-gain zones and ≤0.40 in moderate zones. Triple-glazed windows with insulated frames strongly encouraged for cold climates. State offers rebates for high-performance windows replacing existing single-pane windows.",
+      "citation": "CA Title 24 Energy §110.5 Fenestration",
+      "confidenceTier": "primary",
+      "keywords": ["window", "u-factor", "shgc", "solar", "glazing"]
+    },
+    {
+      "id": "ca-energy-insulation-r-value",
+      "discipline": "structural",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.2(a)",
+      "title": "CA Energy: Insulation R-Value Requirements (Residential)",
+      "text": "New residential construction must meet minimum R-value requirements per climate zone: Attic/Roof: R-38 to R-60 depending on zone; Walls: R-13 to R-21 (with cavity + continuous); Basement/Slab Edge: R-10 to R-19. Continuous exterior insulation counts toward wall R-value if properly installed. High-performance homes (ENERGY STAR, Passive House) can achieve higher R-values and receive rebates. Re-insulation of existing homes encouraged with utility rebates.",
+      "citation": "CA Title 24 Energy §110.2(a) Insulation",
+      "confidenceTier": "primary",
+      "keywords": ["insulation", "r-value", "attic", "wall", "energy"]
+    },
+    {
+      "id": "ca-energy-duct-sealing",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.2(e)",
+      "title": "CA Energy: HVAC Duct Sealing and Testing (Residential)",
+      "text": "All residential HVAC ductwork must be sealed with mastic or equivalent (duct tape is not acceptable). Ducts must be tested post-installation to verify air leakage ≤15% of total airflow (measured via duct blaster). Ducts located in unconditioned spaces must be insulated to R-8 minimum. Flex duct transitions to rigid duct must be sealed with clamps, not just mastic. Third-party verification required for rebate eligibility.",
+      "citation": "CA Title 24 Energy §110.2(e) Duct Sealing",
+      "confidenceTier": "primary",
+      "keywords": ["duct", "sealing", "hvac", "leakage", "test"]
+    },
+    {
+      "id": "ca-energy-air-barrier-continuity",
+      "discipline": "structural",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.1(c)",
+      "title": "CA Energy: Air Barrier Continuity (Building Envelope)",
+      "text": "New buildings must have continuous air barrier at building enclosure with air leakage rate ≤3 ACH50 (measured via blower door test). Air barrier may be polyethylene sheet, spray foam, or taped membrane. Penetrations must be sealed around pipes, wires, and ducts. Walls with cavity insulation must have polyethylene or house wrap as secondary air barrier. Summary — verify exact ACH50 target for your climate zone with AHJ.",
+      "citation": "CA Title 24 Energy §110.1(c) Air Barrier",
+      "confidenceTier": "summary",
+      "keywords": ["air barrier", "air leakage", "blower door", "ach50"]
+    },
+    {
+      "id": "ca-energy-demand-response-hvac",
+      "discipline": "mechanical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "140.8",
+      "title": "CA Energy: Demand Response Capable HVAC Systems",
+      "text": "New residential and commercial buildings with central HVAC systems must have thermostats capable of responding to demand response signals (OpenADR 2.0 compatible or utility-approved smart thermostat). Systems must allow utilities to reduce heating/cooling setpoints by up to 4 degrees during peak demand periods (typically 2-6 PM on summer afternoons). HVAC system control must not override safety parameters (minimum heating 62F, maximum cooling 85F). Smart thermostats must be programmable and offer occupancy-based control.",
+      "citation": "CA Title 24 Energy §140.8 Demand Response",
+      "confidenceTier": "primary",
+      "keywords": ["demand response", "hvac", "thermostat", "smart", "grid"]
+    },
+    {
+      "id": "ca-energy-ev-circuit-future-ready",
+      "discipline": "electrical",
+      "baseEdition": "CA Title 24 Energy Code 2022",
+      "baseSection": "110.2(f)",
+      "title": "CA Energy: EV-Ready Circuits in Residential (Extended)",
+      "text": "All new residential buildings must have 240V branch circuit terminating at driveway, garage, or carport suitable for Level 2 EV charger installation. Circuit must be minimum 40A (for future 32A charger operation at 80%). Multi-family buildings must have at least 20% of parking spaces EV-ready (conduit to panel, not wired). Buildings with on-site parking and solar must include integration planning (solar + EV + battery capable of bi-directional power flow via V2H capable charger, future requirement).",
+      "citation": "CA Title 24 Energy §110.2(f) EV Ready",
+      "confidenceTier": "primary",
+      "keywords": ["ev", "ready", "circuit", "240v", "residential"]
+    }
+  ]
+}

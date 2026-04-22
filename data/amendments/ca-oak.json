@@ -1,0 +1,120 @@
+{
+  "jurisdiction": "ca-oak",
+  "jurisdictionName": "Oakland",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.oaklandca.gov/services/planning-building-service",
+  "amendments": [
+    {
+      "id": "ca-oak-ibc-soft-story-seismic-safety",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "3401",
+      "title": "Oakland Mandatory Soft-Story Seismic Safety Ordinance",
+      "text": "Unreinforced masonry buildings with soft stories built before 1978 must comply by January 2032. Pre-1956 concrete frame buildings with soft stories must retrofit by January 2027 (expedited). Retrofit measures: convert ground-floor parking to concrete shear walls with moment-resisting steel frames, add diagonal bracing (steel X-bracing), or use damping systems (tuned mass dampers, friction dampers). Full seismic evaluation per ASCE 41 required. Buildings in Liquefaction Hazard Zones require additional foundation improvement (underpinning, pilings, jet grouting). Retrofit costs typically $300k-$1M per building; City retrofit loan program available at reduced rates.",
+      "citation": "Oakland Municipal Code §8.6.4050 Soft-Story Building Retrofit",
+      "confidenceTier": "primary",
+      "keywords": ["soft-story", "seismic", "retrofit", "parking", "safety"]
+    },
+    {
+      "id": "ca-oak-nec-reach-code-gas-phase-out",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "Oakland Reach Code: No Gas Appliances in New Construction",
+      "text": "New buildings and major renovations (>50% of building surface) must be all-electric: no natural gas service to building (gas main prohibited at meter). New cooking equipment must use induction cooktops (or electric resistance). Space heating via heat pump HVAC (air-source or ground-source). Water heating via heat pump water heater or solar thermal (no gas tank backup allowed). Fossil fuel infrastructure retrofit to cold-plumbing stubs permitted for future conversion, but gas service disconnected. Exceptions: industrial processes, laboratory equipment with specific heat requirement (limited pilot light approval). Electrical service sized for 200A (single-family) or 400A (multi-family) to accommodate all-electric loads.",
+      "citation": "Oakland Reach Code §19.02.060 All-Electric Buildings",
+      "confidenceTier": "primary",
+      "keywords": ["gas-phase-out", "electric", "all-electric", "heat-pump", "induction"]
+    },
+    {
+      "id": "ca-oak-imc-heat-pump-space-heating-mandate",
+      "discipline": "mechanical",
+      "baseEdition": "IMC 2021",
+      "baseSection": "2001",
+      "title": "Oakland Heat Pump Space Heating Requirement",
+      "text": "All new residential and commercial buildings must use heat pump (air-source, ground-source, or water-source) for primary space heating. Supplemental resistance heating (backup) limited to 10% of annual heat load (fail-safe during extreme cold). Ground-source heat pumps preferred in Bay Area climate (lower operating cost). Air-source heat pump minimum HSPF 2 (heating season performance factor), SEER 2 cooling efficiency. System must be sized for 100% of heating load at design temperature (37°F winter, Oakland area). Ductless mini-split systems or hydronic radiant heat acceptable if meeting performance criteria. Natural gas furnaces prohibited for new construction as of January 1, 2024.",
+      "citation": "Oakland Building Code Amendment 19.02.045",
+      "confidenceTier": "primary",
+      "keywords": ["heat-pump", "heating", "mechanical", "hvac", "efficiency"]
+    },
+    {
+      "id": "ca-oak-nec-residential-solar-mandate",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "705",
+      "title": "Oakland Residential Solar Mandate (Net-Metered PV)",
+      "text": "All new single-family homes and condominiums must install solar photovoltaic system (minimum 3 kW for single-family, 2 kW per unit for condo). If site unsuitable for rooftop PV (shade, structural issues), building must demonstrate infeasibility with engineer letter; alternative: community solar subscription (verifiable power contract) required. PV system must be grid-tied with net metering agreement (utility buyback of excess production). System includes: solar array, string inverter or microinverter per array, AC/DC disconnects, monitoring system, utility bidirectional meter. Building must be solar-ready per CalGreen if full installation deferred.",
+      "citation": "Oakland Solar Mandate, Green Building Code §19.02.087",
+      "confidenceTier": "primary",
+      "keywords": ["solar", "pv", "mandate", "residential", "net-metering"]
+    },
+    {
+      "id": "ca-oak-ipc-green-building-water-quality",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "A803",
+      "title": "Oakland Green Stormwater Infrastructure (Bioswales, Rain Gardens)",
+      "text": "New construction must include stormwater biotreatment: on-site retention via bioswale, rain garden, permeable pavement, or green roof (minimum 1 inch of media depth). System must capture and filter first 1 inch of runoff from impervious surfaces before entering storm drain. Bioswale must drain within 48 hours (engineered soil, underdrain system if needed). Sizing: capture area = 1.25 × impervious roof + hardscape area. Maintenance responsibility documented in operations manual. Multi-unit residential: shared facility acceptable; single-family: individual lot-scale. Summary — verify precise stormwater volume and infiltration rate with Oakland Stormwater Program.",
+      "citation": "Oakland City Code §15.32 Green Infrastructure",
+      "confidenceTier": "summary",
+      "keywords": ["stormwater", "bioswale", "rain-garden", "permeable", "green"]
+    },
+    {
+      "id": "ca-oak-ipc-water-supply-resilience",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "604",
+      "title": "Oakland Water Supply Resilience (Rainwater Harvesting)",
+      "text": "New buildings ≥5,000 sq ft must include on-site water supply redundancy: either (1) rainwater capture tank (minimum 1,000 gallons for single-family, 5,000 gallons for multi-unit), (2) graywater reuse system, or (3) water-reuse system utilizing HVAC condensate. Rainwater tank must include filtration (first-flush diverter, sediment screen), and storage must be food-grade plastic or concrete (not permeable clay). Reused water limited to toilet flushing and landscape irrigation (not potable use). Tank discharge: overflow to storm drain, emergency drain valve. Summary — verify tank sizing and reuse pathways with local AHJ.",
+      "citation": "Oakland City Code §15.32 Water Supply Resilience",
+      "confidenceTier": "summary",
+      "keywords": ["rainwater", "harvesting", "water", "tank", "resilience"]
+    },
+    {
+      "id": "ca-oak-ibc-energy-storage-facilities",
+      "discipline": "electrical",
+      "baseEdition": "IBC 2021",
+      "baseSection": "2701",
+      "title": "Oakland Energy Storage System (Battery) Safety Standards",
+      "text": "Residential battery storage systems ≥10 kWh must meet UL 9540 standard (energy storage system safety), with certified thermal management and fire suppression system (not required for <4 kWh). System must include automated load-shedding (islanding control) and blackout protection for critical circuits (fridge, lights, pump). Battery room must have minimum 30-minute fire rating and smoke detection. DC disconnect rated for maximum system voltage and current (per NEC 706). Monthly inspection for water leaks or thermal runaway signs. Building owner liability insurance must cover battery system. Summary — verify insurance requirements and fire-rating construction with Oakland Fire Department.",
+      "citation": "Oakland Reach Code §19.02.100 Energy Storage Safety",
+      "confidenceTier": "summary",
+      "keywords": ["battery", "storage", "energy", "safety", "fire"]
+    },
+    {
+      "id": "ca-oak-nec-adu-electrical-upgrade",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "230",
+      "title": "Oakland ADU Electrical Service (Separate Metering)",
+      "text": "All accessory dwelling units (detached or attached) must have separate electrical service from primary dwelling: separate meter, separate main breaker panel, independent circuits for lighting and receptacles. Shared HVAC or water heater permitted with separate submetering and cost-sharing formula documented. Service to ADU must be 100A minimum (vs NEC 60A default); sized for full tenant load (heat pump, EV charging if capable, induction cooking). Property owner responsible for upgrade cost; ADU tenant pays for operational consumption only. No temporary power or extension cords; all wiring must be permanent in-wall or conduit.",
+      "citation": "Oakland Municipal Code §17.118 ADU Electrical Standards",
+      "confidenceTier": "primary",
+      "keywords": ["adu", "electrical", "service", "meter", "separate"]
+    },
+    {
+      "id": "ca-oak-ibc-historic-seismic-retrofit",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "3409",
+      "title": "Oakland Historic Building Seismic Retrofit (Exemptions Limited)",
+      "text": "Historic buildings (designated on Local Register or National Register of Historic Places) in Oakland are NOT exempt from soft-story seismic retrofit mandates. Retrofit design must be sensitive to historic fabric: exterior appearance must be unchanged (bracing interior-hidden, cladding preserved). Interior character-defining features may be temporarily removed and reinstalled post-retrofit. Engineering modifications limited to: internal shear walls, foundation underpinning, damping systems. Cost-share grants available from City Historic Preservation office (up to 50% match). Retrofit timeline same as non-historic buildings (2027-2032 phase-in). Summary — verify historic designation status and allowable interior modifications with Oakland Planning Department.",
+      "citation": "Oakland Historic Preservation + IBC 3409",
+      "confidenceTier": "summary",
+      "keywords": ["historic", "seismic", "retrofit", "preservation", "exempt"]
+    },
+    {
+      "id": "ca-oak-imc-indoor-air-quality-filtration",
+      "discipline": "mechanical",
+      "baseEdition": "IMC 2021",
+      "baseSection": "401",
+      "title": "Oakland Indoor Air Quality: MERV-13 Filters and CO2 Monitoring",
+      "text": "All new buildings must install MERV-13 (minimum) furnace and return-air filters, changed monthly or per manufacturer schedule. Commercial buildings and multi-family ≥20 units must include real-time CO2 monitoring in occupied spaces (target <800 ppm daytime, <1,200 ppm nighttime). CO2 sensors must trigger demand-controlled ventilation (automatic increase airflow if CO2 rises above setpoint). Schools and child-care facilities must test for radon and formaldehyde during first year and annually thereafter. Non-residential facilities must maintain log of filter changes and CO2 readings for city inspection. Summary — verify CO2 sensor integration with existing HVAC controls.",
+      "citation": "Oakland Green Building Code §19.02.085 Indoor Air Quality",
+      "confidenceTier": "summary",
+      "keywords": ["air-quality", "filter", "co2", "monitoring", "mechanical"]
+    }
+  ]
+}

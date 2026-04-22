@@ -1,9 +1,28 @@
 /**
  * Blueprint Design System — Color Palette
  * Blue ink on cream paper, sci-fi accents
+ *
+ * Canonical moodboard colors (W8 lock):
+ * - navy: #1B3B5E (blueprint blue, hero/ink)
+ * - robin: #7FCFCB (Robin's Egg, verification/confirmation peak moments ONLY)
+ * - brass: #B6873A (trust/cost/money accents)
+ * - orange: #D9642E (peak moment CTAs, heat/action)
+ * - trace/paper/graphite/faded-rule: neutrals
  */
 
 export const colors = {
+  // Canonical moodboard palette — W8 locked
+  navy: '#1B3B5E',
+  navyDeep: '#0E2A47',
+  robin: '#7FCFCB',
+  brass: '#B6873A',
+  orange: '#D9642E',
+  trace: '#F4F0E6',
+  graphite: '#2E2E30',
+  fadedRule: '#C9C3B3',
+  redline: '#A1473A',
+
+  // Legacy names — re-export canonical values for backwards compatibility
   ink: {
     900: '#0B1D33',
     800: '#122B4A',

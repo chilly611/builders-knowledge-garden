@@ -1647,6 +1647,81 @@ export type Database = {
         }
         Relationships: []
       }
+      rsi_deltas: {
+        Row: {
+          id: string
+          status: string
+          kind: string
+          target: string
+          rationale: string
+          diff_preview: string | null
+          patch: Json | null
+          source_feedback_ids: string[] | null
+          created_at: string
+          applied_at: string | null
+          reviewer: string | null
+          review_notes?: string | null
+        }
+        Insert: {
+          id?: string
+          status?: string
+          kind: string
+          target: string
+          rationale: string
+          diff_preview?: string | null
+          patch?: Json | null
+          source_feedback_ids?: string[] | null
+          created_at?: string
+          applied_at?: string | null
+          reviewer?: string | null
+          review_notes?: string | null
+        }
+        Update: {
+          id?: string
+          status?: string
+          kind?: string
+          target?: string
+          rationale?: string
+          diff_preview?: string | null
+          patch?: Json | null
+          source_feedback_ids?: string[] | null
+          created_at?: string
+          applied_at?: string | null
+          reviewer?: string | null
+          review_notes?: string | null
+        }
+        Relationships: []
+      }
+      rsi_feedback: {
+        Row: {
+          id: string
+          specialist_run_id: string
+          user_id: string | null
+          signal: string
+          note: string | null
+          created_at: string
+          context: Json | null
+        }
+        Insert: {
+          id?: string
+          specialist_run_id: string
+          user_id?: string | null
+          signal: string
+          note?: string | null
+          created_at?: string
+          context?: Json | null
+        }
+        Update: {
+          id?: string
+          specialist_run_id?: string
+          user_id?: string | null
+          signal?: string
+          note?: string | null
+          created_at?: string
+          context?: Json | null
+        }
+        Relationships: []
+      }
       saved_projects: {
         Row: {
           created_at: string | null

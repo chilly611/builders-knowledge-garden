@@ -674,7 +674,7 @@ export const SharedAutonomyInterface: React.FC = () => {
       await refetchActivities();
     } catch (err) {
       console.error('Kill switch error:', err);
-      alert('Kill switch failed. Please try again.');
+      alert('Couldn\'t shut down the agent. Check the connection and try again.');
     } finally {
       setKillSwitchProcessing(false);
     }

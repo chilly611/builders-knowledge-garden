@@ -65,7 +65,7 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
         setBrokerResponse(response);
         setSelectedResourceIds(new Set());
       } catch (err) {
-        setBrokerError(err instanceof Error ? err.message : 'Search failed. Please try again.');
+        setBrokerError(err instanceof Error ? err.message : 'That search didn\'t connect. Check your network or rephrase the scope.');
         setBrokerResponse(null);
       } finally {
         setBrokerLoading(false);

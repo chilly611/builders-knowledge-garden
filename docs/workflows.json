@@ -8,7 +8,7 @@
       "In the prototype, lifecycle stages are called 'levels' and stage 1 is 'Scout'. Per task spec, stage 1 is renamed 'Size Up' here and the original name is preserved as original_prototype_name.",
       "Step type 'radio' is listed in the task spec but does not appear in the prototype. Types actually used: analysis_result, text_input, voice_input, number_input, location_input, multi_select, select, file_upload, template_chooser, checklist.",
       "Each workflow has a totalXP value on the quest. Per the prototype's handleStepInput logic, per-step XP is computed as Math.ceil(quest.totalXP / quest.steps.length) on completion.",
-      "At runtime the prototype augments every system prompt with window.__BKG_TRADE__ and window.__BKG_STATE__ context (see bkg-killer-app-v3.html line 2909). That trade/state injection is an architectural choice worth preserving in the rebuild \u2014 lane awareness is handled at call time, not baked into the prompts themselves.",
+      "At runtime the prototype augments every system prompt with window.__BKG_TRADE__ and window.__BKG_STATE__ context (see bkg-killer-app-v3.html line 2909). That trade/state injection is an architectural choice worth preserving in the rebuild — lane awareness is handled at call time, not baked into the prompts themselves.",
       "Four analysis_result steps reference a promptId that is NOT defined in ANALYSIS_PROMPTS (they fall back to analysisTitle + analysisResult only). These are listed in orphan_analysis_steps below and need a specialist prompt authored for them."
     ],
     "orphanAnalysisSteps": [
@@ -16,25 +16,25 @@
         "workflowId": "q9",
         "stepId": "s9-3",
         "analysisTitle": "Bid Analysis",
-        "note": "No promptId \u2014 needs a specialist prompt for subcontractor bid comparison"
+        "note": "No promptId — needs a specialist prompt for subcontractor bid comparison"
       },
       {
         "workflowId": "q10",
         "stepId": "s10-3",
         "analysisTitle": "Equipment Rental Costs",
-        "note": "No promptId \u2014 needs a specialist prompt for equipment rental vs. buy analysis"
+        "note": "No promptId — needs a specialist prompt for equipment rental vs. buy analysis"
       },
       {
         "workflowId": "q16",
         "stepId": "s16-1",
         "analysisTitle": "Weekly Toolbox Talk",
-        "note": "No promptId \u2014 needs a specialist prompt for OSHA toolbox talk generation"
+        "note": "No promptId — needs a specialist prompt for OSHA toolbox talk generation"
       },
       {
         "workflowId": "q23",
         "stepId": "s23-2",
         "analysisTitle": "Payroll Classification Review",
-        "note": "No promptId \u2014 needs a specialist prompt for 1099 vs W-2 classification review"
+        "note": "No promptId — needs a specialist prompt for 1099 vs W-2 classification review"
       }
     ],
     "fieldNamingConvention": "camelCase matching prototype source (window.QUESTS_DATA / window.ANALYSIS_PROMPTS)",
@@ -46,109 +46,109 @@
       "id": 1,
       "name": "Size Up",
       "original_prototype_name": "Scout",
-      "emoji": "\ud83e\udded"
+      "emoji": "🧭"
     },
     {
       "id": 2,
       "name": "Lock",
-      "emoji": "\ud83d\udd12"
+      "emoji": "🔒"
     },
     {
       "id": 3,
       "name": "Plan",
-      "emoji": "\ud83d\udcd0"
+      "emoji": "📐"
     },
     {
       "id": 4,
       "name": "Build",
-      "emoji": "\ud83d\udd28"
+      "emoji": "🔨"
     },
     {
       "id": 5,
       "name": "Adapt",
-      "emoji": "\ud83d\udd04"
+      "emoji": "🔄"
     },
     {
       "id": 6,
       "name": "Collect",
-      "emoji": "\ud83d\udcb0"
+      "emoji": "💰"
     },
     {
       "id": 7,
       "name": "Reflect",
-      "emoji": "\ud83d\udcd6"
+      "emoji": "📖"
     }
   ],
   "trades": [
     {
       "id": "gc",
-      "emoji": "\ud83c\udfd7\ufe0f",
+      "emoji": "🏗️",
       "name": "General Contractor",
       "desc": "Full project oversight, all phases"
     },
     {
       "id": "reno",
-      "emoji": "\ud83d\udd28",
+      "emoji": "🔨",
       "name": "Renovation / Remodel",
       "desc": "Existing structures, upgrades, additions"
     },
     {
       "id": "adu",
-      "emoji": "\ud83c\udfe0",
+      "emoji": "🏠",
       "name": "ADU / New Construction",
       "desc": "Accessory dwelling units, ground-up builds"
     },
     {
       "id": "roof",
-      "emoji": "\u26fa",
+      "emoji": "⛺",
       "name": "Roofing",
       "desc": "Residential & commercial roofing systems"
     },
     {
       "id": "hvac",
-      "emoji": "\ud83c\udf21\ufe0f",
+      "emoji": "🌡️",
       "name": "HVAC",
       "desc": "Heating, ventilation, air conditioning"
     },
     {
       "id": "elec",
-      "emoji": "\u26a1",
+      "emoji": "⚡",
       "name": "Electrician",
       "desc": "Electrical systems, panels, wiring"
     },
     {
       "id": "plumb",
-      "emoji": "\ud83d\udd27",
+      "emoji": "🔧",
       "name": "Plumbing",
       "desc": "Water, gas, drainage systems"
     },
     {
       "id": "lv",
-      "emoji": "\ud83d\udce1",
+      "emoji": "📡",
       "name": "Low Voltage / A-V",
       "desc": "Security, networking, audio-visual, smart home"
     },
     {
       "id": "concrete",
-      "emoji": "\ud83e\uddf1",
+      "emoji": "🧱",
       "name": "Concrete & Foundation",
       "desc": "Foundations, flatwork, structural concrete"
     },
     {
       "id": "paint",
-      "emoji": "\ud83c\udfa8",
+      "emoji": "🎨",
       "name": "Painting & Finishing",
       "desc": "Interior/exterior painting, coatings, finishes"
     },
     {
       "id": "landscape",
-      "emoji": "\ud83c\udf3f",
+      "emoji": "🌿",
       "name": "Landscaping",
       "desc": "Hardscape, irrigation, outdoor structures"
     },
     {
       "id": "frame",
-      "emoji": "\ud83e\udeb5",
+      "emoji": "🪵",
       "name": "Framing",
       "desc": "Structural framing, rough carpentry"
     }
@@ -184,44 +184,44 @@
     {
       "id": "q1",
       "stageId": 1,
-      "label": "Risk score",
+      "label": "Should you take this bid?",
       "totalXp": 50,
       "steps": [
         {
           "id": "s1-1",
-          "label": "Run client payment history check",
+          "label": "Check the client's payment record",
           "type": "analysis_result",
           "promptId": "risk-payment-history",
-          "analysisTitle": "Payment History Analysis",
+          "analysisTitle": "Checking payment history",
           "exampleOutput": "Client has paid 12 of 14 invoices on time (86%). Average payment delay: 4.2 days. Two late payments were during Q4 2024 (holiday season). Risk: LOW. Suggested approach: Standard net-30 terms."
         },
         {
           "id": "s1-2",
-          "label": "Analyze scope clarity",
+          "label": "How clear is the scope?",
           "type": "text_input",
-          "placeholder": "Paste the scope description or RFP text here\u2026"
+          "placeholder": "e.g., Scope is vague on finishes. Client unsure between carpet and vinyl. May request changes."
         },
         {
           "id": "s1-3",
-          "label": "Check material availability",
+          "label": "Pull material lead times",
           "type": "analysis_result",
           "promptId": "risk-material-availability",
-          "analysisTitle": "Material Availability Check",
-          "exampleOutput": "Primary materials available. Heads up: Lumber (2\u00d76 SPF) has 2-week lead time at current supplier. Consider pre-ordering. No backorders flagged."
+          "analysisTitle": "Checking material availability",
+          "exampleOutput": "Primary materials available. Heads up: Lumber (2×6 SPF) has 2-week lead time at current supplier. Consider pre-ordering. No backorders flagged."
         },
         {
           "id": "s1-4",
-          "label": "Verify crew capacity for timeline",
+          "label": "Do you have crew for the timeline?",
           "type": "number_input",
           "unit": "crew members available",
           "placeholder": "e.g., 6"
         },
         {
           "id": "s1-5",
-          "label": "Calculate risk-adjusted markup",
+          "label": "Set your markup",
           "type": "analysis_result",
           "promptId": "risk-markup-calculation",
-          "analysisTitle": "Risk-Adjusted Markup",
+          "analysisTitle": "Checking what markup to use",
           "exampleOutput": "Based on inputs: Scope clarity 7/10, Payment history A, Material risk LOW, Crew capacity ADEQUATE. Recommended markup: 22-26% (standard range for this risk profile). Consider 28% if timeline is aggressive."
         }
       ]
@@ -229,18 +229,18 @@
     {
       "id": "q2",
       "stageId": 1,
-      "label": "Estimating",
+      "label": "Quick estimate",
       "totalXp": 100,
       "steps": [
         {
           "id": "s2-1",
-          "label": "Project description",
+          "label": "Describe the job",
           "type": "voice_input",
-          "placeholder": "Describe the project \u2014 what's the job? Type or use voice\u2026"
+          "placeholder": "e.g., Kitchen remodel, 320 sq ft. Removing wall between kitchen and dining room, adding granite island with gas cooktop. New appliances. Type or use voice."
         },
         {
           "id": "s2-2",
-          "label": "Job location",
+          "label": "Where is it?",
           "type": "location_input"
         },
         {
@@ -252,7 +252,7 @@
         },
         {
           "id": "s2-4",
-          "label": "Trade specialties needed",
+          "label": "Which trades?",
           "type": "multi_select",
           "options": [
             "General / GC",
@@ -271,16 +271,16 @@
         },
         {
           "id": "s2-5",
-          "label": "Upload documents",
+          "label": "Upload plans or photos",
           "type": "file_upload",
           "accept": "PDF, JPG, PNG, DWG"
         },
         {
           "id": "s2-6",
-          "label": "AI estimate",
+          "label": "Specialist pulls the estimate",
           "type": "analysis_result",
           "promptId": "estimating-takeoff",
-          "analysisTitle": "AI Takeoff & Rough Total",
+          "analysisTitle": "Pulling estimate from your specs",
           "exampleOutput": "Itemized takeoff:\n- Demo + dumpster — $3,200\n- Framing tweaks — $4,800\n- Electrical (3 circuits) — $5,400\n- Plumbing rough-in — $3,900\n- Cabinetry + quartz — $18,500\n- Flooring (320 sqft) — $6,400\n- Paint + trim — $3,600\n- GC overhead + margin — $6,550\n\nRough total: $52,350\n\nAssumptions: existing HVAC stays, no PE needed, owner-grade appliances.\nConfidence: medium.\nNext step: site walk to confirm bearing-wall header."
         }
       ]
@@ -288,18 +288,18 @@
     {
       "id": "q3",
       "stageId": 1,
-      "label": "Client lookup",
+      "label": "Who are you working for?",
       "totalXp": 50,
       "steps": [
         {
           "id": "s3-1",
-          "label": "Import existing client contacts",
+          "label": "Load your client file",
           "type": "file_upload",
           "accept": "CSV, VCF, XLS"
         },
         {
           "id": "s3-2",
-          "label": "Tag clients by project type",
+          "label": "Sort by project type",
           "type": "multi_select",
           "options": [
             "Residential",
@@ -312,19 +312,19 @@
         },
         {
           "id": "s3-3",
-          "label": "Add payment history notes",
+          "label": "Flag payment behavior",
           "type": "text_input",
-          "placeholder": "Notes about payment patterns, preferred terms\u2026"
+          "placeholder": "e.g., Fast pay, slow in summer, requires invoice in specific format, net-30 standard."
         },
         {
           "id": "s3-4",
-          "label": "Upload past project photos",
+          "label": "Attach job photos",
           "type": "file_upload",
           "accept": "JPG, PNG, HEIC"
         },
         {
           "id": "s3-5",
-          "label": "Set follow-up reminder schedule",
+          "label": "When should we check back?",
           "type": "select",
           "options": [
             "Weekly",
@@ -338,41 +338,41 @@
     {
       "id": "q4",
       "stageId": 2,
-      "label": "Contracts",
+      "label": "Lock down the paperwork",
       "totalXp": 100,
       "steps": [
         {
           "id": "s4-1",
-          "label": "Choose contract templates",
+          "label": "Pick the forms you need",
           "type": "template_chooser",
           "templates": [
             {
-              "icon": "\ud83d\udcdd",
+              "icon": "📝",
               "name": "Client Agreement",
               "desc": "Standard client contract with scope, price, timeline, warranty"
             },
             {
-              "icon": "\ud83d\udccb",
+              "icon": "📋",
               "name": "Sub Agreement",
               "desc": "SOW + payment terms + insurance for subs"
             },
             {
-              "icon": "\ud83d\udee1",
+              "icon": "🛡",
               "name": "Lien Waiver (Conditional)",
               "desc": "Conditional waiver for progress payments"
             },
             {
-              "icon": "\ud83d\udee1",
+              "icon": "🛡",
               "name": "Lien Waiver (Unconditional)",
               "desc": "Final unconditional waiver at close"
             },
             {
-              "icon": "\ud83d\udd12",
+              "icon": "🔒",
               "name": "NDA / Confidentiality",
               "desc": "For commercial projects with proprietary details"
             },
             {
-              "icon": "\ud83d\udcb0",
+              "icon": "💰",
               "name": "Change Order Template",
               "desc": "Pre-formatted CO with cost/schedule impact"
             }
@@ -380,13 +380,13 @@
         },
         {
           "id": "s4-2",
-          "label": "Fill in project details",
+          "label": "Fill in the blanks",
           "type": "text_input",
-          "placeholder": "Project name, address, client name, start date\u2026"
+          "placeholder": "e.g., Owner name: Dave Samson, 123 Main St, Boulder CO, Start: May 15."
         },
         {
           "id": "s4-3",
-          "label": "Set payment terms",
+          "label": "Payment terms",
           "type": "select",
           "options": [
             "Net 15",
@@ -399,7 +399,7 @@
         },
         {
           "id": "s4-4",
-          "label": "Review and finalize",
+          "label": "Check the whole thing",
           "type": "checklist"
         }
       ]
@@ -407,70 +407,80 @@
     {
       "id": "q5",
       "stageId": 2,
-      "label": "Code compliance",
+      "label": "Check the codes",
+      "description": "AI-assisted rough-draft code reference guide. Review with your licensed professional before submitting to AHJ. Always consult the jurisdiction's current code adoption and local amendments.",
       "totalXp": 75,
       "steps": [
         {
+          "id": "s5-0",
+          "label": "Figure out which codes apply",
+          "type": "analysis_result",
+          "promptId": "compliance-router",
+          "analysisTitle": "Routed Code Check"
+        },
+        {
           "id": "s5-1",
-          "label": "IBC/IRC structural requirements verified",
+          "label": "Checking structural codes (IBC/IRC)",
           "type": "analysis_result",
           "promptId": "compliance-structural",
-          "analysisTitle": "Structural Code Check",
-          "exampleOutput": "IBC Section 1607: Live loads verified for residential occupancy. IRC R602.3: Wall framing spacing compliant at 16\" OC. No seismic design category upgrades required for this jurisdiction."
+          "analysisTitle": "Structural Code Check"
         },
         {
           "id": "s5-2",
-          "label": "NEC electrical code reviewed",
+          "label": "Checking electrical codes (NEC)",
           "type": "analysis_result",
           "promptId": "compliance-electrical",
-          "analysisTitle": "Electrical Code Check",
-          "exampleOutput": "NEC Article 210: Branch circuits compliant. GFCI protection required in kitchen, bath, garage, outdoor (210.8). AFCI required for bedrooms (210.12). Service panel sizing adequate at 200A."
+          "analysisTitle": "Electrical Code Check"
         },
         {
           "id": "s5-3",
-          "label": "IPC plumbing code checked",
-          "type": "checklist"
+          "label": "Checking plumbing codes (IPC/UPC)",
+          "type": "analysis_result",
+          "promptId": "compliance-plumbing",
+          "analysisTitle": "Plumbing Code Check"
         },
         {
           "id": "s5-4",
-          "label": "Fire code + egress confirmed",
-          "type": "checklist"
+          "label": "Checking fire & egress codes (IFC/NFPA)",
+          "type": "analysis_result",
+          "promptId": "compliance-fire",
+          "analysisTitle": "Fire & Life Safety Check"
         },
         {
           "id": "s5-5",
-          "label": "AHJ-specific amendments researched",
+          "label": "Note any local tweaks",
           "type": "text_input",
-          "placeholder": "Note any local amendments or special requirements\u2026"
+          "placeholder": "e.g., County requires HVAC on separate panel. City adds 2-week turn time for electrical permits."
         },
         {
           "id": "s5-6",
-          "label": "Inspection sequence documented",
+          "label": "List the inspection sequence",
           "type": "text_input",
-          "placeholder": "List the required inspection sequence for this jurisdiction\u2026"
+          "placeholder": "e.g., Foundation, framing, MEP rough, MEP trim, drywall, final."
         }
       ]
     },
     {
       "id": "q6",
       "stageId": 3,
-      "label": "Sequencing",
+      "label": "Sequence the trades",
       "totalXp": 100,
       "steps": [
         {
           "id": "s6-1",
-          "label": "Define phases",
+          "label": "What are the phases?",
           "type": "text_input",
-          "placeholder": "List the project phases (e.g., Demo, Framing, MEP, Finish)\u2026"
+          "placeholder": "e.g., Demo, Framing, MEP rough, Drywall, Paint, Finish."
         },
         {
           "id": "s6-2",
-          "label": "Map dependencies",
+          "label": "What depends on what?",
           "type": "text_input",
-          "placeholder": "Note which phases depend on others\u2026"
+          "placeholder": "e.g., Framing can't start until demo is done. Drywall waits on MEP. Paint is last."
         },
         {
           "id": "s6-3",
-          "label": "Identify parallel work",
+          "label": "What can run at the same time?",
           "type": "multi_select",
           "options": [
             "Demo",
@@ -485,61 +495,61 @@
         },
         {
           "id": "s6-4",
-          "label": "Set total project duration",
+          "label": "Total weeks on the job",
           "type": "number_input",
           "unit": "weeks",
           "placeholder": "e.g., 12"
         },
         {
           "id": "s6-5",
-          "label": "Flag bottlenecks",
+          "label": "Find the bottleneck",
           "type": "analysis_result",
           "promptId": "sequencing-bottlenecks",
-          "analysisTitle": "Sequencing Analysis",
-          "exampleOutput": "Critical path identified: Demo \u2192 Framing \u2192 MEP \u2192 Drywall \u2192 Finish. Longest sequence: 8 weeks. Electrical has 2-week lead time for permit. Recommendation: Start electrical permitting during framing."
+          "analysisTitle": "Looking for the slowest path",
+          "exampleOutput": "Critical path identified: Demo → Framing → MEP → Drywall → Finish. Longest sequence: 8 weeks. Electrical has 2-week lead time for permit. Recommendation: Start electrical permitting during framing."
         }
       ]
     },
     {
       "id": "q7",
       "stageId": 3,
-      "label": "Crew sizing",
+      "label": "How many do you need?",
       "totalXp": 75,
       "steps": [
         {
           "id": "s7-1",
-          "label": "Set crew benchmarks",
+          "label": "What's your baseline crew?",
           "type": "number_input",
           "unit": "workers per phase",
           "placeholder": "e.g., 4-6"
         },
         {
           "id": "s7-2",
-          "label": "Calculate crew size",
+          "label": "Figure out the right size",
           "type": "analysis_result",
           "promptId": "crew-analysis",
-          "analysisTitle": "Crew Sizing Analysis",
+          "analysisTitle": "Calculating crew size",
           "exampleOutput": "Based on scope and timeline: Minimum 4-person crew, optimal 6. Peak demand during framing & MEP: 8 workers. Recommend staggered start for specialty trades."
         },
         {
           "id": "s7-3",
-          "label": "Check availability",
+          "label": "Do you have the people?",
           "type": "checklist"
         },
         {
           "id": "s7-4",
-          "label": "Flag conflicts",
+          "label": "Spot any double-books",
           "type": "analysis_result",
           "promptId": "crew-conflicts",
-          "analysisTitle": "Resource Conflicts",
+          "analysisTitle": "Checking for conflicts",
           "exampleOutput": "Lead electrician assigned to 2 concurrent projects weeks 4-6. Recommendation: Hire temp or adjust schedule."
         },
         {
           "id": "s7-5",
-          "label": "Optimize labor",
+          "label": "Trim the labor cost",
           "type": "analysis_result",
           "promptId": "crew-optimization",
-          "analysisTitle": "Labor Optimization",
+          "analysisTitle": "Looking at labor savings",
           "exampleOutput": "Current plan: $180k labor. Optimized: $162k (10% savings via better sequencing). Trade-off: 1 week longer timeline."
         }
       ]
@@ -547,7 +557,8 @@
     {
       "id": "q8",
       "stageId": 3,
-      "label": "Permits",
+      "label": "Pull the permits",
+      "description": "Rough-draft checklist for your records. Your local permitting authority may require more. Always review with a licensed professional before submitting.",
       "totalXp": 100,
       "steps": [
         {
@@ -572,7 +583,7 @@
         },
         {
           "id": "s8-5",
-          "label": "All approved",
+          "label": "Permit docs packaged",
           "type": "checklist"
         }
       ]
@@ -580,33 +591,33 @@
     {
       "id": "q9",
       "stageId": 3,
-      "label": "Sub bids",
+      "label": "Get sub quotes",
       "totalXp": 100,
       "steps": [
         {
           "id": "s9-1",
-          "label": "Generate SOW",
+          "label": "Write the scope",
           "type": "text_input",
-          "placeholder": "Outline scope of work for subcontractors\u2026"
+          "placeholder": "e.g., Electrical: New 100A subpanel, 8 circuits, all rough-in per plans. Framing: 16 studs, header, new beam."
         },
         {
           "id": "s9-2",
-          "label": "Send RFQs",
+          "label": "Send the RFQs",
           "type": "file_upload",
           "accept": "PDF, DOCX, XLS"
         },
         {
           "id": "s9-3",
-          "label": "Compare bids",
+          "label": "Compare the numbers",
           "type": "analysis_result",
           "promptId": "sub-bid-analysis",
-          "analysisTitle": "Bid Analysis",
+          "analysisTitle": "Comparing bids",
           "exampleOutput": "Electrical: 3 quotes, range $12k-$16k, mid-range $13.5k recommended. Plumbing: 4 quotes, $8k-$11k, recommend lowest at $8k (verified bonding). HVAC: 2 quotes, $9k-$10.5k.",
           "notes": "Wired to sub-bid-analysis specialist (W4.3a)."
         },
         {
           "id": "s9-4",
-          "label": "Select subs",
+          "label": "Who are you hiring?",
           "type": "multi_select",
           "options": [
             "Electrical Sub A",
@@ -618,12 +629,12 @@
         },
         {
           "id": "s9-5",
-          "label": "Send calendar invites",
+          "label": "Sync their calendars",
           "type": "checklist"
         },
         {
           "id": "s9-6",
-          "label": "Track insurance",
+          "label": "Collect insurance docs",
           "type": "file_upload",
           "accept": "PDF"
         }
@@ -632,37 +643,37 @@
     {
       "id": "q10",
       "stageId": 3,
-      "label": "Equipment",
+      "label": "Rent or buy gear",
       "totalXp": 85,
       "steps": [
         {
           "id": "s10-1",
-          "label": "List equipment",
+          "label": "What equipment do you need?",
           "type": "text_input",
-          "placeholder": "Scissor lift, dumpster, scaffolding, compressor, etc\u2026"
+          "placeholder": "e.g., Scissor lift, dumpster, scaffolding, air compressor."
         },
         {
           "id": "s10-2",
-          "label": "Check inventory",
+          "label": "Do you own any of it?",
           "type": "checklist"
         },
         {
           "id": "s10-3",
-          "label": "Get rental quotes",
+          "label": "Get rental rates",
           "type": "analysis_result",
           "promptId": "equipment-rent-vs-buy",
-          "analysisTitle": "Equipment Rental Costs",
+          "analysisTitle": "Checking rental vs. buy",
           "exampleOutput": "Scissor lift 12 weeks: $2,400 rental vs $2,800 purchase. Scaffolding: $1,800 rental. Dumpster 16-week service: $2,200. Total estimated: $6,400.",
           "notes": "Wired to equipment-rent-vs-buy specialist (W4.3a)."
         },
         {
           "id": "s10-4",
-          "label": "Schedule delivery",
+          "label": "Schedule delivery and pickup",
           "type": "checklist"
         },
         {
           "id": "s10-5",
-          "label": "Set maintenance reminders",
+          "label": "Set maintenance checkpoints",
           "type": "checklist"
         }
       ]
@@ -670,44 +681,44 @@
     {
       "id": "q11",
       "stageId": 3,
-      "label": "Supply ordering",
+      "label": "Order materials",
       "totalXp": 85,
       "steps": [
         {
           "id": "s11-1",
-          "label": "Extract material list",
+          "label": "Pull the material takeoff",
           "type": "analysis_result",
           "promptId": "supply-materials",
-          "analysisTitle": "Material List Extraction",
-          "exampleOutput": "From spec: 2\u00d76 SPF framing (800 bf), drywall (4,200 sf), insulation (3,500 sf), roofing (2,400 sf), flooring (2,800 sf). Total weight estimate: 85 tons."
+          "analysisTitle": "Extracting material list",
+          "exampleOutput": "From spec: 2×6 SPF framing (800 bf), drywall (4,200 sf), insulation (3,500 sf), roofing (2,400 sf), flooring (2,800 sf). Total weight estimate: 85 tons."
         },
         {
           "id": "s11-2",
-          "label": "Find suppliers",
+          "label": "Find suppliers in your area",
           "type": "analysis_result",
           "promptId": "supply-suppliers",
-          "analysisTitle": "Supplier Search",
+          "analysisTitle": "Searching for suppliers",
           "exampleOutput": "Local lumberyard: in-stock, 5% discount. National: 2-3% discount, free delivery over $5k. Specialty flooring: 1 supplier within 50 miles. Recommend splitting orders for best pricing."
         },
         {
           "id": "s11-3",
-          "label": "Compare pricing",
+          "label": "Compare your options",
           "type": "analysis_result",
           "promptId": "supply-pricing",
-          "analysisTitle": "Price Comparison",
+          "analysisTitle": "Comparing prices",
           "exampleOutput": "Scenario A (all local): $32k. Scenario B (mixed): $29.8k (7% savings). Scenario C (all national): $28.5k (11% savings, 2-week delay)."
         },
         {
           "id": "s11-4",
-          "label": "Flag lead times",
+          "label": "Watch for long lead times",
           "type": "analysis_result",
           "promptId": "supply-leadtimes",
-          "analysisTitle": "Lead Time Alert",
+          "analysisTitle": "Checking lead times",
           "exampleOutput": "Custom flooring: 4-week lead. Specialty doors: 3 weeks. Standard lumber: in-stock. Recommend pre-ordering specialty items within 2 weeks."
         },
         {
           "id": "s11-5",
-          "label": "Place orders",
+          "label": "Lock in the orders",
           "type": "checklist"
         }
       ]
@@ -715,32 +726,32 @@
     {
       "id": "q12",
       "stageId": 3,
-      "label": "Services list",
+      "label": "Services & utilities",
       "totalXp": 75,
       "steps": [
         {
           "id": "s12-1",
-          "label": "Utility locates",
+          "label": "Call 811 for locates",
           "type": "checklist"
         },
         {
           "id": "s12-2",
-          "label": "Dumpster",
+          "label": "Arrange dumpster",
           "type": "checklist"
         },
         {
           "id": "s12-3",
-          "label": "Portable toilet",
+          "label": "Order portable toilet",
           "type": "checklist"
         },
         {
           "id": "s12-4",
-          "label": "Inspections",
+          "label": "Schedule building inspector",
           "type": "checklist"
         },
         {
           "id": "s12-5",
-          "label": "Fuel delivery",
+          "label": "Set up fuel delivery",
           "type": "checklist"
         }
       ]
@@ -748,35 +759,35 @@
     {
       "id": "q13",
       "stageId": 3,
-      "label": "Hiring",
+      "label": "Hire your crew",
       "totalXp": 60,
       "steps": [
         {
           "id": "s13-1",
-          "label": "Define role",
+          "label": "What role are you filling?",
           "type": "text_input",
-          "placeholder": "Lead carpenter, apprentice, laborer, etc\u2026"
+          "placeholder": "e.g., Lead carpenter, framing apprentice, general laborer, MEP coordinator."
         },
         {
           "id": "s13-2",
-          "label": "Search platforms",
+          "label": "Post on job boards",
           "type": "checklist"
         },
         {
           "id": "s13-3",
-          "label": "Review candidates",
+          "label": "Flag your top candidates",
           "type": "text_input",
-          "placeholder": "Notes on top candidates, experience, references\u2026"
+          "placeholder": "e.g., Mike (framing, 8yr exp, refs solid), Sarah (apprentice, eager, available now)."
         },
         {
           "id": "s13-4",
-          "label": "Send outreach",
+          "label": "Reach out",
           "type": "text_input",
-          "placeholder": "Template or notes for candidate outreach\u2026"
+          "placeholder": "e.g., \"Hey Mike, I've got 12 weeks of framing work starting May 1. Day rate $200, breakfast on us. Interested?\""
         },
         {
           "id": "s13-5",
-          "label": "Confirm hire",
+          "label": "Lock them in",
           "type": "checklist"
         }
       ]
@@ -784,17 +795,17 @@
     {
       "id": "q14",
       "stageId": 4,
-      "label": "Weather schedule",
+      "label": "Work around the weather",
       "totalXp": 85,
       "steps": [
         {
           "id": "s14-1",
-          "label": "Connect weather API",
+          "label": "Enable weather alerts",
           "type": "checklist"
         },
         {
           "id": "s14-2",
-          "label": "Flag sensitive phases",
+          "label": "Which phases need dry?",
           "type": "multi_select",
           "options": [
             "Foundation pour",
@@ -806,27 +817,27 @@
         },
         {
           "id": "s14-3",
-          "label": "Set thresholds",
+          "label": "When do you pause work?",
           "type": "select",
           "options": [
             "Rain >0.25\"",
             "Rain >0.5\"",
-            "Temp <40\u00b0F",
-            "Temp <32\u00b0F",
+            "Temp <40°F",
+            "Temp <32°F",
             "Wind >20mph"
           ]
         },
         {
           "id": "s14-4",
-          "label": "Review forecast",
+          "label": "Check the forecast",
           "type": "analysis_result",
           "promptId": "weather-forecast",
-          "analysisTitle": "10-Day Weather Forecast",
-          "exampleOutput": "This week: 60-70\u00b0F, dry. Days 5-6: Rain 60% chance. Days 7-10: Clear. Recommend: Schedule roofing days 2-4, interior work days 5-6, exterior finish days 7-10."
+          "analysisTitle": "Checking 10-day forecast",
+          "exampleOutput": "This week: 60-70°F, dry. Days 5-6: Rain 60% chance. Days 7-10: Clear. Recommend: Schedule roofing days 2-4, interior work days 5-6, exterior finish days 7-10."
         },
         {
           "id": "s14-5",
-          "label": "Approve suggestions",
+          "label": "Lock in the schedule",
           "type": "checklist"
         }
       ]
@@ -834,17 +845,17 @@
     {
       "id": "q15",
       "stageId": 4,
-      "label": "Daily log",
+      "label": "Daily logbook",
       "totalXp": 80,
       "steps": [
         {
           "id": "s15-1",
-          "label": "Enable recording",
+          "label": "Turn on voice recording",
           "type": "checklist"
         },
         {
           "id": "s15-2",
-          "label": "Set reminder",
+          "label": "When should we remind you?",
           "type": "select",
           "options": [
             "9am",
@@ -855,13 +866,13 @@
         },
         {
           "id": "s15-3",
-          "label": "Review transcription",
+          "label": "What happened today?",
           "type": "voice_input",
-          "placeholder": "Voice daily log or review transcription\u2026"
+          "placeholder": "e.g., \"Framing on west wall done. Electrical rough-in starting tomorrow. Found water stain in south corner, needs investigation.\" Type or use voice."
         },
         {
           "id": "s15-4",
-          "label": "Tag items",
+          "label": "What categories apply?",
           "type": "multi_select",
           "options": [
             "Progress",
@@ -874,7 +885,7 @@
         },
         {
           "id": "s15-5",
-          "label": "Archive entry",
+          "label": "Save to the record",
           "type": "checklist"
         }
       ]
@@ -882,100 +893,100 @@
     {
       "id": "q16",
       "stageId": 4,
-      "label": "Toolbox talks",
+      "label": "Weekly toolbox talk",
       "totalXp": 75,
       "steps": [
         {
           "id": "s16-1",
-          "label": "Generate talk",
+          "label": "Specialist drafts the talk",
           "type": "analysis_result",
           "promptId": "osha-toolbox-talk",
-          "analysisTitle": "Weekly Toolbox Talk",
+          "analysisTitle": "Drafting safety talk",
           "exampleOutput": "Topic: Fall Protection. Outline: OSHA 1926.500, harness inspection, anchor point identification, rescue plan. Duration: 10-15 min. Attendees: 8 required.",
           "notes": "Wired to osha-toolbox-talk specialist (W4.3a)."
         },
         {
           "id": "s16-2",
-          "label": "Review risks",
+          "label": "What's the main hazard this week?",
           "type": "text_input",
-          "placeholder": "Summarize key safety risks for this phase\u2026"
+          "placeholder": "e.g., Working at height. Excavation adjacent to foundation. Electrical energized panel."
         },
         {
           "id": "s16-3",
-          "label": "Deliver to crew",
+          "label": "Deliver the talk",
           "type": "checklist"
         },
         {
           "id": "s16-4",
-          "label": "Log attendance",
+          "label": "How many attended?",
           "type": "number_input",
           "unit": "crew members present",
           "placeholder": "e.g., 8"
         },
         {
           "id": "s16-5",
-          "label": "Note concerns",
+          "label": "Any questions or concerns?",
           "type": "text_input",
-          "placeholder": "Any crew concerns or follow-up items\u2026"
+          "placeholder": "e.g., Two asked about harness fit. Mentioned we should review anchor points before Friday."
         }
       ]
     },
     {
       "id": "q17",
       "stageId": 4,
-      "label": "Expenses",
+      "label": "Expense report",
       "totalXp": 90,
       "steps": [
         {
           "id": "s17-1",
-          "label": "Upload receipts",
+          "label": "Upload your receipts",
           "type": "file_upload",
           "accept": "PDF, JPG, PNG"
         },
         {
           "id": "s17-2",
-          "label": "Review categorization",
+          "label": "Specialist codes them",
           "type": "analysis_result",
           "promptId": "expense-categorization",
-          "analysisTitle": "Expense Categorization",
+          "analysisTitle": "Categorizing expenses",
           "exampleOutput": "Uploaded 24 receipts. Categorized: Materials $8,200, Labor $3,400, Equipment $1,200, Other $620. Total: $13,420. Any miscategorizations?"
         },
         {
           "id": "s17-3",
-          "label": "Fix misclassified",
+          "label": "Fix any wrong codes",
           "type": "checklist"
         },
         {
           "id": "s17-4",
-          "label": "Check dashboard",
+          "label": "Where do we stand?",
           "type": "analysis_result",
           "promptId": "expense-dashboard",
-          "analysisTitle": "Budget vs. Actual",
+          "analysisTitle": "Checking budget vs. actual",
           "exampleOutput": "Budget: $28,500. Spent to date: $13,420 (47%). On track. Labor overages: +2% (acceptable). Materials: -1% (under budget)."
         },
         {
           "id": "s17-5",
-          "label": "Address overages",
+          "label": "Explain any overages",
           "type": "text_input",
-          "placeholder": "Notes on any cost overruns or adjustments\u2026"
+          "placeholder": "e.g., Materials overrun due to spec change for granite. Electrical labor +$400 for unforeseen outlet relocations."
         }
       ]
     },
     {
       "id": "q18",
       "stageId": 4,
-      "label": "Outreach",
+      "label": "Touch base with vendors",
       "totalXp": 85,
       "steps": [
         {
           "id": "s18-1",
-          "label": "Import contacts",
+          "label": "Load your contact list",
           "type": "file_upload",
           "accept": "CSV, VCF, XLS"
         },
         {
           "id": "s18-2",
-          "label": "Tag by type",
+          "label": "Tag who they are",
           "type": "multi_select",
           "options": [
             "Sub / Supplier",
@@ -988,22 +999,22 @@
         },
         {
           "id": "s18-3",
-          "label": "Add rate notes",
+          "label": "Note their rates",
           "type": "text_input",
-          "placeholder": "Notes on rates, availability, terms\u2026"
+          "placeholder": "e.g., Electrician Joe: $85/hr, available 2 weeks out, wants 30-day COI renewal."
         },
         {
           "id": "s18-4",
-          "label": "Draft RFQ template",
+          "label": "Write your RFQ",
           "type": "text_input",
-          "placeholder": "Standard RFQ template for this trade\u2026"
+          "placeholder": "e.g., \"New 100A subpanel, 12 circuits, labor only, rough + trim, 2-week timeline. What's your all-in?\""
         },
         {
           "id": "s18-5",
-          "label": "Review quotes",
+          "label": "Tally the responses",
           "type": "analysis_result",
           "promptId": "contacts-quotes",
-          "analysisTitle": "Quote Summary",
+          "analysisTitle": "Summarizing quotes",
           "exampleOutput": "Received 12 quotes for 6 trades. Average response time: 2.1 days. 3 quotes above budget (request revision). 4 quotes excellent (follow up)."
         }
       ]
@@ -1011,33 +1022,33 @@
     {
       "id": "q19",
       "stageId": 4,
-      "label": "Compass",
+      "label": "Compass check-in",
       "totalXp": 70,
       "steps": [
         {
           "id": "s19-1",
-          "label": "Save estimate",
+          "label": "Save your estimate",
           "type": "checklist"
         },
         {
           "id": "s19-2",
-          "label": "Save schedule",
+          "label": "Save your schedule",
           "type": "checklist"
         },
         {
           "id": "s19-3",
-          "label": "Save tasks",
+          "label": "Save your task list",
           "type": "checklist"
         },
         {
           "id": "s19-4",
-          "label": "Add note",
+          "label": "Note to yourself",
           "type": "voice_input",
-          "placeholder": "Add any notes or voicemail for later\u2026"
+          "placeholder": "e.g., \"Client wants to see framing photos before we close walls. Follow up Thursday AM.\" Type or use voice."
         },
         {
           "id": "s19-5",
-          "label": "Test resume",
+          "label": "Test the snapshot",
           "type": "checklist"
         }
       ]
@@ -1045,47 +1056,47 @@
     {
       "id": "q20",
       "stageId": 5,
-      "label": "Change orders",
+      "label": "Manage scope changes",
       "totalXp": 120,
       "steps": [
         {
           "id": "s20-1",
-          "label": "Document change",
+          "label": "What's the change?",
           "type": "voice_input",
-          "placeholder": "Describe the change request\u2026"
+          "placeholder": "e.g., Client wants to add a third bathroom. Move kitchen island 2 feet west. Upgrade flooring to 4x4 tile. Type or use voice."
         },
         {
           "id": "s20-2",
-          "label": "Cost delta",
+          "label": "What's the cost impact?",
           "type": "analysis_result",
           "promptId": "co-cost-delta",
-          "analysisTitle": "Cost Impact Analysis",
+          "analysisTitle": "Calculating cost impact",
           "exampleOutput": "Change: Add HVAC zone control system. Materials: $3,200. Labor: $1,400. Contingency (10%): $460. Total CO amount: $5,060."
         },
         {
           "id": "s20-3",
-          "label": "Schedule impact",
+          "label": "How does it affect the schedule?",
           "type": "analysis_result",
           "promptId": "co-schedule-impact",
-          "analysisTitle": "Schedule Impact",
+          "analysisTitle": "Checking schedule impact",
           "exampleOutput": "Installation requires 3 additional days during MEP phase. Current timeline: Week 4. No impact on completion date (slack available)."
         },
         {
           "id": "s20-4",
-          "label": "Generate CO doc",
+          "label": "Specialist drafts the CO",
           "type": "analysis_result",
           "promptId": "co-document",
-          "analysisTitle": "Change Order Document",
+          "analysisTitle": "Drafting change order",
           "exampleOutput": "CO#001 generated. Format: Project info, detailed change description, cost breakdown, payment terms, approval lines, schedule note. Ready for client signature."
         },
         {
           "id": "s20-5",
-          "label": "Send for approval",
+          "label": "Get their sign-off",
           "type": "checklist"
         },
         {
           "id": "s20-6",
-          "label": "Update master",
+          "label": "Update your job file",
           "type": "checklist"
         }
       ]
@@ -1093,41 +1104,41 @@
     {
       "id": "q21",
       "stageId": 6,
-      "label": "Draw requests",
+      "label": "Request payment draws",
       "totalXp": 100,
       "steps": [
         {
           "id": "s21-1",
-          "label": "Calculate % complete",
+          "label": "Figure out % complete",
           "type": "analysis_result",
           "promptId": "draw-calculate",
-          "analysisTitle": "Project Completion Status",
+          "analysisTitle": "Calculating project completion",
           "exampleOutput": "Completed: Demo (100%), Framing (100%), MEP rough (85%). Overall: 62% complete. Eligible for Draw #3: $18,900."
         },
         {
           "id": "s21-2",
-          "label": "Auto-fill form",
+          "label": "Auto-fill the draw form",
           "type": "analysis_result",
           "promptId": "draw-calculate",
-          "analysisTitle": "Draw Form Auto-Fill",
+          "analysisTitle": "Pre-filling draw form",
           "exampleOutput": "Draw #3 form pre-filled: Completion %, eligible amount, project dates, contractor info. Requires review & signature only.",
           "notes": "Re-uses the 'draw-calculate' promptId with a different analysis_title and example output."
         },
         {
           "id": "s21-3",
-          "label": "Verify holdback",
+          "label": "Holdback percentage",
           "type": "number_input",
           "unit": "% holdback",
           "placeholder": "e.g., 10"
         },
         {
           "id": "s21-4",
-          "label": "Submit to lender",
+          "label": "Send to the lender",
           "type": "checklist"
         },
         {
           "id": "s21-5",
-          "label": "Track response",
+          "label": "Follow up",
           "type": "checklist"
         }
       ]
@@ -1135,14 +1146,14 @@
     {
       "id": "q22",
       "stageId": 6,
-      "label": "Lien waivers",
+      "label": "Collect lien waivers",
       "totalXp": 95,
       "steps": [
         {
           "id": "s22-1",
-          "label": "List subs/suppliers",
+          "label": "Who needs to waive?",
           "type": "text_input",
-          "placeholder": "All subs and material suppliers requiring waivers\u2026"
+          "placeholder": "e.g., Main Electric, Premier Plumbing, Anderson Lumber, Concrete Pros."
         },
         {
           "id": "s22-2",
@@ -1151,18 +1162,18 @@
         },
         {
           "id": "s22-3",
-          "label": "Collect signed",
+          "label": "Load the signed copies",
           "type": "file_upload",
           "accept": "PDF"
         },
         {
           "id": "s22-4",
-          "label": "Send unconditional",
+          "label": "Send final waivers",
           "type": "checklist"
         },
         {
           "id": "s22-5",
-          "label": "Archive",
+          "label": "File them",
           "type": "checklist"
         }
       ]
@@ -1170,14 +1181,14 @@
     {
       "id": "q23",
       "stageId": 6,
-      "label": "Payroll audit",
+      "label": "Payroll check",
       "totalXp": 80,
       "steps": [
         {
           "id": "s23-1",
-          "label": "List workers",
+          "label": "Who's on your payroll?",
           "type": "text_input",
-          "placeholder": "Employee/1099 roster with hours/dates\u2026"
+          "placeholder": "e.g., Mike (employee), Joe (1099), Sarah (employee)."
         },
         {
           "id": "s23-2",
@@ -1185,21 +1196,21 @@
           "type": "analysis_result",
           "analysisTitle": "Payroll Classification Review",
           "exampleOutput": "18 workers listed. 6 employee, 12 contractor. AI flags: 3 contractors may qualify as employees (regular hours, exclusive work). Recommend CPA review.",
-          "notes": "No prompt_id defined in prototype \u2014 orphan analysis step."
+          "notes": "No prompt_id defined in prototype — orphan analysis step."
         },
         {
           "id": "s23-3",
-          "label": "Review flags",
+          "label": "Review any flags",
           "type": "checklist"
         },
         {
           "id": "s23-4",
-          "label": "Consult CPA",
+          "label": "Get CPA advice",
           "type": "checklist"
         },
         {
           "id": "s23-5",
-          "label": "Update records",
+          "label": "Update your records",
           "type": "checklist"
         }
       ]
@@ -1207,7 +1218,7 @@
     {
       "id": "q24",
       "stageId": 6,
-      "label": "Punch list",
+      "label": "Final walk-through",
       "totalXp": 100,
       "steps": [
         {
@@ -1218,20 +1229,20 @@
         },
         {
           "id": "s24-2",
-          "label": "Upload for detection",
+          "label": "Specialist spots issues",
           "type": "analysis_result",
           "promptId": "punch-detection",
-          "analysisTitle": "Punch List Detection",
+          "analysisTitle": "Finding punch items",
           "exampleOutput": "Analyzed 47 photos. Detected 12 potential punch items: 3 drywall gaps, 2 trim misalignments, 4 paint issues, 3 outlet cover gaps. See detail view."
         },
         {
           "id": "s24-3",
-          "label": "Review items",
+          "label": "Review the list",
           "type": "checklist"
         },
         {
           "id": "s24-4",
-          "label": "Assign to trades",
+          "label": "Assign to the trades",
           "type": "multi_select",
           "options": [
             "Framing",
@@ -1252,19 +1263,19 @@
     {
       "id": "q25",
       "stageId": 7,
-      "label": "Retainage",
+      "label": "Collect retainage",
       "totalXp": 110,
       "steps": [
         {
           "id": "s25-1",
-          "label": "Log amount",
+          "label": "How much is held back?",
           "type": "number_input",
           "unit": "$",
           "placeholder": "e.g., 5000"
         },
         {
           "id": "s25-2",
-          "label": "Set reminders",
+          "label": "When should we remind you?",
           "type": "select",
           "options": [
             "1 week after close",
@@ -1293,14 +1304,14 @@
     {
       "id": "q26",
       "stageId": 7,
-      "label": "Warranty",
+      "label": "Warranty handoff",
       "totalXp": 85,
       "steps": [
         {
           "id": "s26-1",
-          "label": "Log periods",
+          "label": "Log warranty periods",
           "type": "text_input",
-          "placeholder": "Warranty periods by trade (e.g., Roofing 10yr, HVAC 5yr)\u2026"
+          "placeholder": "e.g., Roofing 10yr, HVAC 5yr, paint 2yr."
         },
         {
           "id": "s26-2",
@@ -1309,18 +1320,18 @@
         },
         {
           "id": "s26-3",
-          "label": "Schedule inspection",
+          "label": "Schedule final inspection",
           "type": "checklist"
         },
         {
           "id": "s26-4",
-          "label": "Document",
+          "label": "File the paperwork",
           "type": "file_upload",
           "accept": "PDF"
         },
         {
           "id": "s26-5",
-          "label": "Close file",
+          "label": "Close the file",
           "type": "checklist"
         }
       ]
@@ -1328,20 +1339,20 @@
     {
       "id": "q27",
       "stageId": 7,
-      "label": "Retrospective",
+      "label": "What we learned",
       "totalXp": 100,
       "steps": [
         {
           "id": "s27-1",
-          "label": "What went well",
+          "label": "What went right?",
           "type": "text_input",
-          "placeholder": "Successes, wins, smooth phases\u2026"
+          "placeholder": "e.g., Client was great to work with. Sequencing was perfect. Team came together well."
         },
         {
           "id": "s27-2",
-          "label": "What went wrong",
+          "label": "What went wrong?",
           "type": "text_input",
-          "placeholder": "Challenges, delays, issues\u2026"
+          "placeholder": "e.g., Permits took 3 weeks instead of 2. Drywall crew was slow. Material delay on windows."
         },
         {
           "id": "s27-3",
@@ -1352,13 +1363,13 @@
         },
         {
           "id": "s27-4",
-          "label": "Team feedback",
+          "label": "What the crew thinks",
           "type": "voice_input",
-          "placeholder": "Crew reflections, suggestions for next project\u2026"
+          "placeholder": "e.g., \"Great experience. Let's do more of these. Safety was tight.\" Type or use voice."
         },
         {
           "id": "s27-5",
-          "label": "Tag lessons",
+          "label": "What's the lesson?",
           "type": "multi_select",
           "options": [
             "Scheduling",

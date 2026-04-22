@@ -1,0 +1,131 @@
+{
+  "jurisdiction": "ca-statewide-calgreen",
+  "jurisdictionName": "California (State-Level Title 24 Part 11, CalGreen)",
+  "parent": "california",
+  "adoptedEdition": "CA Title 24 2022 (CalGreen)",
+  "effectiveDate": "2023-01-01",
+  "sourceUrl": "https://www.dgs.ca.gov/bsc/Resources/Title24/2022-Title-24",
+  "amendments": [
+    {
+      "id": "ca-calgreen-nec-408-solar-ready",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "408",
+      "title": "CalGreen Solar-Ready Roof Requirement",
+      "text": "All new residential buildings, including single-family homes and multi-family dwellings, must have roof area solar-ready (clear of obstructions and structurally capable) for photovoltaic system installation. Solar-ready area must be minimum 500 sq ft or 50% of usable roof area (whichever is smaller). Electrical infrastructure (conduit, disconnects, inverter mounting space) must be installed at construction time even if PV modules are not yet installed. Summary — verify exact square footage and obstruction thresholds with California Building Standards Commission.",
+      "citation": "CA Title 24 CalGreen §408 Solar-Ready Requirement",
+      "confidenceTier": "primary",
+      "keywords": ["solar", "ready", "roof", "pv", "residential"]
+    },
+    {
+      "id": "ca-calgreen-nec-210-ev-charging-ready",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "210",
+      "title": "CalGreen EV Charging-Ready Requirement",
+      "text": "All new residential buildings with 3 or more dwelling units must provide EV charging-ready spaces for at least 6% of total parking spaces (or 1 space, whichever is greater). Charging-ready means dedicated 240V branch circuit, conduit, and approved mounting location capable of supporting Level 2 charger installation. Parking spaces must be near electrical service to minimize feeder length. Single-family homes and duplexes exempt if EV-ready branch circuit requirement already met under NEC 210.",
+      "citation": "CA Title 24 CalGreen §210 EV-Ready Parking",
+      "confidenceTier": "primary",
+      "keywords": ["ev", "charging", "parking", "residential", "ready"]
+    },
+    {
+      "id": "ca-calgreen-ipc-low-flow-fixtures",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "422",
+      "title": "CalGreen Low-Flow Fixture Standards",
+      "text": "All plumbing fixtures in new construction and major renovations must meet CalGreen efficiency standards: kitchen faucets max 1.8 gpm (vs IPC 2.2 gpm), lavatory faucets max 0.5 gpm (vs IPC 0.5 gpm, no change), toilet flush volume max 1.28 gallons per flush (UHET standard), urinals max 0.5 gpf. All fixtures must carry WaterSense label or equivalent California certification. Showerheads limited to 1.5 gpm per IPC. Non-residential buildings must exceed these minimums by 20%.",
+      "citation": "CA Title 24 CalGreen §422 Water Efficiency",
+      "confidenceTier": "primary",
+      "keywords": ["water", "fixture", "flow", "gpm", "efficiency"]
+    },
+    {
+      "id": "ca-calgreen-ipc-graywater-system",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "A803",
+      "title": "CalGreen Graywater System Requirement",
+      "text": "New residential buildings with 5 or more dwelling units must either install functional graywater reuse system for landscaping irrigation or demonstrate infeasibility. Graywater sources: sinks, showers, baths (not toilets or kitchen sink). System must include: separate gray piping, settling tank with overflow to sewer, irrigation distribution, and backflow prevention. Single-family homes and buildings <5 units may include graywater infrastructure pre-design (pipes stubbed, sized, access points located) to enable future retrofit. Summary — verify current unit count threshold with local AHJ.",
+      "citation": "CA Title 24 CalGreen §A803 Graywater Reuse",
+      "confidenceTier": "summary",
+      "keywords": ["graywater", "reuse", "plumbing", "water", "irrigation"]
+    },
+    {
+      "id": "ca-calgreen-imc-ventilation-rate",
+      "discipline": "mechanical",
+      "baseEdition": "IMC 2021",
+      "baseSection": "402",
+      "title": "CalGreen Ventilation Rate Requirement",
+      "text": "Residential buildings must provide continuous mechanical ventilation at minimum 0.15 cfm per sq ft of conditioned floor area (with intermittent boost to 0.2 cfm/sqft during cooking and occupancy peaks). Non-residential buildings must meet ASHRAE 62.1 (not IMC baseline). Ventilation system must include heat recovery ventilation (HRV) or energy recovery ventilation (ERV) with minimum 60% sensible recovery efficiency. Demand-controlled ventilation (CO2 sensors) allowed to reduce baseline rates. Ductless systems (individual room ERV) acceptable if meeting cfm minimums.",
+      "citation": "CA Title 24 CalGreen §402 Ventilation Rates",
+      "confidenceTier": "primary",
+      "keywords": ["ventilation", "cfm", "mechanical", "hrv", "erv"]
+    },
+    {
+      "id": "ca-calgreen-imc-hvac-efficiency-tier",
+      "discipline": "mechanical",
+      "baseEdition": "IMC 2021",
+      "baseSection": "502",
+      "title": "CalGreen HVAC Efficiency Tier Requirement",
+      "text": "All HVAC equipment in new residential construction must exceed AHRI minimum efficiency ratings by 10-15% (Tier 1 for climate zones 1-6, Tier 2 for zones 7-16 in high-density areas). Heat pumps must be AHRI-certified for heating down to 17°F minimum. Air-source heat pumps preferred over resistance heating for fossil-fuel elimination path. Ground-source or water-loop heat pumps required in commercial buildings ≥15,000 sq ft. Summary — verify current Tier definitions and climate zone classifications with California Building Standards Commission.",
+      "citation": "CA Title 24 CalGreen §502 HVAC Efficiency",
+      "confidenceTier": "summary",
+      "keywords": ["hvac", "efficiency", "heat", "pump", "cooling"]
+    },
+    {
+      "id": "ca-calgreen-ibc-rebar-recycled-content",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1901",
+      "title": "CalGreen Recycled Content Reinforcement Steel",
+      "text": "All rebar and reinforcement steel used in concrete structures must contain minimum 75% recycled content (post-consumer or post-industrial). Steel wire reinforcement and welded wire fabric must meet same 75% threshold. Documentation (mill certs) must be retained for inspection. Rebar supplier must declare compliance with California environmental product declaration standards. No performance degradation vs virgin rebar; strength ratings unchanged.",
+      "citation": "CA Title 24 CalGreen §1901 Recycled Content",
+      "confidenceTier": "primary",
+      "keywords": ["rebar", "recycled", "content", "steel", "structural"]
+    },
+    {
+      "id": "ca-calgreen-ibc-indoor-air-quality",
+      "discipline": "structural",
+      "baseEdition": "IBC 2021",
+      "baseSection": "1217",
+      "title": "CalGreen Indoor Air Quality and Material Standards",
+      "text": "New buildings must implement indoor air quality measures: low-VOC paints (SCAQMD Rule 1113 compliant), low-formaldehyde composite products (CARB Phase 2 compliant), and formaldehyde-free insulation where practical. All HVAC systems must include MERV-13 filters minimum. Exterior wall and window assemblies must resist moisture intrusion with continuous air barrier. Entryway must include entrance vestibule or 6-foot minimum radon mitigation rough-in. Basement radon mitigation mandatory if soil radon >2 pCi/L estimated. Summary — verify current VOC limits and filter requirements with local AHJ.",
+      "citation": "CA Title 24 CalGreen §1217 Indoor Air Quality",
+      "confidenceTier": "summary",
+      "keywords": ["indoor", "air", "quality", "voc", "formaldehyde"]
+    },
+    {
+      "id": "ca-calgreen-imc-natural-ventilation-windows",
+      "discipline": "mechanical",
+      "baseEdition": "IMC 2021",
+      "baseSection": "401",
+      "title": "CalGreen Natural Ventilation Windows",
+      "text": "Buildings in mild climates (zones 2, 3, 10, 15, 16) may use natural ventilation as supplement or alternative to mechanical HVAC if properly designed. Operable windows must be sized for minimum 5% of floor area in living spaces. Window operation must be intuitive and accessible (no multi-step latching). System design must account for prevailing winds and exterior air quality. Not permitted in high-pollution areas or zones with wildfire smoke risk. Summary — verify applicability to specific microclimate and air quality zones.",
+      "citation": "CA Title 24 CalGreen §401 Natural Ventilation",
+      "confidenceTier": "summary",
+      "keywords": ["ventilation", "natural", "window", "climate", "hvac"]
+    },
+    {
+      "id": "ca-calgreen-nec-battery-storage-sizing",
+      "discipline": "electrical",
+      "baseEdition": "NEC 2023",
+      "baseSection": "706",
+      "title": "CalGreen Battery Storage System Sizing",
+      "text": "New homes with solar PV systems are encouraged (not mandated) to include battery storage ≥10 kWh per Title 24 optional performance path. If included, battery must be sized for minimum 4-hour discharge duration at peak daytime load (typical solar peak 10am-2pm). System must include automatic load-shedding or demand management to extend available duration. UPS capability for critical loads (refrigerator, medical devices, communications) during grid outage. DC battery voltage must not exceed 600V nominal for residential (NEC 706.15(B) compliance). Summary — verify current sizing methodologies with Title 24 Appendix.",
+      "citation": "CA Title 24 CalGreen §706 Battery Storage",
+      "confidenceTier": "summary",
+      "keywords": ["battery", "storage", "sizing", "solar", "renewable"]
+    },
+    {
+      "id": "ca-calgreen-ipc-recycled-water-pipe",
+      "discipline": "plumbing",
+      "baseEdition": "IPC 2021",
+      "baseSection": "A801",
+      "title": "CalGreen Recycled Water Infrastructure (Dual Plumbing)",
+      "text": "New residential buildings in water-stressed regions (Southern CA, San Jose metro, etc.) must design for future recycled water (reclaimed wastewater) connection. Dual-line piping must be installed or conduit stubbed to allow retrofit. Recycled water for toilet flushing and landscape irrigation. Line must be clearly marked (purple color, labels per Title 24), separate from potable supply, and cross-connection prevented via air gap or reduced-pressure backflow preventer. If municipal recycled water not available at site opening, system design and access points still required. Summary — verify regional applicability and current water agency requirements.",
+      "citation": "CA Title 24 CalGreen §A801 Recycled Water-Ready",
+      "confidenceTier": "summary",
+      "keywords": ["recycled", "water", "plumbing", "irrigation", "dual-line"]
+    }
+  ]
+}

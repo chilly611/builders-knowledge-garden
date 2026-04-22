@@ -60,20 +60,23 @@
   --bp-font-mono: 'Courier Prime', 'Courier New', 'SF Mono', monospace;
   --bp-font-sans: 'Space Grotesk', var(--font-archivo), sans-serif;
 
-  /* Builder's Knowledge Garden Design Tokens (v2 palette) */
-  /* Heritage ground */
+  /* Builder's Knowledge Garden Design Tokens (v2 palette, W8 locked) */
+  /* Canonical palette — heritage ground */
   --navy: #1B3B5E;
   --navy-deep: #0E2A47;
   --trace: #F4F0E6;
   --graphite: #2E2E30;
   --faded-rule: #C9C3B3;
-  /* Everyday warm */
+  /* Canonical palette — everyday warm */
   --brass: #B6873A;
-  /* Markup alert */
+  /* Canonical palette — markup alert */
   --redline: #A1473A;
-  /* Peak pair (moment punctuation) */
+  /* Canonical palette — peak pair (moment punctuation, verification only) */
   --robin: #7FCFCB;
   --orange: #D9642E;
+
+  /* DEPRECATED — use --navy / --robin / --brass / --orange / --trace / --graphite / --faded-rule / --redline instead */
+  /* These legacy --bp-* vars will be removed in a future release */
 }
 
 @theme inline {

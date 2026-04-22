@@ -218,6 +218,33 @@ These feed a new RSI loop — **Loop #8, Design Constitution Fitness** — that 
 
 ---
 
+## Canonical Palette (W8 lock)
+
+The visual identity rests on a tightly constrained, moodboard-driven palette locked in Week 8 (April 16–22, 2026). Every surface must use these colors and no others (with the exception of phase-specific chromatic accents and status indicators, which live in `colors.phase` and `colors.status`).
+
+**Heritage ground (always there, structural):**
+- **Navy** `#1B3B5E` — Blueprint blue, hero/ink, primary dark color for type and UI linework
+- **Navy Deep** `#0E2A47` — Darker variant for splash/wordmark-against-navy heritage moments
+- **Trace (paper)** `#F4F0E6` — Light background, sheet color, engraved-paper ground
+- **Graphite** `#2E2E30` — Foreground ink, type, UI linework
+- **Faded Rule** `#C9C3B3` — Heritage grids, hairlines, structural scaffolding
+
+**Everyday warm accent:**
+- **Brass** `#B6873A` — CTAs, emblem highlights, focus rings, hover states, cost/money metaphor
+
+**Markup / alert:**
+- **Redline** `#A1473A` — Error, edit, revision-cloud callouts (sparingly, never everyday)
+
+**Peak pair (earned appearances only — never everyday chrome):**
+- **Robin's Egg** `#7FCFCB` — Verification, confirmation, "you are here," navigable-state indicator, compass-path pulses. **Reserved for moment punctuation and verification states only.** Never appears next to brass in the same component. Never animates into view—it's a quiet confirmation signal, not a celebration.
+- **Deep Orange** `#D9642E` — Project close-out, ritual crown, "something meaningful just happened" signal. Peak-moment CTAs, heat/action metaphor.
+
+**Binding rule:** Robin's Egg and Deep Orange are a **pair**, and they never sit next to brass in the same component. Brass does everyday warm; orange does ceremonial warm. Robin's Egg is the only cool color in the system — so when it appears, it means something.
+
+**Implementation:** All canonical colors are exported from `src/design-system/tokens/colors.ts` as top-level exports (`navy`, `robin`, `brass`, etc.) and as CSS variables in `src/app/globals.css` (`--navy`, `--robin`, `--brass`, etc.). Legacy token names (`ink`, `paper`, `cyan`, `amber`) remain for backwards compatibility but are deprecated.
+
+---
+
 ## Session of Record
 
-This constitution was designed in the Chat session on April 16, 2026. The decisions recorded here — especially the three binding decisions — were made by the founder in that session. The constitution cannot be weakened without an explicit reopening by the founder.
+This constitution was designed in the Chat session on April 16, 2026. The decisions recorded here — especially the three binding decisions and the W8 canonical palette lock — were made by the founder in that session. The constitution cannot be weakened without an explicit reopening by the founder.

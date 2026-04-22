@@ -207,7 +207,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
       const errorMsg: Message = {
         id: `error-${Date.now()}`,
         role: "assistant",
-        content: `Sorry, I encountered an error: ${err instanceof Error ? err.message : "Unknown error"}. Please try again.`,
+        content: `That call didn't go through: ${err instanceof Error ? err.message : "Something went sideways"}. Check your connection and send that again.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);

@@ -75,17 +75,17 @@ describe('SupplyOrderingClient — Happy Path', () => {
     stages = loaded.stages;
   });
 
-  it('workflow q11 loads with 5 steps', () => {
+  it('workflow q11 loads with 5 steps (brand-voice labelling)', () => {
     expect(workflow).toBeDefined();
     expect(workflow.id).toBe('q11');
-    expect(workflow.label).toBe('Supply ordering');
+    expect(workflow.label).toBe('Order materials');
     expect(workflow.steps.length).toBe(5);
   });
 
   it('first step is s11-1 (Extract material list)', () => {
     const firstStep = workflow.steps[0];
     expect(firstStep.id).toBe('s11-1');
-    expect(firstStep.label).toContain('Extract material list');
+    expect(firstStep.label).toContain('material takeoff');
     expect(firstStep.type).toBe('analysis_result');
   });
 
@@ -99,7 +99,7 @@ describe('SupplyOrderingClient — Happy Path', () => {
   it('third step is s11-3 (Compare pricing)', () => {
     const thirdStep = workflow.steps[2];
     expect(thirdStep.id).toBe('s11-3');
-    expect(thirdStep.label).toContain('Compare pricing');
+    expect(thirdStep.label).toContain('Compare');
     expect(thirdStep.type).toBe('analysis_result');
   });
 
@@ -113,7 +113,7 @@ describe('SupplyOrderingClient — Happy Path', () => {
   it('final step is s11-5 (Place orders) with checklist type', () => {
     const finalStep = workflow.steps[4];
     expect(finalStep.id).toBe('s11-5');
-    expect(finalStep.label).toContain('Place orders');
+    expect(finalStep.label).toContain('orders');
     expect(finalStep.type).toBe('checklist');
   });
 

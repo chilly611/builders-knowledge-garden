@@ -45,8 +45,8 @@ interface WorkflowsJson {
 function loadWorkflow() {
   const raw = readFileSync(resolve(process.cwd(), 'docs/workflows.json'), 'utf-8');
   const parsed = JSON.parse(raw) as WorkflowsJson;
-  const wf = parsed.workflows.find((w) => w.id === 'q4');
-  if (!wf) throw new Error('Workflow q4 not found');
+  const wf = parsed.workflows.find((w) => w.id === 'q5');
+  if (!wf) throw new Error('Workflow q5 not found');
   return {
     workflow: wf,
     stages: parsed.lifecycleStages,
@@ -54,7 +54,7 @@ function loadWorkflow() {
   };
 }
 
-describe('CodeComplianceClient — Happy Path', () => {
+describe('Code Compliance Workflow — Happy Path', () => {
   let workflow: Workflow;
   let stages: LifecycleStage[];
   let jurisdictions: any[];
@@ -67,85 +67,75 @@ describe('CodeComplianceClient — Happy Path', () => {
     jurisdictions = loaded.jurisdictions;
   });
 
-  it('workflow q4 loads with label "Contracts"', () => {
+  it('workflow q5 loads with label "Check the codes" (brand-voice labelling)', () => {
     expect(workflow).toBeDefined();
-    expect(workflow.id).toBe('q4');
-    expect(workflow.label).toBe('Contracts');
+    expect(workflow.id).toBe('q5');
+    expect(workflow.label).toBe('Check the codes');
   });
 
-  it('workflow q4 has multiple steps for template selection', () => {
+  it('workflow q5 starts with router step s5-0', () => {
     expect(workflow.steps.length).toBeGreaterThan(0);
-    // First step should be template_chooser type
     const firstStep = workflow.steps[0];
-    expect(firstStep.id).toBe('s4-1');
-    expect(firstStep.type).toBe('template_chooser');
+    expect(firstStep.id).toBe('s5-0');
+    expect(firstStep.type).toBe('analysis_result');
+    expect(firstStep.promptId).toBe('compliance-router');
   });
 
-  it('template chooser step includes contract templates', () => {
-    const templateStep = workflow.steps.find((s) => s.type === 'template_chooser');
-    expect(templateStep).toBeDefined();
+  it('router step has analysis_result type and compliance-router promptId', () => {
+    const routerStep = workflow.steps.find((s) => s.id === 's5-0');
+    expect(routerStep).toBeDefined();
+    expect((routerStep as any).analysisTitle).toBe('Routed Code Check');
+    expect((routerStep as any).promptId).toBe('compliance-router');
+  });
 
-    const templates = (templateStep as any).templates;
-    expect(Array.isArray(templates)).toBe(true);
-    expect(templates.length).toBeGreaterThan(0);
+  it('workflow has 7 steps total (s5-0 through s5-6)', () => {
+    expect(workflow.steps.length).toBe(7);
+    const stepIds = workflow.steps.map((s) => s.id);
+    expect(stepIds).toEqual(['s5-0', 's5-1', 's5-2', 's5-3', 's5-4', 's5-5', 's5-6']);
+  });
 
-    // Check that templates have names and descriptions
-    templates.forEach((t: any) => {
-      expect(t.name).toBeDefined();
-      expect(t.desc).toBeDefined();
+  it('specialist steps s5-1 through s5-4 have analysis_result type', () => {
+    const specialistSteps = workflow.steps.filter((s) => ['s5-1', 's5-2', 's5-3', 's5-4'].includes(s.id));
+    expect(specialistSteps.length).toBe(4);
+    specialistSteps.forEach((step) => {
+      expect(step.type).toBe('analysis_result');
+      expect((step as any).promptId).toBeDefined();
+      expect((step as any).analysisTitle).toBeDefined();
     });
   });
 
-  it('template step includes standard contract types', () => {
-    const templateStep = workflow.steps.find((s) => s.type === 'template_chooser');
-    const templates = (templateStep as any).templates;
+  it('specialist steps have correct promptIds', () => {
+    const step1 = workflow.steps.find((s) => s.id === 's5-1');
+    const step2 = workflow.steps.find((s) => s.id === 's5-2');
+    const step3 = workflow.steps.find((s) => s.id === 's5-3');
+    const step4 = workflow.steps.find((s) => s.id === 's5-4');
 
-    const templateNames = templates.map((t: any) => t.name);
+    expect((step1 as any).promptId).toBe('compliance-structural');
+    expect((step2 as any).promptId).toBe('compliance-electrical');
+    expect((step3 as any).promptId).toBe('compliance-plumbing');
+    expect((step4 as any).promptId).toBe('compliance-fire');
+  });
 
-    // Should include client agreement, sub agreement, and lien waivers
-    expect(templateNames.some((name: string) => name.includes('Client'))).toBe(true);
-    expect(templateNames.some((name: string) => name.includes('Sub'))).toBe(true);
-    expect(templateNames.some((name: string) => name.includes('Lien'))).toBe(true);
+  it('specialist steps do not have exampleOutput field', () => {
+    const specialistSteps = workflow.steps.filter((s) => ['s5-1', 's5-2', 's5-3', 's5-4'].includes(s.id));
+    specialistSteps.forEach((step) => {
+      expect((step as any).exampleOutput).toBeUndefined();
+    });
   });
 
   it('workflow has valid xp total', () => {
     expect(workflow.totalXp).toBeGreaterThan(0);
-    expect(workflow.totalXp).toBe(100);
+    expect(workflow.totalXp).toBe(75);
+  });
+
+  it('workflow belongs to Lock stage (stageId 2)', () => {
+    expect(workflow.stageId).toBe(2);
   });
 
   it('stages are loaded for lifecycle context', () => {
     expect(stages).toBeDefined();
     expect(Array.isArray(stages)).toBe(true);
     expect(stages.length).toBeGreaterThan(0);
-  });
-
-  it('jurisdictions are loaded from workflows.json', () => {
-    expect(jurisdictions).toBeDefined();
-    expect(Array.isArray(jurisdictions)).toBe(true);
-
-    if (jurisdictions.length > 0) {
-      // Check structure of a jurisdiction
-      const jurisdiction = jurisdictions[0];
-      expect(jurisdiction.id).toBeDefined();
-      expect(jurisdiction.code).toBeDefined();
-    }
-  });
-
-  it('can access groupJurisdictions utility', async () => {
-    const { groupJurisdictions } = await import('@/lib/knowledge-data');
-    expect(typeof groupJurisdictions).toBe('function');
-
-    if (jurisdictions.length > 0) {
-      const grouped = groupJurisdictions(jurisdictions);
-      expect(Array.isArray(grouped)).toBe(true);
-
-      // If we have jurisdictions, grouping should return an array of state groups
-      if (grouped.length > 0) {
-        const firstGroup = grouped[0];
-        expect(firstGroup.state).toBeDefined();
-        expect(firstGroup.counties).toBeDefined();
-      }
-    }
   });
 
   it('all steps have valid step types', () => {
@@ -167,20 +157,13 @@ describe('CodeComplianceClient — Happy Path', () => {
     });
   });
 
-  it('workflow belongs to Lock stage (stageId 2)', () => {
-    expect(workflow.stageId).toBe(2);
-  });
+  it('final input steps s5-5 and s5-6 are text_input type', () => {
+    const step5 = workflow.steps.find((s) => s.id === 's5-5');
+    const step6 = workflow.steps.find((s) => s.id === 's5-6');
 
-  it('template step has required structure for conditional lien waivers', () => {
-    const templateStep = workflow.steps.find((s) => s.type === 'template_chooser');
-    const templates = (templateStep as any).templates;
-
-    const liens = templates.filter((t: any) => t.name.includes('Lien'));
-    expect(liens.length).toBeGreaterThanOrEqual(2);
-
-    const liensNames: string[] = liens.map((l: any) => l.name);
-    // Should have both conditional and unconditional variants
-    expect(liensNames.some((n: string) => n.includes('Conditional'))).toBe(true);
-    expect(liensNames.some((n: string) => n.includes('Unconditional'))).toBe(true);
+    expect(step5).toBeDefined();
+    expect(step5?.type).toBe('text_input');
+    expect(step6).toBeDefined();
+    expect(step6?.type).toBe('text_input');
   });
 });
