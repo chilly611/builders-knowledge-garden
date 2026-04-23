@@ -1,43 +1,68 @@
 'use client';
 
 /**
- * WorkflowPickerSearchBox (W7.O redesign)
- * =======================================
+ * WorkflowPickerSearchBox (W9.D.6 fix)
+ * =====================================
  *
  * A quiet, single-line engraved field that lives under the hero subhead.
  * The TOC below is the real navigation — this box is a secondary nudge
  * for users who want to type what they're working on instead of scanning
  * the stage list.
  *
- * Pre-W7 this was a 3-row textarea with a loud "Pull the codes →" button
- * and a "What are you working on (optional)" label. That version read as
- * a disconnected form between the hero and the TOC, and its button label
- * was misleading now that 17 workflows are live (submit always routes to
- * code-compliance regardless of query).
+ * W9.D.6 FIX: Intent routing now live!
+ * - Short queries (≤3 words) or workflow slugs → router.push as navigation
+ * - Multi-word queries or scope keywords → copilot call (stage=0)
+ * - Streams response inline below input with markdownToJsx rendering
+ * - Loading state + Clear button to reset
  *
- * Intent routing is a post-W7 item (tracked on tasks.todo.md Week 3+);
- * until then every submission still lands on code-compliance, but the
- * field itself reads as an invitation, not a committed code-compliance CTA.
+ * Heuristic for navigation vs copilot:
+ * - Query is <= 3 words AND matches a workflow slug/alias → navigate
+ * - Otherwise (scope keywords like sqft, $, ADU, remodel, etc) → copilot
  *
- * Keep:
- *   - voice input (mic icon on the right)
- *   - Enter / Cmd-Enter submit
- *   - graceful empty-submit fallback (so it never feels stuck)
+ * Scope keywords that trigger copilot: sqft, square feet, $, budget, project,
+ * ADU, remodel, build, new construction, scope, addition, renovation
  */
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { markdownToJsx } from '@/design-system/components/utils/markdownToJsx';
 
-// Narrow typing for the Web Speech API — support is inconsistent across
-// browsers and we only need start/stop/onresult/onerror/onend.
+// Narrow typing for the Web Speech API
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySpeechRecognition = any;
+
+// Workflow slug aliases for navigation shortcuts
+const WORKFLOW_SLUGS = new Set([
+  'estimating', 'q2',
+  'code-compliance', 'q5', 'compliance', 'codes',
+  'job-sequencing', 'q6', 'sequencing', 'sequence',
+  'worker-count', 'q7', 'crew',
+  'permit-applications', 'q8', 'permits',
+  'sub-management', 'q9', 'subs',
+  'equipment', 'q10',
+  'supply-ordering', 'q11', 'supply', 'materials',
+  'services-todos', 'q12', 'services',
+  'hiring', 'q13',
+  'weather-scheduling', 'q14', 'weather',
+  'daily-log', 'q15', 'log',
+  'osha-toolbox', 'q16', 'safety',
+  'expenses', 'q17',
+  'outreach', 'q18',
+  'compass-nav', 'q19',
+  'contract-templates', 'q4', 'contracts',
+]);
+
+// Scope keywords that indicate a project description (not a workflow slug)
+const SCOPE_KEYWORDS = /\b(sqft|square\s+feet|square\s+ft|\$|\d+k|\d+m|budget|project|adu|remodel|build|new\s+construction|scope|addition|renovation|kitchen|bath|bedroom|story|basement|garage|patio|deck|fence)\b/i;
 
 export default function WorkflowPickerSearchBox() {
   const router = useRouter();
   const [value, setValue] = useState('');
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [listening, setListening] = useState(false);
+  const [responseContent, setResponseContent] = useState<React.ReactNode[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<AnySpeechRecognition>(null);
 
   useEffect(() => {
@@ -89,105 +114,353 @@ export default function WorkflowPickerSearchBox() {
     setListening(false);
   };
 
+  const shouldUseCopilot = (q: string): boolean => {
+    const words = q.trim().split(/\s+/);
+
+    // If 3 or fewer words, check if it's a workflow slug
+    if (words.length <= 3) {
+      const normalized = q.toLowerCase().trim();
+      if (WORKFLOW_SLUGS.has(normalized)) {
+        return false; // Use navigation
+      }
+    }
+
+    // If query contains scope keywords, use copilot
+    if (SCOPE_KEYWORDS.test(q)) {
+      return true;
+    }
+
+    // If >3 words, default to copilot
+    if (words.length > 3) {
+      return true;
+    }
+
+    // Otherwise navigate (short, no scope keywords, not a slug)
+    return false;
+  };
+
+  const callCopilot = async (q: string) => {
+    setLoading(true);
+    setError(null);
+    setResponseContent(null);
+
+    try {
+      const projectId = typeof window !== 'undefined'
+        ? localStorage.getItem('bkg-active-project') ?? 'default'
+        : 'default';
+
+      const response = await fetch('/api/v1/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: q,
+          stage: 0,
+          projectId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      // Parse SSE stream
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) {
+          streamDone = true;
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6);
+            try {
+              const event = JSON.parse(jsonStr);
+
+              if (event.type === 'chunk' && event.text) {
+                fullText += event.text;
+              } else if (event.type === 'done') {
+                streamDone = true;
+                break;
+              } else if (event.type === 'error') {
+                throw new Error(event.message || 'Stream error');
+              }
+            } catch (e) {
+              // Ignore malformed JSON
+            }
+          }
+        }
+      }
+
+      // Render the full text with markdownToJsx
+      if (fullText) {
+        const rendered = markdownToJsx(fullText);
+        setResponseContent(rendered);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to fetch orientation: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submit = () => {
     const q = value.trim();
-    // Until intent routing ships, we always land on code-compliance.
-    // Empty submit still routes so the field never feels stuck.
-    const href = q
-      ? `/killerapp/workflows/code-compliance?q=${encodeURIComponent(q)}`
-      : '/killerapp/workflows/code-compliance';
-    router.push(href);
+    if (!q) {
+      router.push('/killerapp/workflows/code-compliance');
+      return;
+    }
+
+    if (shouldUseCopilot(q)) {
+      // Copilot route
+      callCopilot(q);
+    } else {
+      // Navigation route: check if it's a slug and convert to full path
+      const normalized = q.toLowerCase();
+      let href = '/killerapp/workflows/code-compliance'; // Default fallback
+
+      if (normalized === 'estimating' || normalized === 'q2') {
+        href = '/killerapp/workflows/estimating';
+      } else if (normalized === 'code-compliance' || normalized === 'q5' || normalized === 'compliance' || normalized === 'codes') {
+        href = '/killerapp/workflows/code-compliance';
+      } else if (normalized === 'job-sequencing' || normalized === 'q6' || normalized === 'sequencing' || normalized === 'sequence') {
+        href = '/killerapp/workflows/job-sequencing';
+      } else if (normalized === 'worker-count' || normalized === 'q7' || normalized === 'crew') {
+        href = '/killerapp/workflows/worker-count';
+      } else if (normalized === 'permit-applications' || normalized === 'q8' || normalized === 'permits') {
+        href = '/killerapp/workflows/permit-applications';
+      } else if (normalized === 'sub-management' || normalized === 'q9' || normalized === 'subs') {
+        href = '/killerapp/workflows/sub-management';
+      } else if (normalized === 'equipment' || normalized === 'q10') {
+        href = '/killerapp/workflows/equipment';
+      } else if (normalized === 'supply-ordering' || normalized === 'q11' || normalized === 'supply' || normalized === 'materials') {
+        href = '/killerapp/workflows/supply-ordering';
+      } else if (normalized === 'services-todos' || normalized === 'q12' || normalized === 'services') {
+        href = '/killerapp/workflows/services-todos';
+      } else if (normalized === 'hiring' || normalized === 'q13') {
+        href = '/killerapp/workflows/hiring';
+      } else if (normalized === 'weather-scheduling' || normalized === 'q14' || normalized === 'weather') {
+        href = '/killerapp/workflows/weather-scheduling';
+      } else if (normalized === 'daily-log' || normalized === 'q15' || normalized === 'log') {
+        href = '/killerapp/workflows/daily-log';
+      } else if (normalized === 'osha-toolbox' || normalized === 'q16' || normalized === 'safety') {
+        href = '/killerapp/workflows/osha-toolbox';
+      } else if (normalized === 'expenses' || normalized === 'q17') {
+        href = '/killerapp/workflows/expenses';
+      } else if (normalized === 'outreach' || normalized === 'q18') {
+        href = '/killerapp/workflows/outreach';
+      } else if (normalized === 'compass-nav' || normalized === 'q19') {
+        href = '/killerapp/workflows/compass-nav';
+      } else if (normalized === 'contract-templates' || normalized === 'q4' || normalized === 'contracts') {
+        href = '/killerapp/workflows/contract-templates';
+      }
+
+      router.push(href);
+    }
+  };
+
+  const clearResponse = () => {
+    setResponseContent(null);
+    setError(null);
+    setValue('');
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        background: 'var(--trace)',
-        border: '0.5px solid var(--faded-rule)',
-        borderRadius: 10,
-        padding: '4px 6px 4px 14px',
-        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)',
-      }}
-    >
-      <input
-        id="workflow-picker-search"
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            submit();
-          }
-        }}
-        placeholder="Describe what you're building — voice or text"
-        aria-label="Describe what you're working on"
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Input row */}
+      <div
         style={{
-          flex: 1,
-          border: 'none',
-          outline: 'none',
-          background: 'transparent',
-          fontFamily: 'var(--font-archivo), sans-serif',
-          fontSize: 14,
-          lineHeight: 1.5,
-          color: 'var(--graphite)',
-          padding: '10px 0',
-          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: 'var(--trace)',
+          border: '0.5px solid var(--faded-rule)',
+          borderRadius: 10,
+          padding: '4px 6px 4px 14px',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)',
         }}
-      />
+      >
+        <input
+          id="workflow-picker-search"
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          placeholder="Describe what you're building — voice or text"
+          aria-label="Describe what you're working on"
+          style={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            fontFamily: 'var(--font-archivo), sans-serif',
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: 'var(--graphite)',
+            padding: '10px 0',
+            minWidth: 0,
+          }}
+        />
 
-      {voiceSupported && (
+        {voiceSupported && (
+          <button
+            type="button"
+            onClick={listening ? stopVoice : startVoice}
+            aria-pressed={listening}
+            aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+            style={{
+              background: listening ? 'rgba(182, 135, 58, 0.12)' : 'transparent',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 8px',
+              color: listening ? 'var(--brass)' : 'var(--graphite)',
+              fontSize: 14,
+              cursor: 'pointer',
+              opacity: listening ? 1 : 0.55,
+              fontFamily: 'inherit',
+              transition: 'opacity 0.15s ease',
+            }}
+          >
+            {listening ? '⏺' : '🎤'}
+          </button>
+        )}
+
         <button
           type="button"
-          onClick={listening ? stopVoice : startVoice}
-          aria-pressed={listening}
-          aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+          onClick={submit}
+          aria-label="Search workflows"
           style={{
-            background: listening ? 'rgba(182, 135, 58, 0.12)' : 'transparent',
+            background: 'transparent',
             border: 'none',
             borderRadius: 6,
-            padding: '6px 8px',
-            color: listening ? 'var(--brass)' : 'var(--graphite)',
-            fontSize: 14,
+            padding: '6px 10px',
+            color: 'var(--graphite)',
+            fontSize: 16,
+            fontWeight: 600,
             cursor: 'pointer',
-            opacity: listening ? 1 : 0.55,
+            opacity: 0.6,
             fontFamily: 'inherit',
             transition: 'opacity 0.15s ease',
           }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.6';
+          }}
         >
-          {listening ? '⏺' : '🎤'}
+          →
         </button>
+      </div>
+
+      {/* Response panel (shown only if copilot was called) */}
+      {(loading || responseContent || error) && (
+        <div
+          style={{
+            background: '#F4F0E6', // Trace cream
+            border: '1px solid var(--faded-rule)',
+            borderRadius: 12,
+            padding: 20,
+            color: 'var(--graphite)',
+          }}
+        >
+          {loading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--graphite)' }}>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--brass)',
+                  animation: 'bkg-ai-pulse 1.4s ease-in-out infinite',
+                }}
+              />
+              Thinking through your project…
+            </div>
+          )}
+
+          {error && (
+            <div
+              style={{
+                fontSize: 14,
+                color: '#d32f2f',
+                marginBottom: 12,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {responseContent && (
+            <div
+              style={{
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {responseContent}
+            </div>
+          )}
+
+          {responseContent && (
+            <div style={{ marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={clearResponse}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--faded-rule)',
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  color: 'var(--graphite)',
+                  cursor: 'pointer',
+                  opacity: 0.7,
+                  fontFamily: 'inherit',
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '0.7';
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
-      <button
-        type="button"
-        onClick={submit}
-        aria-label="Search workflows"
-        style={{
-          background: 'transparent',
-          border: 'none',
-          borderRadius: 6,
-          padding: '6px 10px',
-          color: 'var(--graphite)',
-          fontSize: 16,
-          fontWeight: 600,
-          cursor: 'pointer',
-          opacity: 0.6,
-          fontFamily: 'inherit',
-          transition: 'opacity 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '1';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '0.6';
-        }}
-      >
-        →
-      </button>
+      <style jsx>{`
+        @keyframes bkg-ai-pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.2);
+          }
+        }
+      `}</style>
     </div>
   );
 }

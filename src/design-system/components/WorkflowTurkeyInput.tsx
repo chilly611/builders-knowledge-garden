@@ -323,7 +323,7 @@ export default function WorkflowTurkeyInput({
       </div>
 
       {/* Response pane */}
-      {(response || error) && (
+      {(isStreaming || response || error) && (
         <div
           role="region"
           aria-label="Response"
@@ -339,7 +339,22 @@ export default function WorkflowTurkeyInput({
             lineHeight: 1.55,
           }}
         >
-          {error ? error : markdownToJsx(response)}
+          {isStreaming && !response && !error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: '#B6873A',
+                  animation: 'bkg-ai-thinking 1.4s ease-in-out infinite',
+                }}
+              />
+              <span>Thinking through your question…</span>
+            </div>
+          )}
+          {error ? error : response && markdownToJsx(response)}
         </div>
       )}
 
@@ -366,6 +381,16 @@ export default function WorkflowTurkeyInput({
           50% {
             transform: scale(1.4);
             opacity: 0.55;
+          }
+        }
+        @keyframes bkg-ai-thinking {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.2);
           }
         }
       `}</style>

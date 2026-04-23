@@ -606,3 +606,45 @@ div { color: inherit; }
     min-height: 44px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   W9.D.6 MOBILE LAYOUT POLISH — 375px Viewport
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 375px) {
+  /* Ensure all interactive elements remain touch-friendly */
+  button, a, [role="button"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Workflow Ask input: full width with comfortable padding */
+  textarea[placeholder*="say what you need"],
+  textarea[placeholder*="What do you want"] {
+    width: 100% !important;
+    padding: 8px 12px !important;
+    font-size: 16px !important;
+  }
+
+  /* Global AI FAB: ensure accessibility on narrow screens */
+  button[aria-label*="AI composer"] {
+    bottom: 96px !important;
+    right: 16px !important;
+  }
+
+  /* Home page hero: prevent cutoff */
+  [data-bkg-turkey] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Response panes: full width with padding */
+  div[role="region"][aria-label*="Response"],
+  article[aria-live="polite"] {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}

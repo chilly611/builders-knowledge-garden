@@ -302,6 +302,19 @@ export default function GlobalAiFab() {
 
   return (
     <>
+      <style>{`
+        @keyframes bkgAiThinking {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.2);
+          }
+        }
+      `}</style>
+
       {/* Panel */}
       {open && (
         <div
@@ -381,6 +394,22 @@ export default function GlobalAiFab() {
               </button>
             )}
           </div>
+
+          {isStreaming && !response && !error && (
+            <div style={{ ...responseStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: '#B6873A',
+                  animation: 'bkgAiThinking 1.4s ease-in-out infinite',
+                }}
+              />
+              <span>Thinking through your question…</span>
+            </div>
+          )}
 
           {error && (
             <div style={errorStyle} role="alert">

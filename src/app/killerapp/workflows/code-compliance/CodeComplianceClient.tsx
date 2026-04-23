@@ -78,7 +78,7 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
     <>
       <div
         style={{
-          maxWidth: '900px',
+          maxWidth: 960,
           margin: '0 auto',
           padding: `${spacing[8]} ${spacing[4]}`,
           fontFamily: fonts.body,
@@ -133,8 +133,8 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
         aria-label="Workflow context"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: spacing[4],
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: spacing[3],
           padding: spacing[4],
           marginBottom: spacing[6],
           backgroundColor: colors.ink[50],

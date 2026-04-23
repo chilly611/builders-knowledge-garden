@@ -23,7 +23,32 @@ import type { KnowledgeEntity } from "@/lib/rag";
 
 // Stage-aware system prompts and action suggestions
 const STAGE_SYSTEM_PROMPTS: Record<number, string> = {
-  0: `You're the builder's concierge at the landing page. Help them pick a workflow. If they describe a project, give them a ONE-PARAGRAPH orientation ("Here's how I'd think about that"), then route with buttons. Do NOT answer with code, regulations, or estimates — point them to the right workflow.`,
+  0: `You're a foreman giving a site walkthrough orientation at the landing page. When someone describes a project scope, respond with SUBSTANTIVE, SPECIFIC observations — not a workflow router.
+
+RESPOND WITH:
+1. Opening: "Alright, here's how I'd read it:" or "Let me think this through:"
+2. Then 2–4 concrete observations drawn from the scope:
+   - BALLPARK COST RANGE: Give a rough $X–$Y estimate in appropriate territory (e.g., "$1.2M–$1.6M for a modernist coastal ADU with spa/plunge features")
+   - RISK FLAGS: Name 2–3 specific cost drivers or complexity triggers from the scope (e.g., "Wellness features + radiant heating + plunge pool = waterproofing detail = cost can balloon fast"; "San Diego coastal site = Title 24 compliance + potential WUI zone restrictions")
+   - SEQUENCE IMPLICATIONS: What trades matter most? What's long-lead? (e.g., "Spa/gym/cold plunge = MEP complexity, specialty finishes, permit path gets longer")
+   - SITE-SPECIFIC CONCERNS: Jurisdiction, climate, site constraints that affect the build (e.g., coastal, seismic, flood zones, Title 24)
+3. Close: Plain sentence like "Here's where I'd start:" then present 3 action buttons.
+
+VOICE: Foreman. Direct. Confident. NO disclaimers, NO "consult an architect," NO hedging. Use SPECIFIC numbers where possible.
+LENGTH: 180-260 words. Substantive but fast-read.
+
+EXAMPLE RESPONSE for "2500 sqft ADU in San Diego with spa, gym, cold plunge":
+---
+Alright, here's how I'd read it: You're building a high-spec ADU in a coastal market with luxury wellness features. That puts you in the $1.2M–$1.6M range depending on finishes and your radiant system choice.
+
+Here's what jumps out:
+— Wellness (spa + cold plunge + gym) means radiant floor systems + heavy waterproofing + tile/specialty surfaces. That detail work is where budgets go sideways. Slope it wrong or skimp on the membrane and you're eating a costly repair two years in.
+— San Diego coastal = Title 24 energy compliance is strict. Your thermal envelope, window U-values, and HVAC efficiency have to pencil or permitting stalls. Radiant + high-performance envelope = higher upfront cost.
+— Long-lead: custom spa equipment (8–10 week lead), cabinetry if semi-custom (6–8 weeks). Get those orders in early or your finish schedule slips.
+— MEP complexity: separate circuits for the plunge chiller, ventilation for humidity control, upgraded electrical service. Coordinator's nightmare if you don't stage it right.
+
+Here's where I'd start:
+---`,
 
   1: `You're a GC's estimator and risk-scorer at the Size up stage. If the user describes a project scope, respond with: (a) a rough cost range in $X–$Y form, (b) 3 risk flags, (c) a markup recommendation. Do NOT quote code sections, zoning rules, or ADU regulations. Those are Lock-it-in concerns — route there if asked.`,
 
@@ -54,7 +79,7 @@ const STAGES_THAT_USE_CODE_RAG = new Set<number>([2]); // Only Lock-it-in pulls 
 const STAGE_ACTION_BUTTONS: Record<number, Array<{ label: string; route: string }>> = {
   0: [
     { label: "Estimate the job", route: "/killerapp/workflows/estimating" },
-    { label: "See all workflows", route: "/killerapp" },
+    { label: "Check codes", route: "/killerapp/workflows/code-compliance" },
     { label: "Contract templates", route: "/killerapp/workflows/contract-templates" },
   ],
   1: [
@@ -93,6 +118,70 @@ const STAGE_ACTION_BUTTONS: Record<number, Array<{ label: string; route: string 
     { label: "Generate referrals", route: "/killerapp/workflows/outreach" },
   ],
 };
+
+// ---------------------------------------------------------------------------
+// POST-PROCESSING SANITIZER: Strip banned CYA vocabulary
+// ---------------------------------------------------------------------------
+/**
+ * Sanitizes copilot responses by removing banned phrases and sentences.
+ * Applies the following transformations:
+ * 1. Replace "Authority Having Jurisdiction" / "AHJ" → "the local building department"
+ * 2. Replace "consult (with) a licensed..." → "work with a qualified"
+ * 3. Replace "(not permitted|cannot be built|is illegal)" → "subject to a design-path choice"
+ * 4. Strip "Important:" headers
+ * 5. Remove entire sentences containing CYA-prone phrases
+ */
+function sanitizeCopilotResponse(text: string): string {
+  if (!text) return text;
+
+  let result = text;
+
+  // 1. Replace "Authority Having Jurisdiction" or "AHJ" → "the local building department"
+  // Handle "The Authority Having Jurisdiction" (case variations)
+  result = result.replace(/\bThe\s+Authority Having Jurisdiction\b/gi, (match) =>
+    match.startsWith('T') ? "The local building department" : "the local building department"
+  );
+  // Handle "the Authority Having Jurisdiction" (lowercase variations)
+  result = result.replace(/\bthe\s+Authority Having Jurisdiction\b/gi, "the local building department");
+  // Handle standalone "Authority Having Jurisdiction" (case-insensitive)
+  result = result.replace(/\bAuthority Having Jurisdiction\b/gi, "the local building department");
+  // Handle "The AHJ" (case variations)
+  result = result.replace(/\bThe\s+AHJ\b/g, "The local building department");
+  result = result.replace(/\bthe\s+AHJ\b/g, "the local building department");
+  // Handle remaining standalone AHJ (whole word)
+  result = result.replace(/\bAHJ\b/g, "the local building department");
+
+  // 2. Replace "consult (with) a licensed (architect|engineer|attorney|professional)" → "work with a qualified"
+  result = result.replace(
+    /[Cc]onsult\s+(with\s+)?a\s+licensed\s+(architect|engineer|attorney|professional)/gi,
+    "work with a qualified"
+  );
+
+  // 3. Replace phrases indicating prohibition → "subject to a design-path choice"
+  result = result.replace(
+    /(not permitted|cannot be built|is illegal)/gi,
+    "subject to a design-path choice"
+  );
+
+  // 4. Strip "**Important:**" and "*Important:" patterns completely
+  result = result.replace(/\*\*Important:\*\*\s*/gi, "");
+  result = result.replace(/\*Important:\*\s*/gi, "");
+  result = result.replace(/^Important:\s*/gim, "");
+
+  // 5. Remove entire sentences containing CYA-prone phrases
+  const cyaPatterns = [
+    /[^.!?\n]*\bConsult\s+with\b[^.!?\n]*[.!?\n]/gi,
+    /[^.!?\n]*\bYou\s+should\s+retain\b[^.!?\n]*[.!?\n]/gi,
+    /[^.!?\n]*\bVerify\s+with\s+your\s+building\s+department\b[^.!?\n]*[.!?\n]/gi,
+    /[^.!?\n]*\bWe\s+recommend\s+engaging\b[^.!?\n]*[.!?\n]/gi,
+  ];
+
+  for (const pattern of cyaPatterns) {
+    result = result.replace(pattern, "");
+  }
+
+  return result.trim();
+}
 
 // ---------------------------------------------------------------------------
 // Stage-aware system prompt builder
@@ -274,23 +363,30 @@ export async function POST(request: NextRequest) {
             }
           }
 
+          // SANITIZE: Apply post-processing filter to remove banned CYA vocabulary
+          const sanitizedText = sanitizeCopilotResponse(fullText);
+
           // Append action buttons if not already present
           const buttons = STAGE_ACTION_BUTTONS[validatedStage] || STAGE_ACTION_BUTTONS[0];
-          if (!fullText.includes("What next?")) {
+          let finalText = sanitizedText;
+          if (!sanitizedText.includes("What next?") && !sanitizedText.includes("[*(action:/")) {
             const buttonMarkdown = buttons
               .map((btn) => `- [${btn.label}](action:${btn.route})`)
               .join("\n");
             const buttonsText = `\n\n**What next?**\n${buttonMarkdown}`;
-            fullText += buttonsText;
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ type: "chunk", text: buttonsText })}\n\n`
-              )
-            );
+            finalText += buttonsText;
           }
 
+          // Send the final sanitized text (with buttons if needed)
+          // We emit a "finalText" event so the client can decide to re-render with the sanitized version
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "finalText", text: finalText })}\n\n`
+            )
+          );
+
           // Send completion with citation info
-          const citedIds = extractCitations(fullText, retrieval.entities);
+          const citedIds = extractCitations(finalText, retrieval.entities);
 
           // Emit RSI Loop 5 signal via event bus
           emitCopilotSignal({
@@ -522,8 +618,11 @@ For your specific question about "${query}", here's what I can help with at this
     .map((btn) => `- [${btn.label}](action:${btn.route})`)
     .join("\n");
 
-  return `${baseAnswer}
+  const answer = `${baseAnswer}
 
 **What next?**
 ${buttonMarkdown}`;
+
+  // Apply sanitizer to mock answer as well
+  return sanitizeCopilotResponse(answer);
 }
