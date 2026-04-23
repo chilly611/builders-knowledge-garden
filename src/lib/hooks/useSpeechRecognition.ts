@@ -13,6 +13,14 @@ interface UseSpeechRecognitionReturn {
   stop: () => void;
   reset: () => void;
   error: VoiceNavError | null;
+  /** @deprecated use `supported` */
+  isSupported: boolean;
+  /** @deprecated use `listening` */
+  isListening: boolean;
+  /** @deprecated use `start` */
+  startListening: () => void;
+  /** @deprecated use `stop` */
+  stopListening: () => void;
 }
 
 /**
@@ -180,5 +188,11 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     stop,
     reset,
     error,
+    // Deprecated aliases — preserved so pre-W9.D consumers (dream/page, dream/components/DiscoverFlow)
+    // don't break. New code should use the non-aliased names.
+    isSupported: supported,
+    isListening: listening,
+    startListening: start,
+    stopListening: stop,
   };
 }
