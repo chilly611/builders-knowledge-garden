@@ -624,9 +624,108 @@ Please configure ANTHROPIC_API_KEY to get real LLM-powered routing and analysis.
         },
       },
     },
+    "sequencing-bottlenecks": {
+      narrative: `**Critical path identified — 18 weeks door-to-door.**
+
+Here's how the job sequences, longest-pole first:
+
+| # | Phase | Duration | Depends on | Notes |
+|---|---|---|---|---|
+| 1 | Site prep + demo | 1 wk | — | Start immediately |
+| 2 | Foundation + underslab MEP | 3 wks | Demo | Pull permits during week 1 |
+| 3 | Framing + roof dry-in | 4 wks | Foundation cure | Order trusses now, 3-wk lead |
+| 4 | MEP rough-in | 3 wks | Framing 75% | Runs parallel with window install |
+| 5 | Insulation + drywall | 2 wks | MEP rough + inspections | Can't start until rough inspections pass |
+| 6 | Interior finishes | 3 wks | Drywall + paint | Cabinets 4-wk lead, order during week 4 |
+| 7 | Final MEP trim + appliances | 1 wk | Finishes | |
+| 8 | Final inspections + punch | 1 wk | Everything | |
+
+**Bottlenecks**
+1. **Truss lead time (3 wks)** — order during week 1 or framing slides
+2. **Electrical rough inspection** — schedules fill; book the inspection the day MEP rough starts
+3. **Cabinetry** — 4-wk lead; confirm order during week 4 latest
+
+**Parallel opportunities**
+- Windows install during MEP rough (week 5)
+- Paint prep + primer during drywall tape-and-float
+- Landscaping + driveway during interior finish (weeks 12–14)
+
+**Schedule risk**
+- Weather: framing + roof dry-in is the weather-sensitive window. Build a 1-wk float.
+- Subs: your electrician's calendar is tightest. Lock them at contract signing.
+
+*Draft sequence. Revisit after framing inspection; real schedule lives on your GC calendar.*`,
+      structured: {
+        critical_path: ["Site prep", "Foundation", "Framing", "MEP rough", "Drywall", "Finishes", "Final"],
+        total_weeks: 18,
+        bottlenecks: [
+          { phase: "Truss fabrication", lead_weeks: 3, mitigation: "Order week 1" },
+          { phase: "Electrical rough inspection", risk: "Schedule fills 2 weeks out" },
+          { phase: "Cabinetry", lead_weeks: 4, mitigation: "Order by week 4" },
+        ],
+        parallel_tracks: ["Windows during MEP rough", "Paint prep during drywall tape"],
+        schedule_risks: ["Weather during roof dry-in", "Electrician calendar"],
+      },
+    },
+    "crew-optimization": {
+      narrative: `**Current plan runs $182k in labor. Optimized plan: $164k (10% savings).**
+
+Here's where the fat is:
+
+| Phase | Current crew | Optimal crew | Saving |
+|---|---|---|---|
+| Framing | 4 carps, 2 wks | 3 carps, 2 wks | $4,200 |
+| MEP rough | All trades sequential | Electrical + Plumbing parallel | $6,800 |
+| Drywall | 3 hangers + 2 finishers, 2 wks | 2 hangers + 2 finishers, 10 days | $3,400 |
+| Finish | 5 trades overlapping | Staggered 3-trade rotation | $3,200 |
+
+**Trade-off:** Optimized plan adds 4 days to total schedule because electrical + plumbing can't fully overlap in tight spaces. Cost saving usually wins unless you're pushing a hard finish date.
+
+**What this means for bidding**
+- Bid $182k → win rate drops, but margin's there if you land it
+- Bid $164k + 4-day cushion → competitive + still profitable
+- Keep $6k overhead buffer for either path
+
+*Draft labor plan. Numbers firm up after walk-through; regional wage rate assumed $42/hr loaded.*`,
+      structured: {
+        current_labor: 182000,
+        optimized_labor: 164000,
+        savings: 18000,
+        schedule_impact_days: 4,
+        trade_offs: ["Slightly longer schedule", "Tighter coordination required"],
+      },
+    },
   };
 
-  const mockResponse = mockResponses[specialistId] || mockResponses["compliance-router"];
+  // Stage-aware generic fallback so we NEVER leak compliance content into an
+  // unrelated workflow. If a specialist has no mock entry, return a neutral
+  // "demo mode" placeholder that matches the workflow's category.
+  const fallback = {
+    narrative: `**Draft analysis — demo mode active.**
+
+Your input: "${context.scope_description.substring(0, 100)}${context.scope_description.length > 100 ? "…" : ""}"
+
+This specialist ships real analysis when connected to the live LLM backend. In demo mode we return a neutral placeholder so nothing misleads you — for the production run, we'd return a specific, sourced recommendation based on your project data.
+
+**What this specialist does when live:**
+- Pulls from the BKG database for your jurisdiction, materials, and crew history
+- Runs a 3-source verification (primary code + amendments + local AHJ)
+- Returns a confidence-rated answer with citations you can take to an inspector
+
+**Demo paths that ARE live right now:**
+- Code Compliance (q5) — real 3-source verification with NEC 2023 + IBC + local amendments
+- Supply Ordering (q11) — live cost matrix from Home Depot Pro, 84 Lumber, White Cap
+- Estimating (q2) — itemized cost breakdown by trade
+
+*Placeholder response. Real specialist output available when ANTHROPIC_API_KEY is configured in this environment.*`,
+    structured: {
+      mode: "demo",
+      specialist_id: specialistId,
+      note: "Neutral placeholder — no specialist-specific mock registered for this ID.",
+    },
+  };
+
+  const mockResponse = mockResponses[specialistId] || fallback;
 
   return {
     narrative: mockResponse.narrative,
