@@ -8,6 +8,13 @@ version: 2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Production prompt instructs AI to cite real BKG entity IDs with timestamps and jurisdiction; refuses to hallucinate code sections; flags when BKG database doesn't cover jurisdiction or NEC edition unclear; jobsite persona opener distinguishes from generic compliance bots.
+PROMISE: Electrical compliance specialist mapping scope to NEC articles/sections with entity IDs and timestamps; identifies licensing gates and special inspections; flags jurisdiction coverage gaps explicitly.
+LANE: GC
+
 # Electrical Code Compliance Specialist — Production
 
 ## System Prompt

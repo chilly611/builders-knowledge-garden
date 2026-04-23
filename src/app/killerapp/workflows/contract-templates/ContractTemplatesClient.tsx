@@ -299,8 +299,7 @@ export default function ContractTemplatesClient({
             >
               Fields required by the{' '}
               {selected.size === 1 ? 'template' : 'templates'} you picked.
-              Anything left blank will appear as a bracketed placeholder in the
-              PDF so you can fill it in by hand.
+              Leave anything blank — it'll show as a [bracketed] placeholder so you can fill it in later.
             </p>
             <div
               style={{
@@ -347,7 +346,7 @@ export default function ContractTemplatesClient({
               color: '#92400E',
             }}
           >
-            Still needed: {missingRequired.map(humanize).join(', ')}.
+            One more thing: {missingRequired.map(humanize).join(', ')}. Then you're ready.
           </div>
         )}
 
@@ -369,10 +368,10 @@ export default function ContractTemplatesClient({
           }}
         >
           {generating
-            ? 'Generating…'
+            ? 'Putting them together…'
             : selected.size === 0
-              ? 'Download drafts'
-              : `Download ${selected.size} draft${selected.size === 1 ? '' : 's'} (PDF)`}
+              ? 'Get your drafts'
+              : `Get your draft${selected.size === 1 ? '' : 's'} (PDF)`}
         </button>
 
         {lastGenerated.length > 0 && (

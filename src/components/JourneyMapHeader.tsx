@@ -21,14 +21,16 @@ export interface LifecycleStage {
   emoji: string;
 }
 
+// TODO(W9.C.BR-A): import from canonical colors
+// Mapping: #D85A30 → #D9642E (orange), #1D9E75 → #7FCFCB (robin)
 const STAGE_COLORS: Record<number, string> = {
-  1: '#D85A30', // Size Up
-  2: '#7F77DD', // Lock
-  3: '#1D9E75', // Plan
-  4: '#378ADD', // Build
-  5: '#F59E0B', // Adapt
-  6: '#BA7517', // Collect
-  7: '#639922', // Reflect
+  1: '#D9642E', // Size Up — #D85A30 → #D9642E (canonical Deep Orange)
+  2: '#7F77DD', // Lock (keep legacy phase color for now)
+  3: '#7FCFCB', // Plan — #1D9E75 → #7FCFCB (canonical Robin's Egg)
+  4: '#378ADD', // Build (keep legacy phase color)
+  5: '#F59E0B', // Adapt (keep legacy phase color)
+  6: '#BA7517', // Collect (keep legacy phase color)
+  7: '#639922', // Reflect (keep legacy phase color)
 };
 
 interface JourneyMapHeaderProps {
@@ -124,8 +126,8 @@ export default function JourneyMapHeader({
               ? progress.needsAttention > 0
                 ? { color: '#F59E0B', glyph: '•' } // amber = attention
                 : progress.done === progress.total
-                  ? { color: '#22C55E', glyph: '✓' } // emerald = all done
-                  : { color: '#1D9E75', glyph: '•' } // green = working
+                  ? { color: '#7FCFCB', glyph: '✓' } // #22C55E → #7FCFCB (canonical robin for "complete")
+                  : { color: '#7FCFCB', glyph: '•' } // #1D9E75 → #7FCFCB (canonical robin for "working")
               : null;
             const label = (
               <>

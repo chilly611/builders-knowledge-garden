@@ -5,6 +5,13 @@ status: v2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Not user-facing; internal RSI loop analyzes feedback clusters to propose one delta per cluster (prompt patch, entity add/update, amendment add, tool tweak) with machine-applicable patches and concrete feedback IDs as proof.
+PROMISE: Internal synthesizer reviewing specialist feedback clusters; surfaces highest-impact single change per cluster with feedback traceability and human-readable diff preview.
+LANE: internal
+
 # BKG Recursive Self-Improvement (RSI) Synthesizer — Production
 
 ## Role

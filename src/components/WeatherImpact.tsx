@@ -275,13 +275,13 @@ const WeatherImpact: React.FC = () => {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'clear':
-        return '#1D9E75';
+        return '#7FCFCB';
       case 'monitor':
-        return '#D85A30';
+        return '#D9642E';
       case 'delay':
-        return '#E8443A';
+        return '#A1473A';
       case 'nowork':
-        return '#E8443A';
+        return '#A1473A';
       default:
         return '#378ADD';
     }
@@ -313,7 +313,7 @@ const WeatherImpact: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         style={{
-          backgroundColor: severity === 'warning' ? '#E8443A' : '#D85A30',
+          backgroundColor: severity === 'warning' ? '#A1473A' : '#D9642E',
           color: 'white',
           padding: '16px',
           borderRadius: '8px',
@@ -434,7 +434,7 @@ const WeatherImpact: React.FC = () => {
                             key={i}
                             style={{
                               backgroundColor: '#FFE8E8',
-                              color: '#E8443A',
+                              color: '#A1473A',
                               padding: '6px 12px',
                               borderRadius: '6px',
                               fontSize: '12px',
@@ -447,7 +447,7 @@ const WeatherImpact: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ fontSize: '14px', color: '#1D9E75', marginBottom: '16px', fontFamily: 'Archivo' }}>
+                    <div style={{ fontSize: '14px', color: '#7FCFCB', marginBottom: '16px', fontFamily: 'Archivo' }}>
                       ✓ All activities can proceed as scheduled
                     </div>
                   )}
@@ -541,7 +541,7 @@ const WeatherImpact: React.FC = () => {
                       key={task.id}
                       style={{
                         backgroundColor: impact.status === 'clear' ? '#f0fff4' : '#fff5f5',
-                        border: `1px solid ${impact.affectedActivities.includes(task.activity) ? '#E8443A' : '#1D9E75'}`,
+                        border: `1px solid ${impact.affectedActivities.includes(task.activity) ? '#A1473A' : '#7FCFCB'}`,
                         borderRadius: '6px',
                         padding: '10px 12px',
                         fontSize: '13px',
@@ -553,7 +553,7 @@ const WeatherImpact: React.FC = () => {
                         {task.activity} • {task.duration} day{task.duration > 1 ? 's' : ''}
                       </div>
                       {impact.affectedActivities.includes(task.activity) && (
-                        <div style={{ fontSize: '11px', color: '#E8443A', marginTop: '4px', fontWeight: 'bold' }}>
+                        <div style={{ fontSize: '11px', color: '#A1473A', marginTop: '4px', fontWeight: 'bold' }}>
                           ⚠️ Activity at risk
                         </div>
                       )}
@@ -604,10 +604,10 @@ const WeatherImpact: React.FC = () => {
         {historicalData.map((entry, idx) => {
           const impactColor =
             entry.actualImpact === 'No Impact'
-              ? '#1D9E75'
+              ? '#7FCFCB'
               : entry.actualImpact === 'Minor Delay'
-              ? '#D85A30'
-              : '#E8443A';
+              ? '#D9642E'
+              : '#A1473A';
 
           return (
             <motion.div
@@ -718,7 +718,7 @@ const WeatherImpact: React.FC = () => {
               onClick={() => setViewMode(mode as any)}
               style={{
                 padding: '8px 14px',
-                backgroundColor: viewMode === mode ? '#1D9E75' : '#e0e0e0',
+                backgroundColor: viewMode === mode ? '#7FCFCB' : '#e0e0e0',
                 color: viewMode === mode ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '6px',
@@ -764,7 +764,7 @@ const WeatherImpact: React.FC = () => {
         <div style={{ fontSize: '24px' }}>💰</div>
         <div>
           <div style={{ fontSize: '13px', color: '#666' }}>Projected Weather Impact Cost</div>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#E8443A' }}>
+          <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#A1473A' }}>
             ${costImpact.toLocaleString('en-US', { maximumFractionDigits: 0 })}
           </div>
         </div>

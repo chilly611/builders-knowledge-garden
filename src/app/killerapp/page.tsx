@@ -100,40 +100,57 @@ const LIVE_WORKFLOWS: Record<string, string> = {
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
 // without forcing each workflow route to export its own metadata yet.
+// Dual-label format: plain-English Q first (bold), pro term second (italic/parenthetical).
 const WORKFLOW_BLURBS: Record<string, string> = {
-  q1: 'Red, yellow, or green light on the bid. Why you should or shouldn\'t bid.',
-  q2: 'Get a rough number from the plans. Sanity-check before you quote the client.',
-  q3: 'Who you\'re working for. Past projects, how they pay, what you know about them.',
-  q4: 'Six templates — contract, sub agreement, liens, NDA, change order. Filled and ready to sign.',
-  q5: 'Which codes matter here. Structural, electrical, plumbing, fire, egress.',
-  q6: 'Who works when. Demo, framing, MEP, drywall, paint. Who can run at the same time.',
-  q7: 'How many people you need, per phase. And when you\'ll peak.',
-  q8: 'Applications ready to submit. From the scope you already wrote.',
-  q9: 'Bids side-by-side. Electrical, plumbing, framing. Same categories, easy to compare.',
-  q10: 'Scissor lift, dumpster, scaffolding. Rent it or own it. Total cost.',
-  q11: 'Order the materials. Lead times, suppliers, best prices, inventory check.',
-  q12: 'Utility locates, dumpster, portable toilet, inspections. Who to call, when.',
-  q13: 'Find the crew. Screen candidates. Send offers. Lock dates.',
-  q14: 'Schedule around rain and cold. Sensitive phases get flagged. 10-day forecast.',
-  q15: 'Speak it. We log it. Structured, tagged, searchable.',
-  q16: 'Weekly safety talk. OSHA-sourced. Tailored to what your crew is doing.',
-  q17: 'Receipts coded by category. Budget vs. actual. Overages flagged.',
-  q18: 'Mass outreach to vendors. RFQ in bulk. Responses tracked.',
-  q19: 'Snapshot of where you are. Estimate, schedule, tasks. Save it. Resume later.',
-  q20: 'Scope change? Draft the CO. Cost and schedule impact. Ready for signature.',
-  q21: 'Draw request auto-filled. Lender format. Track percent complete and payment status.',
-  q22: 'Who needs to waive and when. Conditional, final. Check who\'s signed.',
-  q23: 'Employee vs. 1099. Classification review. Flag edge cases.',
-  q24: 'Photos in. Punch list out. Drywall gaps, paint drips, trim misses.',
-  q25: 'Retainage reminder sequence. Track who owes. Escalate if needed.',
-  q26: 'Warranty log. When they expire. Owner reminders on your schedule.',
-  q27: 'What worked. What didn\'t. Cost variance. Crew feedback. Lessons for next time.',
+  q1: 'Should you bid this job? *(Pre-bid risk score)*',
+  q2: 'What might this cost to build? *(Quick estimate)*',
+  q3: 'Who are you working for? *(Client lookup)*',
+  q4: 'Get paperwork ready. *(Contract templates)*',
+  q5: 'Which codes apply here? *(Code compliance)*',
+  q6: 'Who works when? *(Sequence the trades)*',
+  q7: 'How many crew do you need? *(Crew sizing)*',
+  q8: 'What permits do you need? *(Permit checklist)*',
+  q9: 'Compare sub bids. *(Bid analysis)*',
+  q10: 'Rent or buy equipment? *(Equipment costs)*',
+  q11: 'Order the materials. *(Supply ordering)*',
+  q12: 'Schedule utilities and services. *(Services to-do)*',
+  q13: 'Find and hire crew. *(Hiring)*',
+  q14: 'Plan around the weather. *(Weather scheduling)*',
+  q15: 'What happened today? *(Daily log)*',
+  q16: 'Safety topic for the week. *(Toolbox talk)*',
+  q17: 'Track spending on the job. *(Expense report)*',
+  q18: 'Reach out to vendors. *(Vendor outreach)*',
+  q19: 'Where are you now? *(Project compass)*',
+  q20: 'Scope changed — what\'s the cost? *(Change orders)*',
+  q21: 'Request your payment draw. *(Draw requests)*',
+  q22: 'Collect lien waivers. *(Lien waiver tracker)*',
+  q23: 'Are workers classified right? *(Payroll check)*',
+  q24: 'Walk the job — punch list. *(Final walk-through)*',
+  q25: 'Follow up on retainage. *(Retainage tracker)*',
+  q26: 'Log warranties. *(Warranty handoff)*',
+  q27: 'What went well — and what didn\'t? *(Project review)*',
 };
 
 function loadWorkflows(): WorkflowsJson {
   const path = resolve(process.cwd(), 'docs/workflows.json');
   const raw = readFileSync(path, 'utf-8');
   return JSON.parse(raw) as WorkflowsJson;
+}
+
+// Helper to render dual-label blurbs: plain Q + italic pro term
+// Format: "Plain question? *(Pro term)*" → JSX with italic styling
+function renderBlurb(blurb: string) {
+  const match = blurb.match(/^(.+?)\s+\*\(([^)]+)\)\*$/);
+  if (match) {
+    const [, question, proTerm] = match;
+    return (
+      <>
+        <strong>{question}</strong>{' '}
+        <span style={{ fontStyle: 'italic', opacity: 0.7 }}>({proTerm})</span>
+      </>
+    );
+  }
+  return blurb;
 }
 
 const STAGE_COLORS: Record<number, string> = {
@@ -248,7 +265,9 @@ export default function KillerAppPage() {
                             </span>
                           )}
                         </h3>
-                        <p className={styles.workflowBlurb}>{blurb ?? ' '}</p>
+                        <p className={styles.workflowBlurb}>
+                          {blurb ? renderBlurb(blurb) : ' '}
+                        </p>
                         <p className={styles.workflowMeta}>
                           {wf.steps.length} step
                           {wf.steps.length === 1 ? '' : 's'}

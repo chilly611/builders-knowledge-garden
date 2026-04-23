@@ -2,6 +2,13 @@
 prompt_version: v1
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: DRAFT
+BECAUSE: Prototype scope; no entity-ID gating to BKG NEC database or jurisdiction-specific amendments. Uses generic NEC citation knowledge that ChatGPT also knows.
+PROMISE: Identifies applicable NEC articles and requirements for electrical scope by scope element, cites specific articles/sections, and flags items requiring licensed electrician.
+LANE: agnostic
+
 # compliance-electrical
 
 **Specialist role:** NEC compliance specialist — identifies NEC articles and requirements for an electrical scope.

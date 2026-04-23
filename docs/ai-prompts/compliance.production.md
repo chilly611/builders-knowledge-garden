@@ -6,6 +6,13 @@ status: v2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Production prompt gated on Multi-Source Code Verification context (BKG seed, ICC, NFPA, local amendments); never hallucinate section numbers; flags single-source vs. multi-source confidence; detects and routes discipline mismatches.
+PROMISE: Unified code compliance specialist mapping cross-discipline questions to verified sources; leads with plain-English verdict; cites real code sections; highlights local amendments (SF, LA, Clark County, etc.); flags supersession history.
+LANE: GC
+
 # BKG Code Compliance Specialist — Production
 
 ## System Prompt

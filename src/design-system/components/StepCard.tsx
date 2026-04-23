@@ -30,8 +30,8 @@ interface VoiceState {
 const DEFAULT_STATUS = 'pending' as const;
 const STATUS_COLORS = {
   pending: colors.ink[200],
-  in_progress: '#D85A30', // Decision #12: warm orange
-  complete: colors.robin,  // Decision #12: Robin's Egg (canonical: #7FCFCB)
+  in_progress: colors.orange, // Decision #12: Deep Orange (canonical: #D9642E)
+  complete: colors.robin,      // Decision #12: Robin's Egg (canonical: #7FCFCB)
 } as const;
 
 // Peak-moment step IDs — these steps get hero-treatment crowns (Deep Orange CTA, Robin's Egg confidence tag, etc.)
@@ -256,7 +256,7 @@ export default function StepCard({
               <button
                 type="button"
                 onClick={handleVoiceToggle}
-                title={voiceAvailable ? 'Click to record voice input' : 'Voice not available in this browser'}
+                title={voiceAvailable ? 'Tap to talk — we\'ll transcribe' : 'Voice not available in this browser'}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -331,7 +331,7 @@ export default function StepCard({
               <button
                 type="button"
                 onClick={handleVoiceToggle}
-                title={voiceAvailable ? 'Click to record voice input' : 'Voice not available in this browser'}
+                title={voiceAvailable ? 'Tap to talk — we\'ll transcribe' : 'Voice not available in this browser'}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -548,7 +548,7 @@ export default function StepCard({
               📁
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.ink[600] }}>
-              Click to upload or drag and drop
+              Drag your file here — or tap to pick one
             </div>
             {step.accept && (
               <div style={{ fontSize: fontSizes.xs, color: colors.ink[400], marginTop: spacing[2] }}>

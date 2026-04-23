@@ -41,7 +41,7 @@ const LANES: LaneConfig[] = [
   {
     id: "builder", label: "The Builder", sub: "General Contractor", emoji: "\u{1F3D7}\uFE0F", color: "#E8443A", angle: 45,
     routes: [
-      { label: "Command Center", href: "/killerapp", emoji: "\u{1F3AF}", desc: "Project dashboard" },
+      { label: "Workflows", href: "/killerapp", emoji: "\u{1F3AF}", desc: "Project dashboard" },
       { label: "Project Launcher", href: "/launch", emoji: "\u{1F680}", desc: "Start a project" },
       { label: "Finances", href: "/finances", emoji: "\u{1F4B0}", desc: "Financial overview" },
       { label: "My Projects", href: "/projects", emoji: "\u{1F4C1}", desc: "Active projects" },

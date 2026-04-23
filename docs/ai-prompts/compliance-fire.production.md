@@ -6,6 +6,13 @@ status: v2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Production prompt gated on Multi-Source Code Verification context; cites only IFC/NFPA sections from BKG seeded sources (not hallucinated); flags single-source vs. multi-source confidence; route-specific jurisdiction amendments for high-density and WUI zones.
+PROMISE: Fire & life-safety specialist citing IFC/NFPA articles and sections with jurisdiction-aware amendments; occupancy-driven requirements for sprinklers, alarms, exits, and fire-rated assemblies; flags fire-marshal sign-off gates.
+LANE: GC
+
 # BKG Code Compliance — Fire & Life Safety (IFC / NFPA) — Production
 
 ## System Prompt

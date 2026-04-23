@@ -615,7 +615,7 @@ export default function CRMDashboard() {
         }}
       >
         <h1 style={{ fontSize: '32px', fontWeight: '800', color: COLORS.text_dark, margin: '0 0 8px 0' }}>
-          Command Center
+          CRM Dashboard
         </h1>
         <p style={{ fontSize: '14px', color: COLORS.text_light, margin: 0 }}>
           AI-powered CRM with real-time attention queue

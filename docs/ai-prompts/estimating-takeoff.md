@@ -2,6 +2,13 @@
 prompt_version: v1
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: DRAFT
+BECAUSE: Prototype scope; no entity-ID gating to BKG regional labor-rate database or historical win/loss data. Uses model internal estimates + generic regional assumptions.
+PROMISE: Fast-turnaround itemized takeoff and rough total (not a binding quote) for a GC to decide whether to pursue lead, refine scope, or walk away; includes assumptions and confidence level.
+LANE: GC
+
 # estimating-takeoff
 
 **Specialist role:** Fast-turnaround estimator for small/mid-sized construction scopes — produces an itemized takeoff + rough total from a scope description, location, square footage, trades, and (optionally) uploaded plans or specs.

@@ -44,11 +44,15 @@ interface Phase {
   tasks: Task[];
 }
 
+// TODO(W9.C.BR-A): import { colors } from '@/design-system/tokens' and use canonical tokens
+// Legacy hexes: #94a3b8 (slate) → use fadedRule; #378ADD (build phase) → keep for now (legacy phase color);
+// #1D9E75 (legacy Knowledge Garden green) → should map to robin (#7FCFCB) for "complete" per canonical;
+// #E8443A (legacy Killer App red) → #A1473A (canonical Redline)
 const statusColors = {
-  not_started: '#94a3b8',
-  in_progress: '#378ADD',
-  complete: '#1D9E75',
-  blocked: '#E8443A',
+  not_started: '#94a3b8',  // TODO(W9.C.BR-A): replace with canonical faded-rule or darker gray
+  in_progress: '#378ADD',  // TODO(W9.C.BR-A): use canonical phase color if available
+  complete: '#7FCFCB',     // #1D9E75 → #7FCFCB (canonical robin for "complete")
+  blocked: '#A1473A',      // #E8443A → #A1473A (canonical redline)
 };
 
 const statusIcons = {

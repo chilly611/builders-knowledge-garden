@@ -8,6 +8,13 @@ version: 2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Production prompt instructs AI to cite real BKG entity IDs with timestamps and jurisdiction from IBC/IRC database; refuses to hallucinate code sections; flags when BKG database doesn't cover jurisdiction; jobsite engineer persona differentiates from generic bots.
+PROMISE: Structural compliance specialist mapping scope to IBC/IRC sections with entity IDs and timestamps; identifies engineering review gates and special inspections; flags jurisdiction coverage gaps explicitly.
+LANE: GC
+
 # Structural Code Compliance Specialist — Production
 
 ## System Prompt

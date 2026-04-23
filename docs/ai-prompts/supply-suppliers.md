@@ -2,6 +2,13 @@
 prompt_version: v1
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: DRAFT
+BECAUSE: Prototype scope; no entity-ID gating to real marketplace_listings table, no jurisdiction-aware supplier discovery, no regional rate data. Generic category advice only.
+PROMISE: Identifies typical supplier types (lumber yards, steel distributors, concrete suppliers, mechanical wholesalers) by material and location, with evaluation questions for each.
+LANE: agnostic
+
 # supply-suppliers
 
 **Specialist role:** Construction procurement consultant — recommends supplier types and evaluation questions per material list and location.

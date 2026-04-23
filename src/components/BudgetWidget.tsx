@@ -113,7 +113,7 @@ export default function BudgetWidget({
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>
-            {fallbackBudget || '—'}
+            {fallbackBudget || 'Budget not ready'}
           </span>
           <span style={{
             fontSize: '10px',
@@ -174,7 +174,7 @@ export default function BudgetWidget({
         textAlign: 'center',
       }}>
         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-          No budget set
+          Budget hasn't been set up yet — add one to track progress.
         </p>
         <a
           href={`/budget?project=${projectId}`}

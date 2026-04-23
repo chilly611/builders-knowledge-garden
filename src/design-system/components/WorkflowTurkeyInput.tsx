@@ -21,6 +21,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii, shadows } from '@/design-system/tokens';
+import { toFriendlyMessage } from '@/lib/error-messages';
 
 interface MinimalSpeechRecognition {
   continuous: boolean;
@@ -96,9 +97,8 @@ export default function WorkflowTurkeyInput({
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(
-          (body as { error?: string }).error ?? `Request failed (${res.status})`
-        );
+        const err = { status: res.status, error: (body as { error?: string }).error };
+        throw new Error(toFriendlyMessage(err, 'fetch'));
       }
       if (!res.body) throw new Error('No response stream');
 
@@ -185,7 +185,7 @@ export default function WorkflowTurkeyInput({
       };
       rec.onerror = (e) => {
         const err = e as { error?: string };
-        setError(err.error ?? 'Voice input failed.');
+        setError(err.error ?? toFriendlyMessage(err, 'voice'));
         setIsListening(false);
       };
       rec.onend = () => setIsListening(false);

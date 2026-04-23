@@ -165,7 +165,7 @@ export default function WorkflowPickerSearchBox() {
       <button
         type="button"
         onClick={submit}
-        aria-label="Submit"
+        aria-label="Search workflows"
         style={{
           background: 'transparent',
           border: 'none',

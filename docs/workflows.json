@@ -185,6 +185,7 @@
       "id": "q1",
       "stageId": 1,
       "label": "Should you take this bid?",
+      "description": "Quick assessment of payment history, scope clarity, material availability, crew capacity, and markup. Spot risks before you commit.",
       "totalXp": 50,
       "steps": [
         {
@@ -230,6 +231,7 @@
       "id": "q2",
       "stageId": 1,
       "label": "Quick estimate",
+      "description": "AI-assisted takeoff from job description, location, trades, and photos. Rough cost and assumptions — refine with specialists before pricing to the client.",
       "totalXp": 100,
       "steps": [
         {
@@ -289,6 +291,7 @@
       "id": "q3",
       "stageId": 1,
       "label": "Who are you working for?",
+      "description": "Build and organize your client file — past payment history, project types, preferences, and contact cadence. One place for every client you work with.",
       "totalXp": 50,
       "steps": [
         {
@@ -339,6 +342,7 @@
       "id": "q4",
       "stageId": 2,
       "label": "Lock down the paperwork",
+      "description": "Draft and fill standard contracts — client agreements, sub agreements, lien waivers, NDAs, and change orders. Get signatures before you start work.",
       "totalXp": 100,
       "steps": [
         {
@@ -464,6 +468,7 @@
       "id": "q6",
       "stageId": 3,
       "label": "Sequence the trades",
+      "description": "Map phases, dependencies, and parallel work. Find your critical path and longest pole — the bottleneck that sets your finish date.",
       "totalXp": 100,
       "steps": [
         {
@@ -514,6 +519,7 @@
       "id": "q7",
       "stageId": 3,
       "label": "How many do you need?",
+      "description": "Right-size your crew for scope and timeline. Flag double-books, find labor savings, and balance cost against schedule.",
       "totalXp": 75,
       "steps": [
         {
@@ -592,6 +598,7 @@
       "id": "q9",
       "stageId": 3,
       "label": "Get sub quotes",
+      "description": "Write scope, request bids from multiple subs, compare costs and quality, and lock in calendars and insurance before the job starts.",
       "totalXp": 100,
       "steps": [
         {
@@ -644,6 +651,7 @@
       "id": "q10",
       "stageId": 3,
       "label": "Rent or buy gear",
+      "description": "Inventory the equipment you need, own, and must rent. Compare rental vs. buy costs and schedule delivery so nothing delays day one.",
       "totalXp": 85,
       "steps": [
         {
@@ -682,6 +690,7 @@
       "id": "q11",
       "stageId": 3,
       "label": "Order materials",
+      "description": "Extract your material takeoff from specs, shop suppliers for best pricing and availability, watch for lead times, and lock in orders before the first delivery window.",
       "totalXp": 85,
       "steps": [
         {
@@ -727,6 +736,7 @@
       "id": "q12",
       "stageId": 3,
       "label": "Services & utilities",
+      "description": "Call 811, arrange dumpster and portable toilet, schedule inspectors, and set up fuel delivery. Check these off so day one isn't a scramble.",
       "totalXp": 75,
       "steps": [
         {
@@ -760,6 +770,7 @@
       "id": "q13",
       "stageId": 3,
       "label": "Hire your crew",
+      "description": "Define roles, post openings, vet candidates with strong refs, and lock in your people before the schedule starts.",
       "totalXp": 60,
       "steps": [
         {
@@ -796,6 +807,7 @@
       "id": "q14",
       "stageId": 4,
       "label": "Work around the weather",
+      "description": "Flag which phases need dry, set pause thresholds, check the forecast, and reschedule around rain so your timeline stays tight.",
       "totalXp": 85,
       "steps": [
         {
@@ -846,6 +858,7 @@
       "id": "q15",
       "stageId": 4,
       "label": "Daily logbook",
+      "description": "Record what happened each day via voice or text — progress, issues, safety, visitors, weather. Build your job record as you go.",
       "totalXp": 80,
       "steps": [
         {
@@ -894,6 +907,7 @@
       "id": "q16",
       "stageId": 4,
       "label": "Weekly toolbox talk",
+      "description": "Run a focused 10-15 min safety talk each week on the job's top hazard. Engage your crew, document attendance, and keep OSHA happy.",
       "totalXp": 75,
       "steps": [
         {
@@ -935,6 +949,7 @@
       "id": "q17",
       "stageId": 4,
       "label": "Expense report",
+      "description": "Upload receipts, categorize by trade and expense type, spot budget variance, and explain any overages. Stay on top of spend as the job runs.",
       "totalXp": 90,
       "steps": [
         {
@@ -976,6 +991,7 @@
       "id": "q18",
       "stageId": 4,
       "label": "Touch base with vendors",
+      "description": "Organize your contact list, request fresh quotes from subs and suppliers, and tally responses to stay ahead of changing rates and availability.",
       "totalXp": 85,
       "steps": [
         {
@@ -1023,6 +1039,7 @@
       "id": "q19",
       "stageId": 4,
       "label": "Compass check-in",
+      "description": "Snapshot your estimate, schedule, and task list. Add a voice note to yourself and test the time-machine feature to track changes over time.",
       "totalXp": 70,
       "steps": [
         {
@@ -1057,6 +1074,7 @@
       "id": "q20",
       "stageId": 5,
       "label": "Manage scope changes",
+      "description": "Capture change requests, calculate cost and schedule impact, draft a formal change order, and get signed approval before starting any new work.",
       "totalXp": 120,
       "steps": [
         {
@@ -1105,6 +1123,7 @@
       "id": "q21",
       "stageId": 6,
       "label": "Request payment draws",
+      "description": "Calculate % complete, auto-fill your draw form, set holdback, and send to the lender. Get paid as the job progresses, not just at the end.",
       "totalXp": 100,
       "steps": [
         {
@@ -1147,6 +1166,7 @@
       "id": "q22",
       "stageId": 6,
       "label": "Collect lien waivers",
+      "description": "Track who needs to waive their lien, send conditional waivers with draws, and collect final unconditional waivers before you close the file.",
       "totalXp": 95,
       "steps": [
         {
@@ -1182,6 +1202,7 @@
       "id": "q23",
       "stageId": 6,
       "label": "Payroll check",
+      "description": "Review which workers are employees vs. 1099 contractors. Flag anyone who may be misclassified and get CPA sign-off before you finalize payments.",
       "totalXp": 80,
       "steps": [
         {
@@ -1219,6 +1240,7 @@
       "id": "q24",
       "stageId": 6,
       "label": "Final walk-through",
+      "description": "Take photos, AI spots punch items, assign fixes to trades, and track completion. Close the loop on quality before final payment.",
       "totalXp": 100,
       "steps": [
         {
@@ -1264,6 +1286,7 @@
       "id": "q25",
       "stageId": 7,
       "label": "Collect retainage",
+      "description": "Track how much is held back, set reminders to follow up, escalate if needed, and confirm final payment when it arrives.",
       "totalXp": 110,
       "steps": [
         {
@@ -1305,6 +1328,7 @@
       "id": "q26",
       "stageId": 7,
       "label": "Warranty handoff",
+      "description": "Log warranty periods, set reminders to contact clients before expiration, file the paperwork, and close out your project record.",
       "totalXp": 85,
       "steps": [
         {
@@ -1340,6 +1364,7 @@
       "id": "q27",
       "stageId": 7,
       "label": "What we learned",
+      "description": "Capture what went right, what went wrong, cost variance, crew feedback, and key lessons learned. Build wisdom for the next job.",
       "totalXp": 100,
       "steps": [
         {

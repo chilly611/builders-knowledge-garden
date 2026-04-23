@@ -24,10 +24,10 @@ interface ProfileData {
 
 const laneConfig: Record<Lane, { color: string; surface: string; welcome: string }> = {
   dreamer: { color: '#D85A30', surface: '/dream', welcome: "Welcome, Dreamer. Let's bring your vision to life." },
-  builder: { color: '#E8443A', surface: '/killerapp', welcome: 'Welcome, Builder. Your Command Center is ready.' },
-  specialist: { color: '#378ADD', surface: '/killerapp', welcome: 'Welcome, Specialist. Your Command Center is ready.' },
+  builder: { color: '#E8443A', surface: '/killerapp', welcome: 'Welcome, Builder. You\'re all set.' },
+  specialist: { color: '#378ADD', surface: '/killerapp', welcome: 'Welcome, Specialist. You\'re all set.' },
   merchant: { color: '#BA7517', surface: '/marketplace', welcome: 'Welcome, Merchant. Your Marketplace awaits.' },
-  ally: { color: '#7F77DD', surface: '/killerapp', welcome: 'Welcome, Ally. Your Command Center is ready.' },
+  ally: { color: '#7F77DD', surface: '/killerapp', welcome: 'Welcome, Ally. You\'re all set.' },
   crew: { color: '#1D9E75', surface: '/field', welcome: 'Welcome, Crew. Your Field tools are ready.' },
   fleet: { color: '#BA7517', surface: '/marketplace', welcome: 'Welcome, Fleet Manager. Your Marketplace awaits.' },
   machine: { color: '#7F77DD', surface: '/api/docs', welcome: 'Welcome. Your API documentation is ready.' },

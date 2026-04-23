@@ -15,9 +15,9 @@
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 
 export const LIFECYCLE_STAGES: LifecycleStage[] = [
-  { id: 1, name: 'Size Up', emoji: '🧭' },
-  { id: 2, name: 'Lock', emoji: '🔒' },
-  { id: 3, name: 'Plan', emoji: '📐' },
+  { id: 1, name: 'Size up', emoji: '🧭' },
+  { id: 2, name: 'Lock it in', emoji: '🔒' },
+  { id: 3, name: 'Plan it out', emoji: '📐' },
   { id: 4, name: 'Build', emoji: '🔨' },
   { id: 5, name: 'Adapt', emoji: '🔄' },
   { id: 6, name: 'Collect', emoji: '💰' },

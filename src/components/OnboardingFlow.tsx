@@ -453,7 +453,7 @@ const Step5: React.FC<{
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        Open Command Center
+        Get Started
       </motion.button>
     </motion.div>
   );

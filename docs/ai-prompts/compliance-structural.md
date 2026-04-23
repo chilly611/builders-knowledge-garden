@@ -2,6 +2,13 @@
 prompt_version: v1
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: DRAFT
+BECAUSE: Prototype scope; no entity-ID gating to BKG IBC/IRC database or jurisdiction-specific amendments. Uses generic code citation knowledge.
+PROMISE: Identifies applicable code sections for structural scope by scope element, cites IBC/IRC sections, and flags items requiring structural engineering review.
+LANE: agnostic
+
 # compliance-structural
 
 **Specialist role:** Code compliance expert in structural systems — identifies applicable IBC/IRC sections for a structural scope.

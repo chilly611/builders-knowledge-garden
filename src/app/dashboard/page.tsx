@@ -418,7 +418,9 @@ export default function DashboardPage() {
               }}>
                 {now}
               </p>
-              <XPBar current={xp} max={xpMax} level={level} />
+              {process.env.NEXT_PUBLIC_XP_BAR === 'enabled' && (
+                <XPBar current={xp} max={xpMax} level={level} />
+              )}
             </div>
 
             {/* Streak & Tier badges */}
@@ -551,7 +553,7 @@ F */}
 
             {/* KILLER APP QUICK ACCESS */}
             <section>
-              <SectionHeader title="Killer App — Command Center" icon="⚡" action={{ label: 'Open', href: '/command-center' }} />
+              <SectionHeader title="Killer App — Workflows" icon="⚡" action={{ label: 'Open', href: '/killerapp' }} />
               <Card>
                 <div style={{ display: 'flex', gap: 0, marginBottom: 16 }}>
                   <MetricCard label="Active Projects" value="3" sub="1 at risk" color="#0B1D33" />
@@ -562,14 +564,14 @@ F */}
                   <div style={{ width: 1, background: 'rgba(27,58,92,0.08)', margin: '0 12px' }} />
                   <MetricCard label="Team" value="24" sub="members active" color="#BA7517" />
                 </div>
-                <Link href="/command-center" style={{
+                <Link href="/killerapp" style={{
                   display: 'block', textAlign: 'center', textDecoration: 'none',
                   fontFamily: T.fontMono, fontSize: 12, fontWeight: 600,
                   color: '#FEFEFE', background: 'linear-gradient(135deg, #1B3A5C, #24507A)',
                   padding: '10px 20px', borderRadius: 8,
                   letterSpacing: '0.03em', transition: 'all 0.15s',
                 }}>
-                  Open Command Center →
+                  Open Workflows →
                 </Link>
               </Card>
             </section>

@@ -149,6 +149,11 @@ Do NOT include any markdown or explanation, just the JSON array.`;
 
 export async function GET(request: NextRequest) {
   try {
+    // Feature-flag: quests API is disabled by default (W9.C.BR-F: Decision #1)
+    if (process.env.NEXT_PUBLIC_QUESTS !== 'enabled') {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
+
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -238,6 +243,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Feature-flag: quests API is disabled by default (W9.C.BR-F: Decision #1)
+    if (process.env.NEXT_PUBLIC_QUESTS !== 'enabled') {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
+
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

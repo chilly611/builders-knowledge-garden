@@ -7,6 +7,13 @@ version: 2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Production router dispatches only to Multi-Source Code Verification context; never hallucinate section numbers; detects discipline mismatch and routes to specialist step; flags single-source vs. multi-source confidence.
+PROMISE: Triages code questions by discipline (electrical, structural, plumbing, fire, mechanical); leads with verdict and section cite; routes to specialist step if GC needs deep detail; flags jurisdiction-specific variations.
+LANE: GC
+
 # Code Compliance Router Specialist — Production
 
 ## System Prompt

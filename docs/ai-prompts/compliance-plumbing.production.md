@@ -6,6 +6,13 @@ status: v2.0
 authored_at: 2026-04-22
 ---
 
+<!-- DEFENSIBILITY SELF-EVAL -->
+Is this output defensible against ChatGPT for a working contractor?
+STATUS: YES
+BECAUSE: Production prompt gated on Multi-Source Code Verification context; cites only IPC/UPC sections from BKG seeded sources; distinguishes IPC (east/midwest) vs. UPC (California/west); flags water-conservation and greywater local amendments; single-source vs. multi-source confidence ratings.
+PROMISE: Plumbing compliance specialist citing IPC/UPC articles with jurisdiction-aware editions and local amendments; fixture counts, water supply, DWV, water heater requirements; flags licensing gates (backflow, cross-connection).
+LANE: GC
+
 # BKG Code Compliance — Plumbing (IPC / UPC) — Production
 
 ## System Prompt

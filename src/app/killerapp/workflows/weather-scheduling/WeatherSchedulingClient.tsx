@@ -59,7 +59,7 @@ export default function WeatherSchedulingClient({ workflow, stages }: Props) {
           }}
         />
         <span style={{ fontSize: fontSizes.xs, color: colors.ink[500] }}>
-          Enter your site location to fetch the 10-day forecast
+          Where's the site? (City or ZIP to pull the 10-day forecast.)
         </span>
       </label>
     </div>

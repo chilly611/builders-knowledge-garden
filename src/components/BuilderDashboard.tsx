@@ -792,7 +792,7 @@ export const BuilderDashboard: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h1 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 4px 0' }}>
-                Builder Command Center
+                Workflows
               </h1>
               <p style={{ fontSize: '14px', opacity: 0.9, margin: 0 }}>
                 Welcome back, {userName} — manage your portfolio

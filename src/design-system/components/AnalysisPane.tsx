@@ -37,6 +37,8 @@ interface AnalysisPaneProps {
   onResult?: (result: SpecialistResult) => void;
   /** Emit errors upward */
   onError?: (error: Error) => void;
+  /** Optional one-sentence specialist intro label rendered above the analysis */
+  specialistLabel?: string;
 }
 
 type PaneState =
@@ -47,7 +49,7 @@ type PaneState =
 
 const CONFIDENCE_COLORS = {
   high: colors.robin,    // Robin's Egg (canonical: #7FCFCB) — decision #12
-  medium: '#D85A30',     // warm orange
+  medium: colors.orange, // Deep Orange (canonical: #D9642E) — decision #12
   low: '#EF4444',
 } as const;
 
@@ -66,6 +68,7 @@ export default function AnalysisPane({
   autoRun = true,
   onResult,
   onError,
+  specialistLabel,
 }: AnalysisPaneProps) {
   const [state, setState] = useState<PaneState>({ kind: 'idle' });
   const latestInputRef = useRef<string>('');
@@ -286,6 +289,20 @@ export default function AnalysisPane({
             {result.disciplineHandoff.suggestStep}
           </a>{' '}
           for the deep dive.
+        </div>
+      )}
+
+      {/* Specialist label — if provided */}
+      {specialistLabel && (
+        <div
+          style={{
+            fontSize: fontSizes.sm,
+            fontWeight: fontWeights.semibold,
+            color: colors.ink[700],
+            fontStyle: 'italic',
+          }}
+        >
+          {specialistLabel}
         </div>
       )}
 

@@ -205,9 +205,9 @@ function BrokerLoadingState() {
           <line x1="50" y1="35" x2="50" y2="65" strokeWidth="1.2" />
           <line x1="40" y1="50" x2="60" y2="50" strokeWidth="1.2" />
         </svg>
-        <p style={styles.emptyText}>Drafting vendor brief…</p>
+        <p style={styles.emptyText}>Finding vendors…</p>
         <p style={{ ...styles.emptyText, fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
-          Searching, reasoning, and ranking resources
+          Checking inventory, comparing prices, picking the best.
         </p>
       </div>
 
@@ -259,7 +259,7 @@ function BrokerEmptyState() {
             strokeWidth="2"
           />
         </svg>
-        <p style={styles.emptyText}>No vendors found</p>
+        <p style={styles.emptyText}>No vendors for that one.</p>
         <p
           style={{
             ...styles.emptyText,
@@ -269,7 +269,7 @@ function BrokerEmptyState() {
             maxWidth: '300px',
           }}
         >
-          Try a different search or broaden your query terms.
+          Try different keywords — or broaden the search.
         </p>
       </div>
     </div>
@@ -302,13 +302,13 @@ function BrokerErrorState({ error }: { error: string }) {
         </svg>
         <p style={styles.errorText}>{error}</p>
         <p style={{ ...styles.errorText, fontSize: '12px', opacity: 0.6, marginTop: '8px' }}>
-          Live search paused — showing recent vendors
+          Couldn't reach vendors right now — here are recent ones.
         </p>
         <button
           onClick={() => window.location.reload()}
           style={styles.retryButton}
         >
-          Retry Search
+          Try again
         </button>
       </div>
     </div>

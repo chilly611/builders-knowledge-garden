@@ -3,32 +3,31 @@
 import { usePathname } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
-import GlobalJourneyMapHeader from '@/components/GlobalJourneyMapHeader';
+import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
+import IntegratedNavigator from '@/components/IntegratedNavigator';
 import LegalFooter from '@/components/LegalFooter';
 
 export default function KillerAppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
 
-  // W7.O: the picker route itself has no project context, so mounting the
-  // journey strip there rendered misleading demo-data chrome that
-  // dominated first-screen composition. Gate it OFF `/killerapp` (picker
-  // only — still ON for every nested /killerapp/projects/* and
-  // /killerapp/workflows/* route where project context exists).
+  // W9 — Navigator renders on every /killerapp route including the picker.
+  // Founder feedback: picker needs the journey context, not hides from it.
+  // The picker route just gets no active stageId, which the Navigator handles via the "not_started" state.
   //
-  // This is tactical, not the creative redesign. W7.P will rethink the
-  // journey strip + "Time Machine" scrub + budget timeline as a single
-  // integrated surface. Until then the picker renders clean.
-  const showJourneyStrip = pathname !== '/killerapp';
+  // Navigator starts in 'compact' collapse state by default — single horizontal strip.
+  // User toggles to 'expanded' for full journey + time-machine + budget stack.
 
   return (
     <GreenFlashProvider>
-      <KillerAppNav />
-      <div style={{ paddingTop: 48 }}>
-        {showJourneyStrip && <GlobalJourneyMapHeader />}
-        {children}
-        {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
-        <LegalFooter />
-      </div>
+      <NavigatorProvider initialCollapseState="compact">
+        <KillerAppNav />
+        <div style={{ paddingTop: 48 }}>
+          <IntegratedNavigator projectId={null} activeStageId={null} />
+          {children}
+          {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
+          <LegalFooter />
+        </div>
+      </NavigatorProvider>
     </GreenFlashProvider>
   );
 }
