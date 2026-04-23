@@ -19,14 +19,14 @@ const PATHNAME_TO_STAGE: Record<string, StageId> = {
   '/killerapp/workflows/sub-management': 3,
   '/killerapp/workflows/equipment': 3,
   '/killerapp/workflows/supply-ordering': 3,
-  '/killerapp/workflows/services-todos': 3,
+  '/killerapp/workflows/services-todos': 5,
   '/killerapp/workflows/hiring': 3,
   '/killerapp/workflows/weather-scheduling': 4,
   '/killerapp/workflows/daily-log': 4,
   '/killerapp/workflows/osha-toolbox': 4,
-  '/killerapp/workflows/expenses': 4,
+  '/killerapp/workflows/expenses': 6,
   '/killerapp/workflows/outreach': 4,
-  '/killerapp/workflows/compass-nav': 4,
+  '/killerapp/workflows/compass-nav': 7,
 };
 
 /**

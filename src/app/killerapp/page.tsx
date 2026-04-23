@@ -253,12 +253,17 @@ export default function KillerAppPage() {
                   const isLive = Boolean(href);
                   const blurb = WORKFLOW_BLURBS[wf.id];
                   const isSupplyOrdering = wf.id === 'q11';
+                  const stageAccent = STAGE_ACCENTS[stage.id as keyof typeof STAGE_ACCENTS];
+                  const accentHex = stageAccent?.hex || color;
 
                   const rowContent = (
                     <div
                       className={`${styles.workflowRow} ${
                         isSupplyOrdering ? styles.workflowRowPeakMoment : ''
                       } scroll-fade-in`}
+                      style={{
+                        '--stage-accent': accentHex,
+                      } as React.CSSProperties}
                     >
                       {/* Workflow ID / code */}
                       <div className={styles.workflowCode}>

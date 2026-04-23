@@ -11,18 +11,33 @@
 //   ✓ Refined wordmark in graphite (not red), lowercase treatment, proper letterspacing
 //   ✓ Blueprint hairline bottom border (0.5px var(--faded-rule)) in place of red divider
 //   ✓ "Workflows" back-link when inside a workflow route (fluid, not quest-driven)
-//   ✓ Nothing else. Per-workflow journey-map lives in a separate header component.
+//   ✓ Stage landscape chip row on right side showing all 7 stages
 //
 // Export name preserved (default `KillerAppNav`) so the 8 route groups
 // that already import it don't break. Renaming can happen later.
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Logomark from '@/components/Logomark';
+import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
+import { stageFromPathname } from '@/lib/stage-from-pathname';
+
+// Stage landscape mapping: stage ID → label + first workflow href
+const STAGE_LANDSCAPE: Record<StageId, { label: string; href: string }> = {
+  1: { label: 'Size up', href: '/killerapp/workflows/estimating' },
+  2: { label: 'Lock it in', href: '/killerapp/workflows/contract-templates' },
+  3: { label: 'Plan it out', href: '/killerapp/workflows/job-sequencing' },
+  4: { label: 'Build', href: '/killerapp/workflows/daily-log' },
+  5: { label: 'Adapt', href: '/killerapp/workflows/services-todos' },
+  6: { label: 'Collect', href: '/killerapp/workflows/expenses' },
+  7: { label: 'Reflect', href: '/killerapp/workflows/compass-nav' },
+};
 
 export default function KillerAppNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const currentStageId = stageFromPathname(pathname);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -127,6 +142,63 @@ export default function KillerAppNav() {
 
       {/* spacer */}
       <div style={{ flex: 1 }} />
+
+      {/* Stage landscape chip row — desktop only (640px+) */}
+      {!isMobile && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {(Object.keys(STAGE_LANDSCAPE) as unknown as StageId[]).map((stageId) => {
+            const stage = STAGE_LANDSCAPE[stageId];
+            const isActive = currentStageId === stageId;
+            const accentColor = STAGE_ACCENTS[stageId].hex;
+
+            return (
+              <button
+                key={stageId}
+                onClick={() => router.push(stage.href)}
+                style={{
+                  height: 24,
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                  borderRadius: 12,
+                  border: isActive ? 'none' : `1px solid var(--faded-rule)`,
+                  background: isActive ? accentColor : 'transparent',
+                  color: isActive ? 'var(--trace)' : 'var(--graphite)',
+                  fontSize: 11,
+                  fontWeight: 500,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  textTransform: 'lowercase',
+                  transition: 'border-color 0.2s',
+                  ...(isActive && {
+                    transform: 'translateY(-1px)',
+                  }),
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    e.currentTarget.style.borderColor = '#1B3B5E';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'var(--faded-rule)';
+                  }
+                }}
+                title={`Go to ${stage.label}`}
+              >
+                {stage.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

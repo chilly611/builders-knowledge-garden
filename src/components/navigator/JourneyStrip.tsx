@@ -6,12 +6,20 @@
  * The top row of the W9 IntegratedNavigator.
  * Renders 7 lifecycle stages as horizontally-scrollable pills, color-coded
  * by progress status. Active stage highlighted with brass bottom-border.
+ *
+ * Each pill now includes:
+ * - Stage accent color band (2px) at the bottom
+ * - Tinted stage icon (accent on active, graphite on inactive)
+ * - Hover backdrop image bleed (stages 1-4) or accent wash (stages 5-7)
+ * - Brass underline (3px) on current active stage
  */
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { StageId, StageProgress } from './types';
 import { STAGE_REGISTRY } from './types';
+import { STAGE_ACCENTS } from '../../design-system/tokens/stage-accents';
+import { STAGE_ICONS } from './icons';
 
 export interface JourneyStripProps {
   /** Per-stage progress rollup. Must contain all 7 stages. */
@@ -93,6 +101,8 @@ export default function JourneyStrip({
 
   const pillStyle = (stage: StageProgress, isActive: boolean): CSSProperties => {
     const statusStyles = getStatusStyles(stage);
+    const stageAccent = STAGE_ACCENTS[stage.stageId];
+
     const baseStyle: CSSProperties = {
       display: 'inline-flex',
       flexDirection: 'column',
@@ -113,10 +123,14 @@ export default function JourneyStrip({
       transition: `cubic-bezier(0.4, 0.02, 0.2, 1) 200ms`,
       outline: 'none',
       position: 'relative',
+      // Pseudo-element for stage accent band at bottom
+      backgroundClip: 'padding-box',
+      borderBottom: `2px solid ${stageAccent.hex}`,
     };
 
     if (isActive) {
-      baseStyle.borderBottom = '2px solid var(--brass)';
+      // Brass underline replaces the accent band for current stage
+      baseStyle.borderBottom = '3px solid #B6873A';
     }
 
     if (statusStyles.useAnimation) {
@@ -165,6 +179,22 @@ export default function JourneyStrip({
             aria-label={`${STAGE_REGISTRY.find((r) => r.id === activeStage.stageId)?.label} — ${activeStage.status}, ${activeStage.doneCount} of ${activeStage.totalCount} workflows done`}
             style={pillStyle(activeStage, true)}
           >
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                color: STAGE_ACCENTS[activeStage.stageId].hex,
+                flexShrink: 0,
+              }}
+            >
+              {(() => {
+                const IconComponent = STAGE_ICONS[activeStage.stageId];
+                return <IconComponent width={16} height={16} stroke={STAGE_ACCENTS[activeStage.stageId].hex} />;
+              })()}
+            </div>
             <span style={{ fontSize: '10px' }}>{activeStage.stageId}</span>
             <span>{STAGE_REGISTRY.find((r) => r.id === activeStage.stageId)?.label}</span>
           </button>
@@ -186,6 +216,38 @@ export default function JourneyStrip({
   };
 
   const renderExpandedMode = () => {
+    // Determine backdrop image paths for stages 1-4, none for 5-7
+    const backdropPaths: Record<StageId, string | null> = {
+      1: '/stage-backdrops/sizeup-journey.png',
+      2: '/stage-backdrops/lock-journey.png',
+      3: '/stage-backdrops/plan-journey.png',
+      4: '/stage-backdrops/build-journey.png',
+      5: null,
+      6: null,
+      7: null,
+    };
+
+    const getHoverBackdropStyle = (stageId: StageId): CSSProperties => {
+      const backdropPath = backdropPaths[stageId];
+      const stageAccent = STAGE_ACCENTS[stageId];
+
+      if (backdropPath) {
+        // Stages 1-4: use raster image as subtle tinted wash
+        return {
+          backgroundImage: `url('${backdropPath}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.15,
+        };
+      } else {
+        // Stages 5-7: use stage accent color at low opacity
+        return {
+          backgroundColor: stageAccent.hex,
+          opacity: 0.1,
+        };
+      }
+    };
+
     return (
       <>
         <style>{`
@@ -193,11 +255,36 @@ export default function JourneyStrip({
             0%, 100% { opacity: 1; }
             50% { opacity: 0.75; }
           }
+          .journey-pill-hover-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 4px;
+            pointer-events: none;
+            transition: opacity cubic-bezier(0.4, 0.02, 0.2, 1) 200ms;
+            z-index: 0;
+          }
+          .journey-pill-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+          }
         `}</style>
         <div style={containerStyleWithAnimation} role="tablist">
           {stages.map((stage) => {
             const isActive = stage.stageId === activeStageId;
             const stageMeta = STAGE_REGISTRY.find((r) => r.id === stage.stageId);
+            const stageAccent = STAGE_ACCENTS[stage.stageId];
+            const IconComponent = STAGE_ICONS[stage.stageId];
+            const iconColor = isActive ? stageAccent.hex : '#2E2E30'; // Graphite when inactive
+
             return (
               <button
                 key={stage.stageId}
@@ -214,23 +301,47 @@ export default function JourneyStrip({
                   }),
                 }}
               >
-                <span style={{ fontSize: '11px', fontWeight: 700 }}>
-                  {stage.status === 'complete' ? '✓' : stage.stageId}
-                </span>
-                <span style={{ fontSize: '11px', lineHeight: 1.2 }}>
-                  {stageMeta?.label}
-                </span>
-                {stage.totalCount > 0 && (
-                  <span
+                {/* Hover backdrop bleed */}
+                <div
+                  className="journey-pill-hover-backdrop"
+                  style={getHoverBackdropStyle(stage.stageId)}
+                />
+
+                {/* Content layer with icon and text */}
+                <div className="journey-pill-content" style={{ gap: 'inherit' }}>
+                  {/* Stage icon with stage accent tint on active */}
+                  <div
                     style={{
-                      fontSize: '9px',
-                      opacity: 0.75,
-                      marginTop: '2px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '24px',
+                      height: '24px',
+                      color: iconColor,
+                      flexShrink: 0,
                     }}
                   >
-                    {stage.doneCount}/{stage.totalCount}
+                    <IconComponent width={20} height={20} stroke={iconColor} />
+                  </div>
+
+                  <span style={{ fontSize: '11px', fontWeight: 700 }}>
+                    {stage.status === 'complete' ? '✓' : stage.stageId}
                   </span>
-                )}
+                  <span style={{ fontSize: '11px', lineHeight: 1.2 }}>
+                    {stageMeta?.label}
+                  </span>
+                  {stage.totalCount > 0 && (
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        opacity: 0.75,
+                        marginTop: '2px',
+                      }}
+                    >
+                      {stage.doneCount}/{stage.totalCount}
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}
