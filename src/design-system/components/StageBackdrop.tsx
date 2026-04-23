@@ -47,7 +47,7 @@ export default function StageBackdrop({
 
   // Raster images: stages 0-4
   if (stage >= 0 && stage <= 4) {
-    const rasterInfo = RASTER_BACKDROPS[stage];
+    const rasterInfo = RASTER_BACKDROPS[stage as 0 | 1 | 2 | 3 | 4];
     if (!rasterInfo) {
       console.warn(`StageBackdrop: no raster backdrop found for stage ${stage}`);
       return <div />;
@@ -88,7 +88,7 @@ export default function StageBackdrop({
 
   // SVG backdrops: stages 5-7
   if (stage >= 5 && stage <= 7) {
-    const BackdropComponent = STAGE_BACKDROPS[stage];
+    const BackdropComponent = STAGE_BACKDROPS[stage as 5 | 6 | 7];
     if (!BackdropComponent) {
       console.warn(`StageBackdrop: no SVG backdrop found for stage ${stage}`);
       return <div />;

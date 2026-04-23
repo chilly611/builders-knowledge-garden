@@ -509,8 +509,9 @@ export default function CompassBloom() {
               fontSize={isDesktop ? 5.5 : 4}
               fontWeight="700"
               fill={COLORS.trace}
-              title={`${xp.toLocaleString()} XP (${levelInfo.name})`}
+              aria-label={`${xp.toLocaleString()} XP (${levelInfo.name})`}
             >
+              <title>{`${xp.toLocaleString()} XP (${levelInfo.name})`}</title>
               {xp < 1000 ? xp : (xp / 1000).toFixed(1) + "k"}
             </text>
             {/* Level badge below */}
