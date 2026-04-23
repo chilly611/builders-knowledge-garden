@@ -7,8 +7,9 @@
  * - Tables (markdown grid format)
  * - Bold (**text**)
  * - Italic (*text*)
- * - Links ([text](url))
+ * - Links ([text](url) → plain links; action:/path → buttons)
  * - Bullet lists
+ * - "What next?" sections (convert to button rows)
  * - Line breaks
  *
  * Does NOT support: code blocks, nested formatting, complex markdown.
@@ -17,6 +18,58 @@
 
 import React from 'react';
 import { colors, fontSizes, fontWeights, spacing, fonts } from '../../tokens';
+
+/**
+ * ActionButton
+ * ============
+ * Inline client component for rendering action: links as styled pill buttons.
+ * Uses router.push() for client-side navigation, falls back to window.location for SSR safety.
+ */
+function ActionButton({ label, action }: { label: string; action: string }) {
+  const handleClick = () => {
+    try {
+      // Try to use next/navigation if available
+      if (typeof window !== 'undefined') {
+        // SSR-safe: use direct navigation
+        window.location.href = action;
+      }
+    } catch (err) {
+      console.error('Failed to navigate:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: `${spacing[1]} ${spacing[2]}`, // 10px-16px equivalent (4px + 8px padding)
+        borderRadius: '8px',
+        fontSize: fontSizes.sm, // 14px
+        fontWeight: fontWeights.semibold,
+        color: colors.navy,
+        backgroundColor: colors.trace,
+        border: `2px solid var(--stage-accent, ${colors.brass})`,
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        fontFamily: fonts.body,
+        whiteSpace: 'nowrap',
+      }}
+      onMouseEnter={(e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        target.style.transform = 'scale(1.05)';
+      }}
+      onMouseLeave={(e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        target.style.transform = 'scale(1)';
+      }}
+    >
+      {label}
+    </button>
+  );
+}
 
 export function markdownToJsx(markdown: string): React.ReactNode[] {
   const lines = markdown.split('\n');
@@ -33,6 +86,70 @@ export function markdownToJsx(markdown: string): React.ReactNode[] {
       );
       i++;
       continue;
+    }
+
+    // Check for "What next?" section with action buttons
+    if (line.trim() === '**What next?**') {
+      // Look ahead for bullet list of action links
+      let j = i + 1;
+      const actionItems: Array<{ label: string; action: string }> = [];
+
+      // Skip empty line after header
+      if (j < lines.length && !lines[j].trim()) {
+        j++;
+      }
+
+      // Collect bullet items with action: links
+      while (j < lines.length && lines[j].match(/^\s*[-*]\s+/)) {
+        const match = lines[j].match(/^\s*[-*]\s+\[(.+?)\]\(action:(.+?)\)$/);
+        if (match) {
+          actionItems.push({
+            label: match[1],
+            action: match[2],
+          });
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      // If we found action items, render as button row
+      if (actionItems.length > 0) {
+        elements.push(
+          <div
+            key={`whatnext-title-${i}`}
+            style={{
+              fontSize: fontSizes.base,
+              fontWeight: fontWeights.semibold,
+              color: colors.navy,
+              marginTop: spacing[3],
+              marginBottom: spacing[2],
+              fontFamily: fonts.body,
+            }}
+          >
+            What next?
+          </div>
+        );
+
+        elements.push(
+          <div
+            key={`whatnext-buttons-${i}`}
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: spacing[2],
+              marginBottom: spacing[3],
+            }}
+          >
+            {actionItems.map((item, idx) => (
+              <ActionButton key={idx} label={item.label} action={item.action} />
+            ))}
+          </div>
+        );
+
+        i = j;
+        continue;
+      }
     }
 
     // Headers (# ## ###)
@@ -201,13 +318,13 @@ export function markdownToJsx(markdown: string): React.ReactNode[] {
 }
 
 /**
- * Render inline markdown: **bold**, *italic*, [link](url)
+ * Render inline markdown: **bold**, *italic*, [link](url), [action](action:/path)
  */
 function renderInlineMarkdown(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
 
-  // Pattern: (**text**), (*text*), or ([text](url))
+  // Pattern: (**text**), (*text*), or ([text](url)) or ([text](action:/path))
   const regex = /\*\*(.+?)\*\*|\*(.+?)\*|\[(.+?)\]\((.+?)\)|__(.+?)__|_(.+?)_/g;
   let match;
 
@@ -232,22 +349,32 @@ function renderInlineMarkdown(text: string): React.ReactNode {
         </em>
       );
     } else if (match[3] && match[4]) {
-      // [text](url)
-      parts.push(
-        <a
-          key={`link-${match.index}`}
-          href={match[4]}
-          style={{
-            color: 'var(--brass)',
-            textDecoration: 'underline',
-            fontWeight: fontWeights.semibold,
-          }}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {match[3]}
-        </a>
-      );
+      // [text](url) or [text](action:/path)
+      const url = match[4];
+      if (url.startsWith('action:')) {
+        // Action link → render as button
+        const action = url.substring(7); // Remove 'action:' prefix
+        parts.push(
+          <ActionButton key={`action-${match.index}`} label={match[3]} action={action} />
+        );
+      } else {
+        // Regular link → render as anchor
+        parts.push(
+          <a
+            key={`link-${match.index}`}
+            href={url}
+            style={{
+              color: colors.brass,
+              textDecoration: 'underline',
+              fontWeight: fontWeights.semibold,
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {match[3]}
+          </a>
+        );
+      }
     }
 
     lastIndex = regex.lastIndex;

@@ -266,7 +266,7 @@ export async function callSpecialist(
         relevance: r.confidenceTier === "primary" ? "high" : "medium",
       }));
     } else {
-      userMessage += `\n\nCRITICAL: queryAllSources returned no results for this query. You MUST return confidence: low and tell the user: "I don't have a cross-verified answer; do not proceed without AHJ confirmation." Include specific questions the user should ask their AHJ.`;
+      userMessage += `\n\nCRITICAL: queryAllSources returned no results for this query. You MUST return confidence: low and tell the user: "I don't have a cross-verified answer; stop and call your local building department." Include specific questions the user should ask their building department.`;
       codeSourceConfidenceData = { multiSource: false, sourceCount: 0, hasPrimary: false };
     }
   } else if (context.jurisdiction && !isComplianceSpecialist) {
@@ -709,7 +709,7 @@ This specialist ships real analysis when connected to the live LLM backend. In d
 
 **What this specialist does when live:**
 - Pulls from the BKG database for your jurisdiction, materials, and crew history
-- Runs a 3-source verification (primary code + amendments + local AHJ)
+- Runs a 3-source verification (primary code + amendments + local code provisions)
 - Returns a confidence-rated answer with citations you can take to an inspector
 
 **Demo paths that ARE live right now:**

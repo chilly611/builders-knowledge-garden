@@ -41,6 +41,8 @@ import {
   type CSSProperties,
 } from 'react';
 import { usePathname } from 'next/navigation';
+import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { markdownToJsx } from '@/design-system/components/utils/markdownToJsx';
 
 // Minimal SpeechRecognition typing — the web APIs differ per browser and
 // we only need .start(), .stop(), .onresult, .onerror, .onend for the MVP.
@@ -117,6 +119,22 @@ export default function GlobalAiFab() {
     setOpen(false);
   }, [pathname]);
 
+  // Listen for bkg:ai-fab:open event to open FAB and focus textarea.
+  useEffect(() => {
+    const handler = () => {
+      setOpen(true);
+      // Focus the textarea on next frame to ensure it's rendered
+      setTimeout(() => {
+        const textarea = document.querySelector<HTMLTextAreaElement>(
+          '[placeholder="What do you want to do? Type or tap 🎤"]'
+        );
+        textarea?.focus();
+      }, 0);
+    };
+    window.addEventListener('bkg:ai-fab:open', handler);
+    return () => window.removeEventListener('bkg:ai-fab:open', handler);
+  }, []);
+
   // Escape-to-close.
   useEffect(() => {
     if (!open) return;
@@ -139,12 +157,30 @@ export default function GlobalAiFab() {
     abortRef.current = new AbortController();
 
     try {
+      // Compute stage, workflowId, and projectId
+      const stage = stageFromPathname(pathname);
+
+      // Extract workflowId from URL if pathname matches /killerapp/workflows/(.+?)(/|$)
+      let workflowId: string | null = null;
+      const workflowMatch = pathname.match(/\/killerapp\/workflows\/(.+?)(?:\/|$)/);
+      if (workflowMatch) {
+        workflowId = workflowMatch[1];
+      }
+
+      // Get projectId from localStorage or default
+      const projectId = typeof window !== 'undefined'
+        ? localStorage.getItem('bkg-active-project') || 'default'
+        : 'default';
+
       const res = await fetch('/api/v1/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: abortRef.current.signal,
         body: JSON.stringify({
           query: q,
+          stage,
+          workflowId,
+          projectId,
           project_context: {
             pathname: ctx.pathname,
             surface: ctx.surfaceId,
@@ -354,7 +390,7 @@ export default function GlobalAiFab() {
 
           {response && (
             <article style={responseStyle} aria-live="polite">
-              {response}
+              {markdownToJsx(response)}
             </article>
           )}
         </div>

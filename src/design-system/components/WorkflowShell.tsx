@@ -38,6 +38,9 @@ import WorkflowRenderer from './WorkflowRenderer';
 import type { Workflow, WorkflowContext } from './WorkflowRenderer.types';
 import type { StepResult } from './StepCard.types';
 import WorkflowTurkeyInput from './WorkflowTurkeyInput';
+import StageBreadcrumb from './StageBreadcrumb';
+import StarterPromptButtons from './StarterPromptButtons';
+import NextWorkflowCard from './NextWorkflowCard';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-system/tokens';
 import { emitJourneyEvent, resolveProjectId } from '@/lib/journey-progress';
@@ -111,6 +114,7 @@ export default function WorkflowShell({
   const [proMode, setProMode] = useState(false);
   const [eventCount, setEventCount] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
+  const [completedStepIds, setCompletedStepIds] = useState<Set<string>>(new Set());
 
   // Resolve the active project id exactly once on mount. Journey events
   // without a project id use the literal "default" so anonymous / no-project
@@ -134,6 +138,11 @@ export default function WorkflowShell({
   const handleEvent = useCallback(
     (event: StepResult & { workflowId: string }) => {
       setEventCount((n) => n + 1);
+
+      // Track completed steps for NextWorkflowCard
+      if (event.type === 'step_completed') {
+        setCompletedStepIds((prev) => new Set(prev).add(event.stepId));
+      }
 
       // Legacy event bus — preserve for anything still listening.
       if (typeof window !== 'undefined') {
@@ -169,10 +178,20 @@ export default function WorkflowShell({
     [hasStarted, onStepComplete, projectId, workflow.id, workflow.steps]
   );
 
+  // Derive whether all steps are complete
+  const allStepsCompleted = workflow.steps.length > 0 &&
+    completedStepIds.size === workflow.steps.length;
+
+  // Get first stage ID (default to 1 if not available)
+  const firstStageId = (workflow.stageId ?? 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
   const showContextChooser = contextFields.length > 0;
 
   return (
     <>
+      {/* Stage Breadcrumb — mounted at very top, computes stage from pathname */}
+      <StageBreadcrumb />
+
       {/* JourneyMapHeader moved to src/app/killerapp/layout.tsx in W4.1b so
           it's ever-present across the picker and every workflow route
           (not re-mounted per workflow). */}
@@ -238,6 +257,20 @@ export default function WorkflowShell({
             {proMode ? 'Pro: On' : 'Pro: Off'}
           </button>
         </div>
+
+        {/* Starter Prompt Buttons — mounted above Turkey input for quick workflow entry */}
+        <section
+          aria-label="Starter prompts"
+          style={{ marginBottom: spacing[4] }}
+        >
+          <StarterPromptButtons
+            workflowId={workflow.id}
+            onSelect={(prompt) => {
+              // Future: wire to fill Turkey input when it supports controlled state
+              console.log('Starter prompt selected:', prompt);
+            }}
+          />
+        </section>
 
         {/* Universal "talking turkey" natural-language box — always rendered
             per founder direction 2026-04-19. Scoped to the current workflow
@@ -311,6 +344,13 @@ export default function WorkflowShell({
           />
           {sidePanel && <aside>{sidePanel}</aside>}
         </div>
+
+        {/* Next Workflow Card — mounted at bottom to guide progression */}
+        <NextWorkflowCard
+          currentWorkflowId={workflow.id}
+          currentStageId={firstStageId}
+          stepsComplete={allStepsCompleted}
+        />
 
         {/* Event footer */}
         <footer

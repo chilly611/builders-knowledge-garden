@@ -20,8 +20,11 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii, shadows } from '@/design-system/tokens';
 import { toFriendlyMessage } from '@/lib/error-messages';
+import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { markdownToJsx } from './utils/markdownToJsx';
 
 interface MinimalSpeechRecognition {
   continuous: boolean;
@@ -60,6 +63,9 @@ export default function WorkflowTurkeyInput({
   workflowLabel,
   stageId,
 }: WorkflowTurkeyInputProps) {
+  const pathname = usePathname();
+  const computedStageId = stageFromPathname(pathname);
+
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -85,12 +91,14 @@ export default function WorkflowTurkeyInput({
         signal: abortRef.current.signal,
         body: JSON.stringify({
           query: q,
+          stage: computedStageId,
+          workflowId: workflowId,
           project_context: {
             pathname: typeof window !== 'undefined' ? window.location.pathname : '',
             surface: `workflow-${workflowId}`,
             workflow: workflowId,
             label: workflowLabel,
-            stage: stageId ?? null,
+            stage: computedStageId,
           },
         }),
       });
@@ -141,7 +149,7 @@ export default function WorkflowTurkeyInput({
       setIsStreaming(false);
       abortRef.current = null;
     }
-  }, [prompt, isStreaming, workflowId, workflowLabel, stageId]);
+  }, [prompt, isStreaming, workflowId, workflowLabel, computedStageId]);
 
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
@@ -328,11 +336,10 @@ export default function WorkflowTurkeyInput({
             backgroundColor: error ? '#FEF2F2' : '#FFFFFF',
             border: `1px solid ${error ? '#FECACA' : colors.ink[100]}`,
             borderRadius: radii.md,
-            whiteSpace: 'pre-wrap',
             lineHeight: 1.55,
           }}
         >
-          {error ?? response}
+          {error ? error : markdownToJsx(response)}
         </div>
       )}
 

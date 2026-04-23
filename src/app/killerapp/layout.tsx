@@ -9,6 +9,7 @@ import IntegratedNavigator from '@/components/IntegratedNavigator';
 import LegalFooter from '@/components/LegalFooter';
 import StageBackdrop from '@/design-system/components/StageBackdrop';
 import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
+import CommandPalette from '@/design-system/components/CommandPalette';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
@@ -50,6 +51,7 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
           <LegalFooter />
         </div>
         <VoiceCommandNav onNavigate={handleVoiceNavigate} />
+        <CommandPalette />
         {/* TODO(W9.D-W2): mount StageWelcome once project/workflow context is stable. */}
       </NavigatorProvider>
     </GreenFlashProvider>
