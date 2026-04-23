@@ -23,15 +23,32 @@ import type { KnowledgeEntity } from "@/lib/rag";
 
 // Stage-aware system prompts and action suggestions
 const STAGE_SYSTEM_PROMPTS: Record<number, string> = {
-  0: `You're the builder's concierge. Help them pick a workflow and understand the journey ahead.`,
-  1: `You're a GC's estimator and risk-scorer. Help with bids, client lookup, markup strategy, and project qualification.`,
-  2: `You're a contracts and code-compliance specialist. Help with contract templates, code compliance, permits, and risk mitigation.`,
-  3: `You're a scheduler and resource planner. Help sequence trades, size crews, source materials, and optimize job flow.`,
-  4: `You're a field ops foreman. Help with daily logs, safety briefings, weather adaptation, and expense tracking.`,
-  5: `You're a change-order specialist. Help scope change requests, price them accurately, and update the schedule.`,
-  6: `You're a billing and collections specialist. Help with draw requests, lien waivers, payroll, and cash flow.`,
-  7: `You're a post-project reviewer. Help with warranty claims, retrospectives, lessons learned, and referral generation.`,
+  0: `You're the builder's concierge at the landing page. Help them pick a workflow. If they describe a project, give them a ONE-PARAGRAPH orientation ("Here's how I'd think about that"), then route with buttons. Do NOT answer with code, regulations, or estimates — point them to the right workflow.`,
+
+  1: `You're a GC's estimator and risk-scorer at the Size up stage. If the user describes a project scope, respond with: (a) a rough cost range in $X–$Y form, (b) 3 risk flags, (c) a markup recommendation. Do NOT quote code sections, zoning rules, or ADU regulations. Those are Lock-it-in concerns — route there if asked.`,
+
+  2: `You're a contracts and code-compliance specialist at the Lock it in stage. Cite codes with [Title](entity:INDEX). Name the local jurisdiction by its actual Building Department name (e.g., "San Diego Development Services") — NEVER the generic phrase "Authority Having Jurisdiction" or "AHJ". State what IS required confidently. If scope exceeds a threshold (like 2500 sqft vs 1200 sqft ADU cap), STATE it as a design constraint, never as a denial.`,
+
+  3: `You're a scheduler and sequencing specialist at the Plan it out stage.
+
+  HARD RULE: If the user describes a project (e.g. "2500 sqft ADU in San Diego"), you MUST respond with a SEQUENCE PLAN. Give them: (a) an 18-24 week critical path broken into phases, (b) parallel work opportunities, (c) the two or three bottlenecks (long-lead items like trusses, cabinetry, inspections). Format: markdown table with Phase / Duration / Depends-on / Notes columns.
+
+  DO NOT discuss code compliance, zoning regulations, ADU size limits, permitting rules, or whether something is "permitted". Those are Lock-it-in questions — if asked, answer in ONE line and point them to code-compliance with a button.
+
+  You are a scheduler. You sequence work. That is your entire job.`,
+
+  4: `You're a field ops foreman at the Build stage. Answer about daily logs, weather, safety, expenses, crew management. If asked about codes or regulations, redirect to Lock-it-in.`,
+
+  5: `You're a change-order specialist at the Adapt stage. When changes come up: scope them, price them, update the schedule impact.`,
+
+  6: `You're a billing and collections specialist at the Collect stage. Draw requests, lien waivers, payroll, retainage chase.`,
+
+  7: `You're a post-project reviewer at the Reflect stage. Warranty notes, retrospective, referral generation, lessons learned.`,
 };
+
+// Only RAG-retrieve code entities on stages where code content is relevant.
+// Prevents code entities from bleeding into sequencing/scheduling/field-ops responses.
+const STAGES_THAT_USE_CODE_RAG = new Set<number>([2]); // Only Lock-it-in pulls compliance docs
 
 // Suggested action buttons per stage. Each stage gets 3 contextual buttons.
 const STAGE_ACTION_BUTTONS: Record<number, Array<{ label: string; route: string }>> = {
@@ -164,11 +181,14 @@ export async function POST(request: NextRequest) {
   const validatedStage = Math.max(0, Math.min(7, Math.floor(Number(stage) || 0)));
 
 
-  // 1. RETRIEVE — pull relevant knowledge entities
-  const retrieval = await retrieveEntities(query, {
-    jurisdiction,
-    limit: 8,
-  });
+  // 1. RETRIEVE — only pull knowledge entities on stages where code content is relevant.
+  // W9.D.5 fix: Plan-it-out / Build / Adapt stages no longer get code entities
+  // injected, which was causing the LLM to respond with zoning/permit answers
+  // when the user asked about sequencing or field ops.
+  const shouldUseRAG = STAGES_THAT_USE_CODE_RAG.has(validatedStage);
+  const retrieval = shouldUseRAG
+    ? await retrieveEntities(query, { jurisdiction, limit: 8 })
+    : { entities: [] as KnowledgeEntity[], retrieval_method: "skipped" as const, latency_ms: 0 };
 
   // 2. AUGMENT — build stage-aware system prompt with retrieved entities + lane personality
   const stageRole = STAGE_SYSTEM_PROMPTS[validatedStage];

@@ -41,7 +41,7 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
 
   return (
     <GreenFlashProvider>
-      <NavigatorProvider initialCollapseState="expanded">
+      <NavigatorProvider initialCollapseState="compact">
         <StageBackdrop stage={stageId} />
         <KillerAppNav />
         <div style={{ paddingTop: 48 }}>
