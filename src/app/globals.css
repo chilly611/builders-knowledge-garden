@@ -523,3 +523,18 @@ div { color: inherit; }
     box-shadow: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   STAGE ACCENT SYSTEM — W9.D Lane L7
+   ═══════════════════════════════════════════════ */
+@layer tokens {
+  :root {
+    --stage-accent-1: #C9913F;
+    --stage-accent-2: #3E3A6E;
+    --stage-accent-3: #2E9E9A;
+    --stage-accent-4: #E05E4B;
+    --stage-accent-5: #B23A7F;
+    --stage-accent-6: #B6873A;
+    --stage-accent-7: #5E4B7C;
+  }
+}

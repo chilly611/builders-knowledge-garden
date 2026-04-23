@@ -6,7 +6,23 @@ import { useAuth, type UserLane } from "@/lib/auth";
 import { useGamification } from "@/components/GamificationProvider";
 
 // ============================================================================
-// DATA: 8 LANES — each is a petal in the compass bloom
+// PALETTE (W8 LOCK)
+// ============================================================================
+
+const COLORS = {
+  navy: "#1B3B5E",
+  navyDeep: "#0E2A47",
+  trace: "#F4F0E6",
+  brass: "#B6873A",
+  fadedRule: "#C9C3B3",
+  graphite: "#2E2E30",
+  redline: "#A1473A",
+  robin: "#7FCFCB",
+  orange: "#D9642E",
+} as const;
+
+// ============================================================================
+// DATA: 8 LANES — each is a compass position
 // ============================================================================
 
 interface SubRoute {
@@ -108,11 +124,11 @@ const LANES: LaneConfig[] = [
 // ============================================================================
 
 const LEVEL_TIERS = [
-  { name: "Apprentice", maxXp: 500, color: "#666666" },
-  { name: "Builder", maxXp: 2000, color: "#1D9E75" },
-  { name: "Craftsman", maxXp: 5000, color: "#D85A30" },
-  { name: "Master", maxXp: 15000, color: "#7F77DD" },
-  { name: "Architect", maxXp: Infinity, color: "#E8443A" },
+  { name: "Apprentice", maxXp: 500, color: COLORS.graphite },
+  { name: "Builder", maxXp: 2000, color: COLORS.brass },
+  { name: "Craftsman", maxXp: 5000, color: COLORS.robin },
+  { name: "Master", maxXp: 15000, color: COLORS.navy },
+  { name: "Architect", maxXp: Infinity, color: COLORS.orange },
 ];
 
 function getLevelInfo(xp: number) {
@@ -125,7 +141,7 @@ function getLevelInfo(xp: number) {
     }
     accumulated = tier.maxXp;
   }
-  return { name: "Architect", color: "#E8443A", progress: 1 };
+  return { name: "Architect", color: COLORS.orange, progress: 1 };
 }
 
 // ============================================================================
@@ -242,11 +258,12 @@ export default function CompassBloom() {
   if (pathname === "/presentation" || pathname === "/cinematic") return null;
 
   // ── LAYOUT CONFIG ──
-  const bloomSize = isDesktop ? 420 : 350;
-  const petalRadius = isDesktop ? 140 : 115;
-  const center = bloomSize / 2;
-  const petalSize = isDesktop ? 56 : 46;
-  const hubSize = isDesktop ? 88 : 72;
+  const compassSize = isDesktop ? 420 : 350;
+  const legRadius = isDesktop ? 140 : 115;
+  const center = compassSize / 2;
+  const hubRadius = isDesktop ? 20 : 16;
+  const tickMajor = 8;
+  const tickMinor = 4;
 
   return (
     <>
@@ -256,121 +273,283 @@ export default function CompassBloom() {
           onClick={() => { setOpen(false); setExpandedLane(null); }}
           style={{
             position: "fixed", inset: 0, zIndex: 9997,
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-            animation: "bloomFadeIn 0.25s ease",
+            background: "rgba(0,0,0,0.2)",
+            backdropFilter: "blur(5px)", WebkitBackdropFilter: "blur(5px)",
+            animation: "compassFadeIn 0.25s ease",
           }}
           aria-hidden
         />
       )}
 
-      {/* ── BLOOM CONTAINER ── */}
+      {/* ── COMPASS CONTAINER ── */}
       {open && (
         <div
           ref={bloomRef}
           role="navigation"
-          aria-label="Compass Bloom navigation"
+          aria-label="Compass Navigator"
           style={{
             position: "fixed",
             zIndex: 9998,
-            width: bloomSize,
-            height: bloomSize,
+            width: compassSize,
+            height: compassSize,
             bottom: 24 + 28 - center,
             right: 24 + 28 - center,
+            transform: `rotate(${activeLane ? (LANES.find((l: LaneConfig) => l.id === activeLane)?.angle ?? 0) : 0}deg)`,
+            transformOrigin: "center",
+            transition: "transform 0.2s ease",
           }}
         >
-          {/* ── CONNECTING LINES ── */}
+          {/* ── TRACE PAPER BACKGROUND + FADED RULE GRID ── */}
           <svg
-            width={bloomSize}
-            height={bloomSize}
-            style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 0 }}
+            width={compassSize}
+            height={compassSize}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              zIndex: 0,
+              background: COLORS.trace,
+              animation: "compassFadeIn 0.3s ease",
+            }}
           >
+            {/* Faded rule grid */}
+            {Array.from({ length: Math.ceil(compassSize / 40) }).map((_, i) => (
+              <g key={`grid-${i}`}>
+                <line
+                  x1={i * 40}
+                  y1={0}
+                  x2={i * 40}
+                  y2={compassSize}
+                  stroke={COLORS.fadedRule}
+                  strokeWidth={0.5}
+                  opacity={0.3}
+                />
+                <line
+                  x1={0}
+                  y1={i * 40}
+                  x2={compassSize}
+                  y2={i * 40}
+                  stroke={COLORS.fadedRule}
+                  strokeWidth={0.5}
+                  opacity={0.3}
+                />
+              </g>
+            ))}
+
+            {/* Architect dividers: navy ink legs with brass protractor arc */}
             {LANES.map((lane, i) => {
               const angleRad = (lane.angle - 90) * (Math.PI / 180);
-              const endR = petalRadius - petalSize / 2 + 4;
-              const x2 = center + Math.cos(angleRad) * endR;
-              const y2 = center + Math.sin(angleRad) * endR;
               const isActive = activeLane === lane.id || expandedLane === lane.id;
+
+              // Navy ink leg line (angled metal divider leg)
+              const legEnd = legRadius;
+              const x2 = center + Math.cos(angleRad) * legEnd;
+              const y2 = center + Math.sin(angleRad) * legEnd;
+
+              // Measurement ticks along the leg
+              const tickCount = 6;
+              const ticks = [];
+              for (let t = 1; t <= tickCount; t++) {
+                const tickDist = (legEnd / tickCount) * t;
+                const tx = center + Math.cos(angleRad) * tickDist;
+                const ty = center + Math.sin(angleRad) * tickDist;
+                const tickLen = t % 2 === 0 ? tickMajor : tickMinor;
+                const perpRad = angleRad + Math.PI / 2;
+                const tx1 = tx - Math.cos(perpRad) * (tickLen / 2);
+                const ty1 = ty - Math.sin(perpRad) * (tickLen / 2);
+                const tx2 = tx + Math.cos(perpRad) * (tickLen / 2);
+                const ty2 = ty + Math.sin(perpRad) * (tickLen / 2);
+                ticks.push(
+                  <line
+                    key={`tick-${lane.id}-${t}`}
+                    x1={tx1}
+                    y1={ty1}
+                    x2={tx2}
+                    y2={ty2}
+                    stroke={isActive ? COLORS.navy : COLORS.fadedRule}
+                    strokeWidth={isActive ? 1.2 : 0.8}
+                    opacity={isActive ? 0.7 : 0.4}
+                  />
+                );
+              }
+
+              return (
+                <g key={`leg-${lane.id}`}>
+                  {/* Navy ink leg (main divider arm) */}
+                  <line
+                    x1={center}
+                    y1={center}
+                    x2={x2}
+                    y2={y2}
+                    stroke={isActive ? COLORS.navy : COLORS.fadedRule}
+                    strokeWidth={isActive ? 2.2 : 1.4}
+                    opacity={isActive ? 1 : 0.5}
+                    style={{
+                      animation: `compassLegIn 0.35s ease ${i * 30}ms both`,
+                    }}
+                  />
+                  {/* Measurement ticks */}
+                  {ticks}
+                  {/* Endpoint dot (leg terminus) */}
+                  <circle
+                    cx={x2}
+                    cy={y2}
+                    r={isActive ? 1.8 : 1.2}
+                    fill={isActive ? COLORS.navy : COLORS.fadedRule}
+                    opacity={isActive ? 0.8 : 0.4}
+                  />
+                </g>
+              );
+            })}
+
+            {/* Brass protractor arc (half-circle with degree ticks) */}
+            <g opacity={0.7}>
+              {/* Main arc path (brass colored) */}
+              <path
+                d={`M ${center - legRadius * 0.75} ${center} A ${legRadius * 0.75} ${legRadius * 0.75} 0 0 1 ${center + legRadius * 0.75} ${center}`}
+                stroke={COLORS.brass}
+                strokeWidth={1.5}
+                fill="none"
+                opacity={0.5}
+              />
+              {/* Degree tick marks around the arc */}
+              {Array.from({ length: 13 }).map((_, i) => {
+                const ratio = i / 12; // 0 to 1 along semicircle
+                const angle = Math.PI * ratio; // 0 to π
+                const arcRadius = legRadius * 0.75;
+                const isMajor = i % 3 === 0;
+                const tickLength = isMajor ? 5 : 2.5;
+
+                const x1 = center - arcRadius * Math.cos(angle);
+                const y1 = center + arcRadius * Math.sin(angle);
+                const x2 = center - (arcRadius + tickLength) * Math.cos(angle);
+                const y2 = center + (arcRadius + tickLength) * Math.sin(angle);
+
+                return (
+                  <line
+                    key={`arc-tick-${i}`}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke={COLORS.brass}
+                    strokeWidth={isMajor ? 0.8 : 0.6}
+                    opacity={isMajor ? 0.6 : 0.4}
+                  />
+                );
+              })}
+            </g>
+          </svg>
+
+          {/* ── CENTER HUB: Architect's drafting-dividers hinge ── */}
+          <svg
+            width={hubRadius * 2.8}
+            height={hubRadius * 2.8}
+            style={{
+              position: "absolute",
+              left: center - hubRadius * 1.4,
+              top: center - hubRadius * 1.4,
+              zIndex: 20,
+              animation: "compassHubIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
+            }}
+            viewBox={`0 0 ${hubRadius * 2.8} ${hubRadius * 2.8}`}
+          >
+            {/* Outer brass knurled hinge body (large circle) */}
+            <circle
+              cx={hubRadius * 1.4}
+              cy={hubRadius * 1.4}
+              r={hubRadius * 1.2}
+              fill={COLORS.brass}
+              opacity={0.85}
+            />
+            {/* Knurled texture: radial ridges */}
+            {Array.from({ length: 12 }).map((_, i) => {
+              const angle = (i / 12) * Math.PI * 2;
+              const x1 = hubRadius * 1.4 + Math.cos(angle) * (hubRadius * 0.9);
+              const y1 = hubRadius * 1.4 + Math.sin(angle) * (hubRadius * 0.9);
+              const x2 = hubRadius * 1.4 + Math.cos(angle) * (hubRadius * 1.1);
+              const y2 = hubRadius * 1.4 + Math.sin(angle) * (hubRadius * 1.1);
               return (
                 <line
-                  key={lane.id}
-                  x1={center} y1={center} x2={x2} y2={y2}
-                  stroke={isActive ? `${lane.color}70` : "rgba(255,255,255,0.06)"}
-                  strokeWidth={isActive ? 2 : 1}
-                  strokeDasharray={isActive ? "none" : "3 5"}
-                  style={{ animation: `bloomLineIn 0.3s ease ${i * 40}ms both` }}
+                  key={`knurl-${i}`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={COLORS.graphite}
+                  strokeWidth={0.6}
+                  opacity={0.4}
                 />
               );
             })}
+            {/* Inner navy pivot disc */}
+            <circle
+              cx={hubRadius * 1.4}
+              cy={hubRadius * 1.4}
+              r={hubRadius * 0.7}
+              fill={COLORS.navy}
+              opacity={0.9}
+            />
+            {/* Center highlight */}
+            <circle
+              cx={hubRadius * 1.4}
+              cy={hubRadius * 1.4}
+              r={hubRadius * 0.4}
+              fill="none"
+              stroke={COLORS.trace}
+              strokeWidth={0.8}
+              opacity={0.3}
+            />
+            {/* XP text in center */}
+            <text
+              x={hubRadius * 1.4}
+              y={hubRadius * 1.4 - 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={isDesktop ? 5.5 : 4}
+              fontWeight="700"
+              fill={COLORS.trace}
+              title={`${xp.toLocaleString()} XP (${levelInfo.name})`}
+            >
+              {xp < 1000 ? xp : (xp / 1000).toFixed(1) + "k"}
+            </text>
+            {/* Level badge below */}
+            <text
+              x={hubRadius * 1.4}
+              y={hubRadius * 1.4 + 2.5}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={isDesktop ? 3.5 : 2.5}
+              fontWeight="600"
+              fill={COLORS.trace}
+              opacity={0.7}
+            >
+              {level}
+            </text>
           </svg>
 
-          {/* ── CENTER HUB: XP Display ── */}
-          <div
-            style={{
-              position: "absolute",
-              left: center - hubSize / 2,
-              top: center - hubSize / 2,
-              width: hubSize,
-              height: hubSize,
-              borderRadius: "50%",
-              background: "radial-gradient(circle at 30% 30%, #1a1a2e, #0a0a14)",
-              border: `2px solid ${levelInfo.color}40`,
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              boxShadow: `0 0 40px ${levelInfo.color}15, inset 0 0 20px rgba(0,0,0,0.5)`,
-              animation: "bloomCenterIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards",
-              zIndex: 10,
-            }}
-          >
-            <svg width={hubSize} height={hubSize} style={{ position: "absolute", top: 0, left: 0 }}>
-              <circle
-                cx={hubSize / 2} cy={hubSize / 2} r={hubSize / 2 - 4}
-                fill="none" stroke={`${levelInfo.color}20`} strokeWidth={3}
-              />
-              <circle
-                cx={hubSize / 2} cy={hubSize / 2} r={hubSize / 2 - 4}
-                fill="none" stroke={levelInfo.color} strokeWidth={3}
-                strokeLinecap="round"
-                strokeDasharray={`${levelInfo.progress * Math.PI * (hubSize - 8)} ${Math.PI * (hubSize - 8)}`}
-                transform={`rotate(-90 ${hubSize / 2} ${hubSize / 2})`}
-                style={{ transition: "stroke-dasharray 0.6s ease" }}
-              />
-            </svg>
-            <span style={{ fontSize: isDesktop ? 13 : 11, fontWeight: 800, color: levelInfo.color, lineHeight: 1, zIndex: 1 }}>
-              {xp.toLocaleString()}
-            </span>
-            <span style={{ fontSize: isDesktop ? 8 : 7, color: "rgba(255,255,255,0.45)", fontWeight: 600, letterSpacing: 0.5, zIndex: 1 }}>
-              XP
-            </span>
-            <span style={{ fontSize: isDesktop ? 9 : 7, color: levelInfo.color, fontWeight: 700, marginTop: 1, zIndex: 1 }}>
-              {level}
-            </span>
-            {streak > 0 && (
-              <span style={{ fontSize: isDesktop ? 8 : 7, color: "#F59E0B", zIndex: 1 }}>
-                {streak}d {"\u{1F525}"}
-              </span>
-            )}
-          </div>
-
-          {/* ── PETALS: 8 Lanes ── */}
+          {/* ── COMPASS POSITIONS: Lane buttons along the legs ── */}
           {LANES.map((lane, i) => {
             const isActive = activeLane === lane.id;
             const isUserLane = userLane === lane.id;
             const isExpanded = expandedLane === lane.id;
             const isHovered = hoverLane === lane.id;
             const angleRad = (lane.angle - 90) * (Math.PI / 180);
-            const x = center + Math.cos(angleRad) * petalRadius - petalSize / 2;
-            const y = center + Math.sin(angleRad) * petalRadius - petalSize / 2;
 
-            // Position sub-routes panel: push it further out along the petal's angle
+            // Position at end of leg
+            const labelDist = legRadius + 24;
+            const x = center + Math.cos(angleRad) * labelDist - 16;
+            const y = center + Math.sin(angleRad) * labelDist - 16;
+
+            // Position sub-routes panel
             const subAngleRad = angleRad;
             const subDist = isDesktop ? 85 : 70;
-            const subX = center + Math.cos(subAngleRad) * (petalRadius + subDist);
-            const subY = center + Math.sin(subAngleRad) * (petalRadius + subDist);
+            const subX = center + Math.cos(subAngleRad) * (legRadius + subDist);
+            const subY = center + Math.sin(subAngleRad) * (legRadius + subDist);
 
             return (
               <div key={lane.id}>
-                {/* Petal button */}
+                {/* Lane position button */}
                 <button
                   onClick={() => handlePetalClick(lane.id)}
                   onMouseEnter={() => { if (isDesktop) setHoverLane(lane.id); }}
@@ -380,65 +559,61 @@ export default function CompassBloom() {
                   aria-expanded={isExpanded}
                   style={{
                     position: "absolute",
-                    left: x, top: y,
-                    width: petalSize, height: petalSize,
+                    left: x,
+                    top: y,
+                    width: 32,
+                    height: 32,
                     borderRadius: "50%",
-                    border: `2px solid ${(isActive || isUserLane || isExpanded) ? lane.color : `${lane.color}40`}`,
-                    background: isExpanded
-                      ? `radial-gradient(circle, ${lane.color}35, ${lane.color}12)`
-                      : isActive || isUserLane
-                        ? `radial-gradient(circle, ${lane.color}20, ${lane.color}06)`
-                        : "radial-gradient(circle, rgba(255,255,255,0.05), rgba(255,255,255,0.01))",
+                    border: `1.5px solid ${(isActive || isUserLane || isExpanded) ? lane.color : COLORS.fadedRule}`,
+                    background: isActive || isUserLane || isExpanded ? lane.color : COLORS.trace,
                     cursor: "pointer",
-                    display: "flex", flexDirection: "column",
-                    alignItems: "center", justifyContent: "center",
-                    transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
-                    transform: isExpanded ? "scale(1.18)" : isHovered ? "scale(1.1)" : "scale(1)",
-                    boxShadow: isExpanded
-                      ? `0 0 24px ${lane.color}40, 0 4px 16px rgba(0,0,0,0.3)`
-                      : isActive
-                        ? `0 0 12px ${lane.color}20`
-                        : "0 2px 8px rgba(0,0,0,0.2)",
-                    animation: `bloomPetalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) ${i * 45}ms both`,
-                    zIndex: isExpanded ? 5 : 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s ease",
+                    transform: isExpanded ? "scale(1.2)" : isHovered ? "scale(1.1)" : "scale(1)",
+                    boxShadow:
+                      isExpanded
+                        ? `0 3px 12px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.2)`
+                        : "0 2px 6px rgba(0,0,0,0.1)",
+                    animation: `compassPosIn 0.35s ease ${i * 25}ms both`,
+                    zIndex: isExpanded ? 15 : 5,
                     padding: 0,
                     fontFamily: "inherit",
                   }}
                 >
-                  <span style={{ fontSize: isDesktop ? 22 : 18, lineHeight: 1 }}>{lane.emoji}</span>
-                  <span style={{
-                    fontSize: isDesktop ? 7 : 6, fontWeight: 700,
-                    color: (isActive || isUserLane || isExpanded) ? lane.color : "rgba(255,255,255,0.55)",
-                    marginTop: 1, letterSpacing: 0.3,
-                    maxWidth: petalSize - 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {lane.label.replace("The ", "")}
+                  <span
+                    style={{
+                      fontSize: 16,
+                      lineHeight: 1,
+                      filter: isActive || isUserLane || isExpanded ? "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" : "none",
+                    }}
+                  >
+                    {lane.emoji}
                   </span>
-                  {/* Active indicator dot */}
-                  {isActive && (
-                    <div style={{
-                      position: "absolute", bottom: -1, left: "50%", transform: "translateX(-50%)",
-                      width: 6, height: 6, borderRadius: "50%",
-                      background: lane.color, boxShadow: `0 0 6px ${lane.color}`,
-                    }} />
-                  )}
                 </button>
 
-                {/* Hover tooltip (desktop only, not when expanded) */}
+                {/* Hover label (desktop only) */}
                 {isDesktop && isHovered && !isExpanded && (
-                  <div style={{
-                    position: "absolute",
-                    left: x + petalSize / 2, top: y - 28,
-                    transform: "translateX(-50%)",
-                    background: "rgba(15,15,30,0.95)",
-                    border: `1px solid ${lane.color}40`,
-                    borderRadius: 8, padding: "4px 10px",
-                    pointerEvents: "none", whiteSpace: "nowrap",
-                    animation: "bloomLabelIn 0.15s ease forwards",
-                    zIndex: 20,
-                  }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: lane.color }}>{lane.label}</span>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginLeft: 6 }}>{lane.sub}</span>
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: x + 16,
+                      top: y - 36,
+                      transform: "translateX(-50%)",
+                      background: COLORS.trace,
+                      border: `1px solid ${lane.color}60`,
+                      borderRadius: 6,
+                      padding: "4px 8px",
+                      pointerEvents: "none",
+                      whiteSpace: "nowrap",
+                      animation: "compassLabelIn 0.15s ease forwards",
+                      zIndex: 25,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    <div style={{ fontSize: 10, fontWeight: 700, color: lane.color }}>{lane.label}</div>
+                    <div style={{ fontSize: 8, color: COLORS.graphite, opacity: 0.6 }}>{lane.sub}</div>
                   </div>
                 )}
 
@@ -447,32 +622,40 @@ export default function CompassBloom() {
                   <div
                     style={{
                       position: "absolute",
-                      left: subX, top: subY,
+                      left: subX,
+                      top: subY,
                       transform: "translate(-50%, -50%)",
-                      background: "rgba(12, 12, 28, 0.96)",
-                      border: `1px solid ${lane.color}30`,
-                      borderRadius: 16, padding: 10,
+                      background: COLORS.trace,
+                      border: `2px solid ${lane.color}`,
+                      borderRadius: 12,
+                      padding: "12px 8px",
                       minWidth: isDesktop ? 210 : 185,
                       maxWidth: 250,
-                      animation: "bloomSubIn 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
-                      boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 20px ${lane.color}10`,
+                      animation: "compassSubIn 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards",
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)",
                       zIndex: 30,
                     }}
                   >
                     {/* Lane header */}
-                    <div style={{
-                      display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
-                      paddingBottom: 8, borderBottom: `1px solid ${lane.color}20`,
-                    }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 8,
+                        paddingBottom: 8,
+                        borderBottom: `1px solid ${lane.color}40`,
+                      }}
+                    >
                       <span style={{ fontSize: 18 }}>{lane.emoji}</span>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: lane.color }}>{lane.label}</div>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{lane.sub}</div>
+                        <div style={{ fontSize: 8, color: COLORS.graphite, opacity: 0.6 }}>{lane.sub}</div>
                       </div>
                     </div>
 
                     {/* Route links */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       {lane.routes.map((route) => {
                         const active = isRouteActive(route.href, pathname);
                         return (
@@ -480,33 +663,50 @@ export default function CompassBloom() {
                             key={route.href + route.label}
                             onClick={() => handleSubRouteClick(route.href)}
                             style={{
-                              display: "flex", alignItems: "center", gap: 8,
-                              padding: "7px 10px", borderRadius: 10,
-                              background: active ? `${lane.color}15` : "transparent",
-                              border: active ? `1px solid ${lane.color}30` : "1px solid transparent",
-                              cursor: "pointer", transition: "all 0.15s",
-                              textAlign: "left", width: "100%",
-                              fontFamily: "inherit", color: "inherit",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              padding: "6px 8px",
+                              borderRadius: 8,
+                              background: active ? `${lane.color}20` : "transparent",
+                              border: active ? `1px solid ${lane.color}40` : "1px solid transparent",
+                              cursor: "pointer",
+                              transition: "all 0.15s",
+                              textAlign: "left",
+                              width: "100%",
+                              fontFamily: "inherit",
+                              color: "inherit",
                             }}
-                            onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-                            onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? `${lane.color}15` : "transparent"; }}
+                            onMouseEnter={(e) => {
+                              if (!active) e.currentTarget.style.background = `${lane.color}10`;
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!active) e.currentTarget.style.background = "transparent";
+                            }}
                           >
-                            <span style={{ fontSize: 15, flexShrink: 0 }}>{route.emoji}</span>
+                            <span style={{ fontSize: 14, flexShrink: 0 }}>{route.emoji}</span>
                             <div style={{ overflow: "hidden", flex: 1 }}>
-                              <div style={{
-                                fontSize: 11, fontWeight: active ? 700 : 500,
-                                color: active ? lane.color : "rgba(255,255,255,0.8)",
-                              }}>
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: active ? 700 : 500,
+                                  color: active ? lane.color : COLORS.graphite,
+                                }}
+                              >
                                 {route.label}
                               </div>
-                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>{route.desc}</div>
+                              <div style={{ fontSize: 8, color: COLORS.graphite, opacity: 0.5 }}>{route.desc}</div>
                             </div>
                             {active && (
-                              <div style={{
-                                width: 6, height: 6, borderRadius: "50%",
-                                background: lane.color, flexShrink: 0,
-                                boxShadow: `0 0 4px ${lane.color}`,
-                              }} />
+                              <div
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: "50%",
+                                  background: lane.color,
+                                  flexShrink: 0,
+                                }}
+                              />
                             )}
                           </button>
                         );
@@ -523,89 +723,120 @@ export default function CompassBloom() {
       {/* ── FLOATING ACTION BUTTON ── */}
       <button
         ref={fabRef}
-        onClick={() => { setOpen(o => !o); setExpandedLane(null); }}
-        aria-label={open ? "Close compass navigation" : "Open compass navigation"}
+        onClick={() => { setOpen((o) => !o); setExpandedLane(null); }}
+        aria-label={open ? "Close compass navigator" : "Open compass navigator"}
         aria-expanded={open}
         style={{
           position: "fixed",
-          bottom: 24, right: 24,
+          bottom: 24,
+          right: 24,
           zIndex: 9999,
-          width: 56, height: 56,
+          width: 56,
+          height: 56,
           borderRadius: "50%",
-          border: "none", cursor: "pointer",
-          background: open
-            ? `conic-gradient(from 0deg, ${LANES.map(l => l.color).join(", ")}, ${LANES[0].color})`
-            : "linear-gradient(135deg, #1D9E75, #0c5e45)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          border: `2px solid ${COLORS.brass}`,
+          cursor: "pointer",
+          background: open ? COLORS.trace : COLORS.navyDeep,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           boxShadow: open
-            ? "0 0 30px rgba(29,158,117,0.5), 0 4px 20px rgba(0,0,0,0.3)"
-            : "0 4px 16px rgba(0,0,0,0.2), 0 1px 4px rgba(0,0,0,0.1)",
+            ? `0 4px 12px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.2)`
+            : "0 4px 12px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.1)",
           transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-          transform: open ? "rotate(45deg)" : "rotate(0deg)",
+          transform: open ? "scale(1)" : "scale(1)",
           fontFamily: "inherit",
           padding: 0,
         }}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.transform = "scale(1.08)"; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = open ? "rotate(45deg)" : ""; }}
+        onMouseEnter={(e) => {
+          if (!open) e.currentTarget.style.transform = "scale(1.08)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+        }}
       >
         {open ? (
-          <div style={{
-            width: 46, height: 46, borderRadius: "50%",
-            background: "#0f0f1e",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontSize: 18, color: "#fff", transform: "rotate(-45deg)", lineHeight: 1 }}>{"\u2715"}</span>
-          </div>
+          <span style={{ fontSize: 20, color: COLORS.navy, lineHeight: 1 }}>{"\u2715"}</span>
         ) : (
           <>
-            {/* Show mini XP ring on the FAB when closed */}
-            <svg width={56} height={56} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+            {/* Mini drafting-dividers icon */}
+            <svg width={28} height={28} style={{ position: "absolute" }}>
+              {/* Brass hinge circle */}
               <circle
-                cx={28} cy={28} r={25}
-                fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={2}
+                cx={14}
+                cy={14}
+                r={4.5}
+                fill={COLORS.brass}
+                opacity={0.8}
               />
-              <circle
-                cx={28} cy={28} r={25}
-                fill="none" stroke={levelInfo.color} strokeWidth={2}
-                strokeLinecap="round"
-                strokeDasharray={`${levelInfo.progress * Math.PI * 50} ${Math.PI * 50}`}
-                transform="rotate(-90 28 28)"
-                style={{ transition: "stroke-dasharray 0.6s ease" }}
+              {/* Left navy leg (upward angle) */}
+              <line
+                x1={14}
+                y1={14}
+                x2={8}
+                y2={6}
+                stroke={COLORS.navy}
+                strokeWidth={1.8}
+                opacity={0.9}
               />
+              {/* Right navy leg (downward angle) */}
+              <line
+                x1={14}
+                y1={14}
+                x2={20}
+                y2={22}
+                stroke={COLORS.navy}
+                strokeWidth={1.8}
+                opacity={0.9}
+              />
+              {/* Small arc (protractor indicator) */}
+              <path
+                d="M 10 14 A 5 5 0 0 1 18 14"
+                stroke={COLORS.brass}
+                strokeWidth={1}
+                fill="none"
+                opacity={0.6}
+              />
+              {/* Center navy pivot */}
+              <circle cx={14} cy={14} r={2} fill={COLORS.navy} opacity={0.95} />
             </svg>
-            <span style={{ fontSize: 26, zIndex: 1 }}>{"\u{1F9ED}"}</span>
           </>
         )}
       </button>
 
       {/* ── ANIMATIONS ── */}
       <style>{`
-        @keyframes bloomFadeIn {
-          from { opacity: 0 } to { opacity: 1 }
+        @keyframes compassFadeIn {
+          from { opacity: 0 }
+          to { opacity: 1 }
         }
-        @keyframes bloomCenterIn {
-          from { opacity: 0; transform: scale(0.3) }
+        @keyframes compassHubIn {
+          from { opacity: 0; transform: scale(0.4) }
           to { opacity: 1; transform: scale(1) }
         }
-        @keyframes bloomPetalIn {
-          from { opacity: 0; transform: scale(0) rotate(-30deg) }
-          to { opacity: 1; transform: scale(1) rotate(0deg) }
+        @keyframes compassLegIn {
+          from { opacity: 0; stroke-dashoffset: 200px; stroke-dasharray: 200px }
+          to { opacity: 1; stroke-dashoffset: 0; stroke-dasharray: 200px }
         }
-        @keyframes bloomLineIn {
-          from { opacity: 0 } to { opacity: 1 }
+        @keyframes compassPosIn {
+          from { opacity: 0; transform: scale(0) }
+          to { opacity: 1; transform: scale(1) }
         }
-        @keyframes bloomLabelIn {
+        @keyframes compassLabelIn {
           from { opacity: 0; transform: translateX(-50%) translateY(4px) }
           to { opacity: 1; transform: translateX(-50%) translateY(0) }
         }
-        @keyframes bloomSubIn {
-          from { opacity: 0; transform: translate(-50%, -50%) scale(0.8) }
+        @keyframes compassSubIn {
+          from { opacity: 0; transform: translate(-50%, -50%) scale(0.85) }
           to { opacity: 1; transform: translate(-50%, -50%) scale(1) }
         }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
+          }
+          div[role="navigation"] {
+            transform: rotate(0deg) !important;
           }
         }
         @media print {

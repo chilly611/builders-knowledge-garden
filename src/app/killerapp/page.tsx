@@ -30,6 +30,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import Link from 'next/link';
 import Logomark from '@/components/Logomark';
+import ScrollStage from '@/design-system/components/ScrollStage';
+import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import styles from './landing.module.css';
 
@@ -223,10 +225,18 @@ export default function KillerAppPage() {
           const color = STAGE_COLORS[stage.id] ?? '#555';
           if (list.length === 0) return null;
 
+          const stageAccent = STAGE_ACCENTS[stage.id as keyof typeof STAGE_ACCENTS];
+          const accentHex = stageAccent?.hex || color;
+
           return (
-            <section key={stage.id} className={styles.stageSection}>
+            <ScrollStage key={stage.id} stageId={stage.id} className={styles.stageSection}>
               {/* Stage header: small-caps brass tracking */}
-              <header className={styles.stageHeader}>
+              <header
+                className={`${styles.stageHeader} scroll-fade-in`}
+                style={{
+                  '--stage-accent': accentHex,
+                } as React.CSSProperties}
+              >
                 <span className={styles.stageEmoji}>{stage.emoji}</span>
                 <h2 className={styles.stageName} style={{ color }}>
                   {stage.id}. {stage.name}
@@ -248,7 +258,7 @@ export default function KillerAppPage() {
                     <div
                       className={`${styles.workflowRow} ${
                         isSupplyOrdering ? styles.workflowRowPeakMoment : ''
-                      }`}
+                      } scroll-fade-in`}
                     >
                       {/* Workflow ID / code */}
                       <div className={styles.workflowCode}>
@@ -311,7 +321,7 @@ export default function KillerAppPage() {
                   );
                 })}
               </div>
-            </section>
+            </ScrollStage>
           );
         })}
       </main>

@@ -1,0 +1,57 @@
+/* Blueprint Animation Keyframes */
+/* Palette: Navy #1B3B5E, Trace #F4F0E6, Brass #B6873A, Graphite #2E2E30 */
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 100%;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in-draw {
+  from {
+    opacity: 0;
+    stroke-dashoffset: 100%;
+  }
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes compass-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hammer-bounce {
+  0%, 100% {
+    transform: translateY(0px) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(4px) rotateZ(-2deg);
+  }
+  50% {
+    transform: translateY(2px) rotateZ(-1deg);
+  }
+  75% {
+    transform: translateY(1px) rotateZ(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  svg {
+    animation: none !important;
+  }
+
+  svg motion,
+  svg [class*="motion"] {
+    animation: none !important;
+  }
+}
