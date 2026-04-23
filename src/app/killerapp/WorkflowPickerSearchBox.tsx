@@ -123,7 +123,7 @@ export default function WorkflowPickerSearchBox() {
             submit();
           }
         }}
-        placeholder="Or describe what you're working on…"
+        placeholder="Describe what you're building — voice or text"
         aria-label="Describe what you're working on"
         style={{
           flex: 1,

@@ -7,16 +7,16 @@ interface ErrorProps {
   reset: () => void;
 }
 
-export default function KillerAppError({ error, reset }: ErrorProps) {
+export default function WorkflowsError({ error, reset }: ErrorProps) {
   // Log to console for dev debugging
   if (process.env.NODE_ENV !== 'production') {
-    console.error('KillerApp error:', error);
+    console.error('Workflow error:', error);
   }
 
   return (
     <BKGErrorFallback
-      title="Something went sideways"
-      message="We're taking a look. Try again or head back to your workflows."
+      title="This workflow hit a snag"
+      message="Pick another — or try this one again in a minute."
       actions={[
         {
           label: 'Try again',

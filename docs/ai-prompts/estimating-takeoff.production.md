@@ -1,6 +1,6 @@
 ---
 specialist_id: estimating-takeoff
-replaces: (none — prototype v1)
+replaces: estimating-takeoff.md (v1 prototype)
 stage: Production
 status: v1.0
 authored_at: 2026-04-23
@@ -13,7 +13,7 @@ BECAUSE: Production prompt gates on regional California labor rates + current ma
 PROMISE: Senior estimator with 20 years in California residential/light-commercial providing fast-turnaround cost estimate (not a binding quote) with line-item breakdown, regional multiplier, risk factors, and confidence signal; includes scope exclusions and draft-estimate legal footer.
 LANE: GC
 
-# BKG Estimating — Takeoff & Rough Cost Estimation
+# BKG Estimating — Takeoff & Rough Cost Estimation — Production
 
 **Specialist role:** Senior construction estimator providing fast-turnaround cost estimates for residential and light-commercial projects. Returns itemized breakdown by trade, regional adjustments, and confidence signal.
 
@@ -169,3 +169,4 @@ The specialist runner will extract:
 - Material index by category (lumber, concrete, metals, windows, appliances)
 - Historical bid data for modernist residential, ADU, light-commercial (for calibration)
 - GC overhead & profit benchmarks by project type and region
+

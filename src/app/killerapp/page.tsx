@@ -32,6 +32,7 @@ import Link from 'next/link';
 import Logomark from '@/components/Logomark';
 import ScrollStage from '@/design-system/components/ScrollStage';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
+import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import styles from './landing.module.css';
 
@@ -218,6 +219,20 @@ export default function KillerAppPage() {
 
       {/* Stage groups: typographic TOC treatment */}
       <main className={styles.mainContent}>
+        {/* Subtle one-line stage-progress indicator */}
+        <div
+          style={{
+            fontSize: '12px',
+            color: '#2E2E30',
+            opacity: 0.6,
+            marginBottom: '40px',
+            fontWeight: 500,
+            letterSpacing: '0.3px',
+          }}
+        >
+          You're not started yet. {LIFECYCLE_STAGES.length} stages to explore.
+        </div>
+
         {stages.map((stage) => {
           const list = (byStage.get(stage.id) ?? []).sort((a, b) =>
             a.id.localeCompare(b.id, undefined, { numeric: true })

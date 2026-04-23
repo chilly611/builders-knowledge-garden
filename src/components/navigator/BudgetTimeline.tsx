@@ -32,8 +32,14 @@
  * Visual language (compact):
  *   - Single line: "Committed $X · Spent $Y · Remaining $Z"
  *   - --ink, tabular-nums, no per-stage detail
+ *
+ * Demo data fallback:
+ *   - If localStorage has 'bkg-budget-demo-data' key, uses that JSON.
+ *   - Otherwise seeds safe defaults: 7 stages × $0/$0, marked "demo data".
+ *   - Allows investor demos to show live updates without needing real auth.
  */
 
+import { useEffect, useState } from 'react';
 import type { BudgetTimelineData, StageId } from './types';
 import { STAGE_REGISTRY, formatCents } from './types';
 
@@ -46,19 +52,131 @@ export interface BudgetTimelineProps {
   compact?: boolean;
 }
 
-export default function BudgetTimeline(props: BudgetTimelineProps) {
-  const { data, activeStageId, onStageHover, compact = false } = props;
+/**
+ * Fallback demo data: 7 stages with helpful placeholder amounts.
+ * Used when localStorage is empty or during investor demos.
+ */
+function createDemoBudgetData(): BudgetTimelineData {
+  const byStage: Record<StageId, any> = {} as any;
 
-  if (compact) {
-    return <CompactMode data={data} />;
+  // Seed with realistic values: Size Up has commitment, rest are $0/$0
+  const demoAmounts: Record<StageId, { committed: number; spent: number }> = {
+    1: { committed: 25000, spent: 0 },      // Size Up: $250 committed
+    2: { committed: 0, spent: 0 },          // Lock it in
+    3: { committed: 0, spent: 0 },          // Plan it out
+    4: { committed: 0, spent: 0 },          // Build
+    5: { committed: 0, spent: 0 },          // Adapt
+    6: { committed: 0, spent: 0 },          // Collect
+    7: { committed: 0, spent: 0 },          // Reflect
+  };
+
+  let totalCommittedCents = 0;
+  let totalSpentCents = 0;
+
+  for (const stageId of [1, 2, 3, 4, 5, 6, 7] as const) {
+    const { committed, spent } = demoAmounts[stageId];
+    const remaining = committed - spent;
+    const status =
+      committed === 0 ? ('not-started' as const) : spent > committed ? ('overbudget' as const) : ('on-track' as const);
+
+    byStage[stageId] = {
+      stageId,
+      committedCents: committed,
+      spentCents: spent,
+      remainingCents: remaining,
+      status,
+    };
+
+    totalCommittedCents += committed;
+    totalSpentCents += spent;
   }
 
-  return <ExpandedMode data={data} activeStageId={activeStageId} onStageHover={onStageHover} />;
+  const isOverbudget = totalSpentCents > totalCommittedCents;
+  const overAmountCents = isOverbudget ? totalSpentCents - totalCommittedCents : 0;
+
+  return {
+    byStage,
+    totalCommittedCents,
+    totalSpentCents,
+    isOverbudget,
+    overAmountCents,
+  };
+}
+
+/**
+ * Load or create demo budget data from localStorage.
+ * Used only when parent passes zero/empty data (no real project budget available).
+ */
+function loadOrCreateDemoData(): BudgetTimelineData {
+  if (typeof window === 'undefined') {
+    return createDemoBudgetData();
+  }
+
+  try {
+    const stored = window.localStorage.getItem('bkg-budget-demo-data');
+    if (stored) {
+      return JSON.parse(stored) as BudgetTimelineData;
+    }
+  } catch {
+    // Fallback to fresh demo data on parse error
+  }
+
+  return createDemoBudgetData();
+}
+
+export default function BudgetTimeline(props: BudgetTimelineProps) {
+  const { data, activeStageId, onStageHover, compact = false } = props;
+  const [effectiveData, setEffectiveData] = useState<BudgetTimelineData>(data);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  // ─── Live update on bkg:budget:changed event ────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleBudgetChange = () => {
+      // Parent will re-render with fresh data, but we listen directly
+      // in case parent is slow or detached. This ensures the timeline
+      // always reflects the latest commit.
+      setEffectiveData(data);
+      setIsDemoMode(false);
+    };
+
+    window.addEventListener('bkg:budget:changed', handleBudgetChange);
+    return () => window.removeEventListener('bkg:budget:changed', handleBudgetChange);
+  }, [data]);
+
+  // ─── Initialize: if data is empty/stub, use demo fallback ──────────────
+  useEffect(() => {
+    const hasRealData =
+      Object.keys(data.byStage).length > 0 || data.totalCommittedCents > 0 || data.totalSpentCents > 0;
+
+    if (!hasRealData) {
+      const demoData = loadOrCreateDemoData();
+      setEffectiveData(demoData);
+      setIsDemoMode(true);
+    } else {
+      setEffectiveData(data);
+      setIsDemoMode(false);
+    }
+  }, [data]);
+
+  if (compact) {
+    return <CompactMode data={effectiveData} isDemoMode={isDemoMode} />;
+  }
+
+  return (
+    <ExpandedMode
+      data={effectiveData}
+      activeStageId={activeStageId}
+      onStageHover={onStageHover}
+      isDemoMode={isDemoMode}
+    />
+  );
 }
 
 // ─── Compact mode ────────────────────────────────────────────────────────────
 
-function CompactMode({ data }: { data: BudgetTimelineData }) {
+function CompactMode({ data, isDemoMode }: { data: BudgetTimelineData; isDemoMode: boolean }) {
   const remaining = data.totalCommittedCents - data.totalSpentCents;
   const label = `Committed ${formatCents(data.totalCommittedCents)} · Spent ${formatCents(data.totalSpentCents)} · Remaining ${formatCents(remaining)}`;
 
@@ -70,9 +188,15 @@ function CompactMode({ data }: { data: BudgetTimelineData }) {
         color: 'var(--ink)',
         fontVariantNumeric: 'tabular-nums',
         padding: '8px 12px',
+        position: 'relative',
       }}
     >
       {label}
+      {isDemoMode && (
+        <span style={{ fontSize: '9px', color: 'var(--graphite)', marginLeft: '8px', opacity: 0.6 }}>
+          (demo data)
+        </span>
+      )}
     </div>
   );
 }
@@ -83,10 +207,12 @@ function ExpandedMode({
   data,
   activeStageId,
   onStageHover,
+  isDemoMode,
 }: {
   data: BudgetTimelineData;
   activeStageId: StageId | null;
   onStageHover?: (stageId: StageId | null) => void;
+  isDemoMode: boolean;
 }) {
   return (
     <div
@@ -245,6 +371,19 @@ function ExpandedMode({
         >
           Spent: <span style={{ color: 'var(--ink)', fontWeight: 700 }}>{formatCents(data.totalSpentCents)}</span>
         </div>
+        {isDemoMode && (
+          <div
+            style={{
+              fontSize: '9px',
+              color: 'var(--graphite)',
+              fontVariantNumeric: 'tabular-nums',
+              marginTop: '4px',
+              opacity: 0.6,
+            }}
+          >
+            demo data
+          </div>
+        )}
       </div>
     </div>
   );

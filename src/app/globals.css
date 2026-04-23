@@ -538,3 +538,71 @@ div { color: inherit; }
     --stage-accent-7: #5E4B7C;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   W9.D.3 MOBILE RESPONSIVE FIXES — 375px Viewport
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* IntegratedNavigator header: tighten spacing to prevent overflow */
+  header[role="banner"] {
+    padding: 8px 12px !important;
+  }
+
+  /* JourneyStrip: compact pill layout with reduced gaps for mobile scrolling */
+  .journey-pill-content {
+    gap: 2px !important;
+  }
+
+  /* Journey pills: reduce padding and minimum width on mobile */
+  button[role="tab"] {
+    padding: 4px 8px !important;
+    min-width: 50px !important;
+    font-size: 10px !important;
+  }
+
+  /* Stage context pill: reduce size on mobile */
+  .stage-context-pill {
+    max-width: 140px !important;
+    font-size: 11px !important;
+  }
+
+  /* Workflow row card layout: tighter padding for narrow screens */
+  /* (CSS modules handle this but this ensures compatibility) */
+}
+
+@media (max-width: 480px) {
+  /* iPhone SE width (375px) and below: aggressive mobile optimizations */
+
+  /* IntegratedNavigator: minimal padding to prevent content squeeze */
+  header[role="banner"] {
+    padding: 6px 10px !important;
+  }
+
+  /* Journey pills: ultra-compact for 480px and below */
+  button[role="tab"] {
+    padding: 3px 6px !important;
+    min-width: auto !important;
+    font-size: 9px !important;
+    gap: 1px !important;
+  }
+
+  .journey-pill-content {
+    gap: 1px !important;
+  }
+
+  /* Stage context pill: compact footer pill on narrow screens */
+  .stage-context-pill {
+    max-width: 120px !important;
+    font-size: 10px !important;
+    padding: 6px 8px !important;
+    right: 8px !important;
+  }
+
+  /* Ensure touch targets stay at minimum 44px for accessibility */
+  button[role="tab"],
+  button[type="button"],
+  a[href] {
+    min-height: 44px !important;
+  }
+}

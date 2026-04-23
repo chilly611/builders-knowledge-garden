@@ -166,11 +166,11 @@ sources: []
 
 I've got nothing here. EV charging installations are still evolving in the code, and my database doesn't cover them yet.
 
-Here's what you need to ask your AHJ directly: Does Texas adopt the NEC and which edition? Are there any amendments to Article 625 (EV charging circuits) for your jurisdiction? Does your city or county have local amendments for retail charging installations? Who is the authority having jurisdiction for this permit—city, county, or state? Once you have those answers, escalate to a licensed electrician who knows your AHJ's specific requirements.
+Here's what you need to ask your AHJ directly: Does Texas adopt the NEC and which edition? Are there any amendments to Article 625 (EV charging circuits) for your jurisdiction? Does your city or county have local amendments for retail charging installations? Who is the authority having jurisdiction for this permit—city, county, or state? Get those specifics nailed down before you start work.
 
 <json>
 {
-  "narrative": "I've got nothing here. EV charging installations are still evolving in the code, and my database doesn't cover them yet. Here's what you need to ask your AHJ directly: Does Texas adopt the NEC and which edition? Are there any amendments to Article 625 (EV charging circuits) for your jurisdiction? Does your city or county have local amendments for retail charging installations? Who is the authority having jurisdiction for this permit—city, county, or state? Once you have those answers, escalate to a licensed electrician who knows your AHJ's specific requirements.",
+  "narrative": "I've got nothing here. EV charging installations are still evolving in the code, and my database doesn't cover them yet. Here's what you need to ask your AHJ directly: Does Texas adopt the NEC and which edition? Are there any amendments to Article 625 (EV charging circuits) for your jurisdiction? Does your city or county have local amendments for retail charging installations? Who is the authority having jurisdiction for this permit—city, county, or state? Once you have those answers, take them to a licensed electrician familiar with your AHJ's specific requirements.",
   "code_sections": [],
   "confidence": "low",
   "confidence_rationale": "No code sources available for this question.",

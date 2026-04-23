@@ -588,3 +588,101 @@
 .footer a:hover {
   opacity: 0.8;
 }
+
+/* ═══ MOBILE RESPONSIVE — 375px Viewport ═══ */
+
+@media (max-width: 375px) {
+  /* Ultra-narrow: iPhone SE and similar */
+
+  .heroSection {
+    padding: 40px 12px 32px;
+  }
+
+  .heroContent {
+    gap: 20px;
+  }
+
+  .heroLogomark img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .heroHeading {
+    font-size: clamp(32px, 6vw, 56px);
+    line-height: 1.15;
+  }
+
+  .heroHeading::after {
+    width: 80px;
+  }
+
+  .heroSubhead {
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  .mainContent {
+    padding: 0 12px 48px;
+  }
+
+  .stageSection {
+    margin-bottom: 48px;
+  }
+
+  .stageHeader {
+    gap: 6px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+  }
+
+  .stageEmoji {
+    font-size: 18px;
+  }
+
+  .stageName {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+  }
+
+  .stageCount {
+    font-size: 9px;
+  }
+
+  .workflowRow {
+    grid-template-columns: 32px 1fr;
+    gap: 10px;
+    padding: 12px 8px;
+  }
+
+  .workflowCode {
+    font-size: 10px;
+  }
+
+  .workflowName {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .supplyOrderingBadge {
+    font-size: 8px;
+    margin-left: 4px;
+  }
+
+  .workflowBlurb {
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  .workflowMeta {
+    font-size: 8px;
+    margin-top: 2px;
+  }
+
+  .footer {
+    padding: 12px 12px;
+    font-size: 8px;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+}

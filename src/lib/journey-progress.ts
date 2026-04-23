@@ -9,6 +9,7 @@
  *   - Persists per-(user, project) state to localStorage for MVP.
  *   - Dispatches a `bkg:journey:changed` CustomEvent so subscribers refresh.
  *   - Rolls state up from per-workflow to per-stage for JourneyMapHeader.
+ *   - Integrates with time-machine.ts: creates snapshots on step completion.
  *
  * Clerk / Supabase sync deferred to the auth push. Anonymous / no-project
  * users still leave a lightweight local trail keyed by "default".
@@ -206,6 +207,32 @@ export function emitJourneyEvent(event: JourneyEvent): void {
   const state = readState(event.projectId);
   const next = reduce(state, event);
   writeState(event.projectId, next);
+
+  // Integrate with time-machine: create a snapshot on step completion
+  if (event.type === 'step_completed') {
+    try {
+      // Lazy-load time-machine to avoid circular dependencies
+      import('./time-machine').then(({ createSnapshot }) => {
+        // Derive a human-readable hint from the workflow state
+        const workflowState = next[event.workflowId];
+        const hint = `Step ${event.stepIndex + 1} of ${event.totalSteps}`;
+
+        // Guess the active stage based on which workflows have events
+        // For now, use a default stage (stage 1). A more sophisticated
+        // approach would track the actual active stage in the navigator context.
+        createSnapshot(
+          event.projectId,
+          'step_completed',
+          1, // Default to stage 1; ideally passed via event context
+          undefined, // Auto-generate label
+          hint
+        );
+      });
+    } catch (err) {
+      // Silently fail if time-machine can't load
+      console.debug('[journey-progress] Time machine integration skipped:', err);
+    }
+  }
 }
 
 export function getJourneyState(projectId: string): JourneyState {

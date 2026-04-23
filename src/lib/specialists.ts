@@ -496,6 +496,54 @@ function generateMockResult(
   version: "v1" | "v2" = "v1"
 ): SpecialistResult {
   const mockResponses: Record<string, { narrative: string; structured: Record<string, unknown> }> = {
+    "estimating-takeoff": {
+      narrative: `Estimated build cost: $52,350 (±18% confidence), most likely $48,200
+
+For the scope you described, here's the itemized breakdown by trade:
+
+| Trade / Phase | Low $ | High $ | % of Total |
+|---|---|---|---|
+| Demo + dumpster | $2,800 | $3,600 | 6% |
+| Framing tweaks | $4,200 | $5,400 | 10% |
+| Electrical | $4,800 | $6,000 | 11% |
+| Plumbing | $3,400 | $4,400 | 8% |
+| Cabinetry + quartz | $16,500 | $20,500 | 38% |
+| Flooring | $5,600 | $7,200 | 13% |
+| Paint + trim | $3,200 | $4,000 | 7% |
+| GC overhead + margin | $6,550 | $7,850 | 15% |
+
+**Regional Note:** California coastal premium applies. Labor runs 1.18–1.25× national average in LA/SD metro areas. Materials +8% for logistics. No significant union scale unless public funding involved.
+
+**Key Variables:** Site access and soil conditions can swing foundation costs ±$4k. Window/door specification (standard vs. high-performance) swings $6k–$12k. Appliance selection adds $3k–$8k variance.
+
+**Scope Exclusions:** This estimate does NOT include site survey, soils engineering, structural PE stamping, architectural plans, or mitigation of existing conditions. General liability and bonding are included in overhead.
+
+**Confidence:** ±18% confidence if scope stays as described and no unexpected conditions arise. Next step: site walk to confirm bearing-wall status and soil type.
+
+This is a mock response because ANTHROPIC_API_KEY is not configured. Please configure it to get real LLM-powered estimates.`,
+      structured: {
+        confidence: "medium",
+        line_items: [
+          { label: "Demo + dumpster", amount: 3200 },
+          { label: "Framing tweaks", amount: 4800 },
+          { label: "Electrical (3 circuits)", amount: 5400 },
+          { label: "Plumbing rough-in", amount: 3900 },
+          { label: "Cabinetry + quartz", amount: 18500 },
+          { label: "Flooring (320 sqft)", amount: 6400 },
+          { label: "Paint + trim", amount: 3600 },
+          { label: "GC overhead + margin", amount: 6550 },
+        ],
+        rough_total: 52350,
+        assumptions: [
+          "Existing HVAC stays put",
+          "No structural PE needed",
+          "Owner-grade appliances",
+          "Standard finishes (not high-end)",
+        ],
+        confidence_rationale: "Clear scope but bearing-wall status unconfirmed; could swing ±$4k.",
+        next_step: "Site walk to confirm wall-removal status and verify existing conditions.",
+      },
+    },
     "compliance-structural": {
       narrative: `Structural scope analysis for ${context.scope_description.substring(0, 50)}...
 

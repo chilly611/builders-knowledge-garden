@@ -16,18 +16,30 @@
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { StageId, StageProgress } from './types';
 import { STAGE_REGISTRY } from './types';
 import { STAGE_ACCENTS } from '../../design-system/tokens/stage-accents';
 import { STAGE_ICONS } from './icons';
+
+// ─── Stage → first live workflow mapping ──────────────────────────────────
+const STAGE_TO_WORKFLOW_ROUTE: Record<StageId, string> = {
+  1: '/killerapp/workflows/estimating',
+  2: '/killerapp/workflows/contract-templates',
+  3: '/killerapp/workflows/job-sequencing',
+  4: '/killerapp/workflows/daily-log',
+  5: '/killerapp/workflows/services-todos',
+  6: '/killerapp/workflows/expenses',
+  7: '/killerapp/workflows/compass-nav',
+};
 
 export interface JourneyStripProps {
   /** Per-stage progress rollup. Must contain all 7 stages. */
   stages: StageProgress[];
   /** The stage the user is currently viewing. null = picker/no context. */
   activeStageId: StageId | null;
-  /** Fires when the user clicks a stage pill. Parent handles routing. */
-  onStageClick: (stageId: StageId) => void;
+  /** Deprecated: no longer used. Pills now navigate directly via router.push(). */
+  onStageClick?: (stageId: StageId) => void;
   /** Compact = slim row for Navigator compact state. Default false. */
   compact?: boolean;
 }
@@ -35,9 +47,9 @@ export interface JourneyStripProps {
 export default function JourneyStrip({
   stages,
   activeStageId,
-  onStageClick,
   compact = false,
 }: JourneyStripProps) {
+  const router = useRouter();
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -48,14 +60,24 @@ export default function JourneyStrip({
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  const handlePillClick = useCallback(
+    (stageId: StageId) => {
+      const route = STAGE_TO_WORKFLOW_ROUTE[stageId];
+      if (route) {
+        router.push(route);
+      }
+    },
+    [router],
+  );
+
   const handlePillKeyDown = useCallback(
     (e: React.KeyboardEvent, stageId: StageId) => {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        onStageClick(stageId);
+        handlePillClick(stageId);
       }
     },
-    [onStageClick],
+    [handlePillClick],
   );
 
   const getStatusStyles = (stage: StageProgress): {
@@ -175,7 +197,7 @@ export default function JourneyStrip({
             role="tab"
             aria-selected
             onKeyDown={(e) => handlePillKeyDown(e, activeStage.stageId)}
-            onClick={() => onStageClick(activeStage.stageId)}
+            onClick={() => handlePillClick(activeStage.stageId)}
             aria-label={`${STAGE_REGISTRY.find((r) => r.id === activeStage.stageId)?.label} — ${activeStage.status}, ${activeStage.doneCount} of ${activeStage.totalCount} workflows done`}
             style={pillStyle(activeStage, true)}
           >
@@ -291,7 +313,7 @@ export default function JourneyStrip({
                 role="tab"
                 aria-selected={isActive}
                 onKeyDown={(e) => handlePillKeyDown(e, stage.stageId)}
-                onClick={() => onStageClick(stage.stageId)}
+                onClick={() => handlePillClick(stage.stageId)}
                 aria-label={`${stageMeta?.label} — ${stage.status}, ${stage.doneCount} of ${stage.totalCount} workflows done`}
                 style={{
                   ...pillStyle(stage, isActive),

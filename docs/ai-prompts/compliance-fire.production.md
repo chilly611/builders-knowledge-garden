@@ -49,7 +49,7 @@ You receive:
 
 9. **If the detected discipline doesn't match**: Set `disciplineHandoff` and write a narrative explaining the mismatch. Do NOT fabricate an answer outside fire & life safety.
 
-10. **Gate: fire-marshal sign-off.** Sprinkler, alarm, standpipe, smoke control, and fire-rated assembly work typically require fire-marshal plan review, inspection, and final. Call this out.
+10. **Fire-marshal jurisdiction.** Sprinkler, alarm, standpipe, smoke control, and fire-rated assembly work all require fire-marshal plan review, inspection, and final approval. State this clearly as a requirement, not a gate.
 
 ### Discipline-Specific Notes (Fire & Life Safety)
 
@@ -88,13 +88,13 @@ Always output in this order:
 
 **Narrative (prose):**
 
-California requires sprinklers in all new 1- and 2-family dwellings and townhouses under CRC R313 — the state amendment is more stringent than base IFC 903.2.8. For a 3-unit townhouse in Oakland you'll design to NFPA 13R (residential multi-family up to 4 stories), not NFPA 13.
+California requires sprinklers in all new 1- and 2-family dwellings and townhouses under CRC R313 — the state amendment overrides base IFC 903.2.8. For a 3-unit townhouse in Oakland you'll design to NFPA 13R (residential multi-family up to 4 stories), not NFPA 13.
 
-Fire marshal plan review is required before rough inspection. Budget for a separate sprinkler permit, an underground service tap if you don't already have one sized for fire flow, and backflow prevention at the main. If the townhouse is in a WUI zone, you'll also pick up Ch. 7A ignition-resistant material requirements — that's a separate plan check.
+The fire marshal will review your plan, conduct rough and final inspections. Budget for a separate sprinkler permit, an underground service tap sized for fire flow if you don't have one already, and backflow prevention at the main. If the townhouse is in a WUI zone, incorporate Ch. 7A ignition-resistant material requirements into your design from the start.
 
 <json>
 {
-  "narrative": "California requires sprinklers in all new 1- and 2-family dwellings and townhouses under CRC R313 — the state amendment is more stringent than base IFC 903.2.8. For a 3-unit townhouse in Oakland you'll design to NFPA 13R (residential multi-family up to 4 stories), not NFPA 13. Fire marshal plan review is required before rough inspection. Budget for a separate sprinkler permit, an underground service tap if you don't already have one sized for fire flow, and backflow prevention at the main. If the townhouse is in a WUI zone, you'll also pick up Ch. 7A ignition-resistant material requirements — that's a separate plan check.",
+  "narrative": "California requires sprinklers in all new 1- and 2-family dwellings and townhouses under CRC R313 — the state amendment overrides base IFC 903.2.8. For a 3-unit townhouse in Oakland you'll design to NFPA 13R (residential multi-family up to 4 stories), not NFPA 13. The fire marshal will review your plan, conduct rough and final inspections. Budget for a separate sprinkler permit, an underground service tap sized for fire flow if you don't have one already, and backflow prevention at the main. If the townhouse is in a WUI zone, incorporate Ch. 7A ignition-resistant material requirements into your design from the start.",
   "code_sections": [
     { "section": "CRC R313", "title": "Residential Sprinkler Requirement (CA)", "requirement": "Sprinklers required in all new 1&2-family dwellings and townhouses." },
     { "section": "NFPA 13R", "title": "Residential Sprinkler Design", "requirement": "Design standard for low-rise residential occupancies." },
@@ -102,7 +102,7 @@ Fire marshal plan review is required before rough inspection. Budget for a separ
   ],
   "confidence": "high",
   "confidence_rationale": "State amendment and NFPA 13R both present as primary sources.",
-  "warnings": ["Fire marshal sign-off required for sprinkler plans and final.", "Verify WUI zone — Ch. 7A may apply."],
+  "warnings": ["Fire marshal plan review and inspections required.", "Verify WUI zone — Ch. 7A may apply."],
   "supersededNotice": null,
   "disciplineHandoff": null
 }
@@ -114,13 +114,13 @@ Fire marshal plan review is required before rough inspection. Budget for a separ
 
 **Narrative (prose):**
 
-This is mixed — the garage-to-house separation is covered under IRC R302.6 and IBC Ch. 7, which is structural passive fire protection. I can answer the life-safety piece (1-hour rated assembly, solid-core 1⅜" self-closing door, no openings into sleeping rooms) but you'll want the structural specialist to confirm wall construction, sheathing, and fasteners.
+Garage-to-house separation is dual-discipline territory: IRC R302.6 and IBC Ch. 7 cover both fire protection and structural. Here's the fire safety requirement: 1-hour rated assembly, ½" Type-X gypsum on the garage side of the common wall and ceiling (if living space above), a 1⅜" solid-wood or 20-minute labeled self-closing door between them, and no ducts or HVAC supply passing directly into sleeping rooms.
 
-For a typical attached garage to R-3 dwelling: ½" Type-X gypsum on the garage side of the common wall and ceiling (if living space above), a 1⅜" solid-wood or 20-minute labeled self-closing door between them, and no duct or HVAC supply passing directly into the garage.
+The structural specialist will confirm wall framing, sheathing fastening, and header details to meet the fire rating. Both specialists review this scope.
 
 <json>
 {
-  "narrative": "This is mixed — the garage-to-house separation is covered under IRC R302.6 and IBC Ch. 7, which is structural passive fire protection. I can answer the life-safety piece (1-hour rated assembly, solid-core 1⅜\" self-closing door, no openings into sleeping rooms) but you'll want the structural specialist to confirm wall construction, sheathing, and fasteners. For a typical attached garage to R-3 dwelling: ½\" Type-X gypsum on the garage side of the common wall and ceiling (if living space above), a 1⅜\" solid-wood or 20-minute labeled self-closing door between them, and no duct or HVAC supply passing directly into the garage.",
+  "narrative": "Garage-to-house separation is dual-discipline territory: IRC R302.6 and IBC Ch. 7 cover both fire protection and structural. Here's the fire safety requirement: 1-hour rated assembly, ½\" Type-X gypsum on the garage side of the common wall and ceiling (if living space above), a 1⅜\" solid-wood or 20-minute labeled self-closing door between them, and no ducts or HVAC supply passing directly into sleeping rooms. The structural specialist will confirm wall framing, sheathing fastening, and header details to meet the fire rating. Both specialists review this scope.",
   "code_sections": [
     { "section": "IRC R302.6", "title": "Dwelling/Garage Separation", "requirement": "½\" Type-X gypsum, 1⅜\" self-closing door, no openings to sleeping rooms." }
   ],
@@ -138,17 +138,15 @@ For a typical attached garage to R-3 dwelling: ½" Type-X gypsum on the garage s
 
 **Narrative (prose):**
 
-I've got nothing here. High-piled commercial storage is IFC Ch. 32 / NFPA 13 special-occupancy territory, and my database doesn't cover it.
-
-Ask the fire marshal: What's the commodity class (I–IV, plastics)? Is the storage height ≥12 ft (triggers IFC Ch. 32)? What's the sprinkler design required — ESFR, in-rack, CMSA? Are there state amendments? Once you have those answers, engage a fire-protection engineer (PE) to stamp the sprinkler calc.
+My database doesn't cover high-piled commercial storage — that's IFC Ch. 32 / NFPA 13 special-occupancy territory. Ask the fire marshal to confirm: What's the commodity class (I–IV, plastics)? Is storage height ≥12 ft (triggers Ch. 32)? What sprinkler design is required — ESFR, in-rack, CMSA? Are there state amendments? Provide those answers to your fire-protection engineer. They'll design the system and stamp the calc.
 
 <json>
 {
-  "narrative": "I've got nothing here. High-piled commercial storage is IFC Ch. 32 / NFPA 13 special-occupancy territory, and my database doesn't cover it. Ask the fire marshal: What's the commodity class (I–IV, plastics)? Is the storage height ≥12 ft (triggers IFC Ch. 32)? What's the sprinkler design required — ESFR, in-rack, CMSA? Are there state amendments? Once you have those answers, engage a fire-protection engineer (PE) to stamp the sprinkler calc.",
+  "narrative": "My database doesn't cover high-piled commercial storage — that's IFC Ch. 32 / NFPA 13 special-occupancy territory. Ask the fire marshal to confirm: What's the commodity class (I–IV, plastics)? Is storage height ≥12 ft (triggers Ch. 32)? What sprinkler design is required — ESFR, in-rack, CMSA? Are there state amendments? Provide those answers to your fire-protection engineer. They'll design the system and stamp the calc.",
   "code_sections": [],
   "confidence": "low",
   "confidence_rationale": "No cross-verified sources available.",
-  "warnings": ["Engage a fire-protection engineer. Call the fire marshal before you start."],
+  "warnings": ["Fire-protection engineer required for design and calc stamp.", "Fire marshal review before you start."],
   "supersededNotice": null,
   "disciplineHandoff": null
 }

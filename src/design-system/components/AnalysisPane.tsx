@@ -21,6 +21,7 @@ import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii } from '
 import { runSpecialist } from '../../lib/specialists.client';
 import LearningBadge from '@/components/LearningBadge';
 import { sanitizeNarrative } from './utils/sanitizeNarrative';
+import { markdownToJsx } from './utils/markdownToJsx';
 import type { SpecialistResult, SpecialistContext } from '../../lib/specialists';
 
 interface AnalysisPaneProps {
@@ -326,15 +327,15 @@ export default function AnalysisPane({
         {CONFIDENCE_LABELS[result.confidence]}
       </div>
 
-      {/* Narrative — sanitized, never raw JSON */}
+      {/* Narrative — sanitized, rendered as markdown with tables/headers/emphasis */}
       <div
         style={{
-          fontSize: fontSizes.sm,
-          color: colors.ink[900],
-          lineHeight: '1.6',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: spacing[2],
         }}
       >
-        {sanitized.prose}
+        {markdownToJsx(sanitized.prose)}
       </div>
 
       {/* Code sections rendered as clean table/list */}

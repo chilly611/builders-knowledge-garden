@@ -30,11 +30,13 @@ import type {
   BudgetTimelineData,
   TimeMachineData,
   StageBudget,
+  Snapshot,
 } from './navigator/types';
 import { STAGE_REGISTRY } from './navigator/types';
 import { getProjectBudget, getActiveProjectId } from '@/lib/budget-spine';
 import { subscribeJourney } from '@/lib/journey-progress';
 import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
+import { subscribeSnapshots, createWelcomeSnapshot } from '@/lib/time-machine';
 
 export interface IntegratedNavigatorProps {
   /** The project id whose data this Navigator shows. Null = picker route (no project context). */
@@ -194,6 +196,10 @@ export default function IntegratedNavigator(
 
   const [budgetLoading, setBudgetLoading] = useState(false);
 
+  // ─── Time Machine snapshot state ──────────────────────────────────────────
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [hasCreatedWelcomeSnapshot, setHasCreatedWelcomeSnapshot] = useState(false);
+
   const fetchBudget = useCallback(async () => {
     if (!effectiveProjectId) {
       setBudgetData({
@@ -255,19 +261,47 @@ export default function IntegratedNavigator(
       window.removeEventListener('bkg:budget:changed', onBudgetChange);
   }, [fetchBudget]);
 
+  // ─── Time Machine snapshot subscription ──────────────────────────────────
+  useEffect(() => {
+    if (!effectiveProjectId) {
+      setSnapshots([]);
+      setHasCreatedWelcomeSnapshot(false);
+      return;
+    }
+
+    const unsubscribe = subscribeSnapshots(effectiveProjectId, (newSnapshots) => {
+      setSnapshots(newSnapshots);
+    });
+
+    return unsubscribe;
+  }, [effectiveProjectId]);
+
+  // Create welcome snapshot on first project load
+  useEffect(() => {
+    if (!effectiveProjectId || hasCreatedWelcomeSnapshot) {
+      return;
+    }
+
+    // Only create welcome snapshot if none exist yet
+    if (snapshots.length === 0) {
+      createWelcomeSnapshot(effectiveProjectId);
+      setHasCreatedWelcomeSnapshot(true);
+    }
+  }, [effectiveProjectId, hasCreatedWelcomeSnapshot, snapshots.length]);
+
   // ─── Derived data ───────────────────────────────────────────────────────
   const stageProgress = useMemo(
     () => deriveStageProgress(journeyState),
     [journeyState]
   );
 
-  // MVP: time machine is empty (no API yet)
+  // Time Machine data with live snapshots
   const timeMachineData: TimeMachineData = useMemo(
     () => ({
-      snapshots: [],
-      currentSnapshotId: null,
+      snapshots,
+      currentSnapshotId: null, // "now" — live data (no rewind active)
     }),
-    []
+    [snapshots]
   );
 
   // ─── Event handlers ──────────────────────────────────────────────────────
@@ -451,7 +485,7 @@ export default function IntegratedNavigator(
             data={timeMachineData}
             onScrub={handleTimeScrub}
             compact={false}
-            disabled={timeMachineData.snapshots.length === 0}
+            disabled={snapshots.length === 0}
           />
 
           {/* BudgetTimeline */}

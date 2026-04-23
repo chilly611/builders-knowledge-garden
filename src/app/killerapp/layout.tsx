@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
@@ -9,12 +10,18 @@ import LegalFooter from '@/components/LegalFooter';
 import StageBackdrop from '@/design-system/components/StageBackdrop';
 import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
 
 export default function KillerAppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
   const stageId = stageFromPathname(pathname);
+
+  // W9.D.3: Auto-seed demo project on first visit (investor demo)
+  useEffect(() => {
+    autoSeedDemoOnFirstVisit();
+  }, []);
 
   // W9 — Navigator renders on every /killerapp route including the picker.
   // Founder feedback: picker needs the journey context, not hides from it.
