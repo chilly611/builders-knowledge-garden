@@ -66,7 +66,7 @@ export function StarterPromptButtons({
       [data-starter-prompt-buttons] {
         display: flex;
         flex-direction: column;
-        gap: ${spacing.sm}px;
+        gap: ${spacing[2]};
       }
 
       [data-starter-prompt-label] {
@@ -79,13 +79,13 @@ export function StarterPromptButtons({
       [data-starter-prompt-container] {
         display: flex;
         flex-wrap: wrap;
-        gap: ${spacing.xs}px;
+        gap: ${spacing[1]};
       }
 
       [data-starter-prompt-button] {
         flex: 1 1 auto;
         min-width: 0;
-        padding: ${spacing.sm}px ${spacing.lg}px;
+        padding: ${spacing[2]} ${spacing[4]};
         font-size: ${fontSizes.sm};
         font-family: ${fonts.body};
         font-weight: ${fontWeights.medium};
