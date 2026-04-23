@@ -78,7 +78,7 @@ export default function StageBackdrop({
           style={{
             position: 'absolute',
             inset: 0,
-            background: `linear-gradient(rgba(244,240,230,0.65), rgba(244,240,230,0.85))`,
+            background: `linear-gradient(rgba(244,240,230,0.30), rgba(244,240,230,0.55))`,
             pointerEvents: 'none',
           }}
         />
