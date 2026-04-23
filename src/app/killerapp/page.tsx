@@ -34,6 +34,7 @@ import ScrollStage from '@/design-system/components/ScrollStage';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
+import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
@@ -157,13 +158,13 @@ function renderBlurb(blurb: string) {
 }
 
 const STAGE_COLORS: Record<number, string> = {
-  1: '#D85A30', // Size Up
-  2: '#7F77DD', // Lock
-  3: '#1D9E75', // Plan
-  4: '#378ADD', // Build
-  5: '#F59E0B', // Adapt
-  6: '#BA7517', // Collect
-  7: '#639922', // Reflect
+  1: '#C9913F', // Size Up — ochre from STAGE_ACCENTS
+  2: '#3E3A6E', // Lock — indigo from STAGE_ACCENTS
+  3: '#2E9E9A', // Plan — teal from STAGE_ACCENTS
+  4: '#E05E4B', // Build — coral from STAGE_ACCENTS
+  5: '#B23A7F', // Adapt — magenta from STAGE_ACCENTS
+  6: '#B6873A', // Collect — brass from STAGE_ACCENTS
+  7: '#5E4B7C', // Reflect — duskPurple from STAGE_ACCENTS
 };
 
 export default function KillerAppPage() {
@@ -213,7 +214,21 @@ export default function KillerAppPage() {
 
         {/* Natural-language entry: styled as engraved field */}
         <div className={styles.searchBoxWrapper}>
-          <WorkflowPickerSearchBox />
+          <div
+            style={{
+              fontSize: '13px',
+              color: 'var(--graphite)',
+              opacity: 0.65,
+              marginBottom: '8px',
+              fontWeight: 400,
+              letterSpacing: '0.2px',
+            }}
+          >
+            Ask anything — type or talk. Describe a scope and we&apos;ll route you to the right tool.
+          </div>
+          <SearchBoxErrorBoundary>
+            <WorkflowPickerSearchBox />
+          </SearchBoxErrorBoundary>
         </div>
       </header>
 

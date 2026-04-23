@@ -146,7 +146,7 @@ export default function WorkflowPickerSearchBox() {
 
     try {
       const projectId = typeof window !== 'undefined'
-        ? localStorage.getItem('bkg-active-project') ?? 'default'
+        ? localStorage?.getItem?.('bkg-active-project') ?? 'default'
         : 'default';
 
       const response = await fetch('/api/v1/copilot', {
@@ -159,41 +159,51 @@ export default function WorkflowPickerSearchBox() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+      if (!response?.ok) {
+        throw new Error(`API error: ${response?.status ?? 'unknown'}`);
       }
 
       // Parse SSE stream
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      const reader = response?.body?.getReader?.();
+      if (!reader) {
+        throw new Error('No response body');
+      }
 
       const decoder = new TextDecoder();
       let fullText = '';
       let streamDone = false;
 
       while (!streamDone) {
-        const { done, value } = await reader.read();
+        const result = await reader.read?.();
+        if (!result) break;
+
+        const { done, value } = result;
         if (done) {
           streamDone = true;
           break;
         }
 
+        if (!value) continue;
+
         const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+
         const lines = chunk.split('\n');
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line && line.startsWith('data: ')) {
             const jsonStr = line.slice(6);
             try {
               const event = JSON.parse(jsonStr);
 
-              if (event.type === 'chunk' && event.text) {
-                fullText += event.text;
-              } else if (event.type === 'done') {
+              // Handle the new 'complete' event with full text
+              if (event?.type === 'complete' && event?.text) {
+                fullText = event.text;
+              } else if (event?.type === 'done') {
                 streamDone = true;
                 break;
-              } else if (event.type === 'error') {
-                throw new Error(event.message || 'Stream error');
+              } else if (event?.type === 'error') {
+                throw new Error(event?.message || 'Stream error');
               }
             } catch (e) {
               // Ignore malformed JSON
@@ -203,9 +213,16 @@ export default function WorkflowPickerSearchBox() {
       }
 
       // Render the full text with markdownToJsx
-      if (fullText) {
-        const rendered = markdownToJsx(fullText);
-        setResponseContent(rendered);
+      if (fullText && typeof fullText === 'string') {
+        try {
+          const rendered = markdownToJsx(fullText);
+          if (Array.isArray(rendered)) {
+            setResponseContent(rendered);
+          }
+        } catch (renderErr) {
+          const msg = renderErr instanceof Error ? renderErr.message : 'Render error';
+          setError(`Failed to render response: ${msg}`);
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';

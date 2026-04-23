@@ -220,14 +220,13 @@ export default function GlobalAiFab() {
             const parsed = JSON.parse(payload) as
               | { type: 'text'; delta?: string }
               | { type?: string; text?: string; delta?: string };
-            const delta =
-              ('delta' in parsed && parsed.delta) ||
-              ('text' in parsed && parsed.text) ||
-              '';
-            if (delta) setResponse((prev) => prev + delta);
+
+            // Handle the new 'complete' event with full text
+            if ('type' in parsed && parsed.type === 'complete' && 'text' in parsed) {
+              setResponse(parsed.text ?? '');
+            }
           } catch {
-            // Some servers emit plain-text deltas. Append them raw.
-            setResponse((prev) => prev + payload);
+            // Ignore malformed JSON
           }
         }
       }

@@ -382,7 +382,7 @@ interface LabeledSelectProps {
 
 function LabeledSelect({ label, value, onChange, options }: LabeledSelectProps) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
       <span
         style={{
           fontSize: fontSizes.xs,
@@ -394,25 +394,41 @@ function LabeledSelect({ label, value, onChange, options }: LabeledSelectProps) 
       >
         {label}
       </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+      <div
         style={{
-          padding: spacing[2],
-          fontSize: fontSizes.sm,
-          fontFamily: fonts.body,
-          border: `1px solid ${colors.ink[200]}`,
-          borderRadius: radii.sm,
-          backgroundColor: '#FFFFFF',
-          color: colors.ink[900],
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '6px',
         }}
       >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        {options.map((opt) => {
+          const isActive = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              aria-pressed={isActive}
+              style={{
+                height: '28px',
+                padding: '0 10px',
+                fontSize: fontSizes.xs,
+                fontFamily: fonts.body,
+                border: `1px solid ${isActive ? colors.navy : colors.fadedRule}`,
+                borderRadius: radii.sm,
+                backgroundColor: isActive ? colors.navy : colors.trace,
+                color: isActive ? colors.trace : colors.graphite,
+                cursor: 'pointer',
+                fontWeight: isActive ? fontWeights.medium : fontWeights.regular,
+                transition: '150ms ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
