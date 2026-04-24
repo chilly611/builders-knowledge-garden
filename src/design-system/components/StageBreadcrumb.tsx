@@ -127,7 +127,7 @@ export default function StageBreadcrumb({
                     } as React.CSSProperties}
                   >
                     <span style={{ fontSize: '14px' }}>{stage.emoji}</span>
-                    <span style={{ display: 'none' }} className="stage-name-desktop">
+                    <span style={{ display: 'inline' }} className="stage-name-desktop">
                       {stage.name}
                     </span>
                   </div>
@@ -173,7 +173,7 @@ export default function StageBreadcrumb({
                   }}
                 >
                   <span style={{ color: colors.brass, fontSize: '14px' }}>✓</span>
-                  <span style={{ display: 'none' }} className="stage-name-desktop">
+                  <span style={{ display: 'inline' }} className="stage-name-desktop">
                     {stage.name}
                   </span>
                   <span style={{ fontSize: '14px' }}>{stage.emoji}</span>
@@ -202,15 +202,15 @@ export default function StageBreadcrumb({
                   } as React.CSSProperties}
                   onMouseEnter={(e) => {
                     const btn = e.currentTarget as HTMLButtonElement;
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.opacity = '0.5';
+                    (e.currentTarget as HTMLButtonElement).style.opacity = '0.6';
                   }}
                 >
                   <span style={{ fontSize: '14px' }}>{stage.emoji}</span>
-                  <span style={{ display: 'none' }} className="stage-name-desktop">
+                  <span style={{ display: 'inline' }} className="stage-name-desktop">
                     {stage.name}
                   </span>
                 </button>
