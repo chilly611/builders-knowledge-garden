@@ -42,7 +42,7 @@ export function NavigatorProvider({
 
     // Load collapse state from localStorage
     try {
-      const stored = window.localStorage.getItem('bkg:navigator:collapse-state');
+      const stored = window.localStorage.getItem('bkg:navigator-collapse-state');
       if (stored === 'hidden' || stored === 'compact' || stored === 'expanded') {
         setState((prev) => ({ ...prev, collapseState: stored }));
       }
@@ -67,7 +67,7 @@ export function NavigatorProvider({
     if (typeof window === 'undefined') return;
 
     const handleStorageChange = (evt: StorageEvent) => {
-      if (evt.key === 'bkg:navigator:collapse-state' && evt.newValue) {
+      if (evt.key === 'bkg:navigator-collapse-state' && evt.newValue) {
         const newValue = evt.newValue as NavigatorCollapseState;
         if (newValue === 'hidden' || newValue === 'compact' || newValue === 'expanded') {
           setState((prev) => ({ ...prev, collapseState: newValue }));
@@ -86,7 +86,7 @@ export function NavigatorProvider({
       // Persist to localStorage
       if (typeof window !== 'undefined') {
         try {
-          window.localStorage.setItem('bkg:navigator:collapse-state', next);
+          window.localStorage.setItem('bkg:navigator-collapse-state', next);
         } catch {
           // localStorage quota exceeded or unavailable; continue anyway
         }

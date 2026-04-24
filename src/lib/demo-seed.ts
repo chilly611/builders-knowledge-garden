@@ -16,6 +16,7 @@
 
 import { JourneyEvent, emitJourneyEvent } from './journey-progress';
 import { STAGE_WORKFLOWS } from './lifecycle-stages';
+import type { Snapshot } from '@/components/navigator/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -240,6 +241,70 @@ function getActiveProjectId(): string {
 }
 
 /**
+ * Create demo budget data in the BudgetTimeline fallback format.
+ * Maps budget line items to stage-based commitment/spending.
+ */
+function createDemoBudgetData(): any {
+  // Aggregate line items by stage
+  const byStageMap: Record<number, { committed: number; spent: number }> = {
+    1: { committed: 0, spent: 0 },
+    2: { committed: 0, spent: 0 },
+    3: { committed: 0, spent: 0 },
+    4: { committed: 0, spent: 0 },
+    5: { committed: 0, spent: 0 },
+    6: { committed: 0, spent: 0 },
+    7: { committed: 0, spent: 0 },
+  };
+
+  // Sort items into committed (estimated) vs spent (actuals)
+  for (const item of DEMO_BUDGET_ITEMS) {
+    const stageId = item.lifecycleStageId;
+    if (item.isEstimate) {
+      byStageMap[stageId].committed += item.amount;
+    } else {
+      byStageMap[stageId].committed += item.amount;
+      byStageMap[stageId].spent += item.amount;
+    }
+  }
+
+  // Convert to BudgetTimelineData format (using cents)
+  const byStage: Record<number, any> = {};
+  let totalCommittedCents = 0;
+  let totalSpentCents = 0;
+
+  for (const stageId of [1, 2, 3, 4, 5, 6, 7]) {
+    const { committed, spent } = byStageMap[stageId];
+    const committedCents = committed * 100;
+    const spentCents = spent * 100;
+    const remainingCents = committedCents - spentCents;
+    const status =
+      committedCents === 0 ? 'not-started' : spentCents > committedCents ? 'overbudget' : 'on-track';
+
+    byStage[stageId] = {
+      stageId,
+      committedCents,
+      spentCents,
+      remainingCents,
+      status,
+    };
+
+    totalCommittedCents += committedCents;
+    totalSpentCents += spentCents;
+  }
+
+  const isOverbudget = totalSpentCents > totalCommittedCents;
+  const overAmountCents = isOverbudget ? totalSpentCents - totalCommittedCents : 0;
+
+  return {
+    byStage,
+    totalCommittedCents,
+    totalSpentCents,
+    isOverbudget,
+    overAmountCents,
+  };
+}
+
+/**
  * Seed the demo project into localStorage.
  * Populates:
  *   - bkg-active-project = demo-san-diego-adu
@@ -267,12 +332,24 @@ export function seedDemoProject(): void {
     const budgetKey = `bkg:budget:${DEMO_PROJECT_ID}`;
     window.localStorage.setItem(budgetKey, JSON.stringify(DEMO_BUDGET_ITEMS));
 
-    // 4. Store time machine snapshots
+    // 3b. Store formatted demo budget data for BudgetTimeline fallback
+    const demoBudgetData = createDemoBudgetData();
+    window.localStorage.setItem('bkg-budget-demo-data', JSON.stringify(demoBudgetData));
+
+    // 4. Store time machine snapshots in the format time-machine.ts expects
     const timeMachineKey = `bkg:time-machine:${DEMO_PROJECT_ID}`;
-    window.localStorage.setItem(
-      timeMachineKey,
-      JSON.stringify(DEMO_TIME_MACHINE_SNAPSHOTS)
-    );
+    const timeMachineSnapshots: Snapshot[] = DEMO_TIME_MACHINE_SNAPSHOTS.map((snap) => ({
+      snapshotId: `snap-${snap.date.replace(/-/g, '')}-${Math.random().toString(36).slice(2, 9)}`,
+      label: snap.label,
+      timestamp: new Date(snap.date).toISOString(),
+      stageId: 4, // Build stage (most of the snapshots are during build)
+      kind: 'both',
+    }));
+    const timeMachineState = {
+      snapshots: timeMachineSnapshots,
+      version: 1 as const,
+    };
+    window.localStorage.setItem(timeMachineKey, JSON.stringify(timeMachineState));
 
     // 5. Set the seeded flag so we never run this again
     window.localStorage.setItem(

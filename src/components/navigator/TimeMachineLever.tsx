@@ -161,34 +161,125 @@ export default function TimeMachineLever(props: TimeMachineLeverProps) {
     );
   }
 
-  // Empty state
+  // Empty state — show a welcome message but keep the lever visible
   if (snapshots.length === 0) {
     return (
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '56px',
+          flexDirection: 'column',
+          gap: '8px',
+          padding: '16px 12px',
           borderTop: '1px solid var(--faded-rule)',
           borderBottom: '1px solid var(--faded-rule)',
-          color: 'var(--graphite)',
-          fontSize: '11px',
-          opacity: 0.6,
-          padding: '0 12px',
+          backgroundColor: disabled ? 'rgba(0,0,0,0.02)' : 'transparent',
         }}
       >
         <div
           style={{
+            fontSize: '11px',
+            color: 'var(--graphite)',
+            height: '16px',
             position: 'relative',
-            height: '1px',
-            width: '100%',
-            backgroundColor: 'var(--graphite)',
-            opacity: 0.2,
-            marginBottom: '12px',
+            minHeight: '16px',
           }}
-        />
-        <span>Nothing to rewind to yet — the Time Machine starts recording the first time you save a snapshot</span>
+        >
+          Project started
+        </div>
+
+        <div
+          style={{
+            position: 'relative',
+            height: '24px',
+            cursor: disabled ? 'not-allowed' : 'default',
+            opacity: disabled ? 0.4 : 1,
+            transition: disabled ? 'none' : 'opacity 0.2s ease',
+          }}
+        >
+          {/* Track background (1px horizontal rule) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '0',
+              right: '0',
+              height: '1px',
+              backgroundColor: 'var(--graphite)',
+              transform: 'translateY(-50%)',
+            }}
+          />
+
+          {/* Brass endcaps (circles at left and right) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '-6px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--brass)',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              right: '-6px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--brass)',
+              transform: 'translate(50%, -50%)',
+            }}
+          />
+
+          {/* "NOW" label at far right */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              right: '0',
+              fontSize: '11px',
+              color: 'var(--graphite)',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              transform: 'translateY(-50%)',
+              marginLeft: '8px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            NOW
+          </div>
+
+          {/* Starting thumb (brass disk at far right) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              right: '0',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--brass)',
+              transform: 'translate(-50%, -50%)',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            fontSize: '9px',
+            color: 'var(--graphite)',
+            opacity: 0.6,
+            marginTop: '4px',
+          }}
+        >
+          Save your first snapshot to start rewinding
+        </div>
       </div>
     );
   }

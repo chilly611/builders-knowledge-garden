@@ -700,3 +700,150 @@ div { color: inherit; }
     padding-bottom: 12px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   W9.D.8 NAVIGATOR MOBILE RESPONSIVE — 375px Viewport
+   Journey Strip + Time Machine Lever + Budget Timeline
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 375px) {
+  /* ─── IntegratedNavigator Header: Cap max height to 320px ─── */
+  /* Ensures workflow content is reachable below the sticky navigator */
+  header[role="banner"] {
+    max-height: 320px !important;
+    overflow-y: auto !important;
+    padding: 8px 12px !important;
+    top: 48px !important;
+  }
+
+  /* ─── Journey Strip: Horizontal scrolling pills ─── */
+  /* Pills must scroll horizontally without wrapping on 375px */
+  div[style*="display: flex"][style*="gap: 8px"][style*="overflowX"] {
+    gap: 6px !important;
+    padding: 8px 6px !important;
+    min-height: 60px !important;
+  }
+
+  /* Journey pills: reduce to 55px min to fit 6-7 pills without vertical scroll */
+  button[role="tab"] {
+    min-width: 50px !important;
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .journey-pill-content {
+    gap: 1px !important;
+  }
+
+  /* ─── Time Machine Lever: Minimum 280px wide, 44px touch targets ─── */
+  /* Lever thumb and track must be tappable at 44px minimum height */
+  div[role="slider"] {
+    min-height: 44px !important;
+    padding: 16px 12px !important;
+  }
+
+  /* Track background line: ensure it's centered and vertically accessible */
+  div[style*="position: absolute"][style*="top: 50%"][style*="height: 1px"][style*="backgroundColor"] {
+    height: 2px !important;
+    top: calc(50% - 1px) !important;
+  }
+
+  /* Endcap circles: scale up to 16px for better touch targets */
+  div[style*="position: absolute"][style*="width: 12px"][style*="height: 12px"][style*="borderRadius: 50%"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin-left: -8px !important;
+    margin-right: -8px !important;
+  }
+
+  /* Lever thumb: ensure 24px+ diameter for tap accuracy */
+  div[style*="position: absolute"][style*="borderRadius: 50%"][style*="backgroundColor: var(--brass)"][style*="width: 20px"] {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Label above lever: reduce to avoid crowding */
+  div[style*="fontSize: 11px"][style*="color: var(--graphite)"][style*="height: 16px"][style*="position: relative"] {
+    font-size: 10px !important;
+    min-height: 14px !important;
+  }
+
+  /* ─── Budget Timeline: 7-column grid compresses gracefully ─── */
+  /* On 375px, 7 columns × 50px + gaps must fit within viewport */
+  div[style*="display: grid"][style*="gridTemplateColumns: repeat(7, 1fr)"] {
+    gap: 8px !important;
+    padding: 10px 8px !important;
+  }
+
+  /* Budget cells: shrink text and padding to fit columns */
+  div[style*="display: flex"][style*="flexDirection: column"][style*="gap: 2px"][style*="paddingTop"] {
+    padding-top: 8px !important;
+    padding-bottom: 6px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    gap: 1px !important;
+  }
+
+  /* $ glyph: reduce size */
+  div[style*="fontSize: 11px"][style*="color: var(--brass)"][style*="fontWeight: 700"][style*="textAlign: center"] {
+    font-size: 9px !important;
+  }
+
+  /* Committed amount: shrink to 12px to fit 3-4 digit values in 50px column */
+  div[style*="fontSize: 13px"][style*="fontWeight: 700"][style*="color: var(--ink)"] {
+    font-size: 11px !important;
+  }
+
+  /* Spent and remaining labels: scale down */
+  div[style*="fontSize: 11px"][style*="color: var(--graphite)"][style*="fontVariantNumeric: tabular-nums"] {
+    font-size: 9px !important;
+  }
+
+  /* Running totals section: tighten on mobile */
+  div[style*="display: flex"][style*="flexDirection: column"][style*="gap: 6px"][style*="paddingLeft: 16px"][style*="borderLeft"] {
+    min-width: 120px !important;
+    padding-left: 10px !important;
+    gap: 4px !important;
+  }
+
+  /* Total committed/spent label text */
+  div[style*="fontSize: 11px"][style*="color: var(--ink)"][style*="fontVariantNumeric: tabular-nums"][style*="fontWeight: 600"] {
+    font-size: 10px !important;
+    gap: 2px !important;
+  }
+
+  /* Demo data label: reduce visibility */
+  div[style*="fontSize: 9px"][style*="color: var(--graphite)"][style*="fontVariantNumeric: tabular-nums"][style*="marginTop: 4px"] {
+    font-size: 8px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  /* Ultra-narrow (e.g., iPhone SE landscape): aggressive compression */
+  header[role="banner"] {
+    max-height: 280px !important;
+  }
+
+  /* Journey strip: ultra-compact */
+  div[style*="display: flex"][style*="gap: 8px"][style*="overflowX"] {
+    gap: 4px !important;
+    padding: 6px 4px !important;
+  }
+
+  button[role="tab"] {
+    min-width: 45px !important;
+    padding: 3px 4px !important;
+    font-size: 8px !important;
+  }
+
+  /* Budget grid: tighten further */
+  div[style*="display: grid"][style*="gridTemplateColumns: repeat(7, 1fr)"] {
+    gap: 4px !important;
+    padding: 6px 4px !important;
+  }
+
+  div[style*="display: flex"][style*="flexDirection: column"][style*="gap: 2px"][style*="paddingTop"] {
+    padding: 6px 2px !important;
+  }
+}
