@@ -5,12 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
-import IntegratedNavigator from '@/components/IntegratedNavigator';
+import { ProjectCockpit } from '@/components/cockpit';
 import LegalFooter from '@/components/LegalFooter';
 import StageBackdrop from '@/design-system/components/StageBackdrop';
 import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
 import CommandPalette from '@/design-system/components/CommandPalette';
-import NavigatorMiniStrip from '@/design-system/components/NavigatorMiniStrip';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
@@ -45,14 +44,12 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
       <NavigatorProvider initialCollapseState="expanded">
         <StageBackdrop stage={stageId} />
         <KillerAppNav />
+        <ProjectCockpit />
         <div style={{ paddingTop: 48 }}>
-          <IntegratedNavigator projectId={null} activeStageId={null} />
           {children}
           {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
           <LegalFooter />
         </div>
-        {/* W9.D.8: Bottom-of-page mini-strip showing journey progress + budget + time machine snapshots. */}
-        <NavigatorMiniStrip />
         <VoiceCommandNav onNavigate={handleVoiceNavigate} />
         <CommandPalette />
         {/* TODO(W9.D-W2): mount StageWelcome once project/workflow context is stable. */}
