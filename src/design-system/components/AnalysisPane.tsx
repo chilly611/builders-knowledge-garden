@@ -20,6 +20,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii } from '../tokens';
 import { runSpecialist } from '../../lib/specialists.client';
 import LearningBadge from '@/components/LearningBadge';
+import RSIBadge from './RSIBadge';
 import { sanitizeNarrative } from './utils/sanitizeNarrative';
 import { markdownToJsx } from './utils/markdownToJsx';
 import type { SpecialistResult, SpecialistContext } from '../../lib/specialists';
@@ -59,6 +60,19 @@ const CONFIDENCE_LABELS = {
   medium: 'Medium confidence — review before acting',
   low: 'Low confidence — verify with the AHJ',
 } as const;
+
+// RSI cycle defaults per specialist
+const RSI_CYCLES_LOOKUP: Record<string, number> = {
+  'estimating-takeoff': 3,
+  'compliance-router': 5,
+  'compliance-structural': 4,
+  'compliance-electrical': 4,
+  'sequencing-bottlenecks': 2,
+  'supply-lumber': 1,
+  'supply-rebar': 1,
+  'supply-concrete': 1,
+  'supply-steel': 1,
+};
 
 export default function AnalysisPane({
   specialistId,
@@ -293,17 +307,29 @@ export default function AnalysisPane({
         </div>
       )}
 
-      {/* Specialist label — if provided */}
+      {/* Specialist label + RSI badge */}
       {specialistLabel && (
         <div
           style={{
-            fontSize: fontSizes.sm,
-            fontWeight: fontWeights.semibold,
-            color: colors.ink[700],
-            fontStyle: 'italic',
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
           }}
         >
-          {specialistLabel}
+          <div
+            style={{
+              fontSize: fontSizes.sm,
+              fontWeight: fontWeights.semibold,
+              color: colors.ink[700],
+              fontStyle: 'italic',
+            }}
+          >
+            {specialistLabel}
+          </div>
+          <RSIBadge
+            cycles={(result as { improvementCycles?: number }).improvementCycles ?? RSI_CYCLES_LOOKUP[specialistId] ?? 0}
+            loopName="Specialist Prompt Improvement"
+          />
         </div>
       )}
 

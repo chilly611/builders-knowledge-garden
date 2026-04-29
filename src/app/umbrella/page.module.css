@@ -1,0 +1,676 @@
+/* /umbrella Route — Knowledge Gardens Umbrella Landing
+   Drafting-paper aesthetic: Trace #F4F0E6 ground, Navy #1B3B5E ink,
+   Brass #B6873A accents. Four-card garden grid on desktop, stacked mobile. */
+
+.pageContainer {
+  min-height: 100vh;
+  background: #F4F0E6;
+  color: #1B3B5E;
+  font-family: var(--font-archivo), -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══ HERO SECTION ═══ */
+
+.heroSection {
+  position: relative;
+  padding: 80px 28px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Blueprint 32px grid background */
+.blueprintGrid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(
+      0deg,
+      transparent 31px,
+      rgba(198, 195, 179, 0.3) 31px,
+      rgba(198, 195, 179, 0.3) 32px
+    ),
+    linear-gradient(
+      90deg,
+      transparent 31px,
+      rgba(198, 195, 179, 0.3) 31px,
+      rgba(198, 195, 179, 0.3) 32px
+    );
+  background-size: 32px 32px;
+  background-position: 0 0;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.blueprintGrid::before {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  right: 80px;
+  top: 60px;
+  border: 1px solid #B6873A;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.blueprintGrid::after {
+  content: '';
+  position: absolute;
+  width: 50%;
+  height: 1px;
+  right: 0;
+  top: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #B6873A 20%,
+    #B6873A 80%,
+    transparent 100%
+  );
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* Hairline rule */
+.hairlineRule {
+  position: relative;
+  z-index: 1;
+  height: 0.5px;
+  background: #C9C3B3;
+  margin-bottom: 64px;
+}
+
+/* Hero content stack */
+.heroContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 56px;
+}
+
+.heroTextStack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Display heading */
+.heroHeading {
+  font-size: clamp(48px, 6vw, 80px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.05;
+  margin: 0 0 20px 0;
+  color: #1B3B5E;
+  overflow-wrap: break-word;
+  position: relative;
+  padding-bottom: 20px;
+}
+
+.heroHeading::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 120px;
+  height: 1px;
+  background: #B6873A;
+  opacity: 0.5;
+}
+
+/* Subheading */
+.heroSubhead {
+  font-size: 15px;
+  color: #2E2E30;
+  line-height: 1.6;
+  margin: 24px 0 0;
+  max-width: 640px;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* ═══ MAIN CONTENT ═══ */
+
+.mainContent {
+  padding: 0 28px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+/* Thesis Section */
+.thesisSection {
+  margin-bottom: 80px;
+  border-bottom: 0.5px solid #C9C3B3;
+  padding-bottom: 64px;
+}
+
+.thesisParagraph {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #1B3B5E;
+  margin: 0;
+  max-width: 900px;
+  font-weight: 400;
+}
+
+/* Section Heading */
+.sectionHeading {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin: 0 0 40px 0;
+  color: #1B3B5E;
+  position: relative;
+  padding-bottom: 16px;
+  border-bottom: 0.5px solid #C9C3B3;
+}
+
+.sectionHeading::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #B6873A;
+}
+
+/* ═══ GARDENS GRID ═══ */
+
+.gardensSection {
+  margin-bottom: 80px;
+}
+
+.gardensGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 0;
+}
+
+.gardenCard {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #C9C3B3;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.33, 0.66, 0.66, 1);
+  box-shadow: 0 1px 2px rgba(27, 59, 94, 0.04);
+  position: relative;
+}
+
+.gardenCard:hover {
+  box-shadow: 0 2px 12px rgba(27, 59, 94, 0.10);
+}
+
+/* Garden accent band at top */
+.gardenAccent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.builderCard .gardenAccent {
+  background: #B6873A;
+}
+
+.healthCard .gardenAccent {
+  background: #7FCFCB;
+}
+
+.orchidCard .gardenAccent {
+  background: #5E4B7C;
+}
+
+.naturemarkeCard .gardenAccent {
+  background: #5C7A4F;
+}
+
+.gardenContent {
+  padding: 24px;
+  flex: 1;
+  padding-top: 32px;
+}
+
+.gardenTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #1B3B5E;
+  line-height: 1.3;
+}
+
+.gardenStatus {
+  font-size: 11px;
+  margin: 0 0 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statusLive {
+  font-weight: 700;
+  color: #B6873A;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusMeta {
+  font-weight: 500;
+  color: #2E2E30;
+  opacity: 0.6;
+}
+
+.statusComing {
+  font-weight: 600;
+  color: #2E2E30;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gardenDescription {
+  font-size: 14px;
+  color: #2E2E30;
+  opacity: 0.7;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.gardenCTA {
+  display: inline-block;
+  padding: 12px 20px;
+  margin: 16px 24px 24px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1B3B5E;
+  text-decoration: none;
+  border: 1px solid #B6873A;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.gardenCTA:hover {
+  background: #B6873A;
+  color: #F4F0E6;
+}
+
+.gardenCTADisabled {
+  display: inline-block;
+  padding: 12px 20px;
+  margin: 16px 24px 24px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2E2E30;
+  border: 1px solid #C9C3B3;
+  background: transparent;
+  border-radius: 4px;
+  cursor: not-allowed;
+  opacity: 0.5;
+  font-family: var(--font-archivo), sans-serif;
+}
+
+/* ═══ SHARED ENGINE SECTION ═══ */
+
+.engineSection {
+  margin-bottom: 80px;
+}
+
+.engineList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.engineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #1B3B5E;
+}
+
+.bulletCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #B6873A;
+  margin-top: 8px;
+}
+
+/* ═══ MOAT SECTION ═══ */
+
+.moatSection {
+  margin-bottom: 80px;
+  border-top: 0.5px solid #C9C3B3;
+  border-bottom: 0.5px solid #C9C3B3;
+  padding: 48px 0;
+}
+
+.moatParagraph {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #1B3B5E;
+  margin: 0 0 24px 0;
+  max-width: 800px;
+  font-weight: 400;
+}
+
+.moatLink {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #B6873A;
+  text-decoration: none;
+  border-bottom: 1px solid #B6873A;
+  transition: all 0.15s ease;
+  padding-bottom: 2px;
+}
+
+.moatLink:hover {
+  color: #1B3B5E;
+  border-bottom-color: #1B3B5E;
+}
+
+/* ═══ CTA STRIP ═══ */
+
+.ctaStrip {
+  background: #1B3B5E;
+  color: #F4F0E6;
+  padding: 48px 28px;
+  margin-top: auto;
+}
+
+.ctaContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.ctaLeft {
+  flex: 1;
+  min-width: 300px;
+}
+
+.ctaRight {
+  flex-shrink: 0;
+}
+
+.ctaText {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.ctaLink {
+  font-weight: 700;
+  color: #B6873A;
+  text-decoration: none;
+  border-bottom: 1px solid #B6873A;
+  transition: all 0.15s ease;
+  padding-bottom: 1px;
+}
+
+.ctaLink:hover {
+  color: #F4F0E6;
+  border-bottom-color: #F4F0E6;
+}
+
+.ctaSecondary {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #B6873A;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.ctaSecondary:hover {
+  color: #F4F0E6;
+}
+
+/* ═══ RESPONSIVE: TABLET (768px) ═══ */
+
+@media (max-width: 768px) {
+  .heroSection {
+    padding: 56px 28px 48px;
+  }
+
+  .hairlineRule {
+    margin-bottom: 48px;
+  }
+
+  .heroHeading {
+    font-size: clamp(36px, 7vw, 72px);
+  }
+
+  .heroSubhead {
+    font-size: 15px;
+  }
+
+  .sectionHeading {
+    font-size: 24px;
+  }
+
+  .thesisParagraph {
+    font-size: 16px;
+  }
+
+  .gardensGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .gardenTitle {
+    font-size: 16px;
+  }
+
+  .ctaContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .ctaRight {
+    width: 100%;
+  }
+}
+
+/* ═══ RESPONSIVE: MOBILE (480px) ═══ */
+
+@media (max-width: 480px) {
+  .pageContainer {
+    min-height: auto;
+  }
+
+  .heroSection {
+    padding: 48px 16px 40px;
+  }
+
+  .hairlineRule {
+    margin-bottom: 40px;
+  }
+
+  .heroHeading {
+    font-size: clamp(32px, 6vw, 56px);
+    line-height: 1.1;
+  }
+
+  .heroHeading::after {
+    width: 80px;
+  }
+
+  .heroSubhead {
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  .mainContent {
+    padding: 0 16px 60px;
+  }
+
+  .thesisSection {
+    margin-bottom: 56px;
+    padding-bottom: 48px;
+  }
+
+  .thesisParagraph {
+    font-size: 14px;
+  }
+
+  .gardensSection {
+    margin-bottom: 60px;
+  }
+
+  .sectionHeading {
+    font-size: 20px;
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+  }
+
+  .gardensGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .gardenCard {
+    border-radius: 3px;
+  }
+
+  .gardenContent {
+    padding: 20px;
+    padding-top: 28px;
+  }
+
+  .gardenTitle {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .gardenStatus {
+    font-size: 10px;
+  }
+
+  .gardenDescription {
+    font-size: 13px;
+  }
+
+  .gardenCTA,
+  .gardenCTADisabled {
+    margin: 12px 16px 16px 16px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .engineSection {
+    margin-bottom: 60px;
+  }
+
+  .engineItem {
+    font-size: 14px;
+    gap: 12px;
+  }
+
+  .moatSection {
+    margin-bottom: 60px;
+    padding: 40px 0;
+  }
+
+  .moatParagraph {
+    font-size: 14px;
+  }
+
+  .moatLink {
+    font-size: 13px;
+  }
+
+  .ctaStrip {
+    padding: 36px 16px;
+  }
+
+  .ctaContent {
+    gap: 20px;
+  }
+
+  .ctaLeft {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .ctaText {
+    font-size: 14px;
+  }
+
+  .ctaSecondary {
+    font-size: 13px;
+    display: block;
+    text-align: left;
+  }
+}
+
+/* ═══ RESPONSIVE: ULTRA-SMALL (375px) ═══ */
+
+@media (max-width: 375px) {
+  .heroSection {
+    padding: 40px 12px 32px;
+  }
+
+  .heroHeading {
+    font-size: clamp(28px, 5vw, 48px);
+  }
+
+  .mainContent {
+    padding: 0 12px 48px;
+  }
+
+  .gardensGrid {
+    gap: 12px;
+  }
+
+  .gardenContent {
+    padding: 16px;
+    padding-top: 24px;
+  }
+
+  .gardenCTA,
+  .gardenCTADisabled {
+    margin: 10px 12px 12px 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .ctaStrip {
+    padding: 28px 12px;
+  }
+}

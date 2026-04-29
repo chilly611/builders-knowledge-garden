@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Builder's Knowledge Garden · The Compounding Moat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --trace: #F4F0E6;
+            --navy: #1B3B5E;
+            --brass: #B6873A;
+            --white: #FFFFFF;
+            --dark-gray: #2D2D2D;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--trace);
+            color: var(--navy);
+            overflow-x: hidden;
+        }
+
+        /* Scroll snap container */
+        html {
+            scroll-snap-type: y mandatory;
+        }
+
+        section {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 80px;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+        }
+
+        section:nth-child(odd) {
+            background: linear-gradient(135deg, var(--trace) 0%, #F9F7F2 100%);
+        }
+
+        section:nth-child(even) {
+            background: linear-gradient(135deg, #FEFDFB 0%, var(--trace) 100%);
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 40px;
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--brass);
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.4rem;
+            line-height: 1.7;
+            color: var(--dark-gray);
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: var(--brass);
+            font-weight: 500;
+        }
+
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* Slide 1: Title */
+        .slide-title {
+            text-align: center;
+        }
+
+        .slide-title h1 {
+            font-size: 5.5rem;
+            margin-bottom: 30px;
+        }
+
+        .slide-title p {
+            font-size: 2rem;
+            color: var(--brass);
+            font-weight: 500;
+        }
+
+        .tagline {
+            margin-top: 60px;
+            font-size: 1.6rem;
+            color: var(--navy);
+            font-style: italic;
+        }
+
+        /* Two-column layouts */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .column-left, .column-right {
+            padding: 40px;
+        }
+
+        .column-left h3, .column-right h3 {
+            color: var(--brass);
+            margin-bottom: 30px;
+        }
+
+        /* Loop cards */
+        .loop-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--brass);
+            margin-bottom: 15px;
+        }
+
+        .loop-def {
+            font-size: 1.3rem;
+            color: var(--navy);
+            font-weight: 500;
+            margin-bottom: 20px;
+            padding: 15px 0;
+            border-left: 4px solid var(--brass);
+            padding-left: 20px;
+        }
+
+        .loop-detail {
+            font-size: 1.1rem;
+            color: var(--dark-gray);
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        /* SVG styling */
+        .loop-visual {
+            width: 100%;
+            height: 100%;
+            max-height: 500px;
+        }
+
+        /* Charts and examples */
+        .chart-container {
+            margin-top: 40px;
+            padding: 30px;
+            background: var(--white);
+            border-radius: 12px;
+            border: 2px solid var(--brass);
+        }
+
+        .example-code {
+            background: #F0EBE0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 1rem;
+            margin-top: 20px;
+            border-left: 4px solid var(--brass);
+            overflow-x: auto;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .before, .after {
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        .before {
+            background: #FFE8E8;
+            border-left: 4px solid #C13030;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border-left: 4px solid #2E7D32;
+        }
+
+        .before h4, .after h4 {
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        /* Umbrella section */
+        .umbrella-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-top: 40px;
+            width: 100%;
+        }
+
+        .garden {
+            padding: 25px;
+            background: var(--white);
+            border-radius: 8px;
+            border: 2px solid var(--brass);
+            text-align: center;
+        }
+
+        .garden-name {
+            font-weight: 700;
+            color: var(--brass);
+            margin-bottom: 10px;
+        }
+
+        .garden-loop {
+            font-size: 0.95rem;
+            color: var(--navy);
+            font-style: italic;
+        }
+
+        /* Ask section */
+        .ask-list {
+            list-style: none;
+            margin-top: 30px;
+        }
+
+        .ask-list li {
+            padding: 20px;
+            margin-bottom: 15px;
+            background: var(--white);
+            border-left: 6px solid var(--brass);
+            border-radius: 4px;
+            font-size: 1.3rem;
+        }
+
+        .ask-list li strong {
+            color: var(--brass);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            section {
+                padding: 40px 60px;
+            }
+
+            h1 { font-size: 3.5rem; }
+            h2 { font-size: 2.5rem; }
+            p { font-size: 1.2rem; }
+
+            .two-column {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .umbrella-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            section {
+                padding: 30px 40px;
+            }
+
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 1.8rem; }
+            p { font-size: 1rem; }
+
+            .slide-title h1 {
+                font-size: 3rem;
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Accent elements */
+        .accent-box {
+            padding: 30px;
+            background: var(--navy);
+            color: var(--white);
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .accent-box p {
+            color: var(--white);
+        }
+
+        .metric {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--brass);
+            margin: 20px 0;
+        }
+
+        /* Navigation hint */
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.95rem;
+            color: var(--brass);
+            opacity: 0.7;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(10px); }
+        }
+
+        .svgfig {
+            display: block;
+            margin: 40px auto;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Slide 1: Title -->
+    <section class="slide-title">
+        <div class="slide-content">
+            <h1>Builder's Knowledge Garden</h1>
+            <p class="subtitle">The Compounding Moat</p>
+            <p class="tagline">Every contractor query makes the next answer sharper.</p>
+        </div>
+        <div class="scroll-hint">↓ Scroll to explore</div>
+    </section>
+
+    <!-- Slide 2: The Bet -->
+    <section>
+        <div class="slide-content">
+            <h2>The Bet</h2>
+            <p>AI gets better faster than the marketplace can keep up.</p>
+            <p style="margin-top: 60px; font-size: 1.6rem; font-weight: 500;">Only systems that compound from real-world use will stay sharp.</p>
+            <p style="margin-top: 40px;">BKG is wired around five feedback loops that fire silently on every query. These loops watch the gap between what the system said and what actually happened. That gap is currency.</p>
+            <div class="accent-box">
+                <p><strong>The Defense:</strong> A well-funded competitor can copy our UI and our prompts. They cannot buy our data. And they will not stay relevant without it.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 3: The Five Loops (Visual) -->
+    <section>
+        <div class="slide-content">
+            <h2>Five Loops. One Engine.</h2>
+            <svg class="svgfig" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                <!-- Central node -->
+                <circle cx="400" cy="250" r="80" fill="var(--brass)" opacity="0.2" stroke="var(--brass)" stroke-width="3"/>
+                <text x="400" y="260" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--navy)">RSI</text>
+                <text x="400" y="285" text-anchor="middle" font-size="14" fill="var(--navy)">Engine</text>
+
+                <!-- Loop 1: Code Drift (top) -->
+                <path d="M 400 170 Q 280 150 180 200" stroke="var(--brass)" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                <circle cx="120" cy="240" r="50" fill="var(--trace)" stroke="var(--brass)" stroke-width="2"/>
+                <text x="120" y="240" text-anchor="middle" font-size="12" font-weight="bold" fill="var(--navy)">Code</text>
+                <text x="120" y="258" text-anchor="middle" font-size="12" fill="var(--navy)">Drift</text>
+
+                <!-- Loop 2: Specialist Prompts (top-right) -->
+                <path d="M 460 180 Q 580 140 650 180" stroke="var(--brass)" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                <circle cx="700" cy="230" r="50" fill="var(--trace)" stroke="var(--brass)" stroke-width="2"/>
+                <text x="700" y="235" text-anchor="middle" font-size="12" font-weight="bold" fill="var(--navy)">Specialist</text>
+                <text x="700" y="253" text-anchor="middle" font-size="12" fill="var(--navy)">Prompt</text>
+
+                <!-- Loop 3: Workflow Shape (right) -->
+                <path d="M 480 280 Q 620 300 680 320" stroke="var(--brass)" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                <circle cx="720" cy="390" r="50" fill="var(--trace)" stroke="var(--brass)" stroke-width="2"/>
+                <text x="720" y="390" text-anchor="middle" font-size="12" font-weight="bold" fill="var(--navy)">Workflow</text>
+                <text x="720" y="408" text-anchor="middle" font-size="12" fill="var(--navy)">Shape</text>
+
+                <!-- Loop 4: Vendor Adapters (bottom-right) -->
+                <path d="M 430 330 Q 500 420 620 420" stroke="var(--brass)" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                <circle cx="680" cy="450" r="50" fill="var(--trace)" stroke="var(--brass)" stroke-width="2"/>
+                <text x="680" y="450" text-anchor="middle" font-size="12" font-weight="bold" fill="var(--navy)">Vendor</text>
+                <text x="680" y="468" text-anchor="middle" font-size="12" fill="var(--navy)">Adapters</text>
+
+                <!-- Loop 5: Copilot Quality (bottom-left) -->
+                <path d="M 340 330 Q 240 420 160 420" stroke="var(--brass)" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                <circle cx="100" cy="450" r="50" fill="var(--trace)" stroke="var(--brass)" stroke-width="2"/>
+                <text x="100" y="450" text-anchor="middle" font-size="12" font-weight="bold" fill="var(--navy)">Copilot</text>
+                <text x="100" y="468" text-anchor="middle" font-size="12" fill="var(--navy)">Quality</text>
+
+                <!-- Arrow marker definition -->
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="var(--brass)"/>
+                    </marker>
+                </defs>
+
+                <!-- Return arrows to center (feedback flow) -->
+                <path d="M 170 200 Q 280 250 330 280" stroke="var(--brass)" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.5"/>
+                <path d="M 750 280 Q 580 280 470 290" stroke="var(--brass)" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.5"/>
+                <path d="M 770 390 Q 580 340 480 310" stroke="var(--brass)" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.5"/>
+                <path d="M 730 450 Q 500 400 470 330" stroke="var(--brass)" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.5"/>
+                <path d="M 150 450 Q 280 380 350 310" stroke="var(--brass)" stroke-width="2" stroke-dasharray="5,5" fill="none" opacity="0.5"/>
+            </svg>
+            <p style="text-align: center; margin-top: 40px; color: var(--brass); font-weight: 500;">Solid arrows: data in. Dashed arrows: feedback loops back to engine.</p>
+        </div>
+    </section>
+
+    <!-- Slide 4: Loop 1 - Code Drift -->
+    <section>
+        <div class="slide-content">
+            <h2>Loop 1: Code & Data Drift Detection</h2>
+            <div class="two-column">
+                <div class="column-left">
+                    <h3>What It Does</h3>
+                    <p class="loop-def">Every jurisdiction amendment, every NEC update, every code edition becomes a delta.</p>
+                    <p class="loop-detail">Daily heartbeat job runs at 11am UTC. Pulls latest code databases from ASHRAE, IBC, IRC, NEC, IPC, IMC and local amendments. Detects which sections changed.</p>
+                    <p class="loop-detail" style="margin-top: 30px; color: var(--brass); font-weight: 500;">When the NEC moves receptacle spacing rules, we know. When a local AHJ publishes a variance, we catch it.</p>
+                </div>
+                <div class="column-right">
+                    <div class="chart-container">
+                        <h4 style="color: var(--navy); margin-bottom: 20px;">Sample Code Drift Detection</h4>
+                        <div class="example-code">
+<strong>NEC 2023 Update</strong>
+Section 210.52(A) - Receptacle Spacing
+- OLD: "Receptacles in kitchens shall be spaced..."
++ NEW: "Kitchen islands/peninsulas require 2ft spacing..."
+
+<strong>Local Amendment: San Francisco</strong>
+- EV charging required by code update
+- Section 626.1 (new)
+                        </div>
+                        <p style="margin-top: 20px; font-size: 1.1rem; color: var(--navy);">System detects, flags for review, updates knowledge index automatically.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 5: Loop 2 - Specialist Prompts -->
+    <section>
+        <div class="slide-content">
+            <h2>Loop 2: Specialist Prompt Improvement</h2>
+            <div class="two-column">
+                <div class="column-left">
+                    <h3>What It Does</h3>
+                    <p class="loop-def">Every wrong answer is a training signal. The system learns.</p>
+                    <p class="loop-detail">Telemetry logs every specialist call: question, answer, user feedback. Signals: thumbs_up, thumbs_down, correction, outcome_success/failure.</p>
+                    <p class="loop-detail" style="margin-top: 30px;">Synthesis engine clusters feedback by specialist + signal type, proposes concrete delta, human approves, prompt auto-deploys.</p>
+                </div>
+                <div class="column-right">
+                    <div class="chart-container">
+                        <h4 style="color: var(--navy); margin-bottom: 20px;">Example: Kitchen Receptacle Correction</h4>
+                        <div class="before-after">
+                            <div class="before">
+                                <h4>BEFORE</h4>
+                                <p><strong>Q:</strong> Kitchen countertop receptacles?</p>
+                                <p style="margin-top: 10px;"><strong>A:</strong> "Receptacles required along counters."</p>
+                                <p style="margin-top: 15px; color: #C13030;">❌ Missing: GFCI requirement in wet locations</p>
+                            </div>
+                            <div class="after">
+                                <h4>AFTER</h4>
+                                <p><strong>Q:</strong> Kitchen countertop receptacles?</p>
+                                <p style="margin-top: 10px;"><strong>A:</strong> "All kitchen counters require receptacles spaced 2 ft apart, GFCI-protected within 6 ft of sink."</p>
+                                <p style="margin-top: 15px; color: #2E7D32;">✓ Complete & accurate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 40px; color: var(--brass); font-weight: 500;">22 specialists. 2,200 queries/week needed to spin this loop reliably.</p>
+        </div>
+    </section>
+
+    <!-- Slide 6: Loop 3 - Workflow Shape -->
+    <section>
+        <div class="slide-content">
+            <h2>Loop 3: Workflow Shape Evolution</h2>
+            <div class="two-column">
+                <div class="column-left">
+                    <h3>What It Does</h3>
+                    <p class="loop-def">Every drop-off becomes a UX rewrite. If contractors abandon "Plan it out" at 40%, we change it.</p>
+                    <p class="loop-detail">Contractors flow through 7 stages: Size Up → Lock → Plan → Build → Adapt → Collect → Reflect.</p>
+                    <p class="loop-detail" style="margin-top: 20px;">We log entry, exit, user edits, time spent. High drop-off stage? Retrain copilot, reorder fields, split step.</p>
+                </div>
+                <div class="column-right">
+                    <div class="chart-container">
+                        <h4 style="color: var(--navy); margin-bottom: 20px;">Drop-off by Stage</h4>
+                        <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Y-axis -->
+                            <line x1="50" y1="20" x2="50" y2="250" stroke="var(--navy)" stroke-width="2"/>
+                            <!-- X-axis -->
+                            <line x1="50" y1="250" x2="380" y2="250" stroke="var(--navy)" stroke-width="2"/>
+
+                            <!-- Bars (completion rate) -->
+                            <!-- Size Up: 95% -->
+                            <rect x="70" y="112" width="35" height="133" fill="var(--brass)" opacity="0.8"/>
+                            <text x="87" y="260" text-anchor="middle" font-size="10" fill="var(--navy)">Size Up</text>
+                            <text x="87" y="95" text-anchor="middle" font-size="9" fill="var(--navy)">95%</text>
+
+                            <!-- Lock: 88% -->
+                            <rect x="120" y="131" width="35" height="114" fill="var(--brass)" opacity="0.8"/>
+                            <text x="137" y="260" text-anchor="middle" font-size="10" fill="var(--navy)">Lock</text>
+                            <text x="137" y="110" text-anchor="middle" font-size="9" fill="var(--navy)">88%</text>
+
+                            <!-- Plan: 62% ⚠️ -->
+                            <rect x="170" y="181" width="35" height="69" fill="#FF6B6B" opacity="0.8"/>
+                            <text x="187" y="260" text-anchor="middle" font-size="10" fill="var(--navy)">Plan</text>
+                            <text x="187" y="160" text-anchor="middle" font-size="9" fill="#C13030">62% ⚠️</text>
+
+                            <!-- Build: 78% -->
+                            <rect x="220" y="145" width="35" height="105" fill="var(--brass)" opacity="0.8"/>
+                            <text x="237" y="260" text-anchor="middle" font-size="10" fill="var(--navy)">Build</text>
+                            <text x="237" y="125" text-anchor="middle" font-size="9" fill="var(--navy)">78%</text>
+
+                            <!-- Adapt: 85% -->
+                            <rect x="270" y="140" width="35" height="110" fill="var(--brass)" opacity="0.8"/>
+                            <text x="287" y="260" text-anchor="middle" font-size="10" fill="var(--navy)">Adapt</text>
+                            <text x="287" y="120" text-anchor="middle" font-size="9" fill="var(--navy)">85%</text>
+
+                            <!-- Collect: 92% -->
+                            <rect x="320" y="104" width="35" height="141" fill="var(--brass)" opacity="0.8"/>
+                            <text x="337" y="260" text-anchor="middle" font-size="10" fill="var(--navy)">Collect</text>
+                            <text x="337" y="85" text-anchor="middle" font-size="9" fill="var(--navy)">92%</text>
+
+                            <!-- Y-axis labels -->
+                            <text x="35" y="255" text-anchor="end" font-size="10" fill="var(--navy)">0%</text>
+                            <text x="35" y="155" text-anchor="end" font-size="10" fill="var(--navy)">50%</text>
+                            <text x="35" y="25" text-anchor="end" font-size="10" fill="var(--navy)">100%</text>
+                        </svg>
+                        <p style="margin-top: 15px; font-size: 1.1rem; text-align: center; color: #C13030;"><strong>"Plan" stage needs redesign.</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 7: Loop 4 - Vendor Adapters -->
+    <section>
+        <div class="slide-content">
+            <h2>Loop 4: Vendor Adapter Accuracy</h2>
+            <div class="two-column">
+                <div class="column-left">
+                    <h3>What It Does</h3>
+                    <p class="loop-def">Every wrong price, every missed lead time becomes a retrain.</p>
+                    <p class="loop-detail">Every vendor lookup, every quote, every actual order is logged. When BKG says "this roof costs $12K" and contractor pays $11.2K, the adapter learns.</p>
+                    <p class="loop-detail" style="margin-top: 20px;">Over time, quotes inch closer to reality because we observe the ground truth on every project that reaches "Collect" stage.</p>
+                </div>
+                <div class="column-right">
+                    <div class="chart-container">
+                        <h4 style="color: var(--navy); margin-bottom: 20px;">Price Correction Example: Roofing in Texas</h4>
+                        <div class="example-code">
+<strong>Observation Window:</strong> Q1 2025 Texas projects
+
+<strong>Sample Corrections:</strong>
+Asphalt shingle, 2,000 sq ft
+→ BKG estimate: $14,000
+→ Actual market: $12,800 (-8.6%)
+→ Adapter learns: apply -8% factor for TX
+
+Metal roofing, 3,000 sq ft
+→ BKG estimate: $19,500
+→ Actual market: $18,700 (-4.1%)
+→ Trend: metal has smaller variance
+                        </div>
+                        <p style="margin-top: 20px; font-size: 1.1rem; color: var(--navy); font-weight: 500;">Next week's quotes for TX roofing are 8% more accurate.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 8: Loop 5 - Copilot Quality -->
+    <section>
+        <div class="slide-content">
+            <h2>Loop 5: Copilot Quality</h2>
+            <div class="two-column">
+                <div class="column-left">
+                    <h3>What It Does</h3>
+                    <p class="loop-def">Every latency spike, every missed citation becomes a system prompt revision.</p>
+                    <p class="loop-detail">Signals: response latency, citation accuracy, user correction patterns, edit frequency.</p>
+                    <p class="loop-detail" style="margin-top: 20px;">Synthesis engine proposes prompt tweaks: shorter context window, stricter citation constraint, fallback to "defer to human" flag.</p>
+                </div>
+                <div class="column-right">
+                    <div class="chart-container">
+                        <h4 style="color: var(--navy); margin-bottom: 20px;">Latency Improvement Over Time</h4>
+                        <svg viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Y-axis -->
+                            <line x1="50" y1="20" x2="50" y2="200" stroke="var(--navy)" stroke-width="2"/>
+                            <!-- X-axis -->
+                            <line x1="50" y1="200" x2="380" y2="200" stroke="var(--navy)" stroke-width="2"/>
+
+                            <!-- Y-axis labels (ms) -->
+                            <text x="40" y="205" text-anchor="end" font-size="10" fill="var(--navy)">0ms</text>
+                            <text x="40" y="125" text-anchor="end" font-size="10" fill="var(--navy)">2000ms</text>
+                            <text x="40" y="25" text-anchor="end" font-size="10" fill="var(--navy)">4000ms</text>
+
+                            <!-- Line chart: latency over weeks -->
+                            <polyline points="70,80 120,120 170,110 220,85 270,65 320,55"
+                                      stroke="var(--brass)" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+                            <!-- Data points -->
+                            <circle cx="70" cy="80" r="4" fill="var(--brass)"/>
+                            <circle cx="120" cy="120" r="4" fill="var(--brass)"/>
+                            <circle cx="170" cy="110" r="4" fill="var(--brass)"/>
+                            <circle cx="220" cy="85" r="4" fill="var(--brass)"/>
+                            <circle cx="270" cy="65" r="4" fill="var(--brass)"/>
+                            <circle cx="320" cy="55" r="4" fill="var(--brass)"/>
+
+                            <!-- X-axis labels (weeks) -->
+                            <text x="70" y="220" text-anchor="middle" font-size="10" fill="var(--navy)">W1</text>
+                            <text x="120" y="220" text-anchor="middle" font-size="10" fill="var(--navy)">W2</text>
+                            <text x="170" y="220" text-anchor="middle" font-size="10" fill="var(--navy)">W3</text>
+                            <text x="220" y="220" text-anchor="middle" font-size="10" fill="var(--navy)">W4</text>
+                            <text x="270" y="220" text-anchor="middle" font-size="10" fill="var(--navy)">W5</text>
+                            <text x="320" y="220" text-anchor="middle" font-size="10" fill="var(--navy)">W6</text>
+
+                            <!-- Improvement annotation -->
+                            <text x="350" y="70" font-size="11" fill="var(--brass)" font-weight="bold">-31%</text>
+                        </svg>
+                        <p style="margin-top: 20px; font-size: 1rem; color: var(--navy);">Weekly system prompt refinement from user correction signals.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 9: The Umbrella Thesis -->
+    <section>
+        <div class="slide-content">
+            <h2>Five Loops × N Gardens = Compounding Across Domains</h2>
+            <p style="margin-bottom: 40px;">The same RSI engine powers all Knowledge Gardens. Each garden contributes unique data. The platform compounds faster than any single garden could alone.</p>
+
+            <div class="umbrella-grid">
+                <div class="garden">
+                    <div class="garden-name">🔨 Builder's</div>
+                    <div class="garden-loop">Loop 1: Code drift, Loop 2: Specialist prompts</div>
+                </div>
+                <div class="garden">
+                    <div class="garden-name">⚕️ Health</div>
+                    <div class="garden-loop">Loop 1: FDA guidance, Loop 2: Clinician prompts</div>
+                </div>
+                <div class="garden">
+                    <div class="garden-name">🌸 Orchid</div>
+                    <div class="garden-loop">Loop 1: Regulatory drift, Loop 2: Expert prompts</div>
+                </div>
+                <div class="garden">
+                    <div class="garden-name">⚡ Energy</div>
+                    <div class="garden-loop">Loop 1: Code updates, Loop 2: Domain prompts</div>
+                </div>
+                <div class="garden">
+                    <div class="garden-name">🏥 Pharma</div>
+                    <div class="garden-loop">Loop 1: Compliance drift, Loop 2: Specialist prompts</div>
+                </div>
+            </div>
+
+            <div class="accent-box" style="margin-top: 50px;">
+                <p><strong>Insight compounding:</strong> If Loop 2 learns that "prompt brevity decreases correction rate," all five gardens benefit. If Loop 4 learns a vendor accuracy trick, it trains across domains.</p>
+            </div>
+
+            <p style="text-align: center; margin-top: 40px; color: var(--brass); font-weight: 500;">The umbrella is the moat. The gardens are the inputs.</p>
+        </div>
+    </section>
+
+    <!-- Slide 10: The Ask -->
+    <section>
+        <div class="slide-content">
+            <h2>What We Need to Scale</h2>
+            <ul class="ask-list">
+                <li><strong>Query Volume:</strong> 2,200 queries/week to reliably spin the synthesis loop. This is the gas pedal. Usage drives the moat.</li>
+                <li><strong>Permission to Retrain:</strong> Legal review on human-in-loop delta approval. Can we auto-deploy approved prompts? What liability gates exist?</li>
+                <li><strong>Public-Facing Dashboard:</strong> Contractors see what improved and why. Transparency builds trust. "Electrical specialist now catches 15% more GFCI violations."</li>
+                <li><strong>Code/Data Partnerships:</strong> Codified feeds from code publishers (ASHRAE, ICC, AHJs) for faster drift detection. Today: poll. Tomorrow: subscribe.</li>
+                <li><strong>Capital for the Umbrella:</strong> Four more gardens (Health, Orchid, Energy, Pharma) in parallel with scaling BKG. Multi-year, multi-disciplinary effort.</li>
+            </ul>
+
+            <div class="metric" style="text-align: center; margin-top: 60px;">
+                Questions become more valuable every day.
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Keyboard navigation hint (optional, not required for scroll-snap)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+            } else if (e.key === 'ArrowUp') {
+                window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+            }
+        });
+    </script>
+</body>
+</html>
