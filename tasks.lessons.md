@@ -939,3 +939,72 @@ When naming a product or initiative, aim for layered meaning. Ask: does this nam
 **What happened:** Right after the Week 3 push (17 LIVE workflows + budget spine + journey spine + Global AI FAB), founder smoke-tested the live `/killerapp` URL and flagged: "I still don't see the journey map or the budget widget that would be visible and work in an integrated way anytime. That's important. Budget, profit + loss, receivables, payment schedule, where we are overbudget, where we are underbudget — all super important to be visible and accessible and changeable." This was an expectation mismatch. Week 3 mounted `CompassBloom` + `GlobalAiFab` in `src/app/layout.tsx` as global chrome, but `JourneyMapHeader` lives ONLY inside `WorkflowShell` (per-workflow) and `BudgetWidget` is only imported by `/workflows/expenses`. The architecture diagram I delivered before the push said "BudgetWidget pre-existing" in the always-on lane — implying it was mounted globally when it wasn't. Founder saw the diagram, approved the push based on it, and then found the real state didn't match.
 
 **Rule:** When describing architecture to the founder, every component shown in an "always-on" / "global chrome" section MUST be verified as actually imported in `src/app/layout.tsx` (or equivalent root mount point) before labeling it that way. Run `grep -r ComponentName src/app/layout` before making the claim. If a component is mounted per-route or per-workflow-shell only, call it "per-workflow chrome" and say so explicitly — don't lump it with the global FAB. COO-for-construction expectations are that budget + journey visibility travel with the user everywhere, not just inside a workflow; this is a product-level default the founder has, and any architecture doc that doesn't match that default will produce a mismatch after ship. Related rule: when a new "spine" module (data layer that emits events to any subscriber) is shipped, the UI surface that consumes those events needs a matching global mount in the same push, or the data work feels invisible to the user and reads as "didn't integrate." The data spine without the UI surface at the root layout is a gap, not a feature.
+
+---
+
+## W9.D Session Block (2026-04-22 → 2026-04-28)
+
+### Always run `next build` in main context before pushing — vitest is not enough
+**Date:** 2026-04-23 (codified) → 2026-04-28 (re-confirmed twice)
+**What happened:** Three Vercel deploys died because vitest-passing code failed Next 16's strict tsc phase. The pattern: a parallel agent self-reports "build verified" after running its own tsc that didn't catch the issue (sandbox timeout, narrowing context, etc.). I trusted the report and pushed. Vercel hits the real build, fails with `Property 'sm' does not exist on type 'Record<number, string>'` or `Type error: Argument of type 'number' is not assignable to parameter of type 'StageId'` — and we burn an investor-time deploy cycle.
+**Fix:** Before any push that includes parallel-agent output, run `cd bkg-repo && timeout 360 npx next build 2>&1 | grep -E "(Type error|Failed|Compiled successfully)"` in main context. Fix in main if anything blocks. Don't trust agent self-reports.
+**Rule:** "Compiled successfully in Xs" appearing in the FINAL main-context build output is the only acceptable green signal before push. Everything else is theater.
+
+### Token shape gotchas — agents keep tripping these
+**Date:** 2026-04-23 → 2026-04-28
+**What happened:** Three separate parallel waves (W9.C L5, W9.D L4, W9.D.9 zone fillers) used non-existent token keys: `spacing.sm`, `fontWeights.normal`, `<text title="…">`. Each killed a deploy.
+**Fix:** When dispatching agents that touch design tokens, paste this block in the brief verbatim:
+```
+TOKEN SHAPE NOTES (REQUIRED):
+- spacing[N] is numeric-keyed: spacing[1]=4, spacing[2]=8, spacing[3]=12, spacing[4]=16, spacing[5]=20, spacing[6]=24
+- DO NOT use spacing.sm / .md / .lg — use the numeric form
+- fontWeights.regular (NOT fontWeights.normal). Available: light/regular/medium/semibold/bold/black
+- fontSizes is named-keyed: xs / sm / base / md / lg / xl / 2xl / 3xl / 4xl / 5xl
+- SVG <text> takes <title> CHILD for tooltips, NOT a title attribute
+```
+**Rule:** Any agent brief that mentions tokens must include the shape note. No exceptions.
+
+### Don't let agents fabricate test files
+**Date:** 2026-04-28
+**What happened:** W9.D.9 zone-filler agents (B1/B2/B3) and R3 each shipped `__tests__/*.test.tsx` files using `describe`/`it`/`expect`/`jest.fn()` without importing them. The repo uses vitest globals which require `import { describe, it, expect, vi } from 'vitest'` — and `@testing-library/react` isn't installed at the root. tsc went red on hundreds of lines of test code. Had to delete 4 broken test files in main context to unblock the build.
+**Fix:** When briefing an agent, say explicitly: "DO NOT WRITE A TEST FILE unless you also: (a) confirm `@testing-library/react` is in package.json deps, (b) import `{ describe, it, expect, vi } from 'vitest'` at the top of every test file, (c) confirm the file passes tsc on its own."
+**Rule:** Tests are valuable but not free. If the agent can't ship a green test file, it should ship NO test file. Don't pad the deliverable.
+
+### Vercel webhook desync is recurring — script the redeploy step
+**Date:** 2026-04-23 (multiple)
+**What happened:** Pushed `28bfd34` and `3de859f` to main; Vercel didn't pick them up. Root cause: GitHub-Vercel webhook gets stale silently. User had to manually click "Create Deployment" → enter `main` to pull HEAD. This happened 3+ times.
+**Fix:** Before declaring "the deploy is live," explicitly verify by either: (a) check Vercel UI deployments list for the commit hash, OR (b) curl the live URL and grep for a known string from the new code. Don't say "Vercel is building now" without that check.
+**Rule:** A push is only live when a deployment row in Vercel shows the matching commit hash AND the URL serves the new code. Both checks. Until then the push is "uploaded to GitHub, status unknown."
+
+### "AHJ" / "consult a licensed X" is fatal in user-facing AI output
+**Date:** 2026-04-23
+**What happened:** Founder hit the production demo with "Building an ADU in San Diego, 2500 sqft, 2 bedrooms" and got back zoning lecture: "not permitted under current regulations… Authority Having Jurisdiction (San Diego)… Consult with a local architect…" The market for "consult a licensed professional" software is crowded and zero-margin. Founder reaction: "This is a disaster."
+**Root causes (compounding):**
+1. Specialist mock fallback was hardcoded to `compliance-router` — missing-mock specialists returned sprinkler content even in non-compliance workflows.
+2. RAG retrieval ran on every stage — code entities containing "AHJ" got injected into the LLM context window for sequencing/estimating queries; the LLM dutifully cited them.
+3. Stage-3 system prompt was too soft; LLM interpreted scope description as a compliance question.
+**Fix:**
+- `mockResponses[specialistId] || fallback` where `fallback` is a stage-aware demo-mode placeholder, NOT compliance content.
+- `STAGES_THAT_USE_CODE_RAG = new Set([2])` — only Lock-it-in retrieves code entities.
+- Stage-3 prompt now contains: "HARD RULE: You MUST respond with a SEQUENCE PLAN. Do NOT discuss code compliance, zoning, ADU size limits, permitting rules. You are a scheduler. That is your entire job."
+- Server-side sanitizer at `/api/v1/copilot/route.ts` regex-strips remaining "AHJ" / "consult a licensed" leaks.
+**Rule:** CYA vocabulary in AI output is a brand fatality. Three layers of defense: (1) prompt instruction, (2) RAG gating, (3) output sanitizer. Don't trust any single layer.
+
+### Parallel waves — the disjoint-scope pattern
+**Date:** 2026-04-23 (W9.C, W9.D burn) → 2026-04-28 (W9.D.9)
+**What works (proven across 6 waves of 6–12 agents):**
+- Each lane gets a single-page brief with: mandate, exact files, DO NOT TOUCH list, canonical refs INLINE (palette hexes, stage IDs, file paths), acceptance gate, return format.
+- Lanes own DISJOINT files. No two agents edit the same file in the same wave.
+- Integrator wave runs SECOND (single agent owns layout.tsx after primitives land).
+- Mandatory `next build` verification per lane → fail-fast self-correct → final main-context build before push.
+**What breaks:**
+- "DO NOT TOUCH" list missing → collisions, lost edits, conflict-resolution chaos.
+- Canonical refs (palette, tokens) NOT inline → agents invent, drift from spec.
+- Trust agent self-reports without main-context verify → broken deploys.
+**Rule:** The brief is the contract. Every brief contains: scope (NEW or EDIT specific files), DO NOT TOUCH list, canonical references inline, acceptance gate (must run `next build`), return format. No exceptions.
+
+### Storage / context hygiene at session boundaries
+**Date:** 2026-04-28
+**What happened:** Founder's MacBook is slow. 117MB of session JSONL logs accumulated in /mnt/.claude/projects. 1.1GB node_modules. 82MB .next build cache. Founder asked: "what can I delete?"
+**Fix:** At session end, write a session-handoff doc to `docs/strategy/W{N}-session-handoff.md` that's self-contained for the next session. Then user can safely delete: (a) old session JSONL logs, (b) .next build cache, (c) node_modules (regenerates with npm install). Do NOT delete: workspace folder content, /mnt/uploads source assets, anything in bkg-repo not in .gitignore.
+**Rule:** Every session ends with a session-handoff doc. The next session reads it instead of mining the JSONL transcripts. Set the user free to clean up.

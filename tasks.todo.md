@@ -809,3 +809,49 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Output framed as "starting draft for attorney review," NOT "ready-to-sign"
 - [ ] Terms of service includes real liability limitation reviewed by the same attorney
 - [ ] Cannot sell Contract Templates until this is done
+
+---
+
+## W9.D Session Wrap (2026-04-28)
+
+**Sealed at commit:** `28a50da`
+**Production URL:** `builders.theknowledgegardens.com`
+
+### Shipped this session (W9.D series — 13 commits)
+- W9.D — visual overhaul foundation (stage backdrops, scroll transitions, voice nav, compass reskin)
+- W9.D.1 → expand Navigator default + lighter backdrop overlay + transparent KillerAppNav
+- W9.D.2 → 6-lane UX polish burst
+- W9.D.3 → 12-lane functional + UX burst (TimeMachine, Budget integration, stage prompts)
+- W9.D.4 → AI navigator + 3-button responses + ⌘K command palette
+- W9.D.5 → root-fix LLM bleed (RAG gating + stage-3 hard rule)
+- W9.D.6 → home search routing + CYA filter + budget resilience + stage-0 substantive prompt
+- W9.D.7 → 6-lane finals + WorkflowShell chip rewrite
+- W9.D.8 → full Navigator visibility (top + bottom + persisted state + mobile)
+- W9.D.9 → unified ProjectCockpit (replaces IntegratedNavigator + NavigatorMiniStrip) + /rsi route + /umbrella + /marketplace + 5 best-practices articles + RSIBadge primitive
+
+### Open / pending (carry forward to next session)
+- [ ] **#46** W3.6 Compass Navigator polish — CompassBloom present but not yet *the moment*
+- [ ] **#68** W7.P Journey + Time Machine + Budget — cockpit shipped, designer pass needed for visual rhythm
+- [ ] **#72** W7.Q.4 Audit Robin's Egg color token — Tiffany blue reference (key/lock-stage hint)
+- [ ] **#78** W8.2 Rename `/killerapp` → `/app` with redirects (URL hygiene)
+- [ ] **#86** W9.A Research + Spec farm (deferred — most bullets folded into W9.D series)
+- [ ] **#104** W9.D Wave 2 — per-route cockpit context wiring (e.g. step-completion → live cockpit ticks)
+
+### New work surfaced during W9.D
+- [ ] **W10.A** — smoke test 14 untested specialists (q12–q27) against real contractor questions
+- [ ] **W10.B** — Building Intelligence commercial decision (B2B API/MCP separate vs. bundled tier)
+- [ ] **W10.C** — Real RSI volume — capture 100+ specialist runs to replace synthetic /rsi page data
+- [ ] **W10.D** — Cockpit visual rhythm pass (designer review of brass hinge, tick spacing, cross-zone alignment)
+- [ ] **W10.E** — Stage backdrop legibility tuning per page (Plan-it-out's white geometric vs. content)
+- [ ] **W10.F** — Mobile cockpit explicit pass (zone stack, thumb-reach, scroll behavior at <640px)
+- [ ] **W10.G** — Adapt/Collect/Reflect SVG drafting-paper backdrops upgrade to match raster richness
+- [ ] **W10.H** — Badge / certification thresholds: founder decision + UI rendering
+- [ ] **W10.I** — `/umbrella` and `/marketplace` populate with real screenshots / live data wiring
+- [ ] **W10.J** — Test infra: install `@testing-library/react`, add vitest globals, restore deleted W9.D.9 test files
+
+### Operating rules (durable)
+- Every push verified by `next build` in main context — vitest is not enough.
+- CYA language ("AHJ", "consult a licensed", "not permitted") is filtered server-side; never let it back through prompts.
+- RAG retrieval gated to stage 2 only (`STAGES_THAT_USE_CODE_RAG = new Set([2])`).
+- Token shapes: `spacing[N]` numeric, `fontWeights.regular` (not normal), SVG `<title>` child for tooltips.
+- ANTHROPIC_API_KEY required in Vercel env for live LLM responses (mock fallback exists per stage).
