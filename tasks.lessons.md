@@ -1008,3 +1008,36 @@ TOKEN SHAPE NOTES (REQUIRED):
 **What happened:** Founder's MacBook is slow. 117MB of session JSONL logs accumulated in /mnt/.claude/projects. 1.1GB node_modules. 82MB .next build cache. Founder asked: "what can I delete?"
 **Fix:** At session end, write a session-handoff doc to `docs/strategy/W{N}-session-handoff.md` that's self-contained for the next session. Then user can safely delete: (a) old session JSONL logs, (b) .next build cache, (c) node_modules (regenerates with npm install). Do NOT delete: workspace folder content, /mnt/uploads source assets, anything in bkg-repo not in .gitignore.
 **Rule:** Every session ends with a session-handoff doc. The next session reads it instead of mining the JSONL transcripts. Set the user free to clean up.
+
+---
+
+## Specialist runner discipline (W10.A, 2026-05-01)
+
+### RAG gating must be allowlist, not prefix-match
+**Date:** 2026-05-01
+**What happened:** W9.D.5 added `STAGES_THAT_USE_CODE_RAG = new Set([2])` to gate compliance-* specialists from leaking code-RAG into other stages. That gate worked for compliance specialists. But there was a SECOND, legacy RAG path in `specialists.ts` — `retrieveEntities` — that fired for ANY non-compliance specialist whenever `jurisdiction` was set, dumping keyword-matched `knowledge_entities` rows into the `citations` array. The model never used them; they polluted StepCard's citation strip with absurd combinations (e.g., concrete-pour question cited "IBC 903.2.7 Group M Retail Sprinkler Requirements"). Two RAG paths existed; the gate only caught one.
+**Fix:** Removed the legacy path entirely. RAG is now compliance-only. If a future non-compliance specialist genuinely benefits from BKG entity context, opt it in via an explicit allowlist — don't blanket-gate.
+**Rule:** When you add a guard to a code path, grep for ALL similar code paths and gate them too, OR consolidate them into one path. "We gated the new one, the old one still leaks" is the most common shape of this bug. Default to allowlist (opt-in) over prefix-match (opt-out) — it survives refactors better.
+
+### Smoke-test automation misses what the human eye sees
+**Date:** 2026-05-01
+**What happened:** The W10.A probe checked banned-CYA-word patterns, demo-fallback signal regex, and `mock-` citation prefix. All 10 specialists passed every automated check. But manual narrative inspection caught three systemic findings the regex couldn't: hedging openers ("I need more information"), citation pollution (real BKG entity IDs but wildly off-topic), and missing structured JSON. The automated flags are necessary but not sufficient.
+**Fix:** Always read at least 3 full narratives end-to-end during a smoke pass. Write the automation to surface anomalies (long latencies, off-pattern openers) but make space to read the prose.
+**Rule:** A green automated smoke result is not a pass. It's "no known patterns matched." Investor-demo readiness needs eyes on the actual content. Budget time for it.
+
+### Cross-cutting concerns belong in the runner, not in every prompt
+**Date:** 2026-05-01
+**What happened:** 5 of 10 untested specialists opened with "I need more information" before answering. The fix-per-prompt path would mean rewriting 10+ prompt files to add the same instruction — high churn, high blast radius. Instead, appended a single one-line "answer-first" instruction to the runner's `userMessage` after prompt-specific context. Universal effect, single point of change.
+**Rule:** Cross-cutting concerns (voice rules, framing, output-format mandates) live in the runner. Specialist-specific behavior lives in the prompt. If you're about to copy the same instruction into N prompt files, stop and put it upstream.
+
+### v2 prompt files should use `<json>` tags consistently — runner only parses XML form
+**Date:** 2026-05-01
+**What happened:** While writing the W10.A v2 prompt rewrites, noticed `extractSystemPrompt` in `specialists.ts` parses ONLY `<json>...</json>` XML-style tags from model responses (`/<json>([\s\S]*?)<\/json>/`). But the existing v2 prompts (`estimating-takeoff.v2.md`, `sub-bid-analysis.v2.md`, `compliance-structural.v2.md`) teach the schema using markdown ` ```json ` blocks in their few-shot examples. **W10.A5 probe confirmed q2/q5/q9 returned `structured_keys=0` in production** — model dutifully output ` ```json ` blocks (visible in the narrative head: "```json\n{...") but the parser found no `<json>` tags so it never extracted. Structured output has been silently lost.
+**Fix:** Made the runner parser accept both forms (XML tags first, markdown fence as fallback). Backward-compat with all existing v2 prompts AND new ones. No prompt rewrites needed.
+**Rule:** When a runner has an explicit response-format parser, EITHER (a) the few-shot example MUST use that exact format, or (b) the parser must accept the format the few-shot teaches. Don't trust the model to translate. And — when you find a parser-vs-prompt mismatch, the durable fix is to fix the parser to accept both, not to migrate every prompt file. Migrations leave latent breakage; backward-compat fallbacks don't.
+
+### Legal exposure → server-side deterministic gate, not LLM
+**Date:** 2026-05-01
+**What happened:** q23 Payroll Classification step had been parked behind a "DEFERRED WITH LEGAL REVIEW GATE" tag in `tasks.todo.md` § Phase 0 line 744 because 1099-vs-W-2 misclassification creates real liability that varies by state and fact-pattern. The workflow had an `analysis_result` step defined (`s23-2`) but no `promptId` — so it would either fail silently or call a nonexistent specialist. When wiring q12–q27 AI in W10.A4, the question was: write a careful prompt that refuses classification, or short-circuit before the LLM?
+**Fix:** Server-side short-circuit. Specialist ID `payroll-classification-gate` returns a deterministic response from `callSpecialist` BEFORE prompt loading or Claude call — guaranteed not to drift, no API cost, no instruction-following risk. The specialist step still appears in the workflow so users see a clear gate, not a silent skip.
+**Rule:** When an AI step has high legal/safety exposure, prefer a server-side deterministic gate over a prompt that tells the model to refuse. Prompts can drift; deterministic returns can't. Use this pattern when: (a) the right answer turns on facts the AI can't verify, (b) being wrong creates real legal/financial liability, or (c) the user must take an action outside the platform (CPA, attorney, inspector) regardless of what the AI says.

@@ -855,3 +855,42 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - RAG retrieval gated to stage 2 only (`STAGES_THAT_USE_CODE_RAG = new Set([2])`).
 - Token shapes: `spacing[N]` numeric, `fontWeights.regular` (not normal), SVG `<title>` child for tooltips.
 - ANTHROPIC_API_KEY required in Vercel env for live LLM responses (mock fallback exists per stage).
+
+---
+
+## W10.A — Untested specialist smoke test (opened 2026-05-01, IN PROGRESS)
+
+**Premise:** W9.D handoff flagged risk of a Code-Compliance-style demo blowup if the 14 untested q12–q27 specialists were exercised in front of an investor. This session probed them.
+
+**Probe setup:** 10 contractor-realistic prompts fired at the live `/api/v1/specialists/[id]` endpoint on `builders.theknowledgegardens.com`. All 10 returned 200 OK with real Claude Sonnet 4 responses. Automated checks (banned-CYA words, mock-fallback signal, `mock-` citation prefix) caught zero. **Manual narrative + citation inspection caught three systemic findings.** Workflow coverage was actually 10 specialists across 7 of 16 q12–q27 workflows (q12, q13, q15, q19, q22, q23, q25, q26, q27 have no `promptId` at all — see F4 below).
+
+### Findings
+
+- **F1 — Citation pollution (HIGH).** Non-compliance specialists were dumping unrelated codes into the citations array because the legacy `retrieveEntities` path in `src/lib/specialists.ts` fired whenever `jurisdiction` was set. Examples: `weather-forecast` (concrete pour) cited "IBC 903.2.7 Group M Retail Sprinkler Requirements"; `draw-calculate` cited "Data Center Cooling Systems"; `co-document` for a residential rear deck cited 5 IBC codes about sprinklers and exit doorways. Model never used them; they polluted StepCard's citation strip.
+- **F2 — Hedging opener (MEDIUM-HIGH).** 5 of 10 specialists opened with "I need more information" instead of leading with a best-guess answer. Specialists affected: `weather-forecast`, `co-schedule-impact`, `co-document`, `draw-calculate`, `expense-dashboard`. Root cause: their `.md` prompts are explicitly marked `Status: Draft (prototype v3.2) — production rewrite pending`.
+- **F3 — No structured JSON output (MEDIUM).** All 10 specialists returned `structured_keys: 0`. v1 prompts don't request the `<json>...</json>` wrapping the runner expects. Side effect: `confidence` is hardcoded "medium" instead of model-assessed; no extractable budget/schedule fields for spine integration.
+- **F4 — Specialist-less workflows (founder narrative).** 9 of 16 q12–q27 workflows have NO `promptId` at all (q12, q13, q15, q19, q22, q23, q25, q26, q27). They're informational/checklist routes — not bugs, but the W9.D handoff says "17 workflows shipping" and an investor may assume all are AI-driven. Demo-path question for founder.
+
+### Shipped this session — pending review + push
+
+- [x] **W10.A1** Removed legacy `retrieveEntities` path for non-compliance specialists in `src/lib/specialists.ts`. RAG is now compliance-only (matches W9.D.5 root-fix LLM bleed pattern). Comment block tags the change.
+- [x] **W10.A2a** Runner-level "answer-first" framing appended to every specialist's `userMessage`. Additive to whatever the prompt says.
+- [x] **W10.A2b** Five v1→v2 prompt rewrites under `docs/ai-prompts/*.v2.md`: weather-forecast, co-schedule-impact, co-document, draw-calculate, expense-dashboard. Each has answer-first prose + decision-rule defaults + structured `<json>...</json>` output schema + few-shot example.
+- [x] Registered the 5 specialists in `DEFAULT_VERSION_BY_SPECIALIST` (both `src/lib/specialists.ts` and `src/app/api/v1/specialists/[id]/route.ts`).
+
+### Pending — needs commit + push + verification
+
+- [ ] **W10.A.verify** Run `next build` locally OR push to a Vercel preview deploy → re-fire smoke probe → confirm: (a) citations array is empty for non-compliance specialists, (b) 5 v2 specialists no longer open with "I need more information", (c) `structured_keys > 0` on all 5 v2 specialists.
+- [ ] **Commit + push** — needs explicit founder authorization. Suggested commit message: `W10.A: kill RAG bypass for non-compliance specialists + answer-first runner framing + v2 prompts (weather, co-schedule, co-document, draw, expense-dashboard)`.
+
+### Shipped this session — extended pass (founder greenlight: "everything else: go for it")
+
+- [x] **W10.A4** Wired AI into 6 of the 9 specialist-less q12–q27 workflows. New v2 prompts: `crew-outreach-draft` (q13), `daily-log-categorize` (q15), `lien-waiver-tracker` (q22), `retainage-strategy` (q25), `warranty-summary` (q26), `lessons-synthesize` (q27). Each appended as new analysis_result step at the end of its workflow in `docs/workflows.json`. q12 (Services & utilities) and q19 (Compass check-in) intentionally remain pure-checklist — q12 is cross-trade ops with simple actions, q19 is a tutorial for the time-machine snapshot UX.
+- [x] **W10.A4-q23** Payroll classification: deterministic legal-gate specialist (`payroll-classification-gate`) wired to existing `s23-2` analysis step. Server-side short-circuit in `specialists.ts` returns a clear gate response WITHOUT calling Claude — protects against the legal exposure documented in `tasks.todo.md` § Phase 0 line 744. The step shows "Payroll classification is intentionally not run by AI" + redirects user to step s23-4 (CPA review).
+- [x] **W10.A5** Runner parser now accepts BOTH `<json>...</json>` XML tags and ` ```json ` markdown fences. **Critical finding from probe:** q2/q5/q9 v2 prompts have been silently shipping `structured_keys: 0` because their few-shot examples teach markdown fences but the parser only recognized XML tags. Backward-compat fallback in `src/lib/specialists.ts` parses both. No prompt rewrites required.
+- [x] **W10.A6** Promoted smoke probe to `scripts/probes/w10a-smoke.mjs` as a durable harness. 15 probes covering every wired q12–q27 specialist + q2/q5/q9 v2 specialists. Detects `HEDGE_OPENER`, `NO_STRUCTURED`, `CYA_*`, `DEMO_FALLBACK`, `HALLUCINATED_CITE`, HTTP/API errors. Exits 1 on FAIL flags — usable as pre-demo CI gate. Runs against `BASE` env (defaults to live deploy; `BASE=http://localhost:3000` for local dev).
+
+### Still parked (W10.A.x sub-tickets)
+
+- [ ] **W10.A3** Universal v1→v2 prompt rewrite for the remaining ~10 v1 specialists (osha-toolbox-talk, contacts-quotes, expense-categorization, co-cost-delta, punch-detection, crew-analysis/conflicts/optimization, supply-leadtimes, supply-materials, risk-payment-history/material-availability/markup-calculation, equipment-rent-vs-buy, sequencing-bottlenecks, compliance-electrical/fire/plumbing/router). Half-day. Best done with founder review on each prompt before commit.
+- [ ] **W10.A.verify** Full re-probe via `scripts/probes/w10a-smoke.mjs` after push lands. Expected: zero CYA flags, zero `HEDGE_OPENER` on the 5 W10.A2b specialists, zero `NO_STRUCTURED` on q2/q5/q9 (W10.A5 parser fallback), structured output on all 6 W10.A4 specialists, deterministic gate response from `payroll-classification-gate`.

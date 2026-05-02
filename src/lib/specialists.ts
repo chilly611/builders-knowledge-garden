@@ -5,7 +5,8 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import Anthropic from "@anthropic-ai/sdk";
-import { retrieveEntities, type KnowledgeEntity } from "./rag";
+// W10.A1 (2026-05-01): legacy `retrieveEntities` path removed; only the
+// `code-sources` (3-source compliance) path uses RAG now. See specialist body.
 import {
   queryAllSources,
   hasMultipleSources,
@@ -76,6 +77,26 @@ const DEFAULT_VERSION_BY_SPECIALIST: Record<string, "v1" | "v2"> = {
   "estimating-takeoff": "v2", // q2
   "compliance-structural": "v2", // q5
   "sub-bid-analysis": "v2", // q9
+  // W10.A2b (2026-05-01): five q12-q27 specialists rewritten to v2 with
+  // answer-first framing + structured JSON output in <json>...</json> tags.
+  // Smoke probe before rewrite found these all opened with "I need more
+  // information" and returned no parseable structured output.
+  "weather-forecast": "v2", // q14
+  "co-schedule-impact": "v2", // q20
+  "co-document": "v2", // q20
+  "draw-calculate": "v2", // q21
+  "expense-dashboard": "v2", // q17
+  // W10.A4 (2026-05-01): six new specialists wiring AI into previously
+  // specialist-less q12-q27 workflows. q12 (services & utilities) and q19
+  // (compass check-in) intentionally remain pure-checklist — they're
+  // cross-trade ops + a tutorial, no AI value-add. q23 payroll-classification
+  // is handled by the deterministic gate above (no prompt file).
+  "crew-outreach-draft": "v2", // q13
+  "daily-log-categorize": "v2", // q15
+  "lien-waiver-tracker": "v2", // q22
+  "retainage-strategy": "v2", // q25
+  "warranty-summary": "v2", // q26
+  "lessons-synthesize": "v2", // q27
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -194,6 +215,30 @@ export async function callSpecialist(
   const version =
     options?.version || DEFAULT_VERSION_BY_SPECIALIST[specialistId] || "v1";
 
+  // W10.A4 (2026-05-01): deterministic legal-gate specialists — short-circuit
+  // before LLM call. Used for high-legal-exposure analyses (worker classification,
+  // future: state-specific lien-waiver bodies) where AI output is not safe to ship.
+  // The step exists in the workflow so the user sees a clear gate, not a silent skip.
+  if (specialistId === "payroll-classification-gate") {
+    return {
+      narrative:
+        "**Payroll classification is intentionally not run by AI.** State and federal rules for 1099-vs-W-2 classification turn on facts (control, integration, schedule, tools, exclusivity) that vary by worker and state — and the wrong answer creates real liability for you. This step is here to remind you that classification needs CPA sign-off. Move to the next step (\"Get CPA advice\") and bring your worker list with hours, day-rate vs hourly, who supplies tools, and exclusivity facts.",
+      structured: {
+        gate: "legal-review-required",
+        action: "Get CPA review",
+        classification: null,
+        reason:
+          "Worker classification turns on multi-factor tests that vary by state and role. AI output here would be liability.",
+      },
+      citations: [],
+      confidence: "high",
+      raw_response: "",
+      model: "deterministic-gate",
+      latency_ms: Date.now() - start,
+      promptVersion: version,
+    };
+  }
+
   // 1. LOAD THE PROMPT
   const systemPrompt = loadSpecialistPrompt(specialistId, preferProductionPrompt, version);
 
@@ -269,38 +314,21 @@ export async function callSpecialist(
       userMessage += `\n\nCRITICAL: queryAllSources returned no results for this query. You MUST return confidence: low and tell the user: "I don't have a cross-verified answer; stop and call your local building department." Include specific questions the user should ask their building department.`;
       codeSourceConfidenceData = { multiSource: false, sourceCount: 0, hasPrimary: false };
     }
-  } else if (context.jurisdiction && !isComplianceSpecialist) {
-    // Use legacy retrieveEntities for non-compliance specialists
-    const result = await retrieveEntities(context.scope_description, {
-      jurisdiction: context.jurisdiction,
-      limit: 10,
-    });
-
-    if (result.entities.length > 0) {
-      // Format entities as a BKG database excerpt for the model
-      entityContext = "BKG Database Excerpt (relevant to your jurisdiction):\n";
-      entityContext += result.entities
-        .map(
-          (e, idx) =>
-            `[${idx}] ${e.title} (${e.entity_type})\n${e.summary}${e.body ? "\n" + truncate(e.body, 200) : ""}`
-        )
-        .join("\n\n");
-
-      // Inject at the top of the user message so model can cite them
-      userMessage = `${entityContext}\n\n---\n\n${userMessage}`;
-
-      // Prepare citations array for extraction later
-      citations = result.entities.map((e) => ({
-        entity_id: e.id,
-        code_body: e.domain,
-        section: e.title,
-        jurisdiction: context.jurisdiction,
-        relevance: "medium", // Will be overridden by model output if present
-      }));
-    } else {
-      userMessage += `\n\nNote: BKG database does not yet cover ${context.jurisdiction} — return confidence: low if citation required.`;
-    }
   }
+  // W10.A1 (2026-05-01): legacy `retrieveEntities` path removed for non-compliance
+  // specialists. It was firing keyword-match across `knowledge_entities` whenever
+  // jurisdiction was set and dumping unrelated codes into the citations array
+  // (e.g. weather-forecast cited IBC sprinkler requirements). The model never used
+  // them; they polluted StepCard's citation strip. RAG is now compliance-only —
+  // matches the W9.D.5 root-fix LLM bleed pattern (`STAGES_THAT_USE_CODE_RAG = {2}`).
+  // If a future non-compliance specialist genuinely benefits from BKG entity
+  // context, opt it in via an explicit allow-list — don't reintroduce blanket gating.
+
+  // W10.A2a (2026-05-01): runner-level "answer-first" framing.
+  // 5/10 q12-q27 specialists were opening with "I need more information" before
+  // answering. In a demo that reads as the AI dodging. This instruction is
+  // additive to whatever the prompt says.
+  userMessage += `\n\nFraming: lead with your best answer using sensible defaults — state the defaults explicitly. After the answer, list specifics that would tighten it. Never open with a request for more information; the user wants forward motion.`;
 
   // 4. CHECK FOR API KEY AND DECIDE MOCK VS. REAL
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -340,8 +368,16 @@ export async function callSpecialist(
     let disciplineHandoff: DisciplineHandoff | undefined;
     let supersededNotice: SupersededNotice | undefined;
 
-    // Try to extract JSON from <json>...</json> block (production prompt style)
-    const jsonMatch = rawResponse.match(/<json>([\s\S]*?)<\/json>/);
+    // Try to extract structured JSON. Two forms accepted:
+    //   1. <json>...</json>  (canonical XML-tag form — what every v2 prompt should teach)
+    //   2. ```json ... ```   (markdown fence — fallback because legacy v2 prompts
+    //      teach this form in their few-shot examples; W10.A5 (2026-05-01)
+    //      probe confirmed q2/q5/q9 in production are emitting markdown fences,
+    //      which means structured output has been silently lost. This fallback
+    //      restores it without needing to rewrite legacy prompts.)
+    const xmlJsonMatch = rawResponse.match(/<json>([\s\S]*?)<\/json>/);
+    const fenceJsonMatch = !xmlJsonMatch ? rawResponse.match(/```json\s*([\s\S]*?)```/) : null;
+    const jsonMatch = xmlJsonMatch || fenceJsonMatch;
     if (jsonMatch) {
       try {
         structured = JSON.parse(jsonMatch[1].trim());

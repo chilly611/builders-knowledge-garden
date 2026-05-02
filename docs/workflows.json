@@ -800,6 +800,14 @@
           "id": "s13-5",
           "label": "Lock them in",
           "type": "checklist"
+        },
+        {
+          "id": "s13-6",
+          "label": "Get an AI outreach draft",
+          "type": "analysis_result",
+          "promptId": "crew-outreach-draft",
+          "analysisTitle": "Drafting your outreach message",
+          "exampleOutput": "Hey Mike — Chilly here. I've got 12 weeks of framing work on a San Diego ADU starting May 1. Day rate $200, breakfast on us. Your refs are solid — we'd love to have you on. Free for a quick call this week to walk through the build?"
         }
       ]
     },
@@ -900,6 +908,14 @@
           "id": "s15-5",
           "label": "Save to the record",
           "type": "checklist"
+        },
+        {
+          "id": "s15-6",
+          "label": "Categorize today's log",
+          "type": "analysis_result",
+          "promptId": "daily-log-categorize",
+          "analysisTitle": "Tagging the day, flagging follow-ups",
+          "exampleOutput": "Solid framing day. Categorized: progress (west wall done), schedule (electrical rough-in tomorrow), quality (water stain in south corner — flagged for follow-up), crew (Mike late by 1hr — note). Tomorrow's priority: investigate water stain before electrical covers it."
         }
       ]
     },
@@ -1195,6 +1211,14 @@
           "id": "s22-5",
           "label": "File them",
           "type": "checklist"
+        },
+        {
+          "id": "s22-6",
+          "label": "Build your waiver tracking list",
+          "type": "analysis_result",
+          "promptId": "lien-waiver-tracker",
+          "analysisTitle": "Mapping who needs what waiver, when",
+          "exampleOutput": "4 parties × 2-3 waivers each = ~10 waivers to track. CA uses statutory forms for all. Send today: Anderson Lumber + Concrete Pros (paid in full → unconditional final). Pending draw 3: Main Electric + Premier Plumbing conditional partial."
         }
       ]
     },
@@ -1215,9 +1239,10 @@
           "id": "s23-2",
           "label": "Run AI analysis",
           "type": "analysis_result",
-          "analysisTitle": "Payroll Classification Review",
-          "exampleOutput": "18 workers listed. 6 employee, 12 contractor. AI flags: 3 contractors may qualify as employees (regular hours, exclusive work). Recommend CPA review.",
-          "notes": "No prompt_id defined in prototype — orphan analysis step."
+          "analysisTitle": "Legal-gate review (no AI classification)",
+          "exampleOutput": "Payroll classification is intentionally not run by AI. State and federal classification rules turn on facts that vary by worker and state — the wrong answer creates real liability. This step reminds you that classification needs CPA sign-off. Move to the next step (Get CPA advice) with your worker list.",
+          "notes": "No prompt_id defined in prototype — orphan analysis step.",
+          "promptId": "payroll-classification-gate"
         },
         {
           "id": "s23-3",
@@ -1321,6 +1346,14 @@
           "id": "s25-5",
           "label": "Confirm payment",
           "type": "checklist"
+        },
+        {
+          "id": "s25-6",
+          "label": "Get a follow-up + lien-deadline plan",
+          "type": "analysis_result",
+          "promptId": "retainage-strategy",
+          "analysisTitle": "Mapping the cadence + your file-lien deadline",
+          "exampleOutput": "Retainage of $19,250 due. CA file-lien deadline: 90 days from substantial completion. Cadence: day 7 first written request, day 21 second nudge, day 35 phone call, day 50 certified demand, day 65 pre-lien notice, day 85 file lien if unpaid."
         }
       ]
     },
@@ -1357,6 +1390,14 @@
           "id": "s26-5",
           "label": "Close the file",
           "type": "checklist"
+        },
+        {
+          "id": "s26-6",
+          "label": "Generate the warranty summary",
+          "type": "analysis_result",
+          "promptId": "warranty-summary",
+          "analysisTitle": "Building the warranty handoff doc",
+          "exampleOutput": "6 warranty items mapped. Earliest expiration: GC workmanship + HVAC labor + appliances at 1 year. Register: GAF roof (extends to 50yr), Carrier HVAC (extends labor to 10yr), Andersen windows, Sherwin Williams paint. Owner letter generated for the binder."
         }
       ]
     },
@@ -1406,6 +1447,14 @@
             "Safety",
             "Quality"
           ]
+        },
+        {
+          "id": "s27-6",
+          "label": "Synthesize your lessons",
+          "type": "analysis_result",
+          "promptId": "lessons-synthesize",
+          "analysisTitle": "Distilling what to bring forward",
+          "exampleOutput": "Headline: sequencing was a strength, but permit + window-lead-time underestimates ate the budget. Next-job adjustments: add 1 week to permit estimate, order long-lead items at contract signing, pre-qualify drywall subs by job size, keep this framing crew."
         }
       ]
     }

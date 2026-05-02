@@ -883,3 +883,127 @@ Full detail in `docs/revenue-plan.md`.
 2. **Post-revenue before fundraising** — the binary flip from zero customers to any customers changes investor terms meaningfully. Plan for revenue parallel to building, not after.
 3. **Stop reading when the marginal return drops** — line-by-line reading was valuable through ~1600 lines. Past that, agent extraction is more efficient. Don't chase completeness at 2am.
 4. **"Lock" applies to founder decisions too** — even founder-unilateral decisions should be explicit about what's locked and what's open for team input. Prevents the v1.0-premature-lock pattern.
+
+---
+
+## 2026-05-01 — Chat — W10.A Specialist Smoke + Surgical Fixes
+
+**Type:** Demo-readiness audit + surgical code fixes (no commit yet — pending founder review).
+**Outcome:** Three systemic findings caught in q12–q27 specialist suite; F1 + F2a + F2b applied locally; F3 + F4 parked as W10.A.x.
+
+### What happened
+
+Picked up after W9.D session seal (2026-04-28, commit `28a50da`). Three days of quiet. The W9.D handoff explicitly flagged 14 untested q12–q27 specialists as the highest demo-blowup risk before fundraising. This session probed them.
+
+Discovered first that two working copies exist: `Desktop/The Builder Garden/app` is 23 commits stale at W7.O.1 with uncommitted edits + ~30 untracked W9 docs (do NOT push from there). `Developer/builders-knowledge-garden` is at origin/main `3e2d632` and is the canonical working copy this session.
+
+Probed 10 specialists across q14/q16/q17/q18/q20/q21/q24 with contractor-realistic questions against `https://builders.theknowledgegardens.com/api/v1/specialists/[id]`. All 10 returned 200 OK with real Claude Sonnet 4 responses. Automated checks (banned-CYA words, mock-fallback signal, hallucinated-`mock-` citations) caught zero. **Manual narrative inspection caught three systemic findings.**
+
+### Findings
+
+- **F1 — Citation pollution (HIGH).** Legacy `retrieveEntities` path in `src/lib/specialists.ts` was firing for any non-compliance specialist whenever `jurisdiction` was set. Dumping keyword-matched BKG entities into the citations array regardless of relevance. Examples: weather-forecast question about a concrete pour cited "IBC 903.2.7 Group M Retail Sprinkler Requirements"; co-document for a residential rear-deck CO cited 5 IBC codes about sprinklers + exit doorways; draw-calculate cited "Data Center Cooling Systems". Model never used these; they polluted StepCard's citation strip. Investor-demo blowup risk.
+- **F2 — Hedging opener (MEDIUM-HIGH).** 5 of 10 specialists opened with "I need more information" before answering: weather-forecast, co-schedule-impact, co-document, draw-calculate, expense-dashboard. Their `.md` prompts are explicitly marked DRAFT (prototype v3.2).
+- **F3 — No structured JSON (MEDIUM).** All 10 returned `structured_keys: 0`. v1 prompts don't request the `<json>...</json>` wrapping the runner expects.
+- **F4 — Specialist-less workflows (founder narrative).** 9 of 16 q12–q27 workflows have no `promptId` at all (q12, q13, q15, q19, q22, q23, q25, q26, q27). Demo path question.
+
+### Shipped this session — pending push
+
+- **W10.A1** Removed legacy `retrieveEntities` branch in `src/lib/specialists.ts`. RAG is now compliance-only.
+- **W10.A2a** Runner-level "answer-first" framing appended to every specialist's `userMessage`.
+- **W10.A2b** Five v1→v2 prompt rewrites with answer-first prose + decision-rule defaults + structured `<json>...</json>` output schema + few-shot example: `weather-forecast.v2.md`, `co-schedule-impact.v2.md`, `co-document.v2.md`, `draw-calculate.v2.md`, `expense-dashboard.v2.md`. Registered all 5 in `DEFAULT_VERSION_BY_SPECIALIST`.
+
+### Files changed (uncommitted)
+
+- `src/lib/specialists.ts` (modified — F1 + F2a + 5 v2 entries)
+- `src/app/api/v1/specialists/[id]/route.ts` (modified — 5 v2 entries in mirror map)
+- `docs/ai-prompts/weather-forecast.v2.md` (new)
+- `docs/ai-prompts/co-schedule-impact.v2.md` (new)
+- `docs/ai-prompts/co-document.v2.md` (new)
+- `docs/ai-prompts/draw-calculate.v2.md` (new)
+- `docs/ai-prompts/expense-dashboard.v2.md` (new)
+- `tasks.todo.md` (W10.A section appended)
+- `tasks.lessons.md` (4 new lessons appended)
+- `docs/session-log.md` (this entry)
+
+### Pending — needs founder authorization + verification
+
+- Founder review of the diff before commit
+- `next build` in main context (mandatory pre-push gate per W9.D operating rules)
+- Push to `main`
+- Re-fire smoke probe against new live deploy → confirm citations cleaned, openings de-hedged, structured JSON parses
+
+### What did NOT happen
+
+- No commit, no push (durable rule: explicit founder authorization required).
+- F3 universal v1→v2 rewrite (~13 remaining specialists) — parked as W10.A3, half-day, needs per-prompt founder review.
+- F4 founder narrative call on specialist-less workflows — parked as W10.A4.
+- W10.A5 audit of existing `.v2.md` prompts (estimating-takeoff/sub-bid-analysis/compliance-structural) for the same `<json>` parser bug — parked.
+- Couldn't run `tsc --noEmit` or `vitest` locally — sandbox is in `npm cache=only-if-cached` mode and `node_modules` isn't installed in the Developer/ working copy. Edits verified by re-read instead.
+
+### Operating-rule reminders surfaced
+
+- Stale Vercel hash URLs in pickup notes are banned (W9.D lesson) — point at the GitHub commit's ✓ → Vercel Details instead.
+- Two working copies of the repo exist; only `Developer/builders-knowledge-garden` is current.
+- Per `tasks.lessons.md` 2026-04-19, multi-line shell pastes with inline `#` comments break zsh — use a `.sh` file with single-line invocation.
+
+---
+
+## 2026-05-01 — Chat — W10.A Extended Pass (W10.A4 + A5 + A6)
+
+**Type:** Continuation of same-day W10.A session. Founder greenlit "everything else: go for it" so the parked sub-tickets got executed in one continuous pass.
+
+### What landed (still uncommitted, still pending push gate)
+
+**W10.A4 — wired AI into 6 of 9 specialist-less workflows:**
+- `crew-outreach-draft` (q13 Hire your crew) — drafts SMS-friendly outreach in foreman voice
+- `daily-log-categorize` (q15 Daily logbook) — parses log entry into categories + flags + tomorrow's priority + raw_phrases_preserved
+- `lien-waiver-tracker` (q22 Collect lien waivers) — builds tracking list with state-statutory-form awareness; does NOT generate waiver bodies (legal gate)
+- `retainage-strategy` (q25 Collect retainage) — date-by-date follow-up cadence + jurisdiction-specific lien-filing deadline
+- `warranty-summary` (q26 Warranty handoff) — full warranty table per installed system + GC reminder schedule + owner letter
+- `lessons-synthesize` (q27 What we learned) — RSI-tagged lessons + next-job adjustments (this one feeds the recursive self-improvement loop)
+- q12 (Services & utilities) and q19 (Compass check-in) intentionally remain pure-checklist — q12 is cross-trade ops, q19 is a tutorial.
+- q23 Payroll: deterministic legal-gate specialist — server-side short-circuit in `specialists.ts` returns a clear gate response without calling Claude. Honors the `tasks.todo.md` line 744 legal-review gate.
+
+**W10.A5 — runner parser accepts both `<json>` and ` ```json ` forms:**
+- Probe confirmed q2/q5/q9 v2 specialists were silently returning `structured_keys=0` in production — model emits markdown fences per the few-shot, but parser only saw XML tags.
+- Backward-compat fallback in `src/lib/specialists.ts` parses both. No prompt rewrites required.
+
+**W10.A6 — durable smoke harness at `scripts/probes/w10a-smoke.mjs`:**
+- 15 probes covering q2/q5/q9 v2 + 5 W10.A2b rewrites + 6 W10.A4 new specialists + payroll legal gate.
+- Detects HEDGE_OPENER, NO_STRUCTURED, CYA_*, DEMO_FALLBACK, HALLUCINATED_CITE, HTTP/API errors.
+- Exit 1 on FAIL flags. `BASE` env var for local-vs-live targeting. `FILTER` env for partial runs.
+
+### Files added/changed in extended pass
+
+Added (8):
+- `docs/ai-prompts/crew-outreach-draft.v2.md`
+- `docs/ai-prompts/daily-log-categorize.v2.md`
+- `docs/ai-prompts/lien-waiver-tracker.v2.md`
+- `docs/ai-prompts/retainage-strategy.v2.md`
+- `docs/ai-prompts/warranty-summary.v2.md`
+- `docs/ai-prompts/lessons-synthesize.v2.md`
+- `scripts/probes/w10a-smoke.mjs`
+- (no new file for `payroll-classification-gate` — it's deterministic in code)
+
+Modified (3):
+- `src/lib/specialists.ts` (+ deterministic gate, + parser fallback, + 6 entries in DEFAULT_VERSION)
+- `src/app/api/v1/specialists/[id]/route.ts` (+ 6 entries in mirror map)
+- `docs/workflows.json` (6 new analysis_result steps + 1 patched s23-2; +50 lines)
+
+### Lessons added
+
+- `tasks.lessons.md` § Specialist runner discipline — "v2 prompts use `<json>` consistently — runner only parses XML form" (revised with W10.A5 confirmation)
+- `tasks.lessons.md` § Specialist runner discipline — "Legal exposure → server-side deterministic gate, not LLM" (NEW)
+
+### Pending — needs founder action
+
+1. **Run the build gate locally** before push (mandatory per W9.D operating rules):
+   ```sh
+   cd "Developer/builders-knowledge-garden"
+   npm install
+   npx tsc --noEmit
+   npx vitest run
+   npm run build
+   ```
+2. **Commit + push** when green. Suggested commit in `docs/strategy/W10-A-smoke-report.md` § Pre-push checklist.
+3. **Run the smoke harness post-deploy:** `node scripts/probes/w10a-smoke.mjs` — should report 15 OK or 0 FAIL (warnings tolerable).

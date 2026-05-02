@@ -88,10 +88,22 @@ export async function POST(
   const stepId = (body.extra?.step_id as string) || undefined;
 
   // Determine the prompt version that will be used (same logic as specialists.ts)
+  // Keep this in sync with DEFAULT_VERSION_BY_SPECIALIST in src/lib/specialists.ts
   const DEFAULT_VERSION_BY_SPECIALIST: Record<string, "v1" | "v2"> = {
     "estimating-takeoff": "v2",
     "compliance-structural": "v2",
     "sub-bid-analysis": "v2",
+    "weather-forecast": "v2",
+    "co-schedule-impact": "v2",
+    "co-document": "v2",
+    "draw-calculate": "v2",
+    "expense-dashboard": "v2",
+    "crew-outreach-draft": "v2",
+    "daily-log-categorize": "v2",
+    "lien-waiver-tracker": "v2",
+    "retainage-strategy": "v2",
+    "warranty-summary": "v2",
+    "lessons-synthesize": "v2",
   };
   const expectedPromptVersion =
     DEFAULT_VERSION_BY_SPECIALIST[specialistId] || "v1";
