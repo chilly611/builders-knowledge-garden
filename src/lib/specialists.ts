@@ -381,8 +381,15 @@ export async function callSpecialist(
     if (jsonMatch) {
       try {
         structured = JSON.parse(jsonMatch[1].trim());
-        // Narrative is everything before the JSON block
-        narrative = rawResponse.substring(0, jsonMatch.index).trim();
+        // Narrative is everything before the JSON block.
+        // W10.A.fix1 (2026-05-01): if the response is JSON-only (no prose
+        // prefix), keep the full rawResponse as narrative so StepCard has
+        // something to render. Some legacy v2 prompts (estimating-takeoff,
+        // compliance-structural, sub-bid-analysis) teach JSON-only output
+        // in their few-shots; without this fallback their narrative pane
+        // renders empty after the W10.A5 parser fix.
+        const beforeJson = rawResponse.substring(0, jsonMatch.index).trim();
+        narrative = beforeJson.length > 0 ? beforeJson : rawResponse;
 
         // Extract confidence and citations from structured output
         if (structured.confidence) {
