@@ -93,6 +93,27 @@ export interface WorkflowShellProps {
   projectId?: string;
   /** Tag the <main> with a surface id so the Global AI FAB knows where it is. */
   surfaceId?: string;
+  /**
+   * Hydrated payloads keyed by stepId (Project Spine v1).
+   * Forwarded to WorkflowRenderer → StepCard.initialPayload.
+   * Optional and additive.
+   */
+  hydratedPayloads?: Record<
+    string,
+    {
+      value?: string;
+      selected?: string[];
+      checked?: Record<string, boolean>;
+      input?: string;
+    }
+  >;
+  /**
+   * Controlled status map (Project Spine v1).
+   * Pass when the workflow page wants to manage status itself —
+   * e.g. seeding from saved JSONB, then updating on step_completed.
+   * When omitted, the renderer manages locally as before.
+   */
+  statusMap?: Record<string, 'pending' | 'in_progress' | 'complete'>;
 }
 
 export default function WorkflowShell({
@@ -106,6 +127,8 @@ export default function WorkflowShell({
   onStepComplete,
   projectId: projectIdProp,
   surfaceId,
+  hydratedPayloads,
+  statusMap,
 }: WorkflowShellProps) {
   const [trade, setTrade] = useState<string>(defaultContext?.trade ?? 'general');
   const [lane, setLane] = useState<WorkflowContext['lane']>(
@@ -341,6 +364,8 @@ export default function WorkflowShell({
             context={context}
             onEvent={handleEvent}
             proMode={proMode}
+            hydratedPayloads={hydratedPayloads}
+            statusMap={statusMap}
           />
           {sidePanel && <aside>{sidePanel}</aside>}
         </div>

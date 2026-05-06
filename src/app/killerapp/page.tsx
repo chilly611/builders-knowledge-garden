@@ -28,6 +28,7 @@
 import type { Metadata } from 'next';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import Logomark from '@/components/Logomark';
 import ScrollStage from '@/design-system/components/ScrollStage';
@@ -35,6 +36,7 @@ import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
+import KillerappProjectShell from './KillerappProjectShell';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
@@ -231,6 +233,16 @@ export default function KillerAppPage() {
           </SearchBoxErrorBoundary>
         </div>
       </header>
+
+      {/*
+        Project Spine v1 — when ?project=<id> is present, this client
+        island hydrates the project + conversations and renders an
+        inline AI response panel above the picker. Otherwise renders
+        nothing. Suspense required for useSearchParams.
+      */}
+      <Suspense fallback={null}>
+        <KillerappProjectShell />
+      </Suspense>
 
       {/* Stage groups: typographic TOC treatment */}
       <main className={styles.mainContent}>

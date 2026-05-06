@@ -1,11 +1,13 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import WorkflowShell from '@/design-system/components/WorkflowShell';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import type { StepResult } from '@/design-system/components/StepCard.types';
 import { getProjectBudget, recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
+import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import ProjectContextBanner from '../ProjectContextBanner';
 import { colors, spacing, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
 
 interface Props {
@@ -98,13 +100,44 @@ function parseRoughTotal(text: string): number | null {
 }
 
 export default function EstimatingClient({ workflow, stages }: Props) {
+  // Project Spine v1: hydrate + autosave the per-workflow JSONB state.
+  // Hook redirects to /killerapp if no ?project=<id>.
+  const {
+    projectId,
+    hydratedPayloads,
+    recordStepEvent,
+    lastSavedAt,
+    saving,
+    project,
+  } = useProjectWorkflowState({
+    column: 'estimating_state',
+    workflowId: workflow.id,
+  });
+
   const [budgetSnapshot, setBudgetSnapshot] = useState<BudgetSnapshot | null>(null);
   const [budgetError, setBudgetError] = useState<'no-active-project' | null>(null);
   const [loadingBudget, setLoadingBudget] = useState(true);
   const [lastRecordedAmount, setLastRecordedAmount] = useState<number | null>(null);
 
+  // Project Spine v1: track step status locally; seed from hydrated.
+  const [stepStatusMap, setStepStatusMap] = useState<
+    Record<string, 'pending' | 'in_progress' | 'complete'>
+  >({});
+
+  useEffect(() => {
+    if (Object.keys(hydratedPayloads).length === 0) return;
+    setStepStatusMap((prev) => {
+      const next = { ...prev };
+      for (const stepId of Object.keys(hydratedPayloads)) {
+        if (!next[stepId]) next[stepId] = 'complete';
+      }
+      return next;
+    });
+  }, [hydratedPayloads]);
+
   async function refreshBudget() {
-    const result = await getProjectBudget();
+    // Pass URL-bound project id so we don't race localStorage timing.
+    const result = await getProjectBudget(projectId ?? undefined);
     if (!result.ok) {
       // API fetch failed — attempt graceful fallback to demo data
       if (result.reason === 'no-active-project') {
@@ -139,35 +172,71 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   }
 
   useEffect(() => {
+    if (!projectId) return; // wait for hook to resolve
     setLoadingBudget(true);
     refreshBudget().finally(() => setLoadingBudget(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   async function handleStepComplete(stepResult: StepResult & { workflowId: string }) {
-    // Only the final step (s2-6 AI estimate) drives a budget write. Earlier
-    // steps are input capture; the specialist reads them all at once.
+    // Project Spine v1: persist this step's payload into estimating_state.
+    recordStepEvent(stepResult);
+
+    // Bump local statusMap so counter updates in-session.
+    if (stepResult.type === 'step_completed') {
+      setStepStatusMap((prev) => ({ ...prev, [stepResult.stepId]: 'complete' }));
+    } else if (stepResult.type === 'step_saved') {
+      setStepStatusMap((prev) => ({
+        ...prev,
+        [stepResult.stepId]: prev[stepResult.stepId] ?? 'in_progress',
+      }));
+    }
+
+    // Only the final step (s2-6 AI estimate) drives a budget write.
     if (stepResult.stepId !== 's2-6' || stepResult.type !== 'step_completed') return;
 
     const payload = stepResult.payload as { input?: string } | undefined;
     const finalText = payload?.input ?? '';
     const amount = parseRoughTotal(finalText);
-    if (amount === null) return; // Silent skip — contractor may have cleared the figure on purpose.
+    if (amount === null) return;
 
-    const projectId = resolveProjectId();
+    const budgetProjectId = projectId ?? resolveProjectId();
     const result = await recordMaterialCost({
       description: 'AI estimate — Size Up',
       amount,
       lifecycleStageId: 1,
       isEstimate: true,
-      projectId,
+      projectId: budgetProjectId,
     });
 
     if (result.ok) {
       setLastRecordedAmount(amount);
-      // Re-fetch so the top panel reflects the new line item immediately.
       await refreshBudget();
     }
   }
+
+  // ─── "Saved" indicator string ────────────────────────────────────────
+  const savedLabel = saving
+    ? 'Saving…'
+    : lastSavedAt
+      ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+      : null;
+
+  // Pre-fill unsaved text/voice/analysis steps with raw_input.
+  const seededPayloads = useMemo(() => {
+    const out = { ...hydratedPayloads };
+    const raw = project?.raw_input?.trim();
+    if (!raw) return out;
+    for (const step of workflow.steps) {
+      if (out[step.id]) continue;
+      if (step.type === 'text_input' || step.type === 'voice_input') {
+        out[step.id] = { value: raw };
+      } else if (step.type === 'analysis_result') {
+        out[step.id] = { input: raw };
+      }
+    }
+    return out;
+  }, [hydratedPayloads, project, workflow.steps]);
 
   const topPanel = (
     <section
@@ -176,8 +245,25 @@ export default function EstimatingClient({ workflow, stages }: Props) {
         backgroundColor: colors.ink[50],
         borderRadius: radii.md,
         border: `1px solid ${colors.ink[100]}`,
+        position: 'relative',
       }}
     >
+      {savedLabel && (
+        <span
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            top: spacing[2],
+            right: spacing[3],
+            fontSize: fontSizes.xs,
+            color: colors.ink[500],
+            fontFamily: fonts.body,
+          }}
+          data-testid="estimating-saved-indicator"
+        >
+          {savedLabel}
+        </span>
+      )}
       {loadingBudget ? (
         <p style={{ fontFamily: fonts.body, fontSize: fontSizes.sm, color: colors.ink[400] }}>
           Loading budget…
@@ -274,12 +360,18 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   );
 
   return (
-    <WorkflowShell
-      workflow={workflow}
-      stages={stages}
-      breadcrumbLabel="AI Estimating Gate"
-      topPanel={topPanel}
-      onStepComplete={handleStepComplete}
-    />
+    <>
+      <ProjectContextBanner project={project} selfWorkflow="estimating" />
+      <WorkflowShell
+        workflow={workflow}
+        stages={stages}
+        breadcrumbLabel="AI Estimating Gate"
+        topPanel={topPanel}
+        onStepComplete={handleStepComplete}
+        projectId={projectId ?? undefined}
+        hydratedPayloads={seededPayloads}
+        statusMap={stepStatusMap}
+      />
+    </>
   );
 }

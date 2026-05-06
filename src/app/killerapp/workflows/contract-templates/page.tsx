@@ -16,6 +16,7 @@
 
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { Suspense } from 'react';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import { TEMPLATE_META } from '@/lib/contract-templates';
@@ -52,12 +53,16 @@ export default async function ContractTemplatesPage() {
   const { workflow, stages } = loadWorkflow();
   const bodies = await getTemplateBodies();
 
+  // Project Spine v1: client uses useSearchParams via the workflow hook
+  // — must be inside a Suspense boundary.
   return (
-    <ContractTemplatesClient
-      workflow={workflow}
-      stages={stages}
-      templates={TEMPLATE_META}
-      bodies={bodies}
-    />
+    <Suspense fallback={null}>
+      <ContractTemplatesClient
+        workflow={workflow}
+        stages={stages}
+        templates={TEMPLATE_META}
+        bodies={bodies}
+      />
+    </Suspense>
   );
 }

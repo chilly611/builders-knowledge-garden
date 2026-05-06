@@ -39,6 +39,20 @@ import type {
 } from '@/lib/contract-templates';
 import { fillTemplate } from '@/lib/contract-templates';
 import { downloadContractPdf } from '@/lib/pdf/contract-pdf';
+import { useProjectStateBlob } from '@/lib/hooks/useProjectWorkflowState';
+import ProjectContextBanner from '../ProjectContextBanner';
+
+// Project Spine v1 — JSONB shape for contracts_state.
+// Stored as plain object (Set<string> can't round-trip through JSON).
+interface ContractsState extends Record<string, unknown> {
+  selectedIds: string[];
+  fields: Record<string, string>;
+}
+
+const DEFAULT_CONTRACTS_STATE: ContractsState = {
+  selectedIds: [],
+  fields: {},
+};
 
 interface ContractTemplatesClientProps {
   workflow: Workflow;
@@ -53,11 +67,36 @@ export default function ContractTemplatesClient({
   templates,
   bodies,
 }: ContractTemplatesClientProps) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [fields, setFields] = useState<Record<string, string>>({});
+  // Project Spine v1: hydrate + autosave contracts_state JSONB.
+  const {
+    state: contractsState,
+    setState: setContractsState,
+    lastSavedAt,
+    saving,
+    project,
+  } = useProjectStateBlob<ContractsState>({
+    column: 'contracts_state',
+    workflowId: workflow.id,
+    defaultValue: DEFAULT_CONTRACTS_STATE,
+  });
+
+  // Derive Set<string> locally from string[] for the existing render code.
+  const selected = useMemo(
+    () => new Set(contractsState.selectedIds ?? []),
+    [contractsState.selectedIds]
+  );
+  const fields = contractsState.fields ?? {};
+
   const [proMode, setProMode] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string[]>([]);
+
+  // Saved indicator string.
+  const savedLabel = saving
+    ? 'Saving…'
+    : lastSavedAt
+      ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+      : null;
 
   // Merge field definitions across the selected templates — dedupe by key
   // (prefer the first definition encountered so common fields get their
@@ -82,16 +121,19 @@ export default function ContractTemplatesClient({
   const canGenerate = selected.size > 0 && missingRequired.length === 0;
 
   const toggleTemplate = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+    setContractsState((prev) => {
+      const ids = new Set(prev.selectedIds ?? []);
+      if (ids.has(id)) ids.delete(id);
+      else ids.add(id);
+      return { ...prev, selectedIds: Array.from(ids) };
     });
   };
 
   const updateField = (key: string, value: string) => {
-    setFields((prev) => ({ ...prev, [key]: value }));
+    setContractsState((prev) => ({
+      ...prev,
+      fields: { ...(prev.fields ?? {}), [key]: value },
+    }));
   };
 
   const handleGenerate = () => {
@@ -127,6 +169,9 @@ export default function ContractTemplatesClient({
 
   return (
     <>
+      <div style={{ paddingTop: spacing[6] }}>
+        <ProjectContextBanner project={project} selfWorkflow="contract-templates" />
+      </div>
       <div
         style={{
           maxWidth: '900px',
@@ -135,6 +180,21 @@ export default function ContractTemplatesClient({
           fontFamily: fonts.body,
         }}
       >
+        {savedLabel && (
+          <div
+            aria-live="polite"
+            style={{
+              textAlign: 'right',
+              marginBottom: spacing[2],
+              fontSize: fontSizes.xs,
+              color: colors.ink[500],
+              fontFamily: fonts.body,
+            }}
+            data-testid="contract-templates-saved-indicator"
+          >
+            {savedLabel}
+          </div>
+        )}
         {/* Breadcrumb + Pro Toggle */}
         <div
           style={{

@@ -14,7 +14,7 @@
  * Delegates rendering to <WorkflowRenderer>. Does NOT reimplement step logic.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { WorkflowRenderer } from '@/design-system/components';
 import type { Workflow, WorkflowContext } from '@/design-system/components';
@@ -23,6 +23,8 @@ import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import { type Jurisdiction } from '@/lib/knowledge-data';
 import JurisdictionPicker from '@/components/JurisdictionPicker';
+import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import ProjectContextBanner from '../ProjectContextBanner';
 
 interface CodeComplianceClientProps {
   workflow: Workflow;
@@ -46,11 +48,39 @@ const LANES = [
 ] as const;
 
 export default function CodeComplianceClient({ workflow, jurisdictions, stages }: CodeComplianceClientProps) {
+  // Project Spine v1: hydrate + autosave the per-workflow JSONB state.
+  const {
+    hydratedPayloads,
+    recordStepEvent,
+    lastSavedAt,
+    saving,
+    project,
+  } = useProjectWorkflowState({
+    column: 'code_compliance_state',
+    workflowId: workflow.id,
+  });
+
   const [jurisdictionId, setJurisdictionId] = useState<string>(jurisdictions[0]?.id ?? 'ibc-2024');
   const [trade, setTrade] = useState<string>('general');
   const [lane, setLane] = useState<WorkflowContext['lane']>('gc');
   const [proMode, setProMode] = useState(false);
   const [eventCount, setEventCount] = useState(0);
+
+  // Project Spine v1: track step status locally; seed from hydrated.
+  const [stepStatusMap, setStepStatusMap] = useState<
+    Record<string, 'pending' | 'in_progress' | 'complete'>
+  >({});
+
+  useEffect(() => {
+    if (Object.keys(hydratedPayloads).length === 0) return;
+    setStepStatusMap((prev) => {
+      const next = { ...prev };
+      for (const stepId of Object.keys(hydratedPayloads)) {
+        if (!next[stepId]) next[stepId] = 'complete';
+      }
+      return next;
+    });
+  }, [hydratedPayloads]);
 
   const context: WorkflowContext = {
     jurisdiction: jurisdictionId,
@@ -59,15 +89,51 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
     projectPhase: 'preconstruction',
   };
 
-  const handleEvent = useCallback((event: StepResult & { workflowId: string }) => {
-    setEventCount((n) => n + 1);
-    // In Time Machine implementation: pipe to event store here.
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('bkg:workflow:event', { detail: event })
-      );
+  const handleEvent = useCallback(
+    (event: StepResult & { workflowId: string }) => {
+      setEventCount((n) => n + 1);
+      // Project Spine v1: persist to code_compliance_state JSONB.
+      recordStepEvent(event);
+      // Local statusMap so counter updates in-session.
+      if (event.type === 'step_completed') {
+        setStepStatusMap((prev) => ({ ...prev, [event.stepId]: 'complete' }));
+      } else if (event.type === 'step_saved') {
+        setStepStatusMap((prev) => ({
+          ...prev,
+          [event.stepId]: prev[event.stepId] ?? 'in_progress',
+        }));
+      }
+      // Time Machine event bus.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('bkg:workflow:event', { detail: event })
+        );
+      }
+    },
+    [recordStepEvent]
+  );
+
+  const savedLabel = saving
+    ? 'Saving…'
+    : lastSavedAt
+      ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+      : null;
+
+  // Pre-fill unsaved text/voice/analysis steps with raw_input.
+  const seededPayloads = useMemo(() => {
+    const out: Record<string, { value?: string; input?: string; selected?: string[]; checked?: Record<string, boolean> }> = { ...hydratedPayloads };
+    const raw = project?.raw_input?.trim();
+    if (!raw) return out;
+    for (const step of workflow.steps) {
+      if (out[step.id]) continue;
+      if (step.type === 'text_input' || step.type === 'voice_input') {
+        out[step.id] = { value: raw };
+      } else if (step.type === 'analysis_result') {
+        out[step.id] = { input: raw };
+      }
     }
-  }, []);
+    return out;
+  }, [hydratedPayloads, project, workflow.steps]);
 
   // JourneyMapHeader is mounted globally in src/app/killerapp/layout.tsx
   // since W4.1b; no longer rendered per workflow. `stages` prop still
@@ -76,6 +142,9 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
 
   return (
     <>
+      <div style={{ paddingTop: spacing[6] }}>
+        <ProjectContextBanner project={project} selfWorkflow="code-compliance" />
+      </div>
       <div
         style={{
           maxWidth: 960,
@@ -84,6 +153,21 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
           fontFamily: fonts.body,
         }}
       >
+        {savedLabel && (
+          <div
+            aria-live="polite"
+            style={{
+              textAlign: 'right',
+              marginBottom: spacing[2],
+              fontSize: fontSizes.xs,
+              color: colors.ink[500],
+              fontFamily: fonts.body,
+            }}
+            data-testid="code-compliance-saved-indicator"
+          >
+            {savedLabel}
+          </div>
+        )}
         {/* Top bar — breadcrumb + Pro Toggle */}
       <div
         style={{
@@ -231,6 +315,8 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
         context={context}
         onEvent={handleEvent}
         proMode={proMode}
+        hydratedPayloads={seededPayloads}
+        statusMap={stepStatusMap}
       />
 
       {/* Footer — Time Machine signal */}
