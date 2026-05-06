@@ -15,11 +15,111 @@ import {
   extractCitations,
   COPILOT_PROMPT_VERSION,
 } from "@/lib/rag";
+import { getServiceClient } from "@/lib/auth-server";
 
 const MODEL = "claude-sonnet-4-20250514";
 
 // Import types for type safety
 import type { KnowledgeEntity } from "@/lib/rag";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Project Spine v1 (2026-05-03) — best-effort persistence helpers
+// ─────────────────────────────────────────────────────────────────────────────
+// When a /api/v1/copilot request includes a real project UUID, persist
+// the user query + assistant response to project_conversations and
+// best-effort UPDATE the project record (ai_summary, jurisdiction,
+// project_type, cost range). Fire-and-forget; never block the stream.
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isProjectId(s: string | undefined | null): s is string {
+  return !!s && s !== "default" && UUID_RE.test(s);
+}
+
+const COST_RANGE_PATTERNS: RegExp[] = [
+  /\$\s?([\d,]+(?:\.\d+)?)\s?(?:[-–—]|to)\s?\$\s?([\d,]+(?:\.\d+)?)/,
+  /([\d,]+(?:\.\d+)?)\s?(?:[-–—]|to)\s?([\d,]+(?:\.\d+)?)\s?(k|thousand)/i,
+];
+
+function parseDollarToken(token: string, unit?: string): number | null {
+  const cleaned = token.replace(/,/g, "").trim();
+  const n = parseFloat(cleaned);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (unit && /^k|thousand$/i.test(unit)) return Math.round(n * 1000);
+  return Math.round(n);
+}
+
+interface ParsedFromResponse {
+  ai_summary?: string;
+  jurisdiction?: string;
+  project_type?: string;
+  estimated_cost_low?: number;
+  estimated_cost_high?: number;
+}
+
+function parseAiResponse(
+  fullText: string,
+  request: { jurisdiction?: string }
+): ParsedFromResponse {
+  const out: ParsedFromResponse = {};
+  out.ai_summary =
+    fullText.length > 600 ? `${fullText.slice(0, 597).trimEnd()}…` : fullText;
+
+  if (request.jurisdiction) {
+    out.jurisdiction = request.jurisdiction;
+  } else {
+    const m = fullText.match(/Jurisdiction:\s*([^\n.]{2,40})/i);
+    if (m) out.jurisdiction = m[1].trim();
+  }
+
+  const ptMatch = fullText.match(/Project type:\s*([^\n.]{2,40})/i);
+  if (ptMatch) out.project_type = ptMatch[1].trim();
+
+  for (const re of COST_RANGE_PATTERNS) {
+    const m = fullText.match(re);
+    if (!m) continue;
+    const unit = m[3];
+    const low = parseDollarToken(m[1], unit);
+    const high = parseDollarToken(m[2], unit);
+    if (low !== null && high !== null && low <= high) {
+      out.estimated_cost_low = low;
+      out.estimated_cost_high = high;
+      break;
+    }
+  }
+  return out;
+}
+
+async function persistProjectExchange(args: {
+  project_id: string;
+  query: string;
+  response: string;
+  jurisdiction?: string;
+}): Promise<void> {
+  try {
+    const client = getServiceClient();
+    await client.from("project_conversations").insert([
+      { project_id: args.project_id, role: "user", content: args.query },
+      { project_id: args.project_id, role: "assistant", content: args.response },
+    ]);
+
+    const parsed = parseAiResponse(args.response, { jurisdiction: args.jurisdiction });
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (parsed.ai_summary !== undefined) update.ai_summary = parsed.ai_summary;
+    if (parsed.jurisdiction) update.jurisdiction = parsed.jurisdiction;
+    if (parsed.project_type) update.project_type = parsed.project_type;
+    if (parsed.estimated_cost_low !== undefined) update.estimated_cost_low = parsed.estimated_cost_low;
+    if (parsed.estimated_cost_high !== undefined) update.estimated_cost_high = parsed.estimated_cost_high;
+
+    if (Object.keys(update).length > 1) {
+      await client
+        .from("command_center_projects")
+        .update(update)
+        .eq("id", args.project_id);
+    }
+  } catch (err) {
+    console.error("Copilot project persistence failed:", err);
+  }
+}
 
 // Stage-aware system prompts and action suggestions
 const STAGE_SYSTEM_PROMPTS: Record<number, string> = {
@@ -490,6 +590,18 @@ export async function POST(request: NextRequest) {
               })}\n\n`
             )
           );
+
+          // Project Spine v1: persist user query + assistant response to
+          // project_conversations and best-effort update the project
+          // record. Fire-and-forget; never block stream close.
+          if (isProjectId(projectId)) {
+            void persistProjectExchange({
+              project_id: projectId,
+              query,
+              response: finalText,
+              jurisdiction,
+            });
+          }
         } catch (err) {
           controller.enqueue(
             encoder.encode(

@@ -59,21 +59,46 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Project Spine v1 (2026-05-03):
+ * Derive a project name from raw_input. The Killerapp landing flow lets
+ * the user create a project from a single natural-language query (e.g.
+ * "I want to build an ADU in San Diego"). The 20260503_project_spine_v1
+ * migration relaxed name's NOT NULL constraint, but we still want a
+ * human-readable name in the UI for the projects list and legacy
+ * dashboards. So: take the first 80 chars of raw_input, collapse
+ * whitespace, trim. Fall back to "Untitled project" if empty.
+ */
+function deriveNameFromRawInput(rawInput: string): string {
+  const single = rawInput.replace(/\s+/g, ' ').trim();
+  if (!single) return 'Untitled project';
+  if (single.length <= 80) return single;
+  return single.slice(0, 80).trimEnd();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request);
     if (!user) return unauthorizedResponse();
 
     const body = await request.json();
-    if (!body.name?.trim()) {
-      return NextResponse.json({ error: 'name is required' }, { status: 400 });
+    const rawInput = typeof body.raw_input === 'string' ? body.raw_input : '';
+    const explicitName = typeof body.name === 'string' ? body.name.trim() : '';
+    const name = explicitName || (rawInput.trim() ? deriveNameFromRawInput(rawInput) : '');
+
+    if (!name) {
+      return NextResponse.json(
+        { error: 'name or raw_input is required' },
+        { status: 400 }
+      );
     }
 
     const { data, error } = await getSupabase()
       .from('command_center_projects')
       .insert([{
         user_id: user.id,
-        name: body.name.trim(),
+        name,
+        raw_input: rawInput || null,
         phase: body.phase || 'PLAN',
         progress: Number(body.progress) || 0,
         budget_amount: body.budget_amount ? Number(body.budget_amount) : null,

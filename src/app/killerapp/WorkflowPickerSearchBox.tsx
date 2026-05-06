@@ -26,6 +26,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { markdownToJsx } from '@/design-system/components/utils/markdownToJsx';
+import { supabase } from '@/lib/supabase';
 
 // Narrow typing for the Web Speech API
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -139,31 +140,73 @@ export default function WorkflowPickerSearchBox() {
     return false;
   };
 
+  /**
+   * Project Spine v1 (2026-05-03):
+   * On a copilot-qualified query, FIRST create a project record from
+   * raw_input, THEN router.replace `/killerapp?project=<id>`. The
+   * KillerappProjectShell auto-fires the /api/v1/copilot stream once
+   * the URL has the project id, persists the AI response to
+   * project_conversations, and renders inline.
+   *
+   * If the user is anonymous (no session), fall back to the legacy
+   * inline-stream path so they at least see an answer (just not
+   * persisted). They can sign in later to start saving projects.
+   */
   const callCopilot = async (q: string) => {
     setLoading(true);
     setError(null);
     setResponseContent(null);
 
     try {
-      const projectId = typeof window !== 'undefined'
-        ? localStorage?.getItem?.('bkg-active-project') ?? 'default'
-        : 'default';
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      // Authenticated → create a real project and redirect.
+      if (token) {
+        try {
+          const projRes = await fetch('/api/v1/projects', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ raw_input: q }),
+          });
+          if (projRes.ok) {
+            const json = (await projRes.json()) as { project: { id: string } };
+            const projectId = json.project?.id;
+            if (projectId) {
+              router.replace(
+                `/killerapp?project=${encodeURIComponent(projectId)}`
+              );
+              setLoading(false);
+              return;
+            }
+          }
+          // Fall through to inline path on any failure (graceful degrade).
+        } catch (e) {
+          console.error('Project create failed; falling back to inline:', e);
+        }
+      }
+
+      // Anonymous OR project-create fell through — inline-stream path
+      // (legacy W9.D.6 behavior). Response shows in this component but
+      // doesn't persist to DB; refresh wipes it.
+      const projectId =
+        typeof window !== 'undefined'
+          ? localStorage?.getItem?.('bkg-active-project') ?? 'default'
+          : 'default';
 
       const response = await fetch('/api/v1/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: q,
-          stage: 0,
-          projectId,
-        }),
+        body: JSON.stringify({ query: q, stage: 0, projectId }),
       });
 
       if (!response?.ok) {
         throw new Error(`API error: ${response?.status ?? 'unknown'}`);
       }
 
-      // Parse SSE stream
       const reader = response?.body?.getReader?.();
       if (!reader) {
         throw new Error('No response body');
@@ -195,8 +238,6 @@ export default function WorkflowPickerSearchBox() {
             const jsonStr = line.slice(6);
             try {
               const event = JSON.parse(jsonStr);
-
-              // Handle the new 'complete' event with full text
               if (event?.type === 'complete' && event?.text) {
                 fullText = event.text;
               } else if (event?.type === 'done') {
@@ -206,13 +247,12 @@ export default function WorkflowPickerSearchBox() {
                 throw new Error(event?.message || 'Stream error');
               }
             } catch (e) {
-              // Ignore malformed JSON
+              // ignore malformed JSON
             }
           }
         }
       }
 
-      // Render the full text with markdownToJsx
       if (fullText && typeof fullText === 'string') {
         try {
           const rendered = markdownToJsx(fullText);
@@ -220,7 +260,8 @@ export default function WorkflowPickerSearchBox() {
             setResponseContent(rendered);
           }
         } catch (renderErr) {
-          const msg = renderErr instanceof Error ? renderErr.message : 'Render error';
+          const msg =
+            renderErr instanceof Error ? renderErr.message : 'Render error';
           setError(`Failed to render response: ${msg}`);
         }
       }

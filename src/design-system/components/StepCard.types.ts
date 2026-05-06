@@ -94,4 +94,23 @@ export interface StepCardProps {
    * Examples: "Check code compliance", "Save this scope", "Lock jurisdiction"
    */
   ctaLabel?: string;
+  /**
+   * Optional hydrated initial payload (Project Spine v1, 2026-05-03).
+   *
+   * When provided, the StepCard's internal input state is seeded from
+   * this value on mount. Shape mirrors the payload emitted in StepResult:
+   *   - text_input / voice_input / number_input → { value: string }
+   *   - select / multi_select                   → { selected: string[] }
+   *   - checklist                               → { checked: Record<string, boolean> }
+   *   - analysis_result                         → { input: string }
+   *
+   * When omitted, behavior is identical to before (empty inputs).
+   * Purely additive — no existing caller is affected.
+   */
+  initialPayload?: {
+    value?: string;
+    selected?: string[];
+    checked?: Record<string, boolean>;
+    input?: string;
+  };
 }

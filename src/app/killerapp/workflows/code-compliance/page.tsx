@@ -15,6 +15,7 @@
 
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { Suspense } from 'react';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import { JURISDICTIONS } from '@/lib/knowledge-data';
@@ -62,11 +63,15 @@ export default function CodeCompliancePage() {
   const fallback = JURISDICTIONS.find((j) => j.id === 'ibc-2024');
   const jurisdictions = fallback ? [fallback, ...week1Jurisdictions] : week1Jurisdictions;
 
+  // Project Spine v1: client uses useSearchParams via the workflow hook
+  // — must be inside a Suspense boundary.
   return (
-    <CodeComplianceClient
-      workflow={workflow}
-      jurisdictions={jurisdictions}
-      stages={stages}
-    />
+    <Suspense fallback={null}>
+      <CodeComplianceClient
+        workflow={workflow}
+        jurisdictions={jurisdictions}
+        stages={stages}
+      />
+    </Suspense>
   );
 }

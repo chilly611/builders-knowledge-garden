@@ -53,15 +53,44 @@ export default function StepCard({
   renderAnalysis,
   proMode = false,
   ctaLabel = 'Next step',
+  initialPayload,
 }: StepCardProps) {
-  // State management
+  // State management.
+  // Project Spine v1: initialPayload seeds inputs on mount when the
+  // workflow is rehydrating from saved JSONB. Default empty for the
+  // ~17 existing callers that don't pass the prop.
   const [isExpanded, setIsExpanded] = useState(expanded);
   const [voiceState, setVoiceState] = useState<VoiceState>({ isListening: false, transcript: '', error: null });
-  const [inputValue, setInputValue] = useState('');
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
-  const [analysisInput, setAnalysisInput] = useState('');
+  const [inputValue, setInputValue] = useState(initialPayload?.value ?? '');
+  const [selectedOptions, setSelectedOptions] = useState<string[]>(initialPayload?.selected ?? []);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(initialPayload?.checked ?? {});
+  const [analysisInput, setAnalysisInput] = useState(initialPayload?.input ?? '');
   const [voiceAvailable, setVoiceAvailable] = useState(false);
+
+  // Project Spine v1 — late-arriving initialPayload sync.
+  // Hydration is async; useState's initializer captures empty values on
+  // first render. When the hydrated values land later, adopt them ONLY
+  // if the field is still empty so we never clobber active typing.
+  useEffect(() => {
+    if (!initialPayload) return;
+    if (typeof initialPayload.value === 'string' && !inputValue) {
+      setInputValue(initialPayload.value);
+    }
+    if (typeof initialPayload.input === 'string' && !analysisInput) {
+      setAnalysisInput(initialPayload.input);
+    }
+    if (Array.isArray(initialPayload.selected) && selectedOptions.length === 0) {
+      setSelectedOptions(initialPayload.selected);
+    }
+    if (
+      initialPayload.checked &&
+      typeof initialPayload.checked === 'object' &&
+      Object.keys(checkedItems).length === 0
+    ) {
+      setCheckedItems(initialPayload.checked);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPayload]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);

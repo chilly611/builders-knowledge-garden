@@ -64,4 +64,18 @@ export interface WorkflowRendererProps {
   proMode?: boolean;
   /** Optional header — if false, renderer skips the title block */
   showHeader?: boolean;
+  /**
+   * Hydrated payloads keyed by stepId (Project Spine v1, 2026-05-03).
+   * Forwarded to each StepCard via `initialPayload` so saved values
+   * pre-fill on rehydrate. Optional and additive.
+   */
+  hydratedPayloads?: Record<
+    string,
+    {
+      value?: string;
+      selected?: string[];
+      checked?: Record<string, boolean>;
+      input?: string;
+    }
+  >;
 }

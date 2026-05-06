@@ -87,6 +87,7 @@ export default function WorkflowRenderer({
   onEvent,
   proMode = false,
   showHeader = true,
+  hydratedPayloads,
 }: WorkflowRendererProps) {
   // Local uncontrolled state — used when parent doesn't pass controlled maps
   const [localStatus, setLocalStatus] = useState<Record<string, StepStatus>>({});
@@ -266,6 +267,7 @@ export default function WorkflowRenderer({
               renderAnalysis={renderAnalysis}
               proMode={proMode}
               ctaLabel={ctaLabel}
+              initialPayload={hydratedPayloads?.[step.id]}
             />
           );
         })}
