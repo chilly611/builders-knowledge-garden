@@ -66,6 +66,35 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
   const [proMode, setProMode] = useState(false);
   const [eventCount, setEventCount] = useState(0);
 
+  // Project Spine v1: when the project hydrates with a jurisdiction
+  // (e.g. AI take parsed "California" or raw_input mentions San Diego),
+  // default the picker to the matching jurisdiction instead of the
+  // first-in-list. The user can still change it manually after.
+  // Persona findings: Pete, Sarah, Diana ALL flagged this as a trust
+  // killer — code-compliance defaulting to "IBC 2024 generic" when the
+  // project clearly says California is the moment they walk away.
+  useEffect(() => {
+    const projJurisdiction = project?.jurisdiction?.toLowerCase()?.trim();
+    if (!projJurisdiction) return;
+
+    // Look for a jurisdiction in the list whose name OR id matches.
+    // Match on substring so "California" matches "ca-title-24-part-2" or
+    // a city-level entry like "san-diego". Prefer a city/county match
+    // (more specific) over a state match if the project mentions one.
+    const matches = jurisdictions.filter((j) => {
+      const name = `${j.name ?? ''} ${j.state ?? ''} ${j.id}`.toLowerCase();
+      return projJurisdiction.split(/[,\s]+/).some(
+        (token) => token.length > 2 && name.includes(token)
+      );
+    });
+
+    if (matches.length === 0) return;
+    // If the user hasn't changed the default, adopt the project's jurisdiction.
+    setJurisdictionId((current) =>
+      current === (jurisdictions[0]?.id ?? 'ibc-2024') ? matches[0].id : current
+    );
+  }, [project?.jurisdiction, jurisdictions]);
+
   // Project Spine v1: track step status locally; seed from hydrated.
   const [stepStatusMap, setStepStatusMap] = useState<
     Record<string, 'pending' | 'in_progress' | 'complete'>

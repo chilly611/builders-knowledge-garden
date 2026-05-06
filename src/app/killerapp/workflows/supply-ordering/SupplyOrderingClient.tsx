@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import WorkflowShell from '@/design-system/components/WorkflowShell';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
@@ -8,6 +8,8 @@ import type { StepResult } from '@/design-system/components/StepCard.types';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
 import { search, type ResourceResponse } from '@/lib/resource-broker';
+import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import ProjectContextBanner from '../ProjectContextBanner';
 import ResourceCardGrid from './ResourceCardGrid';
 
 interface Props {
@@ -23,11 +25,54 @@ interface Props {
  * Top-level state management for broker interactions across workflow steps.
  */
 export default function SupplyOrderingClient({ workflow, stages }: Props) {
+  // Project Spine v1 (Wave 2, 2026-05-06): hydrate + autosave supply_ordering_state.
+  const {
+    projectId: spineProjectId,
+    hydratedPayloads,
+    recordStepEvent,
+    project,
+  } = useProjectWorkflowState({
+    column: 'supply_ordering_state',
+    workflowId: workflow.id,
+  });
+
   // Broker search state — shared across the workflow steps
   const [brokerResponse, setBrokerResponse] = useState<ResourceResponse | null>(null);
   const [brokerLoading, setBrokerLoading] = useState(false);
   const [brokerError, setBrokerError] = useState<string | null>(null);
   const [selectedResourceIds, setSelectedResourceIds] = useState<Set<string>>(new Set());
+
+  // Track step status locally; seed from hydrated.
+  const [stepStatusMap, setStepStatusMap] = useState<
+    Record<string, 'pending' | 'in_progress' | 'complete'>
+  >({});
+
+  useEffect(() => {
+    if (Object.keys(hydratedPayloads).length === 0) return;
+    setStepStatusMap((prev) => {
+      const next = { ...prev };
+      for (const stepId of Object.keys(hydratedPayloads)) {
+        if (!next[stepId]) next[stepId] = 'complete';
+      }
+      return next;
+    });
+  }, [hydratedPayloads]);
+
+  // Pre-fill unsaved text/voice/analysis steps with raw_input.
+  const seededPayloads = useMemo(() => {
+    const out = { ...hydratedPayloads };
+    const raw = project?.raw_input?.trim();
+    if (!raw) return out;
+    for (const step of workflow.steps) {
+      if (out[step.id]) continue;
+      if (step.type === 'text_input' || step.type === 'voice_input') {
+        out[step.id] = { value: raw };
+      } else if (step.type === 'analysis_result') {
+        out[step.id] = { input: raw };
+      }
+    }
+    return out;
+  }, [hydratedPayloads, project, workflow.steps]);
 
   /**
    * Broker search handler, fired when user completes a step that triggers a search.
@@ -83,6 +128,19 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
    *     stepId, payload?, timestamp }
    */
   const handleStepComplete = async (stepResult: StepResult & { workflowId: string }) => {
+    // Project Spine v1: persist this step's payload into supply_ordering_state.
+    recordStepEvent(stepResult);
+
+    // Bump local statusMap so counter updates in-session.
+    if (stepResult.type === 'step_completed') {
+      setStepStatusMap((prev) => ({ ...prev, [stepResult.stepId]: 'complete' }));
+    } else if (stepResult.type === 'step_saved') {
+      setStepStatusMap((prev) => ({
+        ...prev,
+        [stepResult.stepId]: prev[stepResult.stepId] ?? 'in_progress',
+      }));
+    }
+
     // s11-2 (Find suppliers): trigger broker search with material list context
     if (stepResult.stepId === 's11-2' && stepResult.type === 'step_completed') {
       const inputText = (stepResult.payload as { input?: string } | undefined)?.input ?? '';
@@ -100,13 +158,14 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
         const priceStr = match[0].replace(/k$/i, '000').replace(/[$,]/g, '');
         const amount = parseFloat(priceStr);
         if (!isNaN(amount) && amount > 0) {
-          const projectId = resolveProjectId();
+          // Prefer URL-bound project id over localStorage for budget writes.
+          const budgetProjectId = spineProjectId ?? resolveProjectId();
           await recordMaterialCost({
             description: 'Supply list — Plan',
             amount,
             lifecycleStageId: 3,
             isEstimate: true,
-            projectId,
+            projectId: budgetProjectId,
           });
         }
       }
@@ -131,24 +190,30 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
    * 4. Deep orange CTA only on final s11-5 completion (ritual crown)
    */
   return (
-    <WorkflowShell
-      workflow={workflow}
-      stages={stages}
-      breadcrumbLabel="Supply Ordering"
-      onStepComplete={handleStepComplete}
-      sidePanel={
-        // Broker results sidebar — only shown after s11-2 search
-        brokerResponse && brokerResponse.results.length > 0 ? (
-          <ResourceCardGrid
-            results={brokerResponse.results}
-            loading={brokerLoading}
-            error={brokerError}
-            selectedIds={selectedResourceIds}
-            onSelectionChange={setSelectedResourceIds}
-            onSearch={handleBrokerSearch}
-          />
-        ) : null
-      }
-    />
+    <>
+      <ProjectContextBanner project={project} selfWorkflow="supply-ordering" />
+      <WorkflowShell
+        workflow={workflow}
+        stages={stages}
+        breadcrumbLabel="Supply Ordering"
+        onStepComplete={handleStepComplete}
+        projectId={spineProjectId ?? undefined}
+        hydratedPayloads={seededPayloads}
+        statusMap={stepStatusMap}
+        sidePanel={
+          // Broker results sidebar — only shown after s11-2 search
+          brokerResponse && brokerResponse.results.length > 0 ? (
+            <ResourceCardGrid
+              results={brokerResponse.results}
+              loading={brokerLoading}
+              error={brokerError}
+              selectedIds={selectedResourceIds}
+              onSelectionChange={setSelectedResourceIds}
+              onSearch={handleBrokerSearch}
+            />
+          ) : null
+        }
+      />
+    </>
   );
 }

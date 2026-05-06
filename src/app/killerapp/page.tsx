@@ -37,6 +37,7 @@ import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
 import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
+import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
@@ -246,19 +247,13 @@ export default function KillerAppPage() {
 
       {/* Stage groups: typographic TOC treatment */}
       <main className={styles.mainContent}>
-        {/* Subtle one-line stage-progress indicator */}
-        <div
-          style={{
-            fontSize: '12px',
-            color: '#2E2E30',
-            opacity: 0.6,
-            marginBottom: '40px',
-            fontWeight: 500,
-            letterSpacing: '0.3px',
-          }}
-        >
-          You're not started yet. {LIFECYCLE_STAGES.length} stages to explore.
-        </div>
+        {/* Subtle one-line stage-progress indicator.
+            Project Spine v1 (2026-05-05): made context-aware. Hides
+            itself when ?project=<id> is present in the URL — the
+            project shell renders the active state above the picker. */}
+        <Suspense fallback={null}>
+          <EmptyStateOrProjectIndicator />
+        </Suspense>
 
         {stages.map((stage) => {
           const list = (byStage.get(stage.id) ?? []).sort((a, b) =>

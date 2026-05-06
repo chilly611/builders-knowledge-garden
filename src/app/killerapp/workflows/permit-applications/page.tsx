@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { Suspense } from 'react';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import PermitApplicationsClient from './PermitApplicationsClient';
@@ -27,5 +28,11 @@ export const metadata = {
 
 export default function Page() {
   const { workflow, stages } = loadWorkflow();
-  return <PermitApplicationsClient workflow={workflow} stages={stages} />;
+  // Project Spine v1 (Wave 2): client uses useSearchParams via the hook
+  // — must be inside a Suspense boundary (Next.js 16 prerender requirement).
+  return (
+    <Suspense fallback={null}>
+      <PermitApplicationsClient workflow={workflow} stages={stages} />
+    </Suspense>
+  );
 }

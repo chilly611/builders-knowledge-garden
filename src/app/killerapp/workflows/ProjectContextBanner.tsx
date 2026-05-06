@@ -13,13 +13,21 @@
 import Link from 'next/link';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 
+type WorkflowId =
+  | 'estimating'
+  | 'code-compliance'
+  | 'contract-templates'
+  | 'permit-applications'
+  | 'daily-log'
+  | 'supply-ordering';
+
 interface Props {
   project: ProjectContext | null;
-  selfWorkflow: 'estimating' | 'code-compliance' | 'contract-templates';
+  selfWorkflow: WorkflowId;
 }
 
 const PEER_LINKS: Array<{
-  id: 'estimating' | 'code-compliance' | 'contract-templates';
+  id: WorkflowId;
   label: string;
   href: (projectId: string) => string;
 }> = [
@@ -35,10 +43,28 @@ const PEER_LINKS: Array<{
       `/killerapp/workflows/code-compliance?project=${encodeURIComponent(id)}`,
   },
   {
+    id: 'permit-applications',
+    label: 'Permits',
+    href: (id) =>
+      `/killerapp/workflows/permit-applications?project=${encodeURIComponent(id)}`,
+  },
+  {
     id: 'contract-templates',
     label: 'Contracts',
     href: (id) =>
       `/killerapp/workflows/contract-templates?project=${encodeURIComponent(id)}`,
+  },
+  {
+    id: 'supply-ordering',
+    label: 'Supply',
+    href: (id) =>
+      `/killerapp/workflows/supply-ordering?project=${encodeURIComponent(id)}`,
+  },
+  {
+    id: 'daily-log',
+    label: 'Daily log',
+    href: (id) =>
+      `/killerapp/workflows/daily-log?project=${encodeURIComponent(id)}`,
   },
 ];
 
