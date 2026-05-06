@@ -101,6 +101,96 @@ function payloadFromEvent(
   return out;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Smart pre-fill — parse location + sqft from raw_input
+// ─────────────────────────────────────────────────────────────────────────────
+// User feedback 2026-05-06: "On quick estimate I shouldn't have to answer
+// the questions of where is the location or square footage if I already
+// put those in." So when raw_input mentions a location ("San Diego",
+// "Tampa, FL") or a square footage ("2500 sf", "3,200 square feet"),
+// auto-fill the matching workflow steps AND mark them complete so the
+// XP counts.
+
+const LOCATION_REGEX =
+  // Matches "in <City>" or "in <City>, <State>" or " <City>, <State>"
+  // Tries to capture proper-noun-style locations. Conservative on
+  // matching — if uncertain, returns null and we leave the field empty.
+  /\b(?:in|at|near)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*(?:\s*,\s*[A-Z]{2})?)\b/;
+
+const SQFT_REGEX =
+  // Matches "2500 sf", "2,500 sq ft", "3200 square feet", "1500sqft"
+  /\b([\d,]+)\s*(?:sf|sqft|sq\s?ft|square\s?(?:feet|foot|ft))\b/i;
+
+export interface ParsedFromRaw {
+  location?: string;
+  sqft?: string;
+}
+
+export function parseLocationAndSqftFromRaw(raw: string): ParsedFromRaw {
+  const out: ParsedFromRaw = {};
+  const locMatch = raw.match(LOCATION_REGEX);
+  if (locMatch) out.location = locMatch[1].trim();
+  const sqftMatch = raw.match(SQFT_REGEX);
+  if (sqftMatch) out.sqft = sqftMatch[1].replace(/,/g, '');
+  return out;
+}
+
+/**
+ * Given a workflow's steps + a project's raw_input, build a map of
+ * stepId → seeded StepPayload. Handles:
+ *   - text_input / voice_input         → { value: raw_input }
+ *   - analysis_result                  → { input: raw_input }
+ *   - location_input                   → { value: parsed location }
+ *   - number_input + label match sqft  → { value: parsed sqft }
+ *
+ * Steps that already have a saved payload in `existing` are left alone
+ * (saved values win over seeds). Returns the merged map.
+ */
+export function seedPayloadsFromRaw(
+  steps: Array<{ id: string; type: string; label?: string }>,
+  rawInput: string | null | undefined,
+  existing: Record<string, StepPayload>
+): Record<string, StepPayload> {
+  const out = { ...existing };
+  const raw = rawInput?.trim();
+  if (!raw) return out;
+
+  const parsed = parseLocationAndSqftFromRaw(raw);
+  const labelHintsSqft = (label?: string) =>
+    !!label && /\b(square|sqft|sq\s?ft|footage|size|area)\b/i.test(label);
+
+  for (const step of steps) {
+    if (out[step.id]) continue; // saved values win
+    if (step.type === 'text_input' || step.type === 'voice_input') {
+      out[step.id] = { value: raw };
+    } else if (step.type === 'analysis_result') {
+      out[step.id] = { input: raw };
+    } else if (step.type === 'location_input' && parsed.location) {
+      out[step.id] = { value: parsed.location };
+    } else if (step.type === 'number_input' && parsed.sqft && labelHintsSqft(step.label)) {
+      out[step.id] = { value: parsed.sqft };
+    }
+  }
+  return out;
+}
+
+/**
+ * Mark every seeded step as 'complete' in the status map. This is what
+ * gives the user the "XP credit" for project context they already
+ * provided in raw_input. Saved-state steps stay 'complete' (they were
+ * already marked by the workflow client). Skipped steps stay 'pending'.
+ */
+export function statusFromSeeded(
+  seeded: Record<string, StepPayload>,
+  existingStatus: Record<string, 'pending' | 'in_progress' | 'complete'>
+): Record<string, 'pending' | 'in_progress' | 'complete'> {
+  const out = { ...existingStatus };
+  for (const stepId of Object.keys(seeded)) {
+    if (!out[stepId]) out[stepId] = 'complete';
+  }
+  return out;
+}
+
 export function useProjectWorkflowState(
   args: UseProjectWorkflowStateArgs
 ): UseProjectWorkflowStateReturn {

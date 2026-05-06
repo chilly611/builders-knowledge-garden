@@ -23,7 +23,7 @@ import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '@/design-
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import { type Jurisdiction } from '@/lib/knowledge-data';
 import JurisdictionPicker from '@/components/JurisdictionPicker';
-import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
 
 interface CodeComplianceClientProps {
@@ -148,21 +148,15 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
       ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
       : null;
 
-  // Pre-fill unsaved text/voice/analysis steps with raw_input.
-  const seededPayloads = useMemo(() => {
-    const out: Record<string, { value?: string; input?: string; selected?: string[]; checked?: Record<string, boolean> }> = { ...hydratedPayloads };
-    const raw = project?.raw_input?.trim();
-    if (!raw) return out;
-    for (const step of workflow.steps) {
-      if (out[step.id]) continue;
-      if (step.type === 'text_input' || step.type === 'voice_input') {
-        out[step.id] = { value: raw };
-      } else if (step.type === 'analysis_result') {
-        out[step.id] = { input: raw };
-      }
-    }
-    return out;
-  }, [hydratedPayloads, project, workflow.steps]);
+  // Pre-fill text/voice/analysis + location + sqft from raw_input.
+  const seededPayloads = useMemo(
+    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
+    [hydratedPayloads, project, workflow.steps]
+  );
+  const mergedStatusMap = useMemo(
+    () => statusFromSeeded(seededPayloads, stepStatusMap),
+    [seededPayloads, stepStatusMap]
+  );
 
   // JourneyMapHeader is mounted globally in src/app/killerapp/layout.tsx
   // since W4.1b; no longer rendered per workflow. `stages` prop still
@@ -345,7 +339,7 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
         onEvent={handleEvent}
         proMode={proMode}
         hydratedPayloads={seededPayloads}
-        statusMap={stepStatusMap}
+        statusMap={mergedStatusMap}
       />
 
       {/* Footer — Time Machine signal */}

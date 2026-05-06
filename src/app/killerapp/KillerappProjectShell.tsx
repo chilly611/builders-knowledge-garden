@@ -268,6 +268,7 @@ export default function KillerappProjectShell() {
       }}
       data-testid="killerapp-project-shell"
     >
+      <PulseKeyframes />
       {error && !project ? (
         <div
           style={{
@@ -332,9 +333,7 @@ export default function KillerappProjectShell() {
             >
               AI take {streaming ? '· streaming…' : ''}
             </div>
-            {loading && !aiText ? (
-              <p style={{ color: 'var(--graphite)', opacity: 0.6 }}>Loading…</p>
-            ) : aiText ? (
+            {aiText ? (
               <div
                 style={{
                   fontSize: 15,
@@ -346,9 +345,32 @@ export default function KillerappProjectShell() {
                 {aiText}
               </div>
             ) : (
-              <p style={{ color: 'var(--graphite)', opacity: 0.6 }}>
-                The AI hasn&rsquo;t responded yet. Hit refresh in a moment.
-              </p>
+              // The auto-trigger fires on hydrate, so the empty state is
+              // a brief flash. Show a "thinking" pulse instead of stale
+              // "hit refresh" copy that confused users into thinking the
+              // AI was broken when it was just streaming.
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 14,
+                  color: 'var(--graphite)',
+                  opacity: 0.7,
+                }}
+                aria-live="polite"
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--brass, #B6873A)',
+                    animation: 'bkg-spine-pulse 1.4s ease-in-out infinite',
+                  }}
+                />
+                Thinking through your project…
+              </div>
             )}
           </div>
 
@@ -390,6 +412,20 @@ export default function KillerappProjectShell() {
         </div>
       )}
     </section>
+  );
+}
+
+// Pulse keyframes for the "thinking" indicator — lifted from the same
+// pattern used in WorkflowPickerSearchBox + GlobalAiFab so the visual
+// language stays consistent.
+function PulseKeyframes() {
+  return (
+    <style jsx global>{`
+      @keyframes bkg-spine-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%      { opacity: 0.55; transform: scale(1.25); }
+      }
+    `}</style>
   );
 }
 

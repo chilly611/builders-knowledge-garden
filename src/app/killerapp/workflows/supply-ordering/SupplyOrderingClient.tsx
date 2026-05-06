@@ -8,7 +8,7 @@ import type { StepResult } from '@/design-system/components/StepCard.types';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
 import { search, type ResourceResponse } from '@/lib/resource-broker';
-import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
 import ResourceCardGrid from './ResourceCardGrid';
 
@@ -58,21 +58,15 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
     });
   }, [hydratedPayloads]);
 
-  // Pre-fill unsaved text/voice/analysis steps with raw_input.
-  const seededPayloads = useMemo(() => {
-    const out = { ...hydratedPayloads };
-    const raw = project?.raw_input?.trim();
-    if (!raw) return out;
-    for (const step of workflow.steps) {
-      if (out[step.id]) continue;
-      if (step.type === 'text_input' || step.type === 'voice_input') {
-        out[step.id] = { value: raw };
-      } else if (step.type === 'analysis_result') {
-        out[step.id] = { input: raw };
-      }
-    }
-    return out;
-  }, [hydratedPayloads, project, workflow.steps]);
+  // Pre-fill text/voice/analysis + location + sqft from raw_input.
+  const seededPayloads = useMemo(
+    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
+    [hydratedPayloads, project, workflow.steps]
+  );
+  const mergedStatusMap = useMemo(
+    () => statusFromSeeded(seededPayloads, stepStatusMap),
+    [seededPayloads, stepStatusMap]
+  );
 
   /**
    * Broker search handler, fired when user completes a step that triggers a search.
@@ -199,7 +193,7 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
         onStepComplete={handleStepComplete}
         projectId={spineProjectId ?? undefined}
         hydratedPayloads={seededPayloads}
-        statusMap={stepStatusMap}
+        statusMap={mergedStatusMap}
         sidePanel={
           // Broker results sidebar — only shown after s11-2 search
           brokerResponse && brokerResponse.results.length > 0 ? (

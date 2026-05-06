@@ -40,6 +40,12 @@ export default function KillerAppNav() {
   const currentStageId = stageFromPathname(pathname);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Project Spine v1 (2026-05-06 fix): preserve ?project=<id> when the
+  // user clicks a stage chip. Without this, clicking "Lock it in" or
+  // "Build" navigates to a workflow without project_id, the workflow
+  // hook redirects back to /killerapp, and the user reports "the page
+  // just refreshes."
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -50,7 +56,37 @@ export default function KillerAppNav() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Watch the URL for ?project=<id>. We can't use useSearchParams here
+  // because this component renders inside the global layout — wrapping
+  // it in Suspense at the layout level would cascade through the rest
+  // of the app. Read directly from window.location instead and update
+  // on the popstate event so client-side navigations refresh the value.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sync = () => {
+      const params = new URLSearchParams(window.location.search);
+      setActiveProjectId(params.get('project'));
+    };
+    sync();
+    window.addEventListener('popstate', sync);
+    // Next.js doesn't fire popstate on router.push, so listen to a custom
+    // event we dispatch ourselves whenever a Spine-aware nav happens.
+    window.addEventListener('bkg:project:changed', sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener('bkg:project:changed', sync);
+    };
+  }, [pathname]); // re-read on every route change
+
   if (!mounted) return null;
+
+  // Append ?project=<id> to a stage href if a project is active.
+  const withProjectId = (href: string): string => {
+    if (!activeProjectId) return href;
+    if (href.includes('?project=')) return href;
+    const sep = href.includes('?') ? '&' : '?';
+    return `${href}${sep}project=${encodeURIComponent(activeProjectId)}`;
+  };
 
   // Show "Workflows" back-link whenever we're nested under a workflow route.
   // Root /killerapp is the picker itself, so no back-link there.
@@ -76,9 +112,9 @@ export default function KillerAppNav() {
         fontFamily: 'var(--font-archivo), sans-serif',
       }}
     >
-      {/* Brand → workflow picker */}
+      {/* Brand → workflow picker (preserves ?project=<id> if active) */}
       <Link
-        href="/killerapp"
+        href={withProjectId('/killerapp')}
         style={{
           textDecoration: 'none',
           display: 'flex',
@@ -118,7 +154,7 @@ export default function KillerAppNav() {
             }}
           />
           <Link
-            href="/killerapp"
+            href={withProjectId('/killerapp')}
             style={{
               textDecoration: 'none',
               fontSize: isMobile ? 11 : 12,
@@ -161,7 +197,7 @@ export default function KillerAppNav() {
             return (
               <button
                 key={stageId}
-                onClick={() => router.push(stage.href)}
+                onClick={() => router.push(withProjectId(stage.href))}
                 style={{
                   height: 24,
                   paddingLeft: 10,

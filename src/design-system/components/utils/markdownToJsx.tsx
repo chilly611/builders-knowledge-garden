@@ -28,11 +28,23 @@ import { colors, fontSizes, fontWeights, spacing, fonts } from '../../tokens';
 function ActionButton({ label, action }: { label: string; action: string }) {
   const handleClick = () => {
     try {
-      // Try to use next/navigation if available
-      if (typeof window !== 'undefined') {
-        // SSR-safe: use direct navigation
-        window.location.href = action;
+      if (typeof window === 'undefined') return;
+
+      // Project Spine v1 (2026-05-06 fix): preserve ?project=<id> across
+      // AI-generated action buttons. Without this, buttons like
+      // "Check codes" navigate to /killerapp/workflows/code-compliance
+      // with no project_id, the workflow hook redirects back to /killerapp,
+      // and from the user's POV "the page just refreshes."
+      const currentParams = new URLSearchParams(window.location.search);
+      const projectId = currentParams.get('project');
+
+      let target = action;
+      if (projectId && action.startsWith('/') && !action.includes('?project=')) {
+        const sep = action.includes('?') ? '&' : '?';
+        target = `${action}${sep}project=${encodeURIComponent(projectId)}`;
       }
+
+      window.location.href = target;
     } catch (err) {
       console.error('Failed to navigate:', err);
     }

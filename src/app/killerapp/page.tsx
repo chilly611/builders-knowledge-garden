@@ -38,6 +38,7 @@ import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
+import AuthAndProjectIndicator from './AuthAndProjectIndicator';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
@@ -182,6 +183,13 @@ export default function KillerAppPage() {
 
   return (
     <div className={styles.pageContainer}>
+      {/* Auth + project-saved indicators in the top-right corner.
+          User feedback 2026-05-06 — visible trust signals so the user
+          always knows they're signed in and the project is saved. */}
+      <Suspense fallback={null}>
+        <AuthAndProjectIndicator />
+      </Suspense>
+
       {/* Hero with blueprint grid background */}
       <header className={styles.heroSection}>
         {/* Blueprint 32px grid background */}

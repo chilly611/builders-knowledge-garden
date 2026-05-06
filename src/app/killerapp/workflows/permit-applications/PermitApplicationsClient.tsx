@@ -7,7 +7,7 @@ import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import type { StepResult } from '@/design-system/components/StepCard.types';
 import { recordPermitCost } from '@/lib/budget-spine';
 import { emitJourneyEvent, resolveProjectId, resolveJurisdiction } from '@/lib/journey-progress';
-import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
 import { spacing, colors, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
 
@@ -121,22 +121,15 @@ export default function PermitApplicationsClient({ workflow, stages }: Props) {
       ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
       : null;
 
-  // Pre-fill unsaved text/voice/analysis steps with raw_input so the
-  // user doesn't retype the project description across every step.
-  const seededPayloads = useMemo(() => {
-    const out = { ...hydratedPayloads };
-    const raw = project?.raw_input?.trim();
-    if (!raw) return out;
-    for (const step of workflow.steps) {
-      if (out[step.id]) continue;
-      if (step.type === 'text_input' || step.type === 'voice_input') {
-        out[step.id] = { value: raw };
-      } else if (step.type === 'analysis_result') {
-        out[step.id] = { input: raw };
-      }
-    }
-    return out;
-  }, [hydratedPayloads, project, workflow.steps]);
+  // Pre-fill text/voice/analysis + location + sqft from raw_input.
+  const seededPayloads = useMemo(
+    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
+    [hydratedPayloads, project, workflow.steps]
+  );
+  const mergedStatusMap = useMemo(
+    () => statusFromSeeded(seededPayloads, stepStatusMap),
+    [seededPayloads, stepStatusMap]
+  );
 
   const handleFeeChange = (stepId: string, fee: number | null) => {
     setPermitFees((prev) => ({ ...prev, [stepId]: fee }));
@@ -217,7 +210,7 @@ export default function PermitApplicationsClient({ workflow, stages }: Props) {
         onStepComplete={handleStepComplete}
         projectId={spineProjectId ?? undefined}
         hydratedPayloads={seededPayloads}
-        statusMap={stepStatusMap}
+        statusMap={mergedStatusMap}
       />
     </>
   );

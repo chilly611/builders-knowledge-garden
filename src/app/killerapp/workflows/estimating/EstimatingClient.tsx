@@ -6,7 +6,7 @@ import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import type { StepResult } from '@/design-system/components/StepCard.types';
 import { getProjectBudget, recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
-import { useProjectWorkflowState } from '@/lib/hooks/useProjectWorkflowState';
+import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
 import { colors, spacing, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
 
@@ -222,21 +222,22 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
       : null;
 
-  // Pre-fill unsaved text/voice/analysis steps with raw_input.
-  const seededPayloads = useMemo(() => {
-    const out = { ...hydratedPayloads };
-    const raw = project?.raw_input?.trim();
-    if (!raw) return out;
-    for (const step of workflow.steps) {
-      if (out[step.id]) continue;
-      if (step.type === 'text_input' || step.type === 'voice_input') {
-        out[step.id] = { value: raw };
-      } else if (step.type === 'analysis_result') {
-        out[step.id] = { input: raw };
-      }
-    }
-    return out;
-  }, [hydratedPayloads, project, workflow.steps]);
+  // Pre-fill text/voice/analysis steps with raw_input AND parse out
+  // location + sqft for location_input/number_input steps. User
+  // feedback 2026-05-06: "I shouldn't have to answer the questions of
+  // where is the location or square footage if I already put those in."
+  const seededPayloads = useMemo(
+    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
+    [hydratedPayloads, project, workflow.steps]
+  );
+
+  // Mark seeded steps as 'complete' so the XP counter credits the user
+  // for project context they already provided. Active completions
+  // during the session still update via setStepStatusMap below.
+  const mergedStatusMap = useMemo(
+    () => statusFromSeeded(seededPayloads, stepStatusMap),
+    [seededPayloads, stepStatusMap]
+  );
 
   const topPanel = (
     <section
@@ -370,7 +371,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
         onStepComplete={handleStepComplete}
         projectId={projectId ?? undefined}
         hydratedPayloads={seededPayloads}
-        statusMap={stepStatusMap}
+        statusMap={mergedStatusMap}
       />
     </>
   );
