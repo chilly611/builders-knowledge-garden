@@ -35,16 +35,36 @@ function isProjectId(s: string | undefined | null): s is string {
   return !!s && s !== "default" && UUID_RE.test(s);
 }
 
+// Cost range patterns ordered most-specific first.
+// Group 3 (when present) is the unit suffix: k/thousand → ×1000, m/million → ×1,000,000.
+//
+// Examples that should match:
+//   "$30,000–$45,000"           → low=30000, high=45000  (no unit)
+//   "$1.4M–$1.8M"               → low=1400000, high=1800000  (M unit on both)
+//   "$1.4M to $1.8M"            → same
+//   "30k–45k"                   → low=30000, high=45000
+//   "between 30 and 45 thousand" → low=30000, high=45000
+//
+// Real ADU/wellness builds quote in millions; the original regex only
+// caught k/thousand and missed every realistic high-end ADU estimate
+// (the founder's San Diego ADU prod test landed $1.4M–$1.8M and
+// estimated_cost_low/high stayed null). Adding the m/million capture
+// fixes that.
 const COST_RANGE_PATTERNS: RegExp[] = [
-  /\$\s?([\d,]+(?:\.\d+)?)\s?(?:[-–—]|to)\s?\$\s?([\d,]+(?:\.\d+)?)/,
-  /([\d,]+(?:\.\d+)?)\s?(?:[-–—]|to)\s?([\d,]+(?:\.\d+)?)\s?(k|thousand)/i,
+  // "$X[m|M|k]–$Y[m|M|k]" — both endpoints carry the same unit suffix
+  /\$\s?([\d,]+(?:\.\d+)?)\s?(m|million|k|thousand)?\s?(?:[-–—]|to)\s?\$\s?([\d,]+(?:\.\d+)?)\s?(m|million|k|thousand)?/i,
+  // "X–Y k|thousand|m|million" — unit suffix only at the end
+  /([\d,]+(?:\.\d+)?)\s?(?:[-–—]|to)\s?([\d,]+(?:\.\d+)?)\s?(k|thousand|m|million)/i,
 ];
 
 function parseDollarToken(token: string, unit?: string): number | null {
   const cleaned = token.replace(/,/g, "").trim();
   const n = parseFloat(cleaned);
   if (!Number.isFinite(n) || n <= 0) return null;
-  if (unit && /^k|thousand$/i.test(unit)) return Math.round(n * 1000);
+  if (!unit) return Math.round(n);
+  const u = unit.toLowerCase();
+  if (u === "k" || u === "thousand") return Math.round(n * 1000);
+  if (u === "m" || u === "million") return Math.round(n * 1_000_000);
   return Math.round(n);
 }
 
@@ -74,12 +94,39 @@ function parseAiResponse(
   const ptMatch = fullText.match(/Project type:\s*([^\n.]{2,40})/i);
   if (ptMatch) out.project_type = ptMatch[1].trim();
 
-  for (const re of COST_RANGE_PATTERNS) {
+  // Pattern 1 captures: ($lowNum, lowUnit, $highNum, highUnit) — unit
+  //   suffixes can appear on either or both endpoints.
+  // Pattern 2 captures: (lowNum, highNum, sharedUnit) — unit only at end.
+  // Both patterns share the same downstream resolution: prefer an
+  // endpoint-local unit, fall back to a shared one. If only one endpoint
+  // has a unit (e.g. "$1.4M to $1.8M" written as "$1.4–1.8M"), the
+  // unit is shared.
+  for (let i = 0; i < COST_RANGE_PATTERNS.length; i++) {
+    const re = COST_RANGE_PATTERNS[i];
     const m = fullText.match(re);
     if (!m) continue;
-    const unit = m[3];
-    const low = parseDollarToken(m[1], unit);
-    const high = parseDollarToken(m[2], unit);
+    let lowToken: string;
+    let highToken: string;
+    let lowUnit: string | undefined;
+    let highUnit: string | undefined;
+    if (i === 0) {
+      // Pattern 1: $X[unit] – $Y[unit]
+      lowToken = m[1];
+      lowUnit = m[2];
+      highToken = m[3];
+      highUnit = m[4];
+      // If only one side specified a unit, share it across both.
+      if (lowUnit && !highUnit) highUnit = lowUnit;
+      if (highUnit && !lowUnit) lowUnit = highUnit;
+    } else {
+      // Pattern 2: X – Y unit
+      lowToken = m[1];
+      highToken = m[2];
+      lowUnit = m[3];
+      highUnit = m[3];
+    }
+    const low = parseDollarToken(lowToken, lowUnit);
+    const high = parseDollarToken(highToken, highUnit);
     if (low !== null && high !== null && low <= high) {
       out.estimated_cost_low = low;
       out.estimated_cost_high = high;
