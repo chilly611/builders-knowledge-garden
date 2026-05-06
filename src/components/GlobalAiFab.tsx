@@ -120,10 +120,16 @@ export default function GlobalAiFab() {
   }, [pathname]);
 
   // Listen for bkg:ai-fab:open event to open FAB and focus textarea.
+  // If detail.prompt is provided, seed the textarea with it so the user
+  // doesn't land on an empty input — fixes the "feels nowhere" complaint
+  // when triggered from "Ask the AI what to do next" CTA.
   useEffect(() => {
-    const handler = () => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ prompt?: string } | undefined>).detail;
+      if (detail?.prompt && typeof detail.prompt === 'string') {
+        setPrompt(detail.prompt);
+      }
       setOpen(true);
-      // Focus the textarea on next frame to ensure it's rendered
       setTimeout(() => {
         const textarea = document.querySelector<HTMLTextAreaElement>(
           '[placeholder="What do you want to do? Type or tap 🎤"]'

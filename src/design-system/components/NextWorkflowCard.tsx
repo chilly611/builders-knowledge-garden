@@ -1,9 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LIFECYCLE_STAGES, STAGE_WORKFLOWS, WORKFLOW_TO_STAGE } from '@/lib/lifecycle-stages';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '../tokens';
 import { stageAccent } from '../tokens/stage-accents';
+
+// Map workflow id → live URL path. Mirrors LIVE_WORKFLOWS from
+// src/app/killerapp/page.tsx — kept inline here so this primitive
+// doesn't depend on the page module's internals.
+// Workflows not in this map have no live route yet ("coming soon").
+const LIVE_WORKFLOW_PATHS: Record<string, string> = {
+  q2: '/killerapp/workflows/estimating',
+  q4: '/killerapp/workflows/contract-templates',
+  q5: '/killerapp/workflows/code-compliance',
+  q6: '/killerapp/workflows/job-sequencing',
+  q7: '/killerapp/workflows/worker-count',
+  q8: '/killerapp/workflows/permit-applications',
+  q9: '/killerapp/workflows/sub-management',
+  q10: '/killerapp/workflows/equipment',
+  q11: '/killerapp/workflows/supply-ordering',
+  q12: '/killerapp/workflows/services-todos',
+  q13: '/killerapp/workflows/hiring',
+  q14: '/killerapp/workflows/weather-scheduling',
+  q15: '/killerapp/workflows/daily-log',
+  q16: '/killerapp/workflows/osha-toolbox',
+  q17: '/killerapp/workflows/expenses',
+  q18: '/killerapp/workflows/outreach',
+  q19: '/killerapp/workflows/compass-nav',
+};
 
 /**
  * NextWorkflowCard — Stage-exit card with 3 next-step options
@@ -63,6 +88,9 @@ export default function NextWorkflowCard({
   stepsComplete = false,
   className = '',
 }: NextWorkflowCardProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get('project');
   const [showStagePicker, setShowStagePicker] = useState(false);
   const accent = stageAccent(currentStageId);
   const currentWorkflowLabel = WORKFLOW_LABELS[currentWorkflowId] || 'This workflow';
@@ -75,6 +103,7 @@ export default function NextWorkflowCard({
 
   let nextCTALabel = 'Continue to next workflow';
   let nextStageId: number | null = null;
+  let nextWorkflowId: string | null = null;
 
   if (isLastInStage) {
     // Move to next stage
@@ -82,8 +111,9 @@ export default function NextWorkflowCard({
     if (nextStageId) {
       const nextStageName = LIFECYCLE_STAGES.find((s) => s.id === nextStageId)?.name || `Stage ${nextStageId}`;
       const nextStageWorkflows = STAGE_WORKFLOWS[nextStageId] || [];
-      const nextWorkflowLabel = nextStageWorkflows.length > 0
-        ? WORKFLOW_LABELS[nextStageWorkflows[0]] || 'next workflow'
+      nextWorkflowId = nextStageWorkflows[0] ?? null;
+      const nextWorkflowLabel = nextWorkflowId
+        ? WORKFLOW_LABELS[nextWorkflowId] || 'next workflow'
         : 'next workflow';
       nextCTALabel = `Move to ${nextStageName}: ${nextWorkflowLabel}`;
     } else {
@@ -91,25 +121,57 @@ export default function NextWorkflowCard({
     }
   } else {
     // Continue within stage
-    const nextWorkflowId = currentStageWorkflows[currentIndex + 1];
+    nextWorkflowId = currentStageWorkflows[currentIndex + 1];
     const nextLabel = WORKFLOW_LABELS[nextWorkflowId] || 'next workflow';
     nextCTALabel = `Continue to ${nextLabel}`;
   }
 
+  // Compute the actual destination URL for the primary CTA.
+  // Preserves ?project=<id> so the project context follows the user.
+  // Falls back to /killerapp if the next workflow has no live route yet.
+  const nextLivePath = nextWorkflowId
+    ? LIVE_WORKFLOW_PATHS[nextWorkflowId]
+    : undefined;
+  const nextHref = nextLivePath
+    ? projectId
+      ? `${nextLivePath}?project=${encodeURIComponent(projectId)}`
+      : nextLivePath
+    : projectId
+      ? `/killerapp?project=${encodeURIComponent(projectId)}`
+      : '/killerapp';
+  const isComingSoon = nextWorkflowId && !nextLivePath;
+  const handlePrimaryCTA = () => {
+    router.push(nextHref);
+  };
+
   const handleAIFab = () => {
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('bkg:ai-fab:open'));
+      // Pre-fill the AI fab with a contextual question so the user
+      // doesn't land on an empty input. GlobalAiFab listens for this
+      // event's detail.prompt and seeds its textarea.
+      const prompt = `I'm working on ${currentWorkflowLabel}. What's the most useful next step here?`;
+      window.dispatchEvent(
+        new CustomEvent('bkg:ai-fab:open', { detail: { prompt } })
+      );
     }
   };
 
   const handleStageSelect = (selectedStageId: number) => {
     setShowStagePicker(false);
-    // Navigate to first workflow in selected stage
     const workflows = STAGE_WORKFLOWS[selectedStageId] || [];
-    if (workflows.length > 0) {
-      // TODO: Navigate to /killerapp/workflows/${workflows[0]}
-      console.log(`Navigate to stage ${selectedStageId}, workflow ${workflows[0]}`);
-    }
+    const firstId = workflows[0];
+    const livePath = firstId ? LIVE_WORKFLOW_PATHS[firstId] : undefined;
+    // Land on the first live workflow in the chosen stage; fall back to
+    // /killerapp if nothing in that stage is wired up yet. Preserve
+    // ?project=<id> so the project context follows.
+    const target = livePath
+      ? projectId
+        ? `${livePath}?project=${encodeURIComponent(projectId)}`
+        : livePath
+      : projectId
+        ? `/killerapp?project=${encodeURIComponent(projectId)}`
+        : '/killerapp';
+    router.push(target);
   };
 
   return (
@@ -148,10 +210,7 @@ export default function NextWorkflowCard({
         >
           {/* Primary CTA */}
           <button
-            onClick={() => {
-              // TODO: Navigate using next workflow/stage
-              console.log('Navigate to next workflow');
-            }}
+            onClick={handlePrimaryCTA}
             style={{
               backgroundColor: colors.brass,
               color: 'white',
@@ -163,7 +222,9 @@ export default function NextWorkflowCard({
               border: 'none',
               cursor: 'pointer',
               transition: 'background-color 0.2s ease',
+              opacity: isComingSoon ? 0.65 : 1,
             }}
+            title={isComingSoon ? `${nextCTALabel} — coming soon (returning to summary)` : undefined}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.backgroundColor = '#9E6F2F';
             }}
