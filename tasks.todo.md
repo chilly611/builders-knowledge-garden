@@ -259,3 +259,63 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 
 - [ ] **W10.A3** Universal v1→v2 prompt rewrite for the remaining ~10 v1 specialists (osha-toolbox-talk, contacts-quotes, expense-categorization, co-cost-delta, punch-detection, crew-analysis/conflicts/optimization, supply-leadtimes, supply-materials, risk-payment-history/material-availability/markup-calculation, equipment-rent-vs-buy, sequencing-bottlenecks, compliance-electrical/fire/plumbing/router). Half-day. Best done with founder review on each prompt before commit.
 - [x] **W10.A.verify** Full re-probe via `scripts/probes/w10a-smoke.mjs` after push lands. Expected: zero CYA flags, zero `HEDGE_OPENER` on the 5 W10.A2b specialists, zero `NO_STRUCTURED` on q2/q5/q9 (W10.A5 parser fallback), structured output on all 6 W10.A4 specialists, deterministic gate response from `payroll-classification-gate`. _(triaged 2026-05-01: PASSED — 15/15 OK / 0 FAIL / 0 WARN against live deploy ab5a869)_
+
+---
+
+## ⏵ State of play — 2026-05-05 (Cowork session resume point)
+
+### What just shipped to prod
+
+- **Project Spine v1** — project entity in URL (`?project=<uuid>`), banner travels across `/killerapp` ↔ estimating ↔ code-compliance ↔ contract-templates with raw_input + AI take. Hydrate on tab reopen. Autosave on workflow steps. AI fab pre-fills with contextual prompt when triggered from "Ask AI what to do next." Hallucination guard verified in prod (asked "What does NEC 919.7(D)(4) say?" — AI explicitly admitted ignorance, did not fabricate). All on `main` after merge.
+- **NextWorkflowCard navigation fix** — "Continue to <next workflow>" buttons actually navigate now (was console.log stub). Stage picker actually navigates too. Project_id preserved through the chain. On `project-spine-v1` branch, **not yet merged to main**.
+- **Three quick wins** — code-compliance jurisdiction auto-defaults from project context (Pete/Sarah/Diana trust fix). Cost parser handles `$1.4M-$1.8M` format (banner now populates `estimated_cost_low/high` on real ADU projects). `/killerapp?project=<id>` hides stale "You're not started yet. 7 stages to explore." copy. On `project-spine-v1` branch, **not yet merged to main**.
+
+### Comprehensive dogfood docs created (all in `docs/dogfood/`)
+
+- `master-test-matrix.md` — 16 demo-critical tests across 9 categories
+- `personas/01-10-*.md` — 10 contractor persona test plans (GC John, Maria KBR, Greenhorn Jake, Sparky Pete, PE-GC Sarah, Deck Curtis, Multifamily Mari, Rookie Rico, Green Diana, Foreman Hank)
+- `findings.md` — actual prod test results (6 of 8 tested passed; 8 untested)
+- `fix-strategies/{01-ux,02-data-jurisdiction,03-ai-behavior,04-infra-features}.md` — 4 specialist fix proposals
+- `fix-list.md` — synthesized prioritized master fix list
+
+### To get the latest two commits to prod
+
+```bash
+cd "/Users/chillydahlgren/Desktop/The Builder Garden/app"
+git checkout main && git pull origin main && git merge project-spine-v1 && git push
+```
+
+Vercel auto-deploys ~3 min after the push lands.
+
+### Watch out for parallel work
+
+A separate Claude / Dispatch session is running on the MacBook in the same repo, working on "W6 animation layer" (W6.E/H/I). It died on a 401 mid-scout and is retrying. **If it pushes commits to `main` before you, merge conflicts ahead.** Read its plan before merging anything it produces — it may overlap with the W9.D ScrollStage + `src/design-system/animations/` work that's already on prod.
+
+### Tier 1 work for next session (~3-4 hours)
+
+Goal: make the unscripted "click anywhere in the demo path" experience credible. Right now only q2/q4/q5 have Project Spine v1 wiring. The other 14 workflows (q6-q19) are landmines for John/contractor demo.
+
+- [ ] **Wire Project Spine v1 into q8 permit-applications** — same pattern as q5: import `useProjectWorkflowState`, render `ProjectContextBanner`, pass `hydratedPayloads`/`statusMap` to `WorkflowShell` or `WorkflowRenderer`, wrap `page.tsx` in `<Suspense>`. ~40-50 min.
+- [ ] **Wire Project Spine v1 into q15 daily-log** — same pattern. Hank's #1 workflow. ~40-50 min.
+- [ ] **Wire Project Spine v1 into q11 supply-ordering** — same pattern. Curtis + Maria + Hank all hit this. ~40-50 min.
+- [ ] **Verify SPINE-5/6/7 on prod** — close+reopen, multi-tab isolation, back button. ~15 min.
+- [ ] **Optional: roll the same pattern across q6/q7/q9/q10/q12/q13/q14/q16/q17/q18/q19** — ~7-9 hours total if formulaic. Could be parallel-agent-farmed but the lesson `tasks.lessons.md:931` says seed agents with the source-of-truth StepCard.types.ts inline.
+
+### Tier 2 (post-demo, ~1-2 days)
+
+- [ ] **Proactive AI assist** — 5s idle detection on empty workflow steps → gentle nudge bubble.
+- [ ] **INP perf investigation** — 1-4s spikes on click events flagged in prod. Likely culprit: journey-progress unthrottled PATCHes or ScrollStage observer thrashing.
+- [ ] **Adversarial AI test harness** — 10 fake code probes in CI to prevent regression on the hallucination guard.
+- [ ] **Glossary tooltips on jargon** — "Pre-Bid Risk Score", "Compass", "Time Machine".
+- [ ] **Status counter rehydration on remaining workflows** (currently only q2 derives status from saved JSONB).
+
+### Tier 3 — Phase 2 epics (the big bets)
+
+- [ ] **Photo/video evidence upload** (5-7 days) — #1 universal persona gap. New `project_attachments` table + Supabase Storage bucket + upload UI threaded into KillerappProjectShell + per-step in workflows. John lost a $30k deposit on this exact gap.
+- [ ] **Multi-jurisdiction code data** (~5 weeks) — IL + NYC + FL beyond CA/NV. Pete/Sarah/Mari are blocked without it. Mirrors HKG citation moat strategy.
+- [ ] **Voice 1.5** (~2-3 weeks) — TTS on AI replies, persistent listening toggle, voice button per step, command-vocabulary navigation.
+
+### Demo-readiness call
+
+- **Scripted demo on real ADU** (this week): YES, with Tier 1. Path: `/killerapp` → submit ADU scope → AI streams inline → Estimate → Codes → Contracts. Stay on this loop; don't click into other stages until they're wired.
+- **Unscripted demo "click anywhere"**: NOT YET. Tier 1 + Tier 2 first.

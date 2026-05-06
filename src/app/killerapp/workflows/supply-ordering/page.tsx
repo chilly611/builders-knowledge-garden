@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { Suspense } from 'react';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import SupplyOrderingClient from './SupplyOrderingClient';
@@ -26,5 +27,10 @@ export const metadata = {
 
 export default function Page() {
   const { workflow, stages } = loadWorkflow();
-  return <SupplyOrderingClient workflow={workflow} stages={stages} />;
+  // Project Spine v1 (Wave 2): client uses useSearchParams via the hook.
+  return (
+    <Suspense fallback={null}>
+      <SupplyOrderingClient workflow={workflow} stages={stages} />
+    </Suspense>
+  );
 }
