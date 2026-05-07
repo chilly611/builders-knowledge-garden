@@ -62,6 +62,18 @@ export default function WorkflowPickerSearchBox() {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [responseContent, setResponseContent] = useState<React.ReactNode[] | null>(null);
+  // 2026-05-07 demo readiness: anon users don't realize their work won't
+  // save until they refresh and lose it. Detect auth state once on mount;
+  // if anonymous, render a soft inline nudge after the AI streams.
+  const [isAnonymous, setIsAnonymous] = useState<boolean>(false);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      setIsAnonymous(!data.session);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<AnySpeechRecognition>(null);
@@ -459,7 +471,7 @@ export default function WorkflowPickerSearchBox() {
                   animation: 'bkg-ai-pulse 1.4s ease-in-out infinite',
                 }}
               />
-              Thinking through your project…
+              Running the numbers…
             </div>
           )}
 
@@ -483,6 +495,32 @@ export default function WorkflowPickerSearchBox() {
               }}
             >
               {responseContent}
+            </div>
+          )}
+
+          {responseContent && isAnonymous && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: '10px 12px',
+                fontSize: 12,
+                color: 'var(--graphite, #2E2E30)',
+                background: 'rgba(127, 207, 203, 0.12)',
+                border: '1px solid var(--robins-egg, #7FCFCB)',
+                borderRadius: 8,
+                lineHeight: 1.5,
+              }}
+              role="note"
+            >
+              <strong style={{ fontWeight: 600 }}>Heads up:</strong>{' '}
+              your work won&rsquo;t save if you refresh.{' '}
+              <a
+                href="/login?next=/killerapp"
+                style={{ color: 'var(--graphite)', textDecoration: 'underline' }}
+              >
+                Sign in
+              </a>{' '}
+              to keep this project.
             </div>
           )}
 
