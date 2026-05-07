@@ -37,6 +37,10 @@ const ALLOWED_MIME_TYPES = [
   'video/mp4',
   'video/quicktime',
   'video/webm',
+  // 2026-05-07: PDF support so q4 (signed contracts) and q8 (approved
+  // permit docs) can use this same uploader. Camera capture stays for
+  // photo workflows; <input> below accepts PDFs via accept="image/*,video/*,application/pdf".
+  'application/pdf',
 ];
 
 interface UploadedAttachment {
@@ -91,7 +95,7 @@ export default function AttachmentUploader({
 
       // Validate mime type
       if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-        throw new Error(`File type not allowed. Supported: images (JPEG, PNG, HEIC, WebP), videos (MP4, MOV, WebM)`);
+        throw new Error(`File type not allowed. Supported: images (JPEG/PNG/HEIC/WebP), videos (MP4/MOV/WebM), PDFs.`);
       }
 
       // Get auth session
@@ -292,7 +296,7 @@ export default function AttachmentUploader({
             color: 'var(--graphite)',
           }}
         >
-          Drop photos or videos here
+          Drop a file here
         </div>
         <div
           style={{
@@ -301,13 +305,13 @@ export default function AttachmentUploader({
             opacity: 0.6,
           }}
         >
-          or click to browse (max 50MB each)
+          or click to browse — photos, videos, or PDFs (max 50MB)
         </div>
         <input
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,video/*"
+          accept="image/*,video/*,application/pdf"
           capture="environment"
           onChange={handleInputChange}
           style={{ display: 'none' }}
