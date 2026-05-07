@@ -36,6 +36,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -296,12 +297,36 @@ export default function GlobalAiFab() {
     setIsListening(false);
   }, []);
 
+  const handleVoicePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      if (!isListening) {
+        startListening();
+      }
+    },
+    [isListening, startListening]
+  );
+
+  const handleVoicePointerUp = useCallback(() => {
+    if (isListening) {
+      stopListening();
+    }
+  }, [isListening, stopListening]);
+
+  const handleVoicePointerLeave = useCallback(() => {
+    if (isListening) {
+      stopListening();
+    }
+  }, [isListening, stopListening]);
+
   if (!mounted) return null;
 
   // Hide on the presentation / cinematic surfaces, same rule as CompassBloom.
   if (pathname === '/presentation' || pathname === '/cinematic') return null;
 
-  const ctx = readSurfaceContext(pathname);
+  // INP fix (2026-05-06): Memoize surface context to avoid redundant DOM queries
+  // on every render. readSurfaceContext() queries the DOM, which is expensive.
+  const ctx = useMemo(() => readSurfaceContext(pathname), [pathname]);
   const contextLabel =
     ctx.workflowId ? `Workflow ${ctx.workflowId.toUpperCase()}` : ctx.pathname;
 
@@ -316,6 +341,14 @@ export default function GlobalAiFab() {
           50% {
             opacity: 0.6;
             transform: scale(1.2);
+          }
+        }
+        @keyframes bkgVoicePulse {
+          0%, 100% {
+            box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
           }
         }
       `}</style>
@@ -361,16 +394,21 @@ export default function GlobalAiFab() {
             />
             <button
               type="button"
-              onClick={isListening ? stopListening : startListening}
+              onPointerDown={handleVoicePointerDown}
+              onPointerUp={handleVoicePointerUp}
+              onPointerLeave={handleVoicePointerLeave}
               aria-pressed={isListening}
-              aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+              aria-label={isListening ? 'Listening…' : 'Press and hold to talk'}
               style={{
                 ...voiceButtonStyle,
-                background: isListening ? '#EF4444' : '#fff',
+                background: isListening ? 'linear-gradient(135deg, #DC2626, #B91C1C)' : '#fff',
                 color: isListening ? '#fff' : '#555',
+                animation: isListening ? 'bkgVoicePulse 1s ease-in-out infinite' : 'none',
+                boxShadow: isListening ? '0 0 12px rgba(220, 38, 38, 0.6)' : 'none',
               }}
+              title={isListening ? 'Release to stop' : 'Press and hold to talk'}
             >
-              {isListening ? '■' : '🎤'}
+              {isListening ? '🎤' : '🎤'}
             </button>
           </div>
 

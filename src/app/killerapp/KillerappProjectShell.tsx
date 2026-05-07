@@ -19,7 +19,7 @@
  *   This component uses `useSearchParams`. Parent MUST wrap in <Suspense>.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -245,17 +245,20 @@ export default function KillerappProjectShell() {
 
   if (!projectId) return null;
 
-  const persistedAssistant = conversations
-    .filter((c) => c.role === 'assistant')
-    .at(-1);
-  const aiText = streaming
-    ? streamingResponse
-    : persistedAssistant?.content ?? project?.ai_summary ?? '';
-
-  const userQuery =
-    project?.raw_input ??
-    conversations.find((c) => c.role === 'user')?.content ??
-    '';
+  // INP fix (2026-05-06): Memoize expensive array operations (.filter, .find)
+  // to avoid recomputing on every render. These DOM operations can be costly.
+  const persistedAssistant = useMemo(
+    () => conversations.filter((c) => c.role === 'assistant').at(-1),
+    [conversations]
+  );
+  const userQuery = useMemo(
+    () =>
+      project?.raw_input ??
+      conversations.find((c) => c.role === 'user')?.content ??
+      '',
+    [project?.raw_input, conversations]
+  );
+  const aiText = streaming ? streamingResponse : persistedAssistant?.content ?? project?.ai_summary ?? '';
 
   return (
     <section
@@ -436,7 +439,9 @@ function NextStepLink({ href, label }: { href: string; label: string }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        padding: '8px 14px',
+        padding: '10px 14px',
+        minHeight: 44,
+        minWidth: 44,
         border: '0.5px solid var(--faded-rule)',
         borderRadius: 8,
         background: 'transparent',

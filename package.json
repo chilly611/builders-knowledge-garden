@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "seed:codes": "node scripts/seed-code-entities.mjs"
+    "seed:codes": "node scripts/seed-code-entities.mjs",
+    "probe:adversarial": "node scripts/probes/adversarial-codes.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

@@ -1,0 +1,121 @@
+[
+  {
+    "term": "Pre-Bid Risk Score",
+    "aliases": ["Risk Score"],
+    "plain": "A quick assessment of whether a construction job is safe to bid on, based on project size, scope complexity, client type, and timeline. Flags red flags like tight deadlines or unusual scope to help you decide whether to pursue the bid.",
+    "pro": "Scoring matrix for bid qualification",
+    "source": "BKG workflow q1"
+  },
+  {
+    "term": "Compass",
+    "aliases": ["Project Compass"],
+    "plain": "A one-page visual map of your entire project — where you are now, what's done, what's next, and when key milestones hit. Open it any time to see the big picture without scrolling through details.",
+    "pro": "Stage navigator and progress dashboard",
+    "source": "BKG workflow q19"
+  },
+  {
+    "term": "Time Machine",
+    "aliases": ["Progress Replay", "Undo"],
+    "plain": "A way to rewind your project to an earlier state — go back and change an estimate, re-run a decision, or undo a change order. Lets you explore what-if scenarios without losing your current progress.",
+    "pro": "Temporal project state reversal",
+    "source": "BKG project tool"
+  },
+  {
+    "term": "Lifecycle stage",
+    "aliases": ["Stage"],
+    "plain": "One of seven phases a construction project moves through: Size Up (planning), Lock (paperwork), Plan (crew and permits), Build (execution), Adapt (changes), Collect (payment), Reflect (closeout). Each stage has 2–4 workflows.",
+    "pro": "Seven-phase project workflow model",
+    "source": "BKG core model"
+  },
+  {
+    "term": "Spine",
+    "aliases": ["Project Spine"],
+    "plain": "The continuous thread connecting all your project data across every workflow — your scope, costs, crew, permits, changes, and notes stay in sync. Add a detail in one workflow and it auto-fills the next one.",
+    "pro": "Cross-workflow context persistence layer",
+    "source": "BKG architecture"
+  },
+  {
+    "term": "AHJ",
+    "plain": "Authority Having Jurisdiction — the local government agency (usually the city or county building department) that reviews, approves, and inspects your work. Your permits, plan checks, and inspections all go through them.",
+    "pro": "Authority Having Jurisdiction",
+    "source": "Industry standard"
+  },
+  {
+    "term": "RFI",
+    "plain": "Request for Information — a formal written question you send to the architect, engineer, or general contractor when something in the plans is unclear or missing. The AHJ uses RFIs to ask you for clarification during plan check.",
+    "pro": "Request for Information",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Submittal",
+    "plain": "Any document, product sample, or certification you give to the AHJ or general contractor for review before installing it — like spec sheets for materials, shop drawings from subs, test reports, or proof of licenses. Submittals lock in what you're actually installing.",
+    "pro": "Pre-approval documentation",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Punch list",
+    "plain": "A checklist of small jobs that remain incomplete at the end of a project — paint touch-ups, trim, door adjustments, final cleanup. Created during the final walk-through and typically required before the owner accepts the project and releases final payment.",
+    "pro": "Final deficiency list",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Lien waiver",
+    "plain": "A signed document from a sub, supplier, or laborer saying they've been paid in full and won't file a lien against the property. You need these from everyone before you can get final payment from the owner. Missing one can block your draw for weeks.",
+    "pro": "Mechanic's lien release",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Draw request",
+    "plain": "A bill you submit to the owner or lender for work completed to date. Based on percentage complete or milestones. The lender or owner reviews, approves, and sends payment. Most projects have 3–6 draws; retainage is held back from each one.",
+    "pro": "Progress payment requisition",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Retainage",
+    "plain": "Money held back from each draw (usually 5–10%) until the project is fully complete and all lien waivers are collected. Protects the owner in case you skip town or leave work undone. Released after substantial completion and final inspection.",
+    "pro": "Holdback reserve",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Plan check",
+    "plain": "The AHJ's detailed review of your drawings and documents before you can start work. They look for code violations, missing details, and permit violations. You'll get RFIs for anything unclear; you respond and resubmit until they approve.",
+    "pro": "Design document AHJ review phase",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Title 24",
+    "plain": "California's energy code — rules for insulation, HVAC efficiency, lighting, solar, and water heating. Every project in CA must meet Title 24 compliance. The requirements get stricter every few years. Affects material costs and design decisions.",
+    "pro": "California Title 24 energy code",
+    "source": "California Building Code"
+  },
+  {
+    "term": "NEC",
+    "plain": "National Electrical Code — the standard for safe electrical design and installation across the US. Covers wire sizing, breaker protection, grounding, conduit routing, and outlet placement. Your electrician must follow it; the AHJ enforces it during inspection.",
+    "pro": "NFPA 70 National Electrical Code",
+    "source": "Industry standard"
+  },
+  {
+    "term": "IBC",
+    "plain": "International Building Code — the model code for structural safety, fire safety, and life safety adopted by most US states and cities (sometimes with local amendments). Covers everything from foundation loads to egress requirements.",
+    "pro": "International Building Code",
+    "source": "Industry standard"
+  },
+  {
+    "term": "IPC",
+    "plain": "International Plumbing Code — the standard for water supply, drainage, and vent lines. Covers pipe sizing, trap requirements, cleanout placement, and cross-connection protection. Your plumber follows IPC; inspectors verify compliance.",
+    "pro": "International Plumbing Code",
+    "source": "Industry standard"
+  },
+  {
+    "term": "IRC",
+    "plain": "International Residential Code — a comprehensive code for single-family and small multifamily homes, covering structure, energy, electrical, plumbing, and mechanical systems. Simpler than IBC but stricter on some details for residential buildings.",
+    "pro": "International Residential Code",
+    "source": "Industry standard"
+  },
+  {
+    "term": "NFPA",
+    "plain": "National Fire Protection Association — develops fire and safety codes. NFPA 13 covers sprinkler systems, NFPA 70 is the Electrical Code, NFPA 101 is the Life Safety Code. Used nationwide, often referenced in local codes.",
+    "pro": "National Fire Protection Association",
+    "source": "Industry standard"
+  }
+]

@@ -39,6 +39,7 @@ import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
 import AuthAndProjectIndicator from './AuthAndProjectIndicator';
+import TermTooltip from '@/components/TermTooltip';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
@@ -381,7 +382,7 @@ export default function KillerAppPage() {
         <div>Builder&rsquo;s Knowledge Garden · v0.1</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
           <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
-            View your project Compass →
+            View your project <TermTooltip term="Compass">Compass</TermTooltip> →
           </Link>
           <div style={{ fontSize: '9px', color: 'inherit', opacity: 0.6, maxWidth: 180, textAlign: 'right', lineHeight: 1.4 }}>
             Your one-page project map. Open it any time.

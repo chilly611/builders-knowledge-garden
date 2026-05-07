@@ -17,7 +17,7 @@
  *   Uses useSearchParams. Parent must wrap in <Suspense>.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -43,6 +43,11 @@ export default function AuthAndProjectIndicator() {
   const [email, setEmail] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [project, setProject] = useState<ProjectSummary | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renamingText, setRenamingText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Subscribe to auth state. Updates when user signs in / out without
   // requiring a page reload.
@@ -88,7 +93,56 @@ export default function AuthAndProjectIndicator() {
     };
   }, [projectId]);
 
+  const startRenaming = () => {
+    if (project) {
+      setRenamingText(project.name ?? '');
+      setIsRenaming(true);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  };
+
+  const saveRename = async () => {
+    const newName = renamingText.trim();
+    if (!projectId || !newName || !project || newName === project.name) {
+      setIsRenaming(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await authedFetch('/api/v1/projects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: projectId, name: newName }),
+      });
+      if (res.ok) {
+        setProject({ ...project, name: newName });
+        setIsRenaming(false);
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      }
+    } catch {
+      // Silent failure — user can try again
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const cancelRenaming = () => {
+    setIsRenaming(false);
+  };
+
   if (!authChecked) return null;
+
+  // INP fix (2026-05-06): Memoize project display name computation to avoid
+  // recomputing string slicing on every render.
+  const projectDisplayName = useMemo(
+    () =>
+      project?.name ??
+      project?.raw_input?.slice(0, 60) ??
+      'Untitled project',
+    [project?.name, project?.raw_input]
+  );
 
   return (
     <div
@@ -109,7 +163,10 @@ export default function AuthAndProjectIndicator() {
       <div
         style={{
           pointerEvents: 'auto',
-          padding: '4px 10px',
+          padding: '8px 12px',
+          minHeight: 44,
+          display: 'flex',
+          alignItems: 'center',
           background: 'var(--trace, #F4F0E6)',
           border: '0.5px solid var(--faded-rule, #C9C3B3)',
           borderRadius: 999,
@@ -142,7 +199,8 @@ export default function AuthAndProjectIndicator() {
         <div
           style={{
             pointerEvents: 'auto',
-            padding: '4px 10px',
+            padding: '8px 12px',
+            minHeight: 44,
             background: 'rgba(127, 207, 203, 0.18)', // Robin's egg tint
             border: '0.5px solid var(--robins-egg, #7FCFCB)',
             borderRadius: 999,
@@ -166,20 +224,90 @@ export default function AuthAndProjectIndicator() {
             }}
           />
           <span style={{ opacity: 0.5 }}>saved · </span>
-          <span
-            style={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: 280,
-              fontWeight: 500,
-            }}
-            title={project.name ?? project.raw_input ?? 'Untitled project'}
-          >
-            {project.name ??
-              project.raw_input?.slice(0, 60) ??
-              'Untitled project'}
-          </span>
+
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={renamingText}
+              onChange={(e) => setRenamingText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void saveRename();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  cancelRenaming();
+                }
+              }}
+              onBlur={saveRename}
+              disabled={isSaving}
+              style={{
+                flex: 1,
+                minWidth: 60,
+                maxWidth: 200,
+                border: '1px solid var(--robins-egg, #7FCFCB)',
+                borderRadius: 4,
+                padding: '2px 4px',
+                fontSize: 11,
+                fontFamily: 'inherit',
+                color: 'var(--graphite, #2E2E30)',
+                background: '#fff',
+              }}
+              placeholder="Project name"
+              autoComplete="off"
+            />
+          ) : (
+            <>
+              <span
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: 220,
+                  fontWeight: 500,
+                }}
+                title={projectDisplayName}
+              >
+                {projectDisplayName}
+              </span>
+              <button
+                type="button"
+                onClick={startRenaming}
+                aria-label="Rename project"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '2px 4px',
+                  cursor: 'pointer',
+                  fontSize: 10,
+                  opacity: 0.6,
+                  transition: 'opacity 0.15s',
+                  color: 'var(--graphite, #2E2E30)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '0.6';
+                }}
+              >
+                ✎
+              </button>
+            </>
+          )}
+
+          {saveStatus === 'success' && (
+            <span
+              style={{
+                fontSize: 9,
+                opacity: 0.7,
+                fontStyle: 'italic',
+              }}
+            >
+              Saved
+            </span>
+          )}
         </div>
       )}
     </div>

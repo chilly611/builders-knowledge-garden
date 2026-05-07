@@ -16,16 +16,25 @@
  * Safe for trusted input (specialist responses).
  */
 
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { colors, fontSizes, fontWeights, spacing, fonts } from '../../tokens';
 
 /**
  * ActionButton
  * ============
  * Inline client component for rendering action: links as styled pill buttons.
- * Uses router.push() for client-side navigation, falls back to window.location for SSR safety.
+ * Uses router.push() for client-side navigation instead of full page reload.
+ *
+ * INP fix (2026-05-06): Replaced window.location.href with useRouter().push()
+ * to eliminate the 1-4 second full-page reload on click. Client-side navigation
+ * is virtually instant and preserves state.
  */
 function ActionButton({ label, action }: { label: string; action: string }) {
+  const router = useRouter();
+
   const handleClick = () => {
     try {
       if (typeof window === 'undefined') return;
@@ -44,7 +53,7 @@ function ActionButton({ label, action }: { label: string; action: string }) {
         target = `${action}${sep}project=${encodeURIComponent(projectId)}`;
       }
 
-      window.location.href = target;
+      router.push(target);
     } catch (err) {
       console.error('Failed to navigate:', err);
     }

@@ -219,7 +219,11 @@ export default function ProjectContextBanner({ project, selfWorkflow }: Props) {
               href={p.href(project.id)}
               aria-current={isSelf ? 'page' : undefined}
               style={{
-                padding: '6px 12px',
+                padding: '8px 12px',
+                minHeight: 44,
+                minWidth: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontSize: 12,
                 border: '0.5px solid var(--faded-rule, #C9C3B3)',
                 borderRadius: 6,

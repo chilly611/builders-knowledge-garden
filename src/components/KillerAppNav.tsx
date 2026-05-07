@@ -18,7 +18,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Logomark from '@/components/Logomark';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
@@ -91,6 +91,18 @@ export default function KillerAppNav() {
   // Show "Workflows" back-link whenever we're nested under a workflow route.
   // Root /killerapp is the picker itself, so no back-link there.
   const inWorkflow = pathname.startsWith('/killerapp/workflows/');
+
+  // Show "Projects" link when NOT on the projects page itself.
+  // Used for quick navigation to the projects dashboard.
+  const inProjects = pathname === '/killerapp/projects';
+  const showProjectsNav = !inProjects;
+
+  // INP fix (2026-05-06): Memoize stage keys to avoid re-creating the array
+  // on every render. Object.keys() is expensive and unnecessary to re-compute.
+  const stageIds = useMemo(
+    () => Object.keys(STAGE_LANDSCAPE) as unknown as StageId[],
+    []
+  );
 
   return (
     <div
@@ -176,6 +188,39 @@ export default function KillerAppNav() {
         </>
       )}
 
+      {/* Projects link — visible except when already on projects page */}
+      {showProjectsNav && !isMobile && (
+        <>
+          <span
+            style={{
+              width: 1,
+              height: 20,
+              background: 'var(--faded-rule)',
+              flexShrink: 0,
+            }}
+          />
+          <Link
+            href="/killerapp/projects"
+            style={{
+              textDecoration: 'none',
+              fontSize: 12,
+              fontWeight: 400,
+              color: 'var(--fg-secondary)',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              minHeight: 44,
+              minWidth: 44,
+              justifyContent: 'center',
+              padding: '0 8px',
+            }}
+            title="View all projects"
+          >
+            <span>Projects</span>
+          </Link>
+        </>
+      )}
+
       {/* spacer */}
       <div style={{ flex: 1 }} />
 
@@ -189,7 +234,7 @@ export default function KillerAppNav() {
             flexShrink: 0,
           }}
         >
-          {(Object.keys(STAGE_LANDSCAPE) as unknown as StageId[]).map((stageId) => {
+          {stageIds.map((stageId) => {
             const stage = STAGE_LANDSCAPE[stageId];
             const isActive = currentStageId === stageId;
             const accentColor = STAGE_ACCENTS[stageId].hex;

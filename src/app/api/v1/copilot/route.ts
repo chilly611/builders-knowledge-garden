@@ -151,7 +151,21 @@ async function persistProjectExchange(args: {
 
     const parsed = parseAiResponse(args.response, { jurisdiction: args.jurisdiction });
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (parsed.ai_summary !== undefined) update.ai_summary = parsed.ai_summary;
+
+    // FIX B-8: Preserve initial orientation summary
+    // Fetch the project's current ai_summary to prevent overwriting it with
+    // subsequent copilot calls. Only set ai_summary on the first call when
+    // the project has no orientation yet (ai_summary is null/empty).
+    const { data: project } = await client
+      .from("command_center_projects")
+      .select("ai_summary")
+      .eq("id", args.project_id)
+      .single();
+
+    if (project && !project.ai_summary && parsed.ai_summary !== undefined) {
+      update.ai_summary = parsed.ai_summary;
+    }
+
     if (parsed.jurisdiction) update.jurisdiction = parsed.jurisdiction;
     if (parsed.project_type) update.project_type = parsed.project_type;
     if (parsed.estimated_cost_low !== undefined) update.estimated_cost_low = parsed.estimated_cost_low;
