@@ -14,8 +14,19 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import ProjectsDashboardClient from './ProjectsDashboardClient';
 
+// Force runtime SSR. Static prerender silently produced no HTML for this
+// route (build classified it ○ Static but no projects.html landed in
+// .next/server/app/killerapp/), and Vercel served Next's 500 fallback
+// for every request. Forcing dynamic skips the static-prerender path and
+// renders at request time with full Node.js runtime — robust and small.
+// (2026-05-06 prod fix.)
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
-  title: 'Projects — Builder\'s Knowledge Garden',
+  // Just "Projects" — root layout's title.template adds "— Builder's
+  // Knowledge Garden". Setting the full string here would duplicate
+  // (the rendered title was "Projects — BKG — BKG").
+  title: 'Projects',
   description: 'View and manage all your projects in one place.',
 };
 

@@ -21,9 +21,34 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import type { StepResult } from '@/design-system/components/StepCard.types';
+
+// localStorage key that stores the most-recently-active project id. Set by
+// KillerappProjectShell whenever the user lands on /killerapp?project=<id>.
+// Read here so a workflow page that's hit without ?project= in the URL
+// (e.g. user clicks "Quick estimate" from bare /killerapp) can rescue the
+// active project context instead of bouncing the user back home.
+const ACTIVE_PROJECT_KEY = 'bkg-active-project';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function readActiveProjectFromStorage(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_PROJECT_KEY);
+    if (!raw) return null;
+    if (!UUID_REGEX.test(raw)) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+function withProjectQuery(pathname: string, projectId: string): string {
+  const sep = pathname.includes('?') ? '&' : '?';
+  return `${pathname}${sep}project=${encodeURIComponent(projectId)}`;
+}
 
 export type StepPayload = {
   value?: string;
@@ -208,6 +233,7 @@ export function useProjectWorkflowState(
 ): UseProjectWorkflowStateReturn {
   const { column, workflowId, debounceMs = 500 } = args;
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const projectId = searchParams.get('project');
 
@@ -222,12 +248,21 @@ export function useProjectWorkflowState(
   const stateRef = useRef<Record<string, StepPayload>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 2026-05-06: When the user clicks a workflow CTA from bare /killerapp
+  // (no ?project= in URL), rescue the active project from localStorage and
+  // redirect to the SAME workflow with the id appended. Only bounce the
+  // user back home when there's truly no active project to fall back on.
   useEffect(() => {
     if (projectId) return;
+    const fallback = readActiveProjectFromStorage();
+    if (fallback) {
+      router.replace(withProjectQuery(pathname, fallback));
+      return;
+    }
     router.replace(
       `/killerapp?toast=needs-project&workflow=${encodeURIComponent(workflowId)}`
     );
-  }, [projectId, router, workflowId]);
+  }, [projectId, router, pathname, workflowId]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -354,6 +389,7 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
 ): UseProjectStateBlobReturn<T> {
   const { column, workflowId, defaultValue, debounceMs = 500 } = args;
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const projectId = searchParams.get('project');
 
@@ -367,12 +403,18 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasHydratedRef = useRef(false);
 
+  // Same rescue-from-localStorage pattern as useProjectWorkflowState above.
   useEffect(() => {
     if (projectId) return;
+    const fallback = readActiveProjectFromStorage();
+    if (fallback) {
+      router.replace(withProjectQuery(pathname, fallback));
+      return;
+    }
     router.replace(
       `/killerapp?toast=needs-project&workflow=${encodeURIComponent(workflowId)}`
     );
-  }, [projectId, router, workflowId]);
+  }, [projectId, router, pathname, workflowId]);
 
   useEffect(() => {
     if (!projectId) return;
