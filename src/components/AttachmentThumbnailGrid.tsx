@@ -316,7 +316,7 @@ export default function AttachmentThumbnailGrid({
                   <textarea
                     value={draftCaption}
                     onChange={(e) => setDraftCaption(e.target.value)}
-                    placeholder="Caption — what does this show? (e.g. \"south corner flashing — torn after wind storm\")"
+                    placeholder={`Caption — what does this show? (e.g. "south corner flashing — torn after wind storm")`}
                     rows={2}
                     autoFocus
                     style={{
