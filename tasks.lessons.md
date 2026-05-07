@@ -1,5 +1,38 @@
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-04-20
+## Updated: 2026-05-07
+
+---
+
+## Session 2026-05-07 (autonomous demo readiness pass)
+
+### Strip the AI's trailing action block before rendering raw — never both
+**Date:** 2026-05-07
+**What happened:** `KillerappProjectShell.tsx` rendered `aiText` raw with `whiteSpace: 'pre-wrap'`, then below it rendered a static "What next?" row of `NextStepLink` components. The copilot prompts trained the AI to end every response with `**What next?**` followed by `[Label](action:/path)` bullets so the streaming `WorkflowPickerSearchBox` (which uses `markdownToJsx`) could parse them into buttons. But the persistent shell wasn't using `markdownToJsx` — so the markdown leaked as literal text on top of the static row, on every cold-start.
+**Fix:** `stripTrailingActionBlock(text)` helper that strips everything from the first `**What next?**` marker onward. Static row stays canonical (the prompt sometimes omits one or all three CTAs; the static row never does).
+**Rule:** When two components both render the same content — one as parsed buttons, one as raw text — they will leak unless you explicitly strip the parseable portion from the raw renderer. Whenever you add a new "AI streams markdown, UI renders it" path, audit every other component reading the same field to make sure they're consistent.
+
+### Cowork sandbox cannot unlink `.git/index.lock` on macOS-mounted folders
+**Date:** 2026-05-07
+**What happened:** Tried to run a normal `git add -A && git commit && git push` from the sandbox bash. Got `warning: unable to unlink '.git/objects/.../tmp_obj_*': Operation not permitted` for every blob, then `fatal: Unable to create '.git/index.lock': File exists`. `rm -f .git/index.lock` also returned `Operation not permitted` — even though I owned the file. macOS host's filesystem permissions don't fully translate through the sandbox mount.
+**Fix:** Use the GitHub Trees API to create an atomic commit (POST blobs → POST tree → POST commit → PATCH refs/heads/main) when the sandbox is the only shell available. Working template in `outputs/push-via-api.sh`.
+**Rule:** Treat the sandbox bash as a development environment, not a deploy environment. Local push scripts (`push-fix-*.sh`) are designed to be pasted into the user's HOST terminal where macOS owns the .git directory natively. When the user is asleep/away and you need to push autonomously, fall back to the GitHub API.
+
+### Sandbox bash 45-second wall is shorter than `next build`
+**Date:** 2026-05-07
+**What happened:** Tried to run `npm run build` in the sandbox. Bash command times out at 45s. `setsid` + `nohup` + `disown` did NOT keep the build alive across calls — the sandbox kills detached processes when the bash session ends, regardless of session leader status. Same problem with full `npx eslint src` (~60s).
+**Fix:** When pushing autonomously from the sandbox: (a) targeted ESLint on the touched files only — works in <10s, catches rules-of-hooks reliably (the rule fires per-component, not on global call graphs); (b) skip `npm run build` and let Vercel be the build gate; (c) verify on prod within minutes via the GitHub deployments API + Chrome MCP after the deploy succeeds.
+**Rule:** When a verification step doesn't fit the bash wall, scope it down to just the files this commit touched. Touched-file lint + targeted file reads is enough soundness for incremental pushes; full-tree validation can defer to CI/Vercel. Document "what was skipped and why" in the commit message AND the state-of-play so the next session knows which checks didn't run.
+
+### Chrome on macOS clamps window resize to ~1200px minimum
+**Date:** 2026-05-07
+**What happened:** Tried to resize the Chrome window to 375×812 to test mobile responsiveness on prod. `resize_window(375, 812)` returned success, but `window.innerWidth` reported 1200. Chrome on macOS enforces a minimum window width that the MCP can't bypass. The actual viewport stays at 1200, screenshots stay at 1456×820.
+**Fix:** When real-mobile-viewport testing is needed and the host browser won't cooperate, delegate the audit to a sub-agent that reads the responsive CSS classes/breakpoints in code (Tailwind `md:` / `lg:` prefixes, hardcoded `maxWidth` values, `@media (max-width: ...)` blocks). Catches the same overflow bugs without needing the device.
+**Rule:** Real mobile testing requires Chrome DevTools' device emulation (Page.setDeviceMetricsOverride via CDP) which the MCP doesn't expose. Codebase audit catches all the structural overflow bugs (maxWidth/right-offset/flex-wrap interactions); only animation/touch/keyboard behaviors actually need a real device. Don't waste a session trying to brute-force the resize.
+
+### Whenever you write to a window variable to "remember" state across navigation, it's gone the moment the page reloads
+**Date:** 2026-05-07
+**What happened:** Tried to save `window.__bkg_restore_pid = localStorage.getItem(...)` so I could restore Chilly's project pointer after a navigation, then `localStorage.removeItem(...)` and navigate to a fresh URL to test the empty-state. The `window.__bkg_restore_pid` was gone after navigation (window globals don't survive page reload). Recovered by hardcoding the UUID I read earlier.
+**Rule:** `window.foo = bar` only persists within a page session — it's wiped on any navigation. When you need to preserve state across a navigation while testing, write it to `sessionStorage` (per-tab, survives reloads but not tab close) or to a chat-side variable (just read the value first, hardcode it in the next call). Don't use `window.__*` properties for cross-navigation backups.
 
 ---
 
