@@ -437,7 +437,7 @@ export default function KillerappProjectShell() {
                     animation: 'bkg-spine-pulse 1.4s ease-in-out infinite',
                   }}
                 />
-                Thinking through your project…
+                Running the numbers…
               </div>
             )}
           </div>
