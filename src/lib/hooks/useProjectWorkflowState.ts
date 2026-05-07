@@ -36,10 +36,22 @@ interface ProjectStateColumns {
   estimating_state?: Record<string, StepPayload>;
   code_compliance_state?: Record<string, StepPayload>;
   contracts_state?: Record<string, StepPayload>;
-  // Wave 2 (2026-05-06) — q8/q15/q11 wiring
+  // Wave 2 (2026-05-06 morning) — q8/q15/q11 wiring
   permits_state?: Record<string, StepPayload>;
   daily_log_state?: Record<string, StepPayload>;
   supply_ordering_state?: Record<string, StepPayload>;
+  // Wave 3 (2026-05-06 afternoon) — remaining 11 workflows
+  job_sequencing_state?: Record<string, StepPayload>;
+  worker_count_state?: Record<string, StepPayload>;
+  sub_management_state?: Record<string, StepPayload>;
+  equipment_state?: Record<string, StepPayload>;
+  services_todos_state?: Record<string, StepPayload>;
+  hiring_state?: Record<string, StepPayload>;
+  weather_scheduling_state?: Record<string, StepPayload>;
+  osha_toolbox_state?: Record<string, StepPayload>;
+  expenses_state?: Record<string, StepPayload>;
+  outreach_state?: Record<string, StepPayload>;
+  compass_nav_state?: Record<string, StepPayload>;
 }
 
 type StateColumn = keyof ProjectStateColumns;

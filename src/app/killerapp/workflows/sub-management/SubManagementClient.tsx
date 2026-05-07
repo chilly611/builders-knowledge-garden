@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import WorkflowShell from '@/design-system/components/WorkflowShell';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
 import type { StepResult } from '@/design-system/components/StepCard.types';
 import { recordSubcontractorCost } from '@/lib/budget-spine';
 import { emitJourneyEvent, resolveProjectId } from '@/lib/journey-progress';
+import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
+import ProjectContextBanner from '../ProjectContextBanner';
 
 interface Props {
   workflow: Workflow;
@@ -47,11 +49,59 @@ function parseRoughTotal(text: string): number | null {
 }
 
 export default function SubManagementClient({ workflow, stages }: Props) {
+  // Project Spine v1 (Wave 3): hydrate + autosave sub_management_state.
+  const {
+    projectId: spineProjectId,
+    hydratedPayloads,
+    recordStepEvent,
+    project,
+  } = useProjectWorkflowState({
+    column: 'sub_management_state',
+    workflowId: workflow.id,
+  });
+
   const [selectedBids, setSelectedBids] = useState<SelectedBid[]>([]);
-  const projectId = resolveProjectId();
+
+  // Track step status locally; seed from hydrated.
+  const [stepStatusMap, setStepStatusMap] = useState<
+    Record<string, 'pending' | 'in_progress' | 'complete'>
+  >({});
+
+  useEffect(() => {
+    if (Object.keys(hydratedPayloads).length === 0) return;
+    setStepStatusMap((prev) => {
+      const next = { ...prev };
+      for (const stepId of Object.keys(hydratedPayloads)) {
+        if (!next[stepId]) next[stepId] = 'complete';
+      }
+      return next;
+    });
+  }, [hydratedPayloads]);
+
+  const seededPayloads = useMemo(
+    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
+    [hydratedPayloads, project, workflow.steps]
+  );
+  const mergedStatusMap = useMemo(
+    () => statusFromSeeded(seededPayloads, stepStatusMap),
+    [seededPayloads, stepStatusMap]
+  );
 
   const handleStepComplete = useCallback(
     async (stepResult: StepResult & { workflowId: string }) => {
+      // Project Spine v1: persist this step's payload into sub_management_state.
+      recordStepEvent(stepResult);
+
+      // Bump local statusMap so counter updates in-session.
+      if (stepResult.type === 'step_completed') {
+        setStepStatusMap((prev) => ({ ...prev, [stepResult.stepId]: 'complete' }));
+      } else if (stepResult.type === 'step_saved') {
+        setStepStatusMap((prev) => ({
+          ...prev,
+          [stepResult.stepId]: prev[stepResult.stepId] ?? 'in_progress',
+        }));
+      }
+
       if (stepResult.type !== 'step_completed') {
         return;
       }
@@ -62,12 +112,13 @@ export default function SubManagementClient({ workflow, stages }: Props) {
         const finalText = payload?.input ?? '';
         const amount = parseRoughTotal(finalText);
         if (amount !== null) {
+          const budgetProjectId = spineProjectId ?? resolveProjectId();
           await recordSubcontractorCost({
             description: 'Selected sub bid',
             amount,
             lifecycleStageId: 3,
             isEstimate: true,
-            projectId,
+            projectId: budgetProjectId,
           });
         }
         return;
@@ -75,24 +126,30 @@ export default function SubManagementClient({ workflow, stages }: Props) {
 
       // s9-4: multi_select where user picks winning bids — emit journey event
       if (stepResult.stepId === 's9-4') {
+        const budgetProjectId = spineProjectId ?? resolveProjectId();
         emitJourneyEvent({
           type: 'completed',
           workflowId: workflow.id,
-          projectId,
+          projectId: budgetProjectId,
         });
       }
     },
-    [workflow.id, projectId]
+    [workflow.id, spineProjectId, recordStepEvent]
   );
 
   return (
-    <WorkflowShell
-      workflow={workflow}
-      stages={stages}
-      breadcrumbLabel="Sub Management"
-      contextFields={['trade', 'lane']}
-      onStepComplete={handleStepComplete}
-      projectId={projectId}
-    />
+    <>
+      <ProjectContextBanner project={project} selfWorkflow="sub-management" />
+      <WorkflowShell
+        workflow={workflow}
+        stages={stages}
+        breadcrumbLabel="Sub Management"
+        contextFields={['trade', 'lane']}
+        onStepComplete={handleStepComplete}
+        projectId={spineProjectId ?? undefined}
+        hydratedPayloads={seededPayloads}
+        statusMap={mergedStatusMap}
+      />
+    </>
   );
 }

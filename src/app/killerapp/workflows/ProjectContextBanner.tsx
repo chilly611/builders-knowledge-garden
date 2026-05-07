@@ -13,7 +13,12 @@
 import Link from 'next/link';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 
-type WorkflowId =
+// PEER_LINKS is the curated set of "Move to" buttons we surface in the
+// banner. Keep it small (6 items) so the row stays scannable. New
+// workflows can pass any slug as `selfWorkflow` — if it doesn't match a
+// PEER_LINKS entry, the banner just doesn't dim a self-button (the rest
+// of the row still works, the user navigates back via the breadcrumb).
+type PeerWorkflowId =
   | 'estimating'
   | 'code-compliance'
   | 'contract-templates'
@@ -23,11 +28,12 @@ type WorkflowId =
 
 interface Props {
   project: ProjectContext | null;
-  selfWorkflow: WorkflowId;
+  // Accept any workflow slug. PEER_LINKS only dims/dimensions the curated set.
+  selfWorkflow: PeerWorkflowId | string;
 }
 
 const PEER_LINKS: Array<{
-  id: WorkflowId;
+  id: PeerWorkflowId;
   label: string;
   href: (projectId: string) => string;
 }> = [

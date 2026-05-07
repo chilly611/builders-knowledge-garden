@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
@@ -27,5 +28,9 @@ export const metadata = {
 
 export default function Page() {
   const { workflow, stages } = loadWorkflow();
-  return <EquipmentClient workflow={workflow} stages={stages} />;
+  return (
+    <Suspense fallback={null}>
+      <EquipmentClient workflow={workflow} stages={stages} />
+    </Suspense>
+  );
 }
