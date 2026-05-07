@@ -66,6 +66,36 @@ function setActiveProjectInLocalStorage(id: string) {
   }
 }
 
+/**
+ * The copilot prompts trained the AI to end its response with a
+ * machine-readable action block:
+ *
+ *   **What next?**
+ *   - [Estimate the job](action:/killerapp/workflows/estimating)
+ *   - [Check codes](action:/killerapp/workflows/code-compliance)
+ *   - [Contract templates](action:/killerapp/workflows/contract-templates)
+ *
+ * The shell renders its own static "What next?" CTA row from
+ * `NextStepLink` components below the AI take. If we render aiText raw
+ * with `whiteSpace: 'pre-wrap'`, the markdown shows up as literal text
+ * AND the static row renders below — duplicate UI, raw markdown leaking.
+ *
+ * Strip the trailing block before display. We DON'T re-render via
+ * markdownToJsx here because the static row is the canonical source of
+ * truth for which workflows the next-step links go to (the prompt
+ * sometimes omits one or all three; the static row is always reliable).
+ */
+function stripTrailingActionBlock(text: string): string {
+  if (!text) return text;
+  // Match `**What next?**` (case-insensitive, optional surrounding
+  // whitespace and newlines) followed by everything after it.
+  const cleaned = text.replace(
+    /\n*\s*\*\*\s*what\s+next\??\s*\*\*[\s\S]*$/i,
+    ''
+  );
+  return cleaned.trimEnd();
+}
+
 export default function KillerappProjectShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -288,7 +318,12 @@ export default function KillerappProjectShell() {
 
   if (!projectId) return null;
 
-  const aiText = streaming ? streamingResponse : persistedAssistant?.content ?? project?.ai_summary ?? '';
+  const rawAiText = streaming ? streamingResponse : persistedAssistant?.content ?? project?.ai_summary ?? '';
+  // Strip the trailing **What next?** action block — the static link row
+  // below renders the canonical CTAs. Without this, the markdown leaks
+  // as literal text alongside the rendered buttons. (Demo readiness fix
+  // 2026-05-07.)
+  const aiText = stripTrailingActionBlock(rawAiText);
 
   return (
     <section

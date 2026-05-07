@@ -523,7 +523,10 @@ const panelStyle: CSSProperties = {
   bottom: 160,
   right: 24,
   width: 360,
-  maxWidth: 'calc(100vw - 32px)',
+  // 2026-05-07: was `calc(100vw - 32px)` which collides with the
+  // 24px right-offset (panel needed 360+24=384px > 375px iPhone width).
+  // Cap to the viewport minus 2× the right-offset for symmetric breathing.
+  maxWidth: 'min(360px, calc(100vw - 48px))',
   zIndex: 9996,
   background: '#fff',
   borderRadius: 16,

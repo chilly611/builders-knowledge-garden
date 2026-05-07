@@ -3,9 +3,8 @@
 /**
  * EmptyStateOrProjectIndicator (Project Spine v1, 2026-05-05)
  *
- * Replaces the static "You're not started yet. 7 stages to explore."
- * line on /killerapp with a context-aware version:
- *   - Without ?project=<id>: shows "You're not started yet."
+ * Tiny copy that sits ABOVE the workflow picker on /killerapp:
+ *   - Without ?project=<id>: a one-line invitation to start somewhere.
  *   - With ?project=<id>: hides itself entirely (the
  *     KillerappProjectShell already shows the project context above
  *     the picker; a redundant indicator is noise).
@@ -14,13 +13,16 @@
  * had ALREADY started a project was one of the "feels nowhere" tells
  * the founder kept flagging.
  *
+ * 2026-05-07 demo readiness pass: "You're not started yet. N stages
+ * to explore." reads like the app isn't set up. Replaced with an
+ * action-first invitation.
+ *
  * Suspense:
  *   This component uses `useSearchParams` and so requires a Suspense
  *   boundary in the parent (Next.js 16 requirement).
  */
 
 import { useSearchParams } from 'next/navigation';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
 
 export default function EmptyStateOrProjectIndicator() {
   const searchParams = useSearchParams();
@@ -39,7 +41,7 @@ export default function EmptyStateOrProjectIndicator() {
         letterSpacing: '0.3px',
       }}
     >
-      You&rsquo;re not started yet. {LIFECYCLE_STAGES.length} stages to explore.
+      Pick a workflow below to start — or describe your project up top.
     </div>
   );
 }

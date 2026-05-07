@@ -325,7 +325,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
                   fontStyle: 'italic',
                 }}
               >
-                demo mode
+                starter values
               </span>
             )}
           </div>

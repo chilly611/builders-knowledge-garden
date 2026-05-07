@@ -319,3 +319,108 @@ Goal: make the unscripted "click anywhere in the demo path" experience credible.
 
 - **Scripted demo on real ADU** (this week): YES, with Tier 1. Path: `/killerapp` → submit ADU scope → AI streams inline → Estimate → Codes → Contracts. Stay on this loop; don't click into other stages until they're wired.
 - **Unscripted demo "click anywhere"**: NOT YET. Tier 1 + Tier 2 first.
+
+---
+
+## ⏵ State of play — 2026-05-06 (end of session)
+
+Sealed at commit `5fc6b74`. Production: `builders.theknowledgegardens.com`.
+
+### What shipped today
+
+**Wave 2 + Wave 3 spine wiring (all 17 workflows now LIVE)**
+- q8 permits, q15 daily-log, q11 supply-ordering (Wave 2 — early afternoon)
+- q6, q7, q9, q10, q12, q13, q14, q16, q17, q18, q19 (Wave 3 — late afternoon)
+- Every workflow now hydrates from `?project=<uuid>`, autosaves to its own JSONB column, renders `ProjectContextBanner`, derives step status from saved payloads
+- Schema: `20260506_more_workflow_states.sql` + `20260506_remaining_workflow_states.sql` applied to prod Supabase
+
+**Five UX fixes from real prod feedback**
+- Empty-state copy ("You're not started yet") hidden when project active
+- q2 estimating pre-fills location + sqft from raw_input + auto-completes those steps + grants XP
+- Action buttons in AI responses now preserve `?project=<id>` (was `window.location.href = ...` — silent INP killer)
+- Stage chips in `KillerAppNav` preserve `?project=<id>` via `withProjectId(href)` helper
+- `AuthAndProjectIndicator` top-right pill: "signed in · email" + "saved · project name"
+
+**5-agent parallel sprint (~3-4 hours)**
+- Agent A — Tier 1.5 quick wins: copilot route preserves existing `ai_summary`; AI fab voice → press-and-hold; 44px+ touch targets; inline rename input on project pill
+- Agent B — Adversarial AI harness (`scripts/probes/adversarial-codes.mjs`, 10 fake-code probes) + glossary (`src/data/glossary.json`, 19 jargon terms) + `TermTooltip` client component + integration in `/killerapp` page
+- Agent C — Photo/video upload **Phase 1, infra only**: `project_attachments` table + `project-evidence` Storage bucket (RLS-locked, 50MB cap) + `POST/GET/DELETE /api/v1/projects/[id]/attachments` + standalone `AttachmentUploader` component (drag-drop, mobile camera capture, batch upload). **Not wired into any workflow step yet — that's Phase 2.**
+- Agent D — Multi-project dashboard at `/killerapp/projects`: card grid w/ raw_input preview, AI summary, type/jurisdiction badges, cost range, last-updated. Sort + filter chips + debounced search, localStorage prefs. "Projects" link in `KillerAppNav`.
+- Agent E — INP perf fixes: `markdownToJsx` ActionButton uses `router.push` instead of `window.location.href = target` (the 1-4s click spike root cause). 4 supporting `useMemo` cleanups in `GlobalAiFab`, `KillerappProjectShell`, `AuthAndProjectIndicator`, `KillerAppNav`.
+
+**P0 production outage triage + recovery**
+- Symptom: every `/killerapp/*` route showed Next's 500 fallback inline (`<html id="__next_error__">`). Affected `/killerapp`, `/killerapp/projects`, `/killerapp/legacy-command-center`, every workflow.
+- Root cause: Agent E's `useMemo` calls placed AFTER existing `if (!mounted) return null;` guards. Rules-of-Hooks violation: SSR ran early-return path with N hooks, client mount ran full path with N+1 hooks, React threw "Rendered more hooks than during the previous render," Next streamed its 500 UI.
+- Fix: moved hooks above early returns in 9 components total. First batch (4 files) fixed manually; ESLint gate then surfaced 5 MORE landmines (`ProjectCockpit`, `NavigatorMiniStrip`, `RSIBadge`, `StageContextPill`, `VoiceCommandNav`) — all fixed.
+- Permanent gate: `react-hooks/rules-of-hooks` made explicit in `eslint.config.mjs`; push script greps eslint output for that rule specifically and fails on violations. Other lint errors (the 450+ pre-existing `any`-type / unescaped-apostrophe noise) reported but don't block deploys.
+
+**Bonus polish**
+- 20 page metadata titles trimmed (was rendering "Workflows — BKG — BKG" because root layout's `title.template` was wrapping page-level titles that already included the suffix)
+- Universal `?project=<id>` rescue: when a workflow page is hit without `?project=` in the URL, both `useProjectWorkflowState` and `useProjectStateBlob` now check localStorage first. If a valid UUID is stored, replace URL with same path + id appended. Same rescue on `/killerapp` itself. User's "It should work universally after the project is described once" requirement met.
+
+**Carry-forward recommendations baked into push scripts**
+- `push-fix-2026-05-06f.sh` is the canonical template — runs `npm run lint` (gated on rules-of-hooks only), then `npm run build`, then commit + push. Reuse the structure for future deploys.
+- Old session push scripts (`push-sprint-2026-05-06.sh`, `push-fix-2026-05-06b/c/d/e/f.sh`) can be deleted at next cleanup.
+
+### Open / pending — recommended priority order
+
+**P1 — Photo/Video Upload Phase 2 (3-5 days, highest demo impact)**
+- AttachmentUploader infra is built. Wire it into actual workflow steps:
+  - q15 daily-log — the obvious anchor (Hank's #1 workflow). Add a "Photos" step at top.
+  - q2 estimating — pre-bid jobsite photos for accurate scope.
+  - q5 code-compliance — inspection photos with timestamps (hits John's $30k deposit story dead-on).
+  - q11 supply-ordering — receipts for material reconciliation.
+  - q8 permit-applications — approved permit doc upload.
+  - q4 contract-templates — signed contract upload.
+- For each: import `AttachmentUploader`, mount it inside an `optional_evidence` step in `docs/workflows.json`, hook `onUploaded` to record an event in the workflow's autosave JSONB, render thumbnails on hydrate.
+- Phase 2 also needs: thumbnail grid component (uses signed URLs from API), tap-to-zoom lightbox, delete confirmation, EXIF parsing if `exifr` ships in package.json (currently skipped).
+
+**P1 — Demo run with John (real GC) + contractor friend**
+- Live app is now stable enough to demo. Scripted path: `/killerapp` → submit ADU scope → AI streams inline → Estimate → Codes → Contracts. **Tell them they can also click anywhere — Project Spine v1 covers all 17 workflows now.**
+- Capture reactions verbatim. The persona-roleplay agents are good but a real GC's first 30 seconds will surface things the agents missed.
+
+**P2 — Onboarding flow polish**
+- First-time user lands on `/killerapp` cold (no project, no localStorage, no auth). What do they see? Currently: empty state telling them to type a scope. Test it on a fresh browser profile and see if the friction is right.
+- Microcopy pass on empty states, AI thinking pulse, "Thinking through your project…" copy.
+- Sign-in flow: currently the "sign in to save your project" link is in the top-right pill. Make it more discoverable on first project-create.
+- Mobile pass: touch targets are 44px+ but full mobile-flow audit not done. Test on iPhone Safari + Android Chrome.
+
+**P2 — ESLint backlog burn-down**
+- 452 pre-existing errors (~440 are noise: `any` types, `react/no-unescaped-entities` apostrophes, `react-hooks/set-state-in-effect`, `react-hooks/purity` Math.random in render).
+- The `react-hooks/set-state-in-effect` and `react-hooks/purity` ones are real correctness concerns under React 19 strict mode and should be prioritized.
+- Worth a 2-3 hour burn-down session with parallel agents fixing in batches.
+
+**P2 — Multi-jurisdiction code depth**
+- Currently CA/NV only. Pete (Chicago electrician) / Sarah (NYC structural PE) / Mari (FL multifamily) are blocked.
+- Per fix-strategies/02-data-jurisdiction.md, this is ~5 weeks of grunt work (scrape + structure + cite). Not session-sized but breakable into per-jurisdiction sessions.
+
+**P3 — Voice 1.5**
+- Current: push-to-hold AI fab, push-to-talk on search box.
+- Wanted: TTS on AI replies (so user can keep working hands-free), persistent listening toggle for power users, per-step voice buttons in workflows, expanded command vocabulary (e.g. "go to estimating", "save this", "what's next?").
+- ~2-3 weeks.
+
+**P3 — Real RSI volume**
+- `/rsi` page renders synthetic data. Replace with live specialist-run captures (≥100 runs).
+- Capture infra exists (`rsi-instrumentation.ts`). Just needs traffic + a job that aggregates.
+
+**P3 — Spanish contracts + account-free quick-quote**
+- Persona-flagged: 4 of 10 personas (notably Maria KBR + Curtis) want Spanish-language outputs.
+- Account-free quick-quote: anon users hit `/killerapp`, get one full pass of the AI workflow without signing in, then are softly nudged to save. Increases top-of-funnel.
+
+**Phase 2 epics still on deck** — Multi-jurisdiction code data (~5 weeks), Voice 1.5 (~2-3 weeks), photo/video phase 2 (3-5 days)
+
+### What to read FIRST in next session
+
+1. `tasks.lessons.md` — read the **top-most** ~10 lessons added in 2026-05-06. The hooks-first-returns-second rule is critical. Don't break it.
+2. `eslint.config.mjs` + the latest push script (`push-fix-2026-05-06f.sh`) — understand the lint gate before adding anything to the layout chain.
+3. `src/components/AttachmentUploader.tsx` — the standalone upload component ready for Phase 2 wiring.
+4. `src/lib/hooks/useProjectWorkflowState.ts` — the canonical project-aware hook. Includes the localStorage rescue logic. Any new workflow wiring uses this.
+
+### Production verification (cold-start sanity check)
+
+Test these URLs on a fresh browser, expect them all to render real content (not Next's 500 fallback):
+- `https://builders.theknowledgegardens.com/killerapp`
+- `https://builders.theknowledgegardens.com/killerapp/projects`
+- `https://builders.theknowledgegardens.com/killerapp/workflows/code-compliance`
+- `https://builders.theknowledgegardens.com/killerapp/workflows/daily-log`
+- `https://builders.theknowledgegardens.com/killerapp/legacy-command-center`

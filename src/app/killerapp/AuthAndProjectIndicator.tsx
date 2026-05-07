@@ -193,7 +193,7 @@ export default function AuthAndProjectIndicator() {
               textDecoration: 'underline',
             }}
           >
-            sign in to save your project
+            sign in — your work won&rsquo;t save if you refresh
           </Link>
         )}
       </div>
@@ -214,7 +214,11 @@ export default function AuthAndProjectIndicator() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            maxWidth: 360,
+            // 2026-05-07: maxWidth was 360, which clipped on iPhone SE/12
+            // mini (375px viewport). Cap at the smaller of 360 and the
+            // viewport width minus the right-offset (16px) and a small
+            // breathing margin.
+            maxWidth: 'min(360px, calc(100vw - 48px))',
           }}
         >
           <span
