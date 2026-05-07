@@ -132,10 +132,12 @@ export default function AuthAndProjectIndicator() {
     setIsRenaming(false);
   };
 
-  if (!authChecked) return null;
-
   // INP fix (2026-05-06): Memoize project display name computation to avoid
   // recomputing string slicing on every render.
+  //
+  // CRITICAL (2026-05-06b): useMemo MUST come BEFORE `if (!authChecked) return null`.
+  // Hooks-after-early-return is a Rules of Hooks violation; same pattern
+  // bug took out KillerAppNav, GlobalAiFab, and KillerappProjectShell.
   const projectDisplayName = useMemo(
     () =>
       project?.name ??
@@ -143,6 +145,8 @@ export default function AuthAndProjectIndicator() {
       'Untitled project',
     [project?.name, project?.raw_input]
   );
+
+  if (!authChecked) return null;
 
   return (
     <div

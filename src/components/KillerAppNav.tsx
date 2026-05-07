@@ -78,6 +78,22 @@ export default function KillerAppNav() {
     };
   }, [pathname]); // re-read on every route change
 
+  // INP fix (2026-05-06): Memoize stage keys to avoid re-creating the array
+  // on every render. Object.keys() is expensive and unnecessary to re-compute.
+  //
+  // CRITICAL (2026-05-06b): This useMemo MUST be called before the
+  // `if (!mounted) return null` early return. Calling a hook AFTER an early
+  // return is a Rules of Hooks violation: SSR runs the early return path
+  // (no useMemo), client mount runs the full path (with useMemo), so React
+  // sees a different number of hooks across renders and throws "Rendered
+  // more hooks than during the previous render," cascading the entire
+  // /killerapp/* layout into Next's 500 fallback. Hooks first, returns
+  // second — always.
+  const stageIds = useMemo(
+    () => Object.keys(STAGE_LANDSCAPE) as unknown as StageId[],
+    []
+  );
+
   if (!mounted) return null;
 
   // Append ?project=<id> to a stage href if a project is active.
@@ -96,13 +112,6 @@ export default function KillerAppNav() {
   // Used for quick navigation to the projects dashboard.
   const inProjects = pathname === '/killerapp/projects';
   const showProjectsNav = !inProjects;
-
-  // INP fix (2026-05-06): Memoize stage keys to avoid re-creating the array
-  // on every render. Object.keys() is expensive and unnecessary to re-compute.
-  const stageIds = useMemo(
-    () => Object.keys(STAGE_LANDSCAPE) as unknown as StageId[],
-    []
-  );
 
   return (
     <div

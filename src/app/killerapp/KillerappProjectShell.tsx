@@ -267,10 +267,13 @@ export default function KillerappProjectShell() {
     }
   }
 
-  if (!projectId) return null;
-
   // INP fix (2026-05-06): Memoize expensive array operations (.filter, .find)
   // to avoid recomputing on every render. These DOM operations can be costly.
+  //
+  // CRITICAL (2026-05-06b): These useMemo calls MUST come BEFORE the
+  // `if (!projectId) return null` early return. Hooks-after-early-return
+  // is a Rules of Hooks violation and crashes React during SSR/client
+  // mismatch. (Same pattern bug took out KillerAppNav + GlobalAiFab.)
   const persistedAssistant = useMemo(
     () => conversations.filter((c) => c.role === 'assistant').at(-1),
     [conversations]
@@ -282,6 +285,9 @@ export default function KillerappProjectShell() {
       '',
     [project?.raw_input, conversations]
   );
+
+  if (!projectId) return null;
+
   const aiText = streaming ? streamingResponse : persistedAssistant?.content ?? project?.ai_summary ?? '';
 
   return (

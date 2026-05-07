@@ -319,14 +319,22 @@ export default function GlobalAiFab() {
     }
   }, [isListening, stopListening]);
 
+  // INP fix (2026-05-06): Memoize surface context to avoid redundant DOM queries
+  // on every render. readSurfaceContext() queries the DOM, which is expensive.
+  //
+  // CRITICAL (2026-05-06b): Hooks MUST be called BEFORE the early returns
+  // below. Calling useMemo after `if (!mounted) return null` is a Rules of
+  // Hooks violation — SSR runs the early-return path (no useMemo), client
+  // mount runs the full path (with useMemo), React then sees a different
+  // hook count between renders and throws "Rendered more hooks than during
+  // the previous render," cascading the entire layout into Next's 500
+  // fallback. This bug took out every /killerapp/* route.
+  const ctx = useMemo(() => readSurfaceContext(pathname), [pathname]);
+
   if (!mounted) return null;
 
   // Hide on the presentation / cinematic surfaces, same rule as CompassBloom.
   if (pathname === '/presentation' || pathname === '/cinematic') return null;
-
-  // INP fix (2026-05-06): Memoize surface context to avoid redundant DOM queries
-  // on every render. readSurfaceContext() queries the DOM, which is expensive.
-  const ctx = useMemo(() => readSurfaceContext(pathname), [pathname]);
   const contextLabel =
     ctx.workflowId ? `Workflow ${ctx.workflowId.toUpperCase()}` : ctx.pathname;
 

@@ -1098,3 +1098,24 @@ TOKEN SHAPE NOTES (REQUIRED):
 **What happened:** Shipped a new dashboard route at `/killerapp/projects`. Build said `○ /killerapp/projects` (Static), `next build` was green, all 141 pages "generated." But hitting the URL on prod returned Next.js's `500: This page couldn't load` fallback page (the one with the warning triangle and a Reload button — that's Next's built-in error UI, not Vercel's). Inspection of `.next/server/app/killerapp/` showed the `projects.segments/` folder was created but no `projects.html` or `projects.rsc` — Turbopack tried to prerender, silently produced nothing, didn't fail the build, and Vercel had nothing to serve.
 **Fix:** `export const dynamic = 'force-dynamic'` on the page. That skips the static-prerender path entirely and renders fresh on each request with full Node.js runtime. Robust, one line, no other changes needed.
 **Rule:** If the build classifies a page as `○` Static but you don't see the corresponding `.html` / `.rsc` files under `.next/server/app/<route>/`, the prerender silently failed. Don't trust the route table — `ls` the prerender output. For routes that depend on auth, runtime user context, or anything env-derived, force dynamic and skip the question entirely. (Worth: maybe ship a build-time assertion that fails the build when `○ Static` doesn't produce HTML.)
+
+### Hooks-after-early-return is a P0 production outage waiting to happen
+**Date:** 2026-05-06
+**What happened:** Agent E added `useMemo` calls to four components for INP optimization. In each one, the `useMemo` was placed AFTER the existing `if (!mounted) return null;` (or `if (!authChecked) return null;`, or `if (!projectId) return null;`) early-return guard. The build was green, the local dev server was happy, but on Vercel every `/killerapp/*` route — including ones I never touched like `/killerapp/legacy-command-center` — rendered Next.js's "This page couldn't load" 500 fallback inline alongside whatever DOM had streamed first. Root cause: SSR runs the early-return path (no `useMemo`), client mount runs the full path (with `useMemo`), React detects the hook-count mismatch on hydration and throws "Rendered more hooks than during the previous render." That error propagates up the tree until Next's segment-level error boundary catches it. Because the offending components (`KillerAppNav`, `GlobalAiFab`) are mounted by the LAYOUT, the bug took out every page under `/killerapp/*`. The build never warned. The dev server probably didn't either (HMR can mask hook-count changes).
+**Fix:** Move the hook above the early return. Before:
+```tsx
+if (!mounted) return null;
+const value = useMemo(() => compute(), [dep]);  // BUG
+```
+After:
+```tsx
+const value = useMemo(() => compute(), [dep]);  // hook first
+if (!mounted) return null;                       // return second
+```
+Applied to `KillerAppNav.tsx`, `GlobalAiFab.tsx`, `AuthAndProjectIndicator.tsx`, `KillerappProjectShell.tsx`.
+**Rule:** Hooks first, returns second — ALWAYS. Every `useMemo`, `useCallback`, `useEffect`, `useState`, `useRef`, `useContext`, custom-hook call must appear before ANY conditional `return null` / `return <something/>` in a component body. There is no exception. When optimizing render performance with memoization, don't drop the hook into the most natural-looking spot — drop it at the top of the component, alongside the other hooks. If the build can't catch this, add the `react-hooks/rules-of-hooks` ESLint rule with a CI gate. **This bug is invisible until production.**
+
+### When you spawn an agent to debug a runtime error, don't trust their first hypothesis blindly
+**Date:** 2026-05-06
+**What happened:** Spawned an agent to find what was throwing in the `/killerapp/*` layout chain. The agent confidently identified `useRouter` from `next/navigation` as the culprit ("throws when called during server-side rendering because it requires a browser navigation context"). That's wrong — `useRouter` is perfectly safe in 'use client' components, including during SSR-of-client-component. Had I trusted the agent's diagnosis and added a `typeof window === 'undefined'` guard to gate the hook call, I would have introduced a NEW Rules-of-Hooks violation (conditional hook calls), made the bug worse, and burned more deploy cycles. The actual cause was unrelated (hooks after early return).
+**Rule:** When a debugging agent gives you a confident diagnosis, treat it as a starting point, not a verdict. Cross-check against your own knowledge of the framework. If the agent's fix involves a conditional hook call (`if (cond) return <something>; const value = useFoo()`), that's almost always wrong — the rule violations on both sides cancel into "neither version was right." Spawn-and-verify is faster than spawn-and-trust.
