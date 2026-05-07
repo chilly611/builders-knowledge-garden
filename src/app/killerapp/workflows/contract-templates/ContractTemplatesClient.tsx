@@ -500,6 +500,13 @@ export default function ContractTemplatesClient({
           </details>
         )}
       </div>
+      <AttachmentSection
+        projectId={spineProjectId}
+        workflowId="q4"
+        stepId="upload-signed-contract"
+        title="Upload signed contract"
+        subtitle="Drop the executed contract PDF here once everyone has signed. Keeps the paper trail tied to the project."
+      />
     </>
   );
 }
