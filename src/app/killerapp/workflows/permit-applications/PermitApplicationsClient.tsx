@@ -9,6 +9,7 @@ import { recordPermitCost } from '@/lib/budget-spine';
 import { emitJourneyEvent, resolveProjectId, resolveJurisdiction } from '@/lib/journey-progress';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
+import AttachmentSection from '@/components/AttachmentSection';
 import { spacing, colors, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
 
 interface Props {
@@ -211,6 +212,24 @@ export default function PermitApplicationsClient({ workflow, stages }: Props) {
         projectId={spineProjectId ?? undefined}
         hydratedPayloads={seededPayloads}
         statusMap={mergedStatusMap}
+      />
+      <AttachmentSection
+        projectId={spineProjectId}
+        workflowId="q8"
+        stepId="upload-approved-permit"
+        title="Upload approved permit doc"
+        subtitle="Drop the stamped permit PDFs as they come back. Keeps the paper trail tied to the build, not your inbox."
+        onUploaded={(uploaded) => {
+          recordStepEvent({
+            type: 'step_completed',
+            workflowId: 'q8',
+            stepId: 'upload-approved-permit',
+            payload: {
+              value: `${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded`,
+            },
+            timestamp: Date.now(),
+          });
+        }}
       />
     </>
   );

@@ -10,6 +10,7 @@ import { resolveProjectId } from '@/lib/journey-progress';
 import { search, type ResourceResponse } from '@/lib/resource-broker';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
+import AttachmentSection from '@/components/AttachmentSection';
 import ResourceCardGrid from './ResourceCardGrid';
 
 interface Props {
@@ -186,6 +187,24 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
   return (
     <>
       <ProjectContextBanner project={project} selfWorkflow="supply-ordering" />
+      <AttachmentSection
+        projectId={spineProjectId}
+        workflowId="q11"
+        stepId="upload-material-receipts"
+        title="Upload material receipts"
+        subtitle="Snap the receipts as they come in. We'll reconcile them against the estimate so you know where you stand on materials."
+        onUploaded={(uploaded) => {
+          recordStepEvent({
+            type: 'step_completed',
+            workflowId: 'q11',
+            stepId: 'upload-material-receipts',
+            payload: {
+              value: `${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded`,
+            },
+            timestamp: Date.now(),
+          });
+        }}
+      />
       <WorkflowShell
         workflow={workflow}
         stages={stages}

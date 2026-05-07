@@ -25,6 +25,7 @@ import { type Jurisdiction } from '@/lib/knowledge-data';
 import JurisdictionPicker from '@/components/JurisdictionPicker';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
+import AttachmentSection from '@/components/AttachmentSection';
 
 interface CodeComplianceClientProps {
   workflow: Workflow;
@@ -50,6 +51,7 @@ const LANES = [
 export default function CodeComplianceClient({ workflow, jurisdictions, stages }: CodeComplianceClientProps) {
   // Project Spine v1: hydrate + autosave the per-workflow JSONB state.
   const {
+    projectId: spineProjectId,
     hydratedPayloads,
     recordStepEvent,
     lastSavedAt,
@@ -168,6 +170,24 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
       <div style={{ paddingTop: spacing[6] }}>
         <ProjectContextBanner project={project} selfWorkflow="code-compliance" />
       </div>
+      <AttachmentSection
+        projectId={spineProjectId}
+        workflowId="q5"
+        stepId="upload-inspection-photos"
+        title="Upload inspection photos"
+        subtitle="Document what you saw on the walk — these stick to the project so you can show the inspector exactly what was built."
+        onUploaded={(uploaded) => {
+          recordStepEvent({
+            type: 'step_completed',
+            workflowId: 'q5',
+            stepId: 'upload-inspection-photos',
+            payload: {
+              value: `${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded`,
+            },
+            timestamp: Date.now(),
+          });
+        }}
+      />
       <div
         style={{
           maxWidth: 960,

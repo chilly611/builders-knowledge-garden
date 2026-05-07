@@ -41,6 +41,7 @@ import { fillTemplate } from '@/lib/contract-templates';
 import { downloadContractPdf } from '@/lib/pdf/contract-pdf';
 import { useProjectStateBlob } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
+import AttachmentSection from '@/components/AttachmentSection';
 
 // Project Spine v1 — JSONB shape for contracts_state.
 // Stored as plain object (Set<string> can't round-trip through JSON).
@@ -74,6 +75,7 @@ export default function ContractTemplatesClient({
     lastSavedAt,
     saving,
     project,
+    projectId: spineProjectId,
   } = useProjectStateBlob<ContractsState>({
     column: 'contracts_state',
     workflowId: workflow.id,

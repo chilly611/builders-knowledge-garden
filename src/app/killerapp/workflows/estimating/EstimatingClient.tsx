@@ -8,6 +8,7 @@ import { getProjectBudget, recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
+import AttachmentSection from '@/components/AttachmentSection';
 import { colors, spacing, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
 
 interface Props {
@@ -363,6 +364,24 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   return (
     <>
       <ProjectContextBanner project={project} selfWorkflow="estimating" />
+      <AttachmentSection
+        projectId={projectId}
+        workflowId="q2"
+        stepId="upload-jobsite-reference-photos"
+        title="Upload jobsite reference photos"
+        subtitle="Drop existing-conditions shots — site, structure, finishes — anything the takeoff should account for."
+        onUploaded={(uploaded) => {
+          recordStepEvent({
+            type: 'step_completed',
+            workflowId: 'q2',
+            stepId: 'upload-jobsite-reference-photos',
+            payload: {
+              value: `${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded`,
+            },
+            timestamp: Date.now(),
+          });
+        }}
+      />
       <WorkflowShell
         workflow={workflow}
         stages={stages}

@@ -8,6 +8,7 @@ import type { StepResult } from '@/design-system/components/StepCard.types';
 import { emitJourneyEvent, resolveProjectId } from '@/lib/journey-progress';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
+import AttachmentSection from '@/components/AttachmentSection';
 
 interface Props {
   workflow: Workflow;
@@ -99,6 +100,24 @@ export default function DailyLogClient({ workflow, stages }: Props) {
   return (
     <>
       <ProjectContextBanner project={project} selfWorkflow="daily-log" />
+      <AttachmentSection
+        projectId={spineProjectId}
+        workflowId="q15"
+        stepId="upload-progress-photos"
+        title="Upload progress photos"
+        subtitle="Snap shots of today's work — they stick to this project so you can scroll back through the build."
+        onUploaded={(uploaded) => {
+          recordStepEvent({
+            type: 'step_completed',
+            workflowId: 'q15',
+            stepId: 'upload-progress-photos',
+            payload: {
+              value: `${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded`,
+            },
+            timestamp: Date.now(),
+          });
+        }}
+      />
       <WorkflowShell
         workflow={workflow}
         stages={stages}
