@@ -121,6 +121,33 @@ export default function AttachmentSection({
     fetchAttachments();
   }, [fetchAttachments]);
 
+  const updateCaption = useCallback(
+    async (attachmentId: string, caption: string | null) => {
+      if (!projectId) return;
+      try {
+        const res = await authedFetch(
+          `/api/v1/projects/${encodeURIComponent(projectId)}/attachments`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: attachmentId, caption }),
+          }
+        );
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error('AttachmentSection caption update failed:', body);
+          return;
+        }
+        // Refetch so other consumers (e.g. SupplyOrderingClient) see the
+        // updated caption. Cheap — single GET with cached signed URLs.
+        fetchAttachments();
+      } catch (e) {
+        console.error('AttachmentSection caption update error:', e);
+      }
+    },
+    [projectId, fetchAttachments]
+  );
+
   const handleUploaded = useCallback(
     (uploaded: UploadedAttachment[]) => {
       // Refetch so we have signed URLs (the POST response doesn't include
@@ -241,6 +268,7 @@ export default function AttachmentSection({
                 <AttachmentThumbnailGrid
                   attachments={attachments}
                   loading={loading}
+                  onCaptionUpdate={updateCaption}
                 />
               </div>
             )}

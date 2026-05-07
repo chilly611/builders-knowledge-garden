@@ -247,6 +247,82 @@ export async function POST(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  try {
+    const user = await getAuthUser(request);
+    if (!user) return unauthorizedResponse();
+
+    const { id: projectId } = await params;
+
+    let body: { id?: string; caption?: string | null };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const attachmentId = body.id?.trim();
+    if (!attachmentId) {
+      return NextResponse.json({ error: 'id is required' }, { status: 400 });
+    }
+    // Caption is optional but, if present, must be a string. Cap at 500
+    // chars to avoid abuse — a caption is for "this is the broken
+    // flashing on the south corner", not an essay.
+    const caption = body.caption === null ? null : (body.caption ?? null);
+    if (caption !== null && typeof caption !== 'string') {
+      return NextResponse.json({ error: 'caption must be a string or null' }, { status: 400 });
+    }
+    if (caption && caption.length > 500) {
+      return NextResponse.json({ error: 'caption too long (max 500 chars)' }, { status: 400 });
+    }
+
+    const ownership = await assertProjectOwnership(projectId, user.id);
+    if (!ownership.ok) {
+      return NextResponse.json(
+        { error: ownership.error },
+        { status: ownership.status }
+      );
+    }
+
+    // Verify attachment ownership before updating.
+    const { data: existing, error: fetchError } = await getServiceClient()
+      .from('project_attachments')
+      .select('id, user_id')
+      .eq('id', attachmentId)
+      .eq('project_id', projectId)
+      .single();
+
+    if (fetchError || !existing) {
+      return NextResponse.json({ error: 'Attachment not found' }, { status: 404 });
+    }
+    if (existing.user_id !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized: you do not own this attachment' }, { status: 403 });
+    }
+
+    const { data, error } = await getServiceClient()
+      .from('project_attachments')
+      .update({ caption })
+      .eq('id', attachmentId)
+      .select(
+        'id, project_id, user_id, file_path, mime_type, byte_size, original_filename, caption, workflow_id, step_id, exif_taken_at, exif_lat, exif_lng, created_at'
+      )
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ attachment: data as AttachmentRow });
+  } catch (e) {
+    console.error('Attachments PATCH error:', e);
+    return NextResponse.json(
+      { error: 'Failed to update attachment' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
