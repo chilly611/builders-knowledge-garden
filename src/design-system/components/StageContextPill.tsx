@@ -40,6 +40,10 @@ export default function StageContextPill({
   const pathname = usePathname() ?? '';
   const stageId = overrideStageId !== undefined ? overrideStageId : stageFromPathname(pathname);
 
+  // Hooks must run on every render — keep above any early returns.
+  const [showModal, setShowModal] = useState(false);
+  const [showNextLabel, setShowNextLabel] = useState(false);
+
   // Hide on stage 0 (picker)
   if (stageId === 0) {
     return null;
@@ -60,9 +64,6 @@ export default function StageContextPill({
   if (!stageAccent) {
     return null;
   }
-
-  const [showModal, setShowModal] = useState(false);
-  const [showNextLabel, setShowNextLabel] = useState(false);
 
   // Determine text color: use Trace on darker accents, Graphite on lighter ones
   // This is a simple heuristic based on stage accent hex values

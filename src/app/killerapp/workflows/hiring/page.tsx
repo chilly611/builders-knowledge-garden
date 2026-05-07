@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Hiring Lane — Builder\'s Knowledge Garden',
+  title: 'Hiring Lane',
   description: 'Find, screen, and onboard workers into a lane on your crew.',
 };
 

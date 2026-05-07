@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Weather Scheduling — Builder\'s Knowledge Garden',
+  title: 'Weather Scheduling',
   description: 'Schedule around the weather forecast for your site.',
 };
 

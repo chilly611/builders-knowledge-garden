@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Compass Navigation — Builder\'s Knowledge Garden',
+  title: 'Compass Navigation',
   description: 'Compass: show me where I am, what\'s next, what I\'m missing.',
 };
 

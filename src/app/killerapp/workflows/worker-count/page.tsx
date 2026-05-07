@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Worker Count — Builder\'s Knowledge Garden',
+  title: 'Worker Count',
   description: 'How many workers you need per phase, based on scope and schedule.',
 };
 

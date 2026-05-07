@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Voice-to-Daily-Log — Builder\'s Knowledge Garden',
+  title: 'Voice-to-Daily-Log',
   description: 'Speak your daily log. We\'ll structure it, tag it, and file it.',
 };
 

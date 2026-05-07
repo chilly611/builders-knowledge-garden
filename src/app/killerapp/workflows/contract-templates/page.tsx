@@ -44,7 +44,7 @@ function loadWorkflow(): { workflow: Workflow; stages: LifecycleStage[] } {
 }
 
 export const metadata = {
-  title: "Contract Templates — Builder's Knowledge Garden",
+  title: "Contract Templates",
   description:
     'Fill, generate, and download attorney-review-ready contract drafts: client agreements, subcontractor agreements, lien waivers, NDAs, and change orders.',
 };

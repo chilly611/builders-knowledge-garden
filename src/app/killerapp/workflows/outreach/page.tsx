@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Contacts + Outreach — Builder\'s Knowledge Garden',
+  title: 'Contacts + Outreach',
   description: 'Outreach to your contacts — mass, tailored, or one-to-one.',
 };
 

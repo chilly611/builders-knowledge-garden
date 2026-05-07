@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Job Sequencing — Builder\'s Knowledge Garden',
+  title: 'Job Sequencing',
   description: 'Sequence the job so trades don\'t trip over each other.',
 };
 

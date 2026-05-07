@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Equipment Management — Builder\'s Knowledge Garden',
+  title: 'Equipment Management',
   description:
     'Rent vs. buy for the equipment this job actually needs.',
 };

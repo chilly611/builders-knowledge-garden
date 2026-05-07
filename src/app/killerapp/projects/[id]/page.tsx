@@ -18,7 +18,7 @@ interface ProjectPageProps {
 }
 
 export const metadata = {
-  title: 'Project Dashboard — Builder\'s Knowledge Garden',
+  title: 'Project Dashboard',
   description: 'View your project status, budget, team, and timeline.',
 };
 

@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'OSHA Toolbox Talks — Builder\'s Knowledge Garden',
+  title: 'OSHA Toolbox Talks',
   description: 'Weekly OSHA toolbox talk, tailored to what you\'re actually doing this week.',
 };
 

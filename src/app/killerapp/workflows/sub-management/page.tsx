@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Sub Management — Builder\'s Knowledge Garden',
+  title: 'Sub Management',
   description:
     'Compare subcontractor bids with apples-to-apples line items.',
 };

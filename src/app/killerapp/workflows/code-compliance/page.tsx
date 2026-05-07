@@ -46,7 +46,7 @@ function loadCodeComplianceData(): {
 }
 
 export const metadata = {
-  title: 'Code Compliance Lookup — Builder\'s Knowledge Garden',
+  title: 'Code Compliance Lookup',
   description:
     'AI-assisted structural, electrical, plumbing, and fire-code review with citations you can verify against your AHJ.',
 };

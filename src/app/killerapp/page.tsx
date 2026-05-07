@@ -43,7 +43,7 @@ import TermTooltip from '@/components/TermTooltip';
 import styles from './landing.module.css';
 
 export const metadata: Metadata = {
-  title: 'Workflows — Builder\'s Knowledge Garden',
+  title: 'Workflows',
   description: 'Pick the workflow that matches what you\'re working on — code compliance, estimating, supply ordering, contracts, crew, and more. Start anywhere in the 7-stage lifecycle.',
   openGraph: {
     title: 'Workflows — Builder\'s Knowledge Garden',

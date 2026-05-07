@@ -155,11 +155,7 @@ export default function NavigatorMiniStrip({}: NavBarMiniStripProps = {}) {
   const pathname = usePathname() ?? '';
   const stageId = stageFromPathname(pathname);
 
-  // Early return if on landing (stage 0)
-  if (stageId === 0) {
-    return null;
-  }
-
+  // Hooks must run on every render — keep above any early returns.
   const [data, setData] = useState<MiniStripData>(getMiniStripData);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -218,6 +214,11 @@ export default function NavigatorMiniStrip({}: NavBarMiniStripProps = {}) {
     if (!currentStageId) return null;
     return STAGE_REGISTRY.find((s) => s.id === currentStageId);
   }, [currentStageId]);
+
+  // Early return if on landing (stage 0)
+  if (stageId === 0) {
+    return null;
+  }
 
   const handleLeftClick = () => {
     if (typeof window !== 'undefined') {

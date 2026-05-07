@@ -32,14 +32,10 @@ interface RSIBadgeProps {
 }
 
 export default function RSIBadge({ cycles, loopName }: RSIBadgeProps) {
+  // Hooks must run on every render — keep above any early returns.
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
-
-  // Hide if cycles is 0
-  if (cycles === 0) {
-    return null;
-  }
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -54,6 +50,11 @@ export default function RSIBadge({ cycles, loopName }: RSIBadgeProps) {
     tooltip.style.top = `${badgeRect.bottom + 8}px`;
     tooltip.style.left = `${badgeRect.left}px`;
   }, [showTooltip, isMobile]);
+
+  // Hide if cycles is 0
+  if (cycles === 0) {
+    return null;
+  }
 
   const badgeStyle: CSSProperties = {
     display: 'inline-flex',

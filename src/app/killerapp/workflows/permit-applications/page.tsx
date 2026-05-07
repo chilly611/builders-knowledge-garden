@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Permit Applications — Builder\'s Knowledge Garden',
+  title: 'Permit Applications',
   description:
     'Draft permit applications from the scope you already described.',
 };

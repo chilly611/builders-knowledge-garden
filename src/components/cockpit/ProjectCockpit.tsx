@@ -98,9 +98,7 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   const pathname = usePathname() ?? '';
   const stageId = stageFromPathname(pathname);
 
-  // Hidden on landing route
-  if (pathname === '/killerapp') return null;
-
+  // Hooks must run on every render — keep above any early returns.
   const effectiveProjectId = propProjectId ?? getActiveProjectId() ?? null;
   const [journeyState, setJourneyState] = useState<Record<string, any>>({});
   const [budgetData, setBudgetData] = useState<BudgetTimelineData>({
@@ -167,6 +165,9 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
       detail: { snapshotId, projectId: effectiveProjectId },
     }));
   }, [effectiveProjectId]);
+
+  // Hidden on landing route
+  if (pathname === '/killerapp') return null;
 
   const brass = '#B6873A';
   const trace = '#F4F0E6';

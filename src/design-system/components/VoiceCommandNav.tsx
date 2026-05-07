@@ -36,12 +36,7 @@ export default function VoiceCommandNav({
   onError,
   disabled = false,
 }: VoiceCommandNavProps) {
-  // Check feature flag
-  const flagEnabled = process.env.NEXT_PUBLIC_VOICE_NAV === 'enabled';
-  if (!flagEnabled) {
-    return null;
-  }
-
+  // Hooks must run on every render — keep above any early returns.
   // Hook manages SpeechRecognition lifecycle
   const {
     supported,
@@ -53,11 +48,6 @@ export default function VoiceCommandNav({
     reset,
     error,
   } = useSpeechRecognition();
-
-  // Don't render if API not supported
-  if (!supported) {
-    return null;
-  }
 
   // UI state
   const [showTranscriptPill, setShowTranscriptPill] = useState(false);
@@ -127,6 +117,17 @@ export default function VoiceCommandNav({
       }
     };
   }, []);
+
+  // Check feature flag
+  const flagEnabled = process.env.NEXT_PUBLIC_VOICE_NAV === 'enabled';
+  if (!flagEnabled) {
+    return null;
+  }
+
+  // Don't render if API not supported
+  if (!supported) {
+    return null;
+  }
 
   // Check reduced motion preference
   const prefersReducedMotion =

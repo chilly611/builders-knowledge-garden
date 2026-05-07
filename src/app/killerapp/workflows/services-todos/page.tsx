@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Services Todos — Builder\'s Knowledge Garden',
+  title: 'Services Todos',
   description: 'Services & utilities to-do list — who to call, when, and for what.',
 };
 

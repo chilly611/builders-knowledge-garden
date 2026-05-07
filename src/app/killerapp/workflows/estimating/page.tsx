@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'AI Estimating Gate — Builder\'s Knowledge Garden',
+  title: 'AI Estimating Gate',
   description: 'Fast AI estimate from plans, specs, or a photo. Sanity-check before quoting.',
 };
 

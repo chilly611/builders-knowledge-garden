@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Expense Tracking — Builder\'s Knowledge Garden',
+  title: 'Expense Tracking',
   description: 'Receipt to coded expense, job-costed correctly.',
 };
 

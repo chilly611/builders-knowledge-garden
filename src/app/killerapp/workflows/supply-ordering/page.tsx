@@ -21,7 +21,7 @@ function loadWorkflow() {
 }
 
 export const metadata = {
-  title: 'Supply Ordering — Builder\'s Knowledge Garden',
+  title: 'Supply Ordering',
   description: 'Ordering list from the plan, with lead times surfaced.',
 };
 
