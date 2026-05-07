@@ -48,12 +48,12 @@ Stay on this loop until the unscripted reactions stabilize.
 5. **Walk through 2-3 code rules** — Pro toggle on/off shows the difference between simple-view and pro-view. Citations link to real BKG entities.
 6. **Click "← back to summary"** in the banner — back to home. "Saved · &lt;scope preview&gt;" pill in top right confirms the project survived.
 7. **Click into Estimating (q2)** — banner carries through. AI estimate streams. The budget snapshot reads "starter values" not "demo mode" (the new copy).
-8. **Click into Daily Log (q15)** — Hank's primary workflow on real jobs. (Phase 2 of photo upload not wired yet — note this if asked, point at the tasks.todo.md backlog.)
+8. **Click into Daily Log (q15)** — Hank's primary workflow on real jobs. **Show the "Upload progress photos" panel at the top.** Drag-drop or tap-camera. Drop a real jobsite photo — it persists, thumbnails appear, lightbox-on-click. This is one of the top three "oh" moments for John.
 9. **Top-right pill: sign in** — "sign in — your work won't save if you refresh." Click it. Auth flow. Land back on the same project.
 
 ## What's intentionally rough (don't dodge — name it first)
 
-- **Photo/video evidence upload** — infrastructure shipped, wiring into workflows is next session. John's $30k deposit story lands on this gap directly. Be honest: "this is the next thing I'm shipping; want you to tell me where it goes first."
+- **Photo/video evidence upload — SHIPPED 2026-05-07 PM.** Wired into q15 (daily-log progress photos), q5 (code-compliance inspection photos — John's $30k story), q2 (estimating jobsite reference), q11 (supply-ordering material receipts), q8 (permits doc), q4 (signed contract PDF). PDFs accepted alongside photos/videos (50MB cap). Lightbox preview, 3-col rehydration grid. Receipt OCR / inspector captions / EXIF parsing not yet wired — flag as "Phase 3" if asked.
 - **Multi-jurisdiction code data** — currently CA + NV. Pasadena works. Out-of-state contractors hit a wall (block-on-roadmap, ~5 weeks per jurisdiction).
 - **Voice 1.5** — push-to-talk works on the AI fab and search. TTS replies and command vocabulary are not shipped yet.
 - **Spanish contracts** — flagged by 4/10 personas, not yet built.
@@ -76,7 +76,7 @@ Have them open the same URL on their phone. The 2026-05-07 push tightened mobile
 What might still break:
 - **Banner peer-link row** — six "MOVE TO" buttons may wrap to 2-3 rows. Functional but not pretty.
 - **Workflow picker rows** — 7 stages × 27 workflow rows. Long scroll. Each row should hit 44px+ touch target.
-- **Photo upload from camera roll** — infrastructure exists (`AttachmentUploader`), not yet wired into workflow steps. If they ask "can I upload a photo?" — say "yes, that's the next thing wiring in. Where would you put it first?"
+- **Photo upload from camera roll** — wired Phase 2. Tap the upload zone, iOS opens the camera/library. Test on a real iPhone before the call.
 
 ## Talking points if they ask "what's different from Procore?"
 
@@ -99,7 +99,7 @@ Don't push the close. The demo close-rate signal is "did they want to come back 
 
 - Update `docs/dogfood/john-2026-05-08-call.md` with verbatim reactions
 - File new P0/P1 fixes in `tasks.todo.md` against the verbatim findings
-- If photo upload was the #1 ask: confirms Phase 2 is the next session's commit (Option A from this session's three-lane handoff)
+- If receipt OCR / inspector captions / EXIF parsing comes up: that's Phase 3. q11 receipt vision-pass is the highest-ROI follow-on.
 - If multi-jurisdiction was the #1 ask: time to scope IL/NYC/FL data acquisition
 
 Good luck. The product is honest enough to demo. Let it speak.

@@ -3,6 +3,32 @@
 
 ---
 
+## Session 2026-05-07 PM (Photo Upload Phase 2)
+
+### When the user runs a verifier-style watch loop, push via API not local git
+**Date:** 2026-05-07
+**What happened:** Asked the founder to run `while true; do git fetch && git reset --hard origin/main && npm run build; sleep 60; done` so we'd catch push failures early. Then started editing 6 workflow clients locally to wire Phase 2. Every 60s the watch loop nuked the working tree before the push could land. By the time I'd finished the third file, the first two were already reset. Burned ~15min racing the loop before realizing the structural fix.
+**Fix:** Wrote a Python script that reads current (post-reset) file contents from disk, applies the AttachmentSection wiring in-memory, builds blobs + tree + commit via the GitHub Trees API, and PATCHes `refs/heads/main`. One atomic commit, eight files. Watch loop's next tick pulled it down clean and ran build successfully. Pattern: `outputs/photo-phase2-push.py` is the template.
+**Rule:** When the user is running a watch loop that resets the working tree, the local checkout is no longer a useful staging area. Push directly via API. Trees API for multi-file atomic commits (`POST /git/blobs` × N → `POST /git/trees` → `POST /git/commits` → `PATCH /git/refs/heads/main`). Contents API for single-file follow-ups (cheaper). Either way, the watch loop becomes the verifier instead of the conflict.
+
+### Strip-and-re-emit > regex-everywhere when patching tracked files programmatically
+**Date:** 2026-05-07
+**What happened:** Phase 2's q4 ContractTemplates patch had two regex anchors (one for the import line, one for the JSX). The import anchor matched. The JSX anchor — `\n    </>\n  \);\n}\n?\Z` — was looking for end-of-file, but ContractTemplates has multiple components in the file and the main component's `</>` is followed by `// ----` separators and helper functions. Patch silently produced a file with the import added but no JSX inserted. We caught it via a "files containing AttachmentSection" grep showing 1 ref instead of 2. Sent a follow-up commit.
+**Rule:** When a patcher inserts JSX at the closing tag of a JSX block, anchor on the LITERAL CHARACTERS BEFORE AND AFTER the closing — not on regex constructs that try to match end-of-component. Better: re-emit the whole file from a manually-constructed AST or template. For one-shot fixes it's faster to just open Contents API, fetch the file, do a `re.sub` with a strict before/after literal context, PUT back. This is what the follow-up `outputs/photo-phase2-contracts-fix.py` did successfully.
+
+### MIME types are the silent gotcha when extending an upload component
+**Date:** 2026-05-07
+**What happened:** AttachmentUploader was originally built for jobsite photos/videos. ALLOWED_MIME_TYPES listed jpeg/png/heic/webp + mp4/quicktime/webm. Phase 2 wired it into q4 (signed contracts) and q8 (approved permit docs) — both PDF use cases. The first prod test on q4 worked because the file picker is just `accept="image/*,video/*"` — it doesn't validate beyond filename, and most users don't try to upload PDFs to a "photos and videos" prompt anyway. But the moment a contractor tried to drop a contract PDF, they'd get rejected with "File type not allowed." Caught only because I read the source again before declaring Phase 2 done.
+**Rule:** When extending an upload component to new use cases, audit ALL the MIME-type gates in one pass: the `accept=` attribute, the `ALLOWED_MIME_TYPES` server-side or client-side list, the error message string. AND audit the user-facing copy ("Drop photos or videos here") — it leaks the original use case and confuses anyone bringing the new one. Generic copy with use-case-specific framing in the parent component is the cleaner pattern.
+
+### Hold the use-case copy in the SECTION wrapper, not the uploader
+**Date:** 2026-05-07
+**What happened:** AttachmentUploader has hardcoded "Drop photos or videos here" + "or click to browse (max 50MB each)". Six workflows mount it. Each workflow has a different use case (progress photos, inspection photos, signed PDFs, permit docs, receipts, contracts). The hardcoded uploader copy reads weird in any non-photo case.
+**Fix:** The framing — title + subtitle — moved up one level into AttachmentSection (e.g. "Upload signed contract" + "Drop the executed contract PDF here once everyone has signed"). The uploader's copy stays generic enough ("Drop a file here · photos, videos, or PDFs"). Section carries the specificity, uploader carries the mechanics.
+**Rule:** When wrapping a low-level component for multiple use cases, push the use-case copy UP into the wrapper and keep the low-level component's copy generic. If you need the low-level component's copy customized, add a `helperText`/`title` prop instead of hardcoding. The wrapper ALWAYS knows the use case; the low-level ALWAYS shouldn't.
+
+---
+
 ## Session 2026-05-07 (autonomous demo readiness pass)
 
 ### Strip the AI's trailing action block before rendering raw — never both

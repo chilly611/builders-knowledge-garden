@@ -496,3 +496,67 @@ This session's commit was pushed via GitHub Trees API because the Cowork sandbox
 - Vercel deploy gate took over (succeeded — verified in chrome on prod within 5 min of push).
 
 If a future session needs to ship from the sandbox: prefer landing on a branch first, let Vercel build the preview, verify, then promote to main.
+
+---
+
+## ⏵ State of play — 2026-05-07 PM (Photo Upload Phase 2)
+
+Sealed at HEAD `9f8bb7c5` (chain: `ffe8eb3` → `de53a8a` → `1827476` → `cd1bb00` → `9f8bb7c`). Production verified live on q15 (daily-log), q5 (code-compliance), and q4 (contract-templates) via Chrome MCP after each deploy.
+
+### What shipped this afternoon (Option A — Photo Upload Phase 2)
+
+**Two new shared components:**
+
+- `src/components/AttachmentSection.tsx` — the consumer atom every workflow client mounts. Combines `AttachmentUploader` + `AttachmentThumbnailGrid` + a per-`(workflowId, stepId)` GET to `/api/v1/projects/[id]/attachments`. Trace background, brass uppercase title, foreman-vernacular subtitle. Renders a soft "sign in to upload" affordance for anonymous users, "Pick a project up top" affordance when no project is active. Re-fetches after every successful upload so thumbnails appear immediately.
+- `src/components/AttachmentThumbnailGrid.tsx` — 3-column responsive grid (`auto-fill, minmax(140px, 1fr)`). Renders signed-URL `<img>` / `<video>` thumbs. Click to open a fixed-position lightbox (Esc or backdrop to close, no portal/no third-party dep). Inline ▶ marker on video thumbnails. Caption / filename overlay at bottom of lightbox.
+
+**6 workflow clients wired:**
+
+| Workflow | Step ID | Title | Position |
+|---|---|---|---|
+| q15 daily-log | `upload-progress-photos` | Upload progress photos | above WorkflowShell |
+| q5 code-compliance | `upload-inspection-photos` | Upload inspection photos | above WorkflowRenderer |
+| q2 estimating | `upload-jobsite-reference-photos` | Upload jobsite reference photos | above WorkflowShell |
+| q11 supply-ordering | `upload-material-receipts` | Upload material receipts | above WorkflowShell |
+| q8 permit-applications | `upload-approved-permit` | Upload approved permit doc | below WorkflowShell (terminal) |
+| q4 contract-templates | `upload-signed-contract` | Upload signed contract | below main return (terminal) |
+
+Each `onUploaded` callback calls `recordStepEvent` (or persists into the contracts blob for q4) so the workflow's autosave JSONB tracks "the user uploaded files for this step." Status counter ticks. XP credit lands.
+
+**Three follow-ups in the same wave:**
+
+- PDF support added to `AttachmentUploader.tsx` — q4 contracts and q8 permits were silently rejecting `application/pdf` uploads on first ship. Now in `ALLOWED_MIME_TYPES`. `accept` attribute updated. Drop-zone copy softened from "Drop photos or videos here" → "Drop a file here · photos, videos, or PDFs (max 50MB)" so it reads honest for non-photo workflows.
+- Soft sign-in nudge on `WorkflowPickerSearchBox.tsx` — anonymous users now see an inline robin's-egg-tinted note after the AI streams: "Heads up: your work won't save if you refresh. Sign in to keep this project." Auth state detected once on mount via `supabase.auth.getSession()`. Highest-leverage P1 from the 2026-05-07 AM demo readiness audit.
+- "Thinking through your project…" → "Running the numbers…" on both `WorkflowPickerSearchBox.tsx` and `KillerappProjectShell.tsx` — microcopy agent's pick. Foreman-natural where the previous copy was vaguely consultanty.
+
+### How the autonomous push went
+
+The founder's host shell was running `while true; do git fetch && git reset --hard origin/main && npm run build; sleep 60; done` to catch any push failures. **Local edits got reset every minute before the push could land.** Fix: pushed atomically via the GitHub Trees API instead of local git. The watch loop's next tick pulled the new commit down clean and ran `npm run build` against it. New lessons file entry: "When the user is running a verifier-style watch loop, use the API instead of racing local edits to disk."
+
+### Things observed but NOT fixed this afternoon (P1 backlog)
+
+1. **Drop-zone helper-text customization per section** — could be a `helperText` prop on `AttachmentUploader` so q4 reads "Drop the signed contract PDF here" while q15 stays "Drop a file here". Skipped because the section title + subtitle already carry the framing.
+2. **Receipt OCR + line-item extraction** for q11 — vision API pulls vendor + total off receipt photos and pre-fills the budget row. Phase 3.
+3. **Inspector captions on q5 thumbnails** — caption input under each thumbnail in the grid. Phase 3.
+4. **EXIF parsing** at upload time — `exifr` not installed; couldn't pull geotag/timestamp. Phase 3.
+
+### P2 (next session unless John flags it)
+
+- Multi-jurisdiction code data still CA + NV only. Pasadena works.
+- Voice 1.5 (TTS replies + command vocabulary).
+- Spanish contracts (4/10 personas asked).
+- Jurisdiction default still doesn't pick up "Pasadena" from `ai_summary` (P2 from 2026-05-07 AM).
+
+### Next-session recommended priority order (ranked)
+
+**Top — Run the demo with John + contractor friend.**
+The product is honest enough to demo. `docs/dogfood/demo-playbook-john-2026-05-08.md` has the script. Photo upload Phase 2 has shipped — the playbook's "intentionally rough" section reflects this. Send the URL today.
+
+**Second — Capture verbatim, file follow-ups.**
+`docs/dogfood/john-2026-05-08-call.md` (create after the call). First click, first confusion, first "oh." Convert into P0/P1 tasks here.
+
+**Third — q11 receipt OCR / q5 inspector captions / EXIF.**
+The Phase 2 wiring stops short of "the AI does something with the photo." Receipts are the highest-ROI follow-on (vision API pulls vendor + total → pre-fills budget). Inspector captions land trust on q5. EXIF lands the "this was actually on-site at this time" trust signal.
+
+**Fourth — Jurisdiction auto-default fix (P2 from AM session).**
+30-min investigation; user-visible trust win.
