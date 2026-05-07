@@ -216,6 +216,14 @@ export function seedPayloadsFromRaw(
  * gives the user the "XP credit" for project context they already
  * provided in raw_input. Saved-state steps stay 'complete' (they were
  * already marked by the workflow client). Skipped steps stay 'pending'.
+ *
+ * 2026-05-07 trust-fix: analysis_result steps seed with `{ input: raw }`
+ * (the raw_input is fed to the specialist as a starting point). They
+ * STAY pending until the specialist actually runs — otherwise a fresh q5
+ * project shows "7 of 7 complete" before any code lookups have happened.
+ * We detect analysis_result-style seeds by the payload shape: `input` set,
+ * `value` empty, no selections/checks. text_input / voice_input /
+ * location_input / number_input seeds keep their auto-complete behavior.
  */
 export function statusFromSeeded(
   seeded: Record<string, StepPayload>,
@@ -223,7 +231,15 @@ export function statusFromSeeded(
 ): Record<string, 'pending' | 'in_progress' | 'complete'> {
   const out = { ...existingStatus };
   for (const stepId of Object.keys(seeded)) {
-    if (!out[stepId]) out[stepId] = 'complete';
+    if (out[stepId]) continue;
+    const p = seeded[stepId];
+    const isAnalysisSeed =
+      !!p.input &&
+      !p.value &&
+      (!p.selected || p.selected.length === 0) &&
+      (!p.checked || Object.keys(p.checked).length === 0);
+    if (isAnalysisSeed) continue; // specialist still needs to run
+    out[stepId] = 'complete';
   }
   return out;
 }

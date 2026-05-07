@@ -87,7 +87,7 @@ function parseAiResponse(
   if (request.jurisdiction) {
     out.jurisdiction = request.jurisdiction;
   } else {
-    const m = fullText.match(/Jurisdiction:\s*([^\n.]{2,40})/i);
+    const m = fullText.match(/(?:\*\*)?Jurisdiction:?(?:\*\*)?\s*\*?\*?\s*([^\n.*]{2,40})/i);
     if (m) out.jurisdiction = m[1].trim();
   }
 
@@ -193,7 +193,8 @@ RESPOND WITH:
    - RISK FLAGS: Name 2–3 specific cost drivers or complexity triggers from the scope (e.g., "Wellness features + radiant heating + plunge pool = waterproofing detail = cost can balloon fast"; "San Diego coastal site = Title 24 compliance + potential WUI zone restrictions")
    - SEQUENCE IMPLICATIONS: What trades matter most? What's long-lead? (e.g., "Spa/gym/cold plunge = MEP complexity, specialty finishes, permit path gets longer")
    - SITE-SPECIFIC CONCERNS: Jurisdiction, climate, site constraints that affect the build (e.g., coastal, seismic, flood zones, Title 24)
-3. Close: Plain sentence like "Here's where I'd start:" then present 3 action buttons in the EXACT format below.
+3. JURISDICTION TAG: On its own line, BEFORE the "What next?" block, output exactly: \`Jurisdiction: <city>, <state>\` (or just \`Jurisdiction: <state>\` if no city). Use the location the user mentioned. This is a machine-readable tag we use to default downstream tools (codes, permits, contracts) to the right jurisdiction.
+4. Close: Plain sentence like "Here's where I'd start:" then present 3 action buttons in the EXACT format below.
 
 VOICE: Foreman. Direct. Confident. NO disclaimers, NO "consult an architect," NO hedging. Use SPECIFIC numbers where possible.
 LENGTH: 180-260 words. Substantive but fast-read.
@@ -216,6 +217,8 @@ Here's what jumps out:
 — San Diego coastal = Title 24 energy compliance is strict. Your thermal envelope, window U-values, and HVAC efficiency have to pencil or permitting stalls. Radiant + high-performance envelope = higher upfront cost.
 — Long-lead: custom spa equipment (8–10 week lead), cabinetry if semi-custom (6–8 weeks). Get those orders in early or your finish schedule slips.
 — MEP complexity: separate circuits for the plunge chiller, ventilation for humidity control, upgraded electrical service. Coordinator's nightmare if you don't stage it right.
+
+Jurisdiction: San Diego, CA
 
 Here's where I'd start:
 
