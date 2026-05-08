@@ -3,6 +3,66 @@
 
 ---
 
+## Session 2026-05-07 evening (Trust fixes + Captions + Receipt OCR)
+
+### JSX attribute can't escape quotes with backslash — use a template-literal expression
+**Date:** 2026-05-07
+**What happened:** Generated AttachmentThumbnailGrid via a Python script that wrote
+`placeholder="Caption — what does this show? (e.g. \\\"south corner flashing\\\")"`
+into the file. In JSX, attribute values bounded by double quotes can't escape inner
+double quotes with `\\\"` — the parser sees the first `\\\\` as a literal
+backslash, then the next `\\\"` as the closing of the attribute, then the rest of
+the string becomes raw JSX content. Vercel build failed at TS1127 (Invalid character)
+and TS1382 (Unexpected token, did you mean `{'>'}` or `&gt;`?). Sandbox bash 45s
+wall meant `npm run build` couldn't run pre-push, so the bug shipped to Vercel and
+came back as a build-failure deploy status.
+**Fix:** Switched to a JSX expression with a template literal:
+`placeholder={\`Caption — what does this show? (e.g. "south corner flashing")\`}`.
+Template literals can hold both single and double quotes without escaping, and the
+JSX expression wrapper makes the attribute value any JS expression.
+**Rule:** When generating JSX from Python or any code-gen path, NEVER use `\\\"`
+inside JSX attribute values. Either:
+  (a) wrap the value in a JSX expression with a template literal: `attr={\`...\`}`
+  (b) use single quotes for the attribute and double quotes inside: `attr='...double...'`
+  (c) replace inner doubles with curly quotes (—) or HTML entities (&quot;)
+Option (a) is the cleanest and works for any character.
+
+### Vercel deploy API IS your build verifier when sandbox can't run `next build`
+**Date:** 2026-05-07
+**What happened:** Pushed Tier 2 atomically via Trees API. State-of-play check showed
+HEAD updated. Assumed it was good because previous Tier 2-style pushes worked. Two
+tool calls later I checked the deploy status — `state=failure` for that commit. Lost
+~5 minutes assuming the green source meant green build.
+**Fix:** After any push to main, ALWAYS check
+`/repos/{owner}/{repo}/deployments/{id}/statuses` for the latest deployment of that
+sha. State is one of: pending, in_progress, success, failure. Wait at least 30s
+after push before checking (Vercel queue takes a moment).
+**Rule:** Build the deploy-status check into every push helper. The bash one-liner is:
+```
+TOP=$(curl -s -H "Authorization: token $TOKEN" \
+  "https://api.github.com/repos/$REPO/deployments?per_page=1" | \
+  python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
+curl -s -H "Authorization: token $TOKEN" \
+  "https://api.github.com/repos/$REPO/deployments/$TOP/statuses" | \
+  python3 -c "import sys,json; print(json.load(sys.stdin)[0]['state'])"
+```
+If state==failure, immediately run `npx tsc --noEmit --skipLibCheck <touched files>`
+to find the type/syntax error before iterating blindly.
+
+### tsc --skipLibCheck on touched files only is the fastest sandbox-safe build check
+**Date:** 2026-05-07
+**What happened:** Needed to find why Vercel built failed but `npm run build` won't
+fit in the 45s sandbox window. Tried tsc on the whole project (also too slow). Then
+ran `npx tsc --noEmit --skipLibCheck` against ONLY the 5-6 touched files — finished
+in <30s and surfaced the exact errors with file:line.
+**Rule:** When you need to verify TypeScript correctness in the sandbox without
+running the full Next build, scope tsc to the touched files. The flags
+`--noEmit --skipLibCheck` skip output and node_modules type-checking, which is what
+makes it fast. Caveat: this misses errors that arise from how a touched file is used
+elsewhere; rely on Vercel's full build for that. Targeted tsc is for fast triage.
+
+---
+
 ## Session 2026-05-07 PM (Photo Upload Phase 2)
 
 ### When the user runs a verifier-style watch loop, push via API not local git

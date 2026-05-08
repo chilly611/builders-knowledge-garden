@@ -560,3 +560,64 @@ The Phase 2 wiring stops short of "the AI does something with the photo." Receip
 
 **Fourth — Jurisdiction auto-default fix (P2 from AM session).**
 30-min investigation; user-visible trust win.
+
+---
+
+## ⏵ State of play — 2026-05-07 evening (Trust fixes + Captions + Receipt OCR)
+
+Sealed at HEAD `e6ec82b`. Production verified green via Vercel deploy API on commits c34a9c8, 7c096e2 (failed — JSX escape), e6ec82b (fix-up).
+
+### What shipped this evening
+
+**TIER 1 — Trust fixes (commit `c34a9c8`)**
+
+Both bugs were demo-blocking trust killers from this morning's audit. Pete/Sarah/Diana persona findings flagged jurisdiction; my own cold-start re-run flagged the status counter.
+
+1. **Jurisdiction auto-default** — `src/app/api/v1/copilot/route.ts`
+   - Stage 0 system prompt now explicitly instructs the AI to output `Jurisdiction: <city>, <state>` on its own line before the What-next block.
+   - Few-shot example updated to include the tag.
+   - parseAiResponse regex loosened to handle `**Jurisdiction:**` markdown wrapping.
+   - Result: code-compliance / permits / contracts now default to the correct jurisdiction when the project's raw input names a city or state.
+
+2. **Status counter "7 of 7 complete" on fresh projects** — `src/lib/hooks/useProjectWorkflowState.ts`
+   - `statusFromSeeded` now distinguishes analysis_result-style seeds (have `input` set, no `value`/`selected`/`checked`) from real user input. Analysis seeds stay pending until the specialist actually runs.
+   - Backwards compatible: 17 callers don't change. Distinction lives in the payload-shape check.
+   - Result: fresh project → q5 status counter reads "0 of 7" (or 1 of 7 if a text/voice step seeded from raw input). Demo no longer feels canned.
+
+**TIER 2 — Inspector captions + receipt OCR (commit `7c096e2` initial, `e6ec82b` JSX fix-up)**
+
+3. **Inspector captions** — three files
+   - PATCH /api/v1/projects/[id]/attachments — new endpoint, auth-gated, ownership-checked, 500-char cap
+   - AttachmentThumbnailGrid — caption visible below thumbnail (truncated to 40 chars), inline "Add a caption" affordance, fully editable in lightbox; Esc-while-editing cancels rather than closes
+   - AttachmentSection — `updateCaption` callback that PATCHes + re-fetches
+   - Result: q5 inspector story finally lands. Contractor uploads photo, types "south corner flashing — torn after windstorm", inspector reads months later in proper context.
+
+4. **Receipt OCR for q11** — five files (4 modified, 2 new)
+   - NEW POST /api/v1/projects/[id]/attachments/[attachmentId]/extract-receipt — Claude Haiku 4.5 vision, ~$0.008/image. Returns `{vendor, total, currency, lineItems?, confidence, notes}`. Mime-type-gated to images. Soft-fails on parse error.
+   - NEW src/lib/receipt-extract.ts — client-side helper.
+   - SupplyOrderingClient — auto-fires extract on image upload, shows "Reading the receipt..." spinner, surfaces editable card with vendor + total + category fields, "Save to budget" button calls recordMaterialCost.
+   - Critical UX rule: never auto-write the budget. User confirms after editing.
+   - Demo flow: upload Home Depot receipt → 5 sec later card appears pre-filled → click Save → budget shows the line item.
+
+**TIER 2 FIX-UP (commit `e6ec82b`)**
+
+5. **JSX attribute escape bug** — `src/components/AttachmentThumbnailGrid.tsx`
+   - Initial Tier 2 commit had `placeholder="...\"...\""` — JSX can't escape quotes with backslash inside double-quoted attribute values. Build failed at TS1127 / TS1382.
+   - Fix: switched to template-literal expression `placeholder={\`...\`}`.
+   - Caught by Vercel's deploy API status check, NOT by my own pre-push verification (sandbox bash 45s wall blocks `npm run build`). New lesson queued.
+
+### Next-session backlog (still standing)
+
+**Highest impact next:**
+- EXIF parsing on upload (geotag + timestamp) — needs `exifr` dep added to package.json + npm install. Trust signal: "this was actually on-site at this time."
+- Receipt OCR for q17 (Expense Report) — same pattern as q11, separate wiring.
+- Line-item display in q11 extraction card — API returns them but UI only shows vendor + total for v1.
+- Multi-jurisdiction code data still CA + NV only.
+
+**Durability:**
+- ESLint backlog burn-down — ~12 genuine react-hooks correctness errors hiding in the ~450-error noise wall. Spawn 4-5 parallel agents per category if time allows.
+- Schema additions (receivables `contract_value` column, due_date on budget items).
+
+**Demo orchestration:**
+- Run the demo with John + contractor friend.
+- Capture verbatim → `docs/dogfood/john-2026-05-08-call.md`.
