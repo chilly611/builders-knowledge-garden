@@ -621,3 +621,105 @@ Both bugs were demo-blocking trust killers from this morning's audit. Pete/Sarah
 **Demo orchestration:**
 - Run the demo with John + contractor friend.
 - Capture verbatim → `docs/dogfood/john-2026-05-08-call.md`.
+
+---
+
+## ⏵ State of play — 2026-05-08 early AM (Phase 3+4: receipt OCR fan-out)
+
+Sealed at HEAD `27d0958c` (last source change) + this commit. Vercel
+verified green for every src commit in the chain:
+
+  c34a9c8 — Tier 1 trust fixes (jurisdiction default + status counter)
+  7c096e2 — Tier 2 captions + receipt OCR for q11 (failed; JSX escape)
+  e6ec82b — JSX escape fix (✓ green)
+  9c1b5d4 — Bookkeeping (no src; deploy skipped)
+  05d8d3d — Tier 3: receipt OCR for q17 + line items display (✓ green)
+  27d0958 — Tier 4: PDF support in receipt OCR (✓ green)
+  + this commit — final polish
+
+### What shipped during this 2026-05-08 burn
+
+1. **Trust fixes** — `c34a9c8`
+   - Jurisdiction tag now machine-readable in Stage 0 prompt; copilot
+     parses `Jurisdiction: <city>, <state>`. code-compliance now defaults
+     to the project's actual jurisdiction.
+   - `statusFromSeeded()` distinguishes analysis_result-style seeds from
+     real user input. Fresh q5 reads "0 of 7" not "7 of 7".
+
+2. **Inspector captions** — `7c096e2` + `e6ec82b`
+   - PATCH `/api/v1/projects/[id]/attachments` for caption updates.
+   - Caption visible below thumbnail (truncated 40 chars), editable in
+     lightbox. Esc-while-editing cancels rather than closes.
+   - 500-char cap, auth-gated, ownership-checked.
+
+3. **Receipt OCR for q11** — `7c096e2` + `e6ec82b`
+   - NEW `POST /api/v1/projects/[id]/attachments/[attachmentId]/extract-receipt`.
+   - Claude Haiku 4.5 vision, ~$0.008/image.
+   - SupplyOrderingClient surfaces editable card with vendor/total.
+   - User clicks "Save to budget" → recordMaterialCost. Never auto-write.
+
+4. **Line-items display in extraction cards** — `05d8d3d`
+   - Both q11 and q17 cards now show optional `<details>` block listing
+     extracted line items (description × qty @ $unit — $total).
+   - Hidden by default so the card stays compact.
+
+5. **Receipt OCR for q17 expenses** — `05d8d3d`
+   - Full pattern parity with q11. AttachmentSection mounted, auto-fires
+     extract on image upload, surfaces editable card.
+   - q17 uses recordExpense (not recordMaterialCost) so the 7-way
+     category dropdown survives into the budget table.
+
+6. **PDF receipt support** — `27d0958`
+   - extract-receipt route now accepts `application/pdf` alongside
+     `image/*`. Switches Anthropic content block from `image` to
+     `document` for PDFs (handles multi-page natively).
+   - q11 + q17 onUploaded mime gates loosened to fire OCR for PDFs too.
+   - Closes the "what about PDF supplier invoices?" gap.
+
+7. **onCloseOutClick wired** — this commit
+   - ProjectDashboardClient had a no-op handler from a previous session.
+     Now navigates to the existing `/killerapp/projects/[id]/close-out`
+     route. (Note: ProjectDashboardClient is the demo-project showcase
+     page; real projects route through /killerapp?project=<id>.)
+
+### Things observed but NOT fixed this burn (next-session backlog)
+
+- **EXIF parsing on upload** — needs `exifr` dep added + `npm install`.
+  Watch loop runs build, not install — would break until manual install.
+- **Receipt OCR results don't link back to attachment** — when a budget
+  line is recorded, we don't store the source attachment ID on the
+  budget row. Future: add `source_attachment_id` to budget items so the
+  user can click a line in the budget and see the receipt photo.
+- **q17 has its own internal upload path that's now redundant** — the
+  manual receipt-image entry at s17-2 still exists. Could be deprecated
+  once usage data shows everyone goes through AttachmentSection.
+- **8 SOON workflows** (q1, q3, q20-q27) still inactive. q1 + q3 are
+  small wins (single-AI-call workflows).
+- **Multi-jurisdiction code data** — CA + NV only.
+- **ESLint backlog** — most react-hooks/set-state-in-effect violations
+  are mobile-detection false-positives; not P0. Math.random in render
+  ones live in /dream/* (not the demo path).
+
+### Next-session recommended priority order
+
+**Top — Run the demo with John + contractor friend.**
+  - `docs/dogfood/demo-playbook-john-2026-05-08.md` is the script.
+  - Photo upload Phase 2 + receipt OCR (q11 + q17 + PDF) + captions
+    are all live.
+  - Send the URL today.
+
+**Second — Wire q1 ("Should you bid this job?") and q3 ("Who are you
+working for?") as live workflows.**
+  - Both are single-step AI specialist calls. Match the existing
+    workflow client pattern (q4, q5).
+  - Brings live workflow count from 17/27 to 19/27.
+
+**Third — Source-of-truth linkage between attachments and budget rows.**
+  - When recordMaterialCost / recordExpense is called from a receipt
+    extraction, store `attachment_id` on the budget row.
+  - Adds a "View receipt" link to each budget line.
+
+**Fourth — The 60-second cold-start onboarding video on the landing
+hero.**
+  - Currently the hero is text + image. A 60-sec screen recording of
+    the demo would dramatically improve cold-start conversion.

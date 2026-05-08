@@ -63,7 +63,11 @@ export default function ProjectDashboardClient({
       projectId={projectId}
       demoProject={demoProject}
       onCloseOutClick={() => {
-        // Navigate to close-out workflow
+        // 2026-05-08: was a no-op stub. Now navigates to the close-out
+        // sub-route (already exists at /killerapp/projects/[id]/close-out).
+        if (typeof window !== 'undefined') {
+          window.location.href = `/killerapp/projects/${encodeURIComponent(projectId)}/close-out`;
+        }
       }}
     />
   );

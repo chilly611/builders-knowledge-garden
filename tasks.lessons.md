@@ -1,5 +1,68 @@
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-07
+## Updated: 2026-05-08
+
+---
+
+## Session 2026-05-08 (Phase 3+4 receipt OCR fan-out)
+
+### Anthropic vision API: `image` for images, `document` for PDFs
+**Date:** 2026-05-08
+**What happened:** Wired receipt OCR for q11 (image-only). Tested with PDF
+invoice (since AttachmentUploader accepts PDFs since q4 wiring); got 400
+"Receipt OCR is only supported for image attachments." Realized the
+extract-receipt route gates on `mime_type.startsWith('image/')`. Loosened
+the gate but then the API call itself failed because I was passing PDFs
+as `{ type: 'image', source: ... }` and Anthropic returned a 400 about
+the content type.
+**Fix:** Anthropic's API distinguishes between content-block types:
+  - `{ type: 'image', source: { type: 'url', url: ... } }` — PNG/JPEG/HEIC/WebP
+  - `{ type: 'document', source: { type: 'url', url: ... } }` — PDFs (multi-page native)
+Switch the content block based on mime_type. Both work with `claude-haiku-4-5-20251001`.
+Cost is the same per page.
+**Rule:** When extending a vision-API endpoint to support new mime types,
+audit ALL three layers: (1) the upstream input gate (mime_type filter),
+(2) the API request shape (content-block type), (3) the user-facing
+copy. Test with actual PDFs, not just images.
+
+### Recording money writes from AI extraction needs a confirmation step — never auto-write
+**Date:** 2026-05-08
+**What happened:** First draft of receipt OCR for q11 had the temptation
+to auto-call `recordMaterialCost(...)` immediately when extraction
+returned with high confidence. Stepped back: receipts can be misread (a
+"$1,250.50" total can be misread as "$12,505.00" if the decimal blurs).
+If we auto-write, the user finds a wrong number in their budget hours
+later, has no idea where it came from, and trust collapses. Better:
+surface the extracted data in an editable card, require a single
+explicit click to write. UX cost is one extra tap; trust cost of
+auto-writing is unbounded.
+**Rule:** AI-extracted financial data ALWAYS goes through user
+confirmation. The card should:
+  1. Show the extracted vendor + total + category
+  2. Make all three editable
+  3. Show confidence level explicitly
+  4. Have a "Save" button that's the only way money writes
+  5. Have a "Skip" button so the user can record manually if
+     extraction is wrong
+Apply this rule to any future "AI does the data entry" feature
+(invoice line items, time tracking, change orders).
+
+### When auto-triggering a side-effect on upload, mime-gate at the
+### source AND server side
+**Date:** 2026-05-08
+**What happened:** SupplyOrderingClient auto-fires extract-receipt for
+each uploaded image. First version checked mime_type on the client only.
+A user uploading a non-receipt image (e.g. a jobsite photo) would still
+trigger OCR — wasting an API call (~$0.008/image) and possibly returning
+"not a receipt" with low confidence (which we silently swallow).
+**Fix:** Two-layer gate. Client checks mime_type before calling
+extract-receipt. Server also checks mime_type and returns 400 for
+non-images / non-PDFs. Server is the canonical guard; client is the
+optimization.
+**Rule:** When a client-side action triggers a server-side AI call,
+apply mime-type / content gates on BOTH layers. The client gate
+prevents unnecessary requests; the server gate prevents abuse and
+silent failures. Both gates should be cheap to compute (mime_type is a
+single field).
 
 ---
 

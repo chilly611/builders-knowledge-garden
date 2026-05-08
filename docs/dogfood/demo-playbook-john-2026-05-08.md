@@ -53,7 +53,10 @@ Stay on this loop until the unscripted reactions stabilize.
 
 ## What's intentionally rough (don't dodge — name it first)
 
-- **Photo/video evidence upload — SHIPPED 2026-05-07 PM.** Wired into q15 (daily-log progress photos), q5 (code-compliance inspection photos — John's $30k story), q2 (estimating jobsite reference), q11 (supply-ordering material receipts), q8 (permits doc), q4 (signed contract PDF). PDFs accepted alongside photos/videos (50MB cap). Lightbox preview, 3-col rehydration grid. Receipt OCR / inspector captions / EXIF parsing not yet wired — flag as "Phase 3" if asked.
+- **Photo/video evidence upload — SHIPPED 2026-05-07 PM.** Wired into q15 (daily-log progress photos), q5 (code-compliance inspection photos — John's $30k story), q2 (estimating jobsite reference), q11 (supply-ordering material receipts), q8 (permits doc), q4 (signed contract PDF). PDFs + photos + videos (50MB cap). Lightbox preview, 3-col rehydration grid.
+- **Inspector captions — SHIPPED 2026-05-08.** Click any thumbnail in q5 (or anywhere), open lightbox, type a caption like "south corner flashing — torn after windstorm", click Save. Persists with the photo.
+- **Receipt OCR for q11 + q17 — SHIPPED 2026-05-08.** Drop a Home Depot receipt photo OR a PDF supplier invoice. ~5 sec later an editable card appears with vendor + total + category (q17 has 7 categories, q11 has 4). Line items expand to show what the AI extracted line-by-line. Click Save to write the budget row. Never auto-writes — user always confirms. **This is the demo "oh" moment for John on the budget side.**
+- **EXIF parsing** — Phase 4 (next session). Will surface "this was on-site at <time> in <location>" trust signal once the exifr dependency is installed.
 - **Multi-jurisdiction code data** — currently CA + NV. Pasadena works. Out-of-state contractors hit a wall (block-on-roadmap, ~5 weeks per jurisdiction).
 - **Voice 1.5** — push-to-talk works on the AI fab and search. TTS replies and command vocabulary are not shipped yet.
 - **Spanish contracts** — flagged by 4/10 personas, not yet built.
