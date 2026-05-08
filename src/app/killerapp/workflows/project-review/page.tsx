@@ -22,7 +22,7 @@ function loadWorkflow() {
 
 export const metadata = {
   title: 'Project Review',
-  description: 'What went well, what went wrong, the cost variance, the lessons. Capture them while they're fresh so the next job runs smoother.',
+  description: 'What went well, what went wrong, the cost variance, the lessons. Capture them while they’re fresh so the next job runs smoother.',
 };
 
 export default function Page() {
