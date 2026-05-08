@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
         destination: '/login?signup=1',
         permanent: false,
       },
+      {
+        source: '/dream-oracle',
+        destination: '/dream/oracle',
+        permanent: true,
+      },
     ];
   },
 };

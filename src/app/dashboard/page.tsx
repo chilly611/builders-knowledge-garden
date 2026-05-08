@@ -360,7 +360,7 @@ export default function DashboardPage() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link href="/dream-oracle" style={{
+          <Link href="/dream/oracle" style={{
             fontFamily: T.fontMono, fontSize: 11, color: '#4A89BE',
             textDecoration: 'none', padding: '6px 12px', borderRadius: 6,
             border: '1px solid rgba(27,58,92,0.1)', background: 'rgba(27,58,92,0.03)',
@@ -611,7 +611,7 @@ F */}
                     </Card>
                   </Link>
                 ))}
-                <Link href="/dream-oracle" style={{
+                <Link href="/dream/oracle" style={{
                   display: 'block', textAlign: 'center', textDecoration: 'none',
                   fontFamily: T.fontMono, fontSize: 11, fontWeight: 600,
                   color: '#D85A30', background: 'rgba(216,90,48,0.06)',
