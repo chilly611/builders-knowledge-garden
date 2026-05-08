@@ -9,7 +9,9 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/';
-  const [isSignUp, setIsSignUp] = useState(false);
+  // 2026-05-08: auto-flip to sign-up mode when /login?signup=1
+  // (the /signup route redirects here with that flag).
+  const [isSignUp, setIsSignUp] = useState(searchParams.get('signup') === '1');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
