@@ -40,6 +40,14 @@ const nextConfig: NextConfig = {
         destination: '/dream/oracle',
         permanent: true,
       },
+      {
+        // /budget was a TODO/planned route that never landed. The
+        // canonical budget surface is q17 expenses (BudgetWidget mounted
+        // there). Redirect any old links that still point at /budget.
+        source: '/budget',
+        destination: '/killerapp/workflows/expenses',
+        permanent: true,
+      },
     ];
   },
 };

@@ -177,7 +177,7 @@ export default function BudgetWidget({
           Budget hasn't been set up yet — add one to track progress.
         </p>
         <a
-          href={`/budget?project=${projectId}`}
+          href={`/killerapp/workflows/expenses?project=${projectId}`}
           style={{
             fontSize: '12px', color: '#378ADD',
             textDecoration: 'none', fontWeight: 600,
@@ -283,7 +283,7 @@ export default function BudgetWidget({
 
       {/* Link to full budget page */}
       <a
-        href={`/budget?project=${projectId}`}
+        href={`/killerapp/workflows/expenses?project=${projectId}`}
         style={{
           display: 'block', marginTop: 10, fontSize: '11px',
           color: '#378ADD', textDecoration: 'none', fontWeight: 600,

@@ -218,7 +218,7 @@ export default function GlobalBudgetWidget() {
   if (budgetExists === false) {
     return (
       <a
-        href={`/budget?project=${projectId}`}
+        href={`/killerapp/workflows/expenses?project=${projectId}`}
         style={STYLES.pillCta}
         aria-label="Set up budget for this project"
       >
@@ -275,7 +275,7 @@ export default function GlobalBudgetWidget() {
           <div style={STYLES.panelHeader}>
             <strong style={STYLES.panelTitle}>Budget — this project</strong>
             <a
-              href={`/budget?project=${projectId}`}
+              href={`/killerapp/workflows/expenses?project=${projectId}`}
               style={STYLES.panelFullLink}
             >
               Full view →
