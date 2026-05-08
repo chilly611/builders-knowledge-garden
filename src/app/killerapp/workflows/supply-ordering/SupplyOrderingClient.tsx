@@ -51,6 +51,7 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
       category: 'materials' | 'labor' | 'equipment' | 'overhead';
       confidence: number;
       notes?: string | null;
+      lineItems?: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
       saving: boolean;
       saved: boolean;
       error?: string | null;
@@ -254,6 +255,7 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
                   category: 'materials',
                   confidence: ex.confidence,
                   notes: ex.notes ?? null,
+                  lineItems: Array.isArray(ex.lineItems) ? ex.lineItems : undefined,
                   saving: false,
                   saved: false,
                 },
@@ -397,6 +399,39 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
                     />
                   </label>
                 </div>
+                {p.lineItems && p.lineItems.length > 0 && (
+                  <details
+                    style={{
+                      fontSize: 12,
+                      background: 'var(--trace, #F4F0E6)',
+                      border: '1px solid var(--faded-rule, #C9C3B3)',
+                      borderRadius: 6,
+                      padding: '6px 10px',
+                    }}
+                  >
+                    <summary
+                      style={{
+                        cursor: 'pointer',
+                        fontWeight: 500,
+                        color: 'var(--graphite)',
+                        userSelect: 'none',
+                      }}
+                    >
+                      Line items ({p.lineItems.length})
+                    </summary>
+                    <ul style={{ margin: '8px 0 0', paddingLeft: 20, color: 'var(--graphite)', opacity: 0.85 }}>
+                      {p.lineItems.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: 4, lineHeight: 1.4 }}>
+                          {item.description}
+                          {item.quantity != null && item.quantity > 0 && ` × ${item.quantity}`}
+                          {item.unitPrice != null && ` @ $${Number(item.unitPrice).toLocaleString()}`}
+                          {' — '}
+                          <strong>${Number(item.amount).toLocaleString()}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 {p.notes && (
                   <div style={{ fontSize: 11, color: 'var(--graphite)', opacity: 0.7 }}>
                     Note: {p.notes}
