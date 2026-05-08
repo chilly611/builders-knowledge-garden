@@ -229,7 +229,7 @@ export default function SupplyOrderingClient({ workflow, stages }: Props) {
           // and videos pass through (manual entry is fine for those).
           if (!spineProjectId) return;
           for (const a of uploaded) {
-            if (!a.mime_type?.startsWith?.('image/')) continue;
+            if (!a.mime_type?.startsWith?.('image/') && a.mime_type !== 'application/pdf') continue;
             const id = a.id;
             setExtractingIds((s) => new Set(s).add(id));
             (async () => {

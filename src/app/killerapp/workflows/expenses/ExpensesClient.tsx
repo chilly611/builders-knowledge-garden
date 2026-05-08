@@ -187,7 +187,7 @@ export default function ExpensesClient({ workflow, stages }: Props) {
           });
           if (!spineProjectId) return;
           for (const a of uploaded) {
-            if (!a.mime_type?.startsWith?.('image/')) continue;
+            if (!a.mime_type?.startsWith?.('image/') && a.mime_type !== 'application/pdf') continue;
             const id = a.id;
             setExtractingIds((s) => new Set(s).add(id));
             (async () => {

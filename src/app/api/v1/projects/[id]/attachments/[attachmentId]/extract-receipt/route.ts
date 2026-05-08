@@ -10,8 +10,9 @@
  * we never spend the user's money without an explicit click.
  *
  * Auth: same project + attachment ownership pattern as the parent
- * attachments route. Mime type must start with `image/` (videos and PDFs
- * are out of scope for v1).
+ * attachments route. Accepts images (JPEG/PNG/HEIC/WebP) AND PDFs;
+ * videos are out of scope. PDFs use Anthropic's document content type
+ * which handles multi-page documents natively.
  *
  * Cost: ~$0.008 per image at Haiku rates. Acceptable for the typical
  * 5-10 receipts per project demo.
@@ -102,9 +103,11 @@ export async function POST(
     if (attachment.user_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
-    if (!attachment.mime_type.startsWith('image/')) {
+    const isImage = attachment.mime_type.startsWith('image/');
+    const isPdf = attachment.mime_type === 'application/pdf';
+    if (!isImage && !isPdf) {
       return NextResponse.json(
-        { error: 'Receipt OCR is only supported for image attachments' },
+        { error: 'Receipt OCR is only supported for images and PDFs' },
         { status: 400 }
       );
     }
@@ -149,7 +152,9 @@ export async function POST(
           {
             role: 'user',
             content: [
-              { type: 'image', source: { type: 'url', url: signed.signedUrl } },
+              isPdf
+                ? { type: 'document', source: { type: 'url', url: signed.signedUrl } }
+                : { type: 'image', source: { type: 'url', url: signed.signedUrl } },
               { type: 'text', text: USER_PROMPT },
             ],
           },
