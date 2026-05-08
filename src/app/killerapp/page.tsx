@@ -107,11 +107,15 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q18: '/killerapp/workflows/outreach',
   q19: '/killerapp/workflows/compass-nav',
   // Wave 4 (2026-05-08) — SOON workflows promoted to LIVE
+  q1:  '/killerapp/workflows/bid-risk',
+  q20: '/killerapp/workflows/change-orders',
   q21: '/killerapp/workflows/draw-requests',
   q22: '/killerapp/workflows/lien-waivers',
+  q23: '/killerapp/workflows/payroll-check',
   q24: '/killerapp/workflows/final-walk-through',
   q25: '/killerapp/workflows/retainage-tracker',
   q26: '/killerapp/workflows/warranty-handoff',
+  q27: '/killerapp/workflows/project-review',
 };
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
