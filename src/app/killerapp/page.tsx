@@ -381,7 +381,7 @@ export default function KillerAppPage() {
       <footer className={styles.footer}>
         <div>Builder&rsquo;s Knowledge Garden · v0.1</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
+          <Link href="/killerapp/workflows/compass-nav" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
             View your project <TermTooltip term="Compass">Compass</TermTooltip> →
           </Link>
           <div style={{ fontSize: '9px', color: 'inherit', opacity: 0.6, maxWidth: 180, textAlign: 'right', lineHeight: 1.4 }}>
