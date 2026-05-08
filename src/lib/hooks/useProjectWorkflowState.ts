@@ -77,6 +77,20 @@ interface ProjectStateColumns {
   expenses_state?: Record<string, StepPayload>;
   outreach_state?: Record<string, StepPayload>;
   compass_nav_state?: Record<string, StepPayload>;
+  // Wave 4 (2026-05-08) — SOON workflows go-live (q1, q3, q20-q27).
+  // Migration: 20260508_soon_workflow_state_columns.sql (also applied
+  // remotely via apply_migration). Add a column here as you wire each
+  // SOON workflow.
+  bid_risk_state?: Record<string, StepPayload>;
+  client_lookup_state?: Record<string, StepPayload>;
+  change_orders_state?: Record<string, StepPayload>;
+  draw_requests_state?: Record<string, StepPayload>;
+  lien_waivers_state?: Record<string, StepPayload>;
+  payroll_check_state?: Record<string, StepPayload>;
+  walk_through_state?: Record<string, StepPayload>;
+  retainage_state?: Record<string, StepPayload>;
+  warranty_state?: Record<string, StepPayload>;
+  project_review_state?: Record<string, StepPayload>;
 }
 
 type StateColumn = keyof ProjectStateColumns;

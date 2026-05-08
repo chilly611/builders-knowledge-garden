@@ -89,6 +89,7 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q5: '/killerapp/workflows/code-compliance',
   // Week 3 — Size Up
   q2: '/killerapp/workflows/estimating',
+  q3: '/killerapp/workflows/client-lookup',
   // Week 3 — Plan
   q6: '/killerapp/workflows/job-sequencing',
   q7: '/killerapp/workflows/worker-count',
