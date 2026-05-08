@@ -723,3 +723,50 @@ working for?") as live workflows.**
 hero.**
   - Currently the hero is text + image. A 60-sec screen recording of
     the demo would dramatically improve cold-start conversion.
+
+---
+
+## ⏵ State of play — 2026-05-08 evening (404 audit + signup flow)
+
+After Tiers 1-4 shipped, ran a comprehensive href audit across the
+killer-app + dream + auth surfaces and found 4 broken routes lurking
+in the demo path:
+
+| Route | Was | Now |
+|---|---|---|
+| /compass | 404 (footer Link) | 308 → /killerapp/workflows/compass-nav |
+| /dream-oracle | 404 (2 dashboard Links) | 308 → /dream/oracle |
+| /budget | 404 (4 BudgetWidget links — mounted on q17) | 308 → /killerapp/workflows/expenses |
+| /signup | 404 | 307 → /login?signup=1 |
+
+All 4 verified working via curl on prod.
+
+### Commits this round
+
+  ac8fddc — /compass footer fix + 4 redirects
+  068ae31 — /dream-oracle dashboard fix + redirect
+  a3ace3a — /budget BudgetWidget links + redirect
+  3714e16 — /login auto-flips to sign-up mode when ?signup=1
+
+### Why this matters
+
+Every 404 in the demo path is a "wait, what just happened?" moment
+for a prospect. John clicks the footer Compass link, hits 404, and
+the cold-start magic evaporates. Catching all 4 BEFORE the demo
+matters more than any individual feature ship.
+
+### How they were found
+
+Comprehensive grep for `href="/[^"]*"` and `href={\`/...\`}` across
+src/app + src/components, then curl each unique URL on prod. Took
+~10 minutes; should be a standing ritual before any prospect-facing
+demo.
+
+### Next-session backlog (still standing)
+
+- EXIF parsing — needs `exifr` dep + `npm install`
+- ESLint backlog (mostly false-positives in demo path)
+- Wire q1 / q3 as live workflows (needs DB migration for state
+  columns + specialist prompts for q1)
+- Source-of-truth attachment_id linkage on budget rows
+- Run the demo with John + capture verbatim

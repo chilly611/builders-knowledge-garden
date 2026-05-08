@@ -3,6 +3,41 @@
 
 ---
 
+## Audit ALL static + dynamic hrefs before demos — broken links are silent killers
+
+**Date:** 2026-05-08
+**What happened:** After an aggressive feature-ship burn (receipt OCR, captions,
+trust fixes — 4 commits of substance), ran a comprehensive href audit "just to
+be safe." Found 4 separate 404 routes referenced from the demo path:
+  - `/compass` (footer Link, 1 reference, 404)
+  - `/dream-oracle` (dashboard Links, 2 references, 404 — note dashed name vs. actual `/dream/oracle`)
+  - `/budget` (BudgetWidget + GlobalBudgetWidget, 4 references, 404)
+  - `/signup` (404 with no fallback)
+
+Each one was a latent landmine in the demo. A prospect clicking a footer
+"View your project Compass →" Link and getting 404 = trust gone in 1 click.
+
+**Fix pattern that worked:**
+1. Grep for all hrefs: `grep -rhE 'href="/[^"]*"|href=\{`/[^`]*`\}' src/`
+2. Sort + uniq the unique URL targets
+3. Curl each on prod with `-o /dev/null -w "%{http_code}"` to find the 404s
+4. Two-layer fix for each: (a) update the source href to the canonical URL,
+   (b) add a 301/308 redirect in next.config.ts for any external bookmarks
+
+**Rule:** Before any prospect-facing demo, run the href audit ritual:
+```
+grep -rhE 'href="/[^"]*"' src/ --include="*.tsx" \
+  | grep -oE '/[a-z][a-z0-9/_-]*' | sort -u \
+  | while read p; do echo -n "$p: "; curl -s -o /dev/null -w "%{http_code}\n" "$PROD_URL$p"; done
+```
+
+This catches what targeted code review misses — `<Link href="/compass">`
+with a perfectly-typed string but a route that doesn't exist. The fix
+always lives in two places (source + redirect); shipping only one of
+the two leaves the other risk surface unfixed.
+
+---
+
 ## Session 2026-05-08 (Phase 3+4 receipt OCR fan-out)
 
 ### Anthropic vision API: `image` for images, `document` for PDFs
