@@ -166,8 +166,11 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
     }));
   }, [effectiveProjectId]);
 
-  // Hidden on landing route
-  if (pathname === '/killerapp') return null;
+  // W11 emergency-batch 2026-05-11: previously hidden on the picker route.
+  // Founder feedback: that was the very page where you most needed the
+  // journey context, budget, and time-machine surface — picker felt
+  // disconnected. Render everywhere; the cockpit handles the no-project
+  // case via effectiveProjectId fallback + 'not_started' state.
 
   const brass = '#B6873A';
   const trace = '#F4F0E6';

@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
+import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
+import { Suspense } from 'react';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
 import { ProjectCockpit } from '@/components/cockpit';
@@ -44,6 +46,15 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
       <NavigatorProvider initialCollapseState="expanded">
         <StageBackdrop stage={stageId} />
         <KillerAppNav />
+        {/* W11 emergency-batch 2026-05-11: AuthAndProjectIndicator was
+            previously only mounted in /killerapp/page.tsx, so the auth
+            pill disappeared the moment a user clicked into any workflow.
+            Lifted to the layout so it travels with every /killerapp/*
+            route. Suspense required: AuthAndProjectIndicator uses
+            useSearchParams which Next 16 requires under Suspense. */}
+        <Suspense fallback={null}>
+          <AuthAndProjectIndicator />
+        </Suspense>
         <ProjectCockpit />
         <div style={{ paddingTop: 48 }}>
           {children}

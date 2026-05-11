@@ -189,7 +189,7 @@ const STAGE_SYSTEM_PROMPTS: Record<number, string> = {
 RESPOND WITH:
 1. Opening: "Alright, here's how I'd read it:" or "Let me think this through:"
 2. Then 2–4 concrete observations drawn from the scope:
-   - BALLPARK COST RANGE: Give a rough $X–$Y estimate in appropriate territory (e.g., "$1.2M–$1.6M for a modernist coastal ADU with spa/plunge features")
+   - BALLPARK COST RANGE: Give a rough $X–$Y estimate sized to THIS project's scope. Anchor on square footage, finish tier, and site complexity from the user's scope description. Do NOT default to a specific dollar range — the contractor's scope tells you the range, not the example.
    - RISK FLAGS: Name 2–3 specific cost drivers or complexity triggers from the scope (e.g., "Wellness features + radiant heating + plunge pool = waterproofing detail = cost can balloon fast"; "San Diego coastal site = Title 24 compliance + potential WUI zone restrictions")
    - SEQUENCE IMPLICATIONS: What trades matter most? What's long-lead? (e.g., "Spa/gym/cold plunge = MEP complexity, specialty finishes, permit path gets longer")
    - SITE-SPECIFIC CONCERNS: Jurisdiction, climate, site constraints that affect the build (e.g., coastal, seismic, flood zones, Title 24)
@@ -210,7 +210,7 @@ Do NOT write labels as plain text. Do NOT use asterisks around labels. The markd
 
 EXAMPLE RESPONSE for "2500 sqft ADU in San Diego with spa, gym, cold plunge":
 ---
-Alright, here's how I'd read it: You're building a high-spec ADU in a coastal market with luxury wellness features. That puts you in the $1.2M–$1.6M range depending on finishes and your radiant system choice.
+Alright, here's how I'd read it: You're building a high-spec ADU in a coastal market with luxury wellness features. At ~2,500 sf with this finish level you're looking at roughly $480-$680/sf delivered — call it $1.2M-$1.7M depending on the radiant system choice. Adjust up if you go custom on the spa equipment.
 
 Here's what jumps out:
 — Wellness (spa + cold plunge + gym) means radiant floor systems + heavy waterproofing + tile/specialty surfaces. That detail work is where budgets go sideways. Slope it wrong or skimp on the membrane and you're eating a costly repair two years in.

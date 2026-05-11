@@ -38,7 +38,6 @@ import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
-import AuthAndProjectIndicator from './AuthAndProjectIndicator';
 import TermTooltip from '@/components/TermTooltip';
 import styles from './landing.module.css';
 
@@ -183,8 +182,18 @@ const STAGE_COLORS: Record<number, string> = {
   7: '#5E4B7C', // Reflect — duskPurple from STAGE_ACCENTS
 };
 
-export default function KillerAppPage() {
+export default async function KillerAppPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ project?: string | string[] }>;
+}) {
   const data = loadWorkflows();
+  const resolvedParams = (await searchParams) ?? {};
+  const projectIdRaw = resolvedParams.project;
+  const projectId = Array.isArray(projectIdRaw) ? projectIdRaw[0] : projectIdRaw;
+  const projectQuery = projectId
+    ? `?project=${encodeURIComponent(projectId)}`
+    : '';
   const stages = [...data.lifecycleStages].sort((a, b) => a.id - b.id);
   const byStage = new Map<number, WorkflowSummary[]>();
   for (const w of data.workflows) {
@@ -195,13 +204,6 @@ export default function KillerAppPage() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Auth + project-saved indicators in the top-right corner.
-          User feedback 2026-05-06 — visible trust signals so the user
-          always knows they're signed in and the project is saved. */}
-      <Suspense fallback={null}>
-        <AuthAndProjectIndicator />
-      </Suspense>
-
       {/* Hero with blueprint grid background */}
       <header className={styles.heroSection}>
         {/* Blueprint 32px grid background */}
@@ -367,7 +369,7 @@ export default function KillerAppPage() {
                     return (
                       <Link
                         key={wf.id}
-                        href={href}
+                        href={`${href}${projectQuery}`}
                         className={styles.workflowLink}
                         data-workflow-id={wf.id}
                       >
@@ -394,6 +396,18 @@ export default function KillerAppPage() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
           <Link href="/killerapp/workflows/compass-nav" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
             View your project <TermTooltip term="Compass">Compass</TermTooltip> →
+          </Link>
+          <Link
+            href="/dream"
+            style={{
+              textDecoration: 'none',
+              color: '#D85A30',
+              fontWeight: 600,
+              fontSize: 12,
+              letterSpacing: 0.2,
+            }}
+          >
+            Dream up what you want to build →
           </Link>
           <div style={{ fontSize: '9px', color: 'inherit', opacity: 0.6, maxWidth: 180, textAlign: 'right', lineHeight: 1.4 }}>
             Your one-page project map. Open it any time.

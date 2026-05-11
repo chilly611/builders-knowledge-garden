@@ -38,7 +38,12 @@ function readActiveProjectFromStorage(): string | null {
   try {
     const raw = window.localStorage.getItem(ACTIVE_PROJECT_KEY);
     if (!raw) return null;
-    if (!UUID_REGEX.test(raw)) return null;
+    // W11 emergency-batch 2026-05-11: also allow demo-seeded project ids
+    // (start with 'demo-'). Previously this rescue path required a strict
+    // UUID, so the demo seeder's 'demo-san-diego-adu' id was rejected,
+    // and clicking into a workflow from the demo project bounced the
+    // user home. Real users have real UUIDs and continue to work.
+    if (!UUID_REGEX.test(raw) && !raw.startsWith('demo-')) return null;
     return raw;
   } catch {
     return null;

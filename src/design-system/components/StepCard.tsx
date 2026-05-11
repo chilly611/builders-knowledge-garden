@@ -722,7 +722,6 @@ export default function StepCard({
         );
 
       case 'analysis_result':
-        const isAIEstimateStep = step.id === 's2-6';
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
             {step.promptId && analysisInput && (
@@ -750,94 +749,7 @@ export default function StepCard({
                 <label style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500] }}>
                   {step.analysisTitle}:
                 </label>
-                {isAIEstimateStep ? (
-                  // Peak moment: AI Estimate reveal with engraved-plate treatment
-                  <div
-                    className="bkg-fade-up"
-                    style={{
-                      padding: spacing[6],
-                      backgroundColor: colors.ink[50],
-                      borderRadius: radii.md,
-                      border: `1px solid ${colors.ink[100]}`,
-                    }}
-                  >
-                    {/* Brass small-caps header */}
-                    <div
-                      style={{
-                        fontSize: fontSizes.xs,
-                        fontWeight: fontWeights.semibold,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
-                        color: 'var(--brass)',
-                        marginBottom: spacing[4],
-                      }}
-                    >
-                      Estimate · Confidence
-                    </div>
-
-                    {/* HUGE monospace total */}
-                    <div
-                      style={{
-                        fontSize: '72px',
-                        fontFamily: 'var(--font-archivo), monospace',
-                        fontWeight: fontWeights.bold,
-                        color: 'var(--graphite)',
-                        marginBottom: spacing[4],
-                        lineHeight: 1,
-                      }}
-                    >
-                      $52k
-                    </div>
-
-                    {/* High confidence badge in Robin's Egg */}
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        padding: `${spacing[1]} ${spacing[2]}`,
-                        backgroundColor: 'var(--robin)',
-                        color: '#FFFFFF',
-                        fontSize: fontSizes.xs,
-                        fontWeight: fontWeights.semibold,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        borderRadius: radii.sm,
-                        marginBottom: spacing[4],
-                      }}
-                    >
-                      High Confidence
-                    </div>
-
-                    {/* Category breakdown typographic list */}
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: spacing[3],
-                        fontSize: fontSizes.sm,
-                        color: colors.ink[700],
-                      }}
-                    >
-                      <div>
-                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Framing</div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$8,500</div>
-                      </div>
-                      <div>
-                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Electrical</div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$5,400</div>
-                      </div>
-                      <div>
-                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Plumbing</div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$3,900</div>
-                      </div>
-                      <div>
-                        <div style={{ color: colors.ink[500], marginBottom: spacing[1] }}>Finishes</div>
-                        <div style={{ fontFamily: 'monospace', fontSize: '16px' }}>$28,400</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  renderAnalysis(step, analysisInput)
-                )}
+                {renderAnalysis(step, analysisInput)}
               </div>
             ) : null}
 
