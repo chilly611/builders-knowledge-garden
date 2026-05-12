@@ -27,6 +27,14 @@ This file is the canonical timeline of what was built, when, and why.
 - **"AI is also a user" is structural, not a feature flag.** Every MCP tool description carries human_label + pro_label + lane_relevance. Every agent write defaults to draft-only until contractor explicitly grants send-scope per account.
 - **Decision gate before Brief 1 ships:** (1) Chilly approves the five surfaces, (2) Chilly decides the constitution-extension question (Correction Loop as 8th primitive vs fold into Whisper + Time Machine), (3) Chilly decides Twilio per-account vs shared-pool for Brief 2, (4) Chilly decides legacy `/crm` redirect strategy.
 
+**Brief 1.1 + Brief 2 foundation (dogfooding-prep extension, post-ship):**
+- Voice + photo + manual capture all verified end-to-end on prod. Photo endpoint: 100x100 synthetic JPEG → Supabase Storage URL → Nominatim reverse-geocode resolved (27.9506, -82.4572) to "701 N Marion St, Tampa, FL 33602" → contact row with nested PostalAddress + bkg:geo.
+- Three rounds of prompt iteration on `contact-extract.production.md` (calibration rules, then few-shot with 3 examples, then negative-example with 4th). LLM still returns markdown-headed narratives + `confidence: 0`. Decision: stop iterating prompts, fix route-side (use `extracted.description` as narrative fallback + calibrate confidence from field-presence). Banked in Brief 1.1 backlog with concrete fix.
+- Found `specialist_runs` table missing from prod (W7.R migration never applied). All `_run_id: null` in capture responses. Banked.
+- Found cosmetic path-duplication in photo storage URLs (`crm-photos/crm-photos/...`). Banked.
+- Brief 2 foundation: applied `crm_messages` + `crm_voice_fingerprint` tables via MCP. Wrote `draft-reply.production.md` prompt with 3+1 examples, voice-fingerprint integration, 30s cool-down on complaints. Twilio decision still pending from Chilly.
+- All smoke-test rows cleaned from prod (`DELETE WHERE project_id LIKE 'smoke-test-%' OR project_id LIKE 'photo-smoke-test-%' OR project_id IN ('prompt-rewrite-test','deploy-verify-2026-05-12')`).
+
 **Brief 1 ship report (post-research):**
 - 13 source files pushed to main (commits `0db179cc` initial + `fa09e05a` JSX.Element fix). Vercel build green; live URL `https://builders.theknowledgegardens.com/killerapp/who-is-asking` returns HTTP 200.
 - New surface: voice (hold-to-talk) + photo (tap-to-capture) → `bkg_contact` JSON-LD record with `time_machine_handle`. Pro Toggle, journey events, MCP parity all wired.
