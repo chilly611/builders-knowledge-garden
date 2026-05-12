@@ -28,7 +28,7 @@ export default function VoiceCaptureFAB({
   projectId,
   onSuccess,
   onError,
-}: VoiceCaptureFABProps): JSX.Element {
+}: VoiceCaptureFABProps) {
   const { supported, listening, transcript, interimTranscript, start, stop, error, reset } =
     useSpeechRecognition();
   const [fabState, setFabState] = useState<FabState>('idle');
