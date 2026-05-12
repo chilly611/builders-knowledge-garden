@@ -669,6 +669,15 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 > - `_run_id` is null in capture responses — RSI instrumentation may not be configured for the `contact-extract` specialist (no entry in `specialist_runs` FK constraint? worth checking).
 > - First voice capture before the prompt-fix landed left a "Unknown" row in Postgres; cleaned up in smoke-test housekeeping.
 > - `contact-extract.v1.md` was the wrong filename — `loadSpecialistPrompt` looks for `.v2.md`, `.production.md`, or `.md`. Lesson appended.
+> - **Smoke-test cleanup verified:** all test rows scoped to `project_id IN ('smoke-test-2026-05-12','smoke-test-prompt-tune')` deleted from prod after testing. New test-data hygiene lesson appended.
+>
+> **Brief 1.1 backlog (queued for next session):**
+> - [ ] Prompt-tune `contact-extract.production.md` further: the model is still returning `bkg:confidence: 0` and collapsing the narrative paragraph to just a heading despite the calibration rules. May require few-shot examples with concrete confidence values in the `<json>` block, OR a stricter "EVERY <json> block MUST include `confidence` as a non-zero number at the top level" instruction with negative-example showing what NOT to do.
+> - [ ] Address parsing: model returns flat string `"3242 Bayshore Boulevard, Tampa, FL"` instead of nested `PostalAddress` schema.org object. Likely same prompt-tuning fix — make the example output match what we want and add a negative example.
+> - [ ] `_run_id` is null in capture responses — RSI instrumentation client may not have `NEXT_PUBLIC_SUPABASE_URL` available in route runtime, or the `specialist_id: 'contact-extract'` isn't in any FK constraint that's blocking. Worth a single `console.debug` line + Vercel log check.
+> - [ ] Photo capture not yet exercised on a real device. Test on a phone with EXIF GPS before John Bou demo.
+> - [ ] Route `/killerapp/who-is-asking` is sibling to `/workflows/`, not in `LIVE_WORKFLOWS`. Decide: add a "Today" card on the main picker, OR add an explicit CRM card pointing to `/who-is-asking`, OR leave deep-link-only until Brief 4 (Today landing) lands.
+> - [ ] Demo script written at `docs/demos/brief-1-who-is-asking-demo.md` — read before the John Bou meeting.
 **Plain-language route:** `/killerapp/who-is-asking` · **Pro label:** "Contacts / Leads"
 **The surface:** Two thumb-sized buttons (🎤 hold-to-talk, 📸 tap-to-photo) capture a new contact in <5 seconds. Voice memo → entity extraction → JSON-LD `bkg_contact` with name + address geocoded + intent + budget. Photo → EXIF/GPS match to existing contact within 200m or new-contact prompt. Zero typing required end-to-end.
 
