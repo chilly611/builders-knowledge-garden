@@ -660,7 +660,9 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 > Full spec lives at `docs/research/crm/stream-e-strategy.md` Section 7.
 > No build work begins until Chilly approves the five surfaces (see 2E decision gate above).
 
-### Brief 1 — "Who's asking?" voice & photo capture (M, ~1.5 weeks) — **STARTED 2026-05-12**
+### Brief 1 — "Who's asking?" voice & photo capture (M, ~1.5 weeks) — **STARTED 2026-05-12, BUILD RED**
+> Status 2026-05-12: 13 files pushed to main in commit `0db179cc`. Vercel build failed (live site unaffected — last green build still serving). Need Chilly to share the TypeScript error from the Vercel dashboard (https://vercel.com/chillyd-2693s-projects/app/8P1HLzPx1MVLkqrJm2DjRX5PZR7A) so the fix can be precise. Files affected: `supabase/migrations/20260512_crm_contacts.sql`, `src/lib/crm-spine.ts`, `docs/ai-prompts/contact-extract.v1.md`, `src/app/api/v1/crm/{capture,photo,route.ts}`, `src/app/killerapp/who-is-asking/{page,WhoIsAskingClient}.tsx`, `src/components/crm/{Voice,Photo}CaptureFAB.tsx`, `src/components/crm/ContactCard.tsx`, `src/lib/__tests__/crm-spine.test.ts`, `public/llms.txt`.
+> **Pre-build decisions still needed:** Supabase migration must be applied manually (`supabase db push` or via dashboard) before the route works against real data; until then envs are missing → routes return empty + log warnings. Storage bucket `crm-photos` is created in the migration (public, 10MB limit; v2 TODO: signed URLs).
 **Plain-language route:** `/killerapp/who-is-asking` · **Pro label:** "Contacts / Leads"
 **The surface:** Two thumb-sized buttons (🎤 hold-to-talk, 📸 tap-to-photo) capture a new contact in <5 seconds. Voice memo → entity extraction → JSON-LD `bkg_contact` with name + address geocoded + intent + budget. Photo → EXIF/GPS match to existing contact within 200m or new-contact prompt. Zero typing required end-to-end.
 
