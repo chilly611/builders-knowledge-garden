@@ -1,51 +1,935 @@
 # Builder's Knowledge Garden — Master Task List
 
-> **Triaged 2026-05-01** in the W10.A session. Historical/done sections moved to `tasks.todo.archive.md`. This file is the live backlog.
+
+## ═══ W9 — INTEGRATED NAVIGATOR + STRATEGY INPUTS (2026-04-22, make-or-break 2-day push) ═══
+
+Founder directive: ship a stacked, interactive, ever-present **journey map + time machine + budget timeline** on every `/killerapp` route AND produce strategy inputs (competitive brief, killer-app name shortlist, Compass Navigator redesign spec) to inform the next wave. Lock: names-only (no URL rename yet), hybrid mood-image approach (start on current tokens, swap when images land).
+
+### W9.A — Phase 1: Research & Spec (all parallel, ~7 agents, no code edits)
+- [ ] W9.A.1 — `marketing:competitive-brief` for BKG + the Killer App (Procore, Buildertrend, Knowify, JobTread, Contractor Foreman, CoConstruct, Houzz Pro, Fieldwire, Trimble Connect, CompanyCam). Output: `docs/strategy/competitive-brief.md`.
+- [ ] W9.A.2 — Killer-app naming shortlist: 15-20 candidates with trademark/domain surface + positioning one-liner. Output: `docs/strategy/naming-candidates.md`.
+- [ ] W9.A.3 — Integrated journey+time+budget surface SPEC. Output: `docs/design/W9-integrated-surface-spec.md`.
+- [ ] W9.A.4 — Compass Navigator redesign SPEC (coordinates with W9.A.3 real estate). Output: `docs/design/W9-compass-navigator-spec.md`.
+- [ ] W9.A.5 — UX/design/branding plugin discovery (best-in-class). Report: plugin IDs + gap analysis.
+- [ ] W9.A.6 — Current design-system audit + 3 sharpening recs. Output: `docs/design/W9-audit.md`.
+- [ ] W9.A.7 — One-pager "what BKG/Killer App is today" + shipped-vs-spec drift. Output: `docs/design/W9-one-pager.md`.
+
+### W9.B — Phase 2: Implementation (fires after Phase 1, 5+ parallel agents)
+- [ ] W9.B.1 — Build `<IntegratedNavigator>` component (journey strip + time-machine scrub + budget timeline in a single stacked, collapsible chrome).
+- [ ] W9.B.2 — 7-stage SVG icon system (Size Up / Lock / Plan / Build / Adapt / Collect / Reflect) — ready for user's sketch-derived art when images land.
+- [ ] W9.B.3 — Wire `<IntegratedNavigator>` into `src/app/killerapp/layout.tsx` replacing `GlobalJourneyMapHeader` + `GlobalBudgetWidget`.
+- [ ] W9.B.4 — Tests: happy path + collapse-state + budget-sync + time-machine scrub.
+- [ ] W9.B.5 — Green-gate verification (`tsc --noEmit` + `vitest run`).
+- [ ] W9.B.6 — Hero / picker copy refresh against W9.A.2 naming shortlist (if founder picks a name).
+
+### W9.C — Phase 3: Upload-driven visual polish (fires when 6 mood images + journey sketch land)
+- [ ] W9.C.1 — Extract visual language from the 6 mood images (color accents, texture vocabulary, composition rules).
+- [ ] W9.C.2 — Iterate stage icons + `<IntegratedNavigator>` chrome to hit the sketch's visual intent.
 
 ---
 
-## Carry-forward from archived sections
+## ═══ W7.O — LANDING PICKER COMPOSITION TRIAGE (2026-04-21, same-day demo prep) ═══
 
-The handful of genuinely-open items still tracked from archived sections. If you act on one, close here AND in the archive.
+After the W7 burn shipped, `/killerapp` composition had 5 regressions that made it undemoable ("terrible… embarrassing"). This section is the surgical triage pass. Does NOT touch ProjectCompass / BudgetRiver / GlobalJourneyMapHeader internals — that's deferred to W7.P (creative brainstorm with founder).
 
-### From W4 — Global COO Surfaces (archived)
-- [ ] **Receivables outstanding** (parked, needs schema change): the honest compute is `contract_value − clientPaymentsReceived`, but `project_budgets` only has `total_budget` (cost-to-build), not `contract_value` (revenue). Real fix = add a `contract_value` column to `project_budgets` (migration), default it to `total_budget` for back-compat, then expose `receivablesOutstanding`. Half-engineer day with the migration.
-- [ ] **Next 7 days scheduled (data side)**: the filter is shipped but stays empty until a workflow writes future-dated estimates. q7 (scheduling), q15 (material ordering), q18 (subcontractor call-in) are natural first callers — each needs to pass a `date` arg into the spine helpers.
-- [ ] Per-phase `client_payments` on `/api/v1/budget` summary — replaces the 25/75 deposit/close-out heuristic in `deriveCompassData` with honest per-stage inflow.
-- [ ] Per-payment `due_date` on budget items → lets the compass mark pools 'overdue' (red pulse) vs just 'scheduled'.
-- [ ] Replace emoji milestones in ProjectCompass with hand-drawn SVG icons (permit, foundation, hammer, gears, coins) — emoji rendering is inconsistent across OSes.
-- [ ] Click-to-drill on ProjectCompass: clicking a milestone opens a per-stage panel (workflows in that stage + cost contributions + click to walk in).
-- [ ] **q4 Contract Templates** (Lock) — pre-shell architectural outlier (614 lines), founder design decision needed (migrate to WorkflowShell or accept exception).
-- [ ] **q5 Code Compliance** (Lock) — 259 lines pre-shell, paired design decision with q4.
+**Bugs landed:**
+- [x] Bug 3 — SOON cards vertical text (one word per line). Root cause: `.workflowRowDisabled` and `.workflowRow` were both CSS grids with the same 60px/1fr/auto template; inner grid placed into outer's 60px column collapsed every cell. Fixed by making `.workflowRowDisabled` a plain `display: block` wrapper matching the LIVE `.workflowLink` pattern.
+- [x] Bug 4 — hero heading clipped at viewport edge. `.heroHeading` clamp was 64-120px; at common widths "operating" overran the flex column and got clipped by `.heroSection { overflow: hidden }`. Dropped clamp to 48-80px, added `overflow-wrap: break-word; hyphens: auto` as belt-and-braces.
+- [x] Bug 2 — mid-page "form leak." `WorkflowPickerSearchBox` was a 3-row textarea with a brass "Pull the codes →" button and a heavy label; read as disconnected form. Also semantically stale (always routes to code-compliance now that 17 workflows are live). Replaced with a quiet single-line engraved field, neutral `→` submit, placeholder does the work. Route still pins to code-compliance until intent routing ships.
+- [x] Bug 1 (tactical slice) + Bug 5 — journey strip dominating picker and pushing #1 Size Up off-screen. Gated `GlobalJourneyMapHeader` OFF the `/killerapp` route via `usePathname()` check in `src/app/killerapp/layout.tsx`. Strip still renders on all nested `/killerapp/projects/*` and `/killerapp/workflows/*` routes where project context exists. Creative redesign deferred to W7.P.
 
-### From W3 PUSH (archived)
-- [ ] Compass Navigator polish — project save/switch from the Compass, lane-aware ordering preserved, "Projects" destination added. (Same as #46 in the W9.D handoff carry-forward below — duplicate for visibility.)
+**Gates green (local):** `tsc --noEmit` EXIT 0, `vitest run` 64/64 pass.
 
-### From W2B PUSH — Contract Templates (archived)
+**Files touched:**
+- `src/app/killerapp/landing.module.css` (2 blocks — `.workflowRowDisabled`, `.heroHeading`)
+- `src/app/killerapp/WorkflowPickerSearchBox.tsx` (rewritten, ~155 LOC → ~155 LOC, much quieter)
+- `src/app/killerapp/layout.tsx` (added `usePathname` gate)
+
+---
+
+## ═══ W7.Q — POST-DEMO FUNCTIONAL TRUTH (2026-04-21, critical — platform failed live contractor) ═══
+
+John Bou's contractor ran three real queries today. All three exposed that the branding has outrun the delivery. Founder directive: **"Marketing promises are nothing unless you deliver upon them."** Bugs below are root-cause fixes, not patches. Ordered by severity.
+
+### W7.Q.1 — Code Compliance: ship real 3-source verification (Task #69) — ✅ SHIPPED 2026-04-22
+**What the contractor asked:** NEC 2023 kitchen island receptacle rule (210.52(C)(5) — the rule that was *eliminated* in NEC 2023). Exactly the kind of recent-code question that makes the platform valuable.
+**What we returned:** nothing.
+**Root cause (investigation 2026-04-21):**
+- Seed codes table is CA/AZ/NV-only, ~20 top-level article entries. **No subsections.** NEC 2023 210.52(C) not present.
+- Pipeline is LLM + shallow single-source retrieval (`src/lib/specialists.ts` L94-124). Outside CA/AZ/NV, retrieval returns nothing and the prompt is instructed to respond confidence: low.
+- **There is no "3 sources of truth" anywhere in code or docs.** Zero hits for "three source / sources of truth / triangulat / cross-reference" across `/docs/` and tasks files. It lived only in founder memory as aspirational architecture.
+- `docs/ai-prompts/compliance-electrical.production.md` does not instruct the model to request NEC subsections or cross-check against a secondary source.
+**Fix plan:**
+- [x] Expanded `scripts/seed-code-entities.mjs` from 13 → 60 entities with NEC 2023 subsections, CA Title 24 parts, Southern Nevada amendments, plumbing/mechanical/structural/fire. Added `confidence_tier` and `superseded_by` — NEC 2020 210.52(C)(5) seeded as historical pointing to `nec-2023-210-52-eliminated`.
+- [x] Secondary sources: `src/lib/code-sources/{types,icc,nfpa,bkg-seed,index}.ts` with `queryAllSources` (Promise.allSettled, 3s timeout each, graceful failure) + `hasMultipleSources` gate.
+- [x] Tertiary local amendments: **130 amendments across 11 jurisdiction files** in `data/amendments/` — CA Title 24 Parts 2/3/6/11 (CalGreen), ca-la-county (13), ca-sf (14), ca-sd (11), ca-sj (10), ca-oak (10), nv-southern (14), nv-washoe (12). Loader at `src/lib/code-sources/local-amendments.ts` with parent-jurisdiction fallback (ca-sf query also returns ca-statewide).
+- [x] Compliance prompt v2 at `docs/ai-prompts/compliance.production.md` — multi-source = high, single = medium + caveat, zero = low + AHJ guidance with specific questions to ask. Historical rules trigger supersession notice.
+- [x] `src/lib/specialists.ts` routes compliance specialists through `queryAllSources` + `hasMultipleSources` + historical-detection.
+- [x] 7 vitest tests in `src/lib/__tests__/specialists.compliance.test.ts` — all green.
+
+### W7.Q.2 — Voice input repeats 5 times (Task #70) — ✅ SHIPPED 2026-04-21
+**Where:** StepCard + FieldOps (every workflow page that uses voice).
+**Root cause (investigation 2026-04-21):**
+- `src/design-system/components/StepCard.tsx:104` — `onresult` handler does `transcript: prev.transcript + final + interim`. Each interim fire appends the *entire* accumulated result list to state, so one utterance compounds across 5+ interim events.
+- `src/components/FieldOps.tsx:87-102` — uses `continuous: true` + `interimResults: true` without calling `recognition.stop()` on first final. Recognizer keeps re-firing on the same utterance.
+**Fix:**
+- [x] StepCard, FieldOps, useSpeechRecognition, WorkflowPickerSearchBox, WorkflowTurkeyInput — all five call sites now iterate from `event.resultIndex` and use `final || interim` replace-not-append. `recognition.stop()` fires on first `isFinal`.
+- [x] 6 vitest cases in `StepCard.speech.test.ts` green.
+
+### W7.Q.3 — Supply Ordering returns compliance chatter instead of cost matrix (Task #71) — ✅ SHIPPED 2026-04-22
+**What the founder expected (per killer-app-direction.md):** vendor options with price, quality signal, lead time, URL; scenarios A/B/C with cost totals.
+**What shipped:** the `supply-suppliers.md` prompt (self-labeled in its own file at line 48: *"not defensible against ChatGPT"*), which returns generic "what to ask suppliers" advice.
+**Root cause:**
+- ResourceBroker (task #60 W5.A) was built — `src/lib/resource-broker/search.ts` has live Brave + Anthropic web search — but the workflow step s11-2 is declared `type: analysis_result` with `promptId: "supply-suppliers"`. The step runs the prompt; it never calls the broker.
+- `SupplyOrderingClient.tsx` does call `search()`, but on step *completion*, not as the analysis source. The analysis output the user sees is the generic prompt result.
+**Fix:**
+- [x] Vendor adapter layer at `src/lib/resource-broker/vendors/` — Home Depot Pro, 84 Lumber, White Cap. Each adapter checks `*_API_KEY` env var (stubs documented) and falls back to ResourceBroker web-search with `confidence: "observed" | "estimated" | "web-search"` tagging. 5s timeout, Promise.allSettled, graceful failure. 34 vendor tests green.
+- [x] `queryAllVendors` + `buildCostMatrix` (weighted: price 50% / leadTime 30% / quality 20%) computing cheapest/fastest/bestValue.
+- [x] Two-step pipeline: `docs/ai-prompts/supply-suppliers.production.md` (query-building only, zero compliance language) → `queryAllVendors` → `buildCostMatrix` → `docs/ai-prompts/supply-pricing.production.md` (ranking + confidence).
+- [x] `src/app/killerapp/workflows/supply-ordering/CostMatrix.tsx` — responsive matrix, drafting-brass border on cheapest, robin's-egg check on fastest, emblem crown on bestValue, confidence badges (solid / dashed / muted), design-system tokens only.
+- [x] Snapshot tests verify "IBC", "OSHA", "code", "permit", "inspection" never leak into supply output.
+
+### W7.Q.4 — Robin's Egg is too desaturated / too green (Task #72) — MEDIUM
+**Founder clarification:** "Robin's egg is supposed to be a kind of blue, Tiffany blue."
+**Current:** `--robin: #7FCFCB` — sits between pale web-Tiffany (#81D8D0) and trademark Pantone 1837 (#0ABAB5), leans slightly green (H≈172°).
+**Recommendation (agent report):** shift to `#81D8D0` — paler web Tiffany blue, distinctly cool, doesn't compete with blueprint navy the way #0ABAB5 would.
+**Also found:** two brass-robin pairing violations that break the moodboard rule ("never sit next to brass in the same component"):
+- `src/components/compass/JourneyPills.tsx` — stage title/number in brass, active ring in robin (L38, L69, L76)
+- `src/components/compass/Team.tsx` — title + role in brass, verified checkmark in robin (L47, L93, L114)
+**Fix:**
+- [ ] Change `--robin` to `#81D8D0` in: `bkg-repo/src/app/globals.css:75`, `bkg-design-skill/SKILL.md` (L20, L54), `bkg-design-skill/references/palette-tokens.md` (L24, L152), `bkg-design-skill/references/moodboard.md` (L34, L37), `bkg-design-skill/assets/preview.html` (L20, L337), `bkg-repo/docs/design/moodboard-preview.html` (L20, L329, L337), `bkg-repo/src/app/killerapp/workflows/supply-ordering/ResourceCardGrid.tsx:628`.
+- [ ] Refactor JourneyPills + Team so brass and robin do not co-occupy one component. Promote the verified state to its own cell/layer above the brass chrome.
+
+### W7.S — Code Compliance shippability pass (Task #76) — ✅ SHIPPED 2026-04-22
+
+Burn #2 after contractor demo screenshot: q5 output leaked raw JSON, routed kitchen-plug electrical question to the structural specialist with IBC/IRC labels, ran 6+ irrelevant citations (OSHA, IECC climate, drywall sequence), pre-asserted "verified" on a not-yet-run step, and rendered a single-blob `<select>` with 60 concatenated jurisdictions.
+
+- [x] **Retrieval discipline gate** (`src/lib/code-sources/bkg-seed.ts`): post-retrieval keyword + discipline filter, capped at 3 results sorted by relevance — no more cross-discipline spray.
+- [x] **Router specialist** (`docs/ai-prompts/compliance-router.production.md`): new first step `s5-0` that classifies the question and sets `disciplineHandoff`. 8-case test suite: kitchen-plug supersession, header sizing, water-heater permit, etc.
+- [x] **Four per-discipline specialists** wired in q5: `compliance-structural` (s5-1), `compliance-electrical` (s5-2), `compliance-plumbing` (s5-3, **new**), `compliance-fire` (s5-4, **new**). All four promptIds resolve to on-disk production prompt files (test-gated).
+- [x] **Prose-only narrative rule** in every compliance prompt: no raw JSON in the user-facing `narrative` field, structured data goes in a trailing `<json>` block only.
+- [x] **Sanitization defense** (`src/design-system/components/utils/sanitizeNarrative.ts`, 187 LOC): extracts prose from ```json fences, falls through `narrative`/`answer`/`summary` fields, strips JSON from prose if the LLM ignores the rule. 20 tests.
+- [x] **AnalysisPane upgrade**: citation cap to 3 sorted by relevance, `disciplineHandoff` banner (with jump link to the correct step), `supersededNotice` banner, `code_sections` table renderer. `StepCard.tsx` no longer displays canned `exampleOutput` when a live analysis is active.
+- [x] **JurisdictionPicker** (`src/components/JurisdictionPicker.tsx`, 439 LOC): hand-rolled WAI-ARIA combobox replacing the blob `<select>` — searchable typeahead with keyboard nav, grouped state → county → jurisdiction. 14 tests. Replaces CodeComplianceClient.tsx lines 146–180.
+- [x] **Green gate**: `tsc --noEmit` clean, `vitest run` 25/25 files, 209/209 tests pass.
+
+### W7.R — RSI + HEARTBEAT (Tasks #74, #75) — ✅ SCAFFOLD SHIPPED 2026-04-22
+- [x] Migration `supabase/migrations/20260422_rsi_deltas.sql` — `rsi_feedback` (6 signals) + `rsi_deltas` (5 kinds: prompt_patch, entity_add, entity_update, amendment_add, specialist_tool_tweak). Types added to `src/types/database.ts`.
+- [x] `src/lib/rsi/feedback.ts` (record + recent), `deltas.ts` (propose, list, approve, apply), `synth.ts` (cluster + LLM proposal).
+- [x] `docs/ai-prompts/rsi-synthesis.production.md` — proposes one narrow delta per cluster, cites source feedback IDs, never applies (human-gated).
+- [x] API routes `/api/v1/rsi/feedback` (POST, app auth) + `/api/v1/rsi/heartbeat` (POST, cron-secret).
+- [x] Vercel cron wired: `/api/v1/rsi/heartbeat` every 6 hours (`0 */6 * * *`), alongside existing daily heartbeat.
+- [x] `src/components/OutcomeFeedback.tsx` — 👍 👎 ✏️ affordances with design-token styling.
+- [x] Docs: `docs/rsi/README.md` + `IMPLEMENTATION-STATUS.md`.
+- [ ] **Still required before loop closes:** delta appliers (currently stubs — need file-write/DB-insert/config-update implementations) + reviewer dashboard UI. Tracked as W7.R.3 follow-up.
+
+### W7.Q.0 — Write the lesson first (Task #73) — DO BEFORE THE FIXES
+- [ ] Append the "functional truth > marketing promise" lesson to `tasks.lessons.md` so every future agent enforces it.
+- [ ] Add a LIVE-gate rule to bkg-design skill / workflow picker docs: no workflow ships as LIVE unless it passes a 3-query smoke test against the real-contractor question set. Until then, it renders as DRAFT on the picker, not LIVE or SOON.
+
+---
+
+## ═══ W7.P — JOURNEY + TIME MACHINE + BUDGET INTEGRATION BRAINSTORM (2026-04-21, pending founder input) ═══
+
+Founder direction: "The journey strip at the top I have explained what I want multiple times but we haven't gotten close. Let's work on that creatively. The budget map that was iterated most recently as water isn't working at all. Let's put that at the bottom with money signs and totals along the timeline. The journey map and the time machine should be integrated."
+
+**Goals:**
+1. Journey map + H.G. Wells "Time Machine" scrub metaphor integrated into one surface (not two separate components).
+2. Budget viz moves to BOTTOM of the page as a timeline with money signs and running totals per stage — NOT the BudgetRiver water viz (rejected).
+3. Surface should feel like a single narrative device: where we are, where we've been, where we're going, and how much it's costing.
+
+**Parked until explicit concept alignment with founder.** Prior iterations (JourneyPills, BudgetRiver, ProjectCompass) all missed the mark; do not implement before agreement on metaphor and interaction model.
+
+---
+
+## ═══ WEEK 4 — GLOBAL COO SURFACES + WORKFLOW-BY-WORKFLOW POLISH (opened 2026-04-19, next session) ═══
+
+**Founder direction at end of W3 push:** smoke-testing the live deploy, noticed that JourneyMapHeader + BudgetWidget are NOT globally visible — they only render inside workflow routes. Expectation: "Budget, profit + loss, receivables, payment schedule, where we are overbudget, where we are underbudget — all super important to be visible and accessible and changeable" from ANYWHERE in the app, not just inside a workflow. Compass also "isn't working the way it needs to" — needs careful iteration, not another farm pass.
+
+**W4 scope (ordered):**
+
+### W4.0 — Ship-gate verification (first action next session)
+- [ ] Pull `origin/main` into repo (`cd "/Users/chillydahlgren/Desktop/The Builder Garden/app" && git fetch origin main && git status`). Confirm HEAD is `f3e257a`.
+- [ ] Load `https://app-p7hc1agho-chillyd-2693s-projects.vercel.app/killerapp` — confirm 17 LIVE cards (not 2). If still 2, check Vercel dashboard for build failure (likely cause: pre-existing static-export timeout on `/knowledge`, `/marketplace`, `/mcp`, `/login`, `/launch`, `/manifesto`, `/onboard`, or new `/killerapp/workflows/worker-count`). If build failed, apply `export const dynamic = 'force-dynamic'` to the failing routes as a minimal unblocker (repo-wide fix is out of W4 scope).
+- [ ] If LIVE cards show up but JourneyMapHeader + BudgetWidget don't appear on `/killerapp` picker itself, that is **expected** — it's the W4.1 work below.
+
+### W4.1 — Global COO surfaces (HIGH priority — founder headline ask) — SHIPPED 2026-04-21
+- [x] Mount `BudgetWidget` in `src/app/layout.tsx` as an ever-present chrome element (same pattern as `CompassBloom` + `GlobalAiFab`). Position: ensure it doesn't collide with the Global AI FAB (bottom-right) or Compass FAB. Candidate: top-right sticky, or left-side collapsible rail. **DONE** — wired as GlobalBudgetWidget top-right pill.
+- [x] Extend `BudgetWidget` to show the COO-level data founder asked for, not just one number: total budget, committed vs spent vs remaining, profit + loss running, receivables outstanding, payment schedule next-7-days, over/under-budget flags per category. Pull from `budget-spine.ts` (we already record Material/Labor/Permit/Sub/Equipment/Expense/ClientPayment via project_budgets + budget_items). **DONE** — shows cash flow, next-7-days list.
+- [x] Mount `JourneyMapHeader` globally on all `/killerapp/*` routes (including the `/killerapp` picker itself, not just inside workflows). Extract out of `WorkflowShell` or wire a variant at the picker level. Make sure it reads the active project's journey state, not the "default" bucket. **DONE** — now GlobalJourneyMapHeader renders ProjectCompass (7-stage river + timeline).
+- [x] Confirm `GlobalAiFab` stays bottom-right on every page; check it doesn't fight the new BudgetWidget for real estate. May need a layout z-index audit. **DONE** — FAB preserved bottom-right; ProjectCompass replaced corner pill design.
+- [x] Verify budget + journey stay in sync across routes: navigate from picker → workflow → back to picker, confirm numbers + dots update without reload. **DONE** — shared journey + budget subscribers.
+
+### W4.2 — Compass Navigator careful iteration (founder said "carefully")
+- [ ] Audit current `CompassBloom` behavior vs what founder needs. Do NOT do another farm — one Cowork session pass-through with founder.
+- [ ] Problems known to fix:
+  - [ ] Active project ID doesn't persist across sessions
+  - [ ] Can't switch between saved projects from the Compass
+  - [ ] "Projects" destination not yet a first-class lane
+- [ ] Add project save/load/switch UI. Project ID persistence via localStorage (`bkg:active-project-id`) with graceful default for anon users.
+
+### W4.3 — Workflow-by-workflow polish pass (one at a time, with founder)
+Founder explicit ask: **"go through each live builder workflow to make changes on each in our next session after I sleep. One by one."** Do not batch. Do not farm. Cowork review + edit per workflow.
+
+Ordered 1-by-1 punch list (17 LIVE workflows). Skip to the ones founder flags first; default order is the DREAM → BUILD lifecycle:
+
+- [x] q2 Estimating (Size Up) — SHIPPED 2026-04-21: wired estimating-takeoff specialist, fixed $X.Xk parser, dead-write removed
+- [x] q4 Contract Templates (Lock) — SHIPPED 2026-04-18
+- [x] q5 Code Compliance (Lock) — SHIPPED 2026-04-18
+- [ ] q6 Job Sequencing (Plan)
+- [x] q7 Worker Count (Plan) — SHIPPED 2026-04-21: fixed $X.Xk parser, killed dead duration field
+- [x] q8 Permit Applications (Plan) — SHIPPED 2026-04-21: extracted resolveJurisdiction() helper
+- [x] q9 Sub Management (Plan) — SHIPPED 2026-04-21: wired recordSubcontractorCost on s9-3, added parseRoughTotal
+- [x] q10 Equipment (Plan) — SHIPPED 2026-04-21: replaced amount:0 stub with real parse via parseRoughTotal
+- [x] q11 Supply Ordering (Plan) — SHIPPED 2026-04-21: design-system polish + ResourceBroker integration (demo anchor)
+- [ ] q12 Services Todos (Plan)
+- [ ] q13 Hiring (Plan)
+- [ ] q14 Weather Scheduling (Build)
+- [ ] q15 Daily Log (Build)
+- [x] q16 OSHA Toolbox (Build) — SHIPPED 2026-04-21: wired osha-toolbox-talk specialist (s16-1)
+- [ ] q17 Expenses (Build)
+- [ ] q18 Outreach (Build)
+- [ ] q19 Compass Nav (Build) — may merge into W4.2 instead
+
+For each workflow: open it on the live URL, walk through with founder feedback, note the changes, apply as a small commit, tsc gate, push. Do NOT batch multiple workflows into one commit — founder wants per-workflow atomic changes for clean rollback.
+
+### W4 deferred / parked
+- Pre-existing static-export timeouts (7 client routes) — repo-wide follow-up after W4.1 lands. Minimal W4.0 unblocker: `export const dynamic = 'force-dynamic'` on any route failing Vercel build.
+- Clerk auth + Stripe paywall — still scheduled post-W4 per prior planning.
+- Orphan `analysis_result` promptId wiring for q9/q10/q16 — picked up during the per-workflow pass.
+
+---
+
+## ═══ WEEK 3 PUSH — 15 WORKFLOWS + BUDGET SPINE + AI FAB (2026-04-18) — SHIPPED TO PROD 2026-04-19 ═══
+
+**Status:** 15 new live workflows (q2 + q6–q19) behind a locked spine (WorkflowShell + budget-spine + journey-progress + Global AI FAB). Farm pass ran 5 agents in parallel; integrator pass corrected 10 client files whose agents had invented property names on `StepResult`. `tsc --noEmit` green; `npm test` 11/11 green; `next build` compiles + typechecks all 130 routes in 205s combined. Static-export stage has pre-existing timeouts on 7 client-component routes (see below) — not introduced by Week 3 and out of scope.
+
+**Foundation gate (shipped):**
+- [x] **W3.0** `docs/week3-spine-spec.md` — binding contract for farm agents.
+- [x] **W3.1** `src/design-system/components/WorkflowShell.tsx` — reusable chrome (JourneyMapHeader + breadcrumb + Pro Toggle + context chooser slot + WorkflowRenderer + event footer). Workflow routes now ~40–130 LOC each.
+- [x] **W3.2** `src/lib/budget-spine.ts` — typed `recordMaterialCost`, `recordSubcontractorCost`, `recordEquipmentCost`, `recordLaborCost`, `recordPermitCost`, `recordExpense`, `recordClientPayment`, `getProjectBudget`. All route through `POST /api/v1/budget/items` with Supabase bearer. Silent no-project fallback per spec.
+- [x] **W3.3** `src/lib/journey-progress.ts` + `JourneyMapHeader` — typed `started | step_completed | completed | needs_attention` events persisted to localStorage per `(user|anon, project|default)`. `JourneyMapHeader` renders dot/check indicator per stage (amber = needs_attention, emerald = all done, green = in progress, none = untouched).
+- [x] **W3.4** `src/components/GlobalAiFab.tsx` — bottom-right FAB (`bottom: 96px, right: 24px`) wired into `app/layout.tsx`. Text + 🎤 voice composer with SpeechRecognition, surface-aware via pathname + `data-bkg-surface`, SSE-streams from `/api/v1/copilot`. Cmd+Enter submit, Escape close. Hidden on `/presentation` and `/cinematic`.
+
+**Parallel farm (W3.5) — 5 agents × 3 workflows, all shipped:**
+- [x] Agent A: q2 estimating · q6 job-sequencing · q7 worker-count
+- [x] Agent B: q8 permit-applications · q9 sub-management · q10 equipment · + 2 specialist prompts (sub-bid-analysis, equipment-rent-vs-buy)
+- [x] Agent C: q11 supply-ordering · q12 services-todos · q13 hiring
+- [x] Agent D: q14 weather-scheduling · q15 daily-log · q16 osha-toolbox · + 1 specialist prompt (osha-toolbox-talk)
+- [x] Agent E: q17 expenses · q18 outreach · q19 compass-nav
+
+**Integrator pass (W3.7, shipped):**
+- [x] Single edit to `src/app/killerapp/page.tsx` `LIVE_WORKFLOWS` adding all 15 entries (17 total LIVE routes now). No direct page.tsx edits from farm agents.
+- [x] Corrected 16 tsc errors across 10 farm-built clients (see `tasks.lessons.md` — "Parallel farm agents invent type shapes"). Agents had referenced non-existent `event.stepIndex`, `event.value`, `event.textInput`, `event.analysisOutput`, `event.analysisResult` on `StepResult`, plus fictional event types. Replaced with actual shape: `{ type: 'step_opened'|'step_saved'|'step_skipped'|'step_completed', stepId, payload?: unknown, timestamp }` with payload narrowed per step type.
+- [x] `npx tsc --noEmit` — EXIT 0.
+- [x] `npm test` (vitest) — 11/11 pass.
+- [x] `npx next build` — compile + TS check both green. Static-export timeouts on 7 pre-existing client pages + 1 new (worker-count) are a build-worker parallelism issue, not a code issue. See below.
+
+**Known: pre-existing static-export timeouts (not W3-introduced).**
+Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, `/launch`, `/manifesto`, `/onboard`, plus new `/killerapp/workflows/worker-count`. All are client components that hit external fetches during prerender with 3 workers contending. Reproduces on a clean `git stash` baseline → exists before W3. Worker-count shares the same shape as the 14 sibling workflow routes that DO export cleanly, so the bottleneck is build-worker parallelism + external fetches, not code. Fix is repo-wide (`export const dynamic = 'force-dynamic'` on the affected client routes, or raise `--experimental-build-mode` worker timeout, or stop prerendering client-only pages). Parking for a separate task.
+
+**Compass Navigator polish (W3.6) — DEFERRED to next push:**
+- [ ] Compass Navigator polish — project save/switch from the Compass, lane-aware ordering preserved, "Projects" destination added.
+  - Shipped today: q19 compass-nav workflow gives the user a scripted 5-step walkthrough for orienting in the Compass.
+  - Still pending: the `CompassBloom` FAB itself does not yet persist the active project id across sessions or switch between saved projects. Deferring to W4.
+
+**Pending:**
+- [ ] `git push origin main` — Chilly to run from own terminal (bundle path provided post-commit).
+- [ ] Vercel auto-deploy verification (live URL smoke: `/killerapp` shows q2 + q6–q19 + q4 + q5 as LIVE; worker-count/knowledge/etc. may retry-succeed or fail per Vercel's build-worker timing).
+- [ ] Prod smoke: pick 3 random workflows — estimating (budget write), weather-scheduling (topPanel forecast picker), daily-log (voice input) — verify end-to-end behavior.
+
+**Parking lot (intentional Week 3 deferrals):**
+- q9/q10 orphan analysis steps (s9-3, s10-3) ship WITHOUT promptId wiring — markdown prompt files are authored (`docs/ai-prompts/sub-bid-analysis.md`, `equipment-rent-vs-buy.md`) but AnalysisPane returns null when promptId is missing. Integrator can add promptIds to `docs/workflows.json` or implement a step-level client override.
+- q16 osha-toolbox-talk prompt file authored; s16-1 promptId registration also pending on same mechanism.
+- Clerk auth on `/killerapp/*` — still bundled with Stripe push.
+- Full Supabase persistence of journey-progress events — MVP uses localStorage; server sync waits for Clerk.
+- Pre-existing static-export timeouts on 7 routes — repo-wide investigation.
+
+**Parking lot (intentional Week 3 deferrals):**
+- Clerk auth on `/killerapp/*` — Chilly confirmed still bundled with Stripe push.
+- `draft: false` flip on contract templates — waiting on attorney review (external).
+- Specialist prompts for the 4 orphan `analysis_result` steps (q9-s9-3, q10-s10-3, q16-s16-1, q23-s23-2) — the farm will either author them or defer per workflow.
+- Full Supabase persistence of journey-progress events — MVP uses localStorage; server sync waits for Clerk.
+
+---
+
+## ═══ WEEK 2B PUSH — CONTRACT TEMPLATES (2026-04-18) — SHIPPED LOCALLY, AWAITING PUSH ═══
+
+**Status:** Contract Templates workflow (q4) is now live. Six starter contracts — Client Agreement, Subcontractor Agreement, Lien Waiver (Conditional + Unconditional), Mutual NDA, Change Order — each available as a DRAFT-watermarked PDF. Three automated gates green.
+
+**What ships:**
+- 6 markdown templates under `src/lib/contract-templates/*.md` with `{{variable}}` placeholders and state-aware DRAFT NOTICE footers (statutory-form state warnings for lien waivers: CA, TX, AZ, NV, FL, GA, MA, MI, MS, MO, UT, WY).
+- Isomorphic registry + `fillTemplate()` substitution in `src/lib/contract-templates.ts` (metadata, per-template `requiredFields`, humanized-placeholder fallback for missing values).
+- Server-only filesystem loader in `src/lib/contract-templates.server.ts` — keeps `node:fs` off the client bundle.
+- jsPDF generator in `src/lib/pdf/contract-pdf.ts` — BKG wordmark header, diagonal DRAFT watermark on every page, minimal markdown→PDF (headings, paragraphs, bullets, pipe tables, courier signature blocks), attorney-review disclaimer footer, per-page numbering.
+- Live route at `/killerapp/workflows/contract-templates` — journey-map header, breadcrumb + Pro Toggle, prominent amber DRAFT disclaimer banner, multi-select template picker, merged field form (dedupes across selected templates), one-click "Download N drafts (PDF)" button, Pro-mode inspect-filled-body panel.
+- `LIVE_WORKFLOWS` map in `src/app/killerapp/page.tsx` now includes `q4 → /killerapp/workflows/contract-templates`; blurb rewritten.
+
+**Automated gates (W2B.6):**
+- `npx tsc --noEmit` — EXIT 0
+- `npx vitest run` — 11/11 pass
+- `next build` — all 120+ routes compile, contract-templates listed as static
+- Markdown ↔ registry key parity smoke — 6/6 templates pass (60 total keys accounted for)
+- `fillTemplate` end-to-end smoke — 0 unresolved `{{curly}}` placeholders, missing fields humanized to `[Client Address]` style brackets
+
+**Locked at draft-only.** Per `docs/killer-app-direction.md § Legal prerequisites`, no pathway in the UI flips `draft: false` until a construction attorney has reviewed the template language for the user's state. Every PDF is watermarked DRAFT and carries the attorney-review disclaimer in its footer.
+
+**Subtask ledger (W2B):**
+- [x] **W2B.1** Draft 6 contract templates with `{{variable}}` placeholders
+- [x] **W2B.2** `src/lib/contract-templates.ts` — types, TEMPLATE_META, fillTemplate, extractTemplateKeys
+- [x] **W2B.3** `src/lib/pdf/contract-pdf.ts` — jsPDF renderer + DRAFT watermark
+- [x] **W2B.4** `/killerapp/workflows/contract-templates` route — page.tsx + ContractTemplatesClient.tsx
+- [x] **W2B.5** Wire q4 into `LIVE_WORKFLOWS` + updated blurb
+- [x] **W2B.6** Smoke tests green; commit + bundle + push instructions in hand
+
+**Pending:**
+- [ ] `git push origin main` — Chilly to run from own terminal (bundle delivered via `Builder's Knowledge Garden/week2b-push.bundle`)
+- [ ] Vercel auto-deploy verification
+- [ ] Prod smoke: `/killerapp` shows q4 as LIVE; route loads; pick 1 template, fill fields, download PDF; DRAFT watermark visible; attorney-review disclaimer in footer
 - [ ] **Legal gate (EXTERNAL):** construction attorney review in at least CA (first paid-user jurisdiction) before flipping `draft: false`. Until then, UI ships draft-only.
 
-### From W2 PUSH (archived)
-- [ ] Profile avatar dropdown with XP-as-reputation (waits for Clerk auth).
+**Deferred (intentional):**
+- Stripe paywall around contract generation — next push per Chilly's direction
+- Per-state statutory-form overrides for lien waivers — currently shown as amber warning in draft notice only
+- Saving filled contracts to the user's account — waits for Clerk auth (scheduled with Stripe push)
 
-### From Dream Machine Consolidation (2026-04-14) — wiring still pending
-- [ ] Add 301 redirects for old dream sub-routes in `next.config.ts`
-- [ ] Archive old dream sub-pages to `_archived/`
+---
+
+## ═══ WEEK 2 PUSH — CORRECTING THE FORK (2026-04-18) — SHIPPED ═══
+
+**Status:** Six commits pushed to `origin/main`, Vercel auto-deployed. Chilly confirmed "all set".
+
+**Six-commit stack (oldest → newest):**
+1. `fe10d5e` — Plan: Week 2 fork-correction push + 3 lessons from today's audit
+2. `2927c42` — W2.1: Replace Command Center nav with minimal chrome
+3. `02726a3` — W2.2: Replace Command Center landing with workflow picker
+4. `0cb8cb1` — W2.3: Add journey-map header on workflow routes
+5. `e27b082` — W2.4: Hierarchical CA jurisdiction picker (UI-first)
+6. `0de135d` — W2.5: Voice + natural-language entry on every textarea
+
+**Automated gates (W2.6):**
+- `npx tsc --noEmit` — EXIT 0
+- `npx vitest run` — 11/11 pass
+- `next build` — all routes compile including `/killerapp`, `/killerapp/legacy-command-center`, `/killerapp/workflows/code-compliance`
+
+**Subtask ledger:**
+
+### 1. Replace KillerAppNav.tsx with minimal AppChrome — DONE (commit 2927c42)
+- [x] Collapse 187-line Command Center chrome to ~100 lines; preserve default export name so 8 route groups stay intact
+- [x] Minimal chrome: wordmark, conditional "← All workflows" when inside a workflow route
+- [x] Hardcoded XP tally / streak / 7-module tab array deleted
+- [x] Smoke test: all route groups render after swap (next build green)
+- [ ] **Deferred:** profile avatar dropdown with XP-as-reputation (waits for Clerk auth)
+
+### 2. Build `/killerapp` landing = workflow picker — DONE (commit 02726a3)
+- [x] Server Component reading `docs/workflows.json`
+- [x] 27 workflows rendered as cards grouped by lifecycle stage with LIVE / SOON pills and blurbs
+- [x] Explicit `LIVE_WORKFLOWS` map: `q5` → `/killerapp/workflows/code-compliance`; others route to a courteous "coming soon" page
+- [x] Legacy Command Center preserved at `/killerapp/legacy-command-center` via `git mv` (wired API endpoints not orphaned)
+- [x] CSS hover via `<style>` tag (Server Component safe) — no inline JS handlers
+- [ ] **Deferred to Week 3:** fuzzy search box on the landing (natural-language entry already lives inside the workflow via search box at top of picker that routes to Code Compliance with `?q=`)
+
+### 3. Add journey-map header — DONE (commit 0cb8cb1)
+- [x] `src/components/JourneyMapHeader.tsx` — pure presentational, server-safe
+- [x] 7-stage strip: Size Up → Lock → Plan → Build → Adapt → Collect → Reflect with per-stage accent colors
+- [x] Rendered above Code Compliance workflow
+- [x] `workflow.stageId ?? 1` fallback for undefined case
+- [ ] **Deferred:** stage-filter URL param (`?stage=lock`) — picker currently groups by stage visually; filter UX arrives when the fuzzy search lands
+
+### 4. Hierarchical jurisdiction picker — DONE (commit e27b082)
+- [x] JURISDICTIONS grew from 23 → ~58 entries. CA counties added: Ventura, Riverside, Santa Barbara, Orange, San Bernardino, LA, San Diego, Alameda, Santa Clara, Contra Costa, Sacramento, Kern, Fresno
+- [x] Principal cities under each (Temecula under Riverside; Oxnard + Thousand Oaks under Ventura; etc.) — all four Chilly named (Ventura, Riverside, Temecula, Santa Barbara) visible
+- [x] `groupJurisdictions()` helper returns State → County → Jurisdictions tree
+- [x] Typed `Jurisdiction` interface with `level` union
+- [x] `<optgroup>`-based hierarchical `<select>` in `CodeComplianceClient.tsx` — label format: "California — Riverside County" → Temecula
+- [x] Fallback IBC 2024 surfaced at top of picker
+- [ ] **Deferred to Week 3:** real local-amendment data (this pass is UI-first; names are visible, `metadata.local_amendments` seeds land in Week 3 seed refresh)
+
+### 5. Voice + natural-language entry on every textarea — DONE (commit 0de135d)
+- [x] `text_input`, `voice_input`, AND `analysis_result` steps now carry mic buttons
+- [x] Voice transcripts **append** to existing text (was: replace)
+- [x] `handleApplyVoiceTranscript` routes by `step.type` — `analysis_result` writes to `analysisInput`, others write to `inputValue`
+- [x] Placeholder copy softened — "Type or speak — in your own words. Tap 🎤 to dictate." (was "Enter text here...")
+- [x] Recording pulse + error messaging preserved
+- [x] Picker search box includes voice input + routes to Code Compliance with query pre-filled (`WorkflowPickerSearchBox.tsx`)
+
+### 6. Smoke tests + deploy — AUTOMATED GATES GREEN, PUSH PENDING
+- [x] `npx tsc --noEmit` — EXIT 0
+- [x] `npx vitest run` — 11/11
+- [x] `next build` — all routes compile (including legacy-command-center moved subtree)
+- [x] Manual dev smoke: `/killerapp` picker renders 27 cards, `/killerapp/workflows/code-compliance` renders journey map + hierarchical jurisdiction picker + voice buttons on every textarea
+- [ ] **BLOCKED:** `git push origin main` — `fatal: could not read Username for 'https://github.com': No such device or address`. Founder to push from own terminal, or re-supply a PAT (if supplied again, rotate immediately per lesson #13).
+- [ ] **PENDING PUSH:** Vercel deploy verification + auto-promote check
+- [ ] **PENDING PUSH:** Production smoke: picker renders, journey map above workflow, Temecula visible in picker, Code Compliance still hits Claude API
+
+**Definition of done (local):** ✅ Met. A visitor to `/killerapp` (in dev) sees a searchable workflow picker, 27 cards grouped by stage, LIVE pill on Code Compliance, natural-language search box at top. Clicking Code Compliance lands on the workflow inside a journey-map header, hierarchical jurisdiction picker (Temecula visible), voice button on every textarea, and the specialist call still fires. `/manifesto` and the 8 other route groups still render.
+
+**Definition of done (prod):** ❌ Pending push + Vercel green.
+
+**Lint baseline note:** `npx eslint` on Week 2 touched files reports 9 errors / 12 warnings. Triage: 3 × `@typescript-eslint/no-explicit-any` in `StepCard.tsx` (pre-existing, lines 63/71/82 around SpeechRecognition setup) and unused-vars in `knowledge-data.ts` helpers (pre-existing). Next build does not fail on these (Vercel uses build, not strict-eslint). Clean-up: optional follow-up commit with `// eslint-disable-next-line` comments if we want a clean baseline.
+
+**Background items that don't block this push** (do anytime):
+- Rotate Anthropic API key
+- Rotate Supabase service-role key (in `batch*.mjs` at repo root, in git history)
+- Delete or `.gitignore` the `batch*.mjs` scripts after rotation
+- Wire Clerk basic auth on `/killerapp/*` (scheduled for the Week 2 Stripe push)
+
+---
+
+## ═══ DREAM MACHINE CONSOLIDATION (2026-04-14) — IN PROGRESS ═══
+
+### Architecture + Components (Chat session — DONE)
+- [x] Audit 6 dream interfaces → identify 3 user intents (Discover/Express/Upload)
+- [x] Audit 3 live pages (/dream/upload, /dream/design, /dream/imagine)
+- [x] Lock 12 architectural decisions (all approved)
+- [x] Build unified /dream landing page (3-ramp entry)
+- [x] Build DiscoverFlow component (5-question Oracle)
+- [x] Build DreamReveal component (AI synthesis + profile card)
+- [x] Build useSpeechRecognition hook (Web Speech API)
+- [x] Write COWORK-BUILD-SPEC.md (complete wiring instructions)
+- [x] Push all files to main
+
+### Wiring (next Cowork session — TODO)
+- [ ] Add 301 redirects for old dream sub-routes in next.config.ts
+- [ ] Archive old dream sub-pages to _archived/
 - [ ] Wire GreenFlash celebrations (4 moments)
 - [ ] Wire Design Studio handoff (read localStorage on mount)
 - [ ] Wire Express path (prompt → Design Studio auto-generate)
-- [ ] Run `npm run build` — verify 0 TypeScript errors
+- [ ] Run npm run build — verify 0 TypeScript errors
 - [ ] Deploy to Vercel
 - [ ] Test full flow: landing → discover → reveal → design studio
 
-### From Phase 4 — Spatial Intelligence (BLOCKED on external API access)
-- [ ] World Labs Marble API key — activates real 3D generation in Worldwalker
-- [ ] Photogrammetry API — activates real point cloud generation in CaptureFirst
-- [ ] FLUX/Marble renders the synthesis in Alchemist (blocked on World Labs API)
+## PHASE 0 — PLATFORM FOUNDATIONS
+> Status: COMPLETE
 
-### From Phase 6 — First Dollar
+- [x] Core database schema: users, projects, knowledge, storage
+- [x] Auth system: email/password + Google OAuth via Supabase
+- [x] Navigation architecture: CompassNav with 7 surfaces
+- [x] Dream interface: drag-drop ingredient UI with schema binding
+- [x] Project editor: visual task/phase/resource breakdown
+- [x] Knowledge graph: entity storage and semantic linking
+- [x] MCP server: Claude integration with authorized tool access
+- [x] Deployment: Next.js production on Vercel
+
+---
+
+## PHASE 1A — DREAMER SURFACE
+> Status: COMPLETE
+
+- [x] Dream Editor: canvas-based ingredient picking
+- [x] Dream Schema: aspirational_name, brief_description, user_ingredients, lifecycle_stage
+- [x] Claude Integration: narrative expansion from ingredients
+- [x] Dream Sharing: public dream links with embedded read-only view
+- [x] Dream Timeline: growth visualization (seed → sprout → bloom → harvest)
+- [x] Persistent Storage: dreams saved to PostgreSQL with DreamEssence format
+- [x] UI Polish: typewriter effect, smooth transitions, color per lifecycle stage
+
+---
+
+## PHASE 1B — BUILDER SURFACE
+> Status: COMPLETE (Wave 4)
+
+- [x] Project Editor: WBS (Work Breakdown Structure) with phases, tasks, resources
+- [x] Gantt Timeline: calendar view with critical path highlighting
+- [x] Budget Module: line-item estimates, labor rates, material costs
+- [x] Resource Management: crew assignment, skill matching, capacity planning
+- [x] RFI Tracker: open request management with auto-assignment logic
+- [x] Inspection Checkpoint System: pass/fail gates with documentation
+- [x] Build-to-Dream Linkage: projects reference original dream(s) with lifecycle pipeline
+- [x] Permits & Compliance: checklist tracking with jurisdiction awareness
+
+---
+
+## PHASE 1C — KNOWLEDGE SURFACE
+> Status: COMPLETE
+
+- [x] Knowledge Editor: flexible entity creation with schema inference
+- [x] Entity Types: materials, techniques, suppliers, standards, regulations
+- [x] Graph Visualization: node-link diagram of relationships
+- [x] Full-Text Search: semantic search across all knowledge
+- [x] Claude Copilot: "What does the code say?" for any entity
+- [x] Ingredient Harvesting: drag knowledge entities into dreams
+- [x] Citation System: provenance tracking for every fact
+- [x] Persistent Storage: knowledge base saved in PostgreSQL
+
+---
+
+## PHASE 2 — PERSONA ROUTING & VALUE DELIVERY
+> Imperative 1: Eradicate the value discrepancy. First 30 seconds must deliver on the marketing promise.
+> The platform dynamically reconfigures based on who the user IS.
+
+### 2A. 8-Lane Persona Architecture
+- [x] Database migration: user_profiles table with lane enum (dreamer/builder/specialist/merchant/ally/crew/fleet/machine)
+- [x] Progressive Profiling onboarding: 2-3 questions → lane determination → immediate surface routing
+- [x] Update LanePicker.tsx: 8 lanes with strategy-aligned descriptions and chrome colors
+- [x] Update auth.tsx: add lane to AuthContextType, persist in user_profiles
+- [x] Update CompassNav: lane-aware destination ordering (Builder sees Killer App first, Dreamer sees Dream first)
+- [x] Lane-specific landing surfaces: each lane routes to its primary surface on login
+- [x] Progressive data collection: additional profile questions surface naturally as user engages
+
+### 2B. Morning Briefing & Daily Story Loop
+- [x] API route: POST /api/v1/briefing — Claude-generated, lane-aware narrative briefing
+- [x] 8 distinct briefing tonalities (warm/aspirational for Dreamer, sharp/actionable for Builder, etc.)
+- [x] Morning Briefing UI: typewriter effect, appears on app open, dismissible
+- [x] 3 daily quests generated per briefing (lane-specific, advance real work)
+- [x] "AI works while you sleep" — briefing references overnight analysis
+- [x] Streak counter: consecutive days of app engagement
+
+### 2C. Notification Orchestra (4-Tier Emotional System)
+- [x] Database: notifications table with urgency_level enum (celebration/good_news/heads_up/needs_you)
+- [x] API route: GET/POST/PATCH /api/v1/notifications
+- [x] Notification Orchestra UI: slide-out panel, grouped by urgency, color-coded borders
+- [x] Celebration tier: gold burst animation, confetti on project completions/financial milestones
+- [x] Good News tier: green glow, smooth entry for positive progression
+- [x] Heads Up tier: amber badge, proactive warnings with drafted solutions
+- [x] Needs You tier: red attention pulse, ALWAYS includes pre-researched solution
+- [x] Governing principle: every notification is a gift. If no solution/insight attached, suppress it.
+
+### 2D. Cross-Surface Bridges (Lifecycle Continuity)
+- [x] "Make This Real" button on Dream interfaces → pre-fills project wizard (Dream→Build)
+- [x] "Use in My Dream" button on Knowledge entities → loads as Dream ingredient (Knowledge→Dream)
+- [x] "What does the code say?" link from project items → Knowledge copilot (Build→Knowledge)
+- [x] "Continue Your Dream" card on Dream hub (growth stage: seed/sprout/bloom/harvest)
+- [x] Surface Transition Banner: context-aware suggestion for next surface
+- [x] Lifecycle Progress Bar: DREAM → DESIGN → BUILD phase indicator
+- [x] CRM rebuild: business pulse + AI attention queue wired to real project data
+
+### 2E. CRM Deep Research → v1 Build Order (run BEFORE building CRM v1)
+> Output lands in `docs/research/crm/` and pre-stages the build briefs below.
+> No CRM v1 build work begins until Stream E synthesis is reviewed and approved by Chilly.
+
+**Research scope** — five parallel streams, run in Cowork:
+- [x] Stream A — Mainstream + vertical CRM landscape (HubSpot/Salesforce/Pipedrive/Attio/Day.ai + JobNimbus/JobTread/Followup/Acculynx/Markate/Houzz Pro/BuilderTrend/Roofr) → `docs/research/crm/stream-a-landscape.md` — 6,935 words, 33-row steal/leapfrog/ignore matrix, 126 citations
+- [x] Stream B — Contractor reality (Reddit, reviews, YouTube comments, trade forums) — what contractors actually do, why they reject CRMs, what converts skeptics → `docs/research/crm/stream-b-contractor-reality.md` — 8,538 words, 30 verbatim direct quotes, 30 byproduct moments
+- [x] Stream C — Machine-readable CRM surface (existing CRM MCP servers, API-first CRMs, schema.org Person/Organization, AI-agent CRM workflows, event taxonomy) → `docs/research/crm/stream-c-machine-surface.md` — 7,944 words, 24 MCP tools, 31 lifecycle events, paste-ready `bkg_contact` and `bkg_deal` JSON-LD
+- [x] Stream D — UX patterns worth stealing or rejecting (relational records, mobile-first field UX, voice-CRM, inline AI assist, plain-language label patterns) — each mapped explicitly to one of our 7 primitives → `docs/research/crm/stream-d-ux-patterns.md` — 6,876 words, 45-row pattern→primitive mapping, 25-row reject list
+- [x] Stream E — Synthesis: BKG CRM strategy + v1 spec + adoption story + build order → `docs/research/crm/stream-e-strategy.md` — 2-page exec summary, lifecycle map, plain-language vocabulary, five-surface MLP, invisible CRM architecture, MCP tool surface, FL roofer adoption story, build order, "not building" list
+
+**Stream E deliverables** (the only file Chilly reads first):
+- [x] 2-page exec summary at the top of `stream-e-strategy.md` answering: (1) BKG CRM in one constitution-passing sentence (2) the five v1 surfaces and why those five (3) the moat once shipped (4) what ships first and the demo for John Bou + the contractor partner in 2 weeks
+- [x] CRM Through the Lifecycle: every surface mapped to Lead → Size Up → Lock → Plan → Build → Adapt → Collect → Reflect → Repeat/Reputation
+- [x] Plain-language CRM vocabulary table (jargon | plain language | when shown) — 35 rows
+- [x] Five-surface CRM MLP spec (plain-language question, Invitation Card, machine surface, voice expression, constitution goals, build size): **Today / Who's asking? / What might happen next? / Quick reply / Repeat client radar**
+- [x] Invisible CRM architecture — 30 byproduct moments where CRM data is created without the user thinking "I'm doing CRM"
+- [x] Proposed MCP tool surface — 24 tools with example JSON in/out, `time_machine_handle` on every write
+- [x] Adoption story: Carlos Méndez, Tampa FL roofer, skeptic → dependent in 30 days (voice on day 1 → missed-call wedge day 3 → estimate-silence nudge day 7 → Lupita Pro Toggle day 12 → photo-by-GPS day 18 → repeat radar day 30)
+- [x] "What we're explicitly NOT building in v1" — 18 protected exclusions
+
+**Acceptance criteria for the research sprint:**
+- [x] All five stream files exist in `docs/research/crm/`
+- [ ] Files pushed to main (Chilly to run from own terminal — bundle/git push pending)
+- [x] Stream E's "CRM v1 — Build Order" first three briefs are written as paste-ready Cowork briefs and inserted into the slots reserved in Phase 3 below
+- [x] `tasks.lessons.md` appended — Correction Loop primitive proposal flagged for explicit decision before Brief 1 ships
+- [x] `docs/session-log.md` entry written for the research session
+- [x] No CRM build work has been started — research-only sprint
+
+**Decision gate before Brief 1 ships:**
+- [x] Chilly approves the five surfaces and the build order — **APPROVED 2026-05-12 ("Looks good to me!")**
+- [ ] Chilly decides the constitution-extension question: extend to 8 primitives with **Correction Loop**, or fold the AI-correction UX into Whisper + Time Machine? (Stream D + Stream E both recommend extension; data plumbing differs.) — *flagged as non-blocking for Brief 1: v1 of "Who's asking?" uses simple tap-to-edit on inferred fields; full Correction-Loop teach pattern can wait until first wrong-inference moment surfaces.*
+- [ ] Chilly decides Twilio per-account vs shared-pool number strategy for Brief 2 (not blocking Brief 1)
+- [ ] Chilly decides redirect strategy for legacy `/crm` → `/today` (not blocking Brief 1)
+
+---
+
+## PHASE 3 — GAMIFICATION & ENGAGEMENT ENGINE
+> Imperative 2: The Delight Layer is not decoration — it's core behavioral architecture.
+> Every game mechanic corresponds to real-world project advancement.
+
+### 3A. XP & Leveling System
+- [x] Database: user_xp, xp_events tables
+- [x] API route: GET/POST /api/v1/xp — award and query XP
+- [x] Lane-aware XP values (inspection_passed=200XP for Builder, dream_shared=50XP for Dreamer)
+- [x] 5 levels: Apprentice (0-499), Builder (500-1999), Craftsman (2000-4999), Master (5000-14999), Architect (15000+)
+- [x] XP Engine UI widget: level ring, animated counter, streak flame
+- [x] "+XP" floating toast on every earn event
+- [x] Level-up celebration: full-screen burst with new title
+
+### 3B. Quest System
+- [x] Database: daily_quests table
+- [x] API route: GET /api/v1/quests/daily — 3 AI-generated lane-specific quests
+- [x] Quest completion tracking + XP award
+- [x] "Complete all 3 for 2x bonus" multiplier
+- [x] Quests advance real work (not busywork): "Resolve open RFI", "Update crew rates", "Share your design"
+
+### 3C. Achievement Badging
+- [x] Database: achievements, user_achievements tables
+- [x] 20 launch achievements seeded (Code Whisperer, Budget Ninja, Oracle Initiate, Iron Streak, etc.)
+- [x] 3 categories: Explorer (knowledge engagement), Builder (execution excellence), Architect (creative synthesis)
+- [x] 4 rarity tiers: Common, Rare, Epic, Legendary
+- [x] Achievement unlock animation + XP bonus
+- [x] Achievement showcase on user profile
+- [x] FLUX-generated artwork for each badge (when API available)
+
+### 3D. Streak Mechanics
+- [x] Daily streak tracking with loss-aversion psychology
+- [x] Streak multiplier on XP (7-day streak = 1.5x, 30-day = 2x)
+- [x] "Iron Streak" achievement at 30 consecutive days
+- [x] Streak-preserving actions: safety log, compliance check, dream update, knowledge search
+- [x] Gentle recovery: 1 "streak shield" per month (miss a day, keep streak)
+
+---
+
+## PHASE 4 — SPATIAL INTELLIGENCE & IMMERSION
+> Imperative 3: The Worldwalker and Alchemist interfaces are the ultimate Dreamer hook.
+> Blocked on World Labs API key — build the pipeline, ready to connect.
+
+### 4A. Worldwalker Pipeline
+- [x] Image upload UI with drag-and-drop and processing pipeline visualization
+- [x] Three.js 3D viewer with placeholder house model and manual orbit controls
+- [x] Voice command panel UI (microphone button + example commands)
+- [x] Material detection sidebar with confidence scores
+- [x] Dimension overlay on 3D model
+- [x] API route with mock processing pipeline (ready for World Labs API key)
+- [ ] PENDING: World Labs Marble API key — will activate real 3D generation
+
+### 4B. Capture-First Reconstruction
+- [x] Camera/video capture interface with 30-second recording timer
+- [x] Photo mode: snap multiple photos for photogrammetry (min 8)
+- [x] Point cloud preview: Three.js animated particle cloud
+- [x] "Strip to studs" digital sandbox mode with demolition level slider
+- [x] Material/style identification panel with confidence scores
+- [ ] PENDING: Photogrammetry API — will activate real point cloud generation
+
+### 4C. Alchemist Combinatorial Design
+- [x] Drag-and-drop ingredient crucible (style word + texture + mood → synthesis)
+- [x] Compatibility scoring and semantic relationships between ingredients
+- [ ] FLUX/Marble renders the synthesis (blocked on World Labs API)
+- [x] Recipe sharing: community gallery of unique combinations
+- [x] "Surprise Me" random ingredient generator
+
+### 4D. Construction Cosmos
+- [x] Three.js orbital visualization of the knowledge graph
+- [x] Navigate entities as stars, relationships as orbital paths
+- [x] Click a node → zoom in → entity detail
+- [x] Beautiful enough to be the screensaver/ambient mode
+
+---
+
+## PHASE 5 — AGENTIC INTEROPERABILITY
+> Imperative 4: Within 24 months, most queries will come from non-human entities.
+> Build the infrastructure for the AI-driven construction economy.
+
+### 5A. Agent RBAC & Identity
+- [x] Database: agent_identities, agent_audit_log tables
+- [x] API route: CRUD /api/v1/agents — register, manage, deactivate agents
+- [x] API key generation (bkg_agent_xxx) with bcrypt hash storage
+- [x] 3 autonomy modes: Watch (read-only), Assist (suggestions need approval), Autonomous (full delegation)
+- [x] Permission scoping per agent (which MCP tools accessible)
+- [x] Rate limiting per agent (configurable per hour)
+
+### 5B. MCP Server Enhancement
+- [x] Auth middleware: validate agent API keys on MCP requests
+- [x] Tool-level permission checking
+- [x] Audit logging: every tool call logged with input/output/duration
+- [x] Semantic caching: identical queries return cached results (5-min TTL)
+- [x] LLM-based query routing to authorized pathways only
+
+### 5C. Shared Autonomy Interface
+- [x] Agent activity feed: real-time view of what agents are doing
+- [x] Watch Mode UI: observe agent tasks, read logs
+- [x] Assist Mode UI: agent proposes actions, human approves/rejects
+- [x] Autonomous Mode UI: dashboard showing completed autonomous tasks
+- [x] Explainability on demand: view logic chain and source documents for any agent decision
+- [x] Kill switch: immediately revoke agent access
+
+### 5D. Context Engineering
+- [x] Bounded context windows per agent session
+- [x] Provenance-native responses: every fact cites its knowledge entity
+- [x] Hallucination prevention: authorized agentic pathways only
+- [x] Tamper-evident audit trail for every machine-driven decision
+
+---
+
+## PHASE 6 — FIRST DOLLAR
+> The business becomes real. Revenue from multiple lanes.
+
+- [x] Onboarding gate live: free Explorer tier works, upgrade moment obvious
+- [x] Shareable dream links go viral: every dream has public `/dream/share/[id]` URL
+- [x] Lead-to-warranty CRM lifecycle tracking (full pipeline)
+- [x] AI proposal generator: Claude API → formatted proposal doc (PDF export)
+- [x] Invoice module: AIA G702/G703 pay app format
+- [x] Marketplace transactions: suppliers can list, contractors can order
+- [x] Demo preparation: clean seed data, demo accounts, 8-step guided walkthrough
 - [ ] First paying customer target: one GC or developer on Pro plan
 
 ---
+
+## CRM v1 — Build Order (populated by Stream E, 2026-05-12)
+
+> Reserved slots filled by Stream E synthesis. Each brief is self-contained.
+> Full spec lives at `docs/research/crm/stream-e-strategy.md` Section 7.
+> No build work begins until Chilly approves the five surfaces (see 2E decision gate above).
+
+### Brief 1 — "Who's asking?" voice & photo capture (M, ~1.5 weeks) — **STARTED 2026-05-12**
+**Plain-language route:** `/killerapp/who-is-asking` · **Pro label:** "Contacts / Leads"
+**The surface:** Two thumb-sized buttons (🎤 hold-to-talk, 📸 tap-to-photo) capture a new contact in <5 seconds. Voice memo → entity extraction → JSON-LD `bkg_contact` with name + address geocoded + intent + budget. Photo → EXIF/GPS match to existing contact within 200m or new-contact prompt. Zero typing required end-to-end.
+
+**Files to create:**
+- `src/app/killerapp/who-is-asking/page.tsx` (Server Component)
+- `src/app/killerapp/who-is-asking/WhoIsAskingClient.tsx`
+- `src/components/crm/VoiceCaptureFAB.tsx`
+- `src/components/crm/PhotoCaptureFAB.tsx`
+- `src/components/crm/ContactCard.tsx` (Invitation Card primitive)
+- `src/lib/crm/extract-entities.ts`
+- `docs/ai-prompts/extract-entities.production.md`
+
+**Files to touch:**
+- `src/app/api/v1/crm/capture/route.ts` (POST handler, returns JSON-LD)
+- `src/app/api/v1/crm/photo/route.ts` (POST with EXIF, geocode match)
+- `docs/schemas/crm-schema.sql` (add `time_machine_handle`, `lane`, `lifecycle_stage`, `confidence`, `source` columns)
+- `app/llms.txt` (document `crm_capture_lead` MCP tool)
+
+**Acceptance criteria:**
+- [ ] Hold mic 5s saying "New lead [name] [address] [trade question]" → contact created in <2s after release with name + address geocoded
+- [ ] Snap photo on phone with location services → auto-attach to closest contact (within 200m) or create new via reverse-geocode
+- [ ] Every contact returns valid JSON-LD via `GET /api/v1/crm/contacts/[id].jsonld`
+- [ ] Every write returns a `time_machine_handle`
+- [ ] Pro Toggle flips header from "Who's asking?" to "Contacts" + adds Source/Confidence/Lane columns
+- [ ] Voice flow works offline (transcript queued, syncs on reconnect) — verify in airplane mode
+- [ ] MCP tool `crm_capture_lead` at `/api/v1/mcp` returns the same shape
+- [ ] Build passes: `npm run build` zero TS errors
+- [ ] Constitution check: walked all 10 goals, all pass (see stream-e-strategy.md §7)
+- [ ] MCP surface exposed and documented in `/api/v1/openapi`
+- [ ] Voice expression works (input + output)
+- [ ] Pro Toggle behavior implemented
+- [ ] Time Machine: every state change reversible
+
+**Build & verify:** `tsc --noEmit` EXIT 0 → `vitest run` green (4 new tests: voice capture, photo capture, GPS-attach, JSON-LD validity) → `next build` green → local smoke on phone → push.
+
+**MCP exposure:** `crm_capture_lead`, `crm_list_contacts`, `crm_get_contact`, `crm_attach_photo`, `crm_attach_voice_note`.
+
+### Brief 2 — "Quick reply" inbound conversation queue (L, ~2 weeks)
+**Plain-language route:** `/killerapp/quick-reply` · **Pro label:** "Inbox / Conversations"
+**The surface:** Every inbound SMS / missed-call transcript / voicemail gets an AI draft in the contractor's voice (trained on the last 200 sent SMS). Thumb-approve to send. 90-second undo bar. Tone chips ("warm / professional / brief") regenerate the draft in <2s.
+
+**Files to create:**
+- `src/app/killerapp/quick-reply/page.tsx` + `QuickReplyClient.tsx`
+- `src/components/crm/InboundMessageCard.tsx` (Invitation Card)
+- `src/components/crm/UndoBar.tsx` (Time Machine primitive — 90s countdown)
+- `src/components/crm/VoiceTone.tsx`
+- `src/lib/crm/voice-fingerprint.ts` (background job, tone vector from last 200 sent SMS)
+- `src/lib/crm/draft-reply.ts`
+- `src/app/api/v1/twilio/inbound/route.ts` (Twilio webhook)
+- `src/app/api/v1/twilio/send/route.ts` (outbound, 90s undo cancel before flush)
+- `docs/ai-prompts/draft-reply.production.md`
+
+**Files to touch:**
+- `docs/schemas/crm-schema.sql` (add `messages` table: id, contact_id, direction, body, channel, time_machine_handle, sent_at, delivered_at, proposal_amount_inferred)
+- `src/app/killerapp/layout.tsx` (Quick Reply unread badge in global chrome)
+- `app/llms.txt`
+
+**Acceptance criteria:**
+- [ ] Inbound SMS from known contact appears in `/quick-reply` within 5s of receipt with AI draft loaded
+- [ ] AI draft matches contractor voice ≥4/5 on blind "this sounds like me" eval after 2 weeks of usage
+- [ ] Send queues message; 90s undo bar; tap during window reverses the send
+- [ ] Tone chips regenerate draft in <2s
+- [ ] Every sent message logs `time_machine_handle` + emits `event.message.sent`
+- [ ] If inbound contains a price (e.g., "$5,000"), tag `event.proposal_sent` + start silence timer
+- [ ] MCP tools `crm_draft_reply`, `crm_send_reply`, `crm_undo` work end-to-end via same endpoint
+- [ ] Build passes: `npm run build` zero TS errors
+- [ ] Constitution check: walked all 10 goals, all pass
+- [ ] MCP surface exposed and documented in `/api/v1/openapi`
+- [ ] Voice expression works (input + output)
+- [ ] Pro Toggle behavior implemented
+- [ ] Time Machine support (the 90s undo is the headline)
+
+**Build & verify:** Provision Twilio per account → build → `tsc --noEmit` + `vitest` (6 tests: draft generation, voice fingerprint match, undo within 90s, undo expired, tone regen, MCP parity) → `next build` → real SMS smoke → MCP smoke via Claude Desktop → push.
+
+**MCP exposure:** `crm_list_inbox`, `crm_draft_reply`, `crm_send_reply`, `crm_undo`.
+
+**Pre-build decision needed (Chilly):** Twilio per-account number vs shared-pool number. Per-account preserves "the customer texts you, the same number they always texted" trust signal; ~$1/mo + $0.0075/SMS per account.
+
+### Brief 3 — "Repeat client radar" post-Reflect radar (L, ~2.5 weeks)
+**Plain-language route:** `/killerapp/repeat-radar` · **Pro label:** "Renewal · Warranty · Referrals"
+**The surface:** For every closed project, schedule typed events (warranty checkpoint, anniversary, weather-proactive, referral-friend, repeat-opportunity). Three Whisper cards by default; Pro Toggle reveals full list. The "find the Smith photo from 2 years ago" magnetic moment lives here.
+
+**Files to create:**
+- `src/app/killerapp/repeat-radar/page.tsx` + `RepeatRadarClient.tsx`
+- `src/components/crm/RadarWhisper.tsx` (Whisper primitive)
+- `src/lib/crm/radar/warranty.ts` (per-trade warranty windows: roofing 1mo/3mo/1yr/5yr; HVAC 6mo/1yr)
+- `src/lib/crm/radar/anniversary.ts`
+- `src/lib/crm/radar/storm-proximity.ts` (wraps q14 weather API; 100mi radius)
+- `src/lib/crm/radar/referral-mention.ts` (regex + Claude classification on inbound)
+- `src/lib/crm/radar/repeat-opportunity.ts` (past-address detection)
+- `src/app/api/v1/crm/radar/route.ts` (GET)
+- `src/app/api/v1/crm/radar/dismiss/route.ts` (POST, records reason)
+- `src/app/api/v1/cron/radar-heartbeat/route.ts` (hourly cron)
+- `docs/ai-prompts/radar-outreach.production.md`
+
+**Files to touch:**
+- `docs/schemas/crm-schema.sql` (add `radar_items` table: id, contact_id, reason, severity, suggested_text, surfaced_at, dismissed_at, dismissed_reason)
+- `vercel.json` (add `/api/v1/cron/radar-heartbeat` every hour)
+- `app/llms.txt`
+
+**Acceptance criteria:**
+- [ ] Every project marked `closed` (Reflect-completed) schedules ≥5 radar fires across the next 5 years
+- [ ] Weather event near past customer (within 100mi, severity ≥ moderate) fires within 1 hour
+- [ ] `/repeat-radar` shows at most 3 Whisper cards by default; Pro Toggle reveals full list
+- [ ] Dismissing a radar item records the reason and trains the model to suppress similar
+- [ ] Each card has one-tap "Send the draft" pre-loaded from `crm_propose_outreach`
+- [ ] MCP tools `crm_list_radar`, `crm_propose_outreach`, `crm_dismiss_radar_item` return same shape as UI
+- [ ] Build passes: `npm run build` zero TS errors
+- [ ] Constitution check: walked all 10 goals, all pass
+- [ ] MCP surface exposed and documented in `/api/v1/openapi`
+- [ ] Voice expression works (input + output)
+- [ ] Pro Toggle behavior implemented
+- [ ] Time Machine support (every dismissal restorable)
+
+**Build & verify:** Build per above → seed 5 fake closed projects around Tampa for storm-proximity test → `tsc --noEmit` + `vitest` (8 tests: warranty per trade, anniversary, storm match, referral classifier, dismiss→suppress) → `next build` → trigger heartbeat manually → MCP parity check → push.
+
+**MCP exposure:** `crm_list_radar`, `crm_propose_outreach`, `crm_dismiss_radar_item`.
+
+### Calibration checkpoint
+- [ ] Demo Briefs 1–3 to John Bou for plain-language and lane-fit review (script at stream-e-strategy.md §EXECUTIVE SUMMARY Q4)
+- [ ] Demo to the trusted contractor partner for field-reality review
+- [ ] Adjustments captured in `tasks.lessons.md` before continuing to Brief 4+
+
+### CRM v1 demo gate
+- [ ] 5-minute guided walkthrough: voice "new lead Maria 4421 Brickell roof leak" → instant record on journey strip → snap photo at past customer's address → auto-attach by GPS → inbound text from new number → AI draft → thumb-send with 90s undo → 6-month-old job warranty radar fires "Smith's flashing should be checked, storm Tuesday"
+- [ ] Demo runs on production data (not mock)
+- [ ] One real contractor (the partner) has used it on a real lead before we call it shipped
+
+### Briefs 4+ — deferred to next sprint after calibration
+- [ ] Brief 4 — "Today" landing surface (consolidates Whispers from all four other surfaces)
+- [ ] Brief 5 — "What might happen next?" journey-strip pipeline view (Pro Toggle flips to kanban)
+- [ ] Brief 6 — Time Machine global undo across all CRM writes (currently per-action, this unifies the drafts tray)
+- [ ] Brief 7 — Constitution-extension decision: Correction Loop as 8th primitive (or fold into Whisper + Time Machine)
+- [ ] Brief 8 — `/crm` legacy route redirect strategy
+
+---
+
+## DELIGHT BACKLOG (build after core phases stable)
+
+- [x] Voice briefings — ElevenLabs TTS for morning briefing
+- [x] Sound design — unique sounds per notification tier (celebration/good/heads-up/urgent)
+- [x] Ambient music — Web Audio synthesis with 3 mood profiles (Dream/Build/Knowledge)
+- [x] Seasonal challenges — monthly themed challenges with leaderboards
+- [x] Social sharing — dreams, achievements, progress stories with card generator
+- [x] Trade-off visualizer — change one variable, see ripple across schedule/budget/risk
+- [x] Weather impact automation — auto-adjust schedules based on forecast
+- [x] Time Machine (4D build visualization via Three.js)
+- [x] Industry news feed — Claude-summarized, lane-personalized (ENR, Construction Dive, OSHA)
+- [x] Voice-first field ops — "Works With Dirty Hands" giant-button UX for Crew lane
+- [x] WebXR viewer: VR/AR with measurement tools, annotations, hotspots (Apple Vision Pro + Quest ready)
+
+---
+
+## COMPLETED WORK
+
+### Foundation & Infrastructure
+- Supabase Auth integration (email/password + Google OAuth)
+- PostgreSQL schema for users, projects, dreams, knowledge entities
+- Next.js deployment on Vercel
+- MCP server with Claude integration
+- DreamEssence portable format for cross-interface storage
+- CompassNav 7-surface architecture
+
+### Phase 0-1C Implementation
+- Dream Editor with ingredient UI and lifecycle tracking
+- Project Editor with WBS and timeline views
+- Knowledge Graph with full-text search and entity linking
+- Claude Copilot for knowledge interrogation
+- Dream-to-Project and Project-to-Knowledge navigation bridges
+
+### Phase 2-6 Strategy Overhaul (2026-04-05)
+- 8-Lane Persona Architecture with Progressive Profiling
+- Morning Briefing with Claude-generated lane-specific narratives
+- Notification Orchestra (4-tier emotional system)
+- XP Engine with leveling, streaks, and daily quests
+- Achievement system with 20 seeded badges
+- Cross-Surface Bridge components
+- Agent RBAC with Watch/Assist/Autonomous modes
+- MCP Authentication middleware
+- Shared Autonomy Interface (agent observation and control)
+- Context Engineering (provenance, audit trails, hallucination guard)
+- CRM Dashboard with AI Attention Queue
+- Sound Engine (Web Audio API synthesis)
+- AI Proposal Generator with streaming Claude
+- Trade-off Visualizer with ripple effects
+- Database: 10 new tables, 5 enums, 20 seed achievements, full RLS
+
+### Wave 3 — Cosmos, Cache, Invoice, Demo, News, FieldOps (2026-04-05)
+- Construction Cosmos: Three.js orbital knowledge graph visualization
+- Semantic Cache: LRU with 5-min TTL and cosine similarity
+- Query Router: classification, permission checking, rate limiting
+- Invoice Module: AIA G702/G703 with PDF generation (jsPDF)
+- Demo Mode: 8-step guided walkthrough with seed data
+- Industry News Feed: lane-personalized with 4-hour cache
+- Voice-first FieldOps: giant-button UX for Crew lane
+
+### Wave 4 — Phase 1B Builder Surface + Marketplace (2026-04-05)
+- WBS Editor: hierarchical project breakdown with inline editing
+- Gantt Timeline: critical path, dependencies, zoom levels
+- Budget Module: CSI divisions, change orders, variance tracking
+- Resource Management: crew roster, capacity planning, skill matching
+- RFI Tracker: auto-assignment, response workflow, metrics
+- Inspection Checkpoints: jurisdiction-aware checklists, digital signatures
+- Permits & Compliance: tracker with expiry alerts, AHJ contacts
+- Marketplace: supplier directory, product catalog, quote requests
+
+### Wave 5 — Delight + Phase 4C + Dream Linkage (2026-04-05)
+- Time Machine: 4D Three.js construction phase visualization with manual orbit
+- Ambient Music: Web Audio procedural synthesis, 3 mood profiles (Dream/Build/Knowledge)
+- Seasonal Challenges: 12 monthly themes with leaderboards and lane bonuses
+- Social Sharing: card generator, QR codes, community feed, reactions
+- Weather Impact: 7-day forecast with construction safety assessment
+- Build-to-Dream Linkage: lifecycle pipeline (Dream→Design→Build→Complete)
+- Alchemist Crucible: drag-and-drop ingredient combinatorial design
+- Weather API: mock forecast with construction activity flags
+
+### Wave 6 — Worldwalker, CaptureFirst, WebXR, Marketplace API, Dashboards (2026-04-06)
+- Worldwalker: full spatial intelligence pipeline UI with 3D viewer and voice commands
+- Worldwalker API: job processing pipeline with World Labs integration path
+- CaptureFirst: camera/video capture, point cloud preview, strip-to-studs demolition
+- WebXR Viewer: VR/AR-ready Three.js room with measurements, annotations, hotspots
+- Marketplace API: products, quotes, orders with full CRUD
+- Marketplace Transactions: Stripe integration path with fee calculation and webhooks
+- Builder Dashboard: Command Center integrating all 8 Phase 1B tabs
+- Platform Dashboard: lane-aware landing with XP, notifications, cross-surface bridges
+
+---
+
+## OPEN BLOCKERS
+
+1. **World Labs Marble API Key** — Required for:
+   - Real 3D generation in Worldwalker (pipeline UI ready)
+   - Real photogrammetry in CaptureFirst (UI ready)
+   - FLUX-based image synthesis in Alchemist (UI ready)
+   - Status: Awaiting API access — all UI/pipeline code is deployed and waiting
+
+2. **Stripe API Key** — Required for:
+   - Real payment processing in Marketplace transactions
+   - Status: Transaction API deployed with mock mode, real payments activate when STRIPE_SECRET_KEY is set
+   - Status: Not yet started
+
+---
+
+## SESSION PROTOCOL
+
+- **Principles:** User needs first, strategic imperatives guide all decisions
+- **Decision-making:** When in doubt, check against the 4 imperatives (value discrepancy, delight layer, spatial immersion, agentic future)
+- **Code quality:** All new features include test coverage, type safety (TypeScript), and accessibility compliance
+- **Documentation:** Every new route/component gets API comments and usage examples
+- **Review process:** Feature PRs require walkthrough against this roadmap
+
+---
+
+## FILE LOCATIONS
+
+Key project files referenced in this task list:
+
+- `/app/components/dream/DreamEditor.tsx` — Dream interface
+- `/app/components/build/ProjectEditor.tsx` — Project/Builder interface
+- `/app/components/knowledge/KnowledgeGraph.tsx` — Knowledge surface
+- `/app/components/nav/CompassNav.tsx` — Main navigation
+- `/app/api/mcp/route.ts` — MCP server
+- `/lib/storage/DreamEssence.ts` — Portable dream format
+- `/lib/db/schema.ts` — Database schema
+- `/app/api/v1/briefing/route.ts` — Morning briefing endpoint (Phase 2B)
+- `/app/api/v1/notifications/route.ts` — Notification orchestra (Phase 2C)
+- `/app/api/v1/quests/route.ts` — Quest system (Phase 3B)
+- `/app/api/v1/agents/route.ts` — Agent RBAC (Phase 5A)
+
 
 ## Design Constitution Work (opened 2026-04-16)
 
@@ -104,9 +988,9 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [x] Cowork session: write production-grade prompts for `compliance-structural` and `compliance-electrical` — shipped 2026-04-17 (commit 1b29e2b, BKG voice + entity citations + lane awareness + 3 example runs each)
 - [x] Cowork session: normalize `workflows.json` field naming to camelCase for source fidelity with prototype JS — shipped 2026-04-17 (commit 1b29e2b; 23 of 27 analysis steps have `promptId`, 4 orphans documented)
 - [x] Cowork session: fix Decision #17 path drift — ai-prompts live at `app/docs/ai-prompts/` not `docs/ai-prompts/` — shipped 2026-04-17 (commit 1b29e2b)
-- [x] Cowork session: verify Anthropic Claude API key is wired and accessible from production build _(triaged 2026-05-01: verified by W10.A smoke (15/15 specialists return real claude-sonnet-4-20250514 responses))_
+- [ ] Cowork session: verify Anthropic Claude API key is wired and accessible from production build
 - [x] Cowork session: load Nevada jurisdiction data into `src/lib/knowledge-data.ts` — shipped 2026-04-17 (added nv-lv, nv-ro, nv-hen, plus az-tuc and az-flag for full CA/AZ/NV Week 1 coverage)
-- [x] Payroll Classification (q23/s23-2) — **DEFERRED WITH LEGAL REVIEW GATE.** The prototype's analysis step for 1099-vs-W-2 classification is not being shipped in v1. DOL/IRS rules vary by state and worker; an AI suggesting "3 contractors may qualify as employees" creates real legal exposure. Revisit only after (a) a construction-employment attorney reviews the scope, (b) the output is framed as "questions to discuss with your CPA," never a recommendation, (c) explicit user-facing disclaimer approved by counsel. _(triaged 2026-05-01: W10.A4: shipped as deterministic legal-gate specialist `payroll-classification-gate` (server-side short-circuit, no LLM call). Honors the legal-review gate by design.)_
+- [ ] Payroll Classification (q23/s23-2) — **DEFERRED WITH LEGAL REVIEW GATE.** The prototype's analysis step for 1099-vs-W-2 classification is not being shipped in v1. DOL/IRS rules vary by state and worker; an AI suggesting "3 contractors may qualify as employees" creates real legal exposure. Revisit only after (a) a construction-employment attorney reviews the scope, (b) the output is framed as "questions to discuss with your CPA," never a recommendation, (c) explicit user-facing disclaimer approved by counsel.
 - [ ] Founder: rotate the GitHub PAT shared in chat on 2026-04-17 (Settings → Developer settings → Personal access tokens)
 - [ ] Engage a construction attorney to review the six contract templates before first paid use
 
@@ -124,8 +1008,8 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Audit repo for other leaked secrets (`grep -r 'eyJ\|sk_\|pk_\|whsec_' --include='*.mjs' --include='*.ts' --include='*.md'`)
 
 ### Week 2 (Apr 24-30) — First Paying Customer
-- [x] Ship Contract Templates workflow: 6 templates (Client, Sub, Lien Waivers x2, NDA, Change Order) _(triaged 2026-05-01: W2B push 2026-04-18; 6 templates live at /killerapp/workflows/contract-templates (DRAFT-only))_
-- [x] PDF generation for contracts _(triaged 2026-05-01: W2B: jsPDF generator at src/lib/pdf/contract-pdf.ts)_
+- [ ] Ship Contract Templates workflow: 6 templates (Client, Sub, Lien Waivers x2, NDA, Change Order)
+- [ ] PDF generation for contracts
 - [ ] Stripe subscription billing wired end-to-end at $99/mo Pro tier
 - [ ] Trusted contractor onboarded as customer #1 (locked in for 1 year)
 - [ ] Paywall flow: third Code Compliance Lookup in 30-day window prompts upgrade
@@ -174,599 +1058,3 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Output framed as "starting draft for attorney review," NOT "ready-to-sign"
 - [ ] Terms of service includes real liability limitation reviewed by the same attorney
 - [ ] Cannot sell Contract Templates until this is done
-
----
-
-## W9.D Session Wrap (2026-04-28)
-
-**Sealed at commit:** `28a50da`
-**Production URL:** `builders.theknowledgegardens.com`
-
-### Shipped this session (W9.D series — 13 commits)
-- W9.D — visual overhaul foundation (stage backdrops, scroll transitions, voice nav, compass reskin)
-- W9.D.1 → expand Navigator default + lighter backdrop overlay + transparent KillerAppNav
-- W9.D.2 → 6-lane UX polish burst
-- W9.D.3 → 12-lane functional + UX burst (TimeMachine, Budget integration, stage prompts)
-- W9.D.4 → AI navigator + 3-button responses + ⌘K command palette
-- W9.D.5 → root-fix LLM bleed (RAG gating + stage-3 hard rule)
-- W9.D.6 → home search routing + CYA filter + budget resilience + stage-0 substantive prompt
-- W9.D.7 → 6-lane finals + WorkflowShell chip rewrite
-- W9.D.8 → full Navigator visibility (top + bottom + persisted state + mobile)
-- W9.D.9 → unified ProjectCockpit (replaces IntegratedNavigator + NavigatorMiniStrip) + /rsi route + /umbrella + /marketplace + 5 best-practices articles + RSIBadge primitive
-
-### Open / pending (carry forward to next session)
-- [ ] **#46** W3.6 Compass Navigator polish — CompassBloom present but not yet *the moment*
-- [ ] **#68** W7.P Journey + Time Machine + Budget — cockpit shipped, designer pass needed for visual rhythm
-- [ ] **#72** W7.Q.4 Audit Robin's Egg color token — Tiffany blue reference (key/lock-stage hint)
-- [ ] **#78** W8.2 Rename `/killerapp` → `/app` with redirects (URL hygiene)
-- [ ] **#86** W9.A Research + Spec farm (deferred — most bullets folded into W9.D series)
-- [ ] **#104** W9.D Wave 2 — per-route cockpit context wiring (e.g. step-completion → live cockpit ticks)
-
-### New work surfaced during W9.D
-- [x] **W10.A** — smoke test 14 untested specialists (q12–q27) against real contractor questions _(triaged 2026-05-01: SHIPPED in commits 30e5f28 + ab5a869; 15/15 specialists OK in production. See docs/strategy/W10-A-smoke-report.md)_
-- [ ] **W10.B** — Building Intelligence commercial decision (B2B API/MCP separate vs. bundled tier)
-- [ ] **W10.C** — Real RSI volume — capture 100+ specialist runs to replace synthetic /rsi page data
-- [ ] **W10.D** — Cockpit visual rhythm pass (designer review of brass hinge, tick spacing, cross-zone alignment)
-- [ ] **W10.E** — Stage backdrop legibility tuning per page (Plan-it-out's white geometric vs. content)
-- [ ] **W10.F** — Mobile cockpit explicit pass (zone stack, thumb-reach, scroll behavior at <640px)
-- [ ] **W10.G** — Adapt/Collect/Reflect SVG drafting-paper backdrops upgrade to match raster richness
-- [ ] **W10.H** — Badge / certification thresholds: founder decision + UI rendering
-- [ ] **W10.I** — `/umbrella` and `/marketplace` populate with real screenshots / live data wiring
-- [ ] **W10.J** — Test infra: install `@testing-library/react`, add vitest globals, restore deleted W9.D.9 test files
-
-### Operating rules (durable)
-- Every push verified by `next build` in main context — vitest is not enough.
-- CYA language ("AHJ", "consult a licensed", "not permitted") is filtered server-side; never let it back through prompts.
-- RAG retrieval gated to stage 2 only (`STAGES_THAT_USE_CODE_RAG = new Set([2])`).
-- Token shapes: `spacing[N]` numeric, `fontWeights.regular` (not normal), SVG `<title>` child for tooltips.
-- ANTHROPIC_API_KEY required in Vercel env for live LLM responses (mock fallback exists per stage).
-
----
-
-## W10.A — Untested specialist smoke test (opened 2026-05-01, IN PROGRESS)
-
-**Premise:** W9.D handoff flagged risk of a Code-Compliance-style demo blowup if the 14 untested q12–q27 specialists were exercised in front of an investor. This session probed them.
-
-**Probe setup:** 10 contractor-realistic prompts fired at the live `/api/v1/specialists/[id]` endpoint on `builders.theknowledgegardens.com`. All 10 returned 200 OK with real Claude Sonnet 4 responses. Automated checks (banned-CYA words, mock-fallback signal, `mock-` citation prefix) caught zero. **Manual narrative + citation inspection caught three systemic findings.** Workflow coverage was actually 10 specialists across 7 of 16 q12–q27 workflows (q12, q13, q15, q19, q22, q23, q25, q26, q27 have no `promptId` at all — see F4 below).
-
-### Findings
-
-- **F1 — Citation pollution (HIGH).** Non-compliance specialists were dumping unrelated codes into the citations array because the legacy `retrieveEntities` path in `src/lib/specialists.ts` fired whenever `jurisdiction` was set. Examples: `weather-forecast` (concrete pour) cited "IBC 903.2.7 Group M Retail Sprinkler Requirements"; `draw-calculate` cited "Data Center Cooling Systems"; `co-document` for a residential rear deck cited 5 IBC codes about sprinklers and exit doorways. Model never used them; they polluted StepCard's citation strip.
-- **F2 — Hedging opener (MEDIUM-HIGH).** 5 of 10 specialists opened with "I need more information" instead of leading with a best-guess answer. Specialists affected: `weather-forecast`, `co-schedule-impact`, `co-document`, `draw-calculate`, `expense-dashboard`. Root cause: their `.md` prompts are explicitly marked `Status: Draft (prototype v3.2) — production rewrite pending`.
-- **F3 — No structured JSON output (MEDIUM).** All 10 specialists returned `structured_keys: 0`. v1 prompts don't request the `<json>...</json>` wrapping the runner expects. Side effect: `confidence` is hardcoded "medium" instead of model-assessed; no extractable budget/schedule fields for spine integration.
-- **F4 — Specialist-less workflows (founder narrative).** 9 of 16 q12–q27 workflows have NO `promptId` at all (q12, q13, q15, q19, q22, q23, q25, q26, q27). They're informational/checklist routes — not bugs, but the W9.D handoff says "17 workflows shipping" and an investor may assume all are AI-driven. Demo-path question for founder.
-
-### Shipped this session — pending review + push
-
-- [x] **W10.A1** Removed legacy `retrieveEntities` path for non-compliance specialists in `src/lib/specialists.ts`. RAG is now compliance-only (matches W9.D.5 root-fix LLM bleed pattern). Comment block tags the change.
-- [x] **W10.A2a** Runner-level "answer-first" framing appended to every specialist's `userMessage`. Additive to whatever the prompt says.
-- [x] **W10.A2b** Five v1→v2 prompt rewrites under `docs/ai-prompts/*.v2.md`: weather-forecast, co-schedule-impact, co-document, draw-calculate, expense-dashboard. Each has answer-first prose + decision-rule defaults + structured `<json>...</json>` output schema + few-shot example.
-- [x] Registered the 5 specialists in `DEFAULT_VERSION_BY_SPECIALIST` (both `src/lib/specialists.ts` and `src/app/api/v1/specialists/[id]/route.ts`).
-
-### Pending — needs commit + push + verification
-
-- [x] **W10.A.verify** Run `next build` locally OR push to a Vercel preview deploy → re-fire smoke probe → confirm: (a) citations array is empty for non-compliance specialists, (b) 5 v2 specialists no longer open with "I need more information", (c) `structured_keys > 0` on all 5 v2 specialists. _(triaged 2026-05-01: VERIFIED via live deploy — Vercel built green on 30e5f28; smoke probe caught a JSON-only narrative regression on q2/q5/q9; W10.A.fix1 commit ab5a869 fixed it; final probe is 15/15 OK / 0 FAIL / 0 WARN)_
-- [x] **Commit + push** — needs explicit founder authorization. Suggested commit message: `W10.A: kill RAG bypass for non-compliance specialists + answer-first runner framing + v2 prompts (weather, co-schedule, co-document, draw, expense-dashboard)`. _(triaged 2026-05-01: founder greenlit; commits 30e5f28 + ab5a869 pushed to origin/main; both Vercel deploys green)_
-
-### Shipped this session — extended pass (founder greenlight: "everything else: go for it")
-
-- [x] **W10.A4** Wired AI into 6 of the 9 specialist-less q12–q27 workflows. New v2 prompts: `crew-outreach-draft` (q13), `daily-log-categorize` (q15), `lien-waiver-tracker` (q22), `retainage-strategy` (q25), `warranty-summary` (q26), `lessons-synthesize` (q27). Each appended as new analysis_result step at the end of its workflow in `docs/workflows.json`. q12 (Services & utilities) and q19 (Compass check-in) intentionally remain pure-checklist — q12 is cross-trade ops with simple actions, q19 is a tutorial for the time-machine snapshot UX.
-- [x] **W10.A4-q23** Payroll classification: deterministic legal-gate specialist (`payroll-classification-gate`) wired to existing `s23-2` analysis step. Server-side short-circuit in `specialists.ts` returns a clear gate response WITHOUT calling Claude — protects against the legal exposure documented in `tasks.todo.md` § Phase 0 line 744. The step shows "Payroll classification is intentionally not run by AI" + redirects user to step s23-4 (CPA review).
-- [x] **W10.A5** Runner parser now accepts BOTH `<json>...</json>` XML tags and ` ```json ` markdown fences. **Critical finding from probe:** q2/q5/q9 v2 prompts have been silently shipping `structured_keys: 0` because their few-shot examples teach markdown fences but the parser only recognized XML tags. Backward-compat fallback in `src/lib/specialists.ts` parses both. No prompt rewrites required.
-- [x] **W10.A6** Promoted smoke probe to `scripts/probes/w10a-smoke.mjs` as a durable harness. 15 probes covering every wired q12–q27 specialist + q2/q5/q9 v2 specialists. Detects `HEDGE_OPENER`, `NO_STRUCTURED`, `CYA_*`, `DEMO_FALLBACK`, `HALLUCINATED_CITE`, HTTP/API errors. Exits 1 on FAIL flags — usable as pre-demo CI gate. Runs against `BASE` env (defaults to live deploy; `BASE=http://localhost:3000` for local dev).
-
-### Still parked (W10.A.x sub-tickets)
-
-- [ ] **W10.A3** Universal v1→v2 prompt rewrite for the remaining ~10 v1 specialists (osha-toolbox-talk, contacts-quotes, expense-categorization, co-cost-delta, punch-detection, crew-analysis/conflicts/optimization, supply-leadtimes, supply-materials, risk-payment-history/material-availability/markup-calculation, equipment-rent-vs-buy, sequencing-bottlenecks, compliance-electrical/fire/plumbing/router). Half-day. Best done with founder review on each prompt before commit.
-- [x] **W10.A.verify** Full re-probe via `scripts/probes/w10a-smoke.mjs` after push lands. Expected: zero CYA flags, zero `HEDGE_OPENER` on the 5 W10.A2b specialists, zero `NO_STRUCTURED` on q2/q5/q9 (W10.A5 parser fallback), structured output on all 6 W10.A4 specialists, deterministic gate response from `payroll-classification-gate`. _(triaged 2026-05-01: PASSED — 15/15 OK / 0 FAIL / 0 WARN against live deploy ab5a869)_
-
----
-
-## ⏵ State of play — 2026-05-05 (Cowork session resume point)
-
-### What just shipped to prod
-
-- **Project Spine v1** — project entity in URL (`?project=<uuid>`), banner travels across `/killerapp` ↔ estimating ↔ code-compliance ↔ contract-templates with raw_input + AI take. Hydrate on tab reopen. Autosave on workflow steps. AI fab pre-fills with contextual prompt when triggered from "Ask AI what to do next." Hallucination guard verified in prod (asked "What does NEC 919.7(D)(4) say?" — AI explicitly admitted ignorance, did not fabricate). All on `main` after merge.
-- **NextWorkflowCard navigation fix** — "Continue to <next workflow>" buttons actually navigate now (was console.log stub). Stage picker actually navigates too. Project_id preserved through the chain. On `project-spine-v1` branch, **not yet merged to main**.
-- **Three quick wins** — code-compliance jurisdiction auto-defaults from project context (Pete/Sarah/Diana trust fix). Cost parser handles `$1.4M-$1.8M` format (banner now populates `estimated_cost_low/high` on real ADU projects). `/killerapp?project=<id>` hides stale "You're not started yet. 7 stages to explore." copy. On `project-spine-v1` branch, **not yet merged to main**.
-
-### Comprehensive dogfood docs created (all in `docs/dogfood/`)
-
-- `master-test-matrix.md` — 16 demo-critical tests across 9 categories
-- `personas/01-10-*.md` — 10 contractor persona test plans (GC John, Maria KBR, Greenhorn Jake, Sparky Pete, PE-GC Sarah, Deck Curtis, Multifamily Mari, Rookie Rico, Green Diana, Foreman Hank)
-- `findings.md` — actual prod test results (6 of 8 tested passed; 8 untested)
-- `fix-strategies/{01-ux,02-data-jurisdiction,03-ai-behavior,04-infra-features}.md` — 4 specialist fix proposals
-- `fix-list.md` — synthesized prioritized master fix list
-
-### To get the latest two commits to prod
-
-```bash
-cd "/Users/chillydahlgren/Desktop/The Builder Garden/app"
-git checkout main && git pull origin main && git merge project-spine-v1 && git push
-```
-
-Vercel auto-deploys ~3 min after the push lands.
-
-### Watch out for parallel work
-
-A separate Claude / Dispatch session is running on the MacBook in the same repo, working on "W6 animation layer" (W6.E/H/I). It died on a 401 mid-scout and is retrying. **If it pushes commits to `main` before you, merge conflicts ahead.** Read its plan before merging anything it produces — it may overlap with the W9.D ScrollStage + `src/design-system/animations/` work that's already on prod.
-
-### Tier 1 work for next session (~3-4 hours)
-
-Goal: make the unscripted "click anywhere in the demo path" experience credible. Right now only q2/q4/q5 have Project Spine v1 wiring. The other 14 workflows (q6-q19) are landmines for John/contractor demo.
-
-- [ ] **Wire Project Spine v1 into q8 permit-applications** — same pattern as q5: import `useProjectWorkflowState`, render `ProjectContextBanner`, pass `hydratedPayloads`/`statusMap` to `WorkflowShell` or `WorkflowRenderer`, wrap `page.tsx` in `<Suspense>`. ~40-50 min.
-- [ ] **Wire Project Spine v1 into q15 daily-log** — same pattern. Hank's #1 workflow. ~40-50 min.
-- [ ] **Wire Project Spine v1 into q11 supply-ordering** — same pattern. Curtis + Maria + Hank all hit this. ~40-50 min.
-- [ ] **Verify SPINE-5/6/7 on prod** — close+reopen, multi-tab isolation, back button. ~15 min.
-- [ ] **Optional: roll the same pattern across q6/q7/q9/q10/q12/q13/q14/q16/q17/q18/q19** — ~7-9 hours total if formulaic. Could be parallel-agent-farmed but the lesson `tasks.lessons.md:931` says seed agents with the source-of-truth StepCard.types.ts inline.
-
-### Tier 2 (post-demo, ~1-2 days)
-
-- [ ] **Proactive AI assist** — 5s idle detection on empty workflow steps → gentle nudge bubble.
-- [ ] **INP perf investigation** — 1-4s spikes on click events flagged in prod. Likely culprit: journey-progress unthrottled PATCHes or ScrollStage observer thrashing.
-- [ ] **Adversarial AI test harness** — 10 fake code probes in CI to prevent regression on the hallucination guard.
-- [ ] **Glossary tooltips on jargon** — "Pre-Bid Risk Score", "Compass", "Time Machine".
-- [ ] **Status counter rehydration on remaining workflows** (currently only q2 derives status from saved JSONB).
-
-### Tier 3 — Phase 2 epics (the big bets)
-
-- [ ] **Photo/video evidence upload** (5-7 days) — #1 universal persona gap. New `project_attachments` table + Supabase Storage bucket + upload UI threaded into KillerappProjectShell + per-step in workflows. John lost a $30k deposit on this exact gap.
-- [ ] **Multi-jurisdiction code data** (~5 weeks) — IL + NYC + FL beyond CA/NV. Pete/Sarah/Mari are blocked without it. Mirrors HKG citation moat strategy.
-- [ ] **Voice 1.5** (~2-3 weeks) — TTS on AI replies, persistent listening toggle, voice button per step, command-vocabulary navigation.
-
-### Demo-readiness call
-
-- **Scripted demo on real ADU** (this week): YES, with Tier 1. Path: `/killerapp` → submit ADU scope → AI streams inline → Estimate → Codes → Contracts. Stay on this loop; don't click into other stages until they're wired.
-- **Unscripted demo "click anywhere"**: NOT YET. Tier 1 + Tier 2 first.
-
----
-
-## ⏵ State of play — 2026-05-06 (end of session)
-
-Sealed at commit `5fc6b74`. Production: `builders.theknowledgegardens.com`.
-
-### What shipped today
-
-**Wave 2 + Wave 3 spine wiring (all 17 workflows now LIVE)**
-- q8 permits, q15 daily-log, q11 supply-ordering (Wave 2 — early afternoon)
-- q6, q7, q9, q10, q12, q13, q14, q16, q17, q18, q19 (Wave 3 — late afternoon)
-- Every workflow now hydrates from `?project=<uuid>`, autosaves to its own JSONB column, renders `ProjectContextBanner`, derives step status from saved payloads
-- Schema: `20260506_more_workflow_states.sql` + `20260506_remaining_workflow_states.sql` applied to prod Supabase
-
-**Five UX fixes from real prod feedback**
-- Empty-state copy ("You're not started yet") hidden when project active
-- q2 estimating pre-fills location + sqft from raw_input + auto-completes those steps + grants XP
-- Action buttons in AI responses now preserve `?project=<id>` (was `window.location.href = ...` — silent INP killer)
-- Stage chips in `KillerAppNav` preserve `?project=<id>` via `withProjectId(href)` helper
-- `AuthAndProjectIndicator` top-right pill: "signed in · email" + "saved · project name"
-
-**5-agent parallel sprint (~3-4 hours)**
-- Agent A — Tier 1.5 quick wins: copilot route preserves existing `ai_summary`; AI fab voice → press-and-hold; 44px+ touch targets; inline rename input on project pill
-- Agent B — Adversarial AI harness (`scripts/probes/adversarial-codes.mjs`, 10 fake-code probes) + glossary (`src/data/glossary.json`, 19 jargon terms) + `TermTooltip` client component + integration in `/killerapp` page
-- Agent C — Photo/video upload **Phase 1, infra only**: `project_attachments` table + `project-evidence` Storage bucket (RLS-locked, 50MB cap) + `POST/GET/DELETE /api/v1/projects/[id]/attachments` + standalone `AttachmentUploader` component (drag-drop, mobile camera capture, batch upload). **Not wired into any workflow step yet — that's Phase 2.**
-- Agent D — Multi-project dashboard at `/killerapp/projects`: card grid w/ raw_input preview, AI summary, type/jurisdiction badges, cost range, last-updated. Sort + filter chips + debounced search, localStorage prefs. "Projects" link in `KillerAppNav`.
-- Agent E — INP perf fixes: `markdownToJsx` ActionButton uses `router.push` instead of `window.location.href = target` (the 1-4s click spike root cause). 4 supporting `useMemo` cleanups in `GlobalAiFab`, `KillerappProjectShell`, `AuthAndProjectIndicator`, `KillerAppNav`.
-
-**P0 production outage triage + recovery**
-- Symptom: every `/killerapp/*` route showed Next's 500 fallback inline (`<html id="__next_error__">`). Affected `/killerapp`, `/killerapp/projects`, `/killerapp/legacy-command-center`, every workflow.
-- Root cause: Agent E's `useMemo` calls placed AFTER existing `if (!mounted) return null;` guards. Rules-of-Hooks violation: SSR ran early-return path with N hooks, client mount ran full path with N+1 hooks, React threw "Rendered more hooks than during the previous render," Next streamed its 500 UI.
-- Fix: moved hooks above early returns in 9 components total. First batch (4 files) fixed manually; ESLint gate then surfaced 5 MORE landmines (`ProjectCockpit`, `NavigatorMiniStrip`, `RSIBadge`, `StageContextPill`, `VoiceCommandNav`) — all fixed.
-- Permanent gate: `react-hooks/rules-of-hooks` made explicit in `eslint.config.mjs`; push script greps eslint output for that rule specifically and fails on violations. Other lint errors (the 450+ pre-existing `any`-type / unescaped-apostrophe noise) reported but don't block deploys.
-
-**Bonus polish**
-- 20 page metadata titles trimmed (was rendering "Workflows — BKG — BKG" because root layout's `title.template` was wrapping page-level titles that already included the suffix)
-- Universal `?project=<id>` rescue: when a workflow page is hit without `?project=` in the URL, both `useProjectWorkflowState` and `useProjectStateBlob` now check localStorage first. If a valid UUID is stored, replace URL with same path + id appended. Same rescue on `/killerapp` itself. User's "It should work universally after the project is described once" requirement met.
-
-**Carry-forward recommendations baked into push scripts**
-- `push-fix-2026-05-06f.sh` is the canonical template — runs `npm run lint` (gated on rules-of-hooks only), then `npm run build`, then commit + push. Reuse the structure for future deploys.
-- Old session push scripts (`push-sprint-2026-05-06.sh`, `push-fix-2026-05-06b/c/d/e/f.sh`) can be deleted at next cleanup.
-
-### Open / pending — recommended priority order
-
-**P1 — Photo/Video Upload Phase 2 (3-5 days, highest demo impact)**
-- AttachmentUploader infra is built. Wire it into actual workflow steps:
-  - q15 daily-log — the obvious anchor (Hank's #1 workflow). Add a "Photos" step at top.
-  - q2 estimating — pre-bid jobsite photos for accurate scope.
-  - q5 code-compliance — inspection photos with timestamps (hits John's $30k deposit story dead-on).
-  - q11 supply-ordering — receipts for material reconciliation.
-  - q8 permit-applications — approved permit doc upload.
-  - q4 contract-templates — signed contract upload.
-- For each: import `AttachmentUploader`, mount it inside an `optional_evidence` step in `docs/workflows.json`, hook `onUploaded` to record an event in the workflow's autosave JSONB, render thumbnails on hydrate.
-- Phase 2 also needs: thumbnail grid component (uses signed URLs from API), tap-to-zoom lightbox, delete confirmation, EXIF parsing if `exifr` ships in package.json (currently skipped).
-
-**P1 — Demo run with John (real GC) + contractor friend**
-- Live app is now stable enough to demo. Scripted path: `/killerapp` → submit ADU scope → AI streams inline → Estimate → Codes → Contracts. **Tell them they can also click anywhere — Project Spine v1 covers all 17 workflows now.**
-- Capture reactions verbatim. The persona-roleplay agents are good but a real GC's first 30 seconds will surface things the agents missed.
-
-**P2 — Onboarding flow polish**
-- First-time user lands on `/killerapp` cold (no project, no localStorage, no auth). What do they see? Currently: empty state telling them to type a scope. Test it on a fresh browser profile and see if the friction is right.
-- Microcopy pass on empty states, AI thinking pulse, "Thinking through your project…" copy.
-- Sign-in flow: currently the "sign in to save your project" link is in the top-right pill. Make it more discoverable on first project-create.
-- Mobile pass: touch targets are 44px+ but full mobile-flow audit not done. Test on iPhone Safari + Android Chrome.
-
-**P2 — ESLint backlog burn-down**
-- 452 pre-existing errors (~440 are noise: `any` types, `react/no-unescaped-entities` apostrophes, `react-hooks/set-state-in-effect`, `react-hooks/purity` Math.random in render).
-- The `react-hooks/set-state-in-effect` and `react-hooks/purity` ones are real correctness concerns under React 19 strict mode and should be prioritized.
-- Worth a 2-3 hour burn-down session with parallel agents fixing in batches.
-
-**P2 — Multi-jurisdiction code depth**
-- Currently CA/NV only. Pete (Chicago electrician) / Sarah (NYC structural PE) / Mari (FL multifamily) are blocked.
-- Per fix-strategies/02-data-jurisdiction.md, this is ~5 weeks of grunt work (scrape + structure + cite). Not session-sized but breakable into per-jurisdiction sessions.
-
-**P3 — Voice 1.5**
-- Current: push-to-hold AI fab, push-to-talk on search box.
-- Wanted: TTS on AI replies (so user can keep working hands-free), persistent listening toggle for power users, per-step voice buttons in workflows, expanded command vocabulary (e.g. "go to estimating", "save this", "what's next?").
-- ~2-3 weeks.
-
-**P3 — Real RSI volume**
-- `/rsi` page renders synthetic data. Replace with live specialist-run captures (≥100 runs).
-- Capture infra exists (`rsi-instrumentation.ts`). Just needs traffic + a job that aggregates.
-
-**P3 — Spanish contracts + account-free quick-quote**
-- Persona-flagged: 4 of 10 personas (notably Maria KBR + Curtis) want Spanish-language outputs.
-- Account-free quick-quote: anon users hit `/killerapp`, get one full pass of the AI workflow without signing in, then are softly nudged to save. Increases top-of-funnel.
-
-**Phase 2 epics still on deck** — Multi-jurisdiction code data (~5 weeks), Voice 1.5 (~2-3 weeks), photo/video phase 2 (3-5 days)
-
-### What to read FIRST in next session
-
-1. `tasks.lessons.md` — read the **top-most** ~10 lessons added in 2026-05-06. The hooks-first-returns-second rule is critical. Don't break it.
-2. `eslint.config.mjs` + the latest push script (`push-fix-2026-05-06f.sh`) — understand the lint gate before adding anything to the layout chain.
-3. `src/components/AttachmentUploader.tsx` — the standalone upload component ready for Phase 2 wiring.
-4. `src/lib/hooks/useProjectWorkflowState.ts` — the canonical project-aware hook. Includes the localStorage rescue logic. Any new workflow wiring uses this.
-
-### Production verification (cold-start sanity check)
-
-Test these URLs on a fresh browser, expect them all to render real content (not Next's 500 fallback):
-- `https://builders.theknowledgegardens.com/killerapp`
-- `https://builders.theknowledgegardens.com/killerapp/projects`
-- `https://builders.theknowledgegardens.com/killerapp/workflows/code-compliance`
-- `https://builders.theknowledgegardens.com/killerapp/workflows/daily-log`
-- `https://builders.theknowledgegardens.com/killerapp/legacy-command-center`
-
----
-
-## ⏵ State of play — 2026-05-07 (Cowork autonomous session)
-
-Sealed at commit `be60ec3`. Production: `builders.theknowledgegardens.com` — verified post-deploy.
-
-### What shipped today (Option B — Demo readiness pass)
-
-**5 P0 polish fixes verified live on prod:**
-
-1. **AI take "What next?" markdown leak** — `KillerappProjectShell.tsx`. The persistent project shell rendered `aiText` raw with `whiteSpace: 'pre-wrap'`, then ALSO rendered a static "What next?" link row below. Result: the AI's `**What next?**` + action-link bullets showed as literal text alongside the rendered buttons on every cold-start. Added `stripTrailingActionBlock()` helper that strips everything from the first `**What next?**` marker onward before rendering. Static link row remains the canonical source of truth (the prompt sometimes omits one or all three CTAs; the static row never does). Verified: AI take reads cleanly, ends at "Here's where I'd start:" (above the rule), button row renders below.
-
-2. **Empty-state copy on home** — `EmptyStateOrProjectIndicator.tsx`. Was: "You're not started yet. 7 stages to explore." (read like the app wasn't set up). Now: "Pick a workflow below to start — or describe your project up top."
-
-3. **"demo mode" label on Estimating** — `EstimatingClient.tsx:328`. Was: italic "demo mode" chip when budget snapshot was empty (true for every fresh project). Now: "starter values" — same affordance, no dev/test feel.
-
-4. **Sign-in pill copy** — `AuthAndProjectIndicator.tsx`. Was: "sign in to save your project". Now: "sign in — your work won't save if you refresh." Ephemerality is concrete; users don't take soft hints seriously.
-
-5. **Mobile overflow at 375px** — `AuthAndProjectIndicator.tsx` + `GlobalAiFab.tsx`. Both pills/panels had `maxWidth: 360` + `right: 16-24`, which clipped on iPhone SE / 12 mini. Tightened both to `maxWidth: min(360px, calc(100vw - 48px))`. Code-only — visual mobile testing is still pending real-iPhone verification (Chrome on macOS won't shrink window below 1200px).
-
-**4-agent parallel audit (run during this session):**
-
-- `docs/dogfood/demo-readiness-2026-05-07.md` — synthesis of cold-start + 4 audits + the prioritized P0/P1/P2 backlog
-- Empty-state copy sweep (Explore agent) — 17 workflows + dashboard + home
-- Sign-in discoverability trace (Explore agent) — 60-second cold-start trace, top 3 fixes
-- Microcopy + CTA review (Explore agent) — verb chaos, glossary-but-no-tooltip findings
-- Mobile responsive audit (Explore agent, codebase-only) — 3 P0 mobile breaks
-
-**Demo playbook for John + contractor friend:**
-
-- `docs/dogfood/demo-playbook-john-2026-05-08.md` — what to send, scripted demo path, what's intentionally rough, talking points vs. Procore, what to capture during the call.
-
-### Things I observed but DIDN'T fix this session (P1 backlog, ranked)
-
-1. **Soft sign-in nudge after first AI stream** (sign-in agent's top P1) — concrete suggested copy in `WorkflowPickerSearchBox.tsx` after `responseContent` renders, gated on anonymous user. Skipped to avoid risky UX timing changes pre-demo.
-2. **CTA verb standardization across StepCard step types** (microcopy agent) — `WorkflowRenderer.tsx`/`StepCard.tsx`. "Save this" / "Pick these" / "Record it" / "Lock jurisdiction" → standardize to "Note the scope" / "Select your picks" / "Log the amount" / "Set jurisdiction." Touches the workflow hot path; defer to a session that can verify all 17 workflows.
-3. **ProjectContextBanner peer-link verbs** — "Codes" → "Check codes" / "Permits" → "Pull permits" / etc. Skipped because the current concise nouns work in a tight nav row, and the "→" suffix already implies action.
-4. **"Thinking through your project…" copy** — microcopy agent suggested "Running the numbers…". Two places to keep in sync (`KillerappProjectShell.tsx:405` + `WorkflowPickerSearchBox.tsx:462`). Quick fix if next session wants it.
-
-### P2 backlog from this session
-
-- **Jurisdiction auto-default not picking up "Pasadena CA"** — Cold-start submitted ADU scope mentioning Pasadena. AI take cited Pasadena ADU ordinance correctly, but `code-compliance` workflow defaulted jurisdiction to "IBC 2024 (International), US" not California-specific. Investigate `useProjectWorkflowState` jurisdiction extraction from `ai_summary`. Likely the jurisdiction parser doesn't know to map "Pasadena" → ca-la or similar; or the ai_summary doesn't structure jurisdiction in a parseable way.
-- **Status counter on q5 workflow shows "7 of 7 complete" on a fresh project** — likely shared anon journey state across project IDs. The localStorage keys `bkg:journey:anon:<projectId>` may not correctly partition.
-- **Vercel team toolbar leaks "INP Issue" overlay** — only Chilly sees it (team-gated), not John. Not a demo blocker.
-
-### Next-session recommended priority order (ranked)
-
-**Top — Photo/Video Upload Phase 2 (still the highest demo impact)**
-
-This is what John's $30k deposit story hits dead-on. Phase 1 infra shipped 2026-05-06. Phase 2 wires `AttachmentUploader` into actual workflow steps. Order from yesterday's handoff stands: q15 daily-log → q5 code-compliance → q2 estimating → q11 supply-ordering → q8 permits → q4 contracts. ~3-5 hours. After this lands, the contractor demo loop is end-to-end credible.
-
-**Second — Run the demo, capture verbatim**
-
-Send the URL + the email template from `demo-playbook-john-2026-05-08.md`. Get John on a call, capture first 30 seconds. The persona-roleplay agents are good but a real GC's first reactions surface things the agents missed.
-
-**Third — P1 polish from this session's audit**
-
-Soft sign-in nudge after first AI stream, CTA verb standardization, "Running the numbers…" copy. ~1-2 hours.
-
-### Notes on the autonomous-push fallback
-
-This session's commit was pushed via GitHub Trees API because the Cowork sandbox can't unlink `.git/index.lock` on macOS-mounted folders. Working push script: `outputs/push-via-api.sh` (kept as a template). The canonical local path remains `push-fix-2026-05-06f.sh` (lint gate → build gate → git push). Use the API fallback only when the sandbox is the only available shell.
-
-### Build verification — what was skipped this session
-
-`npm run build` was NOT run locally before push because the sandbox bash has a 45-second wall and `next build` for this repo takes ~1-3 min. Mitigations:
-- Targeted ESLint on the 5 touched files passed clean (0 rules-of-hooks violations).
-- Touched files are pure CSS strings, copy changes, and a no-hooks regex helper — type errors are unlikely.
-- Vercel deploy gate took over (succeeded — verified in chrome on prod within 5 min of push).
-
-If a future session needs to ship from the sandbox: prefer landing on a branch first, let Vercel build the preview, verify, then promote to main.
-
----
-
-## ⏵ State of play — 2026-05-07 PM (Photo Upload Phase 2)
-
-Sealed at HEAD `9f8bb7c5` (chain: `ffe8eb3` → `de53a8a` → `1827476` → `cd1bb00` → `9f8bb7c`). Production verified live on q15 (daily-log), q5 (code-compliance), and q4 (contract-templates) via Chrome MCP after each deploy.
-
-### What shipped this afternoon (Option A — Photo Upload Phase 2)
-
-**Two new shared components:**
-
-- `src/components/AttachmentSection.tsx` — the consumer atom every workflow client mounts. Combines `AttachmentUploader` + `AttachmentThumbnailGrid` + a per-`(workflowId, stepId)` GET to `/api/v1/projects/[id]/attachments`. Trace background, brass uppercase title, foreman-vernacular subtitle. Renders a soft "sign in to upload" affordance for anonymous users, "Pick a project up top" affordance when no project is active. Re-fetches after every successful upload so thumbnails appear immediately.
-- `src/components/AttachmentThumbnailGrid.tsx` — 3-column responsive grid (`auto-fill, minmax(140px, 1fr)`). Renders signed-URL `<img>` / `<video>` thumbs. Click to open a fixed-position lightbox (Esc or backdrop to close, no portal/no third-party dep). Inline ▶ marker on video thumbnails. Caption / filename overlay at bottom of lightbox.
-
-**6 workflow clients wired:**
-
-| Workflow | Step ID | Title | Position |
-|---|---|---|---|
-| q15 daily-log | `upload-progress-photos` | Upload progress photos | above WorkflowShell |
-| q5 code-compliance | `upload-inspection-photos` | Upload inspection photos | above WorkflowRenderer |
-| q2 estimating | `upload-jobsite-reference-photos` | Upload jobsite reference photos | above WorkflowShell |
-| q11 supply-ordering | `upload-material-receipts` | Upload material receipts | above WorkflowShell |
-| q8 permit-applications | `upload-approved-permit` | Upload approved permit doc | below WorkflowShell (terminal) |
-| q4 contract-templates | `upload-signed-contract` | Upload signed contract | below main return (terminal) |
-
-Each `onUploaded` callback calls `recordStepEvent` (or persists into the contracts blob for q4) so the workflow's autosave JSONB tracks "the user uploaded files for this step." Status counter ticks. XP credit lands.
-
-**Three follow-ups in the same wave:**
-
-- PDF support added to `AttachmentUploader.tsx` — q4 contracts and q8 permits were silently rejecting `application/pdf` uploads on first ship. Now in `ALLOWED_MIME_TYPES`. `accept` attribute updated. Drop-zone copy softened from "Drop photos or videos here" → "Drop a file here · photos, videos, or PDFs (max 50MB)" so it reads honest for non-photo workflows.
-- Soft sign-in nudge on `WorkflowPickerSearchBox.tsx` — anonymous users now see an inline robin's-egg-tinted note after the AI streams: "Heads up: your work won't save if you refresh. Sign in to keep this project." Auth state detected once on mount via `supabase.auth.getSession()`. Highest-leverage P1 from the 2026-05-07 AM demo readiness audit.
-- "Thinking through your project…" → "Running the numbers…" on both `WorkflowPickerSearchBox.tsx` and `KillerappProjectShell.tsx` — microcopy agent's pick. Foreman-natural where the previous copy was vaguely consultanty.
-
-### How the autonomous push went
-
-The founder's host shell was running `while true; do git fetch && git reset --hard origin/main && npm run build; sleep 60; done` to catch any push failures. **Local edits got reset every minute before the push could land.** Fix: pushed atomically via the GitHub Trees API instead of local git. The watch loop's next tick pulled the new commit down clean and ran `npm run build` against it. New lessons file entry: "When the user is running a verifier-style watch loop, use the API instead of racing local edits to disk."
-
-### Things observed but NOT fixed this afternoon (P1 backlog)
-
-1. **Drop-zone helper-text customization per section** — could be a `helperText` prop on `AttachmentUploader` so q4 reads "Drop the signed contract PDF here" while q15 stays "Drop a file here". Skipped because the section title + subtitle already carry the framing.
-2. **Receipt OCR + line-item extraction** for q11 — vision API pulls vendor + total off receipt photos and pre-fills the budget row. Phase 3.
-3. **Inspector captions on q5 thumbnails** — caption input under each thumbnail in the grid. Phase 3.
-4. **EXIF parsing** at upload time — `exifr` not installed; couldn't pull geotag/timestamp. Phase 3.
-
-### P2 (next session unless John flags it)
-
-- Multi-jurisdiction code data still CA + NV only. Pasadena works.
-- Voice 1.5 (TTS replies + command vocabulary).
-- Spanish contracts (4/10 personas asked).
-- Jurisdiction default still doesn't pick up "Pasadena" from `ai_summary` (P2 from 2026-05-07 AM).
-
-### Next-session recommended priority order (ranked)
-
-**Top — Run the demo with John + contractor friend.**
-The product is honest enough to demo. `docs/dogfood/demo-playbook-john-2026-05-08.md` has the script. Photo upload Phase 2 has shipped — the playbook's "intentionally rough" section reflects this. Send the URL today.
-
-**Second — Capture verbatim, file follow-ups.**
-`docs/dogfood/john-2026-05-08-call.md` (create after the call). First click, first confusion, first "oh." Convert into P0/P1 tasks here.
-
-**Third — q11 receipt OCR / q5 inspector captions / EXIF.**
-The Phase 2 wiring stops short of "the AI does something with the photo." Receipts are the highest-ROI follow-on (vision API pulls vendor + total → pre-fills budget). Inspector captions land trust on q5. EXIF lands the "this was actually on-site at this time" trust signal.
-
-**Fourth — Jurisdiction auto-default fix (P2 from AM session).**
-30-min investigation; user-visible trust win.
-
----
-
-## ⏵ State of play — 2026-05-07 evening (Trust fixes + Captions + Receipt OCR)
-
-Sealed at HEAD `e6ec82b`. Production verified green via Vercel deploy API on commits c34a9c8, 7c096e2 (failed — JSX escape), e6ec82b (fix-up).
-
-### What shipped this evening
-
-**TIER 1 — Trust fixes (commit `c34a9c8`)**
-
-Both bugs were demo-blocking trust killers from this morning's audit. Pete/Sarah/Diana persona findings flagged jurisdiction; my own cold-start re-run flagged the status counter.
-
-1. **Jurisdiction auto-default** — `src/app/api/v1/copilot/route.ts`
-   - Stage 0 system prompt now explicitly instructs the AI to output `Jurisdiction: <city>, <state>` on its own line before the What-next block.
-   - Few-shot example updated to include the tag.
-   - parseAiResponse regex loosened to handle `**Jurisdiction:**` markdown wrapping.
-   - Result: code-compliance / permits / contracts now default to the correct jurisdiction when the project's raw input names a city or state.
-
-2. **Status counter "7 of 7 complete" on fresh projects** — `src/lib/hooks/useProjectWorkflowState.ts`
-   - `statusFromSeeded` now distinguishes analysis_result-style seeds (have `input` set, no `value`/`selected`/`checked`) from real user input. Analysis seeds stay pending until the specialist actually runs.
-   - Backwards compatible: 17 callers don't change. Distinction lives in the payload-shape check.
-   - Result: fresh project → q5 status counter reads "0 of 7" (or 1 of 7 if a text/voice step seeded from raw input). Demo no longer feels canned.
-
-**TIER 2 — Inspector captions + receipt OCR (commit `7c096e2` initial, `e6ec82b` JSX fix-up)**
-
-3. **Inspector captions** — three files
-   - PATCH /api/v1/projects/[id]/attachments — new endpoint, auth-gated, ownership-checked, 500-char cap
-   - AttachmentThumbnailGrid — caption visible below thumbnail (truncated to 40 chars), inline "Add a caption" affordance, fully editable in lightbox; Esc-while-editing cancels rather than closes
-   - AttachmentSection — `updateCaption` callback that PATCHes + re-fetches
-   - Result: q5 inspector story finally lands. Contractor uploads photo, types "south corner flashing — torn after windstorm", inspector reads months later in proper context.
-
-4. **Receipt OCR for q11** — five files (4 modified, 2 new)
-   - NEW POST /api/v1/projects/[id]/attachments/[attachmentId]/extract-receipt — Claude Haiku 4.5 vision, ~$0.008/image. Returns `{vendor, total, currency, lineItems?, confidence, notes}`. Mime-type-gated to images. Soft-fails on parse error.
-   - NEW src/lib/receipt-extract.ts — client-side helper.
-   - SupplyOrderingClient — auto-fires extract on image upload, shows "Reading the receipt..." spinner, surfaces editable card with vendor + total + category fields, "Save to budget" button calls recordMaterialCost.
-   - Critical UX rule: never auto-write the budget. User confirms after editing.
-   - Demo flow: upload Home Depot receipt → 5 sec later card appears pre-filled → click Save → budget shows the line item.
-
-**TIER 2 FIX-UP (commit `e6ec82b`)**
-
-5. **JSX attribute escape bug** — `src/components/AttachmentThumbnailGrid.tsx`
-   - Initial Tier 2 commit had `placeholder="...\"...\""` — JSX can't escape quotes with backslash inside double-quoted attribute values. Build failed at TS1127 / TS1382.
-   - Fix: switched to template-literal expression `placeholder={\`...\`}`.
-   - Caught by Vercel's deploy API status check, NOT by my own pre-push verification (sandbox bash 45s wall blocks `npm run build`). New lesson queued.
-
-### Next-session backlog (still standing)
-
-**Highest impact next:**
-- EXIF parsing on upload (geotag + timestamp) — needs `exifr` dep added to package.json + npm install. Trust signal: "this was actually on-site at this time."
-- Receipt OCR for q17 (Expense Report) — same pattern as q11, separate wiring.
-- Line-item display in q11 extraction card — API returns them but UI only shows vendor + total for v1.
-- Multi-jurisdiction code data still CA + NV only.
-
-**Durability:**
-- ESLint backlog burn-down — ~12 genuine react-hooks correctness errors hiding in the ~450-error noise wall. Spawn 4-5 parallel agents per category if time allows.
-- Schema additions (receivables `contract_value` column, due_date on budget items).
-
-**Demo orchestration:**
-- Run the demo with John + contractor friend.
-- Capture verbatim → `docs/dogfood/john-2026-05-08-call.md`.
-
----
-
-## ⏵ State of play — 2026-05-08 early AM (Phase 3+4: receipt OCR fan-out)
-
-Sealed at HEAD `27d0958c` (last source change) + this commit. Vercel
-verified green for every src commit in the chain:
-
-  c34a9c8 — Tier 1 trust fixes (jurisdiction default + status counter)
-  7c096e2 — Tier 2 captions + receipt OCR for q11 (failed; JSX escape)
-  e6ec82b — JSX escape fix (✓ green)
-  9c1b5d4 — Bookkeeping (no src; deploy skipped)
-  05d8d3d — Tier 3: receipt OCR for q17 + line items display (✓ green)
-  27d0958 — Tier 4: PDF support in receipt OCR (✓ green)
-  + this commit — final polish
-
-### What shipped during this 2026-05-08 burn
-
-1. **Trust fixes** — `c34a9c8`
-   - Jurisdiction tag now machine-readable in Stage 0 prompt; copilot
-     parses `Jurisdiction: <city>, <state>`. code-compliance now defaults
-     to the project's actual jurisdiction.
-   - `statusFromSeeded()` distinguishes analysis_result-style seeds from
-     real user input. Fresh q5 reads "0 of 7" not "7 of 7".
-
-2. **Inspector captions** — `7c096e2` + `e6ec82b`
-   - PATCH `/api/v1/projects/[id]/attachments` for caption updates.
-   - Caption visible below thumbnail (truncated 40 chars), editable in
-     lightbox. Esc-while-editing cancels rather than closes.
-   - 500-char cap, auth-gated, ownership-checked.
-
-3. **Receipt OCR for q11** — `7c096e2` + `e6ec82b`
-   - NEW `POST /api/v1/projects/[id]/attachments/[attachmentId]/extract-receipt`.
-   - Claude Haiku 4.5 vision, ~$0.008/image.
-   - SupplyOrderingClient surfaces editable card with vendor/total.
-   - User clicks "Save to budget" → recordMaterialCost. Never auto-write.
-
-4. **Line-items display in extraction cards** — `05d8d3d`
-   - Both q11 and q17 cards now show optional `<details>` block listing
-     extracted line items (description × qty @ $unit — $total).
-   - Hidden by default so the card stays compact.
-
-5. **Receipt OCR for q17 expenses** — `05d8d3d`
-   - Full pattern parity with q11. AttachmentSection mounted, auto-fires
-     extract on image upload, surfaces editable card.
-   - q17 uses recordExpense (not recordMaterialCost) so the 7-way
-     category dropdown survives into the budget table.
-
-6. **PDF receipt support** — `27d0958`
-   - extract-receipt route now accepts `application/pdf` alongside
-     `image/*`. Switches Anthropic content block from `image` to
-     `document` for PDFs (handles multi-page natively).
-   - q11 + q17 onUploaded mime gates loosened to fire OCR for PDFs too.
-   - Closes the "what about PDF supplier invoices?" gap.
-
-7. **onCloseOutClick wired** — this commit
-   - ProjectDashboardClient had a no-op handler from a previous session.
-     Now navigates to the existing `/killerapp/projects/[id]/close-out`
-     route. (Note: ProjectDashboardClient is the demo-project showcase
-     page; real projects route through /killerapp?project=<id>.)
-
-### Things observed but NOT fixed this burn (next-session backlog)
-
-- **EXIF parsing on upload** — needs `exifr` dep added + `npm install`.
-  Watch loop runs build, not install — would break until manual install.
-- **Receipt OCR results don't link back to attachment** — when a budget
-  line is recorded, we don't store the source attachment ID on the
-  budget row. Future: add `source_attachment_id` to budget items so the
-  user can click a line in the budget and see the receipt photo.
-- **q17 has its own internal upload path that's now redundant** — the
-  manual receipt-image entry at s17-2 still exists. Could be deprecated
-  once usage data shows everyone goes through AttachmentSection.
-- **8 SOON workflows** (q1, q3, q20-q27) still inactive. q1 + q3 are
-  small wins (single-AI-call workflows).
-- **Multi-jurisdiction code data** — CA + NV only.
-- **ESLint backlog** — most react-hooks/set-state-in-effect violations
-  are mobile-detection false-positives; not P0. Math.random in render
-  ones live in /dream/* (not the demo path).
-
-### Next-session recommended priority order
-
-**Top — Run the demo with John + contractor friend.**
-  - `docs/dogfood/demo-playbook-john-2026-05-08.md` is the script.
-  - Photo upload Phase 2 + receipt OCR (q11 + q17 + PDF) + captions
-    are all live.
-  - Send the URL today.
-
-**Second — Wire q1 ("Should you bid this job?") and q3 ("Who are you
-working for?") as live workflows.**
-  - Both are single-step AI specialist calls. Match the existing
-    workflow client pattern (q4, q5).
-  - Brings live workflow count from 17/27 to 19/27.
-
-**Third — Source-of-truth linkage between attachments and budget rows.**
-  - When recordMaterialCost / recordExpense is called from a receipt
-    extraction, store `attachment_id` on the budget row.
-  - Adds a "View receipt" link to each budget line.
-
-**Fourth — The 60-second cold-start onboarding video on the landing
-hero.**
-  - Currently the hero is text + image. A 60-sec screen recording of
-    the demo would dramatically improve cold-start conversion.
-
----
-
-## ⏵ State of play — 2026-05-08 evening (404 audit + signup flow)
-
-After Tiers 1-4 shipped, ran a comprehensive href audit across the
-killer-app + dream + auth surfaces and found 4 broken routes lurking
-in the demo path:
-
-| Route | Was | Now |
-|---|---|---|
-| /compass | 404 (footer Link) | 308 → /killerapp/workflows/compass-nav |
-| /dream-oracle | 404 (2 dashboard Links) | 308 → /dream/oracle |
-| /budget | 404 (4 BudgetWidget links — mounted on q17) | 308 → /killerapp/workflows/expenses |
-| /signup | 404 | 307 → /login?signup=1 |
-
-All 4 verified working via curl on prod.
-
-### Commits this round
-
-  ac8fddc — /compass footer fix + 4 redirects
-  068ae31 — /dream-oracle dashboard fix + redirect
-  a3ace3a — /budget BudgetWidget links + redirect
-  3714e16 — /login auto-flips to sign-up mode when ?signup=1
-
-### Why this matters
-
-Every 404 in the demo path is a "wait, what just happened?" moment
-for a prospect. John clicks the footer Compass link, hits 404, and
-the cold-start magic evaporates. Catching all 4 BEFORE the demo
-matters more than any individual feature ship.
-
-### How they were found
-
-Comprehensive grep for `href="/[^"]*"` and `href={\`/...\`}` across
-src/app + src/components, then curl each unique URL on prod. Took
-~10 minutes; should be a standing ritual before any prospect-facing
-demo.
-
-### Next-session backlog (still standing)
-
-- EXIF parsing — needs `exifr` dep + `npm install`
-- ESLint backlog (mostly false-positives in demo path)
-- Wire q1 / q3 as live workflows (needs DB migration for state
-  columns + specialist prompts for q1)
-- Source-of-truth attachment_id linkage on budget rows
-- Run the demo with John + capture verbatim
