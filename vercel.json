@@ -1,12 +1,5 @@
 {
-  "crons": [
-    {
-      "path": "/api/v1/heartbeat",
-      "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/v1/rsi/heartbeat",
-      "schedule": "0 17 * * *"
-    }
+  "rewrites": [
+    { "source": "/investor-brief", "destination": "/investor-brief.html" }
   ]
 }
