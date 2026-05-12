@@ -6,6 +6,14 @@
 
 ## CRM Strategy (research sprint, 2026-05-12)
 
+### Always fetch the agent's output back from GitHub and read it before celebrating a push
+**Date:** 2026-05-12
+**What happened:** Pushed 13 Brief 1 files in a single batch via the GitHub Contents API. All 13 returned 201/200 — push was clean. But Vercel's build of that commit failed (red). I didn't see it until polling the status API ~2 min later. Live site is fine (Vercel keeps last green build serving until a new one promotes), but the failure means new pushes don't deploy until the broken HEAD is fixed.
+**Root cause of the failure:** Unknown without the build log. Agent-written files were pattern-grounded to the audit, but a code agent can still ship a strict-mode TypeScript error that local heuristic checks miss. Without a local clone of the repo I can't run `tsc --noEmit` before pushing — `next build` checks are stricter than stock `tsc`, per the 2026-04-18 lesson.
+**Rule:** Before relying on a code-writing subagent for >5 files at once: (a) clone the repo into the Cowork workspace OR (b) use Supabase / Vercel REST API tokens so I can fetch failed deploy logs without asking the user. Without one of those, my agent push is "spray and pray" — patches require the user to copy the build error from their dashboard, which is a context-switching tax. Next time: request the repo clone path via `request_cowork_directory` BEFORE writing code, or pre-arrange a Vercel token alongside the GitHub PAT.
+
+---
+
 ### The "CRM rebuild" checkbox in Phase 2D was a placeholder, not a delivered product
 **Date:** 2026-05-12 (discovered during CRM deep-research sprint)
 **What happened:** Phase 2D's `[x] CRM rebuild: business pulse + AI attention queue wired to real project data` was carried forward from early 2026-03-29 work that the team had already named as a failure pattern: *"The CRM devolved into a generic SaaS demo — exactly what the presentation says we're NOT."* The line stayed checked because the `/crm` route renders without error. But the prior lessons entry from March 2026 already declared the surface wrong, and the research sprint confirms it. The current `/crm` Command Center is the floor of what we ship; the new five-surface MLP is the ceiling.
