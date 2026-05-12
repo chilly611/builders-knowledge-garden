@@ -6,6 +6,17 @@
 
 ## CRM Strategy (research sprint, 2026-05-12)
 
+### Specialist prompt filename convention is `.v2.md` / `.production.md` / `.md` — never `.v1.md`
+**Date:** 2026-05-12
+**What happened:** I shipped a new specialist prompt as `docs/ai-prompts/contact-extract.v1.md`. The route called `callSpecialist('contact-extract', ctx, { mockIfNoKey: true, version: 'v1' })` and got a 500. Cause: `loadSpecialistPrompt` in `src/lib/specialists.ts` resolves prompts in this order — `<id>.v2.md` (only if `version === 'v2'`), then `<id>.production.md` (only if `preferProductionPrompt: true`), then `<id>.md` (the fallback "prototype" path which requires a different heading: `## Original prototype system prompt` wrapped in backticks). There is NO `.v1.md` path. My file was invisible to the loader.
+**Fix:** Renamed the prompt to `<id>.production.md` (the file already had the right `## System Prompt` heading) and updated routes to pass `preferProductionPrompt: true`.
+**Rule:** New specialist prompts ALWAYS go to `docs/ai-prompts/<id>.production.md`. Routes that call them pass `preferProductionPrompt: true`. Use `.v2.md` only when adding a v2 of an EXISTING specialist that's already in `DEFAULT_VERSION_BY_SPECIALIST`. Never use `.v1.md` — the loader will never find it.
+
+### Capture endpoint smoke tests must include cleanup of test data
+**Date:** 2026-05-12
+**What happened:** End-to-end smoke test of Brief 1 voice capture created 3 contact rows in the production `knowledge-gardens-prod` Supabase, including one "Unknown" row from the failed pre-prompt-fix call. Forgot to delete after the test. Manually cleaned up via `DELETE FROM crm_contacts WHERE project_id = 'smoke-test-2026-05-12'`. Risk: smoke tests pollute production data if not scoped to a test project_id AND cleaned up after.
+**Rule:** Every smoke test against a live API endpoint that writes to prod Supabase must (a) scope the write with a clearly-named test `project_id` (e.g. `smoke-test-YYYY-MM-DD-<purpose>`), (b) delete the test rows at the end of the test, (c) verify the delete was complete before declaring done.
+
 ### React 19 / Next 16: `JSX.Element` is no longer a global namespace — strip return-type annotations on components
 **Date:** 2026-05-12
 **What happened:** Brief 1's 5 React components were written by a code agent with explicit `: JSX.Element` return-type annotations. Audit didn't catch it because the agent claimed the existing repo pattern used `Promise<JSX.Element>` based on inferred type from `tsc --declaration` — but that was the *inferred* type, not the *source* annotation. The actual repo has exactly one file using `JSX.Element` and it imports the namespace explicitly. Under Next 16.2.1 + React 19.2.4, the JSX namespace is not globally augmented for client components — Vercel's stricter `next build` typecheck (not stock tsc) fails with `Cannot find namespace 'JSX'`.
