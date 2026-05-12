@@ -80,7 +80,7 @@ export default async function WhoIsAskingPage({
   searchParams,
 }: {
   searchParams?: Promise<{ project?: string | string[] }>;
-}): Promise<JSX.Element> {
+}) {
   const resolved = (await searchParams) ?? {};
   const raw = resolved.project;
   const projectId = Array.isArray(raw) ? raw[0] : raw;
