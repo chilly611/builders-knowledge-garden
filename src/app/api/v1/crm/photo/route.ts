@@ -333,9 +333,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           },
         };
         const result = await callSpecialist('contact-extract', ctx, {
-          mockIfNoKey: true,
-          version: 'v1',
-        });
+        mockIfNoKey: true,
+        preferProductionPrompt: true,
+      });
         narrative = result.narrative;
         structured = result.structured;
         confidence =
