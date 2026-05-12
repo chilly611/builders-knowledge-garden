@@ -66,7 +66,7 @@ function timeSince(iso?: string): string {
   return `${y}y ago`;
 }
 
-export default function ContactCard({ contact, proMode = false, onTap }: ContactCardProps): JSX.Element {
+export default function ContactCard({ contact, proMode = false, onTap }: ContactCardProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
   const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
   const stage = contact.lifecycleStage ?? 'lead';
