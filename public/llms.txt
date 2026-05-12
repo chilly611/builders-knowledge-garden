@@ -52,13 +52,21 @@ Model Context Protocol server endpoint. See MCP Server section below.
 **POST /api/v1/copilot**
 AI copilot endpoint for construction advice. Accepts queries and returns AI-generated responses grounded in the knowledge graph.
 
+**POST /api/v1/crm/capture**
+Capture a new contact from voice or manual input. Body: `{ source: 'voice'|'manual', transcript?, manualFields?, projectId? }`. Returns the `bkg_contact` JSON-LD record + `time_machine_handle`. Every write is reversible for 30 seconds via PATCH `archived=true` (v1 undo).
+
+**POST /api/v1/crm/photo**
+Capture a contact from a photo. Body: `{ photoBase64, photoMimeType, photoExif?: {gps?: [lat,lon]} }`. GPS-attaches to the closest existing contact within 200m, or reverse-geocodes via Nominatim and creates a new contact. Returns JSON-LD record + `time_machine_handle`.
+
+**Knowledge page:** /killerapp/who-is-asking — voice + photo contact capture surface ("Who's asking, and what do I know about them?"). Pro Toggle reveals "Contacts" / "Source / Confidence / Lane" columns.
+
 ## MCP Server
 
 **Endpoint:** `https://builders.theknowledgegardens.com/api/v1/mcp`
 **Protocol:** Model Context Protocol (MCP)
 **Purpose:** Enables AI systems to access Builder's Knowledge Garden as a context source for construction-related queries
 
-### Available Tools (12 total)
+### Available Tools (14 total)
 
 The MCP server exposes the following tools:
 
@@ -74,6 +82,8 @@ The MCP server exposes the following tools:
 10. **list_jurisdictions** — List all 142+ supported jurisdictions with code references
 11. **crm_list_contacts** — List CRM contacts with pipeline and lead scoring data
 12. **crm_pipeline_stats** — Get CRM pipeline summary with deal values and follow-ups
+13. **crm_capture_lead** — Capture a new contact from voice transcript or manual fields; returns `bkg_contact` JSON-LD + `time_machine_handle`
+14. **crm_attach_photo** — Capture a contact from a photo; GPS-matches to closest contact within 200m or creates new via reverse-geocode
 
 ### Connecting to the MCP Server
 
