@@ -231,7 +231,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       };
       const result = await callSpecialist('contact-extract', ctx, {
         mockIfNoKey: true,
-        version: 'v1',
+        preferProductionPrompt: true,
       });
       narrative = result.narrative;
       const structured = result.structured as ExtractedContactJson;
