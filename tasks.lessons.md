@@ -6,6 +6,12 @@
 
 ## CRM Strategy (research sprint, 2026-05-12)
 
+### React 19 / Next 16: `JSX.Element` is no longer a global namespace — strip return-type annotations on components
+**Date:** 2026-05-12
+**What happened:** Brief 1's 5 React components were written by a code agent with explicit `: JSX.Element` return-type annotations. Audit didn't catch it because the agent claimed the existing repo pattern used `Promise<JSX.Element>` based on inferred type from `tsc --declaration` — but that was the *inferred* type, not the *source* annotation. The actual repo has exactly one file using `JSX.Element` and it imports the namespace explicitly. Under Next 16.2.1 + React 19.2.4, the JSX namespace is not globally augmented for client components — Vercel's stricter `next build` typecheck (not stock tsc) fails with `Cannot find namespace 'JSX'`.
+**Fix:** Strip every `: JSX.Element` and `: Promise<JSX.Element>` annotation from function-component declarations. Let TypeScript infer. Alternative: `import { type JSX } from 'react'` at the top of each file. Removing the annotation is the cleaner, repo-consistent option.
+**Rule:** When writing or auditing React components for this repo (Next 16 + React 19): never annotate the return type of a function component. Let TypeScript infer. If you must annotate, use `React.ReactNode` or import the JSX namespace explicitly. The 2026-04-18 lesson about `next build` having stricter typechecks than `tsc --noEmit` applies — local tsc would miss this one, only `next build` catches it.
+
 ### Always fetch the agent's output back from GitHub and read it before celebrating a push
 **Date:** 2026-05-12
 **What happened:** Pushed 13 Brief 1 files in a single batch via the GitHub Contents API. All 13 returned 201/200 — push was clean. But Vercel's build of that commit failed (red). I didn't see it until polling the status API ~2 min later. Live site is fine (Vercel keeps last green build serving until a new one promotes), but the failure means new pushes don't deploy until the broken HEAD is fixed.
