@@ -178,7 +178,7 @@ export default function PhotoCaptureFAB({
   projectId,
   onSuccess,
   onError,
-}: PhotoCaptureFABProps): JSX.Element {
+}: PhotoCaptureFABProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [fabState, setFabState] = useState<FabState>('idle');
 
