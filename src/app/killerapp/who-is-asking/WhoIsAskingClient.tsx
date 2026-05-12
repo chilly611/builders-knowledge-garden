@@ -50,7 +50,7 @@ const UNDO_WINDOW_MS = 30_000;
 export default function WhoIsAskingClient({
   initialContacts,
   initialProjectId,
-}: WhoIsAskingClientProps): JSX.Element {
+}: WhoIsAskingClientProps) {
   const [contacts, setContacts] = useState<InitialContact[]>(initialContacts);
   const [proMode, setProMode] = useState<boolean>(false);
   const [undo, setUndo] = useState<UndoState | null>(null);
