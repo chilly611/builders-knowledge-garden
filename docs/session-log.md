@@ -6,6 +6,52 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-12 — Cowork Session: CRM Deep Research Sprint (Streams A–E)
+**Agent:** Cowork (claude-opus-4-7)
+**What was built:**
+- `docs/research/crm/stream-a-landscape.md` — Mainstream + vertical CRM landscape audit (6,935 words, 33-row steal/leapfrog/ignore matrix, 126 citations). Audited HubSpot, Salesforce, Pipedrive, Zoho, Monday, Copper, Close, Folk, Attio, Day.ai (horizontal) + JobNimbus, JobTread, Followup, Acculynx, Markate, Contractor Foreman, Houzz Pro, JobProgress, BuilderTrend, CompanyCam, Roofr (construction-vertical) + AI-native + inbox/CRM hybrids.
+- `docs/research/crm/stream-b-contractor-reality.md` — Contractor ground-truth research (8,538 words, 30 verbatim direct quotes from r/Roofing / r/Plumbing / r/Contractor / r/handyman / r/Construction with cited URLs, 30 byproduct moments). Documents anti-CRM patterns, adoption-conversion inflection moments, three trade-specific journeys (storm-chase roofer / residential remodel GC / service trade), voice + field reality.
+- `docs/research/crm/stream-c-machine-surface.md` — Machine-readable CRM surface (7,944 words, 24 MCP tools with example JSON I/O, 31 lifecycle events grouped by stage, paste-ready `bkg_contact` and `bkg_deal` JSON-LD documents). Audited existing CRM MCP servers (HubSpot/Salesforce/Attio/Pipedrive/Folk/Twenty/JobNimbus community), schema.org grounding, AI-as-equal-user field visibility model.
+- `docs/research/crm/stream-d-ux-patterns.md` — UX patterns to steal or reject (6,876 words, 45-row pattern→primitive mapping, 25-row reject list with named products). Maps each pattern to one of the 7 BKG primitives; flags two patterns that don't map cleanly (proposed 8th-primitive Correction Loop, proposed architectural Phone-Number-as-Inbox).
+- `docs/research/crm/stream-e-strategy.md` — **The synthesis Chilly reads first.** 2-page executive summary answering the 4 demanded questions; full CRM-through-the-lifecycle map (Lead → Size Up → Lock → Plan → Build → Adapt → Collect → Reflect → Repeat); 35-row plain-language vocabulary table; five-surface MLP spec (Today / Who's asking? / What might happen next? / Quick reply / Repeat client radar); invisible CRM architecture with 30 byproduct moments; final 24-tool MCP surface; Carlos Méndez Tampa-FL roofer 30-day adoption story; first three Cowork-ready briefs; "what we're explicitly NOT building in v1" list (18 items).
+- `tasks.todo.md` — Section 2E (CRM Deep Research → v1 Build Order) inserted after Phase 2D. "CRM v1 — Build Order" section inserted before DELIGHT BACKLOG with all three first briefs paste-ready.
+- `tasks.lessons.md` — Six new lessons appended at top (placeholder-checkboxes erase lessons, "CRM" is itself a Goal-1 violation, Time Machine is precondition for AI write access, Correction Loop primitive proposal, defensible-against-ChatGPT extends to surfaces, parallel-subagent dispatch discipline).
+
+**Key decisions:**
+- **The BKG CRM is connective tissue across the Killer App's 7-stage lifecycle, not a module.** It threads from pre-stage Lead through Reflect into Repeat/Reputation/Warranty.
+- **The five v1 surfaces are Today / Who's asking? / What might happen next? / Quick reply / Repeat client radar.** Anything else is Pro-Toggle-only or v2.
+- **Brief 1 ships first: voice + photo capture at `/killerapp/who-is-asking`.** Brief 2: AI-drafted SMS at `/killerapp/quick-reply` with 90s undo. Brief 3: post-Reflect radar at `/killerapp/repeat-radar`.
+- **Plain-language route slugs in URLs, never `/crm`.** Pro Toggle re-exposes the term inside the UI. Existing `/crm` route stays for legacy linkability until a redirect is decided (Brief 8).
+- **`time_machine_handle` is mandatory on every write across every new CRM table.** Goal 5 (Time Machine as platform infrastructure) is the precondition for AI agent write access — Stream C found this to be the single most important design move differentiating BKG from every audited CRM MCP server.
+- **JSON-LD is the canonical record shape.** `bkg_contact` and `bkg_deal` are schema.org-grounded with BKG extensions (lane, lifecycle_stage, confidence, source). UI is one rendering; MCP is the other; same data.
+- **"AI is also a user" is structural, not a feature flag.** Every MCP tool description carries human_label + pro_label + lane_relevance. Every agent write defaults to draft-only until contractor explicitly grants send-scope per account.
+- **Decision gate before Brief 1 ships:** (1) Chilly approves the five surfaces, (2) Chilly decides the constitution-extension question (Correction Loop as 8th primitive vs fold into Whisper + Time Machine), (3) Chilly decides Twilio per-account vs shared-pool for Brief 2, (4) Chilly decides legacy `/crm` redirect strategy.
+
+**Issues / open questions:**
+- The Phase 2D line `[x] CRM rebuild: business pulse + AI attention queue wired to real project data` is technically true (the database has rows) but the surface it describes was already flagged in the March 2026 lessons as wrong ("The CRM devolved into a generic SaaS demo"). The new five-surface MLP supersedes it. Lesson appended to `tasks.lessons.md`.
+- No CRM build work has been started — research-only sprint per the 2E brief.
+- Files not yet pushed to `main` — Chilly to run from own terminal (or supply a GitHub PAT to push via the Contents API).
+- Twilio account / number provisioning is a pre-build dependency for Brief 2. Per-account number recommended; shared-pool is the cheaper fallback.
+- The `Correction Loop` 8th-primitive question is open and must be answered by the founder before Brief 1 ships, since the data plumbing differs (corrections nest inside Time Machine but are not a subset of it).
+
+**Research dispatch pattern (worth carrying forward):**
+- Four parallel general-purpose subagents (A/B/C/D) executed independently.
+- Each prompt inlined the full constitution text, the 7-stage lifecycle, both non-negotiable framings, exact output file path, output structure, verification criteria.
+- 30,000+ words of research with 200+ cited sources produced in ~10 minutes wall-clock.
+- Zero rework needed — contrast with the W3.5 farm (16 tsc errors from agents inventing type shapes). Rule: inline the source-of-truth in agent prompts, don't link to it.
+
+**Files touched (cleanup checklist for Chilly's git push):**
+- `docs/research/crm/stream-a-landscape.md` (new)
+- `docs/research/crm/stream-b-contractor-reality.md` (new)
+- `docs/research/crm/stream-c-machine-surface.md` (new)
+- `docs/research/crm/stream-d-ux-patterns.md` (new)
+- `docs/research/crm/stream-e-strategy.md` (new)
+- `tasks.todo.md` (Section 2E inserted; CRM v1 Build Order with 3 briefs inserted)
+- `tasks.lessons.md` (6 new lessons appended at top)
+- `docs/session-log.md` (this entry — local-only until Chilly appends to the canonical log via GitHub Contents API per CLAUDE.md protocol)
+
+---
+
 ## 2026-03-28 — Chat Session: Visual Transformation
 **Agent:** Chat (Claude Opus)
 **What was built:**
