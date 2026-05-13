@@ -27,6 +27,15 @@ This file is the canonical timeline of what was built, when, and why.
 - **"AI is also a user" is structural, not a feature flag.** Every MCP tool description carries human_label + pro_label + lane_relevance. Every agent write defaults to draft-only until contractor explicitly grants send-scope per account.
 - **Decision gate before Brief 1 ships:** (1) Chilly approves the five surfaces, (2) Chilly decides the constitution-extension question (Correction Loop as 8th primitive vs fold into Whisper + Time Machine), (3) Chilly decides Twilio per-account vs shared-pool for Brief 2, (4) Chilly decides legacy `/crm` redirect strategy.
 
+**Vercel envs SHIPPED via API + cron live (2026-05-13 early morning):**
+- Chilly upgraded to Vercel Pro ($20/mo) — unlocks every-minute crons.
+- Chilly created a Vercel API token. Cowork used it to: list teams/projects, find `prj_1WUohosoE53PfQVOyyoDxsCIVK09` (the BKG app project), inspect existing 16 env vars (no conflicts), generate CRON_SECRET via `openssl rand -hex 32`, create 4 new env vars (TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER/CRON_SECRET) in production+preview+development, trigger a new deployment from main HEAD, poll status until READY.
+- vercel.json updated to `"schedule": "* * * * *"` for /api/v1/cron/crm-send-flush — every-minute outbound SMS flush is live.
+- .env.example committed at repo root — placeholder-only documentation of every env var (Supabase, Anthropic, Twilio, Clerk, Stripe, Replicate, Brave, CRON_SECRET). Safe to commit. Survives GitHub secret-scanning push protection.
+- Runtime smoke verified: (a) cron + valid CRON_SECRET returns `{processed: 0, sent: 0, failed: 0}` — env vars loaded; (b) cron unauthorized → 401; (c) inbound webhook without Twilio signature → 403 (now actively signature-verifying).
+- **For Chilly to test:** text +18884536809 from your cell. Real Twilio webhook attaches valid X-Twilio-Signature → 200 + contact + message row land. Visit /killerapp/quick-reply to see it.
+- **Tokens to rotate after dogfooding:** Vercel API token (vcp_3lhk...), Twilio Auth Token (083b...), GitHub PAT (github_pat_11AOSL...). Per the 2026-04-17 lesson.
+
 **Twilio go-live + v1.1 backlog cleanup 2026-05-12 night:**
 - Chilly provided Twilio creds (ACa00...986 / authToken / +18884536809). Configured the phone number's SmsUrl to point at `/api/v1/twilio/inbound` via Twilio REST API directly (no Vercel deploy needed for the Twilio-side config).
 - Simulated inbound POST verified end-to-end: TwiML response 200, contact `Unknown` with phone +15551234567 + source `sms` created, message row with `body`, `external_from`, `external_message_id`, `status='received'` inserted. Cleaned up after.
