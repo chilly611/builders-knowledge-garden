@@ -656,6 +656,23 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 
 ## CRM v1 — Build Order (populated by Stream E, 2026-05-12)
 
+### Twilio go-live — pending Chilly's Vercel env vars (2026-05-12 evening)
+> Twilio account created. Twilio number webhook URL configured to `https://builders.theknowledgegardens.com/api/v1/twilio/inbound` via Twilio REST API (verified — simulated inbound POST creates contact + message row end-to-end).
+> Inbound flow works without Vercel envs (dev mode skips signature verify with console warn). Outbound flow blocked until Vercel envs land. Cron endpoint live + tested but returns `{ok: true, skipped: true, reason: 'twilio_env_missing'}`.
+>
+> **Four vars to add in Vercel dashboard → Project Settings → Environment Variables → Production + Preview + Development:**
+> - `TWILIO_ACCOUNT_SID` = (grab from Twilio Console → Account Info → starts with `AC...`)
+> - `TWILIO_AUTH_TOKEN` = (grab from Twilio Console → Account Info → Auth Token. **Rotate after this session** since it was in chat context.)
+> - `TWILIO_PHONE_NUMBER` = `+18884536809`
+> - `CRON_SECRET` = any random string (e.g., output of `openssl rand -hex 32` — used to authorize manual flush triggers)
+>
+> After saving, click "Redeploy" on the latest deployment. Then test by texting `+18884536809` from your phone.
+
+### Cron schedule — v1.1 follow-up
+> Vercel Hobby tier doesn't allow `* * * * *` frequency. vercel.json has NO cron entry — endpoint is manual-trigger only via `curl -H "Authorization: Bearer <CRON_SECRET>" https://builders.theknowledgegardens.com/api/v1/cron/crm-send-flush`. When upgrading to Pro, add `{"path": "/api/v1/cron/crm-send-flush", "schedule": "* * * * *"}`. Alternative: external scheduler like cron-job.org or GitHub Actions `schedule:` (5-min min free).
+
+
+
 > Reserved slots filled by Stream E synthesis. Each brief is self-contained.
 > Full spec lives at `docs/research/crm/stream-e-strategy.md` Section 7.
 > No build work begins until Chilly approves the five surfaces (see 2E decision gate above).
@@ -678,8 +695,8 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 > - [ ] Photo capture not yet exercised on a real device. Test on a phone with EXIF GPS before John Bou demo.
 > - [ ] Route `/killerapp/who-is-asking` is sibling to `/workflows/`, not in `LIVE_WORKFLOWS`. Decide: add a "Today" card on the main picker, OR add an explicit CRM card pointing to `/who-is-asking`, OR leave deep-link-only until Brief 4 (Today landing) lands.
 > - [ ] Demo script written at `docs/demos/brief-1-who-is-asking-demo.md` — read before the John Bou meeting.
-> - [ ] **NEW — Storage path duplication bug.** `/api/v1/crm/photo` produces URLs like `crm-photos/crm-photos/...jpg` (bucket name appears twice). Fix in `src/app/api/v1/crm/photo/route.ts`: change `const path = \`crm-photos/${Date.now()}-...\`` to `const path = \`${Date.now()}-...\`` — `storage.from('crm-photos')` already scopes the bucket. Cosmetic but ugly in JSON-LD.
-> - [ ] **NEW — `specialist_runs` table missing from prod.** All `_run_id: null` in capture responses is because the W7.R RSI tables were authored in `supabase/migrations/20260422_rsi_deltas.sql` but never applied to `knowledge-gardens-prod`. Apply the existing migration or write a smaller one with just `specialist_runs` so RSI instrumentation actually logs. Without this, the learning loop for Brief 1.1 prompt iteration is blind.
+> - [x] **Storage path duplication bug FIXED 2026-05-12.** `/api/v1/crm/photo` produces URLs like `crm-photos/crm-photos/...jpg` (bucket name appears twice). Fix in `src/app/api/v1/crm/photo/route.ts`: change `const path = \`crm-photos/${Date.now()}-...\`` to `const path = \`${Date.now()}-...\`` — `storage.from('crm-photos')` already scopes the bucket. Cosmetic but ugly in JSON-LD.
+> - [x] **`specialist_runs` table CREATED 2026-05-12 via MCP** — Schema reconstructed from `src/types/database.ts` (run_id PK + workflow_id + specialist_id + input_json + 5 indexes + updated_at trigger). RSI logger should now populate `_run_id` on every capture/draft/compliance call. All `_run_id: null` in capture responses is because the W7.R RSI tables were authored in `supabase/migrations/20260422_rsi_deltas.sql` but never applied to `knowledge-gardens-prod`. Apply the existing migration or write a smaller one with just `specialist_runs` so RSI instrumentation actually logs. Without this, the learning loop for Brief 1.1 prompt iteration is blind.
 > - [ ] **NEW — Route-side fallback for LLM narrative.** The model keeps emitting structured markdown (`## Contact Record\n**Name:**...`) instead of a sentence narrative. Prompt iteration alone won't fix this. Fix in capture/photo routes: detect markdown patterns in `result.narrative` and fall back to `extracted.description` (the JSON-LD `description` field is consistently sentence-form). Same fallback for `confidence`: if both `bkg:confidence` and top-level `confidence` are 0 but `name + address + intent` are all populated, calibrate to 0.7 server-side.
 > - [ ] **NEW — Regenerate `src/types/database.ts`** after Brief 1 + Brief 2 migrations. The autogenerated types don't include `crm_contacts`, `crm_contact_activities`, `crm_messages`, or `crm_voice_fingerprint`. Future agents will reinvent shapes. Run `npx supabase gen types typescript --project-id vlezoyalutexenbnzzui --schema public > src/types/database.ts` from a local clone.
 
@@ -1087,5 +1104,3 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Output framed as "starting draft for attorney review," NOT "ready-to-sign"
 - [ ] Terms of service includes real liability limitation reviewed by the same attorney
 - [ ] Cannot sell Contract Templates until this is done
-
-<!-- conflict test -->
