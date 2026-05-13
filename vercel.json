@@ -1,11 +1,5 @@
 {
   "rewrites": [
     { "source": "/investor-brief", "destination": "/investor-brief.html" }
-  ],
-  "crons": [
-    {
-      "path": "/api/v1/cron/crm-send-flush",
-      "schedule": "* * * * *"
-    }
   ]
 }
