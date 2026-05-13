@@ -399,13 +399,13 @@ crm_describe_self() → {tools, schemas, examples} // for agent self-discovery
 
 ## SECTION 6 — ADOPTION STORY: 30-DAY ROOFER, SKEPTIC → DEPENDENT
 
-**Carlos Méndez, 41, owns Méndez Roofing in Tampa, FL.** One truck, his brother part-time, a wife (Lupita) who does QuickBooks invoices on Sundays. He has tried Jobber, JobNimbus, and "some other one I forget the name of." He still uses a spiral notebook on the truck door for active jobs and his phone Contacts app for everyone else. He texts customers from his personal number. He hates the word "CRM."
+**Carlos Méndez, 41, owns Méndez Roofing in Chula Vista, CA.** One truck, his brother part-time, a wife (Lupita) who does QuickBooks invoices on Sundays. He has tried Jobber, JobNimbus, and "some other one I forget the name of." He still uses a spiral notebook on the truck door for active jobs and his phone Contacts app for everyone else. He texts customers from his personal number. He hates the word "CRM."
 
-### Day 0 — Carlos hears about BKG from John Bou at a Tampa Bay Builders happy hour.
+### Day 0 — Carlos hears about BKG from John Bou at a San Diego Builders happy hour.
 John shows him the picker landing on his phone. Carlos says, "I'm not signing up for another CRM." John says, "It's not a CRM. It's a tool that listens for you when you're on a roof." Carlos signs up because the homepage doesn't ask for a credit card and the first screen says **"Who's asking, and what do I know about them?"** — which is exactly what he yells at Lupita on Sundays.
 
 ### Day 1 — Empty-state demo.
-Carlos opens BKG. The "Today" screen is empty but invites him: "Snap a photo or hold the mic to add your first customer." He holds the mic, says "Bob Henderson, 3242 Bayshore, ridge cap blew off." A card appears: Bob Henderson, 3242 Bayshore Blvd, Tampa, FL. Estimated value $800. Source: voice. *Done in 4 seconds.* Carlos says "huh" out loud and adds the next three customers from memory the same way.
+Carlos opens BKG. The "Today" screen is empty but invites him: "Snap a photo or hold the mic to add your first customer." He holds the mic, says "Bob Henderson, 1456 Highland Ave, ridge cap blew off." A card appears: Bob Henderson, 1456 Highland Ave Blvd, Chula Vista, CA, FL. Estimated value $800. Source: voice. *Done in 4 seconds.* Carlos says "huh" out loud and adds the next three customers from memory the same way.
 
 ### Day 3 — The missed-call wedge.
 Carlos is on a roof. A new number texts: "Hi, my neighbor said you did roof work and my flashing's leaking — 7841 Bayou Dr." BKG creates a new lead card and shows a Whisper on his phone: "New person asking — Lisa from Bayou Dr — want me to draft a reply?" Carlos taps the Whisper. AI draft already shows: "Hi Lisa — thanks for reaching out. I'm on a roof right now, will swing by tomorrow at 10. Sound good? — Carlos." He taps Send. Toast: "Sent. Undo for 90s." He goes back to work. **He just won a job he would have lost.**
@@ -423,7 +423,7 @@ Carlos is on a Smith job. Snaps a photo of an exposed nail in the underlayment. 
 Rafa says, "This is a CRM, right?" Carlos says, "No, it's not. Watch." Holds the mic, says "New lead Mark from McDonalds drive-thru AC out budget 800." Card appears. Rafa says, "OK, fine, I'll try it."
 
 ### Day 30 — The first repeat-radar fire.
-A Whisper appears on Carlos's Today screen: "Diego Romero — you fixed his roof last May — Tampa has heavy storms forecast for Thursday. Want to send a quick 'we got you, call if you see leaks' text?" Carlos taps. Sends. Diego replies: "Wow, thanks man, you're the only contractor that's ever done that." Diego refers two neighbors that week.
+A Whisper appears on Carlos's Today screen: "Diego Romero — you fixed his roof last May — San Diego has heavy storms forecast for Thursday. Want to send a quick 'we got you, call if you see leaks' text?" Carlos taps. Sends. Diego replies: "Wow, thanks man, you're the only contractor that's ever done that." Diego refers two neighbors that week.
 
 ### What flipped Carlos
 - The product never said the word "CRM."
@@ -591,7 +591,7 @@ These three briefs are paste-ready into `tasks.todo.md` under the reserved slots
 
 **Build & verify steps:**
 1. Build per above. Reuse existing weather API (q14) for storm proximity.
-2. Seed 5 fake closed projects with addresses around Tampa to test storm proximity.
+2. Seed 5 fake closed projects with addresses around San Diego to test storm proximity.
 3. `tsc --noEmit` + `vitest run` (add 8 tests: warranty calc per trade, anniversary trigger, storm match, referral classifier, dismiss → suppress).
 4. `next build` green.
 5. Local smoke: manually trigger heartbeat, verify 3 cards on screen, dismiss one, verify it doesn't re-fire.
