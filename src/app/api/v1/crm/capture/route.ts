@@ -163,6 +163,159 @@ function isBodyValid(body: unknown): body is CaptureRequestBody {
   return true;
 }
 
+// ─── Markdown-fields parser (Brief 1.1 fallback) ──────────────────────────
+// When the LLM emits markdown like:
+//   **Contact Record Created:**
+//   ```
+//   Name: Sara Chen
+//   Address: 1456 Davis Boulevard, Tampa, FL
+//   Trade Intent: Plumbing - water heater
+//   Budget Range: ~$2,000
+//   Phone: 555-1234
+//   Email: sara@example.com
+//   ```
+// ...we recover the fields here. Returns null if no fields were found.
+function parseMarkdownFields(
+  text: string,
+  body: CaptureRequestBody,
+): ExtractedContactJson | null {
+  if (!text || typeof text !== 'string') return null;
+
+  // Match lines like "Name: foo", "**Name:** foo", "- Name: foo"
+  const fieldRe = /(?:^|\n)\s*(?:[-*•]\s*)?(?:\*\*)?\s*([A-Za-z][A-Za-z _/&-]{1,50})(?:\*\*)?\s*:\s*([^\n]+)/g;
+  const fields: Record<string, string> = {};
+  let m: RegExpExecArray | null;
+  while ((m = fieldRe.exec(text)) !== null) {
+    const rawKey = m[1].trim().toLowerCase().replace(/[\s_-]+/g, ' ');
+    const rawVal = m[2].trim().replace(/^\*+|\*+$/g, '').replace(/^["']|["']$/g, '').trim();
+    if (rawVal && rawVal.toLowerCase() !== 'not provided' && rawVal.toLowerCase() !== 'unknown' && rawVal !== 'N/A') {
+      // Keep the first occurrence
+      if (!(rawKey in fields)) fields[rawKey] = rawVal;
+    }
+  }
+  if (Object.keys(fields).length === 0) return null;
+
+  // Map common keys
+  const get = (...keys: string[]): string | undefined => {
+    for (const k of keys) {
+      if (fields[k]) return fields[k];
+    }
+    return undefined;
+  };
+  const nameRaw = get('name', 'full name', 'contact name', 'customer name');
+  const phoneRaw = get('phone', 'telephone', 'phone number', 'mobile', 'cell');
+  const emailRaw = get('email', 'email address');
+  const addressRaw = get('address', 'street address', 'location', 'site address');
+  const intentRaw = get('trade intent', 'intent', 'service type', 'request', 'issue', 'problem', 'work needed');
+  const budgetRaw = get('budget range', 'budget', 'estimated value', 'price range', 'estimate');
+  const companyRaw = get('company', 'business', 'organization');
+  const laneRaw = get('lane', 'customer type');
+  const projectTypeRaw = get('project type', 'trade category', 'category');
+
+  // Parse name into givenName/familyName when 2+ tokens
+  let givenName: string | undefined;
+  let familyName: string | undefined;
+  let name = nameRaw;
+  if (nameRaw) {
+    const parts = nameRaw.split(/\s+/);
+    if (parts.length >= 2) {
+      givenName = parts[0];
+      familyName = parts.slice(1).join(' ');
+    } else {
+      givenName = parts[0];
+    }
+  } else if (companyRaw) {
+    name = companyRaw;
+  } else {
+    name = 'Unknown';
+  }
+
+  // Parse address into PostalAddress
+  let address: ExtractedContactJson['address'] | undefined;
+  if (addressRaw) {
+    // Try to split "1456 Davis Boulevard, Tampa, FL" → {streetAddress, locality, region}
+    const parts = addressRaw.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 3) {
+      address = {
+        streetAddress: parts[0],
+        addressLocality: parts[1],
+        addressRegion: parts[2].replace(/\s+\d{5}(-\d{4})?$/, '').trim() || undefined,
+      };
+    } else if (parts.length === 2) {
+      address = { streetAddress: parts[0], addressLocality: parts[1] };
+    } else {
+      address = { streetAddress: addressRaw };
+    }
+  }
+
+  // Parse budget into number
+  let estimatedValue: number | undefined;
+  if (budgetRaw) {
+    const numMatch = budgetRaw.match(/(\d[\d,]*(?:\.\d+)?)\s*(k|grand|thousand|m)?/i);
+    if (numMatch) {
+      let n = parseFloat(numMatch[1].replace(/,/g, ''));
+      const suffix = (numMatch[2] || '').toLowerCase();
+      if (suffix === 'k' || suffix === 'grand' || suffix === 'thousand') n *= 1000;
+      else if (suffix === 'm') n *= 1_000_000;
+      if (Number.isFinite(n) && n > 0) estimatedValue = n;
+    }
+  }
+
+  // Map lane from intent or explicit lane field
+  let lane: string = 'homeowner';
+  if (laneRaw) {
+    const l = laneRaw.toLowerCase();
+    if (['gc', 'general contractor', 'general'].some((k) => l.includes(k))) lane = 'gc';
+    else if (['specialty', 'sub', 'subcontractor'].some((k) => l.includes(k))) lane = 'specialty';
+    else if (['supplier', 'vendor'].some((k) => l.includes(k))) lane = 'supplier';
+    else if (l.includes('home')) lane = 'homeowner';
+  } else if (intentRaw) {
+    const i = intentRaw.toLowerCase();
+    if (/roof|ridge|flash|shingle|gutter|leak|hvac|ac\b|panel|plumb|drain|water heater/.test(i)) {
+      lane = 'homeowner';
+    }
+  }
+
+  // Map project_type from intent
+  let projectType: string | undefined;
+  if (projectTypeRaw) {
+    projectType = projectTypeRaw.toLowerCase().replace(/\W+/g, '_').replace(/^_|_$/g, '');
+  } else if (intentRaw) {
+    const i = intentRaw.toLowerCase();
+    if (/roof|ridge|shingle|flashing/.test(i)) projectType = 'roof_repair';
+    else if (/water heater/.test(i)) projectType = 'water_heater';
+    else if (/plumb|drain|leak/.test(i)) projectType = 'plumbing';
+    else if (/hvac|ac|cooling|heating/.test(i)) projectType = 'hvac';
+    else if (/panel|electric/.test(i)) projectType = 'electrical';
+    else if (/kitchen|reno/.test(i)) projectType = 'kitchen_reno';
+  }
+
+  // Description: prefer intent + budget
+  let description: string | undefined;
+  if (intentRaw && budgetRaw) description = `${intentRaw}. Budget ~${budgetRaw.replace(/^~/, '')}.`;
+  else if (intentRaw) description = intentRaw;
+  else if (budgetRaw) description = `Budget ~${budgetRaw.replace(/^~/, '')}.`;
+
+  return {
+    '@type': companyRaw ? 'Organization' : 'Person',
+    name: name ?? 'Unknown',
+    givenName,
+    familyName,
+    email: emailRaw ?? null,
+    telephone: phoneRaw ?? null,
+    address,
+    description,
+    'bkg:lane': lane,
+    'bkg:lifecycle_stage': 'lead',
+    'bkg:source': body.source ?? 'voice',
+    'bkg:confidence': 0.75, // markdown-parsed has reasonable confidence
+    confidence: 0.75,
+    estimated_value: estimatedValue,
+    project_type: projectType,
+    tags: intentRaw ? [intentRaw.toLowerCase().split(/\s+/)[0]] : [],
+  };
+}
+
 function mockExtraction(body: CaptureRequestBody): ExtractedContactJson {
   if (body.source === 'manual' && body.manualFields) {
     const f = body.manualFields;
@@ -288,7 +441,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
       narrative = result.narrative;
       const structured = result.structured as ExtractedContactJson;
-      extracted = structured ?? mockExtraction(validBody);
+      // Brief 1.1 fallback: when the LLM ignores <json> tags and dumps
+      // markdown-formatted "Name: X\nAddress: Y" instead, parse it.
+      const hasUsefulStructured =
+        structured && typeof structured === 'object' &&
+        Object.keys(structured).length > 0 &&
+        (structured.name || structured.givenName || structured.familyName || structured.address);
+      if (hasUsefulStructured) {
+        extracted = structured;
+      } else {
+        const parsedFromMarkdown = parseMarkdownFields(narrative || result.raw_response || '', validBody);
+        extracted = parsedFromMarkdown ?? mockExtraction(validBody);
+      }
     }
 
     // ─── Brief 1.1 fallbacks ──────────────────────────────────────────
