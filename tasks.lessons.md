@@ -12,6 +12,18 @@
 **Fix:** Renamed the prompt to `<id>.production.md` (the file already had the right `## System Prompt` heading) and updated routes to pass `preferProductionPrompt: true`.
 **Rule:** New specialist prompts ALWAYS go to `docs/ai-prompts/<id>.production.md`. Routes that call them pass `preferProductionPrompt: true`. Use `.v2.md` only when adding a v2 of an EXISTING specialist that's already in `DEFAULT_VERSION_BY_SPECIALIST`. Never use `.v1.md` — the loader will never find it.
 
+### Vercel Hobby tier doesn't allow sub-daily cron schedules
+**Date:** 2026-05-12 (Brief 2 cron deploy)
+**What happened:** Pushed `vercel.json` with `{"path": "/api/v1/cron/crm-send-flush", "schedule": "* * * * *"}` for the outbound SMS flush. Build failed immediately with "Deployment failed." The Vercel error link redirected to docs about cron pricing — every-minute scheduling is a Pro-tier feature.
+**Fix:** Removed the cron entry from `vercel.json`. The route handler stays — it's reachable at `/api/v1/cron/crm-send-flush` and can be triggered manually (with `Authorization: Bearer <CRON_SECRET>`) or from external schedulers (cron-job.org, GitHub Actions schedule).
+**Rule:** Before adding any cron to `vercel.json`, check the customer's Vercel plan tier. Hobby allows daily; Pro allows any frequency (down to every minute). If sub-daily scheduling is required AND the project is on Hobby, options: (a) upgrade to Pro, (b) use Supabase pg_cron via an Edge Function, (c) use an external scheduler (GitHub Actions `schedule:` workflow can fire as often as every 5 minutes for free). For BKG specifically: the SMS flush is acceptable to be manual or via external scheduler until Pro upgrade.
+
+### Don't trust a CHECK constraint enum to be complete on first design
+**Date:** 2026-05-12 (Twilio webhook smoke)
+**What happened:** Brief 1's `crm_contacts.source` CHECK constraint allowed `('voice','photo','manual','dream_builder')` based on the original Brief 1 capture sources. When Brief 2's Twilio inbound webhook tried to insert a new contact with `source: 'sms'`, the constraint violated → insert failed → route swallowed the error and returned 200 to ack Twilio → smoke test showed `0 rows` in the DB.
+**Fix:** `ALTER TABLE public.crm_contacts DROP CONSTRAINT crm_contacts_source_check; ALTER TABLE ... ADD CONSTRAINT ... CHECK (source IN ('voice','photo','manual','dream_builder','sms','email','call'));`
+**Rule:** When designing a CHECK constraint with an enum, anticipate future channel additions and either (a) leave the constraint off entirely (cheap to add later, easy to forget), or (b) include EVERY plausible value up front (email, sms, call, voice, photo, manual, import, api, etc) even if you're not building for them yet. The cost of an unused enum value is zero; the cost of a silent constraint violation on a webhook is hours of debugging.
+
 ### Markdown-fields parser is the LLM-tax safety net
 **Date:** 2026-05-12 (Brief 1.1 final fix)
 **What happened:** Three rounds of prompt iteration plus route-side `cleanupNarrative` + `calibrateConfidence` STILL didn't reliably get structured output from `contact-extract`. Claude Sonnet 4 would emit markdown like:
