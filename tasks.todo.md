@@ -656,9 +656,17 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 
 ## CRM v1 — Build Order (populated by Stream E, 2026-05-12)
 
-### Twilio go-live — ✅ COMPLETE (2026-05-12 evening)
+### Twilio go-live — ✅ COMPLETE (10DLC primary 2026-05-13)
 > Twilio account created. Twilio number webhook URL configured to `https://builders.theknowledgegardens.com/api/v1/twilio/inbound` via Twilio REST API (verified — simulated inbound POST creates contact + message row end-to-end).
-> ✅ **All 4 env vars set via Vercel API (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, CRON_SECRET) — production+preview+development.** Redeploy READY. Cron returns `{processed: 0}` (env vars loaded). Inbound webhook now signature-verifies (unsigned → 403, real Twilio signature → 200 + DB insert).
+> ✅ **All 4 env vars set via Vercel API** (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, CRON_SECRET) — production + preview + development. Cron returns `{processed: 0}` (env vars loaded). Inbound webhook signature-verifies. Twilio account upgraded from trial to Full Active ($20 funds).
+>
+> ✅ **10DLC SD number purchased 2026-05-13:** `+1 619-932-5552` (Chula Vista, CA). Webhook configured. TWILIO_PHONE_NUMBER env var swapped from `+18884536809` to `+16199325552`. Redeployed.
+>
+> ⏳ **A2P 10DLC Brand registration — Chilly to submit (10-15 min wizard):** https://console.twilio.com/us1/develop/sms/regulatory-compliance/a2p-trust-product → "Sole Proprietor" (1-3 days approval). Use case: Customer Care or Mixed. Sample messages from `docs/demos/brief-1-who-is-asking-demo.md`. Until approved, outbound is throttled/filtered by carriers; low-volume dogfooding (~10-30 msgs/day) usually goes through.
+>
+> 📞 **Parked numbers:**
+> - `+1 888-453-6809` (toll-free) — Toll-Free Verification submitted, 1-3 weeks for approval. Inbound still works. Keep for brand line / second channel.
+
 >
 > **Four vars to add in Vercel dashboard → Project Settings → Environment Variables → Production + Preview + Development:**
 > - `TWILIO_ACCOUNT_SID` = (grab from Twilio Console → Account Info → starts with `AC...`)
