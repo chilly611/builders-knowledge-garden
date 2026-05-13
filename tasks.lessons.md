@@ -12,6 +12,12 @@
 **Fix:** Renamed the prompt to `<id>.production.md` (the file already had the right `## System Prompt` heading) and updated routes to pass `preferProductionPrompt: true`.
 **Rule:** New specialist prompts ALWAYS go to `docs/ai-prompts/<id>.production.md`. Routes that call them pass `preferProductionPrompt: true`. Use `.v2.md` only when adding a v2 of an EXISTING specialist that's already in `DEFAULT_VERSION_BY_SPECIALIST`. Never use `.v1.md` — the loader will never find it.
 
+### Vercel API beats the dashboard for env var management — same pattern as GitHub PAT
+**Date:** 2026-05-13
+**What happened:** After upgrading to Pro, Chilly granted a Vercel API token. From a single bash session: listed teams, found the project, generated CRON_SECRET, created 4 env vars across all 3 environments, triggered a redeploy, polled for READY, smoke-tested the cron + webhook auth. ~5 minutes of wall-clock, zero clicks for Chilly.
+**Why this matters:** Almost everything Chilly was doing in the Vercel dashboard (managing env vars, redeploying, inspecting builds, checking deployment status) is exposed in the Vercel REST API at `https://api.vercel.com/...`. A scoped Bearer token unlocks all of it. Same pattern as the GitHub PAT for the Contents API, the Twilio Account SID + Auth Token for the SMS API, the Supabase MCP for SQL.
+**Rule:** For every external service the project depends on, ask "is there an API token I can hold (with the right scope + expiry) instead of clicking through the dashboard each session?" If yes, that's the cleanest workflow. If no, fall back to Claude in Chrome browser automation. Almost every modern SaaS has a token; the dashboard is the slow path for what should be a 30-second API call.
+
 ### Vercel Hobby tier doesn't allow sub-daily cron schedules
 **Date:** 2026-05-12 (Brief 2 cron deploy)
 **What happened:** Pushed `vercel.json` with `{"path": "/api/v1/cron/crm-send-flush", "schedule": "* * * * *"}` for the outbound SMS flush. Build failed immediately with "Deployment failed." The Vercel error link redirected to docs about cron pricing — every-minute scheduling is a Pro-tier feature.
