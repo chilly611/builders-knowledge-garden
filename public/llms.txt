@@ -4,7 +4,7 @@
 
 **Name:** Builder's Knowledge Garden
 **Domain:** builders.theknowledgegardens.com
-**Framework:** Next.js 15 App Router
+**Framework:** Next.js 16 App Router
 **Purpose:** Centralized knowledge graph and API access for building codes, construction methods, materials, standards, regulations, and jurisdictional requirements across 142+ jurisdictions.
 
 Builder's Knowledge Garden provides construction professionals, architects, and builders with structured, curated knowledge about building practices, regulations, materials, and methods. The platform integrates with AI systems through REST APIs and a Model Context Protocol (MCP) server for seamless access to construction knowledge.
@@ -56,9 +56,29 @@ AI copilot endpoint for construction advice. Accepts queries and returns AI-gene
 Capture a new contact from voice or manual input. Body: `{ source: 'voice'|'manual', transcript?, manualFields?, projectId? }`. Returns the `bkg_contact` JSON-LD record + `time_machine_handle`. Every write is reversible for 30 seconds via PATCH `archived=true` (v1 undo).
 
 **POST /api/v1/crm/photo**
-Capture a contact from a photo. Body: `{ photoBase64, photoMimeType, photoExif?: {gps?: [lat,lon]} }`. GPS-attaches to the closest existing contact within 200m, or reverse-geocodes via Nominatim and creates a new contact. Returns JSON-LD record + `time_machine_handle`.
+Capture a contact from a photo OR a short video (≤60s, ≤100MB). Body: `{ photoBase64, photoMimeType, photoExif?: {gps?: [lat,lon]}, mediaDurationSeconds? }`. GPS-attaches to the closest existing contact within 200m, or reverse-geocodes via Nominatim and creates a new contact. Photo path runs Claude Vision for field extraction; video path skips vision and falls back to GPS + address only. Returns JSON-LD record + `time_machine_handle`. For videos the JSON-LD emits a `video: { '@type': 'VideoObject', contentUrl, duration }` instead of `image`.
 
-**Knowledge page:** /killerapp/who-is-asking — voice + photo contact capture surface ("Who's asking, and what do I know about them?"). Pro Toggle reveals "Contacts" / "Source / Confidence / Lane" columns.
+**GET /api/v1/crm/messages**
+List messages. Query params: `inbox=1` returns unread inbound + their drafts; `contact=<id>` returns the full thread for a contact. Default returns the 200 most recent.
+
+**POST /api/v1/crm/messages**
+Create a message (typically used by tests/manual entry; production inbound flows go through `/api/v1/twilio/inbound`). Body: `{ contactId?, direction: 'inbound'|'outbound', channel?: 'sms'|'voicemail'|'email'|'call_transcript'|'manual', body, externalFrom?, externalTo?, externalMessageId? }`.
+
+**POST /api/v1/crm/messages/draft**
+Draft an AI reply in the contractor's voice. Body: `{ contactId, inboundMessageId, tone?: 'warm'|'professional'|'brief' }`. Loads the contact history + voice fingerprint, calls the `draft-reply` specialist, inserts a row with `status='drafted'`, `ai_drafted=true`. Returns `{ draftMessageId, body, reasoning, toneUsed, voiceMatchScore, containsCommitment, containsPrice, suggestedSendDelayMs, intentTags, timeMachineHandle }`.
+
+**POST /api/v1/crm/messages/send**
+Queue an outbound message for send. Body: `{ draftMessageId, body? }`. Flips status to `queued` with `queued_until = now + 90s`. The actual Twilio flush is performed by a downstream worker; until then the row is reversible via `/undo`.
+
+**POST /api/v1/crm/messages/undo**
+Cancel a queued outbound message within the 90s window. Body: `{ messageId }`. Returns `{ ok: false, reason: 'undo-window-expired' }` after the window closes.
+
+**POST /api/v1/twilio/inbound**
+Twilio webhook for inbound SMS. Server-to-server only (form-urlencoded body, X-Twilio-Signature header verified when `TWILIO_AUTH_TOKEN` is configured). Matches `From` to an existing contact by phone or creates a new contact with `source='sms'`, then inserts an inbound message row. Returns empty TwiML `<Response></Response>` — no auto-reply; the contractor drafts via the UI.
+
+**Knowledge page:** /killerapp/who-is-asking — voice + photo + video contact capture surface ("Who's asking, and what do I know about them?"). Pro Toggle reveals "Contacts" / "Source / Confidence / Lane" columns.
+
+**Knowledge page:** /killerapp/quick-reply — inbound message inbox with AI-drafted replies in the contractor's voice. Pro Toggle relabels to "Inbox" and reveals voice-match score + reasoning trace per draft. 90-second undo on every send.
 
 ## MCP Server
 
@@ -66,7 +86,7 @@ Capture a contact from a photo. Body: `{ photoBase64, photoMimeType, photoExif?:
 **Protocol:** Model Context Protocol (MCP)
 **Purpose:** Enables AI systems to access Builder's Knowledge Garden as a context source for construction-related queries
 
-### Available Tools (14 total)
+### Available Tools (18 total)
 
 The MCP server exposes the following tools:
 
@@ -83,7 +103,11 @@ The MCP server exposes the following tools:
 11. **crm_list_contacts** — List CRM contacts with pipeline and lead scoring data
 12. **crm_pipeline_stats** — Get CRM pipeline summary with deal values and follow-ups
 13. **crm_capture_lead** — Capture a new contact from voice transcript or manual fields; returns `bkg_contact` JSON-LD + `time_machine_handle`
-14. **crm_attach_photo** — Capture a contact from a photo; GPS-matches to closest contact within 200m or creates new via reverse-geocode
+14. **crm_attach_photo** — Capture a contact from a photo or short video; GPS-matches to closest contact within 200m or creates new via reverse-geocode
+15. **crm_list_inbox** — List inbound messages with their AI drafts. Returns unread inbound + outbound rows in `drafted`|`queued` state for the same contact.
+16. **crm_draft_reply** — Draft a reply in the contractor's voice. Inputs: `contactId`, `inboundMessageId`, optional `tone` (warm|professional|brief). Returns the draft body + reasoning trace + voice-match score.
+17. **crm_send_reply** — Queue an outbound message with a 90-second undo window. Body override permitted if the contractor edited the draft.
+18. **crm_undo_send** — Cancel a queued outbound message within the 90-second window. Returns `undo-window-expired` once Twilio has flushed.
 
 ### Connecting to the MCP Server
 
