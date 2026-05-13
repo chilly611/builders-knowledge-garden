@@ -1,10 +1,17 @@
-// Builder's Knowledge Garden — CRM Capture Route (Brief 1)
+// Builder's Knowledge Garden — CRM Capture Route (Brief 1, patched in Brief 1.1)
 // POST /api/v1/crm/capture
 // Voice / manual contact capture. Calls contact-extract specialist, persists
 // to crm_contacts, returns the bkg_contact JSON-LD record plus a
 // time_machine_handle. Matches the route shape from
 // src/app/api/v1/specialists/[id]/route.ts: 405 on non-POST, body validation,
 // RSI instrumentation, { ...result, _run_id } response envelope.
+//
+// Brief 1.1: adds two route-side fallbacks that compensate for LLM drift —
+//   - cleanupNarrative strips stray markdown headings (`##`, `**Name:**`)
+//     that shouldn't land in the description field.
+//   - calibrateConfidence backfills a sensible value when the LLM forgets
+//     to emit bkg:confidence (or emits 0 because it didn't follow the
+//     prompt rubric).
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -56,6 +63,63 @@ interface ExtractedContactJson {
   estimated_value?: number;
   project_type?: string;
   tags?: string[];
+  intent?: string;
+}
+
+// ─── Brief 1.1 fallbacks (route-side) ─────────────────────────────────────
+
+/**
+ * cleanupNarrative — when the LLM forgets the "no headings" rule and
+ * returns markdown like `## Summary` or `**Name:** ...`, the raw narrative
+ * is unfit for the description field. Detect those patterns and prefer
+ * the extracted description instead.
+ */
+function cleanupNarrative(
+  narrative: string | undefined,
+  extractedDescription: string | undefined
+): string {
+  const n = (narrative ?? '').trim();
+  if (!n) return extractedDescription ?? '';
+  const startsWithHeader = /^##/.test(n) || /^\*\*[A-Z]/.test(n);
+  const containsBoldFieldLabel = /\*\*Name:\*\*/i.test(n);
+  if (startsWithHeader || containsBoldFieldLabel) {
+    return (extractedDescription ?? '').trim();
+  }
+  return n;
+}
+
+/**
+ * calibrateConfidence — when the LLM emits 0 / null / missing, infer a
+ * sensible value from how complete the extraction was. Signals counted:
+ *   1. name present + non-empty
+ *   2. address.streetAddress present + non-empty
+ *   3. intent OR description present + non-empty
+ * Three signals → 0.85; two → 0.65; one → 0.4; zero → 0.
+ */
+function calibrateConfidence(
+  llmConfidence: number | undefined | null,
+  extracted: ExtractedContactJson
+): number {
+  if (typeof llmConfidence === 'number' && llmConfidence > 0) {
+    return llmConfidence;
+  }
+  let signals = 0;
+  const name = typeof extracted.name === 'string' ? extracted.name.trim() : '';
+  if (name.length > 0) signals++;
+  const streetOk =
+    typeof extracted.address?.streetAddress === 'string' &&
+    extracted.address.streetAddress.trim().length > 0;
+  if (streetOk) signals++;
+  const intentOk =
+    (typeof extracted.intent === 'string' && extracted.intent.trim().length > 0) ||
+    (typeof extracted.description === 'string' &&
+      extracted.description.trim().length > 0);
+  if (intentOk) signals++;
+
+  if (signals >= 3) return 0.85;
+  if (signals === 2) return 0.65;
+  if (signals === 1) return 0.4;
+  return 0;
 }
 
 // ─── Supabase admin client (graceful fallback) ────────────────────────────
@@ -63,9 +127,6 @@ interface ExtractedContactJson {
 let adminClient: SupabaseClient | null = null;
 function getAdminClient(): SupabaseClient | null {
   if (adminClient) return adminClient;
-  // Reads SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY. If absent, returns null
-  // and the route falls back to a non-persistent path. Mirrors the
-  // mockIfNoKey philosophy in specialists.ts.
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey || url.includes('placeholder')) {
@@ -102,11 +163,6 @@ function isBodyValid(body: unknown): body is CaptureRequestBody {
   return true;
 }
 
-/**
- * Deterministic mock extraction when ANTHROPIC_API_KEY is absent. We still
- * persist to the DB with confidence: 0 and the raw transcript so the
- * contractor can edit later. Never fail silently.
- */
 function mockExtraction(body: CaptureRequestBody): ExtractedContactJson {
   if (body.source === 'manual' && body.manualFields) {
     const f = body.manualFields;
@@ -130,7 +186,6 @@ function mockExtraction(body: CaptureRequestBody): ExtractedContactJson {
       tags: ['manual-entry'],
     };
   }
-  // voice: keep the transcript as description, name unknown
   return {
     '@type': 'Person',
     name: 'Unknown (voice — re-extract when API key available)',
@@ -146,7 +201,12 @@ function mockExtraction(body: CaptureRequestBody): ExtractedContactJson {
   };
 }
 
-function buildJsonLD(extracted: ExtractedContactJson, contactId: string, timeMachineHandle: string) {
+function buildJsonLD(
+  extracted: ExtractedContactJson,
+  contactId: string,
+  timeMachineHandle: string,
+  confidence: number
+) {
   return {
     '@context': 'https://schema.org',
     '@type': extracted['@type'] ?? 'Person',
@@ -162,7 +222,7 @@ function buildJsonLD(extracted: ExtractedContactJson, contactId: string, timeMac
     'bkg:lane': extracted['bkg:lane'] ?? 'homeowner',
     'bkg:lifecycle_stage': extracted['bkg:lifecycle_stage'] ?? 'lead',
     'bkg:source': extracted['bkg:source'] ?? 'voice',
-    'bkg:confidence': extracted['bkg:confidence'] ?? extracted.confidence ?? 0,
+    'bkg:confidence': confidence,
     'bkg:last_touch': new Date().toISOString(),
     'bkg:time_machine_handle': timeMachineHandle,
   };
@@ -171,7 +231,6 @@ function buildJsonLD(extracted: ExtractedContactJson, contactId: string, timeMac
 // ─── POST ─────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // 1. Parse body.
   let body: unknown;
   try {
     body = await request.json();
@@ -191,7 +250,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const validBody: CaptureRequestBody = body;
 
-  // 2. RSI instrumentation (silent on failure — same pattern as specialists/[id]).
   const workflowId = 'who-is-asking';
   const stepId = validBody.source ?? 'voice';
   const runId = await logSpecialistRunStart({
@@ -204,21 +262,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const startedAt = Date.now();
 
   try {
-    // 3. Run the specialist (or fall back to deterministic mock).
     const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
     let extracted: ExtractedContactJson;
     let narrative = '';
-    let confidence = 0;
 
     if (validBody.source === 'manual') {
-      // Manual path: skip the LLM, just normalize the fields.
       extracted = mockExtraction(validBody);
       narrative = 'Manual contact capture — fields stored verbatim.';
-      confidence = 0; // user-typed = no inference confidence
     } else if (!hasApiKey) {
       extracted = mockExtraction(validBody);
       narrative = 'ANTHROPIC_API_KEY not configured — stored with confidence 0.';
-      confidence = 0;
     } else {
       const ctx: SpecialistContext = {
         scope_description: validBody.transcript ?? '',
@@ -236,15 +289,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       narrative = result.narrative;
       const structured = result.structured as ExtractedContactJson;
       extracted = structured ?? mockExtraction(validBody);
-      confidence =
-        typeof extracted['bkg:confidence'] === 'number'
-          ? extracted['bkg:confidence']
-          : typeof extracted.confidence === 'number'
-            ? extracted.confidence
-            : 0;
     }
 
-    // 4. Persist to crm_contacts. If Supabase envs missing, return ephemeral row.
+    // ─── Brief 1.1 fallbacks ──────────────────────────────────────────
+    const llmConfidence =
+      typeof extracted['bkg:confidence'] === 'number'
+        ? extracted['bkg:confidence']
+        : typeof extracted.confidence === 'number'
+          ? extracted.confidence
+          : undefined;
+    const confidence = calibrateConfidence(llmConfidence, extracted);
+    extracted['bkg:confidence'] = confidence;
+    const cleanedNarrative = cleanupNarrative(narrative, extracted.description);
+    if (cleanedNarrative) {
+      // Backfill description with the cleaned narrative when extracted
+      // had nothing useful — keeps the contact's notes legible.
+      if (!extracted.description || extracted.description.trim().length === 0) {
+        extracted.description = cleanedNarrative;
+      }
+    }
+    // Replace the narrative we'll emit to the client + RSI logs.
+    narrative = cleanedNarrative;
+
     const admin = getAdminClient();
     const timeMachineHandle = crypto.randomUUID();
     let contactId: string;
@@ -286,7 +352,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         lead_score: 30,
         notes: extracted.description ?? null,
         tags: extracted.tags ?? [],
-        jsonld: null as unknown, // filled in below after we know the id
+        jsonld: null as unknown,
         source: validBody.source ?? 'voice',
         source_audio_url: null,
         source_photo_url: null,
@@ -308,8 +374,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       contactId = data.id as string;
 
-      // Now backfill the jsonld with the real id.
-      const jsonld = buildJsonLD(extracted, contactId, timeMachineHandle);
+      const jsonld = buildJsonLD(extracted, contactId, timeMachineHandle, confidence);
       await admin.from('crm_contacts').update({ jsonld }).eq('id', contactId);
 
       const latency = Date.now() - startedAt;
@@ -344,10 +409,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // No Supabase: ephemeral response. Still returns a valid contactId so the
-    // client can render a "thanks" toast and emit journey events.
+    // No Supabase: ephemeral response.
     contactId = crypto.randomUUID();
-    const jsonld = buildJsonLD(extracted, contactId, timeMachineHandle);
+    const jsonld = buildJsonLD(extracted, contactId, timeMachineHandle, confidence);
 
     const latency = Date.now() - startedAt;
     if (runId) {
