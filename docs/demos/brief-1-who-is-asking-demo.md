@@ -17,7 +17,7 @@ Open the URL on your phone. Show the empty state with two huge thumb-buttons (mi
 ## Beat 1 — Voice capture (~60 seconds)
 
 1. Hold the mic button.
-2. Say: *"New lead Bob Henderson, three two four two Bayshore Boulevard Tampa, ridge cap blew off after the storm, budget around eight hundred."*
+2. Say: *"New lead Bob Henderson, three two four two Highland Ave Chula Vista, ridge cap blew off after the storm, budget around eight hundred."*
 3. Release.
 4. Show the card that appears: Bob Henderson, address parsed, lane inferred to "homeowner," lifecycle stage = "Lead."
 
