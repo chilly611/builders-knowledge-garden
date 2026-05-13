@@ -27,6 +27,14 @@ This file is the canonical timeline of what was built, when, and why.
 - **"AI is also a user" is structural, not a feature flag.** Every MCP tool description carries human_label + pro_label + lane_relevance. Every agent write defaults to draft-only until contractor explicitly grants send-scope per account.
 - **Decision gate before Brief 1 ships:** (1) Chilly approves the five surfaces, (2) Chilly decides the constitution-extension question (Correction Loop as 8th primitive vs fold into Whisper + Time Machine), (3) Chilly decides Twilio per-account vs shared-pool for Brief 2, (4) Chilly decides legacy `/crm` redirect strategy.
 
+**Brief 2 IMPLEMENTATION shipped 2026-05-12 evening:**
+- 19 source files written in one focused agent dispatch, pushed in a single batch, Vercel green on first build. ZERO of today's recurring failure modes recurred (no JSX.Element annotations, no wrong prompt path, no missing preferProductionPrompt).
+- Live: `/killerapp/quick-reply` HTTP 200. New routes: `/api/v1/crm/messages` (list inbox + thread), `/api/v1/crm/messages/draft` (calls draft-reply specialist), `/api/v1/crm/messages/send` (queues with 90s undo window), `/api/v1/crm/messages/undo` (cancels within window), `/api/v1/twilio/inbound` (signature-verified webhook). New components: `MediaCaptureFAB` (replaces PhotoCaptureFAB, 60s video cap + 100MB), `InboundMessageCard`, `UndoBar` (reusable Time Machine primitive), `VoiceTone`.
+- Video everywhere: `crm-photos` bucket extended to 100MB + mp4/quicktime/webm/m4v MIMEs. `crm_contact_activities` gained `media_type` / `media_duration_seconds` / `media_size_bytes`. Photo route now handles video uploads (skips Claude vision for video, just stores + reverse-geocodes GPS).
+- Brief 1.1 markdown-fields parser fix shipped after smoke-test revealed the LLM emits markdown `Name:` patterns when it ignores `<json>` tags. Route now recovers fields from either shape. Voice capture for Sara Chen now reliably populates name/address/description.
+- DB clean: all smoke-test rows deleted.
+- Outstanding: Chilly to provide Twilio Account SID / Auth Token / phone number for Vercel envs to wire real SMS. Schema and webhook are ready.
+
 **Brief 1.1 + Brief 2 foundation (dogfooding-prep extension, post-ship):**
 - Voice + photo + manual capture all verified end-to-end on prod. Photo endpoint: 100x100 synthetic JPEG → Supabase Storage URL → Nominatim reverse-geocode resolved (27.9506, -82.4572) to "701 N Marion St, Tampa, FL 33602" → contact row with nested PostalAddress + bkg:geo.
 - Three rounds of prompt iteration on `contact-extract.production.md` (calibration rules, then few-shot with 3 examples, then negative-example with 4th). LLM still returns markdown-headed narratives + `confidence: 0`. Decision: stop iterating prompts, fix route-side (use `extracted.description` as narrative fallback + calibrate confidence from field-presence). Banked in Brief 1.1 backlog with concrete fix.
