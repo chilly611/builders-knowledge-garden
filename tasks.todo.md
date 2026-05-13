@@ -656,9 +656,9 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 
 ## CRM v1 — Build Order (populated by Stream E, 2026-05-12)
 
-### Twilio go-live — pending Chilly's Vercel env vars (2026-05-12 evening)
+### Twilio go-live — ✅ COMPLETE (2026-05-12 evening)
 > Twilio account created. Twilio number webhook URL configured to `https://builders.theknowledgegardens.com/api/v1/twilio/inbound` via Twilio REST API (verified — simulated inbound POST creates contact + message row end-to-end).
-> Inbound flow works without Vercel envs (dev mode skips signature verify with console warn). Outbound flow blocked until Vercel envs land. Cron endpoint live + tested but returns `{ok: true, skipped: true, reason: 'twilio_env_missing'}`.
+> ✅ **All 4 env vars set via Vercel API (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, CRON_SECRET) — production+preview+development.** Redeploy READY. Cron returns `{processed: 0}` (env vars loaded). Inbound webhook now signature-verifies (unsigned → 403, real Twilio signature → 200 + DB insert).
 >
 > **Four vars to add in Vercel dashboard → Project Settings → Environment Variables → Production + Preview + Development:**
 > - `TWILIO_ACCOUNT_SID` = (grab from Twilio Console → Account Info → starts with `AC...`)
