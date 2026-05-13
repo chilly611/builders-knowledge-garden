@@ -27,6 +27,14 @@ This file is the canonical timeline of what was built, when, and why.
 - **"AI is also a user" is structural, not a feature flag.** Every MCP tool description carries human_label + pro_label + lane_relevance. Every agent write defaults to draft-only until contractor explicitly grants send-scope per account.
 - **Decision gate before Brief 1 ships:** (1) Chilly approves the five surfaces, (2) Chilly decides the constitution-extension question (Correction Loop as 8th primitive vs fold into Whisper + Time Machine), (3) Chilly decides Twilio per-account vs shared-pool for Brief 2, (4) Chilly decides legacy `/crm` redirect strategy.
 
+**10DLC primary number + Tampa scrub (2026-05-13 evening):**
+- Chilly clarified geography — he's in San Diego, BKG pilot jurisdictions are CA/NV/AZ, contractor partner is SD, dad in SF. Stream B's invented Tampa/FL adoption persona (Carlos Méndez Tampa) was wrong and had propagated into the demo script. Scrubbed.
+- Bought 10DLC `+1 619-932-5552` (Chula Vista, CA) via Twilio API. Friendly name "BKG 10DLC Primary (San Diego)". SmsUrl → /api/v1/twilio/inbound. SMS+MMS+Voice enabled. PN sid `PNe6d87a849436e007dcd2fbfd9f9adbd7`.
+- Updated TWILIO_PHONE_NUMBER env var via Vercel API from +18884536809 → +16199325552 across prod/preview/development. Redeployed. Runtime confirmed picking up new number.
+- Toll-free 888 number stays parked — Toll-Free Verification submitted in parallel (1-3 weeks). Both numbers route to the same inbound webhook.
+- A2P 10DLC Brand registration is the gate to compliant outbound at scale. Chilly to submit via Twilio Console wizard (Sole Proprietor track, 1-3 days approval). Sample messages drafted from draft-reply.production.md output style.
+- New lesson: don't let research subagents invent geography. Pilot is CA/NV/AZ, never FL.
+
 **Vercel envs SHIPPED via API + cron live (2026-05-13 early morning):**
 - Chilly upgraded to Vercel Pro ($20/mo) — unlocks every-minute crons.
 - Chilly created a Vercel API token. Cowork used it to: list teams/projects, find `prj_1WUohosoE53PfQVOyyoDxsCIVK09` (the BKG app project), inspect existing 16 env vars (no conflicts), generate CRON_SECRET via `openssl rand -hex 32`, create 4 new env vars (TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER/CRON_SECRET) in production+preview+development, trigger a new deployment from main HEAD, poll status until READY.
