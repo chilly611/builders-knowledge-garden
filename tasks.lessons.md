@@ -12,6 +12,22 @@
 **Fix:** Renamed the prompt to `<id>.production.md` (the file already had the right `## System Prompt` heading) and updated routes to pass `preferProductionPrompt: true`.
 **Rule:** New specialist prompts ALWAYS go to `docs/ai-prompts/<id>.production.md`. Routes that call them pass `preferProductionPrompt: true`. Use `.v2.md` only when adding a v2 of an EXISTING specialist that's already in `DEFAULT_VERSION_BY_SPECIALIST`. Never use `.v1.md` — the loader will never find it.
 
+### Markdown-fields parser is the LLM-tax safety net
+**Date:** 2026-05-12 (Brief 1.1 final fix)
+**What happened:** Three rounds of prompt iteration plus route-side `cleanupNarrative` + `calibrateConfidence` STILL didn't reliably get structured output from `contact-extract`. Claude Sonnet 4 would emit markdown like:
+```
+**Contact Record Created:**
+
+Name: Sara Chen
+Address: 1456 Davis Boulevard, Tampa, FL
+Trade Intent: Plumbing - water heater
+Budget Range: ~$2,000
+```
+with ZERO `<json>` tags. The route's `specialists.ts` parser at line 378 (`rawResponse.match(/<json>([\s\S]*?)<\/json>/)`) returned no match, so `result.structured` was `{}` and the route fell into the "Unknown" mock path.
+**Fix:** Added a `parseMarkdownFields(text, body)` function in the capture route. It uses a regex (`/(?:^|\n)\s*(?:[-*•]\s*)?(?:\*\*)?\s*([A-Za-z][A-Za-z _/&-]{1,50})(?:\*\*)?\s*:\s*([^\n]+)/g`) to find every `Key: Value` line in the raw response. Then maps known keys (`Name`, `Address`, `Phone`, `Email`, `Trade Intent`, `Budget Range`, etc.) into the canonical `ExtractedContactJson` shape — including splitting `name` into givenName/familyName and `address` into a nested PostalAddress with locality/region. Sets confidence 0.75 on a successful markdown parse. Falls through to `mockExtraction` only if zero fields found.
+**Outcome:** Voice capture for "New lead Sara Chen 1456 Davis Boulevard Tampa, water heater leaking, looking for a quote around 2 grand" now reliably produces a contact with name=Sara Chen, address populated, description populated, lane=homeowner, confidence 0.65 (calibrated from field presence). Works whether the LLM emits `<json>` tags OR markdown.
+**Rule:** When the LLM consistently outputs structured information in a *parseable* shape (just not the shape you asked for), add a route-side parser for the shape it actually emits. Three rounds of prompt iteration is the ceiling — past that, the LLM is teaching you what shape it WANTS to output, and you should listen.
+
 ### Trust the LLM's structured output, doubt the prose — route-side fallback is more robust than prompt-engineering
 **Date:** 2026-05-12 (Brief 1.1)
 **What happened:** Three rounds of prompt iteration on `contact-extract.production.md` to fix the "narrative is a markdown heading" and "confidence is always 0" failure modes. Each round changed the structure of the prompt; each time the LLM (claude-sonnet-4-20250514) ignored the instructions and produced either `**Contact Record:**` headings, full markdown-formatted "Contact Record" blocks, or `bkg:confidence: 0` despite explicit calibration rules. Adding 3 concrete examples + 1 negative example didn't move the needle.
