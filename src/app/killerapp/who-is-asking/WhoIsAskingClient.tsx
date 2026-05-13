@@ -1,14 +1,15 @@
 'use client';
 
-// Builder's Knowledge Garden — "Who's asking?" Client (Brief 1)
+// Builder's Knowledge Garden — "Who's asking?" Client (Brief 1, patched in Brief 2)
 // Holds the capture state, listens for `bkg:crm:changed` to refresh, subscribes
 // to journey-progress for the workflowId 'who-is-asking', renders the
-// VoiceCaptureFAB + PhotoCaptureFAB, and shows a 30-second undo bar after each
-// successful create (Time Machine primitive — Goal 5 / binding decision #2).
+// VoiceCaptureFAB + MediaCaptureFAB (Brief 2: photo+video), and shows a
+// 30-second undo bar after each successful create (Time Machine primitive —
+// Goal 5 / binding decision #2).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import VoiceCaptureFAB from '@/components/crm/VoiceCaptureFAB';
-import PhotoCaptureFAB from '@/components/crm/PhotoCaptureFAB';
+import MediaCaptureFAB from '@/components/crm/MediaCaptureFAB';
 import ContactCard from '@/components/crm/ContactCard';
 import type { ContactWriteOkResult } from '@/lib/crm-spine';
 import {
@@ -264,8 +265,8 @@ export default function WhoIsAskingClient({
             fontSize: 15,
           }}
         >
-          Snap a photo or hold the mic to add your first contact. They land here
-          with name and address inferred — no form, no fields.
+          Snap a photo, record a clip, or hold the mic to add your first contact.
+          They land here with name and address inferred — no form, no fields.
         </p>
       ) : (
         <ul
@@ -314,9 +315,10 @@ export default function WhoIsAskingClient({
           zIndex: 50,
         }}
       >
-        <PhotoCaptureFAB
+        <MediaCaptureFAB
           projectId={projectIdRef.current}
-          onSuccess={(r) => handleCaptureSuccess(r, 'photo')}
+          mediaKind="both"
+          onSuccess={(r) => handleCaptureSuccess(r, 'media')}
           onError={handleCaptureError}
         />
         <VoiceCaptureFAB
