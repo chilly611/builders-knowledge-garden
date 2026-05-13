@@ -1087,3 +1087,5 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Output framed as "starting draft for attorney review," NOT "ready-to-sign"
 - [ ] Terms of service includes real liability limitation reviewed by the same attorney
 - [ ] Cannot sell Contract Templates until this is done
+
+<!-- conflict test -->
