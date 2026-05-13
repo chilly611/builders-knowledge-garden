@@ -1,12 +1,20 @@
-// Builder's Knowledge Garden — CRM Photo Capture Route (Brief 1)
+// Builder's Knowledge Garden — CRM Photo / Video Capture Route
 // POST /api/v1/crm/photo
-// Photo capture from the field. Strategy:
-//   1. Upload the photo to Supabase Storage bucket `crm-photos/`.
-//   2. Reverse-geocode the EXIF GPS via Nominatim (no API key).
-//   3. Find the closest existing contact within 200m using JS-side haversine.
-//   4. If match: attach as activity. If no match: call contact-extract specialist
-//      with the photo + reverse-geocoded address, create a new contact.
-//   5. Return { ok, contactId, timeMachineHandle, attached, jsonld, _run_id }.
+//
+// Brief 1: photo capture from the field.
+// Brief 2 additions:
+//   - Accepts video MIME types (mp4, quicktime, webm, x-m4v) in addition
+//     to images. Video path skips Claude Vision (Claude doesn't process
+//     video yet) and falls back to reverse-geocode + GPS match-or-create.
+//   - Fixes a path-duplication bug: `storage.from('crm-photos')` already
+//     scopes the bucket, so the upload path must NOT re-include
+//     'crm-photos/'.
+//   - Adds cleanupNarrative + calibrateConfidence helpers (Brief 1.1
+//     route-side fallbacks) to keep stray markdown headers out of the
+//     description field and to backfill confidence from extracted shape
+//     when the LLM forgot to emit one.
+//   - Inserts media_type / media_duration_seconds / media_size_bytes onto
+//     crm_contact_activities when attaching to an existing contact.
 //
 // Same conventions as src/app/api/v1/specialists/[id]/route.ts: POST-only,
 // 405s on other verbs, RSI instrumentation, no leaking internal errors.
@@ -29,6 +37,7 @@ interface PhotoRequestBody {
     gps?: [number, number]; // [lat, lon]
     timestamp?: string;
   };
+  mediaDurationSeconds?: number;
   projectId?: string;
 }
 
@@ -51,6 +60,30 @@ interface ContactWithGeo {
   label: string;
 }
 
+const SUPPORTED_IMAGE_MIMES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/heic',
+  'image/heif',
+  'image/webp',
+]);
+
+const SUPPORTED_VIDEO_MIMES = new Set([
+  'video/mp4',
+  'video/quicktime',
+  'video/webm',
+  'video/x-m4v',
+]);
+
+function classifyMime(mime: string): 'photo' | 'video' | 'unsupported' {
+  if (SUPPORTED_IMAGE_MIMES.has(mime)) return 'photo';
+  if (SUPPORTED_VIDEO_MIMES.has(mime)) return 'video';
+  if (mime.startsWith('image/')) return 'photo';
+  if (mime.startsWith('video/')) return 'video';
+  return 'unsupported';
+}
+
 // ─── Supabase admin client ────────────────────────────────────────────────
 
 let adminClient: SupabaseClient | null = null;
@@ -67,17 +100,65 @@ function getAdminClient(): SupabaseClient | null {
   return adminClient;
 }
 
+// ─── Brief 1.1 fallbacks (route-side) ─────────────────────────────────────
+
+/**
+ * cleanupNarrative — when the LLM forgets the "no headings" rule and
+ * returns markdown like `## Summary` or `**Name:** ...`, the raw narrative
+ * is unfit for the description field. Detect those patterns and prefer
+ * the extracted description instead.
+ */
+function cleanupNarrative(
+  narrative: string | undefined,
+  extractedDescription: string | undefined
+): string {
+  const n = (narrative ?? '').trim();
+  if (!n) return extractedDescription ?? '';
+  const startsWithHeader = /^##/.test(n) || /^\*\*[A-Z]/.test(n);
+  const containsBoldFieldLabel = /\*\*Name:\*\*/i.test(n);
+  if (startsWithHeader || containsBoldFieldLabel) {
+    return (extractedDescription ?? '').trim();
+  }
+  return n;
+}
+
+/**
+ * calibrateConfidence — when the LLM emits 0 / null / missing, infer a
+ * sensible value from how complete the extraction was. Three signals
+ * present → 0.85; two → 0.65; one → 0.4; zero → 0.
+ */
+function calibrateConfidence(
+  llmConfidence: number | undefined | null,
+  extracted: Record<string, unknown>
+): number {
+  if (typeof llmConfidence === 'number' && llmConfidence > 0) {
+    return llmConfidence;
+  }
+  let signals = 0;
+  const name = typeof extracted.name === 'string' ? extracted.name.trim() : '';
+  if (name.length > 0) signals++;
+  const addr = extracted.address as { streetAddress?: string } | undefined;
+  const streetOk = typeof addr?.streetAddress === 'string' && addr.streetAddress.trim().length > 0;
+  if (streetOk) signals++;
+  const intent =
+    (typeof extracted.intent === 'string' && extracted.intent.trim().length > 0) ||
+    (typeof extracted.description === 'string' && (extracted.description as string).trim().length > 0);
+  if (intent) signals++;
+
+  if (signals >= 3) return 0.85;
+  if (signals === 2) return 0.65;
+  if (signals === 1) return 0.4;
+  return 0;
+}
+
 // ─── Geo helpers ──────────────────────────────────────────────────────────
 
 function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
-/**
- * Haversine distance in meters between two [lat, lon] pairs.
- */
 function haversineMeters(a: [number, number], b: [number, number]): number {
-  const R = 6371000; // Earth radius in meters
+  const R = 6371000;
   const dLat = toRad(b[0] - a[0]);
   const dLon = toRad(b[1] - a[1]);
   const lat1 = toRad(a[0]);
@@ -102,10 +183,6 @@ interface NominatimResponse {
   };
 }
 
-/**
- * Reverse-geocode via Nominatim. Best-effort: returns null on any failure.
- * Respects their 1 req/sec policy by being called sparingly; no caching needed for v1.
- */
 async function reverseGeocode(
   lat: number,
   lon: number
@@ -114,8 +191,8 @@ async function reverseGeocode(
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
     const res = await fetch(url, {
       headers: {
-        // Nominatim requires a meaningful User-Agent
-        'User-Agent': 'BuildersKnowledgeGarden/1.0 (https://builders.theknowledgegardens.com)',
+        'User-Agent':
+          'BuildersKnowledgeGarden/1.0 (https://builders.theknowledgegardens.com)',
       },
     });
     if (!res.ok) return null;
@@ -134,31 +211,46 @@ function isBodyValid(body: unknown): body is PhotoRequestBody {
   return true;
 }
 
-// ─── Photo storage ────────────────────────────────────────────────────────
+// ─── Media storage ────────────────────────────────────────────────────────
 
-async function uploadPhoto(
+interface UploadedMedia {
+  publicUrl: string;
+  sizeBytes: number;
+}
+
+async function uploadMedia(
   admin: SupabaseClient,
   dataUrlOrBase64: string,
   mimeType: string
-): Promise<string | null> {
+): Promise<UploadedMedia | null> {
   try {
-    // Strip data URL prefix if present.
     const base64 = dataUrlOrBase64.includes(',')
       ? dataUrlOrBase64.split(',')[1]
       : dataUrlOrBase64;
     const buffer = Buffer.from(base64, 'base64');
-    const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
-    const path = `crm-photos/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const { error } = await admin.storage.from('crm-photos').upload(path, buffer, {
-      contentType: mimeType,
-      upsert: false,
-    });
+    const ext =
+      mimeType === 'video/quicktime'
+        ? 'mov'
+        : mimeType === 'video/x-m4v'
+          ? 'm4v'
+          : (mimeType.split('/')[1]?.replace('jpeg', 'jpg') ?? 'bin');
+    // NOTE: storage.from('crm-photos') already scopes the bucket; the path
+    // is the key WITHIN the bucket. Re-including 'crm-photos/' here used
+    // to produce s3 keys like `crm-photos/crm-photos/<uuid>.jpg`.
+    const path = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await admin.storage
+      .from('crm-photos')
+      .upload(path, buffer, {
+        contentType: mimeType,
+        upsert: false,
+      });
     if (error) {
       console.error('[crm/photo] storage upload error:', error.message);
       return null;
     }
     const { data } = admin.storage.from('crm-photos').getPublicUrl(path);
-    return data.publicUrl ?? null;
+    if (!data.publicUrl) return null;
+    return { publicUrl: data.publicUrl, sizeBytes: buffer.byteLength };
   } catch (err) {
     console.error('[crm/photo] upload exception:', err);
     return null;
@@ -189,8 +281,6 @@ async function findNearestContact(
   gps: [number, number],
   orgId: string | null
 ): Promise<{ contactId: string; distanceM: number; label: string } | null> {
-  // v1: SELECT all contacts where jsonld has a 'bkg:geo' (could be expensive;
-  // a PostGIS column is the v2 fix). Filter by org_id where available.
   const query = admin
     .from('crm_contacts')
     .select('id, first_name, last_name, jsonld, source_photo_url, project_location')
@@ -235,16 +325,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const validBody: PhotoRequestBody = body;
   const mimeType = validBody.photoMimeType ?? 'image/jpeg';
+  const kind = classifyMime(mimeType);
+  if (kind === 'unsupported') {
+    return NextResponse.json(
+      {
+        error: 'unsupported_media',
+        message: `Media type ${mimeType} is not supported. Use image/* or video/*.`,
+      },
+      { status: 400 }
+    );
+  }
+  const isVideo = kind === 'video';
+  const mediaDurationSeconds = validBody.mediaDurationSeconds;
 
   // RSI instrumentation
   const workflowId = 'who-is-asking';
-  const stepId = 'photo';
+  const stepId = isVideo ? 'video' : 'photo';
   const runId = await logSpecialistRunStart({
     workflow_id: workflowId,
     step_id: stepId,
     specialist_id: 'contact-extract',
     prompt_version: 'v1',
-    input_json: { hasPhoto: true, gps: validBody.photoExif?.gps } as unknown,
+    input_json: {
+      hasPhoto: !isVideo,
+      hasVideo: isVideo,
+      mimeType,
+      mediaDurationSeconds,
+      gps: validBody.photoExif?.gps,
+    } as unknown,
   });
   const startedAt = Date.now();
 
@@ -252,20 +360,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const admin = getAdminClient();
     const timeMachineHandle = crypto.randomUUID();
 
-    // 1. Upload photo to Supabase Storage (best-effort).
-    let photoUrl: string | null = null;
+    // 1. Upload media to Supabase Storage (best-effort).
+    let mediaUrl: string | null = null;
+    let mediaSizeBytes: number | null = null;
     if (admin && validBody.photoBase64) {
-      photoUrl = await uploadPhoto(admin, validBody.photoBase64, mimeType);
-      if (!photoUrl) {
+      const uploaded = await uploadMedia(admin, validBody.photoBase64, mimeType);
+      if (!uploaded) {
         return NextResponse.json(
           {
             error: 'storage_upload_failed',
-            message: 'Could not save photo to storage',
+            message: 'Could not save media to storage',
             _run_id: runId,
           },
           { status: 500 }
         );
       }
+      mediaUrl = uploaded.publicUrl;
+      mediaSizeBytes = uploaded.sizeBytes;
     }
 
     // 2. Reverse-geocode GPS (if present).
@@ -274,6 +385,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const [lat, lon] = validBody.photoExif.gps;
       address = await reverseGeocode(lat, lon);
     }
+    const addressStr = address?.display_name ?? '(no GPS)';
+    const streetLabel =
+      [address?.address?.house_number, address?.address?.road]
+        .filter(Boolean)
+        .join(' ')
+        .trim() || address?.display_name || 'this location';
 
     // 3. Try to match an existing contact within 200m.
     let attached = false;
@@ -287,19 +404,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         attached = true;
         await admin.from('crm_contact_activities').insert({
           contact_id: contactId,
-          activity_type: 'photo',
-          title: 'Field photo attached',
+          activity_type: isVideo ? 'video' : 'photo',
+          title: isVideo ? 'Field video attached' : 'Field photo attached',
           body: address?.display_name
-            ? `Photo near ${address.display_name} (${match.distanceM.toFixed(0)}m from contact).`
-            : `Photo attached (${match.distanceM.toFixed(0)}m from contact).`,
+            ? `${isVideo ? 'Video' : 'Photo'} near ${address.display_name} (${match.distanceM.toFixed(0)}m from contact).`
+            : `${isVideo ? 'Video' : 'Photo'} attached (${match.distanceM.toFixed(0)}m from contact).`,
           completed_at: new Date().toISOString(),
           time_machine_handle: timeMachineHandle,
+          media_type: isVideo ? 'video' : 'photo',
+          media_duration_seconds: mediaDurationSeconds ?? null,
+          media_size_bytes: mediaSizeBytes,
         });
-        // Stamp the contact with the photo url + last_contact_at
         await admin
           .from('crm_contacts')
           .update({
-            source_photo_url: photoUrl,
+            source_photo_url: mediaUrl,
             last_contact_at: new Date().toISOString(),
           })
           .eq('id', contactId);
@@ -313,48 +432,76 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // 4. No match → call specialist to extract a new contact from photo + address.
+    // 4. No match → create new contact.
     if (!attached) {
-      const addressStr = address?.display_name ?? '(no GPS)';
       let narrative = '';
-      let confidence = 0;
       let structured: Record<string, unknown> = {};
 
-      const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
-      if (hasApiKey) {
-        const ctx: SpecialistContext = {
-          scope_description: `Jobsite photo at ${addressStr}`,
-          extra: {
-            workflow_id: workflowId,
-            step_id: stepId,
-            photo_data_url: `data:${mimeType};base64,${validBody.photoBase64?.slice(0, 100)}...`, // truncated marker; full image passed via specialist runtime if implemented
-            photo_geocoded_address: addressStr,
-            project_id: validBody.projectId,
-          },
-        };
-        const result = await callSpecialist('contact-extract', ctx, {
-        mockIfNoKey: true,
-        preferProductionPrompt: true,
-      });
-        narrative = result.narrative;
-        structured = result.structured;
-        confidence =
-          typeof structured['bkg:confidence'] === 'number'
-            ? (structured['bkg:confidence'] as number)
-            : 0;
-      } else {
-        narrative = `Photo captured at ${addressStr}. ANTHROPIC_API_KEY missing — saved as draft.`;
+      if (isVideo) {
+        // Video: skip Claude Vision entirely. Use GPS-derived defaults.
+        narrative = address?.display_name
+          ? `Video uploaded at ${address.display_name}.`
+          : 'Video uploaded (no GPS).';
         structured = {
           '@type': 'Person',
-          name: address?.display_name
-            ? `Owner at ${address.address?.house_number ?? ''} ${address.address?.road ?? ''}`.trim()
-            : 'Unknown owner (photo)',
-          description: `Field photo. ${addressStr}`,
+          name: `Owner at ${streetLabel}`,
+          description: address?.display_name
+            ? `Video uploaded at ${address.display_name}`
+            : 'Video uploaded at unknown location',
           'bkg:lane': 'homeowner',
           'bkg:lifecycle_stage': 'lead',
-          'bkg:source': 'photo',
-          'bkg:confidence': 0,
+          'bkg:source': 'photo', // bkg_contact source enum doesn't include 'video' in v1; mark as photo for backwards-compat
+          'bkg:confidence': 0.4, // video gives us address but no face/sign — modest signal
         };
+      } else {
+        // Photo: original Brief 1 behaviour (unchanged).
+        const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+        if (hasApiKey) {
+          const ctx: SpecialistContext = {
+            scope_description: `Jobsite photo at ${addressStr}`,
+            extra: {
+              workflow_id: workflowId,
+              step_id: stepId,
+              photo_data_url: `data:${mimeType};base64,${validBody.photoBase64?.slice(0, 100)}...`,
+              photo_geocoded_address: addressStr,
+              project_id: validBody.projectId,
+            },
+          };
+          const result = await callSpecialist('contact-extract', ctx, {
+            mockIfNoKey: true,
+            preferProductionPrompt: true,
+          });
+          narrative = result.narrative;
+          structured = result.structured;
+        } else {
+          narrative = `Photo captured at ${addressStr}. ANTHROPIC_API_KEY missing — saved as draft.`;
+          structured = {
+            '@type': 'Person',
+            name: address?.display_name ? `Owner at ${streetLabel}` : 'Unknown owner (photo)',
+            description: `Field photo. ${addressStr}`,
+            'bkg:lane': 'homeowner',
+            'bkg:lifecycle_stage': 'lead',
+            'bkg:source': 'photo',
+            'bkg:confidence': 0,
+          };
+        }
+      }
+
+      // Brief 1.1 fallbacks
+      const llmConfidence =
+        typeof structured['bkg:confidence'] === 'number'
+          ? (structured['bkg:confidence'] as number)
+          : undefined;
+      const confidence = calibrateConfidence(llmConfidence, structured);
+      structured['bkg:confidence'] = confidence;
+      const cleanedDescription = cleanupNarrative(
+        narrative,
+        typeof structured.description === 'string'
+          ? (structured.description as string)
+          : undefined
+      );
+      if (cleanedDescription) {
+        structured.description = cleanedDescription;
       }
 
       if (admin) {
@@ -362,7 +509,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           org_id: null,
           project_id: validBody.projectId ?? null,
           first_name:
-            ((structured.givenName as string) ?? (structured.name as string) ?? 'Owner').split(' ')[0] || 'Owner',
+            ((structured.givenName as string) ??
+              (structured.name as string) ??
+              'Owner')
+              .split(' ')[0] || 'Owner',
           last_name: (structured.familyName as string) ?? null,
           company: null,
           email: null,
@@ -377,11 +527,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           estimated_value: null,
           lead_score: 30,
           notes: (structured.description as string) ?? null,
-          tags: (structured.tags as string[]) ?? ['photo-capture'],
+          tags: (structured.tags as string[]) ?? (isVideo ? ['video-capture'] : ['photo-capture']),
           jsonld: null as unknown,
           source: 'photo',
           source_audio_url: null,
-          source_photo_url: photoUrl,
+          source_photo_url: mediaUrl,
           source_transcript: null,
           confidence,
           time_machine_handle: timeMachineHandle,
@@ -395,9 +545,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .select('id')
           .single();
         if (insertErr || !inserted) {
-          throw new Error(`crm_contacts insert failed: ${insertErr?.message ?? 'unknown'}`);
+          throw new Error(
+            `crm_contacts insert failed: ${insertErr?.message ?? 'unknown'}`
+          );
         }
         contactId = inserted.id as string;
+
+        // Record the create as an activity too, with media metadata.
+        await admin.from('crm_contact_activities').insert({
+          contact_id: contactId,
+          activity_type: isVideo ? 'video' : 'photo',
+          title: isVideo ? 'Created from field video' : 'Created from field photo',
+          body: cleanedDescription || narrative,
+          completed_at: new Date().toISOString(),
+          time_machine_handle: timeMachineHandle,
+          media_type: isVideo ? 'video' : 'photo',
+          media_duration_seconds: mediaDurationSeconds ?? null,
+          media_size_bytes: mediaSizeBytes,
+        });
 
         jsonld = {
           '@context': 'https://schema.org',
@@ -408,14 +573,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             ? {
                 '@type': 'PostalAddress',
                 streetAddress:
-                  `${address.address.house_number ?? ''} ${address.address.road ?? ''}`.trim() || undefined,
-                addressLocality: address.address.city ?? address.address.town ?? address.address.village,
+                  `${address.address.house_number ?? ''} ${address.address.road ?? ''}`.trim() ||
+                  undefined,
+                addressLocality:
+                  address.address.city ?? address.address.town ?? address.address.village,
                 addressRegion: address.address.state,
                 postalCode: address.address.postcode,
                 addressCountry: address.address.country_code?.toUpperCase(),
               }
             : undefined,
-          image: photoUrl ?? undefined,
+          // Photo path keeps `image`; video path emits a `video` VideoObject.
+          ...(isVideo
+            ? {
+                video: {
+                  '@type': 'VideoObject',
+                  contentUrl: mediaUrl ?? undefined,
+                  duration:
+                    mediaDurationSeconds && mediaDurationSeconds > 0
+                      ? `PT${Math.round(mediaDurationSeconds)}S`
+                      : undefined,
+                },
+              }
+            : {
+                image: mediaUrl ?? undefined,
+              }),
           description: structured.description,
           additionalType: 'https://builders.theknowledgegardens.com/schemas/bkg_contact',
           'bkg:lane': structured['bkg:lane'] ?? 'homeowner',
@@ -438,7 +619,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           '@type': 'Person',
           '@id': `bkg:contact:${contactId}`,
           name: structured.name ?? 'Owner',
-          image: photoUrl ?? undefined,
+          ...(isVideo
+            ? {
+                video: {
+                  '@type': 'VideoObject',
+                  contentUrl: mediaUrl ?? undefined,
+                  duration:
+                    mediaDurationSeconds && mediaDurationSeconds > 0
+                      ? `PT${Math.round(mediaDurationSeconds)}S`
+                      : undefined,
+                },
+              }
+            : {
+                image: mediaUrl ?? undefined,
+              }),
           additionalType: 'https://builders.theknowledgegardens.com/schemas/bkg_contact',
           'bkg:source': 'photo',
           'bkg:confidence': confidence,
@@ -451,12 +645,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await logSpecialistRunComplete(
           runId,
           {
-            narrative,
+            narrative: cleanedDescription || narrative,
             structured,
             citations: [],
-            confidence: confidence > 0.7 ? 'high' : confidence > 0.3 ? 'medium' : 'low',
+            confidence:
+              confidence > 0.7 ? 'high' : confidence > 0.3 ? 'medium' : 'low',
             raw_response: '',
-            model: hasApiKey ? 'claude-sonnet-4-20250514' : 'mock',
+            model: isVideo
+              ? 'gps-only'
+              : process.env.ANTHROPIC_API_KEY
+                ? 'claude-sonnet-4-20250514'
+                : 'mock',
             latency_ms: latency,
             promptVersion: 'v1',
           },
@@ -470,7 +669,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await logSpecialistRunComplete(
           runId,
           {
-            narrative: 'Photo attached to existing contact (GPS match within 200m).',
+            narrative: `${isVideo ? 'Video' : 'Photo'} attached to existing contact (GPS match within 200m).`,
             structured: { attached: true },
             citations: [],
             confidence: 'high',
@@ -491,6 +690,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         timeMachineHandle,
         attached,
         jsonld,
+        mediaKind: isVideo ? 'video' : 'photo',
         _run_id: runId,
       },
       { status: 200 }
@@ -505,7 +705,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       {
         error: 'photo_capture_failed',
-        message: 'The photo could not be processed',
+        message: 'The media could not be processed',
         _run_id: runId,
       },
       { status: 500 }
