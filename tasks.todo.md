@@ -720,8 +720,8 @@ Next build logs 60s timeouts on `/knowledge`, `/marketplace`, `/mcp`, `/login`, 
 
 **MCP exposure:** `crm_capture_lead`, `crm_list_contacts`, `crm_get_contact`, `crm_attach_photo`, `crm_attach_voice_note`.
 
-### Brief 2 — "Quick reply" inbound conversation queue (L, ~2 weeks) — **FOUNDATION LAID 2026-05-12**
-> **Foundation 2026-05-12:** Schema and AI prompt shipped ahead of code work.
+### Brief 2 — "Quick reply" inbound conversation queue (L, ~2 weeks) — **✅ SHIPPED 2026-05-12 (Twilio webhook ready, awaiting account creds)**
+> ✅ **Shipped 2026-05-12.** All 19 source files live on prod. `/killerapp/quick-reply` HTTP 200. Inbox/draft/send/undo endpoints all return 200. Twilio webhook at `/api/v1/twilio/inbound` ready to receive when Chilly pastes Account SID + Auth Token + phone number into Vercel envs.
 > - Migration `supabase/migrations/20260512_crm_messages.sql` applied to `knowledge-gardens-prod` via MCP. Tables `crm_messages` + `crm_voice_fingerprint`, 8 indexes, updated_at trigger. Time Machine + status enum (received/drafted/queued/sent/delivered/failed/undone/read) + 90s undo window column + sentiment + intent_tags columns.
 > - Prompt `docs/ai-prompts/draft-reply.production.md` written with 3 positive examples (warm/brief/complaint-with-cooldown) + 1 negative example. Voice-fingerprint-aware. Includes `voice_match_score`, `contains_commitment`, `contains_price`, `suggested_send_delay_ms` (30s cool-down on complaints).
 > - **Still blocked:** Chilly to decide Twilio per-account vs shared-pool number strategy. Schema is provider-agnostic, so the route work can start when that's decided.
