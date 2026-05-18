@@ -18,7 +18,7 @@
  * that flag to `false` from the UI; it ships locked on.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
@@ -92,6 +92,44 @@ export default function ContractTemplatesClient({
   const [proMode, setProMode] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string[]>([]);
+
+  // Project Spine v1.5: autofill contract fields from project context on
+  // first hydration. Runs ONCE per session (guarded by `didAutofill`); the
+  // user can always overwrite. Never clobbers a field the user already
+  // typed into. See tasks.lessons.md 2026-05-18 for the trap this avoids:
+  // ContractsState extends `Record<string, unknown>`, and the hook's
+  // hydration spread (`{ ...defaultValue, ...blob } as T` in
+  // useProjectStateBlob) widens `fields` to `Record<string, unknown>` at
+  // the spread site. We declare `f: Record<string, string>` LOCALLY to
+  // narrow the assignment target back to string-only, so `String(val)`
+  // assigns cleanly and `f[key].trim()` is type-safe.
+  const [didAutofill, setDidAutofill] = useState(false);
+  useEffect(() => {
+    if (didAutofill) return;
+    if (!project) return;
+    setContractsState((prev: ContractsState) => {
+      const f: Record<string, string> = { ...(prev.fields ?? {}) };
+      let changed = false;
+      const seed = (key: string, val: string | number | null | undefined): void => {
+        if (val === null || val === undefined || val === '') return;
+        const existing: string | undefined = f[key];
+        if (existing && existing.trim().length > 0) return;
+        f[key] = String(val);
+        changed = true;
+      };
+      seed('projectName', project.name);
+      const low = project.estimated_cost_low;
+      const high = project.estimated_cost_high;
+      if (typeof low === 'number' && typeof high === 'number' && high > 0) {
+        const mid = Math.round((low + high) / 2);
+        seed('contractAmount', `$${mid.toLocaleString()}`);
+      }
+      const summary = project.ai_summary ?? project.raw_input;
+      if (summary) seed('scopeOfWork', summary);
+      return changed ? { ...prev, fields: f } : prev;
+    });
+    setDidAutofill(true);
+  }, [project, didAutofill, setContractsState]);
 
   // Saved indicator string.
   const savedLabel = saving
