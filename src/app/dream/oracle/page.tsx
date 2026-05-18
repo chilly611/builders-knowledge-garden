@@ -1249,21 +1249,48 @@ function RendersPhase({
         ))}
       </div>
 
+      {/* C8 (2026-05-18): primary CTA — make the dream a real project.
+          Above the secondary 'Begin Another Reading'. */}
+      {profile && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          style={{ width: '100%', maxWidth: 520, zIndex: 1, marginBottom: 12 }}
+        >
+          <MakeThisRealButton
+            rawInput={[
+              profile.overallVibe,
+              profile.aestheticDNA && `Aesthetic: ${profile.aestheticDNA}`,
+              profile.lightPreference && `Light: ${profile.lightPreference}`,
+              profile.natureRelationship && `Nature: ${profile.natureRelationship}`,
+              profile.rechargeMethod && `Recharge: ${profile.rechargeMethod}`,
+              profile.securityNeed && `Security: ${profile.securityNeed}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            aiSummary={profile.overallVibe}
+            projectType={profile.aestheticDNA}
+            label="Make This Real →"
+          />
+        </motion.div>
+      )}
+
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStartOver}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.6 }}
         style={{
-          padding: '14px 40px',
-          fontSize: '16px',
+          padding: '12px 28px',
+          fontSize: '14px',
           fontFamily: 'var(--font-archivo)',
-          fontWeight: 600,
-          background: '#D85A30',
-          color: 'white',
-          border: 'none',
+          fontWeight: 500,
+          background: 'transparent',
+          color: '#D85A30',
+          border: '1px solid rgba(216, 90, 48, 0.5)',
           borderRadius: '8px',
           cursor: 'pointer',
           zIndex: 1,

@@ -81,6 +81,8 @@ export const JURISDICTIONS: Jurisdiction[] = [
   // San Diego County
   { id: "ca-sd-county", name: "San Diego County", code: "CBC + SD County amendments", year: 2022, level: "county", state: "California", county: "San Diego" },
   { id: "ca-sd", name: "San Diego, CA", code: "CBC + SD amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
+  { id: "ca-marin-county", name: "Marin County, CA", code: "CBC + Marin County amendments", year: 2022, level: "county", state: "California", county: "Marin" },
+  { id: "ca-marin", name: "Marin County, CA", code: "CBC + Marin amendments", year: 2022, level: "city", state: "California", county: "Marin" },
   { id: "ca-chula-vista", name: "Chula Vista, CA", code: "CBC + Chula Vista amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
   { id: "ca-oceanside", name: "Oceanside, CA", code: "CBC + Oceanside amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
   { id: "ca-carlsbad", name: "Carlsbad, CA", code: "CBC + Carlsbad amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
