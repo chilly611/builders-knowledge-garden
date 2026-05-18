@@ -61,6 +61,22 @@ curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
 - `docs/dream-builder-interface-brainstorm.md` — 18 interface concepts
 - `docs/killer-app-recovery-plan.md` — Gap analysis + rebuild plan
 
+
+## Team
+
+- **Chilly Dahlgren** (chillyd@gmail.com) — founder
+- **Michael Bou** — onboarded 2026-05-18 for the May 20 SF demo sprint. Full GitHub / Supabase / Vercel access. Start at `docs/onboarding/MICHAEL-START-HERE.md`.
+
+## Onboarding
+
+New teammates: read `docs/onboarding/MICHAEL-START-HERE.md` first. Top-level docs there:
+
+- `MICHAEL-START-HERE.md` — read this first; product, access, setup
+- `REPO-AND-FOLDER-MAP.md` — single source of truth + local-folder cleanup notes
+- `DEMO-MAY20-PLAN.md` — the script we're shipping by Wednesday May 20
+- `PARALLEL-AGENT-PLAYBOOK.md` — how Cowork / Claude Code / chat / human teammates coordinate
+- `NEXT-SESSION-PROMPT.md` — paste this at the start of every new session
+
 ## Philosophy
 
 - **Minimal Lovable Product** — never MVP. Ship things people LOVE.
