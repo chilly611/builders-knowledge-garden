@@ -100,6 +100,35 @@ function parseRoughTotal(text: string): number | null {
   return hasK ? numeric * 1000 : numeric;
 }
 
+// C4: CSI estimate-block parser. The estimating-takeoff specialist may
+// emit a fenced <estimate> JSON block with `total` and `lines[]`. We
+// parse permissively so the table renders when structured output
+// arrives without breaking older transcripts.
+interface EstimateLine { division: string; low: number; high: number; }
+interface EstimateBlock { total: number | null; lines: EstimateLine[]; }
+function parseEstimateBlock(text: string): EstimateBlock | null {
+  const m = text.match(/<estimate>([\s\S]*?)<\/estimate>/i);
+  if (!m) return null;
+  try {
+    const parsed: unknown = JSON.parse(m[1].trim());
+    if (!parsed || typeof parsed !== 'object') return null;
+    const p = parsed as { total?: unknown; lines?: unknown };
+    const linesRaw = Array.isArray(p.lines) ? p.lines : [];
+    const lines: EstimateLine[] = linesRaw
+      .filter((l): l is { division: string; low?: number; high?: number } =>
+        !!l && typeof l === 'object' && typeof (l as { division?: unknown }).division === 'string'
+      )
+      .map((l) => ({
+        division: String(l.division),
+        low: Number(l.low) || 0,
+        high: Number(l.high) || 0,
+      }));
+    return { total: typeof p.total === 'number' ? p.total : null, lines };
+  } catch {
+    return null;
+  }
+}
+
 export default function EstimatingClient({ workflow, stages }: Props) {
   // Project Spine v1: hydrate + autosave the per-workflow JSONB state.
   // Hook redirects to /killerapp if no ?project=<id>.
@@ -119,6 +148,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   const [budgetError, setBudgetError] = useState<'no-active-project' | null>(null);
   const [loadingBudget, setLoadingBudget] = useState(true);
   const [lastRecordedAmount, setLastRecordedAmount] = useState<number | null>(null);
+  const [csiEstimate, setCsiEstimate] = useState<EstimateBlock | null>(null);
 
   // Project Spine v1: track step status locally; seed from hydrated.
   const [stepStatusMap, setStepStatusMap] = useState<
@@ -127,6 +157,12 @@ export default function EstimatingClient({ workflow, stages }: Props) {
 
   useEffect(() => {
     if (Object.keys(hydratedPayloads).length === 0) return;
+    const saved = hydratedPayloads['s2-6'];
+    if (saved && typeof saved === 'object' && 'input' in saved) {
+      const input = (saved as { input?: unknown }).input;
+      const block = parseEstimateBlock(typeof input === 'string' ? input : '');
+      if (block) setCsiEstimate(block);
+    }
     setStepStatusMap((prev) => {
       const next = { ...prev };
       for (const stepId of Object.keys(hydratedPayloads)) {
@@ -198,6 +234,8 @@ export default function EstimatingClient({ workflow, stages }: Props) {
 
     const payload = stepResult.payload as { input?: string } | undefined;
     const finalText = payload?.input ?? '';
+    const block = parseEstimateBlock(finalText);
+    if (block) setCsiEstimate(block);
     const amount = parseRoughTotal(finalText);
     if (amount === null) return;
 
@@ -356,6 +394,75 @@ export default function EstimatingClient({ workflow, stages }: Props) {
               Just recorded ${lastRecordedAmount.toLocaleString()} from the AI takeoff.
             </p>
           )}
+        </div>
+      )}
+      {csiEstimate && csiEstimate.lines.length > 0 && (
+        <div style={{ marginTop: spacing[4] }}>
+          <p style={{
+            fontFamily: fonts.body,
+            fontSize: fontSizes.sm,
+            fontWeight: fontWeights.semibold,
+            color: colors.ink[900],
+            marginBottom: spacing[2],
+          }}>
+            Cost breakdown by CSI division
+          </p>
+          <div style={{
+            border: `1px solid ${colors.ink[200]}`,
+            borderRadius: radii.md,
+            overflow: 'hidden',
+            backgroundColor: 'var(--trace)',
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 1fr',
+              padding: `${spacing[2]} ${spacing[3]}`,
+              fontFamily: fonts.mono,
+              fontSize: fontSizes.xs,
+              fontWeight: fontWeights.semibold,
+              color: colors.ink[600],
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              borderBottom: `1px solid ${colors.ink[200]}`,
+            }}>
+              <span>Division</span>
+              <span style={{ textAlign: 'right' }}>Low</span>
+              <span style={{ textAlign: 'right' }}>High</span>
+            </div>
+            {csiEstimate.lines.map((line, idx) => (
+              <div key={`${line.division}-${idx}`} style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr',
+                padding: `${spacing[2]} ${spacing[3]}`,
+                fontFamily: fonts.body,
+                fontSize: fontSizes.sm,
+                color: colors.ink[900],
+                borderBottom: idx < csiEstimate.lines.length - 1
+                  ? `1px solid ${colors.ink[100]}`
+                  : 'none',
+              }}>
+                <span>{line.division}</span>
+                <span style={{ textAlign: 'right' }}>${line.low.toLocaleString()}</span>
+                <span style={{ textAlign: 'right' }}>${line.high.toLocaleString()}</span>
+              </div>
+            ))}
+            {csiEstimate.total !== null && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 2fr',
+                padding: `${spacing[2]} ${spacing[3]}`,
+                fontFamily: fonts.body,
+                fontSize: fontSizes.sm,
+                fontWeight: fontWeights.semibold,
+                color: colors.ink[900],
+                borderTop: `1px solid ${colors.ink[200]}`,
+                backgroundColor: colors.ink[50],
+              }}>
+                <span>Total estimate</span>
+                <span style={{ textAlign: 'right' }}>${csiEstimate.total.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </section>
