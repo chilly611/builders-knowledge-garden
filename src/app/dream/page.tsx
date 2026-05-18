@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import DiscoverFlow, { type DiscoverSelections } from './components/DiscoverFlow';
 import DreamReveal, { type DreamProfile } from './components/DreamReveal';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
+import MakeThisRealButton from '@/components/dream/MakeThisRealButton';
 
 // ═══ Design tokens ═══
 const WARM = '#D85A30';

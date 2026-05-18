@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import MakeThisRealButton from '@/components/dream/MakeThisRealButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProjectProvider, useProject } from '../../dream-shared/ProjectContext';
 import SaveLoadPanel from '../../dream-shared/SaveLoadPanel';
