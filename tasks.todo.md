@@ -1149,3 +1149,21 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Brand-voice continuity check on remaining workflows not in the demo path (Agent F's brief was scoped to demo path).
 - [ ] EXIF parsing on photo uploads (was P2 pre-session, still P2).
 - [ ] ESLint backlog burn-down.
+
+
+## ═══ 2026-05-18 PM (burn 2) — CA/AZ/NV depth + visible trust badge ═══
+
+### Shipped this burn (commit `4776e6a`)
+- [x] Massive `knowledge_entities` expansion: 16 new building codes covering data center (CBC 403 + ASHRAE 90.4 + NFPA 75), skyscraper (CBC 1604.5 + SF AB-082), commercial office (Title 24 §140.3 + IECC C405), hospital (HCAI SB-1953), K-12 school (DSA Field Act), residential reno (CRC R502, CEC 210.52(C), CPC 407, CA ADU Handbook 2024), accessibility (CBC 11B / 2010 ADA), and desert (Phoenix Cool Roof, Clark County). All tagged with proper `jurisdiction_ids` UUIDs AND `metadata.adopted_by` slug list (belt-and-braces for both retrieval paths). Total now ~27 new BKG-seeded codes today.
+- [x] 23 new rows in `jurisdictions` Supabase table for CA/AZ/NV major metros + statewide pseudo-jurisdictions. `knowledge_entities.jurisdiction_ids` FK-safe for the new rows now.
+- [x] **Visible trust badge** in code-compliance results: `SourceCountBadge` component renders 4 states (green "N sources verified" / warm-ochre "Single source - confirm with AHJ" / red "No verified code data - call AHJ" / null for non-compliance specialists). Plumbed `sourceCount` through `SpecialistResult` interface + return path. Rendered next to the confidence band in `AnalysisPane.tsx`. The 3-source-of-truth architecture (live since W7.Q.1 / 2026-04-22) is now actually visible to users for the first time.
+- [x] `JURISDICTIONS` (in-app picker) gap-fill: 10 new cities. Picker now covers ~80 CA/AZ/NV jurisdictions.
+
+### 2026-05-18 PM (burn 2) follow-ups
+- [ ] **Manual click-through smoke test of the trust badge.** Open `/killerapp/workflows/code-compliance?project=55730cd3-5225-493d-8b5c-49086d942565`, ask a compliance question with `ANTHROPIC_API_KEY` wired (Marin foundation rule for example), confirm the green "✓ N sources verified" badge renders in the AnalysisPane response. Owner: Chilly or Michael.
+- [ ] **Telemetry on the trust badge** — emit a `source_count_visible` event when `<SourceCountBadge>` mounts with `sources >= 2`. Will feed the RSI Goal-2 metric (show-your-work surfaces visible per session) and let us A/B the badge wording later. ~10 LOC.
+- [ ] **Tooltip / explanation modal on click** — investors will want to know what "3 sources" means in concrete terms. Modal lists the actual sources for that specific answer: e.g. "1. BKG-seed: crc-r301-marin-wind-seismic (primary). 2. ICC: CRC §R301.2.1 (primary). 3. Marin County amendments local file (tertiary)." Owner: open.
+- [ ] **Backfill `metadata.adopted_by` + `jurisdiction_ids` on the existing 542 pre-W11.B knowledge_entities rows.** They were seeded before the dual-tagging rule; many may have stale single-column tagging. Audit + UPDATE script needed. Owner: open.
+- [ ] **Audit non-compliance specialists for similar "computed but never returned" signals** (lesson from this burn). Likely candidates: estimating-takeoff (CSI coverage %?), sub-bid-analysis (bid coverage %?), supply specialists (vendor count?). Each is a potential trust badge in its own workflow. Owner: open.
+- [ ] **Lane-aware affordance** — when a project hydrates with a building_type that maps to a lane, surface that lane in the project shell ("Working on a data center — here are the relevant workflows"). Currently the picker shows everything. Adaptive UX per user's "more useful as a user's lane is discovered" directive. Owner: open.
+- [ ] **Heartbeat status badge** — surface the `/api/v1/rsi/heartbeat` last-run timestamp on the killer-app shell so users see "Last refreshed: 12 min ago" or similar. Addresses "everything updating on a heartbeat schedule so nobody misses a beat" directive. Owner: open.

@@ -944,3 +944,48 @@ The ONLY usable signal is the GitHub commit-status API.
 **Rule:** Always poll `/commits/<sha>/status` for Vercel state in this repo. Don't bother with `/check-runs` until / unless a Checks-API integration replaces the Status integration.
 
 ---
+
+
+---
+
+### Platform infrastructure that's invisible to users isn't really shipped
+**Date:** 2026-05-18 (burn 2)
+**What happened:** The W7.Q.1 ship (2026-04-22) built `queryAllSources` for 3-source code verification. It computed `codeSourceConfidenceData.sourceCount`, injected the count into the LLM prompt, and influenced the model's `confidence` field. But the `sourceCount` itself was never returned in `SpecialistResult` and never rendered in the UI. For four weeks the platform was multi-source-verifying every compliance answer and saying nothing about it to the user. The investor demo would have leaned on a feature no one could see.
+
+**Fix (this burn):** One additive type field (`sourceCount?: number` in `SpecialistResult`), one line in the return statement, one new component (`SourceCountBadge`, 95 LOC), one JSX insertion in `AnalysisPane.tsx`. Total LOC: ~110. Total time: ~15 min. The signal is now visible everywhere the confidence band renders.
+
+**Rule:** When shipping infrastructure that improves an answer's quality (multi-source verification, RAG hit-count, retrieval grounding, citation provenance, freshness check) — ALWAYS ship the user-visible signal in the same sprint. The rule "platform invisible = not shipped" applies regardless of how clean the back-end implementation is. Story for the demo / investor / customer / engineer reading the result needs the badge as much as the code path needs the verification. Bake this into review: "does the user see when this is on?" If no, the ship isn't complete.
+
+**Detection pattern:** for any `Result` interface returned by a `lib/`-layer specialist or service, audit it twice a sprint — once for "is every field actually rendered somewhere?" and once for "are there computed values in the function body that DON'T get attached to the result?" The latter is what bit us here; `sourceCount` lived in a local var named `codeSourceConfidenceData` and dropped on the floor at the return boundary.
+
+---
+
+### Cross-jurisdiction code seeding: tag with both `jurisdiction_ids` (uuid[]) and `metadata.adopted_by` (text[])
+**Date:** 2026-05-18 (burn 2)
+**What happened:** Seeded 16 new building codes spanning data center / skyscraper / commercial / hospital / school / residential reno / accessibility / desert. Each code is relevant to multiple jurisdictions (a Title 24 §140.3 envelope rule applies in SF, Oakland, San Jose, SD, plus the statewide level). Initial instinct was to seed one row per jurisdiction (cross-product). That's wasteful — each row is the same text; only the FK changes.
+
+**Fix:** One row per code, with TWO multi-jurisdiction columns populated:
+- `jurisdiction_ids: uuid[]` — the canonical FK to `jurisdictions.id`. Used by joins and the formal data model.
+- `metadata.adopted_by: text[]` — the legacy slug list used by `queryAllSources` keyword filter (`bkg-seed.ts` searches `metadata::text ILIKE '%<jurisdiction>%'`).
+
+**Rule:** When seeding cross-jurisdictional code data, write the row once and tag both columns. The UUID array satisfies the schema; the slug array satisfies the existing retrieval keyword filter. Until the filter migrates to FK joins, populate both — belt-and-braces. Also: when adding a new code system to BKG, scan `src/lib/code-sources/*.ts` for the active retrieval path so you know which fields it inspects.
+
+---
+
+### Stray non-ASCII chars in SQL strings: a Chinese/Cyrillic glyph in a function call name silently kills the parse
+**Date:** 2026-05-18 (burn 2)
+**What happened:** One INSERT failed with `function gen_租_uuid() does not exist`. The string `gen_random_uuid` had been corrupted to `gen_租_uuid` — a Chinese character `租` (zū = "rent") substituted for `random`. Probable origin: editor autocorrect, IME glitch, or a copy-paste from a normalized document that compressed `_random_` to `_租_` via a normalization pass. Hard to spot visually because the underscore framing made it look like the rest of the identifier.
+
+**Fix:** Re-run the INSERT with the correct identifier; works clean. Post-hoc: install non-ASCII linter rule for SQL inserts that should be ASCII-only (function names, identifiers, table/column refs).
+
+**Rule:** When a SQL query mysteriously fails on a function name that "should exist", grep the raw query text for non-ASCII characters before debugging anything else. `grep -P '[^\x00-\x7F]'` on the SQL string surfaces these in 100ms. Same applies to JSON keys, TypeScript identifiers, and any literal where ASCII is structurally required.
+
+---
+
+### Trust signals on a demo screen are demo content, not engineering polish
+**Date:** 2026-05-18 (burn 2)
+**What happened:** Through 4 weeks of agent rotations on this codebase, no one prioritized making the 3-source verification visible — the badge was always "P2 nice-to-have, post-demo." The investor pitch script for Wednesday says: "we cross-check every code answer against multiple sources, so you never get an AI hallucination on a building permit." A pitch claim that's invisible on screen is a pitch claim that doesn't land. The badge IS the demo content.
+
+**Rule:** Trust signals (source count, freshness, provenance, "verified by", "updated N min ago", "synced from Supabase") sit at the intersection of platform infrastructure and demo content. They are NOT polish to do after the demo — they ARE the demo. When a pitch has a claim like "no hallucinations" / "live data" / "verified citations", build the on-screen artifact that proves the claim BEFORE the demo, not after. Same as for "100% test coverage" badges, security audit stamps, SOC2 logos on landing pages — the artifact is part of the product, not commentary on it.
+
+---

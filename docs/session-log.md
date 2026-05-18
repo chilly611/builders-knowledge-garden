@@ -1189,3 +1189,35 @@ Modified (3):
 **SECURITY — please action post-demo:** the GitHub PAT used for these pushes is embedded in the local repo's `origin` URL (`https://chilly611:github_pat_11AOSL…@github.com/…`). The PAT therefore appears in this session's transcript. Per the existing `tasks.lessons.md` 2026-04-17 rule ("Founder-shared PATs belong in a single push and then in the bin"), **Chilly should rotate this PAT after the Wednesday demo lands** — GitHub Settings → Developer settings → Personal access tokens → revoke + regenerate, then `git remote set-url origin https://github.com/chilly611/builders-knowledge-garden.git` to strip the inline PAT.
 
 **Cold-start trust audit (Phase 4) verdict:** GREEN. All 7 demo-path URLs return 200 on prod. Ship 1 Marin entries observed in code-compliance route payload. Ship 3 copy changes observed on `/dream/oracle` + `/killerapp` (zero residue of old strings). Ship 2 autofill not WebFetch-observable (hydration-time effect) — needs a 30-second manual click-through on prod before Wednesday morning to confirm the fields paint.
+
+
+---
+
+## 2026-05-18 PM (burn 2) — Cowork Session: CA/AZ/NV depth + visible trust badge + jurisdiction gap-fill
+**Agent:** Cowork (claude-opus-4-7)
+**What was built:**
+- **Ship 4 — Knowledge-engine expansion (Supabase MCP).** 23 new rows in `jurisdictions` (SF, Oakland, Berkeley, San Jose, Palo Alto, Mountain View, Cupertino, LA, SD, Sacramento, Phoenix, Mesa, Scottsdale, Tucson, Flagstaff, Glendale, Las Vegas, Henderson, North Las Vegas, Reno, Sparks + ca-/az-/nv-statewide). 16 new rows in `knowledge_entities` spanning the full building-type spectrum:
+  - **Data center:** CBC 403 high-rise + Group H, ASHRAE 90.4 PUE (1.40-1.61 depending on climate zone), NFPA 75 IT fire (clean-agent + VESDA + EPO)
+  - **Skyscraper:** CBC 1604.5 Risk Cat IV + SF AB-082 SETC peer review for 160 ft+ + PEER TBI Guidelines
+  - **Commercial:** Title 24 §140.3 envelope + IECC C405 lighting (AZ/NV)
+  - **Hospital:** HCAI / OSHPD SB-1953 SPC-4D / NPC-5 acute care by 2030
+  - **School:** DSA Field Act + Chapter 16A / 19A school seismic detailing
+  - **Residential:** CRC R502 floor framing, CEC 210.52(C) kitchen receptacles (with the 2023 island-deletion supersession story), CPC 407 bath clearances + venting, CA ADU Handbook 2024 (state pre-emption of local zoning up to 1200 sf)
+  - **Accessibility:** CBC 11B-206 / 2010 ADA accessible route + the 20% TI trigger that catches every commercial renovation in California
+  - **Desert:** Phoenix Cool Roof Ordinance (SRI 75+) + Clark County Southern Nevada Amendments
+- **Ship 5 — Visible trust badge** (commit `4776e6a`). The `queryAllSources` 3-source-verification architecture was invisible to users. Now: `SpecialistResult.sourceCount?: number` plumbed through specialists.ts (line 52-67 interface + line 441 return). New `SourceCountBadge.tsx` component (95 LOC) renders 4 states: green pill "N sources verified" for N≥2, warm-ochre "Single source — confirm with AHJ" for N=1, red "No verified code data — call AHJ" for N=0, null for non-compliance specialists. Rendered next to the confidence band in `AnalysisPane.tsx`. Directly addresses the "how do you avoid AI hallucinations?" investor anxiety with on-screen proof.
+- **Ship 6 — JURISDICTIONS gap-fill** (`src/lib/knowledge-data.ts`). Added 10 cities: Palo Alto / Mountain View / Cupertino / Sunnyvale (Santa Clara County tech cluster), Mountain House + Fresno (Central Valley reach), Mesa / Scottsdale / Glendale / Chandler / Gilbert / Tempe (full Phoenix Maricopa coverage), North Las Vegas / Paradise / Sparks (Clark + Washoe). Picker now covers ~80 CA/AZ/NV jurisdictions, up from ~60.
+
+**Key decisions:**
+- **All three ships in one atomic Trees API commit.** Low risk per ship (additive type + new component + JSX wrap + array literal additions); combined still low-risk. One Vercel build, one rollback target.
+- **Data work via Supabase MCP, separately from code commit.** Knowledge-entity rows + jurisdiction rows are not under git source control (live in the production DB). Documented in this session log for traceability.
+- **`metadata.adopted_by` AND `jurisdiction_ids` both populated** on every new `knowledge_entities` row. `adopted_by` is the legacy text-slug list the `queryAllSources` keyword filter uses; `jurisdiction_ids` is the canonical uuid[] FK to `jurisdictions` rows. Belt-and-braces because two retrieval paths exist and we want both to find the data.
+- **Demo-day calibration of `sourceCount` badge thresholds:** the message at sources=2 is the same green-tier "verified" label as sources=3+. This is intentional — most BKG questions cross-verify against at least 2 sources (BKG seed + one of ICC/NFPA/local) and we want the demo's compliance queries to feel verified, not borderline.
+
+**Issues/bugs found:**
+- One SQL run failed because a stray non-ASCII character (likely an editor autocorrect) replaced `random` with `租` in `gen_random_uuid()`. Caught on first attempt, re-ran clean. Lesson appended.
+- The `codeSourceConfidenceData.sourceCount` was already being computed by the existing pipeline since W7.Q.1 (2026-04-22) — but it was never attached to the SpecialistResult return. The 3-source-of-truth feature has been *technically working but invisible* in production for 4 weeks. This burn surfaces it. Pattern: when shipping platform infrastructure, also ship the user-visible signal in the same sprint. Lesson appended.
+
+**Files touched (commit -> paths):**
+- `4776e6a` — `src/lib/specialists.ts` (sourceCount field + return), `src/design-system/components/SourceCountBadge.tsx` (new), `src/design-system/components/AnalysisPane.tsx` (import + JSX), `src/lib/knowledge-data.ts` (10 new city entries in JURISDICTIONS array)
+- **Supabase MCP** — 23 inserts into `jurisdictions`, 16 inserts into `knowledge_entities`.
