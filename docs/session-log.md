@@ -1134,3 +1134,24 @@ Modified (3):
 
 **Prod verified:** /, /killerapp, /dream/oracle, /killerapp/workflows/contract-templates, /killerapp/workflows/estimating all return 200.
 
+## 2026-05-18 (afternoon) — Cowork Session: Michael Bou onboarding bundle
+**Agent:** Cowork (opus-4-7)
+**What was built:**
+- 5-doc onboarding bundle for Michael Bou at `docs/onboarding/` and locally at `~/Desktop/The Builder Garden/Builder's Knowledge Garden/michael-onboarding/`:
+  - `MICHAEL-START-HERE.md` — product, access, setup, first three actions
+  - `REPO-AND-FOLDER-MAP.md` — single source of truth + local-folder cleanup notes (clarifies the "many BKG folders" confusion)
+  - `DEMO-MAY20-PLAN.md` — 4-act script + 12 prerequisites + Tue/Wed agenda
+  - `PARALLEL-AGENT-PLAYBOOK.md` — patterns for Cowork × Claude Code × chat × Michael
+  - `NEXT-SESSION-PROMPT.md` — paste-at-start prompt for the next session after Chilly's machine restart
+- `bkg-michael-bundle.zip` (~17KB) in workspace folder for thumbdrive handoff
+- Updated root `CLAUDE.md` to add "## Team" + "## Onboarding" sections pointing at `docs/onboarding/`
+
+**Key decisions:**
+- Michael authenticates via Chilly's GitHub account (per user choice) — fastest setup, no PR/collaborator delay.
+- Michael gets full Supabase + Vercel access (per user choice) — same as Chilly.
+- Repo is flat on GitHub; corrected paths in the onboarding docs (no `app/` prefix) since Chilly's local-only `app/` wrapper doesn't exist on a fresh clone.
+- Bundle is duplicated: GitHub at `docs/onboarding/` (canonical) + local workspace for thumbdrive (offline).
+
+**Commits:**
+- `7ae1123a` — Onboarding: Michael Bou bundle (5 docs) + CLAUDE.md team section
+
