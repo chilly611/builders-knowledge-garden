@@ -114,6 +114,17 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef<string | null>(null);
 
+  // First-paint persistence: if initial state came from URL, write
+  // to localStorage so cross-tab + rescue logic stays in sync. Runs
+  // exactly once after mount.
+  useEffect(() => {
+    if (projectId && typeof window !== 'undefined') {
+      try { window.localStorage.setItem(ACTIVE_PROJECT_KEY, projectId); }
+      catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Whenever URL ?project= changes (back/forward nav, link clicks),
   // align local projectId state.
   useEffect(() => {

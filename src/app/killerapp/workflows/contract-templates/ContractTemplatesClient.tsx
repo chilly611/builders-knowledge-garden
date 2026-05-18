@@ -18,7 +18,7 @@
  * that flag to `false` from the UI; it ships locked on.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
@@ -135,6 +135,58 @@ export default function ContractTemplatesClient({
     setContractsState((prev) => ({
       ...prev,
       fields: { ...(prev.fields ?? {}), [key]: value },
+    }));
+  };
+
+  // C3: autofill contract fields from project spine on first hydrate.
+  // Reads project.name (client/project name), jurisdiction (state),
+  // estimated cost range (price). Only writes EMPTY fields so the
+  // user's own edits are never trampled.
+  const [didAutofill, setDidAutofill] = useState(false);
+  useEffect(() => {
+    if (didAutofill) return;
+    if (!project) return;
+    setContractsState((prev) => {
+      const f = { ...(prev.fields ?? {}) };
+      let changed = false;
+      const seed = (key: string, val: string | number | null | undefined) => {
+        if (val === null || val === undefined || val === '') return;
+        if (f[key] && f[key].trim().length > 0) return;
+        f[key] = String(val);
+        changed = true;
+      };
+      // Project name is the natural project_name / jobName seed.
+      seed('projectName', project.name);
+      seed('jobName', project.name);
+      // Jurisdiction → state.
+      seed('state', project.jurisdiction);
+      seed('jurisdiction', project.jurisdiction);
+      // Cost range — midpoint as price.
+      const low = project.estimated_cost_low;
+      const high = project.estimated_cost_high;
+      if (low && high) {
+        const mid = Math.round((low + high) / 2);
+        seed('contractPrice', `$${mid.toLocaleString()}`);
+        seed('price', `$${mid.toLocaleString()}`);
+      }
+      // Client name if the project knows it.
+      seed('clientName', project.client_name);
+      return changed ? { ...prev, fields: f } : prev;
+    });
+    setDidAutofill(true);
+  }, [project, didAutofill, setContractsState]);
+
+  // C3: payment-schedule preset chips. Selects a canonical milestone
+  // structure into the `paymentSchedule` field if the form requires it.
+  const PAYMENT_PRESETS: { id: string; label: string; value: string }[] = [
+    { id: 'net30', label: 'Net 30', value: 'Net 30 — invoiced monthly; balance due 30 days from invoice date.' },
+    { id: '10-40-40-10', label: '10 / 40 / 40 / 10', value: '10% deposit at signing · 40% at material delivery · 40% at substantial completion · 10% at final walkthrough.' },
+    { id: 'half-down', label: '50% up front', value: '50% deposit at signing · 50% at substantial completion.' },
+  ];
+  const applyPaymentPreset = (val: string) => {
+    setContractsState((prev) => ({
+      ...prev,
+      fields: { ...(prev.fields ?? {}), paymentSchedule: val },
     }));
   };
 
@@ -381,6 +433,49 @@ export default function ContractTemplatesClient({
               ))}
             </div>
           </>
+        )}
+
+        {/* C3: payment-preset chips. Visible whenever paymentSchedule
+            field is among the required fields for current selection. */}
+        {selected.size > 0 && requiredFields.some((f) => f.key === 'paymentSchedule') && (
+          <div style={{ marginTop: spacing[4], marginBottom: spacing[4] }}>
+            <div
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: fontSizes.xs,
+                fontWeight: fontWeights.semibold,
+                color: colors.ink[600],
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: spacing[2],
+              }}
+            >
+              Quick payment schedules
+            </div>
+            <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
+              {PAYMENT_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => applyPaymentPreset(p.value)}
+                  style={{
+                    padding: `${spacing[2]} ${spacing[3]}`,
+                    fontSize: fontSizes.xs,
+                    fontWeight: fontWeights.semibold,
+                    fontFamily: fonts.body,
+                    border: `1px solid var(--brass)`,
+                    backgroundColor: 'var(--trace)',
+                    color: colors.ink[900],
+                    borderRadius: radii.full,
+                    cursor: 'pointer',
+                    transition: `all ${transitions.base}`,
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Step 3: Generate */}

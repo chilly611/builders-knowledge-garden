@@ -127,12 +127,51 @@ export function createSnapshot(
   // Generate snapshot ID (unique per project)
   const snapshotId = `snap-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
+  // C5: capture point-in-time journey state so we can rewind.
+  // Read via the same localStorage key journey-progress writes to;
+  // failure is silent (snapshot still works, just no rewind data).
+  let journey: Record<string, unknown> | undefined;
+  let budget:
+    | { totalEstimated?: number; totalSpent?: number; byPhase?: Record<string, { estimated?: number; spent?: number }> }
+    | undefined;
+  try {
+    const journeyKey = `bkg:journey:anon:${projectId}`;
+    const userId = window.localStorage.getItem('bkg-user-id');
+    const keyedJourneyKey = userId
+      ? `bkg:journey:${userId}:${projectId}`
+      : journeyKey;
+    const raw = window.localStorage.getItem(keyedJourneyKey) ?? window.localStorage.getItem(journeyKey);
+    if (raw) journey = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    /* ignore — snapshot still useful without journey blob */
+  }
+  try {
+    // budget-spine writes summary fragments to localStorage under
+    // bkg:budget:<projectId>. We persist the raw items here; the
+    // cockpit re-derives byPhase on rewind.
+    const budgetRaw = window.localStorage.getItem(`bkg:budget:${projectId}`);
+    if (budgetRaw) {
+      const items = JSON.parse(budgetRaw) as Array<{
+        amount?: number;
+        isEstimate?: boolean;
+        lifecycleStageId?: number;
+      }>;
+      const totalEstimated = items.filter((i) => i.isEstimate).reduce((s, i) => s + (i.amount || 0), 0);
+      const totalSpent = items.filter((i) => !i.isEstimate).reduce((s, i) => s + (i.amount || 0), 0);
+      budget = { totalEstimated, totalSpent };
+    }
+  } catch {
+    /* ignore */
+  }
+
   const snapshot: Snapshot = {
     snapshotId,
     label: label || generateLabel(eventType, hint),
     timestamp: new Date().toISOString(),
     stageId,
     kind: 'both', // For MVP, always capture both estimates and actuals
+    journey,
+    budget,
   };
 
   // Prepend new snapshot to array (most recent first)

@@ -116,6 +116,26 @@ export interface Snapshot {
   stageId: StageId;
   /** What this snapshot captures. */
   kind: 'estimates' | 'actuals' | 'both';
+  /**
+   * Captured per-workflow journey state at snapshot time. Optional —
+   * older snapshots written before C5 won't have it; consumers must
+   * fall back to 'no rewind data available' rather than crashing.
+   *
+   * Shape mirrors `JourneyState` from `@/lib/journey-progress` but
+   * we keep the type here as `Record<string, unknown>` so this file
+   * has no circular import with lib/journey-progress.
+   */
+  journey?: Record<string, unknown>;
+  /**
+   * Captured budget summary at snapshot time. Shape mirrors the
+   * subset of `BudgetSummary` the cockpit reads. Optional for the
+   * same back-compat reason as `journey`.
+   */
+  budget?: {
+    totalEstimated?: number;
+    totalSpent?: number;
+    byPhase?: Record<string, { estimated?: number; spent?: number }>;
+  };
 }
 
 export interface TimeMachineData {
