@@ -132,7 +132,6 @@ export default function KillerappProjectShell() {
 
   useEffect(() => {
     if (!projectId) {
-      setProject(null);
       setConversations([]);
       setStreamingResponse('');
       setStreaming(false);
@@ -147,38 +146,22 @@ export default function KillerappProjectShell() {
 
     (async () => {
       try {
-        const [projRes, convRes] = await Promise.all([
-          authedFetch(`/api/v1/projects?id=${encodeURIComponent(projectId)}`),
-          authedFetch(
-            `/api/v1/projects/${encodeURIComponent(projectId)}/conversations`
-          ),
-        ]);
+        // C1 spine (2026-05-18): project fetch lives in ProjectProvider.
+        // Shell only owns conversations (copilot concern).
+        const convRes = await authedFetch(
+          `/api/v1/projects/${encodeURIComponent(projectId)}/conversations`
+        );
 
-        if (!projRes.ok) {
-          if (cancelled) return;
-          setError(
-            projRes.status === 404
-              ? "We couldn't find that project."
-              : 'Sign in to view this project.'
-          );
-          setLoading(false);
-          return;
-        }
-        const projJson = await projRes.json();
         if (cancelled) return;
-        setProject(projJson as ProjectRecord);
-
         if (convRes.ok) {
           const convJson = await convRes.json();
-          if (!cancelled) {
-            setConversations(
-              (convJson.conversations as ConversationRow[]) ?? []
-            );
-          }
+          setConversations(
+            (convJson.conversations as ConversationRow[]) ?? []
+          );
         }
       } catch (e) {
-        if (!cancelled) setError('Could not load this project.');
-        console.error('Project hydrate error:', e);
+        if (!cancelled) setError('Could not load conversations.');
+        console.error('Conversations hydrate error:', e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -279,13 +262,14 @@ export default function KillerappProjectShell() {
 
   async function refreshAfterStream(pid: string) {
     try {
-      const [projRes, convRes] = await Promise.all([
-        authedFetch(`/api/v1/projects?id=${encodeURIComponent(pid)}`),
-        authedFetch(
-          `/api/v1/projects/${encodeURIComponent(pid)}/conversations`
-        ),
-      ]);
-      if (projRes.ok) setProject(await projRes.json());
+      // C1 spine: dispatch the changed event to make the Provider re-fetch
+      // the project (so fresh ai_summary lands). Also refresh conversations.
+      window.dispatchEvent(
+        new CustomEvent('bkg:project:changed', { detail: { id: pid } })
+      );
+      const convRes = await authedFetch(
+        `/api/v1/projects/${encodeURIComponent(pid)}/conversations`
+      );
       if (convRes.ok) {
         const convJson = await convRes.json();
         setConversations(
