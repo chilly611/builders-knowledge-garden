@@ -1103,3 +1103,34 @@ Modified (3):
    ```
 2. **Commit + push** when green. Suggested commit in `docs/strategy/W10-A-smoke-report.md` § Pre-push checklist.
 3. **Run the smoke harness post-deploy:** `node scripts/probes/w10a-smoke.mjs` — should report 15 OK or 0 FAIL (warnings tolerable).
+
+## 2026-05-18 — Cowork Session: C5 rewind + C3 contracts + C4 estimating + Marin codes
+**Agent:** Cowork (opus-4-7)
+**What was built:**
+- C5 Time Machine rewind: extended `Snapshot` type with optional `journey` + `budget` blobs; new `src/lib/use-time-machine-rewind.ts` hook owns `currentSnapshotId` + dispatches `bkg:project:state-rewound`; new `src/components/cockpit/RewindToast.tsx` shows "Return to live" banner; `ProjectCockpit` re-routes time-scrub through `rewindTo()` and overrides journey/budget state on the rewind event; `TimeMachineDial` receives `currentSnapshotId` prop.
+- C4 Estimating CSI breakdown: `parseEstimateBlock()` helper accepts a fenced `<estimate>` JSON block (`{total, lines[{division, low, high}]}`); state rehydrates from saved s2-6 payloads; topPanel renders a 3-column CSI division table with low/high/total row.
+- C3 Contracts payment-preset chips: 3 quick-pick chips (Net 30 · 10/40/40/10 · 50% up front) write into the `paymentSchedule` field with one tap.
+- ProjectContext.tsx: first-paint write to localStorage when initial state comes from URL — fixes cross-tab + rescue sync.
+- Marin seed: created `ca-marin` jurisdiction row in Supabase; tagged 11 demo-critical CA building codes (CBC 1604/1613, CBC Title 24 parts 3/6/11, IRC R301/R403.1, ASCE 7 wind+seismic, IBC 1027, IECC R403) with Marin's UUID in `jurisdiction_ids`.
+
+**Key decisions:**
+- Atomic commit via Trees API → one push, full validation by Vercel.
+- When the first batch (3ba65f94) broke the build with no log access, reverted just the 3 consumer files (cockpit/contracts/estimating) and re-layered them one at a time to isolate the culprit. 3 deploys: cockpit ✓, estimating ✓, contracts ✗.
+- Root cause: the contracts autofill `useEffect` triggered the build break. Shipped only the payment-preset chips and deferred the autofill effect.
+- Snapshot blobs persist in localStorage alongside the snapshot itself — no API surface needed for the demo.
+
+**Issues/bugs found:**
+- Vercel deployment logs aren't accessible without a Vercel token, so debugging "deployment failed in 25s" required bisecting commits.
+- Sandbox can't run `next build` (bus error / OOM) and `tsc --noEmit` times out on a repo this size in the 45s window.
+- Contracts autofill effect — to be re-attempted next session with simpler shape (defer to a useEffect that bails on first paint if any field has a value, and avoid the Record<string, unknown> conflation).
+
+**Commits (chronological):**
+- `3ba65f94` C5+C3+C4 atomic batch (broke build)
+- `a250a556` hot-fix: revert 3 consumer files
+- `9f25b240` re-layer cockpit (green)
+- `6237ebaf` re-layer estimating CSI (green)
+- `81e84597` re-layer contracts autofill+chips (broke build)
+- `eda151ff` hot-fix: drop contracts autofill, keep chips (green) → current main
+
+**Prod verified:** /, /killerapp, /dream/oracle, /killerapp/workflows/contract-templates, /killerapp/workflows/estimating all return 200.
+
