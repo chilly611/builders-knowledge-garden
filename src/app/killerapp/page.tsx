@@ -38,6 +38,7 @@ import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
+import AuthAndProjectIndicator from './AuthAndProjectIndicator';
 import TermTooltip from '@/components/TermTooltip';
 import styles from './landing.module.css';
 
@@ -88,7 +89,6 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q5: '/killerapp/workflows/code-compliance',
   // Week 3 — Size Up
   q2: '/killerapp/workflows/estimating',
-  q3: '/killerapp/workflows/client-lookup',
   // Week 3 — Plan
   q6: '/killerapp/workflows/job-sequencing',
   q7: '/killerapp/workflows/worker-count',
@@ -105,16 +105,6 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q17: '/killerapp/workflows/expenses',
   q18: '/killerapp/workflows/outreach',
   q19: '/killerapp/workflows/compass-nav',
-  // Wave 4 (2026-05-08) — SOON workflows promoted to LIVE
-  q1:  '/killerapp/workflows/bid-risk',
-  q20: '/killerapp/workflows/change-orders',
-  q21: '/killerapp/workflows/draw-requests',
-  q22: '/killerapp/workflows/lien-waivers',
-  q23: '/killerapp/workflows/payroll-check',
-  q24: '/killerapp/workflows/final-walk-through',
-  q25: '/killerapp/workflows/retainage-tracker',
-  q26: '/killerapp/workflows/warranty-handoff',
-  q27: '/killerapp/workflows/project-review',
 };
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
@@ -185,15 +175,10 @@ const STAGE_COLORS: Record<number, string> = {
 export default async function KillerAppPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ project?: string | string[] }>;
+  searchParams: Promise<{ project?: string }>;
 }) {
+  const { project: activeProjectId } = await searchParams;
   const data = loadWorkflows();
-  const resolvedParams = (await searchParams) ?? {};
-  const projectIdRaw = resolvedParams.project;
-  const projectId = Array.isArray(projectIdRaw) ? projectIdRaw[0] : projectIdRaw;
-  const projectQuery = projectId
-    ? `?project=${encodeURIComponent(projectId)}`
-    : '';
   const stages = [...data.lifecycleStages].sort((a, b) => a.id - b.id);
   const byStage = new Map<number, WorkflowSummary[]>();
   for (const w of data.workflows) {
@@ -204,6 +189,13 @@ export default async function KillerAppPage({
 
   return (
     <div className={styles.pageContainer}>
+      {/* Auth + project-saved indicators in the top-right corner.
+          User feedback 2026-05-06 — visible trust signals so the user
+          always knows they're signed in and the project is saved. */}
+      <Suspense fallback={null}>
+        <AuthAndProjectIndicator />
+      </Suspense>
+
       {/* Hero with blueprint grid background */}
       <header className={styles.heroSection}>
         {/* Blueprint 32px grid background */}
@@ -231,8 +223,7 @@ export default async function KillerAppPage({
             </h1>
 
             <p className={styles.heroSubhead}>
-              Every tool a builder needs. Talking to each other. Learning as
-              you go.
+              Every tool you need. Wired together. Smarter every job.
             </p>
           </div>
         </div>
@@ -249,7 +240,7 @@ export default async function KillerAppPage({
               letterSpacing: '0.2px',
             }}
           >
-            Ask anything — type or talk. Describe a scope and we&apos;ll route you to the right tool.
+            Tell us what you&apos;re working on. We&apos;ll point you at the right tool.
           </div>
           <SearchBoxErrorBoundary>
             <WorkflowPickerSearchBox />
@@ -366,10 +357,17 @@ export default async function KillerAppPage({
                   );
 
                   if (isLive && href) {
+                    // Preserve active project context so the workflow page
+                    // hydrates state instead of bouncing back to /killerapp.
+                    // Fixes the 2026-05-11 "clicked Check codes → nothing
+                    // saved" regression where bare hrefs dropped ?project=.
+                    const liveHref = activeProjectId
+                      ? `${href}?project=${encodeURIComponent(activeProjectId)}`
+                      : href;
                     return (
                       <Link
                         key={wf.id}
-                        href={`${href}${projectQuery}`}
+                        href={liveHref}
                         className={styles.workflowLink}
                         data-workflow-id={wf.id}
                       >
@@ -394,20 +392,8 @@ export default async function KillerAppPage({
       <footer className={styles.footer}>
         <div>Builder&rsquo;s Knowledge Garden · v0.1</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <Link href="/killerapp/workflows/compass-nav" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
+          <Link href="/compass" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}>
             View your project <TermTooltip term="Compass">Compass</TermTooltip> →
-          </Link>
-          <Link
-            href="/dream"
-            style={{
-              textDecoration: 'none',
-              color: '#D85A30',
-              fontWeight: 600,
-              fontSize: 12,
-              letterSpacing: 0.2,
-            }}
-          >
-            Dream up what you want to build →
           </Link>
           <div style={{ fontSize: '9px', color: 'inherit', opacity: 0.6, maxWidth: 180, textAlign: 'right', lineHeight: 1.4 }}>
             Your one-page project map. Open it any time.

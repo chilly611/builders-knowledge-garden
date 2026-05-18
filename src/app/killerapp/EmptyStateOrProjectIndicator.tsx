@@ -41,7 +41,7 @@ export default function EmptyStateOrProjectIndicator() {
         letterSpacing: '0.3px',
       }}
     >
-      Pick a workflow below to start — or describe your project up top.
+      Pick a workflow, or tell us about the job up top.
     </div>
   );
 }

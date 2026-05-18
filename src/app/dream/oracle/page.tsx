@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
-import MakeThisRealButton from '@/components/dream/MakeThisRealButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProjectProvider, useProject } from '../../dream-shared/ProjectContext';
 import SaveLoadPanel from '../../dream-shared/SaveLoadPanel';
@@ -37,11 +36,11 @@ const QUESTIONS = [
 ];
 
 const PROCESSING_STEPS = [
-  'Reading your dreams...',
-  'Mapping emotional architecture...',
-  'Analyzing aesthetic wavelengths...',
-  'Constructing your profile...',
-  'Generating renders...',
+  'Reading your answers...',
+  'Finding the shape of it...',
+  'Pulling the look and feel...',
+  'Building your profile...',
+  'Drawing it up...',
 ];
 
 function OraclePageInner() {
@@ -503,7 +502,7 @@ function IntroPhase({ onBegin }: { onBegin: () => void }) {
             fontWeight: 300,
           }}
         >
-          Discover your dream home through seven profound questions. The Oracle will read your answers and reveal the architectural essence of your ideal sanctuary.
+          Seven questions. We&apos;ll sketch the home you keep almost-describing.
         </p>
 
         <motion.button
@@ -525,7 +524,7 @@ function IntroPhase({ onBegin }: { onBegin: () => void }) {
             transition: 'all 0.3s ease',
           }}
         >
-          Begin Your Reading
+          Start
         </motion.button>
       </motion.div>
 
@@ -1024,7 +1023,7 @@ function ProfilePhase({
             { label: 'Light Preference', value: profile.lightPreference },
             { label: 'Social Scale', value: `${profile.socialScale}/10` },
             { label: 'Nature Connection', value: profile.natureRelationship },
-            { label: 'Aesthetic DNA', value: profile.aestheticDNA },
+            { label: 'Look & feel', value: profile.aestheticDNA },
             { label: 'Security Need', value: profile.securityNeed },
             { label: 'Recharge Method', value: profile.rechargeMethod },
           ].map((item, index) => (
@@ -1091,7 +1090,7 @@ function ProfilePhase({
               fontFamily: 'var(--font-archivo)',
             }}
           >
-            Overall Essence
+            Overall vibe
           </p>
           <p
             style={{
@@ -1179,7 +1178,7 @@ function RendersPhase({
             fontFamily: 'var(--font-archivo)',
           }}
         >
-          Three visions of your ideal sanctuary
+          Here&apos;s what it could look like
         </p>
       </motion.div>
 
@@ -1249,55 +1248,28 @@ function RendersPhase({
         ))}
       </div>
 
-      {/* C8 (2026-05-18): primary CTA — make the dream a real project.
-          Above the secondary 'Begin Another Reading'. */}
-      {profile && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          style={{ width: '100%', maxWidth: 520, zIndex: 1, marginBottom: 12 }}
-        >
-          <MakeThisRealButton
-            rawInput={[
-              profile.overallVibe,
-              profile.aestheticDNA && `Aesthetic: ${profile.aestheticDNA}`,
-              profile.lightPreference && `Light: ${profile.lightPreference}`,
-              profile.natureRelationship && `Nature: ${profile.natureRelationship}`,
-              profile.rechargeMethod && `Recharge: ${profile.rechargeMethod}`,
-              profile.securityNeed && `Security: ${profile.securityNeed}`,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            aiSummary={profile.overallVibe}
-            projectType={profile.aestheticDNA}
-            label="Make This Real →"
-          />
-        </motion.div>
-      )}
-
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStartOver}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.5 }}
         style={{
-          padding: '12px 28px',
-          fontSize: '14px',
+          padding: '14px 40px',
+          fontSize: '16px',
           fontFamily: 'var(--font-archivo)',
-          fontWeight: 500,
-          background: 'transparent',
-          color: '#D85A30',
-          border: '1px solid rgba(216, 90, 48, 0.5)',
+          fontWeight: 600,
+          background: '#D85A30',
+          color: 'white',
+          border: 'none',
           borderRadius: '8px',
           cursor: 'pointer',
           zIndex: 1,
           marginBottom: '40px',
         }}
       >
-        Begin Another Reading
+        Run it again
       </motion.button>
     </motion.div>
   );

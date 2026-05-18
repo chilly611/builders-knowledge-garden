@@ -138,19 +138,6 @@ export default function ContractTemplatesClient({
     }));
   };
 
-  // C3: payment-schedule preset chips.
-  const PAYMENT_PRESETS: { id: string; label: string; value: string }[] = [
-    { id: 'net30', label: 'Net 30', value: 'Net 30 — invoiced monthly; balance due 30 days from invoice date.' },
-    { id: '10-40-40-10', label: '10 / 40 / 40 / 10', value: '10% deposit at signing · 40% at material delivery · 40% at substantial completion · 10% at final walkthrough.' },
-    { id: 'half-down', label: '50% up front', value: '50% deposit at signing · 50% at substantial completion.' },
-  ];
-  const applyPaymentPreset = (val: string): void => {
-    setContractsState((prev) => ({
-      ...prev,
-      fields: { ...(prev.fields ?? {}), paymentSchedule: val },
-    }));
-  };
-
   const handleGenerate = () => {
     if (!canGenerate || generating) return;
     setGenerating(true);
@@ -396,45 +383,6 @@ export default function ContractTemplatesClient({
           </>
         )}
 
-        {selected.size > 0 && requiredFields.some((f) => f.key === 'paymentSchedule') && (
-          <div style={{ marginTop: spacing[4], marginBottom: spacing[4] }}>
-            <div style={{
-              fontFamily: fonts.mono,
-              fontSize: fontSizes.xs,
-              fontWeight: fontWeights.semibold,
-              color: colors.ink[600],
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: spacing[2],
-            }}>
-              Quick payment schedules
-            </div>
-            <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-              {PAYMENT_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => applyPaymentPreset(p.value)}
-                  style={{
-                    padding: `${spacing[2]} ${spacing[3]}`,
-                    fontSize: fontSizes.xs,
-                    fontWeight: fontWeights.semibold,
-                    fontFamily: fonts.body,
-                    border: `1px solid var(--brass)`,
-                    backgroundColor: 'var(--trace)',
-                    color: colors.ink[900],
-                    borderRadius: radii.full,
-                    cursor: 'pointer',
-                    transition: `all ${transitions.base}`,
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Step 3: Generate */}
         <StepHeading n={3} total={3} title="Generate your drafts" />
         <p
@@ -460,7 +408,7 @@ export default function ContractTemplatesClient({
               color: '#92400E',
             }}
           >
-            One more thing: {missingRequired.map(humanize).join(', ')}. Then you're ready.
+            Still need: {missingRequired.map(humanize).join(', ')}.
           </div>
         )}
 

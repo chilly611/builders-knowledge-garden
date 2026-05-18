@@ -81,8 +81,6 @@ export const JURISDICTIONS: Jurisdiction[] = [
   // San Diego County
   { id: "ca-sd-county", name: "San Diego County", code: "CBC + SD County amendments", year: 2022, level: "county", state: "California", county: "San Diego" },
   { id: "ca-sd", name: "San Diego, CA", code: "CBC + SD amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
-  { id: "ca-marin-county", name: "Marin County, CA", code: "CBC + Marin County amendments", year: 2022, level: "county", state: "California", county: "Marin" },
-  { id: "ca-marin", name: "Marin County, CA", code: "CBC + Marin amendments", year: 2022, level: "city", state: "California", county: "Marin" },
   { id: "ca-chula-vista", name: "Chula Vista, CA", code: "CBC + Chula Vista amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
   { id: "ca-oceanside", name: "Oceanside, CA", code: "CBC + Oceanside amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
   { id: "ca-carlsbad", name: "Carlsbad, CA", code: "CBC + Carlsbad amendments", year: 2022, level: "city", state: "California", county: "San Diego" },
@@ -126,13 +124,17 @@ export const JURISDICTIONS: Jurisdiction[] = [
   { id: "ca-fontana", name: "Fontana, CA", code: "CBC + Fontana amendments", year: 2022, level: "city", state: "California", county: "San Bernardino" },
   { id: "ca-ontario", name: "Ontario, CA", code: "CBC + Ontario amendments", year: 2022, level: "city", state: "California", county: "San Bernardino" },
 
-  // Bay Area overflow (Alameda, Santa Clara, Contra Costa)
+  // Bay Area overflow (Alameda, Santa Clara, Contra Costa, Marin)
   { id: "ca-alameda-county", name: "Alameda County", code: "CBC + Alameda County amendments", year: 2022, level: "county", state: "California", county: "Alameda" },
   { id: "ca-oakland", name: "Oakland, CA", code: "CBC + Oakland amendments", year: 2022, level: "city", state: "California", county: "Alameda" },
   { id: "ca-berkeley", name: "Berkeley, CA", code: "CBC + Berkeley amendments", year: 2022, level: "city", state: "California", county: "Alameda" },
   { id: "ca-santa-clara-county", name: "Santa Clara County", code: "CBC + SC County amendments", year: 2022, level: "county", state: "California", county: "Santa Clara" },
   { id: "ca-san-jose", name: "San Jose, CA", code: "CBC + San Jose amendments", year: 2022, level: "city", state: "California", county: "Santa Clara" },
   { id: "ca-contra-costa-county", name: "Contra Costa County", code: "CBC + CC County amendments", year: 2022, level: "county", state: "California", county: "Contra Costa" },
+  { id: "ca-marin-county", name: "Marin County", code: "CBC + Marin County amendments (Title 24, CRC, CBC)", year: 2022, level: "county", state: "California", county: "Marin" },
+  { id: "ca-san-rafael", name: "San Rafael, CA", code: "CBC + San Rafael amendments", year: 2022, level: "city", state: "California", county: "Marin" },
+  { id: "ca-novato", name: "Novato, CA", code: "CBC + Novato amendments", year: 2022, level: "city", state: "California", county: "Marin" },
+  { id: "ca-mill-valley", name: "Mill Valley, CA", code: "CBC + Mill Valley amendments", year: 2022, level: "city", state: "California", county: "Marin" },
 
   // Sacramento
   { id: "ca-sacramento-county", name: "Sacramento County", code: "CBC + Sacramento County amendments", year: 2022, level: "county", state: "California", county: "Sacramento" },
