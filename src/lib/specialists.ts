@@ -63,6 +63,14 @@ export interface SpecialistResult {
   supersededNotice?: SupersededNotice;
   code_sections?: { section: string; title: string; requirement: string; status?: string }[];
   warnings?: string[];
+  /**
+   * For compliance specialists: number of distinct code sources cross-verified
+   * (BKG seed / ICC / NFPA / local amendments). Set from
+   * `codeSourceConfidenceData.sourceCount` after `queryAllSources` runs.
+   * Drives the trust badge in AnalysisPane. Undefined for non-compliance
+   * specialists.
+   */
+  sourceCount?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -439,6 +447,10 @@ export async function callSpecialist(
       promptVersion: version,
       disciplineHandoff,
       supersededNotice,
+      // W11.B (2026-05-18 PM): expose the multi-source verification count
+      // up to the UI so AnalysisPane can render a trust badge. Undefined
+      // for non-compliance specialists (codeSourceConfidenceData stays null).
+      sourceCount: codeSourceConfidenceData?.sourceCount,
     };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);

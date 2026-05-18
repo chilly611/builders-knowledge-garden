@@ -21,6 +21,7 @@ import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii } from '
 import { runSpecialist } from '../../lib/specialists.client';
 import LearningBadge from '@/components/LearningBadge';
 import RSIBadge from './RSIBadge';
+import SourceCountBadge from './SourceCountBadge';
 import { sanitizeNarrative } from './utils/sanitizeNarrative';
 import { markdownToJsx } from './utils/markdownToJsx';
 import type { SpecialistResult, SpecialistContext } from '../../lib/specialists';
@@ -333,24 +334,36 @@ export default function AnalysisPane({
         </div>
       )}
 
-      {/* Confidence band */}
+      {/* Trust signals row: multi-source verification + confidence band.
+          SourceCountBadge renders nothing when result.sourceCount is
+          undefined (non-compliance specialists), so this row collapses
+          gracefully on non-code workflows. */}
       <div
         style={{
-          display: 'inline-flex',
+          display: 'flex',
+          flexWrap: 'wrap',
           alignItems: 'center',
           gap: spacing[2],
-          alignSelf: 'flex-start',
-          padding: `${spacing[1]} ${spacing[3]}`,
-          backgroundColor: `${CONFIDENCE_COLORS[result.confidence]}20`,
-          color: CONFIDENCE_COLORS[result.confidence],
-          fontSize: fontSizes.xs,
-          fontWeight: fontWeights.semibold,
-          borderRadius: radii.full,
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
         }}
       >
-        {CONFIDENCE_LABELS[result.confidence]}
+        <SourceCountBadge sources={result.sourceCount} />
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: spacing[2],
+            padding: `${spacing[1]} ${spacing[3]}`,
+            backgroundColor: `${CONFIDENCE_COLORS[result.confidence]}20`,
+            color: CONFIDENCE_COLORS[result.confidence],
+            fontSize: fontSizes.xs,
+            fontWeight: fontWeights.semibold,
+            borderRadius: radii.full,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          {CONFIDENCE_LABELS[result.confidence]}
+        </div>
       </div>
 
       {/* Narrative — sanitized, rendered as markdown with tables/headers/emphasis */}

@@ -135,6 +135,12 @@ export const JURISDICTIONS: Jurisdiction[] = [
   { id: "ca-san-rafael", name: "San Rafael, CA", code: "CBC + San Rafael amendments", year: 2022, level: "city", state: "California", county: "Marin" },
   { id: "ca-novato", name: "Novato, CA", code: "CBC + Novato amendments", year: 2022, level: "city", state: "California", county: "Marin" },
   { id: "ca-mill-valley", name: "Mill Valley, CA", code: "CBC + Mill Valley amendments", year: 2022, level: "city", state: "California", county: "Marin" },
+  { id: "ca-palo-alto", name: "Palo Alto, CA", code: "CBC + Palo Alto amendments", year: 2022, level: "city", state: "California", county: "Santa Clara" },
+  { id: "ca-mountain-view", name: "Mountain View, CA", code: "CBC + Mountain View amendments", year: 2022, level: "city", state: "California", county: "Santa Clara" },
+  { id: "ca-cupertino", name: "Cupertino, CA", code: "CBC + Cupertino amendments", year: 2022, level: "city", state: "California", county: "Santa Clara" },
+  { id: "ca-sunnyvale", name: "Sunnyvale, CA", code: "CBC + Sunnyvale amendments", year: 2022, level: "city", state: "California", county: "Santa Clara" },
+  { id: "ca-mountain-house", name: "Mountain House, CA", code: "CBC + San Joaquin amendments", year: 2022, level: "city", state: "California", county: "San Joaquin" },
+  { id: "ca-fresno", name: "Fresno, CA", code: "CBC + Fresno amendments", year: 2022, level: "city", state: "California", county: "Fresno" },
 
   // Sacramento
   { id: "ca-sacramento-county", name: "Sacramento County", code: "CBC + Sacramento County amendments", year: 2022, level: "county", state: "California", county: "Sacramento" },
@@ -142,17 +148,26 @@ export const JURISDICTIONS: Jurisdiction[] = [
 
   // ── Arizona ───────────────────────────────────────────────────────────
   { id: "az-state", name: "Arizona (statewide)", code: "IBC + state amendments", year: 2021, level: "state", state: "Arizona" },
-  { id: "az-phx", name: "Phoenix, AZ", code: "IBC + local", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
-  { id: "az-tuc", name: "Tucson, AZ", code: "IBC + local", year: 2021, level: "city", state: "Arizona", county: "Pima" },
-  { id: "az-flag", name: "Flagstaff, AZ", code: "IBC + local (climate zone 5)", year: 2021, level: "city", state: "Arizona", county: "Coconino" },
+  { id: "az-phx", name: "Phoenix, AZ", code: "IBC + Phoenix amendments + Cool Roof Ord", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-mesa", name: "Mesa, AZ", code: "IBC + Mesa amendments", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-scottsdale", name: "Scottsdale, AZ", code: "IBC + Scottsdale amendments", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-glendale", name: "Glendale, AZ", code: "IBC + Glendale amendments", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-chandler", name: "Chandler, AZ", code: "IBC + Chandler amendments", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-gilbert", name: "Gilbert, AZ", code: "IBC + Gilbert amendments", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-tempe", name: "Tempe, AZ", code: "IBC + Tempe amendments", year: 2021, level: "city", state: "Arizona", county: "Maricopa" },
+  { id: "az-tuc", name: "Tucson, AZ", code: "IBC + Tucson amendments", year: 2021, level: "city", state: "Arizona", county: "Pima" },
+  { id: "az-flag", name: "Flagstaff, AZ", code: "IBC + Flagstaff amendments (climate zone 5)", year: 2021, level: "city", state: "Arizona", county: "Coconino" },
 
   // ── Nevada ────────────────────────────────────────────────────────────
   { id: "nv-state", name: "Nevada (statewide)", code: "IBC + state amendments", year: 2018, level: "state", state: "Nevada" },
   { id: "nv-clark-county", name: "Clark County, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "county", state: "Nevada", county: "Clark" },
   { id: "nv-lv", name: "Las Vegas, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada", county: "Clark" },
   { id: "nv-hen", name: "Henderson, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada", county: "Clark" },
+  { id: "nv-north-las-vegas", name: "North Las Vegas, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada", county: "Clark" },
+  { id: "nv-paradise", name: "Paradise, NV", code: "Southern Nevada Amendments to IBC", year: 2018, level: "city", state: "Nevada", county: "Clark" },
   { id: "nv-washoe-county", name: "Washoe County, NV", code: "IBC + Washoe County amendments", year: 2018, level: "county", state: "Nevada", county: "Washoe" },
   { id: "nv-ro", name: "Reno, NV", code: "IBC + Washoe County amendments", year: 2018, level: "city", state: "Nevada", county: "Washoe" },
+  { id: "nv-sparks", name: "Sparks, NV", code: "IBC + Washoe County amendments", year: 2018, level: "city", state: "Nevada", county: "Washoe" },
 
   // ── Other US (kept from prior list) ───────────────────────────────────
   { id: "ny-nyc", name: "New York City, NY", code: "NYC BC", year: 2022, level: "city", state: "New York" },
