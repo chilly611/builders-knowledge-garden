@@ -18,7 +18,7 @@
  * that flag to `false` from the UI; it ships locked on.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
@@ -137,41 +137,6 @@ export default function ContractTemplatesClient({
       fields: { ...(prev.fields ?? {}), [key]: value },
     }));
   };
-
-  // C3: autofill contract fields from project spine on first hydrate.
-  // Reads project.name, jurisdiction, cost range. Only writes EMPTY
-  // fields so user edits are never trampled.
-  const [didAutofill, setDidAutofill] = useState(false);
-  useEffect(() => {
-    if (didAutofill) return;
-    if (!project) return;
-    setContractsState((prev) => {
-      const f: Record<string, string> = { ...(prev.fields ?? {}) };
-      let changed = false;
-      const seed = (key: string, val: string | number | null | undefined): void => {
-        if (val === null || val === undefined || val === '') return;
-        const existing = f[key];
-        if (existing && existing.trim().length > 0) return;
-        f[key] = String(val);
-        changed = true;
-      };
-      seed('projectName', project.name);
-      seed('jobName', project.name);
-      seed('state', project.jurisdiction);
-      seed('jurisdiction', project.jurisdiction);
-      const low = project.estimated_cost_low;
-      const high = project.estimated_cost_high;
-      if (low && high) {
-        const mid = Math.round((low + high) / 2);
-        const formatted = '$' + mid.toLocaleString();
-        seed('contractPrice', formatted);
-        seed('price', formatted);
-      }
-      seed('clientName', project.client_name);
-      return changed ? { ...prev, fields: f } : prev;
-    });
-    setDidAutofill(true);
-  }, [project, didAutofill, setContractsState]);
 
   // C3: payment-schedule preset chips.
   const PAYMENT_PRESETS: { id: string; label: string; value: string }[] = [
