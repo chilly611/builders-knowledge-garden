@@ -28,6 +28,8 @@ import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { getActiveProjectId, getProjectBudget } from '@/lib/budget-spine';
 import { subscribeJourney } from '@/lib/journey-progress';
 import { subscribeSnapshots } from '@/lib/time-machine';
+import { useTimeMachineRewind, REWIND_EVENT, type RewindEventDetail } from '@/lib/use-time-machine-rewind';
+import RewindToast from './RewindToast';
 
 const STAGE_TO_PHASE: Record<StageId, string> = {
   1: 'DREAM', 2: 'DESIGN', 3: 'PLAN', 4: 'BUILD', 5: 'BUILD', 6: 'DELIVER', 7: 'GROW',
@@ -140,6 +142,35 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
     return subscribeSnapshots(effectiveProjectId, setSnapshots);
   }, [effectiveProjectId]);
 
+  // C5: rewind support — when the dial scrubs, override journey +
+  // budget state from the snapshot blobs. Returning to live restores
+  // the live subscriptions automatically (they overwrite below).
+  const { currentSnapshotId, rewindTo } = useTimeMachineRewind(effectiveProjectId);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onRewind = (e: Event) => {
+      const detail = (e as CustomEvent<RewindEventDetail>).detail;
+      if (!detail || detail.projectId !== effectiveProjectId) return;
+      if (detail.snapshotId === null) return;
+      if (detail.journey && typeof detail.journey === 'object') {
+        setJourneyState(detail.journey as Record<string, unknown>);
+      }
+      if (detail.budget) {
+        const tEst = Math.round((detail.budget.totalEstimated || 0) * 100);
+        const tSpent = Math.round((detail.budget.totalSpent || 0) * 100);
+        setBudgetData({
+          byStage: {} as BudgetTimelineData['byStage'],
+          totalCommittedCents: tEst,
+          totalSpentCents: tSpent,
+          isOverbudget: tSpent > tEst,
+          overAmountCents: tSpent > tEst ? tSpent - tEst : 0,
+        });
+      }
+    };
+    window.addEventListener(REWIND_EVENT, onRewind);
+    return () => window.removeEventListener(REWIND_EVENT, onRewind);
+  }, [effectiveProjectId]);
+
   // Responsive
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -161,10 +192,11 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   }, [router, effectiveProjectId]);
 
   const handleTimeScrub = useCallback((snapshotId: string | null) => {
+    rewindTo(snapshotId);
     window.dispatchEvent(new CustomEvent('bkg:navigator:time-scrubbed', {
       detail: { snapshotId, projectId: effectiveProjectId },
     }));
-  }, [effectiveProjectId]);
+  }, [effectiveProjectId, rewindTo]);
 
   // W11 emergency-batch 2026-05-11: previously hidden on the picker route.
   // Founder feedback: that was the very page where you most needed the
@@ -187,6 +219,8 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   );
 
   return (
+    <>
+    <RewindToast onReturnToLive={() => rewindTo(null)} />
     <header style={{
       position: 'sticky', top: 48, zIndex: 10,
       backgroundColor: trace,
@@ -222,7 +256,7 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
         position: 'relative',
       }}>
         {!isMobile && <BrassHinge />}
-        <TimeMachineDial snapshots={snapshots} onScrub={handleTimeScrub} />
+        <TimeMachineDial snapshots={snapshots} onScrub={handleTimeScrub} currentSnapshotId={currentSnapshotId ?? undefined} />
       </div>
 
       {/* Budget (35%) */}
@@ -233,5 +267,6 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
         <BudgetSnapshot data={budgetData} activeStageId={activeStageId} />
       </div>
     </header>
+    </>
   );
 }
