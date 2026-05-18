@@ -23,6 +23,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useProject } from '@/lib/hooks/useProject';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -99,9 +100,12 @@ function stripTrailingActionBlock(text: string): string {
 export default function KillerappProjectShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectId = searchParams.get('project');
 
-  const [project, setProject] = useState<ProjectRecord | null>(null);
+  // C1 spine (2026-05-18): project identity + record now come from
+  // ProjectContext. This component still owns conversations + streaming
+  // (those are copilot concerns, not project-identity concerns).
+  const { project, projectId, loading: projectLoading, setActiveProject } = useProject();
+
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,21 +113,17 @@ export default function KillerappProjectShell() {
   const [streaming, setStreaming] = useState(false);
   const triggeredStreamFor = useRef<string | null>(null);
 
-  // 2026-05-06: When the user lands on bare /killerapp (no ?project=) but
-  // we have a recently-active project in localStorage, restore the URL
-  // so KillerAppNav stage chips, action-button URL rewrites, and the
-  // workflow-hook fallback all see the project context. Without this the
-  // user's "Quick estimate"/"Check codes" clicks would bounce back home.
-  // Skip when the user just got bounced (toast=needs-project) — we don't
-  // want to fight a redirect loop with whatever sent them here.
+  // C1 spine: on bare /killerapp with no ?project= but a stored project,
+  // align the URL via setActiveProject. Skip when the user just got
+  // bounced (toast=needs-project) — we don't want to fight a redirect.
   useEffect(() => {
     if (projectId) return;
     if (searchParams.get('toast')) return;
     if (typeof window === 'undefined') return;
     try {
       const stored = window.localStorage.getItem(ACTIVE_PROJECT_KEY);
-      if (stored && UUID_REGEX.test(stored)) {
-        router.replace(`/killerapp?project=${encodeURIComponent(stored)}`);
+      if (stored && (UUID_REGEX.test(stored) || stored.startsWith('demo-'))) {
+        setActiveProject(stored);
       }
     } catch {
       // ignore storage failures

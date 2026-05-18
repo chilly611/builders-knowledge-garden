@@ -7,6 +7,7 @@ import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 import { Suspense } from 'react';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
+import { ProjectProvider } from '@/contexts/ProjectContext';
 import { ProjectCockpit } from '@/components/cockpit';
 import LegalFooter from '@/components/LegalFooter';
 import StageBackdrop from '@/design-system/components/StageBackdrop';
@@ -43,7 +44,9 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
 
   return (
     <GreenFlashProvider>
-      <NavigatorProvider initialCollapseState="expanded">
+      <Suspense fallback={null}>
+        <ProjectProvider>
+          <NavigatorProvider initialCollapseState="expanded">
         <StageBackdrop stage={stageId} />
         <KillerAppNav />
         {/* W11 emergency-batch 2026-05-11: AuthAndProjectIndicator was
@@ -64,7 +67,9 @@ export default function KillerAppLayout({ children }: { children: React.ReactNod
         <VoiceCommandNav onNavigate={handleVoiceNavigate} />
         <CommandPalette />
         {/* TODO(W9.D-W2): mount StageWelcome once project/workflow context is stable. */}
-      </NavigatorProvider>
+          </NavigatorProvider>
+        </ProjectProvider>
+      </Suspense>
     </GreenFlashProvider>
   );
 }
