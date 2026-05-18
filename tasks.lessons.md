@@ -845,3 +845,39 @@ This produces `refs/heads/main` as the bundle's ref. Then `git pull <bundle> mai
 **What happened:** I dispatched 6 agents in parallel to build IntegratedNavigator sub-components (JourneyStrip, TimeMachineLever, BudgetTimeline, NavigatorContext, icons, root orchestrator). I wrote the shared `types.ts` first — which was the right call and let all six converge on the same `StageId`, `StageProgress`, `NavigatorCollapseState`, etc. without cross-talk. But I didn't specify *which* library module owned `STAGE_WORKFLOWS` (the stage→workflow-ids map). The root orchestrator agent invented the import path `@/lib/journey-progress`, where it doesn't exist — it lives in `@/lib/lifecycle-stages`. tsc caught it, but only at green-gate time.
 **Fix:** The shared type-contract file should also include a comment block that enumerates the *existing* helper modules an implementer is allowed to import from, with canonical paths. For W9 that was: `@/lib/budget-spine` (money), `@/lib/journey-progress` (events/subscription only), `@/lib/lifecycle-stages` (stage→workflow maps). Anything outside that list is either a new export (add to the same commit) or a phantom import.
 **Rule:** Before dispatching parallel agents, write *both* the type contract *and* a "known imports" list enumerating which symbols come from which canonical module. Agent prompts should include: "Do not invent import paths — if a symbol isn't in the known-imports list, implement it locally." This prevents the downstream fix of "delete phantom import, add to the real module" during the green gate.
+
+## 2026-05-18 — Bisect when Vercel logs aren't accessible
+
+When a Trees-API atomic commit breaks the Vercel build and you don't have a
+Vercel API token, the fastest path is:
+
+1. **Revert just the consumer-of-new-types files** (the ones with the most
+   code surface — components that import the new module). Keep new files
+   and type extensions untouched; those rarely break a build on their own.
+2. **Push that revert.** If Vercel goes green, the bug is in one of the
+   reverted files.
+3. **Re-layer one file at a time.** Each re-layer is a single-file Trees
+   commit. ~1 minute per cycle.
+
+Why this works: build failures often surface in the IMPORTING file, not the
+new module. Reverting the importers is a binary-search step that costs one
+push but pays back log access we couldn't otherwise get.
+
+## 2026-05-18 — `Record<string, unknown>` index types break `.trim()`
+
+When `state.fields` is typed `Record<string, string>` but the enclosing
+state extends `Record<string, unknown>`, indexed access inside a callback
+can collapse to `unknown`. `.trim()` fails the type-check downstream
+without an explicit `Record<string, string>` annotation on the local copy.
+
+The fix: declare `const f: Record<string, string> = { ...prev.fields };`
+explicitly inside the autofill effect. Don't rely on the spread carrying
+narrow types through nested closures.
+
+## 2026-05-18 — Sandbox can't reproduce `next build`
+
+The Cowork sandbox runs out of memory (`Bus error`, core dump) on a
+`next build` of a repo this size. Don't burn time trying — bisect via
+pushes instead. `tsc --noEmit` also times out before producing output.
+The ONLY usable signal is the GitHub commit-status API.
+
