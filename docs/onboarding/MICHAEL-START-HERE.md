@@ -158,11 +158,12 @@ See `REPO-AND-FOLDER-MAP.md` for the full deep-link list.
 
 ## 8. What's on fire right now
 
-Read `DEMO-MAY20-PLAN.md` for the full state-of-play. Top three demo-blockers:
+Read `DEMO-MAY20-PLAN.md` for the full state-of-play. **Big news: Chilly burned through three demo-blockers on Sunday afternoon (2026-05-18 PM, before you got here).** The state has moved. Here's the current top of the fire:
 
-1. **C3 contracts spine autofill** — deferred (broke the build twice). Chips ship; autofill effect is the open task. See `tasks.lessons.md` 2026-05-18 for the trap.
-2. **C7 Who's asking? voice input** — stub route exists; spec is at `docs/sprint-may17/specs/B7-who-is-asking.md`.
-3. **C6 MCP closer (Claude Desktop fetches BKG knowledge live)** — needs final wiring + Chilly's demo laptop tested.
+1. **C6 MCP closer wiring** — Claude Desktop must fetch BKG knowledge live during Act 4. The server already exists at `/api/v1/mcp` (12 tools, including `search_knowledge`), and the 11 Marin codes are seeded with `jurisdiction_ids` pointing at the `ca-marin` UUID — data is ready. Remaining work: register the server in `~/Library/Application Support/Claude/claude_desktop_config.json` on the demo MacBook, then cold-start test the query "What are the Marin County energy code requirements?". This is the highest-value remaining Tuesday item.
+2. **Demo laptop cold-start test** — open Safari/Chrome incognito on Chilly's demo MacBook Tuesday evening, walk through the script start to finish. Note every stumble. Wednesday morning is for fixing those, not for new work.
+3. **30-second contracts-autofill smoke test** — autofill shipped Sunday PM (commit `ebdb85b`, third attempt, finally landed clean via explicit `Record<string, string>` annotation). The Vercel build is green, but the field-population behavior happens at hydration time and isn't WebFetch-observable — needs a manual click-through on prod to confirm `projectName` and `contractAmount` actually paint when you open `/killerapp/workflows/contract-templates?project=55730cd3-5225-493d-8b5c-49086d942565`. 5 minutes.
+4. **C7 Who's asking? voice input** — stub route exists; spec at `docs/sprint-may17/specs/B7-who-is-asking.md`. Parallel-burn Agent E mapped a 5-step ~500-LOC ship plan (`/api/v1/crm/voice-extract` POST → `WhoIsAskingClient.tsx` → page route → register in workflows.json → emit journey event). This is your Tuesday afternoon project if items 1–3 are clean.
 
 ---
 
@@ -179,8 +180,10 @@ Read `DEMO-MAY20-PLAN.md` for the full state-of-play. Top three demo-blockers:
 
 ## 10. First three things to do today
 
-1. Finish setup (Section 4). Confirm `pnpm dev` runs and home/killerapp/dream all load locally.
-2. Read `DEMO-MAY20-PLAN.md` end-to-end. Walk through the demo on prod (https://builders.theknowledgegardens.com) so you've literally seen the script work.
-3. Pick **one open item** from `tasks.todo.md` (look under the "2026-05-18 follow-ups" section). Ping Chilly which one you're taking. Then ship it.
+The state has moved since the bundle was assembled — three demo-blockers shipped Sunday afternoon (commits `3e9393e` Ship 1+3, `ebdb85b` Ship 2 contracts autofill). Read `DEMO-MAY20-PLAN.md` "Demo prerequisites" table first; items 6, 10, 13, 14 all flipped to YES on 2026-05-18 PM. Your fresh-onboard punch list:
+
+1. **Finish setup** (Section 4). Confirm `pnpm dev` runs and home / killerapp / dream all load locally. After `git pull origin main`, you should see the new copy on `/dream/oracle` — "Seven questions. We'll sketch the home you keep almost-describing." If you see the old palm-reader copy ("Discover your dream home through seven profound questions"), you have a stale checkout. Pull again.
+2. **Run the prod demo path end-to-end yourself.** Cold browser, incognito mode. Open `https://builders.theknowledgegardens.com/killerapp/workflows/contract-templates?project=55730cd3-5225-493d-8b5c-49086d942565`, pick "Client Agreement", and **confirm the `projectName` field auto-populates to "Modern farmhouse in Marin" and `contractAmount` to roughly "$905,000"** (midpoint of the 750k–1.06M estimate). This is the 30-second smoke test the Sunday burn left for you. If it doesn't paint, you have the first urgent Tuesday fix — DM Chilly and dig into `ContractTemplatesClient.tsx` autofill `useEffect` (the diff is in commit `ebdb85b`).
+3. **Pick the highest-value remaining P0 from `DEMO-MAY20-PLAN.md` "Demo-blockers ranked > P0".** Top candidate is **C6 MCP closer wiring** (register `/api/v1/mcp` in Claude Desktop's config on Chilly's demo laptop and cold-start test the Marin query) — this is Act 4 of the demo and Chilly can't pair on it alone. Second candidate is **C7 Who's asking? voice extract** (Agent E's 5-step ship plan in the demo plan doc). Ping Chilly which you're taking, then ship.
 
 Welcome to the team. The next 72 hours are everything.
