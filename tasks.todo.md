@@ -1112,3 +1112,12 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Output framed as "starting draft for attorney review," NOT "ready-to-sign"
 - [ ] Terms of service includes real liability limitation reviewed by the same attorney
 - [ ] Cannot sell Contract Templates until this is done
+
+## 2026-05-18 follow-ups
+- [ ] **C3 contracts autofill (defer):** Re-attempt the autofill `useEffect` with an explicit `Record<string, string>` annotation on the local `f` copy. Last attempt broke the Vercel build; current main ships chips only.
+- [x] **C5 Time Machine rewind:** shipped (commits 9f25b240). Snapshot type extended; `useTimeMachineRewind` hook owns currentSnapshotId; `RewindToast` banner shows "Return to live"; cockpit listens for `bkg:project:state-rewound` and overrides journey/budget state.
+- [x] **C4 Estimating CSI table:** shipped (commit 6237ebaf). `parseEstimateBlock` reads fenced `<estimate>` JSON; topPanel renders 3-col CSI division breakdown when present.
+- [x] **C3 contracts chips:** shipped (commit eda151ff). 3 payment-schedule presets.
+- [x] **Marin codes:** 11 CA building codes tagged with `ca-marin` jurisdiction UUID; code-compliance query now returns Marin-flavored results for the demo project.
+- [x] **ProjectContext localStorage persistence:** shipped — first-paint URL projectId writes to `bkg-active-project`.
+
