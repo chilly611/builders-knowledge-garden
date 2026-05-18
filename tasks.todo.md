@@ -1121,3 +1121,31 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [x] **Marin codes:** 11 CA building codes tagged with `ca-marin` jurisdiction UUID; code-compliance query now returns Marin-flavored results for the demo project.
 - [x] **ProjectContext localStorage persistence:** shipped — first-paint URL projectId writes to `bkg-active-project`.
 
+
+
+## ═══ 2026-05-18 PM — Demo-prep parallel burn (3 ships) ═══
+
+### Shipped this session
+- [x] Marin code-compliance wiring — `src/lib/knowledge-data.ts` JURISDICTIONS got Marin County + San Rafael + Novato + Mill Valley entries (commit `3e9393e`). 11 `ca-marin`-tagged building_code rows seeded directly to `knowledge_entities` via Supabase MCP (CRC R301, CRC R403.1, CRC R327 WUI, CBC 1604, CBC 1613, CBC 1809, ASCE 7-16, Title 24 Part 6, Title 24 §110.10 solar, CalGreen, Marin grading ordinance). Picker auto-default in `CodeComplianceClient.tsx:78` now matches Marin via `project.jurisdiction = 'Marin County, CA'` substring instead of falling back to `ibc-2024` generic.
+- [x] C3 contracts spine autofill — third attempt landed clean (commit `ebdb85b`, branch `feat/c3-contracts-autofill-may18` → fast-forwarded main). Explicit `Record<string, string>` annotation in the seed callback fixed the `Type 'unknown' is not assignable to type 'string'` error that broke Vercel twice earlier in the day. Autofills `projectName`, `contractAmount` (estimate midpoint), and `scopeOfWork` from project context. Guarded by `didAutofill` state; never clobbers user input.
+- [x] Foreman-vernacular copy pass (Ship 3) — `/dream/oracle` palm-reader register removed across 7 strings (intro paragraph, 5 processing-step labels, "Begin Your Reading", "Begin Another Reading", "Three visions of your ideal sanctuary", "Aesthetic DNA", "Overall Essence"). KillerApp landing hero subhead + search-helper + empty-state line tightened. Contracts "One more thing: … Then you're ready." replaced with "Still need: …". Commit `3e9393e`, combined with Ship 1.
+- [x] Michael onboarding bundle regenerated — `DEMO-MAY20-PLAN.md` prereq table flipped items 6, 10, 13, 14 to YES; `MICHAEL-START-HERE.md` Sections 8 + 10 rewritten for fresh-onboard Michael. Pushed to `docs/onboarding/` in-repo for the first time (commit `f7760505`). Bundle `.zip` rebuilt + copied to workspace folder.
+- [x] Pre-existing async `searchParams` + `liveHref` preservation fix in `killerapp/page.tsx` shipped alongside (addresses 2026-05-11 "clicked Check codes → nothing saved" regression). Came from Chilly's local uncommitted tree; complete + intentional; in commit `3e9393e`.
+
+### 2026-05-18 PM follow-ups (for Michael, Tuesday)
+- [ ] **30-second contracts-autofill smoke test** on prod: open `https://builders.theknowledgegardens.com/killerapp/workflows/contract-templates?project=55730cd3-5225-493d-8b5c-49086d942565`, pick "Client Agreement", confirm `projectName` populates "Modern farmhouse in Marin" and `contractAmount` populates roughly "$905,000" (midpoint of 750k–1.06M). If autofill doesn't paint, ship a follow-up before Wednesday. ~5 minutes. Owner: Chilly or Michael.
+- [ ] **C6 MCP closer** — wire `/api/v1/mcp` into Claude Desktop's config (`~/Library/Application Support/Claude/claude_desktop_config.json`) on the demo MacBook, then cold-start test the query "What are the Marin County energy code requirements?". The 12-tool server already exists in this repo and the 11 Marin codes are seeded — registration + auth is the only remaining work. Owner: Chilly + Michael.
+- [ ] **C7 Who's asking? voice extract** — Agent E's 5-step ship plan (~500 LOC): (1) `/api/v1/crm/voice-extract` POST route that calls Claude for `{first_name, company?, estimated_value?, notes}` extraction; (2) `WhoIsAskingClient.tsx` w/ `useSpeechRecognition` + photo intake (~280 LOC); (3) `/killerapp/workflows/crm-lead-intake/page.tsx` boilerplate (~60 LOC); (4) register in `workflows.json` + `LIVE_WORKFLOWS` map; (5) `emitJourneyEvent({type: 'step_completed', workflowId: 'crm-lead-intake'})` to light the "Lead" dot. Spec at `docs/sprint-may17/specs/B7-who-is-asking.md`. Owner: Michael (Tuesday).
+- [ ] **A11y CTA contrast on `/dream/oracle`** — Agent G measured white-on-`#D85A30` at 3.51:1 (fails WCAG AA for 16px normal). One-line fix: darken bg to `#B84A24` (4.6:1) at oracle/page.tsx lines 521, 762, 1263. Owner: open. ~5 min.
+- [ ] **JourneyArc 9px stage labels** — bump to 11px + opacity 0.85 in `src/components/cockpit/JourneyArc.tsx:287`. Agent G P2.
+- [ ] **Cockpit SVG stations non-keyboard-focusable** — wrap `<g onClick>` in `<button type="button" aria-label={stage.name}>`. Agent G P2.
+- [ ] **Rotate the GitHub PAT** embedded in `app/.git/config` origin URL after Wednesday demo lands. The PAT is in this session's transcript. GitHub Settings → Developer settings → Personal access tokens → revoke + regenerate, then `git remote set-url origin https://github.com/chilly611/builders-knowledge-garden.git` to strip the inline credential.
+- [ ] **`public.dreams` table missing** in Supabase — `GET /api/v1/dreams` returns 500. POST on the demo path swallows the failure (try/catch), so non-blocking, but worth fixing post-demo. Owner: open.
+- [ ] **Audit + commit Chilly's other uncommitted local work** — `src/app/killerapp/KillerappProjectShell.tsx` (76 lines) and `src/app/killerapp/layout.tsx` (20 lines) had pre-existing unstaged changes when this session started. Left untouched by this burn since they weren't audited. Owner: Chilly.
+- [ ] **23 Supabase tables have RLS disabled** (advisory output 2026-05-18) — including `crm_contacts`, `crm_messages`, `crm_voice_fingerprint`, `crm_contact_activities`, `specialist_runs`, `improvement_ledger`. Remediation SQL captured in advisory; not auto-applied. Demo-week deferrable. Owner: Chilly or Michael.
+
+### Recon backlog (P2 from this session's 8-agent parallel burn)
+- [ ] Sparkline + Cockpit SVG keyboard access (Agent G).
+- [ ] Brand-voice continuity check on remaining workflows not in the demo path (Agent F's brief was scoped to demo path).
+- [ ] EXIF parsing on photo uploads (was P2 pre-session, still P2).
+- [ ] ESLint backlog burn-down.
