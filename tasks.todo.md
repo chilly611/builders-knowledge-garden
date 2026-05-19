@@ -1167,3 +1167,28 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] **Audit non-compliance specialists for similar "computed but never returned" signals** (lesson from this burn). Likely candidates: estimating-takeoff (CSI coverage %?), sub-bid-analysis (bid coverage %?), supply specialists (vendor count?). Each is a potential trust badge in its own workflow. Owner: open.
 - [ ] **Lane-aware affordance** — when a project hydrates with a building_type that maps to a lane, surface that lane in the project shell ("Working on a data center — here are the relevant workflows"). Currently the picker shows everything. Adaptive UX per user's "more useful as a user's lane is discovered" directive. Owner: open.
 - [ ] **Heartbeat status badge** — surface the `/api/v1/rsi/heartbeat` last-run timestamp on the killer-app shell so users see "Last refreshed: 12 min ago" or similar. Addresses "everything updating on a heartbeat schedule so nobody misses a beat" directive. Owner: open.
+
+
+## ═══ 2026-05-19 AM (burn 3) — Lane A retroactive audits + 2 missing demo projects seeded ═══
+
+### Shipped this burn
+- [x] **10 retroactive Lane A audit reports** at `docs/sprint-may17/audit/{A1-A10}.md` plus an index `README.md`. The Sun May 17 sprint prompt called for these audits BEFORE any Lane B specs or C builds; they never ran. Now landed two days before the demo so Chilly + Michael have eyes on every workflow's actual state.
+- [x] **Two missing demo projects seeded** to `command_center_projects`:
+  - `ADU in Sausalito` (UUID `aa11b22c-1111-4d78-aaaa-bbccdd112233`) — 700 sf detached ADU, hillside, Marin County, $180k–$320k. Includes raw_input, ai_summary, pre-seeded estimating_state + code_compliance_state + contracts_state.
+  - `Commercial TI in SoMa` (UUID `bb22c33d-2222-4d78-bbbb-ccddee223344`) — 8,400 sf creative-agency TI, 1920s SF building, $850k–$1.4M. Same full context.
+  - With the existing Marin farmhouse (UUID `55730cd3-…`), all three Sun17-prompt-named demo projects now exist in Supabase. Chilly can ad-lib "let me show you an ADU" or "let me show you a tenant improvement" off-script.
+
+### Top P0/P1 items the audits surfaced (newly visible)
+- [ ] **(A1)** Demo plan still references `/killerapp/who-is-asking` but the route is a stub. Either repoint demo at `/killerapp/workflows/client-lookup` (q3 — works today) OR ship the voice-extract surface Tuesday (Agent E's plan, ~500 LOC, 5 steps).
+- [ ] **(A6)** Chilly's two uncommitted local diffs (`src/app/killerapp/KillerappProjectShell.tsx` 76 lines, `src/app/killerapp/layout.tsx` 20 lines) are unaccounted for. Audit + commit or revert before Tuesday dress rehearsal.
+- [ ] **(A9)** Claude Desktop Act 4 requires a stdio bridge — `/api/v1/mcp` is HTTP-only. ~30-LOC Node script + config registration on Chilly's demo MacBook. **Best first ship for Michael.**
+- [ ] **(A6 / Agent G)** TimeMachineDial keyboard focus + 9px JourneyArc labels — ~15 min a11y fixes that an investor would notice.
+- [ ] **(A5)** Estimating regional multiplier ignored. SF coastal premium / desert overhead not in prompt context. Robust if scope is clear; brittle if vague.
+- [ ] **(A2)** `/launch` wizard is a UI prototype that does not persist. Keep OUT of demo path.
+
+### Recommended Tuesday execution order
+1. Michael: build MCP stdio bridge + cold-start test Marin code query (~30-45 min)
+2. Chilly: audit + commit/revert the two uncommitted local diffs (~10 min)
+3. Either: a11y quick wins on TimeMachineDial + JourneyArc (~15 min)
+4. Either: 30-second contracts-autofill smoke test on each of the 3 demo projects (~5 min)
+5. Optional spare-cycle ship: `/killerapp/who-is-asking` voice extract per Agent E's plan (~2-3 hr)
