@@ -1162,3 +1162,17 @@ Also: when the canonical name ends in " county" (e.g. "Marin County"), also acce
 **Rule:** for state/country code conversion, use a real lookup table (USPS, ISO 3166). Never derive codes from name heuristics — country and state names are full of one-word forms, multi-word forms, abbreviations, and exceptions. The 50 states + DC map is 51 entries; it's not a maintenance burden.
 
 **Second rule:** before appending a derived label suffix to a value that might already contain it, regex-check for the suffix and skip the append. Cheap defense against silent double-tagging.
+
+## 2026-05-19 — Sticky state-flag bugs are invisible until the wrong rendering path shows up
+
+Spent four commits chasing a "paragraph overflow" bug. Three of them shipped correct, defensible improvements to `renderParagraph` (strip HTML comments, oversized-token break, replace custom wrap with `splitTextToSize`, add character-level hardWrap safety net) — none of which fixed the user's report, because the disclaimer paragraphs weren't going through `renderParagraph` at all. They were going through `renderSignatureBlock` because `inSignatureBlock = true` set after `## SIGNATURES` had no terminator except another `## ` heading, and persisted across the `---` separator and into the disclaimer.
+
+The breakthrough was Michael's screenshot showing the disclaimer paragraph rendered in courier (monospace). Courier ≠ helvetica → not `renderParagraph` → wrong code path. Without that visual clue, the four prior fixes would have shipped and the demo would still have broken.
+
+**Rules:**
+
+1. **When a fix doesn't take, suspect the dispatch, not the renderer.** If you've audited the rendering logic and it should work, the most likely explanation is that the content isn't reaching that renderer at all. Add tracing or sanity-check the parser/router before piling on more renderer-side defenses.
+
+2. **State flags that flip on but never flip off are a foot-gun.** `inSignatureBlock = true` set by `## SIGNATURES` and reset only by the next `## ` heading meant a `---` separator silently extended sig-block mode through the disclaimer. The fix is to give every persistent flag MULTIPLE explicit reset triggers (`---` AND any heading of any level), not just the inverse of what set it.
+
+3. **Visual artifacts (font, weight, color) are the cheapest debug signal.** A user reporting "doesn't wrap" is ambiguous. A screenshot showing courier vs. helvetica is unambiguous and points at the exact branch.

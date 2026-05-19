@@ -1408,3 +1408,23 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - `src/components/JurisdictionPicker.tsx` (+30/-3)
 
 **Commit:** `a46424c`
+
+## 2026-05-19 evening (continued, ships 4-5-6) — Chat (Claude Code, michael@laptop): Contract PDF cleanup
+**Agent:** Chat (Claude Sonnet 4.5 / Claude Code)
+**What was built (3 commits):**
+- `200927a` — Strip HTML author comments from rendered PDFs (`<!-- SHARED DISCLAIMER ... -->` was appearing as body text). Added a hard-break for any single token wider than availableWidth.
+- `0e81a71` — Replaced custom inline-styled wrap with jsPDF `splitTextToSize`. Added `sanitizeForPdf` to remove non-WinAnsi unicode (⚠ was rendering as `&` because U+26A0 isn't in helvetica's WinAnsi encoding). Removed ~150 LOC of dead code (renderInlineText + parseInline + helpers).
+- `bd26693` — Changed `**⚠ DRAFT NOTICE — READ BEFORE SIGNING**` to `*** DRAFT NOTICE — READ BEFORE SIGNING ***` across all 7 template files. Added `***...***` = centered+bold render mode. Added a hardWrap char-fallback after splitTextToSize so no line can overflow even if jsPDF's metrics are off.
+- `9b07034` — **The actual root cause of "paragraph still overflows":** the disclaimer paragraphs weren't going through `renderParagraph` at all. After `## SIGNATURES` at line 82 of client-agreement.md, `inSignatureBlock = true` persisted across the `---` separator and into the disclaimer at lines 100-102. They were rendered as signature blocks (courier, no wrap). Michael's screenshot showing monospace text was the breakthrough. Fix: `---` and any heading of any level now ends signature-block mode.
+
+**Key decision:**
+- **Lose mid-paragraph inline emphasis to gain reliable wrap.** The custom inline-styled wrap was the source of measurement bugs that wouldn't fully reproduce in tests. Switched to splitTextToSize as the primary wrap and hardWrap as the safety net. The templates rarely use `**bold**` inside a paragraph for legal-meaning content; whole-paragraph bold (`**X**`) and centered+bold (`***X***`) are preserved. Trade-off worth it for demo-grade margins.
+
+**Issues/bugs found in process:**
+- Signature-block mode in `parseBlocks` had no terminator other than another `## ` heading. The actual real-world delimiter (`---` between signature block and disclaimer) was ignored, causing every paragraph after `## SIGNATURES` to silently inherit sig-block mode. Three prior wrap-fix attempts (oversized-token, splitTextToSize, hardWrap) all landed correctly but didn't help because the broken path wasn't `renderParagraph` — it was `renderSignatureBlock`.
+
+**Files touched:**
+- `src/lib/pdf/contract-pdf.ts` (rendered 4 separate commits — strip comments, swap wrap engine, add centered mode + hardWrap, fix sig-block termination)
+- `src/lib/contract-templates/*.md` × 7 (`**⚠ DRAFT NOTICE...**` → `*** DRAFT NOTICE... ***`)
+
+**Commits:** `200927a` `0e81a71` `bd26693` `9b07034`. Final commit landed green; Michael confirmed in the demo browser.
