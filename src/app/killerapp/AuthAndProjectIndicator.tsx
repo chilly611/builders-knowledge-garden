@@ -146,7 +146,13 @@ export default function AuthAndProjectIndicator() {
     [project?.name, project?.raw_input]
   );
 
-  if (!authChecked) return null;
+  // 2026-05-18 (Wave 2): Was `if (!authChecked) return null;` — that hid the
+  // indicator on workflow pages during the auth-resolution flash, leaving
+  // demo visitors with no visible "sign in" CTA. Now we render a placeholder
+  // "Checking…" pill while auth is loading (preserves layout) and an
+  // explicit "Not signed in · Sign in / Sign up" anon-CTA once resolved.
+  // /signup route does not exist in this app (verified 2026-05-18), so both
+  // anon CTAs point to /login.
 
   return (
     <div
@@ -180,21 +186,30 @@ export default function AuthAndProjectIndicator() {
           whiteSpace: 'nowrap',
         }}
       >
-        {email ? (
+        {!authChecked ? (
+          <span style={{ opacity: 0.5 }}>Checking…</span>
+        ) : email ? (
           <span>
             <span style={{ opacity: 0.5 }}>signed in · </span>
             {email}
           </span>
         ) : (
-          <Link
-            href="/login?next=/killerapp"
-            style={{
-              color: 'inherit',
-              textDecoration: 'underline',
-            }}
-          >
-            sign in — your work won&rsquo;t save if you refresh
-          </Link>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ink-500, #6F6F73)' }}>
+            <span style={{ opacity: 0.7 }}>Not signed in ·</span>
+            <Link
+              href="/login?next=/killerapp"
+              style={{ color: 'var(--ink-500, #6F6F73)', textDecoration: 'underline', fontSize: 11 }}
+            >
+              Sign in
+            </Link>
+            <span style={{ opacity: 0.4 }}>/</span>
+            <Link
+              href="/login?next=/killerapp"
+              style={{ color: 'var(--ink-500, #6F6F73)', textDecoration: 'underline', fontSize: 11 }}
+            >
+              Sign up
+            </Link>
+          </span>
         )}
       </div>
 
