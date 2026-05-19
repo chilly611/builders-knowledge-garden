@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { colors } from '@/design-system/tokens/colors';
 import { fontWeights, letterSpacing } from '@/design-system/tokens/typography';
 import { STAGE_REGISTRY } from '@/components/navigator/types';
@@ -225,6 +225,20 @@ export default function BudgetSnapshot({
       ? Math.round((spentDollars / committedDollars) * 100)
       : 0;
 
+  // 2026-05-18 (Wave 2): brief pulse on the committed-total when it changes.
+  // Subtle 250ms scale + robin-tint so the user sees that the cockpit DID
+  // react to their last save. Auto-clears after 600ms.
+  const prevTotalRef = useRef<number>(data.totalCommittedCents);
+  const [justUpdated, setJustUpdated] = useState(false);
+  useEffect(() => {
+    if (prevTotalRef.current !== data.totalCommittedCents) {
+      prevTotalRef.current = data.totalCommittedCents;
+      setJustUpdated(true);
+      const t = setTimeout(() => setJustUpdated(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [data.totalCommittedCents]);
+
   return (
     <div
       data-zone="budget"
@@ -297,7 +311,16 @@ export default function BudgetSnapshot({
                 gap: '6px',
               }}
             >
-              <span style={{ color: colors.graphite, fontWeight: fontWeights.regular }}>
+              <span
+                style={{
+                  color: justUpdated ? colors.robin : colors.graphite,
+                  fontWeight: fontWeights.regular,
+                  display: 'inline-block',
+                  transformOrigin: 'left center',
+                  transition: 'transform 250ms ease, color 250ms ease',
+                  transform: justUpdated ? 'scale(1.05)' : 'scale(1)',
+                }}
+              >
                 {formatCurrency(data.totalCommittedCents)}
               </span>
               <span style={{ color: colors.graphite, opacity: 0.6, fontSize: '10px' }}>
