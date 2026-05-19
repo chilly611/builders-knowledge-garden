@@ -348,7 +348,55 @@ class ContractRenderer {
       this.y += lineHeight;
     };
 
+    // Hard-break a token that's wider than the entire available line width
+    // (e.g. a long URL or file path). Splits the word character-by-character
+    // so we never paint past the right margin. Returns chunks where each
+    // chunk's width <= availableWidth.
+    const splitOversized = (word: Word): Word[] => {
+      this.setStyle(word.style);
+      if (this.doc.getTextWidth(word.text) <= availableWidth) return [word];
+      const out: Word[] = [];
+      let chunk = '';
+      for (const ch of word.text) {
+        const next = chunk + ch;
+        if (this.doc.getTextWidth(next) > availableWidth && chunk.length > 0) {
+          out.push({ text: chunk, style: word.style });
+          chunk = ch;
+        } else {
+          chunk = next;
+        }
+      }
+      if (chunk.length > 0) out.push({ text: chunk, style: word.style });
+      return out;
+    };
+
+    // Expand any oversized tokens into multiple sub-tokens up front so the
+    // main loop's wrap math always sees fitting words.
+    const expanded: Word[] = [];
     for (const w of words) {
+      if (w.text === ' ') {
+        expanded.push(w);
+        continue;
+      }
+      const parts = splitOversized(w);
+      for (let k = 0; k < parts.length; k++) {
+        expanded.push(parts[k]);
+        // After every sub-chunk except the last, force a wrap by injecting a
+        // newline-sentinel — represented here as a zero-width marker we
+        // detect below.
+        if (k < parts.length - 1) expanded.push({ text: '\n', style: w.style });
+      }
+    }
+
+    for (const w of expanded) {
+      // Hard-newline sentinel from splitOversized.
+      if (w.text === '\n') {
+        while (line.length > 0 && line[line.length - 1].text === ' ') line.pop();
+        flushLine();
+        line = [];
+        lineWidthMm = 0;
+        continue;
+      }
       this.setStyle(w.style);
       const wWidth = this.doc.getTextWidth(w.text);
       // A leading space at start of line is meaningless.
@@ -495,7 +543,11 @@ class ContractRenderer {
 // ---------------------------------------------------------------------------
 
 function parseBlocks(source: string): Block[] {
-  const lines = source.replace(/\r\n/g, '\n').split('\n');
+  // Strip HTML comments (including multi-line) — these are author notes in
+  // the template files (e.g. "<!-- SHARED DISCLAIMER — See ..._shared/
+  // disclaimer.md for canonical version -->") and must never reach the PDF.
+  const stripped = source.replace(/<!--[\s\S]*?-->/g, '');
+  const lines = stripped.replace(/\r\n/g, '\n').split('\n');
   const blocks: Block[] = [];
 
   let i = 0;
