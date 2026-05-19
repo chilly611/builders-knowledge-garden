@@ -302,7 +302,23 @@ export default function KillerappProjectShell() {
 
   if (!projectId) return null;
 
-  const rawAiText = streaming ? streamingResponse : persistedAssistant?.content ?? project?.ai_summary ?? '';
+  // 2026-05-19 (Ship 14): the prior `streaming ? streamingResponse : …`
+  // ternary caused a visible regression to the "Running the numbers…"
+  // spinner the moment the stream finished. Why: persistProjectExchange
+  // (the server-side write to project_conversations) is fire-and-forget,
+  // so `refreshAfterStream` often fetches BEFORE the row exists →
+  // `persistedAssistant` is undefined → `project?.ai_summary` is also
+  // empty on a brand-new project → final fallback is '' → spinner.
+  //
+  // Prefer streamingResponse whenever it has content (it's the most
+  // recent text the user saw). The "streaming…" label still flips off
+  // via the `streaming` flag, but the body text stays stable across the
+  // stream-end / persist-write window.
+  const rawAiText =
+    streamingResponse ||
+    persistedAssistant?.content ||
+    project?.ai_summary ||
+    '';
   // Strip the trailing **What next?** action block — the static link row
   // below renders the canonical CTAs. Without this, the markdown leaks
   // as literal text alongside the rendered buttons. (Demo readiness fix
