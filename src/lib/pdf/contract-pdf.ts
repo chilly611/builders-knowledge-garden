@@ -557,16 +557,22 @@ function parseBlocks(source: string): Block[] {
       continue;
     }
 
-    // Horizontal rule
+    // Horizontal rule — also ends signature-block mode. A `---` after the
+    // SIGNATURES section is the natural delimiter before the disclaimer; we
+    // need to clear the sig-block flag here so subsequent paragraphs render
+    // as helvetica paragraphs, not courier signature lines.
     if (/^---+$/.test(line.trim())) {
       blocks.push({ kind: 'hr' });
+      inSignatureBlock = false;
       i++;
       continue;
     }
 
-    // Headings
+    // Headings — h1 and h3 also end signature-block mode (only h2 with
+    // "SIGNATURES"/"AUTHORIZATIONS" text turns it ON).
     if (line.startsWith('# ')) {
       blocks.push({ kind: 'title', text: stripInlineMarkers(line.slice(2)) });
+      inSignatureBlock = false;
       i++;
       continue;
     }
@@ -582,6 +588,7 @@ function parseBlocks(source: string): Block[] {
     }
     if (line.startsWith('### ')) {
       blocks.push({ kind: 'h3', text: stripInlineMarkers(line.slice(4)) });
+      inSignatureBlock = false;
       i++;
       continue;
     }
