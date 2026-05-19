@@ -172,9 +172,19 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   useEffect(() => {
     if (Object.keys(hydratedPayloads).length === 0) return;
     const saved = hydratedPayloads['s2-6'];
-    if (saved && typeof saved === 'object' && 'input' in saved) {
+    if (saved && typeof saved === 'object') {
+      // 2026-05-19 dogfood: manual-fill answer (payload.value) wins over
+      // AI input (payload.input). Lets dad demo estimating end-to-end by
+      // pasting a hand-written breakdown.
+      const value = (saved as { value?: unknown }).value;
       const input = (saved as { input?: unknown }).input;
-      const block = parseEstimateBlock(typeof input === 'string' ? input : '');
+      const text =
+        typeof value === 'string' && value.trim()
+          ? value
+          : typeof input === 'string'
+            ? input
+            : '';
+      const block = parseEstimateBlock(text);
       if (block) setCsiEstimate(block);
     }
     setStepStatusMap((prev) => {
@@ -246,8 +256,9 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     // Only the final step (s2-6 AI estimate) drives a budget write.
     if (stepResult.stepId !== 's2-6' || stepResult.type !== 'step_completed') return;
 
-    const payload = stepResult.payload as { input?: string } | undefined;
-    const finalText = payload?.input ?? '';
+    const payload = stepResult.payload as { input?: string; value?: string } | undefined;
+    // Manual-fill answer (payload.value) wins over AI input (payload.input).
+    const finalText = (payload?.value && payload.value.trim()) || payload?.input || '';
     const block = parseEstimateBlock(finalText);
     if (block) setCsiEstimate(block);
     const amount = parseRoughTotal(finalText);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii, shadows, transitions, zIndex } from '../tokens';
 import type { StepCardProps, StepResult, WorkflowStep } from './StepCard.types';
 
@@ -66,6 +66,14 @@ export default function StepCard({
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(initialPayload?.checked ?? {});
   const [analysisInput, setAnalysisInput] = useState(initialPayload?.input ?? '');
   const [voiceAvailable, setVoiceAvailable] = useState(false);
+  // 2026-05-19 dogfood: manual-fill mode for analysis_result steps. When
+  // turned on, the user writes their own answer in place of the AI
+  // specialist call. Initial value comes from initialPayload.value (which
+  // is how a previously-saved manual answer gets re-hydrated).
+  const [manualMode, setManualMode] = useState<boolean>(
+    !!initialPayload?.value && step.type === 'analysis_result'
+  );
+  const [manualAnswer, setManualAnswer] = useState<string>(initialPayload?.value ?? '');
 
   // Project Spine v1 — late-arriving initialPayload sync.
   // Hydration is async; useState's initializer captures empty values on
@@ -89,8 +97,114 @@ export default function StepCard({
     ) {
       setCheckedItems(initialPayload.checked);
     }
+    // 2026-05-19 dogfood: hydrate manual-fill answer for analysis_result.
+    if (
+      step.type === 'analysis_result' &&
+      typeof initialPayload.value === 'string' &&
+      initialPayload.value &&
+      !manualAnswer
+    ) {
+      setManualAnswer(initialPayload.value);
+      setManualMode(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPayload]);
+
+  // ── Draft auto-persist (2026-05-19, dogfood fix) ────────────────────────
+  // Why: prior behavior only emitted onAction on explicit Save/Skip/Complete
+  // clicks. A user who typed and then navigated to another workflow lost
+  // their input. Now we emit `step_saved` on a 400ms debounce whenever the
+  // local input state changes, AND once more on unmount. Persistence layer
+  // is unchanged — same payload shape, same column, downstream consumers
+  // (status map, parsers) read identically.
+  //
+  // `lastPersistedSigRef` holds the JSON signature of the last emitted
+  // payload so we don't re-emit unchanged values (e.g. hydrate echoes or
+  // re-renders that don't actually change anything).
+  const lastPersistedSigRef = useRef<string>(
+    JSON.stringify(initialPayload ?? {})
+  );
+
+  const buildDraftPayload = useCallback((): {
+    value?: string;
+    selected?: string[];
+    checked?: Record<string, boolean>;
+    input?: string;
+  } => {
+    switch (step.type) {
+      case 'text_input':
+      case 'voice_input':
+      case 'number_input':
+      case 'location_input':
+      case 'file_upload':
+        return { value: inputValue };
+      case 'multi_select':
+      case 'select':
+      case 'template_chooser':
+        return { selected: selectedOptions };
+      case 'checklist':
+        return { checked: checkedItems };
+      case 'analysis_result': {
+        // Manual-fill: when the user wrote their own answer, persist BOTH
+        // input (scope to AI) and value (their narrative). Downstream
+        // consumers can prefer payload.value when set, fall back to AI.
+        const p: { value?: string; input?: string } = {};
+        if (analysisInput) p.input = analysisInput;
+        if (manualMode && manualAnswer) p.value = manualAnswer;
+        return p;
+      }
+      default:
+        return {};
+    }
+  }, [step.type, inputValue, selectedOptions, checkedItems, analysisInput, manualMode, manualAnswer]);
+
+  const isPayloadEmpty = (p: {
+    value?: string;
+    selected?: string[];
+    checked?: Record<string, boolean>;
+    input?: string;
+  }) =>
+    !p.value &&
+    !p.input &&
+    (!p.selected || p.selected.length === 0) &&
+    (!p.checked || Object.keys(p.checked).length === 0);
+
+  const persistDraft = useCallback(() => {
+    if (!onAction) return;
+    const payload = buildDraftPayload();
+    if (isPayloadEmpty(payload)) return;
+    const sig = JSON.stringify(payload);
+    if (sig === lastPersistedSigRef.current) return;
+    lastPersistedSigRef.current = sig;
+    onAction({
+      type: 'step_saved',
+      stepId: step.id,
+      payload,
+      timestamp: Date.now(),
+    });
+  }, [onAction, buildDraftPayload, step.id]);
+
+  // Debounced auto-persist on local-state change. Only fires once expanded
+  // so we don't echo the hydrate before the user has interacted.
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!isExpanded) return;
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = setTimeout(persistDraft, 400);
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    };
+  }, [inputValue, selectedOptions, checkedItems, analysisInput, manualAnswer, manualMode, isExpanded, persistDraft]);
+
+  // Final flush on unmount — preserves whatever was typed if the user
+  // navigates away mid-debounce.
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+      persistDraft();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -210,7 +324,12 @@ export default function StepCard({
 
   // Handle step submission
   const handleStepSubmit = (submitType: 'save' | 'skip' | 'complete') => {
-    const payload =
+    const payload: {
+      value?: string;
+      selected?: string[];
+      checked?: Record<string, boolean>;
+      input?: string;
+    } =
       step.type === 'text_input' || step.type === 'voice_input'
         ? { value: inputValue }
         : step.type === 'number_input'
@@ -220,7 +339,9 @@ export default function StepCard({
             : step.type === 'checklist'
               ? { checked: checkedItems }
               : step.type === 'analysis_result'
-                ? { input: analysisInput }
+                ? (manualMode && manualAnswer
+                    ? { input: analysisInput, value: manualAnswer }
+                    : { input: analysisInput })
                 : {};
 
     if (onAction) {
@@ -237,6 +358,7 @@ export default function StepCard({
         payload,
         timestamp: Date.now(),
       });
+      lastPersistedSigRef.current = JSON.stringify(payload);
     }
 
     // Close after submit if not analysis
@@ -743,15 +865,72 @@ export default function StepCard({
               </div>
             )}
 
-            {/* Render analysis via renderAnalysis callback if provided (no exampleOutput display) */}
-            {renderAnalysis && analysisInput ? (
+            {/* 2026-05-19 dogfood: manual-fill toggle. Lets the user write
+                the answer themselves (e.g. when AI is rate-limited, or for
+                demoing a slice without burning specialist calls). Persists
+                to payload.value via the auto-persist effect. */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[2],
+                fontSize: fontSizes.xs,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setManualMode((m) => !m)}
+                style={{
+                  padding: `${spacing[1]} ${spacing[2]}`,
+                  borderRadius: radii.sm,
+                  border: `${borders.thin} ${colors.ink[300]}`,
+                  backgroundColor: manualMode ? colors.ink[50] : colors.paper.white,
+                  color: colors.ink[700],
+                  fontFamily: fonts.body,
+                  fontSize: fontSizes.xs,
+                  cursor: 'pointer',
+                }}
+                aria-pressed={manualMode}
+              >
+                {manualMode ? '↩ Use the specialist instead' : '✏️ Write the answer yourself'}
+              </button>
+              <span style={{ color: colors.ink[500] }}>
+                {manualMode
+                  ? 'Manual mode — your text is saved as the answer for this step.'
+                  : 'Skip the AI call and fill this in by hand.'}
+              </span>
+            </div>
+
+            {manualMode ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
                 <label style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500] }}>
-                  {step.analysisTitle}:
+                  {step.analysisTitle ?? 'Your answer'} (manual):
                 </label>
-                {renderAnalysis(step, analysisInput)}
+                <textarea
+                  placeholder="Write the answer in your own words. Auto-saves as you go."
+                  value={manualAnswer}
+                  onChange={(e) => setManualAnswer(e.target.value)}
+                  style={{
+                    ...commonInputStyle,
+                    minHeight: '160px',
+                    resize: 'vertical',
+                  }}
+                />
+                <div style={{ fontSize: fontSizes.xs, color: colors.ink[500] }}>
+                  Saved to the project — every other workflow can read this.
+                </div>
               </div>
-            ) : null}
+            ) : (
+              /* Render analysis via renderAnalysis callback if provided (no exampleOutput display) */
+              renderAnalysis && analysisInput ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+                  <label style={{ fontSize: fontSizes.xs, fontWeight: fontWeights.semibold, color: colors.ink[500] }}>
+                    {step.analysisTitle}:
+                  </label>
+                  {renderAnalysis(step, analysisInput)}
+                </div>
+              ) : null
+            )}
 
             {/* Input field for analysis — natural language + voice */}
             <textarea

@@ -317,8 +317,11 @@ export function useProjectWorkflowState(
           Partial<ProjectContext>;
         const map = (json[column] ?? {}) as Record<string, StepPayload>;
         if (cancelled) return;
-        stateRef.current = { ...map };
-        setHydratedPayloads(map);
+        // 2026-05-19 dogfood fix: merge — never clobber. If the user typed
+        // BEFORE hydrate landed (stateRef populated by recordStepEvent), let
+        // those values win over the just-fetched server state.
+        stateRef.current = { ...map, ...stateRef.current };
+        setHydratedPayloads(stateRef.current);
         setProject({
           id: (json.id as string) ?? projectId,
           name: json.name ?? null,
@@ -345,11 +348,23 @@ export function useProjectWorkflowState(
     if (!projectId) return;
     setSaving(true);
     try {
+      // 2026-05-19 dogfood fix: keepalive lets the PATCH survive unload /
+      // rapid client-side navigation (the unmount cleanup below fires this).
       const res = await authedFetch('/api/v1/projects', {
         method: 'PATCH',
         body: JSON.stringify({ id: projectId, [column]: stateRef.current }),
+        keepalive: true,
       });
-      if (res.ok) {
+      if (res.status === 401) {
+        // Bubble auth failure up so UI can surface "sign in to save."
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('bkg:workflow:save-unauthed', {
+              detail: { projectId, column },
+            })
+          );
+        }
+      } else if (res.ok) {
         setLastSavedAt(Date.now());
         // 2026-05-18 (Wave 2): notify cockpit/budget widgets that something
         // saved so they can refetch derived data (budget totals, etc.)
@@ -481,7 +496,13 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
           Partial<ProjectContext>;
         const blob = (json[column] ?? {}) as Record<string, unknown>;
         if (cancelled) return;
-        const merged = { ...defaultValue, ...blob } as T;
+        // 2026-05-19 dogfood fix: merge local-typed values OVER hydrate so a
+        // late-arriving fetch can't clobber input the user already changed.
+        const merged = {
+          ...defaultValue,
+          ...blob,
+          ...(stateRef.current as Record<string, unknown>),
+        } as T;
         stateRef.current = merged;
         setStateInner(merged);
         hasHydratedRef.current = true;
@@ -515,8 +536,17 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
       const res = await authedFetch('/api/v1/projects', {
         method: 'PATCH',
         body: JSON.stringify({ id: projectId, [column]: stateRef.current }),
+        keepalive: true,
       });
-      if (res.ok) {
+      if (res.status === 401) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('bkg:workflow:save-unauthed', {
+              detail: { projectId, column },
+            })
+          );
+        }
+      } else if (res.ok) {
         setLastSavedAt(Date.now());
         // 2026-05-18 (Wave 2): see sibling flush() above — broadcast for
         // cockpit/budget refetch.
@@ -543,7 +573,11 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
           : next;
       stateRef.current = resolved;
       setStateInner(resolved);
-      if (!hasHydratedRef.current) return;
+      // 2026-05-19 dogfood fix: previously this returned early when
+      // hasHydratedRef was false, silently dropping any setState calls
+      // that landed before the GET completed. With the merge fix in the
+      // hydrate effect, hydrate now folds in the local stateRef instead
+      // of clobbering it — so we can always schedule a flush here.
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => void flush(), debounceMs);
     },
