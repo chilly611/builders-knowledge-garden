@@ -201,7 +201,7 @@ class ContractRenderer {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(TYPE.title);
     this.doc.setTextColor(...rgb(COLOR.text));
-    this.doc.text(text, this.pageWidth / 2, this.y + 6, { align: 'center' });
+    this.doc.text(sanitizeForPdf(text), this.pageWidth / 2, this.y + 6, { align: 'center' });
     this.y += 14;
   }
 
@@ -211,7 +211,7 @@ class ContractRenderer {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(TYPE.h2);
     this.doc.setTextColor(...rgb(COLOR.brand));
-    this.doc.text(text, PAGE.marginLeft, this.y + 4);
+    this.doc.text(sanitizeForPdf(text), PAGE.marginLeft, this.y + 4);
     this.y += 7;
   }
 
@@ -221,27 +221,63 @@ class ContractRenderer {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(TYPE.h3);
     this.doc.setTextColor(...rgb(COLOR.text));
-    this.doc.text(text, PAGE.marginLeft, this.y + 4);
+    this.doc.text(sanitizeForPdf(text), PAGE.marginLeft, this.y + 4);
     this.y += 6;
   }
 
   private renderParagraph(text: string): void {
+    // Whole-paragraph bold: when the entire paragraph is wrapped in **,
+    // preserve the emphasis (this is how headings-like phrases such as
+    // "**⚠ DRAFT NOTICE — READ BEFORE SIGNING**" are authored). Inline
+    // bold inside a longer paragraph is dropped — the templates rarely
+    // use it for legal-meaning content, and reliable wrap is more
+    // important than preserving partial emphasis.
+    const trimmed = text.trim();
+    const wholeBold = /^\*\*[\s\S]*\*\*$/.test(trimmed);
+    const cleaned = sanitizeForPdf(stripInlineMarkers(text));
+    if (!cleaned.trim()) return;
+
+    this.doc.setFont('helvetica', wholeBold ? 'bold' : 'normal');
     this.doc.setFontSize(TYPE.body);
     this.doc.setTextColor(...rgb(COLOR.text));
-    this.renderInlineText(text, { indent: 0 });
+
+    this.renderWrappedLines(cleaned, PAGE.marginLeft, 0);
     this.y += 2.5;
   }
 
   private renderList(items: string[]): void {
+    this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(TYPE.body);
     this.doc.setTextColor(...rgb(COLOR.text));
     for (const item of items) {
+      const cleaned = sanitizeForPdf(stripInlineMarkers(item));
+      if (!cleaned.trim()) continue;
+      // Render bullet at fixed indent, then the wrapped content with a 6mm
+      // hanging indent so wrapped lines align under the first character.
       this.ensureSpace(5);
       this.doc.setFont('helvetica', 'normal');
       this.doc.text('•', PAGE.marginLeft + 2, this.y + 4);
-      this.renderInlineText(item, { indent: 6 });
+      this.renderWrappedLines(cleaned, PAGE.marginLeft + 6, 6);
     }
     this.y += 1;
+  }
+
+  /**
+   * Wrap `text` to fit within (contentWidth - indent) using jsPDF's
+   * splitTextToSize (known-correct width math, unlike the previous
+   * hand-rolled inline renderer). Renders each wrapped line starting at
+   * `x` with the active font/style. Advances `this.y` and handles page
+   * breaks via ensureSpace.
+   */
+  private renderWrappedLines(text: string, x: number, indent: number): void {
+    const availableWidth = this.contentWidth - indent;
+    const lineHeight = 5;
+    const lines = this.doc.splitTextToSize(text, availableWidth);
+    for (const ln of lines) {
+      this.ensureSpace(lineHeight);
+      this.doc.text(ln, x, this.y + 4);
+      this.y += lineHeight;
+    }
   }
 
   private renderHr(): void {
@@ -292,7 +328,7 @@ class ContractRenderer {
     this.doc.setFont('courier', 'normal');
     this.doc.setFontSize(TYPE.body);
     this.doc.setTextColor(...rgb(COLOR.text));
-    const lines = text.split('\n');
+    const lines = sanitizeForPdf(text).split('\n');
     for (const line of lines) {
       this.ensureSpace(5);
       this.doc.text(line, PAGE.marginLeft, this.y + 4);
@@ -302,135 +338,14 @@ class ContractRenderer {
   }
 
   // -------------------------------------------------------------------------
-  // Inline rendering — handles **bold**, _italic_, and wraps at contentWidth
+  // (Removed 2026-05-19): the previous custom inline-styled wrap renderer
+  // had measurement bugs that bled long paragraphs past the right margin.
+  // Replaced by renderWrappedLines() above, which uses jsPDF's built-in
+  // splitTextToSize (known-correct width math). Trade-off: we drop
+  // mid-paragraph **bold** / _italic_ emphasis; whole-paragraph bold is
+  // detected and preserved by renderParagraph. The templates use inline
+  // emphasis sparingly and never for legal-meaning content.
   // -------------------------------------------------------------------------
-
-  private renderInlineText(text: string, opts: { indent: number }): void {
-    const segments = parseInline(text);
-    const availableWidth = this.contentWidth - opts.indent;
-    const lineHeight = 5;
-    const x0 = PAGE.marginLeft + opts.indent;
-
-    // Build a word list where each word carries its style.
-    type Word = { text: string; style: 'normal' | 'bold' | 'italic' | 'bolditalic' };
-    const words: Word[] = [];
-    for (const seg of segments) {
-      // Split on whitespace but keep word-style pairing.
-      const tokens = seg.text.split(/(\s+)/).filter((t) => t.length > 0);
-      for (const tok of tokens) {
-        if (/^\s+$/.test(tok)) {
-          // Whitespace — collapse to a single space marker.
-          if (words.length > 0 && words[words.length - 1].text !== ' ') {
-            words.push({ text: ' ', style: seg.style });
-          }
-        } else {
-          words.push({ text: tok, style: seg.style });
-        }
-      }
-    }
-
-    // Greedy line-fill.
-    let line: Word[] = [];
-    let lineWidthMm = 0;
-
-    const flushLine = () => {
-      this.ensureSpace(lineHeight);
-      let x = x0;
-      for (const w of line) {
-        if (w.text === ' ') {
-          x += this.doc.getTextWidth(' ');
-          continue;
-        }
-        this.setStyle(w.style);
-        this.doc.text(w.text, x, this.y + 4);
-        x += this.doc.getTextWidth(w.text);
-      }
-      this.y += lineHeight;
-    };
-
-    // Hard-break a token that's wider than the entire available line width
-    // (e.g. a long URL or file path). Splits the word character-by-character
-    // so we never paint past the right margin. Returns chunks where each
-    // chunk's width <= availableWidth.
-    const splitOversized = (word: Word): Word[] => {
-      this.setStyle(word.style);
-      if (this.doc.getTextWidth(word.text) <= availableWidth) return [word];
-      const out: Word[] = [];
-      let chunk = '';
-      for (const ch of word.text) {
-        const next = chunk + ch;
-        if (this.doc.getTextWidth(next) > availableWidth && chunk.length > 0) {
-          out.push({ text: chunk, style: word.style });
-          chunk = ch;
-        } else {
-          chunk = next;
-        }
-      }
-      if (chunk.length > 0) out.push({ text: chunk, style: word.style });
-      return out;
-    };
-
-    // Expand any oversized tokens into multiple sub-tokens up front so the
-    // main loop's wrap math always sees fitting words.
-    const expanded: Word[] = [];
-    for (const w of words) {
-      if (w.text === ' ') {
-        expanded.push(w);
-        continue;
-      }
-      const parts = splitOversized(w);
-      for (let k = 0; k < parts.length; k++) {
-        expanded.push(parts[k]);
-        // After every sub-chunk except the last, force a wrap by injecting a
-        // newline-sentinel — represented here as a zero-width marker we
-        // detect below.
-        if (k < parts.length - 1) expanded.push({ text: '\n', style: w.style });
-      }
-    }
-
-    for (const w of expanded) {
-      // Hard-newline sentinel from splitOversized.
-      if (w.text === '\n') {
-        while (line.length > 0 && line[line.length - 1].text === ' ') line.pop();
-        flushLine();
-        line = [];
-        lineWidthMm = 0;
-        continue;
-      }
-      this.setStyle(w.style);
-      const wWidth = this.doc.getTextWidth(w.text);
-      // A leading space at start of line is meaningless.
-      if (line.length === 0 && w.text === ' ') continue;
-      if (lineWidthMm + wWidth > availableWidth && w.text !== ' ') {
-        // wrap
-        // Drop trailing space
-        while (line.length > 0 && line[line.length - 1].text === ' ') line.pop();
-        flushLine();
-        line = [];
-        lineWidthMm = 0;
-        if (w.text === ' ') continue;
-      }
-      line.push(w);
-      lineWidthMm += wWidth;
-    }
-    if (line.length > 0) {
-      while (line.length > 0 && line[line.length - 1].text === ' ') line.pop();
-      flushLine();
-    }
-  }
-
-  private setStyle(style: 'normal' | 'bold' | 'italic' | 'bolditalic'): void {
-    const s =
-      style === 'bold'
-        ? 'bold'
-        : style === 'italic'
-          ? 'italic'
-          : style === 'bolditalic'
-            ? 'bolditalic'
-            : 'normal';
-    this.doc.setFont('helvetica', s);
-    this.doc.setFontSize(TYPE.body);
-  }
 
   // -------------------------------------------------------------------------
   // Page flow
@@ -685,93 +600,35 @@ function parsePipeRow(line: string): string[] {
   return cells;
 }
 
-// ---------------------------------------------------------------------------
-// Inline parsing — **bold** and _italic_
-// ---------------------------------------------------------------------------
-
-type InlineStyle = 'normal' | 'bold' | 'italic' | 'bolditalic';
-
-function parseInline(text: string): Array<{ text: string; style: InlineStyle }> {
-  const out: Array<{ text: string; style: InlineStyle }> = [];
-  let buf = '';
-  let style: InlineStyle = 'normal';
-  let i = 0;
-
-  const flush = () => {
-    if (buf) {
-      out.push({ text: buf, style });
-      buf = '';
-    }
-  };
-
-  while (i < text.length) {
-    if (text[i] === '*' && text[i + 1] === '*') {
-      flush();
-      style = toggleBold(style);
-      i += 2;
-      continue;
-    }
-    // `_` only triggers italic when it's a word boundary — avoid mangling
-    // things like {{snake_case_keys}} (although we don't currently produce any).
-    if (
-      text[i] === '_' &&
-      (i === 0 || /[\s\W]/.test(text[i - 1]) || isItalicToggleAllowed(out, buf, style)) &&
-      (text[i + 1] === undefined || /\S/.test(text[i + 1]))
-    ) {
-      // Look ahead for closing _ before whitespace
-      const rest = text.slice(i + 1);
-      const closeIdx = rest.search(/_/);
-      if (closeIdx > 0 && !/\s/.test(rest[0])) {
-        flush();
-        style = toggleItalic(style);
-        i += 1;
-        continue;
-      }
-    }
-    buf += text[i];
-    i++;
-  }
-  flush();
-  return out;
-}
-
-function isItalicToggleAllowed(
-  _out: Array<{ text: string; style: InlineStyle }>,
-  _buf: string,
-  _style: InlineStyle
-): boolean {
-  return true;
-}
-
-function toggleBold(s: InlineStyle): InlineStyle {
-  switch (s) {
-    case 'normal':
-      return 'bold';
-    case 'bold':
-      return 'normal';
-    case 'italic':
-      return 'bolditalic';
-    case 'bolditalic':
-      return 'italic';
-  }
-}
-
-function toggleItalic(s: InlineStyle): InlineStyle {
-  switch (s) {
-    case 'normal':
-      return 'italic';
-    case 'italic':
-      return 'normal';
-    case 'bold':
-      return 'bolditalic';
-    case 'bolditalic':
-      return 'bold';
-  }
-}
-
 /** Remove inline markdown markers for contexts that don't render them. */
 function stripInlineMarkers(s: string): string {
   return s.replace(/\*\*/g, '').replace(/(^|\W)_([^_]+)_(?=\W|$)/g, '$1$2');
+}
+
+/**
+ * jsPDF's default helvetica is WinAnsi-encoded (CP1252). Characters outside
+ * that range get substituted with a placeholder glyph that surfaces as `&`
+ * or similar visual noise in the rendered PDF. Strip the symbols we know
+ * the templates use that aren't in WinAnsi (⚠ for the draft notice, etc.).
+ * Per user feedback: if the symbol can't render, leave nothing in its place —
+ * don't substitute an alternative letter.
+ *
+ * Em-dash (—, U+2014) and smart quotes (', ', ", ") ARE in WinAnsi and
+ * render correctly, so we leave them alone.
+ */
+function sanitizeForPdf(s: string): string {
+  return s
+    // Strip Misc Symbols (U+2600..U+26FF), Dingbats (U+2700..U+27BF),
+    // and emoji / supplementary symbols (U+1F000..U+1FFFF). These are
+    // the most common offenders authored into our templates (⚠).
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    // Collapse any whitespace runs that result from stripping a symbol —
+    // e.g. "⚠ DRAFT" -> " DRAFT" -> "DRAFT" so the bold paragraph doesn't
+    // start with a stray space.
+    .replace(/ {2,}/g, ' ')
+    .replace(/^ +/gm, '')
+    .replace(/ +$/gm, '');
 }
 
 // ---------------------------------------------------------------------------
