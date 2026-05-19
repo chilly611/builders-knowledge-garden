@@ -90,10 +90,18 @@ function stripTrailingActionBlock(text: string): string {
   if (!text) return text;
   // Match `**What next?**` (case-insensitive, optional surrounding
   // whitespace and newlines) followed by everything after it.
-  const cleaned = text.replace(
+  let cleaned = text.replace(
     /\n*\s*\*\*\s*what\s+next\??\s*\*\*[\s\S]*$/i,
     ''
   );
+  // 2026-05-19 (Ship 15): the model habitually writes a lead-in like
+  // "Here's where I'd start:" or "Next steps:" right before the
+  // `**What next?**` action list. Once we strip the action list the
+  // lead-in becomes a dangling header with nothing under it — looks
+  // broken on screen. Strip any trailing short line ending in `:`
+  // (capped at 120 chars to avoid eating long prose that happens to
+  // end in a colon). The canonical action chips render below.
+  cleaned = cleaned.replace(/\n+[^\n]{1,120}:\s*$/, '');
   return cleaned.trimEnd();
 }
 
