@@ -1119,3 +1119,16 @@ This session was interrupted twice by concurrent pushes from Chilly's parallel s
 2. **Declare file paths in `tasks.todo.md` follow-ups when you claim a task.** A 2-line "touching: route.ts / install-mcp/page.tsx / build-mcpb.mjs" note lets the other agent route around.
 3. **When the same file does conflict, the agent that pushes second resolves** — they have the smaller diff to re-apply on top of the larger landed change.
 4. **De-dupe via post-merge consolidation, not pre-merge coordination.** If two agents both ship a stdio bridge (as happened here), the second one rebases, deletes their duplicate, and adapts their unique work (.mcpb packaging) to wrap the first one's canonical file. One source of truth, both contributions ship.
+
+## 2026-05-19 — Workflow API `user_id` filter is a demo-day foot-gun
+
+Every workflow page (`/killerapp/workflows/*`) hydrates project state via `useProjectWorkflowState`, which calls `/api/v1/projects?id=<id>`. That endpoint runs `.eq('id', projectId).eq('user_id', user.id).single()` — so it returns 404 if the *currently authenticated user* doesn't own the project, even if the project exists. The autofill effects then no-op silently (`if (!project) return` guards in every workflow client), leaving form fields empty with no error toast.
+
+**The trap:** during a live demo, this looks identical to "autofill is broken" or "the page is buggy." Nothing on screen tells you the API 404'd. The fix is "log in as the right user," not "ship more code."
+
+**Rule for every demo prep:** before a demo, run a cold-start dress rehearsal as the actual presenter's account (not "I'm logged in as some user, it'll be fine"). The smoke test we ran today caught this 36 hours before showtime, not 30 seconds before.
+
+**Cleanup options for after:**
+1. Add `is_demo_project boolean DEFAULT false` to `command_center_projects` + filter API with `.or('user_id.eq.<id>,is_demo_project.eq.true')`. Also filter demo rows OUT of users' personal project lists.
+2. Tighter: when API returns 404 because of the user_id filter (vs. truly nonexistent project), return a structured "wrong owner" error that the workflow page surfaces visibly. Stumble-but-visible > silent-failure.
+3. For workflow pages specifically: relax the filter to allow read access on any project the user has been added to (via a `project_collaborators` table). This generalizes beyond demo.

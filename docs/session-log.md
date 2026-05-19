@@ -1331,3 +1331,31 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - `.mcpb` installed in Claude Desktop on Michael's laptop; the Act 4 query lands with Title 24 §110.10 cited.
 
 **Commit:** `b5b8bad` (8 files, 1 deletion — `mcp-bridge/server.mjs` dropped in favor of Chilly's `scripts/mcp-bridge.js`)
+
+## 2026-05-19 evening — Chat (Claude Code, michael@laptop): Contracts-autofill smoke test — surfaced auth-context demo risk
+**Agent:** Chat (Claude Sonnet 4.5 / Claude Code)
+**What was run:**
+- Manual + code-path smoke test of the contracts-autofill workflow at `https://builders.theknowledgegardens.com/killerapp/workflows/contract-templates?project=55730cd3-5225-493d-8b5c-49086d942565` per the 2026-05-18 PM follow-up in `tasks.todo.md`.
+- Browser automation via Claude in Chrome timed out three times on `document_idle` (page has running framer-motion / polling that never goes idle), so the live verification was done by Michael manually in his Chrome tab while I traced the code path in parallel.
+
+**What was found:**
+- `Project name` field empty. `Contract price` field empty (note: code key is `contractAmount`, UI label is "Contract price" — same field).
+- Network tab confirmed `/api/v1/projects?id=55730cd3-...` returned **404 Not Found**.
+- Root cause: `/api/v1/projects/route.ts:25-26` filters `.eq('id', projectId).eq('user_id', user.id).single()`. Demo project `55730cd3` is owned by Chilly's account (he seeded it during Burn 1 / W11 emergency batch), not Michael's. With Michael signed in as himself, the filter rejects the fetch.
+- The autofill code in `ContractTemplatesClient.tsx:107-132` is itself correct — Chilly's commit `ebdb85b` with the `Record<string, string>` annotation works as designed. The bug is upstream: the hook's `setProject(...)` call seeds the project object with all-null fields when the API 404s, every `seed()` call early-returns on null, and the form stays empty with no error toast.
+
+**Key decisions:**
+- **Ship nothing tonight.** Option A from the writeup — whichever laptop runs Wednesday's demo must be logged in as the account that owns the demo projects. Same constraint blocks every workflow page, not just contracts, since they all hydrate via `useProjectWorkflowState`.
+- **Surface the risk loudly in `tasks.todo.md`** as a P0 Tuesday action item: confirm which user_id owns the 3 demo projects (`55730cd3` / `aa11b22c` / `bb22c33d`), load that account's credentials into the demo browser, cold-start dress rehearsal Tuesday. Bonus option B (hardcoded 3-UUID allowlist in API) noted for anyone with bandwidth Tuesday.
+- **Defer the right engineering fix** (`is_demo_project` column + or-filter + filter-out-from-personal-list) until after Wednesday's demo lands. Tracked separately.
+
+**Issues/bugs found:**
+- The `AuthAndProjectIndicator` component (shipped in Burn 4 to show Sign in / Sign up CTAs for anonymous users everywhere) was reported by Michael as not visible on the contracts-templates page — no avatar, no name, no sign-in CTA. He WAS authenticated (404 vs. {projects:[]} confirms it) but no auth UI rendered. May be a layout/visibility bug on this specific workflow page; worth a fast follow-up audit Tuesday. **Not blocking the demo** since the fix is "presenter logs in as the right account anyway."
+- Browser automation via Claude in Chrome failed reliably on this page (`document_idle` timeout). Pattern likely affects any animated/polling Killer App page. Worth knowing before relying on browser automation for future smoke tests — manual + code-path is faster.
+
+**Files touched (ceremony only, no code changes):**
+- `tasks.todo.md` — marked smoke test [x] with full finding; added P0 Wednesday-demo-auth follow-up
+- `tasks.lessons.md` — appended "workflow API user_id filter is a demo-day foot-gun" lesson
+- `docs/session-log.md` — this entry
+
+**No code commits this session.**
