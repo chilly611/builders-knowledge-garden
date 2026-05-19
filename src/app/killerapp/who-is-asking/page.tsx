@@ -1,96 +1,92 @@
-// Builder's Knowledge Garden — "Who's asking?" (Brief 1)
-// Server Component. Reads recent contacts from Supabase, hands them to the
-// client component. URL slug is plain-language per Goal 1; Pro Toggle flips
-// the header text to "Contacts" without changing the URL.
+/**
+ * /killerapp/who-is-asking
+ * =========================
+ * Voice-first lead intake. The opening move of the CRM funnel.
+ *
+ * Server Component:
+ *   - Reads ?project=<id> query param if present (passed down so the
+ *     journey event lands on the right project bucket).
+ *   - Renders the foreman-vernacular shell + delegates interactive
+ *     state to WhoIsAskingClient.
+ *
+ * Wired to workflow "crm-lead-intake" in docs/workflows.json so the
+ * journey-map "Lead" dot lights up the moment a contact is confirmed.
+ */
 
-import type { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
-import WhoIsAskingClient, { type InitialContact } from './WhoIsAskingClient';
+import { Suspense } from 'react';
+import Link from 'next/link';
+import WhoIsAskingClient from './WhoIsAskingClient';
 
-export const metadata: Metadata = {
-  title: "Who's asking? | Builder's Knowledge Garden",
+export const metadata = {
+  title: "Who's asking?",
   description:
-    'Voice and photo capture for new leads. Hold the mic or snap a photo — the contact lands on your journey strip at "Lead" with name, address, and intent inferred.',
-  openGraph: {
-    title: "Who's asking?",
-    description: 'Voice + photo contact capture for builders meeting leads in the field.',
-  },
+    "Tell us about a lead. We'll capture the rough shape and you can polish it after.",
 };
-
-interface CrmContactRow {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  company: string | null;
-  email: string | null;
-  phone: string | null;
-  lane: string | null;
-  lifecycle_stage: string | null;
-  project_location: string | null;
-  source: string | null;
-  confidence: number | null;
-  last_contact_at: string | null;
-  created_at: string | null;
-}
-
-async function loadRecentContacts(projectId?: string): Promise<InitialContact[]> {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey || url.includes('placeholder')) {
-    return [];
-  }
-  try {
-    const admin = createClient(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    let query = admin
-      .from('crm_contacts')
-      .select(
-        'id, first_name, last_name, company, email, phone, lane, lifecycle_stage, project_location, source, confidence, last_contact_at, created_at'
-      )
-      .eq('archived', false)
-      .order('last_contact_at', { ascending: false, nullsFirst: false })
-      .limit(20);
-    if (projectId) {
-      query = query.eq('project_id', projectId);
-    }
-    const { data, error } = await query;
-    if (error || !data) return [];
-    return (data as CrmContactRow[]).map((r) => ({
-      id: r.id,
-      firstName: r.first_name ?? 'Unknown',
-      lastName: r.last_name ?? undefined,
-      company: r.company ?? undefined,
-      email: r.email ?? undefined,
-      phone: r.phone ?? undefined,
-      lane: r.lane ?? undefined,
-      lifecycleStage: r.lifecycle_stage ?? 'lead',
-      projectLocation: r.project_location ?? undefined,
-      source: r.source ?? 'manual',
-      confidence: r.confidence ?? undefined,
-      lastContactAt: r.last_contact_at ?? r.created_at ?? undefined,
-    }));
-  } catch (err) {
-    console.error('[who-is-asking] load failed:', err);
-    return [];
-  }
-}
 
 export default async function WhoIsAskingPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ project?: string | string[] }>;
+  searchParams: Promise<{ project?: string }>;
 }) {
-  const resolved = (await searchParams) ?? {};
-  const raw = resolved.project;
-  const projectId = Array.isArray(raw) ? raw[0] : raw;
-
-  const initialContacts = await loadRecentContacts(projectId);
+  const { project } = await searchParams;
 
   return (
-    <WhoIsAskingClient
-      initialContacts={initialContacts}
-      initialProjectId={projectId}
-    />
+    <div
+      style={{
+        maxWidth: 960,
+        margin: '0 auto',
+        padding: '32px 24px',
+        fontFamily: 'var(--font-body, system-ui)',
+      }}
+    >
+      <nav
+        style={{
+          fontSize: 13,
+          color: 'var(--graphite, #2E2E30)',
+          marginBottom: 16,
+          opacity: 0.7,
+        }}
+      >
+        <Link
+          href="/killerapp"
+          style={{ color: 'inherit', textDecoration: 'none' }}
+        >
+          Killer App
+        </Link>
+        <span style={{ margin: '0 8px' }}>/</span>
+        <span>Who&apos;s asking?</span>
+      </nav>
+
+      <header style={{ marginBottom: 32 }}>
+        <h1
+          style={{
+            fontSize: 36,
+            fontWeight: 600,
+            color: 'var(--graphite, #1B3B5E)',
+            margin: 0,
+            marginBottom: 8,
+            lineHeight: 1.15,
+          }}
+        >
+          Who&apos;s asking?
+        </h1>
+        <p
+          style={{
+            fontSize: 16,
+            color: 'var(--graphite, #2E2E30)',
+            opacity: 0.75,
+            margin: 0,
+            lineHeight: 1.5,
+          }}
+        >
+          Tell us about a lead. We&apos;ll capture the rough shape and you
+          can polish it after.
+        </p>
+      </header>
+
+      <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
+        <WhoIsAskingClient initialProjectId={project} />
+      </Suspense>
+    </div>
   );
 }

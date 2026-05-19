@@ -105,6 +105,8 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q17: '/killerapp/workflows/expenses',
   q18: '/killerapp/workflows/outreach',
   q19: '/killerapp/workflows/compass-nav',
+  // Sprint B7 — voice-first lead intake
+  'crm-lead-intake': '/killerapp/who-is-asking',
 };
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
@@ -138,6 +140,7 @@ const WORKFLOW_BLURBS: Record<string, string> = {
   q25: 'Follow up on retainage. *(Retainage tracker)*',
   q26: 'Log warranties. *(Warranty handoff)*',
   q27: 'What went well — and what didn\'t? *(Project review)*',
+  'crm-lead-intake': 'Who\'s asking? *(Voice lead intake)*',
 };
 
 function loadWorkflows(): WorkflowsJson {

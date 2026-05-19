@@ -1457,6 +1457,23 @@
           "exampleOutput": "Headline: sequencing was a strength, but permit + window-lead-time underestimates ate the budget. Next-job adjustments: add 1 week to permit estimate, order long-lead items at contract signing, pre-qualify drywall subs by job size, keep this framing crew."
         }
       ]
+    },
+    {
+      "id": "crm-lead-intake",
+      "stageId": 1,
+      "label": "Who's asking?",
+      "description": "Voice-first lead capture. Dictate the rough shape of a new contact and we'll structure it into the CRM.",
+      "totalXp": 50,
+      "steps": [
+        {
+          "id": "wia-1",
+          "label": "Capture lead voice",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Catching who's asking",
+          "exampleOutput": "Captured Mike Tanaka from Tanaka Roofing — re-roof on 2200 sqft tile job in Pasadena. Added to pipeline as a new lead."
+        }
+      ]
     }
   ]
 }
