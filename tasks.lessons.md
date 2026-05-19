@@ -1082,3 +1082,40 @@ Total query time: ~10 seconds. Saved at least one Vercel build failure.
 - `scopeOfWork` populated from `project.ai_summary` — confirms the optional path also fired
 
 **Rule:** when designing a smoke test for a hydration-time effect, list the COMPLETE observable chain (project context → effect fires → form value set → UI renders) and have the agent verify each link. Reporting only "the page loaded" is not enough.
+
+## 2026-05-18 — DXT renamed to MCPB mid-2025; ship `.mcpb` for zero-touch demo installs
+
+Anthropic renamed the Desktop Extension format from DXT to MCPB. `.dxt` files were the old name; the current spec is `.mcpb` (MCP Bundle), `manifest_version: "0.3"`, and the official packager is `@anthropic-ai/mcpb` (`npx -y -p @anthropic-ai/mcpb mcpb pack`). Any plan that mentions `.dxt` is referring to the obsolete name — fetch the README at `github.com/anthropics/mcpb` for the current schema before writing the manifest.
+
+**Why this matters for our demo:** the `.mcpb` install path (download + double-click → Claude Desktop installs) is the only zero-touch route for connecting a fresh laptop to BKG's MCP server. Manual `claude_desktop_config.json` editing is the fallback for older Claude Desktop builds. We host the bundle at `/bkg-mcp.mcpb` on prod so any laptop with a browser can install in ~30 seconds.
+
+**Recipe:**
+1. `mcp-bridge/manifest.json` with `manifest_version: "0.3"`, `server.type: "node"`, `server.entry_point: "mcp-bridge.js"`, and `server.mcp_config.args: ["${__dirname}/mcp-bridge.js"]`.
+2. Build script copies the canonical bridge (`scripts/mcp-bridge.js`) + manifest into a staging dir then runs `mcpb pack`.
+3. Output to `public/bkg-mcp.mcpb` so Vercel serves it as a static file.
+4. Landing page at `/install-mcp` with a single `<a href="/bkg-mcp.mcpb" download>` button.
+
+## 2026-05-18 — `body_plain` was always a phantom column; use `search_text` for FTS on `knowledge_entities`
+
+`src/app/api/v1/mcp/route.ts` `search_knowledge` queried `knowledge_entities.body_plain` via `textSearch`. That column does not exist on the table. Every Supabase query errored silently, the `if (!error && data)` guard was bypassed (error truthy → fall through), and every demo query returned the hardcoded mock data (IBC sprinklers / OSHA fall protection / 4000 PSI concrete) — including the Act 4 closer "What are the Marin County energy code requirements?"
+
+**The fix is the proven pattern from `src/app/api/v1/search/route.ts` and `src/lib/rag.ts`:**
+- `select` does not include a `body_plain` field
+- `.eq("status", "published")` filter (so unpublished drafts don't leak)
+- `.textSearch("search_text", query, { type: "plain", config: "english" })` — `search_text` is the generated tsvector column
+- Use `domain` not `domain_id` for the filter
+- Fall back to `ilike` OR-of-words on `search_text` when FTS returns no rows — catches partial-word + abbreviation queries like "Marin energy code" where the body text says "Title 24 §110.10 solar"
+
+**Rule:** when adding a new query path against `knowledge_entities` (or any shared table), grep for at least one existing working query against the same table and match its column list. Don't invent column names from a comment or an early-draft schema.
+
+## 2026-05-18 — Parallel-agent push rebase pattern: small, file-scoped, no merges
+
+This session was interrupted twice by concurrent pushes from Chilly's parallel session (Burn 5 close-out, then Ship 8.5 installer). Both rebased cleanly with `git rebase FETCH_HEAD` because the file paths didn't overlap: my work touched `mcp-bridge/`, `scripts/build-mcpb.mjs`, `public/bkg-mcp.mcpb`, `src/app/install-mcp/`, `docs/onboarding/`, `package.json`, `src/app/api/v1/mcp/route.ts`; Chilly's touched `scripts/mcp-bridge.js`/`mcp-bridge.README.md`/`mcp-bridge.smoke.sh`, `src/app/api/v1/crm/route.ts`, `src/app/signup/`, `src/app/login/page.tsx`, `tasks.*.md`, `docs/session-log.md`.
+
+**The one file we both could have touched** is `src/app/api/v1/mcp/route.ts` — Chilly's burn was building a bridge that wraps that endpoint, mine was fixing a bug inside it. Pure luck that Chilly didn't also need to edit it.
+
+**Rule when two agents are coding in parallel against `main`:**
+1. **Pull-rebase before every push, not just on rejection.** Costs 2 seconds, catches the conflict-prone case at planning time.
+2. **Declare file paths in `tasks.todo.md` follow-ups when you claim a task.** A 2-line "touching: route.ts / install-mcp/page.tsx / build-mcpb.mjs" note lets the other agent route around.
+3. **When the same file does conflict, the agent that pushes second resolves** — they have the smaller diff to re-apply on top of the larger landed change.
+4. **De-dupe via post-merge consolidation, not pre-merge coordination.** If two agents both ship a stdio bridge (as happened here), the second one rebases, deletes their duplicate, and adapts their unique work (.mcpb packaging) to wrap the first one's canonical file. One source of truth, both contributions ship.

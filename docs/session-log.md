@@ -1304,3 +1304,30 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - `src/app/login/page.tsx` (modified — honor next=)
 
 **Supabase MCP discovery for this burn:** queried `crm_contacts` schema (33 columns, 5 NOT-NULL non-id), `storage.buckets` (confirmed `crm-photos` exists + public), `agent_identities` (table doesn't exist).
+
+## 2026-05-18 evening — Chat (Claude Code, michael@laptop): C6 MCP closer — .mcpb extension + search_text fix
+**Agent:** Chat (Claude Sonnet 4.5 / Claude Code)
+**What was built:**
+- `/install-mcp` landing page — one-button download of `bkg-mcp.mcpb` for Claude Desktop, route at `src/app/install-mcp/page.tsx`
+- `mcp-bridge/manifest.json` — MCPB v0.3 manifest pointing at Chilly's `scripts/mcp-bridge.js` (no duplication of the bridge logic)
+- `scripts/build-mcpb.mjs` + `pnpm build:mcpb` — packs manifest + bridge into `public/bkg-mcp.mcpb` via the official `@anthropic-ai/mcpb` CLI (2.7 KB output)
+- `public/bkg-mcp.mcpb` — built artifact, served at `https://builders.theknowledgegardens.com/bkg-mcp.mcpb`
+- `docs/onboarding/CLAUDE-DESKTOP-MCP-SETUP.md` — manual-config fallback for older Claude Desktop builds
+- **Bug fix:** `src/app/api/v1/mcp/route.ts` `search_knowledge` was querying a nonexistent `body_plain` column → every Supabase query errored silently → every demo query returned mock data (IBC sprinklers / OSHA fall protection / 4000 PSI concrete). Ported the proven `search_text` + `ilike` OR fallback pattern from `src/app/api/v1/search/route.ts` and `src/lib/rag.ts`. Now returns the seeded Marin entries — verified live: `search_knowledge("Marin energy code")` returns "Title 24 §110.10 — Marin Solar PV Mandate" + "Title 24 Part 6 — Marin Energy Standards" with `source: supabase`.
+
+**Key decisions:**
+- **Use `.mcpb` over manual config paste** so any Wednesday-morning laptop (Chilly's, Michael's, a borrowed one) installs the closer in one download + one double-click — no terminal, no JSON editing. User explicitly chose this friction level over a curl-installer or hosted-MCP refactor.
+- **Single source of truth for the bridge** — Chilly's `scripts/mcp-bridge.js` (shipped in Burn 5 in parallel with this session) is the canonical bridge. My .mcpb build copies it into the staging dir at pack time rather than maintaining a duplicate inside `mcp-bridge/`. Reduces drift to zero.
+- **Fix the route.ts bug in the same atomic commit** instead of deferring — without it the .mcpb closer would have looked exactly like the demo working but returned mock data on stage. User chose the inline fix path; ~15-LOC delta mirroring an already-working route.
+
+**Issues/bugs found:**
+- The `body_plain` column never existed on `knowledge_entities` — present in the codebase since the original MCP route was written (see route.ts pre-2026-05-18). Caught only because the bridge smoke test surfaced the empty-results-fallthrough.
+- Two concurrent push rejections during this session (Burn 5 close-out + Ship 8.5 installer landed while I was working). Both rebased cleanly — no conflicts because file paths didn't overlap. The parallel-agent playbook is working.
+
+**Verified live on prod:**
+- `https://builders.theknowledgegardens.com/install-mcp` → HTTP 200
+- `https://builders.theknowledgegardens.com/bkg-mcp.mcpb` → HTTP 200, 2670 bytes, `application/octet-stream`
+- `POST /api/v1/mcp` `search_knowledge` returns Marin entries with `source: supabase`
+- `.mcpb` installed in Claude Desktop on Michael's laptop; the Act 4 query lands with Title 24 §110.10 cited.
+
+**Commit:** `b5b8bad` (8 files, 1 deletion — `mcp-bridge/server.mjs` dropped in favor of Chilly's `scripts/mcp-bridge.js`)
