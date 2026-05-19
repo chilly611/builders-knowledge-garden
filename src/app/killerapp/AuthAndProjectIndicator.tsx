@@ -19,7 +19,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 interface ProjectSummary {
@@ -38,7 +38,13 @@ async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
 
 export default function AuthAndProjectIndicator() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const projectId = searchParams.get('project');
+  // 2026-05-18 (Ship 11): anon CTAs now preserve the current pathname as
+  // `next=`, so users return to where they were after auth instead of being
+  // dumped on /killerapp. Falls back to /killerapp if usePathname returns
+  // null (shouldn't happen in client components, but defensive).
+  const nextParam = encodeURIComponent(pathname || '/killerapp');
 
   const [email, setEmail] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -151,8 +157,8 @@ export default function AuthAndProjectIndicator() {
   // demo visitors with no visible "sign in" CTA. Now we render a placeholder
   // "Checking…" pill while auth is loading (preserves layout) and an
   // explicit "Not signed in · Sign in / Sign up" anon-CTA once resolved.
-  // /signup route does not exist in this app (verified 2026-05-18), so both
-  // anon CTAs point to /login.
+  // 2026-05-18 (Ship 11): /signup now exists, and both CTAs preserve the
+  // current pathname as `next=` so users return to where they were.
 
   return (
     <div
@@ -197,14 +203,14 @@ export default function AuthAndProjectIndicator() {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ink-500, #6F6F73)' }}>
             <span style={{ opacity: 0.7 }}>Not signed in ·</span>
             <Link
-              href="/login?next=/killerapp"
+              href={`/login?next=${nextParam}`}
               style={{ color: 'var(--ink-500, #6F6F73)', textDecoration: 'underline', fontSize: 11 }}
             >
               Sign in
             </Link>
             <span style={{ opacity: 0.4 }}>/</span>
             <Link
-              href="/login?next=/killerapp"
+              href={`/signup?next=${nextParam}`}
               style={{ color: 'var(--ink-500, #6F6F73)', textDecoration: 'underline', fontSize: 11 }}
             >
               Sign up

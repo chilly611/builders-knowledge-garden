@@ -8,10 +8,13 @@ import { supabase } from '@/lib/supabase';
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/';
-  // 2026-05-08: auto-flip to sign-up mode when /login?signup=1
-  // (the /signup route redirects here with that flag).
-  const [isSignUp, setIsSignUp] = useState(searchParams.get('signup') === '1');
+  // 2026-05-19 (Ship 11): honor `next=` query param (used by
+  // AuthAndProjectIndicator) so users return to whatever workflow page
+  // they were on. `redirectTo` is kept as legacy fallback. Final fallback
+  // is /killerapp (the demo entry).
+  const nextParam = searchParams.get('next') || searchParams.get('redirectTo') || '/killerapp';
+  const redirectTo = nextParam;
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,7 +44,7 @@ function LoginPageContent() {
         } else {
           setSuccessMessage('Sign up successful! Check your email to confirm.');
           setTimeout(() => {
-            router.push('/killerapp');
+            router.push(nextParam);
           }, 2000);
         }
       } else {
@@ -55,7 +58,7 @@ function LoginPageContent() {
         } else {
           setSuccessMessage('Signed in successfully!');
           setTimeout(() => {
-            router.push('/killerapp');
+            router.push(nextParam);
           }, 500);
         }
       }

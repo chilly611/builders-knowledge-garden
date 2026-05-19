@@ -49,7 +49,15 @@ interface ExtractResponse {
   meta: { extractor: string; projectId: string | null; photoUrl: string | null };
 }
 
-type Status = 'idle' | 'capturing' | 'extracting' | 'reviewing' | 'saving' | 'saved' | 'error';
+type Status =
+  | 'idle'
+  | 'capturing'
+  | 'uploading'
+  | 'extracting'
+  | 'reviewing'
+  | 'saving'
+  | 'saved'
+  | 'error';
 
 export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClientProps) {
   const {
@@ -70,6 +78,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
   const [draft, setDraft] = useState<DraftLead | null>(null);
   const [contact, setContact] = useState<ExtractResponse['contact']>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Combine the finalized transcript + interim chunk for the pill display
@@ -107,8 +116,41 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
       setErrorMsg('Say or type something first.');
       return;
     }
-    setStatus('extracting');
     setErrorMsg(null);
+    setPhotoUploadError(null);
+
+    // 1. If a photo was attached, upload it FIRST. On failure we surface a
+    //    small inline note and continue without the photo — the contact is
+    //    still more valuable than the picture.
+    let uploadedPhotoUrl: string | undefined;
+    if (photoFile) {
+      setStatus('uploading');
+      try {
+        const fd = new FormData();
+        fd.append('photo', photoFile);
+        const upRes = await fetch('/api/v1/uploads/photo', {
+          method: 'POST',
+          body: fd,
+        });
+        const upJson = (await upRes.json().catch(() => ({}))) as {
+          ok?: boolean;
+          url?: string;
+          error?: string;
+        };
+        if (!upRes.ok || !upJson.ok || !upJson.url) {
+          throw new Error(upJson.error || `Photo upload failed (${upRes.status})`);
+        }
+        uploadedPhotoUrl = upJson.url;
+      } catch (err) {
+        console.error('[who-is-asking] photo upload failed:', err);
+        setPhotoUploadError(
+          err instanceof Error ? err.message : 'Photo upload failed — saving lead without it.'
+        );
+      }
+    }
+
+    // 2. Extract + persist the contact.
+    setStatus('extracting');
     try {
       const projectId = initialProjectId || resolveProjectId();
       const res = await fetch('/api/v1/crm/voice-extract', {
@@ -116,7 +158,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcript: effectiveTranscript,
-          photoUrl: photoFile ? `placeholder://${photoFile.name}` : undefined,
+          photoUrl: uploadedPhotoUrl,
           projectId,
         }),
       });
@@ -172,6 +214,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
     setDraft(null);
     setContact(null);
     setErrorMsg(null);
+    setPhotoUploadError(null);
     setStatus('idle');
     if (photoInputRef.current) photoInputRef.current.value = '';
   };
@@ -197,7 +240,11 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
       }}
     >
       {/* STEP 1 — voice capture */}
-      {status === 'idle' || status === 'capturing' || status === 'extracting' || status === 'error' ? (
+      {status === 'idle' ||
+      status === 'capturing' ||
+      status === 'uploading' ||
+      status === 'extracting' ||
+      status === 'error' ? (
         <section aria-label="Voice capture">
           <h2
             style={{
@@ -224,7 +271,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
           <button
             type="button"
             onClick={handleToggleListen}
-            disabled={!supported || status === 'extracting'}
+            disabled={!supported || status === 'extracting' || status === 'uploading'}
             aria-pressed={listening}
             style={{
               padding: `${spacing[3]} ${spacing[5]}`,
@@ -331,6 +378,20 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
               Mic trouble: {voiceError}. Type it instead.
             </p>
           )}
+          {status === 'uploading' && (
+            <p
+              role="status"
+              aria-live="polite"
+              style={{ marginTop: spacing[3], color: colors.ink[500], fontSize: fontSizes.sm }}
+            >
+              Uploading photo…
+            </p>
+          )}
+          {photoUploadError && (
+            <p style={{ marginTop: spacing[3], color: colors.status.error, fontSize: fontSizes.sm }}>
+              {photoUploadError}
+            </p>
+          )}
           {errorMsg && (
             <p style={{ marginTop: spacing[3], color: colors.status.error, fontSize: fontSizes.sm }}>
               {errorMsg}
@@ -341,7 +402,9 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
             <button
               type="button"
               onClick={handleCapture}
-              disabled={status === 'extracting' || !effectiveTranscript}
+              disabled={
+                status === 'extracting' || status === 'uploading' || !effectiveTranscript
+              }
               style={{
                 padding: `${spacing[3]} ${spacing[5]}`,
                 fontSize: fontSizes.sm,
@@ -350,17 +413,23 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
                 border: 'none',
                 borderRadius: radii.full,
                 backgroundColor:
-                  status === 'extracting' || !effectiveTranscript
+                  status === 'extracting' || status === 'uploading' || !effectiveTranscript
                     ? colors.ink[200]
                     : colors.navy,
                 color: '#FFFFFF',
                 cursor:
-                  status === 'extracting' || !effectiveTranscript ? 'not-allowed' : 'pointer',
+                  status === 'extracting' || status === 'uploading' || !effectiveTranscript
+                    ? 'not-allowed'
+                    : 'pointer',
                 minHeight: 44,
               }}
               data-testid="wia-capture-button"
             >
-              {status === 'extracting' ? 'Catching it…' : 'Capture lead'}
+              {status === 'uploading'
+                ? 'Uploading photo…'
+                : status === 'extracting'
+                  ? 'Catching it…'
+                  : 'Capture lead'}
             </button>
           </div>
         </section>
