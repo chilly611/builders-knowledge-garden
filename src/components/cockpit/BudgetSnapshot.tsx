@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { colors } from '@/design-system/tokens/colors';
 import { fontWeights, letterSpacing } from '@/design-system/tokens/typography';
 import { STAGE_REGISTRY } from '@/components/navigator/types';
+import { getActiveProjectId } from '@/lib/budget-spine';
 
 /**
  * BudgetSnapshot (W9.D.9 — Lane B3)
@@ -239,9 +241,27 @@ export default function BudgetSnapshot({
     }
   }, [data.totalCommittedCents]);
 
+  // 2026-05-19 (Ship 23): make the snapshot a click target → full budget page.
+  // ProjectId comes from the same localStorage spine the rest of the budget
+  // flow uses; we resolve it lazily on mount so SSR stays clean.
+  const [projectId, setProjectId] = useState<string | null>(null);
+  useEffect(() => {
+    setProjectId(getActiveProjectId());
+  }, []);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const budgetHref = projectId
+    ? `/killerapp/budget?project=${encodeURIComponent(projectId)}`
+    : '/killerapp/budget';
+
   return (
-    <div
+    <Link
+      href={budgetHref}
       data-zone="budget"
+      aria-label="Open the full budget for this project"
+      title="Open the full budget for this project"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         flex: '0 0 35%',
         display: 'flex',
@@ -249,8 +269,38 @@ export default function BudgetSnapshot({
         justifyContent: 'center',
         padding: '4px 12px',
         gap: '4px',
+        position: 'relative',
+        cursor: 'pointer',
+        textDecoration: 'none',
+        color: 'inherit',
+        backgroundColor: isHovered ? 'rgba(255, 213, 79, 0.08)' : 'transparent',
+        transform: isHovered ? 'translateY(-1px) scale(1.02)' : 'translateY(0) scale(1)',
+        transformOrigin: 'center center',
+        transition:
+          'background-color 180ms ease, transform 180ms ease',
+        borderRadius: '4px',
       }}
     >
+      {/* Hover affordance: "Open budget →" tag */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: '4px',
+          right: '8px',
+          fontSize: '9px',
+          color: colors.brass,
+          fontWeight: fontWeights.semibold,
+          letterSpacing: letterSpacing.technical,
+          textTransform: 'uppercase',
+          opacity: isHovered ? 1 : 0,
+          transform: isHovered ? 'translateX(0)' : 'translateX(4px)',
+          transition: 'opacity 180ms ease, transform 180ms ease',
+          pointerEvents: 'none',
+        }}
+      >
+        Open budget →
+      </span>
       {!hasData ? (
         // Empty state
         <div
@@ -351,6 +401,6 @@ export default function BudgetSnapshot({
           </div>
         </>
       )}
-    </div>
+    </Link>
   );
 }

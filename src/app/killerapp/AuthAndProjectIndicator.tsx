@@ -455,6 +455,14 @@ export default function AuthAndProjectIndicator() {
   // collapse the two stacked pills into a single hamburger button +
   // slide-out panel. This stops the project name from getting clipped
   // mid-word on iPhone SE / mini (375px viewport).
+  // 2026-05-19 (Ship 21 hotfix): z-index bumped 50 -> 100. The Ship-18
+  // refactor left this pill at z=50, but the global app-shell top bar
+  // (which contains CompassWorkflowNav) is a position:fixed band at z=99
+  // with a translucent cream background. It paints OVER the pill, making
+  // the "Sign in / Sign up" CTA invisible on /killerapp — a P0 demo
+  // blocker for the May 20 investor demo. 100 beats the 99 nav while
+  // staying well below the FAB stack (9997+) so we don't fight the AI
+  // FAB or its drawer scrim. Same fix for the mobile branch below.
   if (isMobile) {
     return (
       <div
@@ -462,7 +470,7 @@ export default function AuthAndProjectIndicator() {
           position: 'fixed',
           top: 12,
           right: 16,
-          zIndex: 50,
+          zIndex: 100,
           pointerEvents: 'none',
         }}
         data-testid="auth-and-project-indicator"
@@ -629,13 +637,19 @@ export default function AuthAndProjectIndicator() {
   }
 
   // Desktop layout — two stacked pills, top-right.
+  // 2026-05-19 (Ship 21 hotfix): z-index bumped 50 -> 100. See matching
+  // comment on the mobile branch above: the app-shell top bar / Compass
+  // workflow nav is a position:fixed band at z=99 with a translucent
+  // cream background that was painting OVER this pill, hiding the Sign
+  // in / Sign up CTA on /killerapp. 100 beats the nav while staying
+  // safely below the FAB stack (9997+).
   return (
     <div
       style={{
         position: 'fixed',
         top: 12,
         right: 16,
-        zIndex: 50,
+        zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-end',

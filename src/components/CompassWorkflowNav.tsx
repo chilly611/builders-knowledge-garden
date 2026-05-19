@@ -48,7 +48,11 @@ import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 // Order within each group reflects the lifecycle reading order.
 // ---------------------------------------------------------------------------
 
-type StageBucket = 1 | 2 | 3;
+// Stage 0 is the cross-cutting "Money" group surfaced at the top of the
+// panel per Ship 22 brief — it isn't a lifecycle stage, it's an always-on
+// section ("Budget" is the entry point for the dedicated /killerapp/budget
+// interface). Existing stage 1/2/3 behaviour is unchanged.
+type StageBucket = 0 | 1 | 2 | 3;
 
 interface WorkflowEntry {
   id: string;
@@ -60,6 +64,8 @@ interface WorkflowEntry {
 }
 
 const WORKFLOWS: WorkflowEntry[] = [
+  // Stage 0 — Money (always-on, sits at the top of the panel)
+  { id: 'budget',          href: '/killerapp/budget',                         stage: 0, emoji: '\u{1F4B0}', label: "What's the budget?",                  sublabel: 'Budget & estimating' },
   // Stage 1 — Size up
   { id: 'crm-lead-intake', href: '/killerapp/who-is-asking',                  stage: 1, emoji: '\u{1F4DE}', label: "Who's asking?",                       sublabel: 'Voice lead intake' },
   { id: 'q2',              href: '/killerapp/workflows/estimating',           stage: 1, emoji: '\u{1F4CF}', label: 'What might this cost to build?',     sublabel: 'Quick estimate' },
@@ -84,6 +90,9 @@ const WORKFLOWS: WorkflowEntry[] = [
 ];
 
 const GROUPS: { stage: StageBucket; title: string; }[] = [
+  // Ship 22: "Money" sits at the top — it's the first thing the contractor
+  // sees when they crack open the navigator. Always-on, no lifecycle gating.
+  { stage: 0, title: '\u{1F4B0} Money' },
   { stage: 1, title: '1 · Size up' },
   { stage: 2, title: '2 · Lock it in' },
   { stage: 3, title: '3 · Plan it out' },
@@ -375,7 +384,13 @@ export default function CompassWorkflowNav() {
             {GROUPS.map((group) => {
               const rows = filtered.filter((w) => w.stage === group.stage);
               if (rows.length === 0) return null;
-              const accent = STAGE_ACCENTS[group.stage].hex;
+              // Stage 0 = the Ship 22 "Money" group; STAGE_ACCENTS only
+              // defines 1–7 lifecycle stages, so fall back to brass for
+              // the always-on money lane.
+              const accent =
+                group.stage === 0
+                  ? COLORS.brass
+                  : STAGE_ACCENTS[group.stage as 1 | 2 | 3].hex;
               return (
                 <div key={group.stage} style={{ marginBottom: 6 }}>
                   <div
