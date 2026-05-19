@@ -26,6 +26,7 @@ import {
 import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { getActiveProjectId, getProjectBudget } from '@/lib/budget-spine';
+import { useActiveProject } from '@/lib/hooks/use-active-project';
 import { subscribeJourney } from '@/lib/journey-progress';
 import { subscribeSnapshots } from '@/lib/time-machine';
 import { useTimeMachineRewind, REWIND_EVENT, type RewindEventDetail } from '@/lib/use-time-machine-rewind';
@@ -101,7 +102,13 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   const stageId = stageFromPathname(pathname);
 
   // Hooks must run on every render — keep above any early returns.
-  const effectiveProjectId = propProjectId ?? getActiveProjectId() ?? null;
+  // 2026-05-18 (Wave 2): subscribe to useActiveProject so a project switch
+  // propagates reactively rather than only on next render. Fall back to the
+  // legacy getActiveProjectId() snapshot when the hook returns null on
+  // first paint.
+  const [activeProjectFromHook] = useActiveProject();
+  const effectiveProjectId =
+    propProjectId ?? activeProjectFromHook ?? getActiveProjectId() ?? null;
   const [journeyState, setJourneyState] = useState<Record<string, any>>({});
   const [budgetData, setBudgetData] = useState<BudgetTimelineData>({
     byStage: {} as any, totalCommittedCents: 0, totalSpentCents: 0, isOverbudget: false, overAmountCents: 0,
@@ -132,9 +139,22 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   useEffect(() => { fetchBudget(); }, [fetchBudget]);
   useEffect(() => {
     const onBudgetChange = () => fetchBudget();
+    // 2026-05-18 (Wave 2): refetch budget when ANY workflow autosaves on the
+    // active project — workflow state often feeds budget derivations (line
+    // items, headcount, etc.) so the cockpit stays in sync without the
+    // user having to navigate away and back.
+    const onAutosave = (e: Event) => {
+      const ce = e as CustomEvent<{ projectId?: string; column?: string }>;
+      if (!effectiveProjectId) return;
+      if (ce.detail?.projectId === effectiveProjectId) fetchBudget();
+    };
     window.addEventListener('bkg:budget:changed', onBudgetChange);
-    return () => window.removeEventListener('bkg:budget:changed', onBudgetChange);
-  }, [fetchBudget]);
+    window.addEventListener('bkg:workflow:autosaved', onAutosave as EventListener);
+    return () => {
+      window.removeEventListener('bkg:budget:changed', onBudgetChange);
+      window.removeEventListener('bkg:workflow:autosaved', onAutosave as EventListener);
+    };
+  }, [fetchBudget, effectiveProjectId]);
 
   // Snapshots subscription
   useEffect(() => {
@@ -185,11 +205,16 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   const handleStageClick = useCallback((stageIdArg: StageId) => {
     const stageMeta = STAGE_REGISTRY.find((s) => s.id === stageIdArg);
     if (!stageMeta) return;
+    // 2026-05-18 (Wave 2): kick off a budget refetch BEFORE we navigate so
+    // the destination workflow page mounts with fresh totals. Fire-and-
+    // forget — the promise resolves into state; the navigation isn't
+    // blocked.
+    void fetchBudget();
     router.push(`/killerapp/workflows?stage=${stageMeta.slug}`);
     window.dispatchEvent(new CustomEvent('bkg:navigator:stage-clicked', {
       detail: { stageId: stageIdArg, projectId: effectiveProjectId },
     }));
-  }, [router, effectiveProjectId]);
+  }, [router, effectiveProjectId, fetchBudget]);
 
   const handleTimeScrub = useCallback((snapshotId: string | null) => {
     rewindTo(snapshotId);
