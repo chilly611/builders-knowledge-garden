@@ -17,26 +17,15 @@
  * compass in `/killerapp/layout.tsx`. The orchestrator deprecates
  * `<CompassBloom />` for /killerapp/* after Wednesday.
  *
- * Save-and-go semantics:
- *   This demo Ship uses the SIMPLER pattern — just `router.push(href)`
- *   directly. The autosave debounce (500ms, see
- *   `src/lib/hooks/useProjectWorkflowState.ts`) almost certainly fires
- *   before the user navigates from this overlay.
- *
- *   TODO(post-demo): swap to the event-based flush-and-await pattern.
- *   Sketch:
- *     await new Promise<void>((resolve) => {
- *       const onAck = () => { window.removeEventListener('bkg:workflow:autosaved', onAck); resolve(); };
- *       window.addEventListener('bkg:workflow:autosaved', onAck, { once: true });
- *       window.dispatchEvent(new CustomEvent('bkg:nav:flush-and-go', { detail: { href } }));
- *       setTimeout(resolve, 800); // hard timeout — never block nav indefinitely
- *     });
- *     router.push(href);
- *
- *   `useProjectWorkflowState` already emits `bkg:workflow:autosaved`
- *   when its `flush()` completes (grep'd 2026-05-19). The missing piece
- *   is a listener for `bkg:nav:flush-and-go` that calls flush(). One
- *   line in the hook.
+ * Save-and-go semantics (Ship 32):
+ *   `handleNavigate` dispatches `bkg:nav:flush-and-go` with the target
+ *   href, waits up to 400ms for a `bkg:nav:flush-ack` from any mounted
+ *   useProjectWorkflowState / useProjectStateBlob consumer (whose
+ *   listener awaits its own flush() and then acks), and then calls
+ *   router.push. If no consumer is mounted on the current page, the
+ *   timeout fires and we fall back to the prior behavior of an
+ *   immediate router.push — those pages don't have local workflow
+ *   state to flush anyway, so this gracefully degrades.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -211,21 +200,50 @@ export default function CompassWorkflowNav() {
     );
   }, [query]);
 
-  // Save-and-go: simple router.push for the demo. See file header for the
-  // proper flush-and-await pattern to wire post-demo.
+  // Save-and-go (Ship 32): dispatch `bkg:nav:flush-and-go`, then await a
+  // `bkg:nav:flush-ack` (emitted by useProjectWorkflowState /
+  // useProjectStateBlob once their flush() PATCH resolves). Hard-cap the
+  // wait at 400ms so a page without those hooks mounted (or a slow PATCH)
+  // can never block navigation — in that case we fall back to the prior
+  // behavior of "just router.push immediately," which is fine because the
+  // hooks already auto-flush every 500ms when state changes.
   const handleNavigate = useCallback((href: string) => {
     const target = withProject(href);
-    // Best-effort flush hint — useProjectWorkflowState already auto-flushes
-    // every 500ms, so this is just belt-and-suspenders for the demo.
+    setOpen(false);
+
+    const go = () => router.push(target);
+
+    if (typeof window === 'undefined') {
+      go();
+      return;
+    }
+
+    let done = false;
+    const onAck = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('bkg:nav:flush-ack', onAck);
+      go();
+    };
+    window.addEventListener('bkg:nav:flush-ack', onAck);
+
     try {
       window.dispatchEvent(
         new CustomEvent('bkg:nav:flush-and-go', { detail: { href: target } }),
       );
     } catch {
-      // ignore — older browsers
+      // ignore — older browsers without CustomEvent support
     }
-    setOpen(false);
-    router.push(target);
+
+    // Timeout fallback: 400ms is short enough that the demo never feels
+    // sluggish, long enough for the in-flight PATCH (typical p50 ~80ms) to
+    // ack first. If no listener is mounted, this is the path that fires.
+    window.setTimeout(() => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('bkg:nav:flush-ack', onAck);
+      go();
+    }, 400);
   }, [router, withProject]);
 
   if (!mounted) return null;
@@ -384,13 +402,10 @@ export default function CompassWorkflowNav() {
             {GROUPS.map((group) => {
               const rows = filtered.filter((w) => w.stage === group.stage);
               if (rows.length === 0) return null;
-              // Stage 0 = the Ship 22 "Money" group; STAGE_ACCENTS only
-              // defines 1–7 lifecycle stages, so fall back to brass for
-              // the always-on money lane.
-              const accent =
-                group.stage === 0
-                  ? COLORS.brass
-                  : STAGE_ACCENTS[group.stage as 1 | 2 | 3].hex;
+              // Stage 0 = the Ship 22 "Money" group. Ship 29 adds an
+              // explicit stage-0 entry to STAGE_ACCENTS (brass-flavored),
+              // so a direct lookup now covers every group.
+              const accent = STAGE_ACCENTS[group.stage].hex;
               return (
                 <div key={group.stage} style={{ marginBottom: 6 }}>
                   <div

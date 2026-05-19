@@ -23,7 +23,9 @@ import Logomark from '@/components/Logomark';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 
-// Stage landscape mapping: stage ID → label + first workflow href
+// Stage landscape mapping: lifecycle stage ID (1–7) → label + first workflow
+// href. StageId itself is 1..7 (lifecycle-only); the Money group (stage 0)
+// has its own always-on entry point in CompassWorkflowNav.
 const STAGE_LANDSCAPE: Record<StageId, { label: string; href: string }> = {
   1: { label: 'Size up', href: '/killerapp/workflows/estimating' },
   2: { label: 'Lock it in', href: '/killerapp/workflows/contract-templates' },
