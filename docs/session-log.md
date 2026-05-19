@@ -1268,3 +1268,39 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - Time Machine + dynamic adaptive budget visibly update on autosave, project switch, stage click, navigation ✓
 - Trust badge on every code-compliance answer (from prior burn) ✓
 - Three diverse demo projects ready (Marin farmhouse / ADU Sausalito / SoMa TI) ✓
+
+
+---
+
+## 2026-05-19 evening — Cowork Session: Burn 5 (Tuesday-prep — MCP bridge + CRM Supabase + photo upload + signup + smoke test)
+**Agent:** Cowork (claude-opus-4-7)
+**Outcome:** ALL 5 SHIPPED + SMOKE-TESTED. Final HEAD: `6342f09`.
+
+**What was built:**
+- **Ship 8 — MCP stdio bridge (commit `6342f09`).** `scripts/mcp-bridge.js` (84 LOC, plain Node, no deps) speaks MCP JSON-RPC 2.0 from stdin and translates `tools/call` into BKG's `POST /api/v1/mcp` shape. Plus a setup README with 5-step Claude Desktop config recipe and a smoke-test bash harness. Verified 3/3 PASS against prod from the build agent's terminal. **Auth status:** /api/v1/mcp endpoint is currently public (mcp-auth.ts exists but isn't imported by the route; `agent_identities` table doesn't exist). The bridge works with no `BKG_API_KEY` for the demo. Post-demo: wire mcp-auth or delete the module.
+- **Ship 9 — Real Supabase write in /api/v1/crm (same commit).** Rewrote route.ts. POST inserts into `crm_contacts` with sensible defaults (`contact_type='lead'`, `stage='new'`, `temperature='warm'`, `source='manual'`, auto-generated `time_machine_handle`). GET lists from the table (filterable). PATCH updates by id. Falls back to in-memory MOCK_CONTACTS only when Supabase isn't configured. Voice-extract route compatibility verified by the build agent. No external consumers of the removed exports — verified via grep before push.
+- **Ship 10 — Real photo upload pipeline (same commit).** New `/api/v1/uploads/photo/route.ts` (140 LOC) accepts multipart form, validates image/* + 10 MB cap, uploads to the existing public `crm-photos` Supabase Storage bucket, returns public URL. `WhoIsAskingClient.tsx` (+69 LOC, 571→640) now uploads BEFORE calling voice-extract and passes the real URL. Soft-failure: if upload fails the contact is still created without the photo.
+- **Ship 11 — /signup route + next-pathname preservation (same commit).** New `/signup/page.tsx` (422 LOC) mirrors `/login/page.tsx` visual + Supabase `auth.signUp` pattern, with email-confirmation success view and "already have an account" link to /login. `AuthAndProjectIndicator.tsx` now uses `usePathname()` and passes `?next=<encoded>` to both Sign in and Sign up links. Sign up routes to /signup (was /login). `/login/page.tsx` now honors `next=` query param (fallback chain: next > redirectTo > /killerapp) so sign-in returns users where they were.
+- **Ship 12 — Claude in Chrome smoke test (verified prod).** Drove a real browser through the contracts-autofill flow on all 3 demo projects:
+  - **Marin farmhouse (55730cd3):** projectName "Modern farmhouse in Marin" + contractAmount "$905,000" — **PASS** (exact match)
+  - **ADU in Sausalito (aa11b22c):** projectName "ADU in Sausalito" + contractAmount "$250,000" — **PASS** (exact match)
+  - **Commercial TI in SoMa (bb22c33d):** projectName "Commercial TI in SoMa" + contractAmount "$1,125,000" — **PASS** (exact match)
+  - Bonus: scopeOfWork field also auto-populates from the AI summary; projectAddress fills from project location. Console clean of project-hydration errors on all 3 runs.
+
+**Key decisions:**
+- **Diff-before-push protocol worked.** Caught that the CRM agent did a whole-file rewrite (not surgical), then verified no external consumers of the removed exports before allowing the push. That's the lesson from Burn 4 (subagent stomp) operationalized.
+- **MCP bridge ships without auth for the demo.** The mcp-auth.ts module exists but isn't wired into the live route, and the agent_identities table is missing entirely. Rather than try to fix auth in the 24-hour pre-demo window, we documented the gap and ship the bridge to work without `BKG_API_KEY`. Post-demo decision: wire auth or remove the dead module.
+- **Vercel toolbar visible on prod.** The smoke-test agent noticed the Vercel toolbar overlay appearing on prod pages with an INP perf hint. Cosmetic, but distracting on a demo screen — added to Tuesday morning checklist.
+
+**Files touched (commit -> path, ALL on commit `6342f09`):**
+- `scripts/mcp-bridge.js` (NEW)
+- `scripts/mcp-bridge.README.md` (NEW)
+- `scripts/mcp-bridge.smoke.sh` (NEW)
+- `src/app/api/v1/crm/route.ts` (rewritten — Supabase-backed)
+- `src/app/api/v1/uploads/photo/route.ts` (NEW)
+- `src/app/killerapp/who-is-asking/WhoIsAskingClient.tsx` (modified — real upload integration)
+- `src/app/signup/page.tsx` (NEW)
+- `src/app/killerapp/AuthAndProjectIndicator.tsx` (modified — usePathname + next=)
+- `src/app/login/page.tsx` (modified — honor next=)
+
+**Supabase MCP discovery for this burn:** queried `crm_contacts` schema (33 columns, 5 NOT-NULL non-id), `storage.buckets` (confirmed `crm-photos` exists + public), `agent_identities` (table doesn't exist).

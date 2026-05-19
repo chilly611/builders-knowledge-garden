@@ -1021,3 +1021,64 @@ Vercel caught both via the same TS error pattern, but the rewind stomp would NOT
 - After pushing any subagent-written file, if Vercel fails fast (<60s = typecheck error), assume a stomp and bisect with canonical-restoration as step 1 — not edit-the-edit.
 
 **Generalization:** this is a specific instance of the broader "agent self-reports lie pleasantly" pattern (lesson 2026-04-22). Subagents report their intent and what they believe they did. They don't know what the parent's main is. Trust the build output, not the agent narrative.
+
+
+---
+
+### Diff-before-push protocol pays off in the first sprint — catch whole-file rewrites before they ship
+**Date:** 2026-05-19 (Burn 5 — Ships 8-11)
+**What happened:** After the Burn 4 "subagent stomp" incident (`useProjectWorkflowState.ts` + `ProjectCockpit.tsx`), the new rule was: before pushing any subagent-written file, fetch the canonical version from main via Contents API and diff against the local working tree. Burn 5 had FOUR subagent-written file modifications. Three were clean surgical edits. One (`/api/v1/crm/route.ts`) was a **WHOLE-FILE REWRITE** — different imports, different module structure, removed `export const STAGES` / `CONTACT_TYPES` / `TEMPERATURES` constants and types. The diff-before-push step caught it before push.
+
+The rewrite turned out to be SAFE — `grep -rn "from.*api/v1/crm/route" src/` returned zero matches (no external consumers of the removed exports). Push proceeded. Build went green.
+
+**Rule (operationalized):** the diff-before-push step has two layers:
+1. **Mechanical**: diff the agent's output against canonical main. If it's not a small surgical change, treat as a rewrite.
+2. **Risk-assessment for rewrites**: grep for external consumers of any removed exports. If no consumers exist, the rewrite is safe. If consumers exist, force the agent to redo as a surgical edit OR fix the consumers in the same commit.
+
+**The cost of doing this check:** ~30 seconds per file (one curl + one diff + one grep). For 4 files that's ~2 minutes. The cost of NOT doing it on Burn 4 was: 2 failed Vercel deploys, a force-push rollback, two bisect passes, plus near-shipping the Time Machine rewind stomp to investors.
+
+**Sub-lesson:** when an agent reports "rewrote the POST handler" or similar, that's not a surgical edit — it's a rewrite. The diff will show it. Don't trust the agent's framing; look at the diff.
+
+---
+
+### Use Claude in Chrome for hydration-time JS verification
+**Date:** 2026-05-19 (Ship 12)
+**What happened:** The Ship 5 trust badge and Ship 2 contracts autofill are hydration-time effects — they fire AFTER the React tree mounts and the project context resolves. WebFetch sees the SSR shell; it does not see the hydrated state. So "is the autofill paint working?" can't be verified by curl or WebFetch.
+
+**Pattern:** dispatch a subagent with Claude in Chrome MCP tools (`mcp__Claude_in_Chrome__navigate`, `get_page_text`, `find`, `form_input`, `read_console_messages`). The subagent drives a real browser, waits for hydration, reads the actual form input values, and reports the observed state. Cost: ~150k tokens + ~3 min wall-clock for a 3-project smoke test. Compared to manual click-through on a real laptop: faster, deterministic, captures console errors.
+
+**Rule:** for any feature that lives in client-side hydration (autofill, event subscribers, animations, state-derived UI), use Claude in Chrome to smoke-test on prod. WebFetch is only good for SSR / shell-level checks.
+
+**Tactical:** in the subagent's spawn prompt, include the exact URLs, expected observable values, and a tolerance (e.g., "$905,000 ± $1,000"). The agent will report exact-match where possible; tolerance handles rounding / formatting drift.
+
+---
+
+### Discover Supabase schema + storage buckets BEFORE dispatching code-writing subagents
+**Date:** 2026-05-19 (Burn 5)
+**What happened:** Before dispatching Ships 9 and 10 build agents, queried Supabase MCP for:
+1. `crm_contacts` table schema (33 columns: 5 NOT-NULL non-id, plus required `time_machine_handle` per the Stream-C spec)
+2. `storage.buckets` listing (confirmed `crm-photos` exists and is public)
+3. `agent_identities` table (turned out to NOT exist — surfaced gap for Ship 8 auth)
+
+Pasting that exact schema into each agent's spawn prompt meant the agents:
+- Used `time_machine_handle` correctly (would have missed it otherwise)
+- Knew the bucket name without guessing
+- Didn't try to write to a non-existent auth table
+
+Total query time: ~10 seconds. Saved at least one Vercel build failure.
+
+**Rule:** for any subagent that's going to write Supabase-touching code, the orchestrator does a 3-query schema discovery FIRST and inlines the result in the spawn prompt. Don't let the agent infer the schema from grep'd type definitions — they're often stale or partial.
+
+---
+
+### Hydration-time autofill is observable, but only end-to-end
+**Date:** 2026-05-19 (Ship 12 smoke)
+**What happened:** The contracts autofill `useEffect` runs once per session after the project hook hydrates. To verify it works on a project, you have to: (1) navigate to the URL with `?project=<uuid>`, (2) wait for the hook to fetch the project from Supabase, (3) wait for the autofill effect to fire, (4) click the template tile to enter step 2, (5) observe the form input values. Skip any step and you see nothing.
+
+**Observable in the Claude in Chrome run:**
+- Project name on the project context banner ("Modern farmhouse in Marin") — confirms hook hydrated
+- Form `projectName` input value matching project name — confirms autofill fired
+- Form `contractAmount` input formatted as currency — confirms midpoint calc + formatter ran
+- `scopeOfWork` populated from `project.ai_summary` — confirms the optional path also fired
+
+**Rule:** when designing a smoke test for a hydration-time effect, list the COMPLETE observable chain (project context → effect fires → form value set → UI renders) and have the agent verify each link. Reporting only "the page loaded" is not enough.

@@ -1213,3 +1213,31 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Time Machine rewind should also pulse BudgetSnapshot when a snapshot's historical totals load. Today the pulse only fires on autosave-driven changes.
 - [ ] AuthAndProjectIndicator's "Sign in / Sign up" link target preservation — currently both go to `/login?next=/killerapp`. When the user signs in from a workflow page, they should come back to that workflow, not the picker. Pass `next=` from the current pathname.
 - [ ] Add diff-before-push enforcement to any future code-writing subagent prompt: "Before reporting done, fetch the canonical version of every file you touched from main via Contents API and diff against your local version. Confirm only your intended hunks are present. If anything else is changed, flag it and stop."
+
+
+## ═══ 2026-05-19 evening (Burn 5) — Tuesday-prep ships ═══
+
+### Shipped this burn (commit `6342f09`)
+- [x] **Ship 8 — MCP stdio bridge** for Claude Desktop Act 4. `scripts/mcp-bridge.js` + README + smoke test. Verified 3/3 PASS against prod from the build agent's terminal.
+- [x] **Ship 9 — Real Supabase write in /api/v1/crm.** POST inserts into `crm_contacts` with required defaults. GET / PATCH also wired. Voice-extract compatibility preserved.
+- [x] **Ship 10 — Real photo upload pipeline.** `/api/v1/uploads/photo` POST → Supabase Storage `crm-photos` bucket → public URL. `WhoIsAskingClient.tsx` uploads before voice-extract.
+- [x] **Ship 11 — /signup route + next-pathname preservation.** New /signup page mirrors /login. AuthAndProjectIndicator preserves current pathname as `?next=`. /login honors `next=`.
+- [x] **Ship 12 — Smoke test on 3 demo projects (Claude in Chrome).** All 3 PASS with exact-match autofill values:
+  - Marin farmhouse: "Modern farmhouse in Marin" / "$905,000"
+  - ADU in Sausalito: "ADU in Sausalito" / "$250,000"
+  - Commercial TI in SoMa: "Commercial TI in SoMa" / "$1,125,000"
+  Plus scopeOfWork populates from `project.ai_summary` on all 3. Console clean.
+
+### Tuesday morning checklist (Chilly + Michael)
+- [ ] **Install MCP bridge on demo MacBook**: `sudo cp app/scripts/mcp-bridge.js /usr/local/bin/bkg-mcp && sudo chmod +x /usr/local/bin/bkg-mcp`. Edit `~/Library/Application Support/Claude/claude_desktop_config.json` with the JSON snippet in `scripts/mcp-bridge.README.md`. Quit Claude Desktop, reopen. Ask "What are the building code requirements for a single-family home in Marin County?" — should call `lookup_code` and return the seeded Marin codes.
+- [ ] **Disable Vercel toolbar overlay on prod** (smoke-test agent noticed it on every page with the INP perf hint). Either: Vercel project Settings → "Vercel Toolbar" → off, or use ⌘. to hide on the demo MacBook.
+- [ ] **Disable Next.js dev INP overlay** — same vector, distracting on stage.
+- [ ] **Cold-start dress rehearsal on the demo laptop**: clean incognito window, walk all 4 acts end-to-end with one of the 3 seeded demo projects. Note every stumble.
+- [ ] **Optional but high-leverage**: walk through `/signup` once to confirm the email-confirmation flow lands cleanly on the demo MacBook.
+
+### Burn 5 follow-ups (post-demo)
+- [ ] Wire `mcp-auth.ts` into `/api/v1/mcp/route.ts` AND create the `agent_identities` table. Until then, the MCP endpoint is publicly callable with no rate limit. Fine for demo; not fine for ongoing prod.
+- [ ] Have `voice-extract` POST `source_transcript`, `source_audio_url`, `source_photo_url`, AND `source: 'voice-intake'` to `/api/v1/crm` so the audit trail isn't empty for voice-captured leads. One-line change.
+- [ ] Add image content-sniff to `/api/v1/uploads/photo` (currently trusts the browser-supplied mimetype).
+- [ ] Add auth gate to `/api/v1/uploads/photo` (currently no `getAuthUser` check).
+- [ ] Validate `next=` redirect target in `/signup` and `/login` — currently accepts any value. Restrict to same-origin paths starting with `/` (and reject `//`).
