@@ -1132,3 +1132,25 @@ Every workflow page (`/killerapp/workflows/*`) hydrates project state via `usePr
 1. Add `is_demo_project boolean DEFAULT false` to `command_center_projects` + filter API with `.or('user_id.eq.<id>,is_demo_project.eq.true')`. Also filter demo rows OUT of users' personal project lists.
 2. Tighter: when API returns 404 because of the user_id filter (vs. truly nonexistent project), return a structured "wrong owner" error that the workflow page surfaces visibly. Stumble-but-visible > silent-failure.
 3. For workflow pages specifically: relax the filter to allow read access on any project the user has been added to (via a `project_collaborators` table). This generalizes beyond demo.
+
+## 2026-05-19 — `WorkflowPickerSearchBox` strips jurisdiction at project create time
+
+The killerapp "describe your project" search box (`src/app/killerapp/WorkflowPickerSearchBox.tsx:185`) POSTs only `{ raw_input: q }` to `/api/v1/projects`. The server then stores `jurisdiction: body.jurisdiction || null` — so every project created via the killerapp surface has `command_center_projects.jurisdiction = NULL` in the database, even though the user's natural-language input contains the location.
+
+Every downstream workflow that reads `project.jurisdiction` then receives null and hits its fallback path — usually "show the first jurisdiction in the list" or "leave the picker wherever it last was." When the user has previously clicked something else, that selection sticks, and you get the demo killer where a project described as "San Francisco" renders Santa Monica citations.
+
+**Two-layer fix pattern:**
+
+1. **Immediate (workflow-side):** in each workflow client that needs jurisdiction, scan `project.raw_input` / `project.ai_summary` / `project.name` in addition to `project.jurisdiction`. Match canonical jurisdiction names (with the ", XX" state suffix and "(statewide)" tags stripped) against word-bounded normalized signals. Score by level (city > county > state) then by canonical-name length (longer = more specific). Only override the picker when the user hasn't manually changed it.
+
+2. **Right answer (project-create-side):** parse jurisdiction at create time via an LLM call (the AI Take pass is already happening — extend its output to extract jurisdiction + project_type + estimated cost range) and write them to the row. Once that's in place every workflow gets jurisdiction for free without per-workflow autofill logic.
+
+**Rule when a "wrong default" bug shows up in a workflow:** check what's actually stored on the project row BEFORE assuming the workflow code is the bug. If the source column is empty, the workflow is correctly rendering the fallback — the bug is upstream at project creation.
+
+## 2026-05-19 — Word-boundary matching for jurisdiction inference
+
+When matching a free-text project description against the JURISDICTIONS list, naive substring matching (`signals.includes(name)`) silently corrupts results because city names overlap with common English words and other place names: "Marin" ⊂ "Marina", "Burbank" ⊂ random text very rarely but it can happen, and worst of all "California" never appears as a substring of "ca 94122" so state-level matches miss entirely.
+
+The fix (shipped in `CodeComplianceClient.tsx` 2026-05-19): normalize signal text by replacing every non-alphanumeric run with a single space, then pad with leading/trailing spaces, then match against `` ` ${canonical_name} ` `` (with spaces). This gives token-bounded substring matching without needing a regex per jurisdiction.
+
+Also: when the canonical name ends in " county" (e.g. "Marin County"), also accept the base name ("marin") as a valid match — users say "in Marin", not "in Marin County."

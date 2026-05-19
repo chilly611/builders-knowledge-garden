@@ -1359,3 +1359,35 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - `docs/session-log.md` — this entry
 
 **No code commits this session.**
+
+## 2026-05-19 evening (continued) — Chat (Claude Code, michael@laptop): P0 code-compliance jurisdiction mismatch
+**Agent:** Chat (Claude Sonnet 4.5 / Claude Code)
+**What was built:**
+- Fixed `src/app/killerapp/workflows/code-compliance/CodeComplianceClient.tsx` autofill effect (lines 71-160) to scan `project.jurisdiction` + `ai_summary` + `raw_input` + `name` instead of just `project.jurisdiction`. Scoring: city (30) > county (20) > state (10) > international (0), plus canonical-name length for tie-breaking. Word-bounded matching to avoid false hits ("marin" vs "marina"). Same override gate (only updates picker if user hasn't manually changed it).
+
+**What was found:**
+- Michael described a project as "I want to build a 400sf detached adu in my backyard, which measures 40x100, in San Francisco, ca 94122." Project name and AI Take both correctly parsed SF/Sunset District. But the Code Compliance Lookup tool rendered the jurisdiction dropdown as **Santa Monica, CA**, citations tagged `ca-santa-monica`, AND the LLM-generated body still talked about SF. Investor sees this in 3 seconds — P0 demo killer.
+- Two-layer root cause (logged separately in `tasks.todo.md`):
+  1. **Upstream:** `src/app/killerapp/WorkflowPickerSearchBox.tsx:185` POSTs only `{ raw_input: q }` to `/api/v1/projects`. The server stores `jurisdiction: body.jurisdiction || null` → null. Every killerapp-created project has a null jurisdiction column. **Not fixed today** — that's a project-creation-side fix (parse jurisdiction via LLM at create time).
+  2. **Downstream:** the CodeComplianceClient autofill effect only looked at `project.jurisdiction`. When null, it returned early, leaving the dropdown at whatever was last selected. **Fixed today** — autofill now scans all available project signals.
+
+**Key decisions:**
+- **Ship the workflow-side workaround, log the project-creation-side fix as a follow-up.** The workaround unblocks the demo TODAY by inferring jurisdiction from `raw_input` directly. The proper fix (extract jurisdiction at create time) is bigger surface and not demo-blocking with the workaround in place.
+- **Word-bounded matching** (`signals.includes(\` ${canonical} \`)`) instead of bare `.includes()` — prevents "marin" from matching "marina" or other accidental substring hits.
+- **County base-name fallback** — "Marin County" canonical also accepts "marin" as a match because users say "in Marin", not "in Marin County."
+- **Score by level + length** — when multiple jurisdictions match (e.g. "moving from Marin to San Francisco"), prefer city over county and longer canonical names. SF wins over Marin County in mixed-mention scenarios.
+
+**Issues/bugs found:**
+- The Santa Monica selection in Michael's screenshot was likely a stale manual click from earlier testing (the autofill's override-only-if-default gate means once you manually pick a wrong jurisdiction, it sticks across same-mount state). Not a code bug — but worth noting: a hard refresh (`⌘⇧R`) is required to fully reset the picker state and re-run autofill.
+- `WorkflowPickerSearchBox` skipping jurisdiction extraction will affect every workflow that needs project location context — contracts, permits, schedule, estimates, etc. Today's fix is scoped to code-compliance. Other workflows will need similar workaround patches OR the upstream fix needs to ship.
+
+**Verified live on prod:**
+- Vercel deploy `c760743` green on 3rd poll.
+- Pending Michael's hard-refresh verification in the browser to confirm dropdown lands on San Francisco for his SF ADU project.
+
+**Files touched:**
+- `src/app/killerapp/workflows/code-compliance/CodeComplianceClient.tsx` (autofill effect, +84/-23 lines)
+- `tasks.todo.md` (marked code-compliance bug `[x]` with finding; added upstream-fix follow-up; added a note about the demo-auth follow-up from earlier in the session)
+- `tasks.lessons.md` (two new lessons: project-creation-skips-jurisdiction and word-boundary-matching)
+
+**Commit:** `c760743` (2 files, +84/-23). All 12 existing happy-path tests still pass.
