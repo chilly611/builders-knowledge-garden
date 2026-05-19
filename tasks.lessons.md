@@ -1154,3 +1154,11 @@ When matching a free-text project description against the JURISDICTIONS list, na
 The fix (shipped in `CodeComplianceClient.tsx` 2026-05-19): normalize signal text by replacing every non-alphanumeric run with a single space, then pad with leading/trailing spaces, then match against `` ` ${canonical_name} ` `` (with spaces). This gives token-bounded substring matching without needing a regex per jurisdiction.
 
 Also: when the canonical name ends in " county" (e.g. "Marin County"), also accept the base name ("marin") as a valid match — users say "in Marin", not "in Marin County."
+
+## 2026-05-19 — USPS state codes need a real map, not a first-letter heuristic
+
+`JurisdictionPicker.tsx getShortLabel` previously computed two-letter state codes by taking `state.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase()`. This silently breaks on every single-word state name: California → "C", Texas → "T", Florida → "F", Ohio → "O". Only multi-word state names accidentally work ("New York" → "NY"). And on top of that, most jurisdiction `name` fields already include the state suffix (e.g., "San Francisco, CA"), so appending a state code double-tags the label even when the abbreviation is correct.
+
+**Rule:** for state/country code conversion, use a real lookup table (USPS, ISO 3166). Never derive codes from name heuristics — country and state names are full of one-word forms, multi-word forms, abbreviations, and exceptions. The 50 states + DC map is 51 entries; it's not a maintenance burden.
+
+**Second rule:** before appending a derived label suffix to a value that might already contain it, regex-check for the suffix and skip the append. Cheap defense against silent double-tagging.

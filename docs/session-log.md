@@ -1391,3 +1391,20 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - `tasks.lessons.md` (two new lessons: project-creation-skips-jurisdiction and word-boundary-matching)
 
 **Commit:** `c760743` (2 files, +84/-23). All 12 existing happy-path tests still pass.
+
+## 2026-05-19 evening (continued, 3rd ship) — Chat (Claude Code, michael@laptop): Fix JurisdictionPicker label artifact
+**Agent:** Chat (Claude Sonnet 4.5 / Claude Code)
+**What was built:**
+- Fixed `src/components/JurisdictionPicker.tsx` `getShortLabel`: replaced a broken "first letter of each word in state name" abbreviation heuristic with a proper USPS state-name → code map for all 50 states + DC. Added a regex guard so when a jurisdiction's `name` already contains a ", XX" state suffix (which is the case for nearly all city/county entries), the function returns the name as-is instead of double-tagging.
+
+**What was found:**
+- After the code-compliance jurisdiction-mismatch fix landed, Michael noticed the dropdown rendered "San Francisco, CA, C" — extra trailing ", C." The root cause was a long-standing bug in `getShortLabel`: `state.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase()` returns "C" for "California" (one word, one letter), "T" for "Texas", "O" for "Ohio", etc. Only multi-word state names ("New York" → "NY") accidentally worked, and even those double-tagged because the city `name` already includes ", XX". This bug has been live since the picker was written; no one caught it until tonight's polish pass.
+
+**Verified:**
+- Vercel deploy `a46424c` green on first poll (~25s).
+- 26 tests pass (12 happy-path + 14 picker).
+
+**Files touched:**
+- `src/components/JurisdictionPicker.tsx` (+30/-3)
+
+**Commit:** `a46424c`
