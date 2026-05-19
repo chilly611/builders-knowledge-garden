@@ -226,22 +226,27 @@ class ContractRenderer {
   }
 
   private renderParagraph(text: string): void {
-    // Whole-paragraph bold: when the entire paragraph is wrapped in **,
-    // preserve the emphasis (this is how headings-like phrases such as
-    // "**⚠ DRAFT NOTICE — READ BEFORE SIGNING**" are authored). Inline
-    // bold inside a longer paragraph is dropped — the templates rarely
-    // use it for legal-meaning content, and reliable wrap is more
-    // important than preserving partial emphasis.
+    // Three rendering modes for whole-paragraph emphasis (lowest priority first):
+    //   plain  — body text, left-aligned
+    //   **X**  — bold, left-aligned (preserved for short heading-like phrases)
+    //   ***X***— bold + CENTERED (used for the DRAFT NOTICE banner)
+    // Inline emphasis *inside* a longer paragraph is dropped — the templates
+    // rarely use it for legal-meaning content, and reliable wrap matters more.
     const trimmed = text.trim();
-    const wholeBold = /^\*\*[\s\S]*\*\*$/.test(trimmed);
+    const wholeCenterBold = /^\*\*\*[\s\S]*\*\*\*$/.test(trimmed);
+    const wholeBold = !wholeCenterBold && /^\*\*[\s\S]*\*\*$/.test(trimmed);
     const cleaned = sanitizeForPdf(stripInlineMarkers(text));
     if (!cleaned.trim()) return;
 
-    this.doc.setFont('helvetica', wholeBold ? 'bold' : 'normal');
+    this.doc.setFont('helvetica', (wholeCenterBold || wholeBold) ? 'bold' : 'normal');
     this.doc.setFontSize(TYPE.body);
     this.doc.setTextColor(...rgb(COLOR.text));
 
-    this.renderWrappedLines(cleaned, PAGE.marginLeft, 0);
+    if (wholeCenterBold) {
+      this.renderWrappedLines(cleaned, this.pageWidth / 2, 0, { align: 'center' });
+    } else {
+      this.renderWrappedLines(cleaned, PAGE.marginLeft, 0);
+    }
     this.y += 2.5;
   }
 
@@ -263,21 +268,86 @@ class ContractRenderer {
   }
 
   /**
-   * Wrap `text` to fit within (contentWidth - indent) using jsPDF's
-   * splitTextToSize (known-correct width math, unlike the previous
-   * hand-rolled inline renderer). Renders each wrapped line starting at
-   * `x` with the active font/style. Advances `this.y` and handles page
-   * breaks via ensureSpace.
+   * Wrap `text` to fit within (contentWidth - indent) and render each line at
+   * x/this.y. Uses jsPDF's splitTextToSize for the primary wrap, then runs a
+   * hard character-based safety pass that re-splits any line whose measured
+   * width still exceeds availableWidth (defense against font-metric edge
+   * cases that have repeatedly bitten this renderer).
+   *
+   * `align: 'center'` centers each wrapped line around `x`; default is
+   * left-aligned starting at `x`.
    */
-  private renderWrappedLines(text: string, x: number, indent: number): void {
+  private renderWrappedLines(
+    text: string,
+    x: number,
+    indent: number,
+    opts: { align?: 'left' | 'center' } = {},
+  ): void {
     const availableWidth = this.contentWidth - indent;
     const lineHeight = 5;
-    const lines = this.doc.splitTextToSize(text, availableWidth);
+
+    // Primary wrap.
+    const primary = this.doc.splitTextToSize(text, availableWidth) as string[];
+
+    // Safety pass: split any line that still measures wider than
+    // availableWidth. Walks word-by-word; if a single word is wider than the
+    // line, falls back to a char-by-char split. Guarantees no rendered line
+    // overflows the margin even if splitTextToSize's metrics are off.
+    const lines: string[] = [];
+    for (const ln of primary) {
+      if (this.doc.getTextWidth(ln) <= availableWidth) {
+        lines.push(ln);
+        continue;
+      }
+      lines.push(...this.hardWrap(ln, availableWidth));
+    }
+
     for (const ln of lines) {
       this.ensureSpace(lineHeight);
-      this.doc.text(ln, x, this.y + 4);
+      this.doc.text(ln, x, this.y + 4, opts.align ? { align: opts.align } : undefined);
       this.y += lineHeight;
     }
+  }
+
+  /** Manual word- then char-level wrap. Last-resort safety. */
+  private hardWrap(text: string, maxWidth: number): string[] {
+    const out: string[] = [];
+    const words = text.split(/(\s+)/);
+    let current = '';
+    const flush = () => {
+      if (current.length > 0) {
+        out.push(current);
+        current = '';
+      }
+    };
+    for (const w of words) {
+      if (w === '') continue;
+      const candidate = current + w;
+      if (this.doc.getTextWidth(candidate) <= maxWidth) {
+        current = candidate;
+        continue;
+      }
+      // Current word would overflow.
+      flush();
+      // If the word itself is wider than the line, split char-by-char.
+      if (this.doc.getTextWidth(w) > maxWidth) {
+        let chunk = '';
+        for (const ch of w) {
+          const next = chunk + ch;
+          if (this.doc.getTextWidth(next) > maxWidth && chunk.length > 0) {
+            out.push(chunk);
+            chunk = ch;
+          } else {
+            chunk = next;
+          }
+        }
+        if (chunk.length > 0) current = chunk;
+      } else {
+        current = w.trimStart();
+      }
+    }
+    flush();
+    return out;
   }
 
   private renderHr(): void {
