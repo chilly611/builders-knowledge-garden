@@ -408,6 +408,29 @@ export function useProjectWorkflowState(
     [debounceMs, flush]
   );
 
+  // Ship 32: save-and-go listener. CompassWorkflowNav (and any other nav
+  // surface) dispatches `bkg:nav:flush-and-go` immediately before it would
+  // call router.push. We flush the pending state, then ack so the nav can
+  // navigate AFTER the PATCH is durable. If no consumer is mounted, the
+  // nav falls back to its own 400ms timeout — see CompassWorkflowNav.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = async (e: Event) => {
+      const ce = e as CustomEvent<{ href?: string | null }>;
+      try {
+        await flush();
+      } finally {
+        window.dispatchEvent(
+          new CustomEvent('bkg:nav:flush-ack', {
+            detail: { href: ce.detail?.href ?? null },
+          })
+        );
+      }
+    };
+    window.addEventListener('bkg:nav:flush-and-go', handler);
+    return () => window.removeEventListener('bkg:nav:flush-and-go', handler);
+  }, [flush]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -583,6 +606,26 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
     },
     [debounceMs, flush]
   );
+
+  // Ship 32: save-and-go listener (blob variant). Same contract as the
+  // sibling hook above — await flush(), then ack with the requested href.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = async (e: Event) => {
+      const ce = e as CustomEvent<{ href?: string | null }>;
+      try {
+        await flush();
+      } finally {
+        window.dispatchEvent(
+          new CustomEvent('bkg:nav:flush-ack', {
+            detail: { href: ce.detail?.href ?? null },
+          })
+        );
+      }
+    };
+    window.addEventListener('bkg:nav:flush-and-go', handler);
+    return () => window.removeEventListener('bkg:nav:flush-and-go', handler);
+  }, [flush]);
 
   useEffect(() => {
     return () => {

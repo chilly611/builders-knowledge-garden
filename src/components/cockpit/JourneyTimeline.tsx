@@ -90,6 +90,29 @@ const NAVY = '#1B3B5E';
 const TRACE = '#F4F0E6';
 const FADED = '#C9C3B3';
 
+/**
+ * Ship 30 — compact-mode 1-3 letter abbreviations for the < 640px pill strip.
+ * Keys match StageId (1..7) in STAGE_REGISTRY / LIFECYCLE_STAGES.
+ *   1 Size up    → SU
+ *   2 Lock it in → LK
+ *   3 Plan it out→ PL
+ *   4 Build      → BD
+ *   5 Adapt      → AD
+ *   6 Collect    → CO
+ *   7 Reflect    → RF
+ * The full stage name + status sentence is rendered above the strip so these
+ * 2-letter tokens never have to carry meaning on their own.
+ */
+const STAGE_ABBREV: Record<number, string> = {
+  1: 'SU',
+  2: 'LK',
+  3: 'PL',
+  4: 'BD',
+  5: 'AD',
+  6: 'CO',
+  7: 'RF',
+};
+
 // ─── Per-stage state derivation ──────────────────────────────────────────
 
 /**
@@ -147,6 +170,12 @@ export default function JourneyTimeline({
   onReturnToLive,
 }: JourneyTimelineProps) {
   const [isMobile, setIsMobile] = useState(false);
+  // Ship 30: lazy initializer ensures we read the compact breakpoint on
+  // first paint without scheduling a setState inside the effect body.
+  const [isCompact, setIsCompact] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 640px)').matches;
+  });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [hoveredStageId, setHoveredStageId] = useState<StageId | null>(null);
   const [previewStageId, setPreviewStageId] = useState<StageId | null>(null);
@@ -161,6 +190,14 @@ export default function JourneyTimeline({
     const check = () => setIsMobile(window.innerWidth < 640);
     check();
     window.addEventListener('resize', check);
+    // Ship 30: compact stacked treatment uses matchMedia for the < 640px
+    // breakpoint so we react instantly to viewport changes (orientation,
+    // devtools resize) without waiting on the throttled resize listener.
+    // Initial value is read via the lazy useState initializer above; here
+    // we only subscribe to subsequent changes.
+    const compactMql = window.matchMedia('(max-width: 640px)');
+    const onCompact = (e: MediaQueryListEvent) => setIsCompact(e.matches);
+    compactMql.addEventListener('change', onCompact);
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(motion.matches);
     const onMotion = (e: MediaQueryListEvent) =>
@@ -168,6 +205,7 @@ export default function JourneyTimeline({
     motion.addEventListener('change', onMotion);
     return () => {
       window.removeEventListener('resize', check);
+      compactMql.removeEventListener('change', onCompact);
       motion.removeEventListener('change', onMotion);
     };
   }, []);
@@ -539,6 +577,455 @@ export default function JourneyTimeline({
     onScrub?.(null);
     onReturnToLive?.();
   };
+
+  // ─── Ship 30 — Compact stacked treatment (< 640px) ─────────────────────
+  // Replaces the previous "horizontal scrolling stage segments" mobile
+  // treatment with a single-row pill strip + dedicated status sentence +
+  // native <input type="range"> scrubber. The desktop branch below is
+  // byte-identical to Ship 24 — we early-return for compact only.
+  if (isCompact) {
+    // The slider models the same [0..1] handle fraction as the desktop
+    // rail. We expose it as integer steps so ArrowLeft / ArrowRight on the
+    // native range input land on the same snapshot/future buckets as the
+    // desktop keyboard handler.
+    const unvisitedStages = STAGE_REGISTRY.filter(
+      (s) => stageStates[s.id]?.base === 'unvisited'
+    );
+    // Stop count = past snapshots + 1 "now" + each unvisited future stage.
+    const snapStops = orderedSnapshots.length; // indices 0..snapStops-1 = past
+    const nowIndex = snapStops; // single "now" stop
+    const futureCount = unvisitedStages.length;
+    const totalStops = nowIndex + 1 + futureCount; // at least 1
+    const maxIndex = Math.max(0, totalStops - 1);
+
+    // Current slider value derived from the same source of truth used by
+    // the desktop rail (previewStageId / currentSnapshotId).
+    let sliderValue = nowIndex;
+    if (previewStageId !== null) {
+      const i = unvisitedStages.findIndex((s) => s.id === previewStageId);
+      if (i >= 0) sliderValue = nowIndex + 1 + i;
+    } else if (currentSnapshotId !== null) {
+      const i = orderedSnapshots.findIndex(
+        (s) => s.snapshotId === currentSnapshotId
+      );
+      if (i >= 0) sliderValue = i;
+    }
+
+    const applySliderValue = (raw: number) => {
+      const v = Math.max(0, Math.min(maxIndex, Math.round(raw)));
+      if (v < nowIndex) {
+        // past snapshot
+        const snap = orderedSnapshots[v];
+        if (snap) {
+          setPreviewStageId(null);
+          onPreviewFuture?.(null);
+          onScrub?.(snap.snapshotId);
+        }
+      } else if (v === nowIndex) {
+        setPreviewStageId(null);
+        onPreviewFuture?.(null);
+        onScrub?.(null);
+      } else {
+        const stage = unvisitedStages[v - nowIndex - 1];
+        if (stage) {
+          setPreviewStageId(stage.id);
+          onPreviewFuture?.(stage.id);
+        }
+      }
+    };
+
+    // Compact rail ArrowLeft/Right mirrors the desktop handleScrubKey
+    // semantics (step by one stop, wrap to live at end). The native input
+    // already handles arrow keys for value change, so this is a belt-and-
+    // suspenders preventDefault for parity with the desktop contract.
+    const onSliderKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        applySliderValue(sliderValue - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        applySliderValue(sliderValue + 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        applySliderValue(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        applySliderValue(nowIndex);
+      }
+    };
+
+    // Status sentence above the strip — derived from the active stage's
+    // StageProgress so the investor demo reads naturally on mobile.
+    const activeMeta =
+      activeStageId != null
+        ? LIFECYCLE_STAGES.find((s) => s.id === activeStageId)
+        : null;
+    const activeProgress =
+      activeStageId != null
+        ? stages.find((s) => s.stageId === activeStageId)
+        : null;
+    const activeBase =
+      activeStageId != null ? stageStates[activeStageId]?.base : null;
+    let statusSentence = 'No active stage';
+    if (activeMeta) {
+      if (activeProgress && activeProgress.totalCount > 0) {
+        const verb =
+          activeBase === 'completed'
+            ? 'workflows done'
+            : activeBase === 'visited'
+            ? 'workflows done'
+            : 'workflows done';
+        statusSentence = `${activeMeta.name} · ${activeProgress.doneCount} of ${activeProgress.totalCount} ${verb}`;
+      } else {
+        statusSentence = `${activeMeta.name} · not yet started`;
+      }
+    }
+
+    // Future-zone preview banner — shown when scrubbed right of "Now".
+    const futurePreviewStage =
+      previewStageId != null
+        ? LIFECYCLE_STAGES.find((s) => s.id === previewStageId)
+        : null;
+
+    return (
+      <div
+        data-zone="journey-timeline"
+        data-compact="true"
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          padding: '2px 4px',
+          position: 'relative',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
+        <style>{`
+          @keyframes bkg-stage-pulse {
+            0%, 100% { box-shadow: 0 0 0 2px ${TRACE}, 0 0 0 4px ${BRASS}; }
+            50%      { box-shadow: 0 0 0 2px ${TRACE}, 0 0 0 6px ${BRASS}; }
+          }
+        `}</style>
+
+        {/* Status sentence — full stage name (never abbreviated). */}
+        <div
+          data-compact-status
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: NAVY,
+            letterSpacing: 0.2,
+            minHeight: 16,
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+          aria-live="polite"
+        >
+          <span
+            aria-hidden="true"
+            style={{ color: BRASS, fontWeight: 700 }}
+          >
+            ▸
+          </span>
+          <span
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {statusSentence}
+          </span>
+        </div>
+
+        {/* Future-zone preview banner (shown when scrubbed right of "Now"). */}
+        {futurePreviewStage && (
+          <div
+            data-compact-future-preview
+            aria-live="polite"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 11,
+              fontStyle: 'italic',
+              color: BRASS,
+              opacity: 0.85,
+              minHeight: 14,
+            }}
+          >
+            <span aria-hidden="true">›</span>
+            <span>
+              Coming next: {futurePreviewStage.name}
+            </span>
+          </div>
+        )}
+
+        {/* Pill strip — single horizontal row, no overflow. */}
+        <div
+          role="group"
+          aria-label="Project lifecycle stages"
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
+            overflowX: 'hidden',
+            gap: 3,
+            width: '100%',
+          }}
+        >
+          {LIFECYCLE_STAGES.map((stage) => {
+            const sid = stage.id as StageId;
+            const accent = STAGE_ACCENTS[sid];
+            const accentHex = accent.hex;
+            const meta = stageStates[sid];
+            const base = meta?.base ?? 'unvisited';
+            const isActive = meta?.isActive ?? false;
+            const isFuturePreview =
+              previewStageId === sid && base === 'unvisited';
+            const abbrev = STAGE_ABBREV[sid] ?? stage.name.slice(0, 2);
+
+            // Pill visual treatment — same semantics as desktop, scaled down.
+            let borderWidth = 1;
+            let borderStyle: 'solid' | 'dashed' = 'solid';
+            let backgroundColor: string = 'transparent';
+            let labelOpacity = 0.6;
+            let labelWeight: 400 | 500 | 600 | 700 = 500;
+            let labelStyle: 'normal' | 'italic' = 'normal';
+            if (base === 'completed') {
+              borderWidth = 2;
+              backgroundColor = accentHex;
+              labelOpacity = 1;
+              labelWeight = 700;
+            } else if (base === 'visited') {
+              borderWidth = 2;
+              backgroundColor = `${accentHex}4D`;
+              labelOpacity = 1;
+              labelWeight = 600;
+            }
+            if (isFuturePreview) {
+              borderStyle = 'dashed';
+              labelOpacity = 0.5;
+              labelStyle = 'italic';
+              backgroundColor = 'transparent';
+            }
+
+            // Tiny dot indicator: filled (completed) / outlined (visited) /
+            // dashed (unvisited or future).
+            const dotInner =
+              base === 'completed'
+                ? { backgroundColor: BRASS, border: 'none' }
+                : base === 'visited'
+                ? {
+                    backgroundColor: 'transparent',
+                    border: `1px solid ${accentHex}`,
+                  }
+                : {
+                    backgroundColor: 'transparent',
+                    border: `1px dashed ${accentHex}`,
+                  };
+
+            const ringStyle = isActive
+              ? {
+                  boxShadow: `0 0 0 1.5px ${TRACE}, 0 0 0 3px ${BRASS}`,
+                  animation:
+                    !prefersReducedMotion && !isScrubbedOffLive
+                      ? 'bkg-stage-pulse 1.4s ease-in-out infinite'
+                      : 'none',
+                }
+              : {};
+
+            const a11yState =
+              base === 'completed'
+                ? 'Completed'
+                : base === 'visited'
+                ? 'In progress'
+                : isFuturePreview
+                ? 'Coming next'
+                : 'Not yet visited';
+
+            return (
+              <button
+                key={sid}
+                type="button"
+                onClick={() => onStageClick?.(sid)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onStageClick?.(sid);
+                  }
+                }}
+                aria-label={`Stage ${sid}: ${stage.name}. ${a11yState}.`}
+                aria-current={isActive ? 'step' : undefined}
+                aria-pressed={isActive}
+                data-stage-id={sid}
+                data-stage-state={isFuturePreview ? 'future' : base}
+                data-stage-active={isActive ? 'true' : 'false'}
+                title={`${stage.name} — ${a11yState}`}
+                style={{
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  height: 32,
+                  padding: '2px 4px',
+                  margin: 0,
+                  border: `${borderWidth}px ${borderStyle} ${accentHex}`,
+                  borderRadius: 999,
+                  backgroundColor,
+                  color: base === 'completed' ? TRACE : NAVY,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 3,
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 10,
+                  fontStyle: labelStyle,
+                  fontWeight: labelWeight,
+                  letterSpacing: 0.4,
+                  opacity: labelOpacity,
+                  transition:
+                    'opacity 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease',
+                  position: 'relative',
+                  ...ringStyle,
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    flex: '0 0 auto',
+                    ...dotInner,
+                  }}
+                />
+                <span
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {abbrev}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Slim native range slider — same min/max/step contract + ArrowLeft/
+            Right keyboard nav as the desktop scrubber rail. */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          <input
+            type="range"
+            min={0}
+            max={maxIndex}
+            step={1}
+            value={sliderValue}
+            onChange={(e) => applySliderValue(Number(e.currentTarget.value))}
+            onKeyDown={onSliderKeyDown}
+            aria-label="Time machine scrubber. Left arrow rewinds, right arrow advances or previews future, Escape returns to live."
+            aria-valuemin={0}
+            aria-valuemax={maxIndex}
+            aria-valuenow={sliderValue}
+            aria-valuetext={
+              sliderValue < nowIndex
+                ? `Snapshot ${sliderValue + 1} of ${snapStops}: ${
+                    orderedSnapshots[sliderValue]?.label ?? ''
+                  }`
+                : sliderValue === nowIndex
+                ? 'Now (live)'
+                : `Coming next: ${
+                    unvisitedStages[sliderValue - nowIndex - 1]
+                      ? LIFECYCLE_STAGES.find(
+                          (s) =>
+                            s.id ===
+                            unvisitedStages[sliderValue - nowIndex - 1].id
+                        )?.name ?? ''
+                      : ''
+                  }`
+            }
+            style={{
+              width: '100%',
+              height: 18,
+              accentColor: BRASS,
+              cursor: maxIndex > 0 ? 'pointer' : 'default',
+              margin: 0,
+            }}
+          />
+          {/* Zone labels under the slider — match desktop semantics. */}
+          <div
+            aria-hidden="true"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 9,
+              color: BRASS,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              opacity: 0.7,
+              marginTop: 2,
+            }}
+          >
+            <span>Past</span>
+            <span>Now</span>
+            <span style={{ fontStyle: 'italic' }}>Coming next</span>
+          </div>
+        </div>
+
+        {/* Return-to-live pill — same content + a11y as desktop. */}
+        {isScrubbedOffLive && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: 2,
+            }}
+          >
+            <button
+              type="button"
+              onClick={returnToLive}
+              aria-label="Return to live view"
+              style={{
+                padding: '4px 12px',
+                borderRadius: 999,
+                border: `1px solid ${BRASS}`,
+                backgroundColor: NAVY,
+                color: TRACE,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: 0.4,
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(27,58,92,0.25)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  backgroundColor: BRASS,
+                }}
+              />
+              Return to live
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // ─── Render ────────────────────────────────────────────────────────────
 

@@ -129,6 +129,113 @@ function parseEstimateBlock(text: string): EstimateBlock | null {
   }
 }
 
+// Ship 34 — parser fallbacks. If the specialist prompt drifts and the
+// fenced <estimate>...</estimate> JSON block isn't there, we still want
+// the "Push to budget" button to work. Two fallbacks scan the same
+// transcript text the primary parser sees.
+
+/**
+ * Dollar-amount tokenizer used by both fallback parsers. Handles
+ * `$48,500`, `$48.5k`, `48000`, `48k` — same `k` detect-and-multiply
+ * logic as parseRoughTotal so 48.2k → 48200, not 48200000.
+ */
+function parseMoneyToken(raw: string): number | null {
+  if (!raw) return null;
+  const cleaned = raw.trim().replace(/[$,]/g, '');
+  const m = cleaned.match(/^(\d+(?:\.\d+)?)(k?)$/i);
+  if (!m) return null;
+  const numeric = parseFloat(m[1]);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  return /k/i.test(m[2]) ? numeric * 1000 : numeric;
+}
+
+/**
+ * Ship 34 fallback #1 — markdown table parser. Looks for a `|`-delimited
+ * table with at least 3 columns (Description / Low / High). Skips the
+ * header row, the `---` separator row, and TOTAL rows. Returns [] if no
+ * usable table is found.
+ *
+ * Tolerant of leading/trailing whitespace and tables that don't start at
+ * column 0. We don't try to find a *specific* header — any 3+ column row
+ * where the 2nd and 3rd cells parse as money counts.
+ */
+function parseEstimateMarkdownTable(text: string): EstimateLine[] {
+  if (!text) return [];
+  const lines = text.split('\n');
+  const out: EstimateLine[] = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line.startsWith('|') || !line.endsWith('|')) continue;
+    // Strip outer pipes, split into cells, trim.
+    const cells = line.slice(1, -1).split('|').map((c) => c.trim());
+    if (cells.length < 3) continue;
+    // Separator row (e.g. `|---|---|---|`).
+    if (cells.every((c) => /^:?-+:?$/.test(c))) continue;
+    const label = cells[0];
+    // Skip header / total / empty-label rows.
+    if (!label) continue;
+    if (/^(division|description|category|item|line)$/i.test(label)) continue;
+    if (/^total/i.test(label)) continue;
+    const low = parseMoneyToken(cells[1]);
+    const high = parseMoneyToken(cells[2]);
+    if (low === null || high === null) continue;
+    out.push({ division: label, low, high });
+  }
+  return out;
+}
+
+/**
+ * Ship 34 fallback #2 — prose parser. Regex-extracts patterns like
+ *   "Plumbing: $4,500–$6,500"
+ *   "Electrical: $8k - $12k"
+ *   "Site prep ranges $15k to $20k"
+ * one match per non-empty line. Conservative: requires both a low and a
+ * high value, and a label before the colon / "ranges" keyword.
+ */
+function parseEstimateProse(text: string): EstimateLine[] {
+  if (!text) return [];
+  const out: EstimateLine[] = [];
+  // Accept en-dash (–), em-dash (—), hyphen-minus (-), and "to" between
+  // the two money tokens.
+  const colonRe = /^([^:\n][^:\n]{0,80}?):\s*\$?([\d.,]+k?)\s*(?:[–—\-]|to)\s*\$?([\d.,]+k?)\b/i;
+  const rangesRe = /^([^\n]{1,80}?)\s+ranges?\s+\$?([\d.,]+k?)\s*(?:[–—\-]|to)\s*\$?([\d.,]+k?)\b/i;
+  const seen = new Set<string>();
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    // Don't double-eat markdown-table rows the table parser already handled.
+    if (line.startsWith('|')) continue;
+    const m = line.match(colonRe) ?? line.match(rangesRe);
+    if (!m) continue;
+    const label = m[1].trim().replace(/^[*\-•]+\s*/, '');
+    if (!label || /^total/i.test(label)) continue;
+    const low = parseMoneyToken(m[2]);
+    const high = parseMoneyToken(m[3]);
+    if (low === null || high === null) continue;
+    const key = `${label.toLowerCase()}::${low}::${high}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ division: label, low, high });
+  }
+  return out;
+}
+
+/**
+ * Ship 33 — stable ID for an estimate line. Format:
+ *   est-{projectId}-{division-slug}
+ * where division-slug is lowercase, non-alphanumerics collapsed to `-`,
+ * leading/trailing dashes stripped, capped at 40 chars. Lets re-runs
+ * REPLACE the prior push for the same division instead of duplicating.
+ */
+function stableEstimateLineId(projectId: string | null | undefined, division: string): string {
+  const slug = division
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40);
+  return `est-${projectId ?? 'anonymous'}-${slug}`;
+}
+
 export default function EstimatingClient({ workflow, stages }: Props) {
   // Project Spine v1: hydrate + autosave the per-workflow JSONB state.
   // Hook redirects to /killerapp if no ?project=<id>.
@@ -160,7 +267,10 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   const [pushReceipt, setPushReceipt] = useState<
     | { kind: 'idle' }
     | { kind: 'pushing' }
-    | { kind: 'pushed'; added: number }
+    // Ship 33: distinguish "refreshed" (replaced previously pushed AI
+    // lines) from "added" (all-new). `replaced` is the count of prior
+    // AI-pushed lines that were removed during merge.
+    | { kind: 'pushed'; added: number; replaced: number }
     | { kind: 'error'; message: string }
   >({ kind: 'idle' });
 
@@ -285,6 +395,31 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     : lastSavedAt
       ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
       : null;
+
+  // Ship 34 — derive the latest assistant-side transcript text for s2-6
+  // so the fallback parsers can scan it when the <estimate> JSON block
+  // is missing. Mirrors the value/input precedence in the seed effect.
+  const s26Text = useMemo(() => {
+    const saved = hydratedPayloads['s2-6'];
+    if (!saved || typeof saved !== 'object') return '';
+    const value = (saved as { value?: unknown }).value;
+    const input = (saved as { input?: unknown }).input;
+    if (typeof value === 'string' && value.trim()) return value;
+    if (typeof input === 'string') return input;
+    return '';
+  }, [hydratedPayloads]);
+
+  // Ship 34 — combined "effective lines" for the Push-to-budget button.
+  // Priority: primary csiEstimate.lines → markdown table → prose. The
+  // button is enabled when ANY of these returns >= 1 line.
+  const effectiveLines = useMemo<EstimateLine[]>(() => {
+    if (csiEstimate && csiEstimate.lines.length > 0) return csiEstimate.lines;
+    const table = parseEstimateMarkdownTable(s26Text);
+    if (table.length > 0) return table;
+    const prose = parseEstimateProse(s26Text);
+    if (prose.length > 0) return prose;
+    return [];
+  }, [csiEstimate, s26Text]);
 
   // Pre-fill text/voice/analysis steps with raw_input AND parse out
   // location + sqft for location_input/number_input steps. User
@@ -488,116 +623,132 @@ export default function EstimatingClient({ workflow, stages }: Props) {
               </div>
             )}
           </div>
-
-          {/* Ship 28 — push this AI estimate into the dedicated /budget page. */}
-          <div style={{ marginTop: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3], flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => {
-                if (!csiEstimate || csiEstimate.lines.length === 0) return;
-                setPushReceipt({ kind: 'pushing' });
+        </div>
+      )}
+      {/* Ship 28 + 33 + 34 — push this AI estimate into the dedicated /budget page.
+          Ship 33: dedup by stable ID (est-{projectId}-{division-slug}) so re-runs
+          REPLACE prior AI-pushed lines instead of duplicating with a shifted midpoint.
+          Ship 34: button is enabled whenever effectiveLines has rows (primary
+          csiEstimate, markdown-table fallback, or prose fallback). Sibling of the
+          CSI table block so the button still renders when the AI prompt drifts
+          and the <estimate> JSON block is missing. */}
+      {effectiveLines.length > 0 && (
+        <div style={{ marginTop: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3], flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (effectiveLines.length === 0) return;
+              setPushReceipt({ kind: 'pushing' });
+              try {
+                // Heuristic category mapping (case-insensitive).
+                const categorize = (label: string): string => {
+                  const t = label.toLowerCase();
+                  if (/plumb|electric|hvac|mechanical|roof|drywall|insul|tile|stucco|paint|landscap|solar|fire/.test(t)) return 'subcontractors';
+                  if (/labor|crew|foreman|wages|payroll/.test(t)) return 'labor';
+                  if (/permit|plan check|fee|impact|inspect/.test(t)) return 'permits';
+                  if (/profit|overhead|o&p|markup|margin/.test(t)) return 'profit';
+                  if (/equipment|rental|scaffold|lift|generator|crane|excavat/.test(t)) return 'equipment';
+                  if (/insurance|bond|liability|workers comp/.test(t)) return 'insurance';
+                  if (/admin|office|software|phone|mileage/.test(t)) return 'admin';
+                  if (/contingency|reserve|buffer/.test(t)) return 'contingency';
+                  if (/concrete|gravel|rebar|sand|aggregate/.test(t)) return 'raw-supplies';
+                  return 'materials';
+                };
+                const now = new Date().toISOString();
+                // Ship 33 — stable IDs so re-runs replace, not duplicate.
+                const newLines = effectiveLines.map((line) => ({
+                  id: stableEstimateLineId(projectId, line.division),
+                  category: categorize(line.division),
+                  description: line.division,
+                  amount: Math.round((line.low + line.high) / 2),
+                  state: 'estimated' as const,
+                  notes: `AI estimate: $${line.low.toLocaleString()}–$${line.high.toLocaleString()} (from /workflows/estimating)`,
+                  createdAt: now,
+                  updatedAt: now,
+                }));
+                // Ship 33 — dedup by stable ID. Load existing lines, drop any
+                // previously-AI-pushed rows whose ID matches an incoming new ID
+                // (this is the "replace prior push" path), then append.
+                const lsKey = `bkg-budget-${projectId ?? 'anonymous'}`;
+                let existing: Array<{ id?: string; description?: string; amount?: number }> = [];
                 try {
-                  // Heuristic category mapping (case-insensitive).
-                  const categorize = (label: string): string => {
-                    const t = label.toLowerCase();
-                    if (/plumb|electric|hvac|mechanical|roof|drywall|insul|tile|stucco|paint|landscap|solar|fire/.test(t)) return 'subcontractors';
-                    if (/labor|crew|foreman|wages|payroll/.test(t)) return 'labor';
-                    if (/permit|plan check|fee|impact|inspect/.test(t)) return 'permits';
-                    if (/profit|overhead|o&p|markup|margin/.test(t)) return 'profit';
-                    if (/equipment|rental|scaffold|lift|generator|crane|excavat/.test(t)) return 'equipment';
-                    if (/insurance|bond|liability|workers comp/.test(t)) return 'insurance';
-                    if (/admin|office|software|phone|mileage/.test(t)) return 'admin';
-                    if (/contingency|reserve|buffer/.test(t)) return 'contingency';
-                    if (/concrete|gravel|rebar|sand|aggregate/.test(t)) return 'raw-supplies';
-                    return 'materials';
-                  };
-                  const now = new Date().toISOString();
-                  const newLines = csiEstimate.lines.map((line) => ({
-                    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
-                      ? crypto.randomUUID()
-                      : `est-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                    category: categorize(line.division),
-                    description: line.division,
-                    amount: Math.round((line.low + line.high) / 2),
-                    state: 'estimated' as const,
-                    notes: `AI estimate: $${line.low.toLocaleString()}–$${line.high.toLocaleString()} (from /workflows/estimating)`,
-                    createdAt: now,
-                    updatedAt: now,
-                  }));
-                  // Dedup by description+amount against existing localStorage lines.
-                  const lsKey = `bkg-budget-${projectId ?? 'anonymous'}`;
-                  let existing: Array<{ description?: string; amount?: number }> = [];
-                  try {
-                    const raw = window.localStorage.getItem(lsKey);
-                    if (raw) {
-                      const parsed = JSON.parse(raw);
-                      if (Array.isArray(parsed?.lines)) existing = parsed.lines;
-                    }
-                  } catch { /* localStorage corrupt — start fresh */ }
-                  const sig = (d: string | undefined, a: number | undefined) =>
-                    `${(d ?? '').trim().toLowerCase()}::${Math.round(a ?? 0)}`;
-                  const existingSigs = new Set(existing.map((l) => sig(l.description, l.amount)));
-                  const fresh = newLines.filter((l) => !existingSigs.has(sig(l.description, l.amount)));
-                  const merged = [...existing, ...fresh];
-                  try {
-                    window.localStorage.setItem(lsKey, JSON.stringify({ lines: merged }));
-                  } catch { /* quota / disabled — fall through to API */ }
-                  // Fire-and-forget DB sync (Ship 25's project_budgets column).
-                  if (projectId) {
-                    void fetch('/api/v1/projects', {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ id: projectId, project_budgets: { lines: merged } }),
-                    }).catch(() => { /* offline / no-auth — localStorage is the source of truth */ });
+                  const raw = window.localStorage.getItem(lsKey);
+                  if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed?.lines)) existing = parsed.lines;
                   }
-                  setPushReceipt({ kind: 'pushed', added: fresh.length });
-                } catch (err) {
-                  setPushReceipt({
-                    kind: 'error',
-                    message: err instanceof Error ? err.message : 'Push failed',
-                  });
+                } catch { /* localStorage corrupt — start fresh */ }
+                const incomingIds = new Set(newLines.map((l) => l.id));
+                const aiPrefix = `est-${projectId ?? 'anonymous'}-`;
+                // A row is "previously AI-pushed" if its id starts with the
+                // est-{projectId}- prefix. We only drop those that match an
+                // incoming new ID — orphaned prior pushes (e.g. division
+                // renamed away) stay so the user can manually clean them up.
+                const replaced = existing.filter(
+                  (l) => typeof l.id === 'string' && l.id.startsWith(aiPrefix) && incomingIds.has(l.id)
+                ).length;
+                const kept = existing.filter(
+                  (l) => !(typeof l.id === 'string' && l.id.startsWith(aiPrefix) && incomingIds.has(l.id))
+                );
+                const merged = [...kept, ...newLines];
+                try {
+                  window.localStorage.setItem(lsKey, JSON.stringify({ lines: merged }));
+                } catch { /* quota / disabled — fall through to API */ }
+                // Fire-and-forget DB sync (Ship 25's project_budgets column).
+                if (projectId) {
+                  void fetch('/api/v1/projects', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: projectId, project_budgets: { lines: merged } }),
+                  }).catch(() => { /* offline / no-auth — localStorage is the source of truth */ });
                 }
-              }}
-              disabled={pushReceipt.kind === 'pushing'}
-              style={{
-                padding: `${spacing[2]} ${spacing[4]}`,
-                fontSize: fontSizes.sm,
-                fontWeight: fontWeights.semibold,
-                fontFamily: fonts.body,
-                background: 'var(--brass, #C9913F)',
-                color: 'var(--trace, #F4F0E6)',
-                border: 'none',
-                borderRadius: radii.full,
-                cursor: 'pointer',
-                minHeight: 40,
-              }}
-              data-testid="estimating-push-to-budget"
+                setPushReceipt({ kind: 'pushed', added: newLines.length, replaced });
+              } catch (err) {
+                setPushReceipt({
+                  kind: 'error',
+                  message: err instanceof Error ? err.message : 'Push failed',
+                });
+              }
+            }}
+            disabled={pushReceipt.kind === 'pushing' || effectiveLines.length === 0}
+            style={{
+              padding: `${spacing[2]} ${spacing[4]}`,
+              fontSize: fontSizes.sm,
+              fontWeight: fontWeights.semibold,
+              fontFamily: fonts.body,
+              background: 'var(--brass, #C9913F)',
+              color: 'var(--trace, #F4F0E6)',
+              border: 'none',
+              borderRadius: radii.full,
+              cursor: 'pointer',
+              minHeight: 40,
+            }}
+            data-testid="estimating-push-to-budget"
+          >
+            Push to budget →
+          </button>
+          {pushReceipt.kind === 'pushed' && (
+            <span
+              role="status"
+              aria-live="polite"
+              style={{ fontSize: fontSizes.sm, color: colors.ink[600] }}
             >
-              Push to budget →
-            </button>
-            {pushReceipt.kind === 'pushed' && (
-              <span
-                role="status"
-                aria-live="polite"
-                style={{ fontSize: fontSizes.sm, color: colors.ink[600] }}
+              {pushReceipt.replaced > 0
+                ? `Refreshed ${pushReceipt.added} line${pushReceipt.added === 1 ? '' : 's'} — `
+                : `Added ${pushReceipt.added} line${pushReceipt.added === 1 ? '' : 's'} — `}
+              <a
+                href={`/killerapp/budget${projectId ? `?project=${encodeURIComponent(projectId)}` : ''}`}
+                style={{ color: 'var(--brass, #C9913F)', textDecoration: 'underline' }}
               >
-                {pushReceipt.added > 0
-                  ? `Added ${pushReceipt.added} line${pushReceipt.added === 1 ? '' : 's'} — `
-                  : 'Already in your budget — '}
-                <a
-                  href={`/killerapp/budget${projectId ? `?project=${encodeURIComponent(projectId)}` : ''}`}
-                  style={{ color: 'var(--brass, #C9913F)', textDecoration: 'underline' }}
-                >
-                  Open budget →
-                </a>
-              </span>
-            )}
-            {pushReceipt.kind === 'error' && (
-              <span style={{ fontSize: fontSizes.sm, color: '#A02A1F' }}>
-                Push failed: {pushReceipt.message}
-              </span>
-            )}
-          </div>
+                Open budget →
+              </a>
+            </span>
+          )}
+          {pushReceipt.kind === 'error' && (
+            <span style={{ fontSize: fontSizes.sm, color: '#A02A1F' }}>
+              Push failed: {pushReceipt.message}
+            </span>
+          )}
         </div>
       )}
     </section>

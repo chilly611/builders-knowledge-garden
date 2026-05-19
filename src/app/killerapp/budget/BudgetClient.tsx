@@ -1186,23 +1186,147 @@ function CategoryCard({
 
 // ─── Cash flow strip ──────────────────────────────────────────────────────
 
-function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
-  const withDates = lines.filter((l) => l.dueDate && l.amount > 0);
+// Ship 31: real date-axis cash flow strip.
+// Project lifecycle fields (start_date / milestone_date / created_at) are not
+// on the typed ProjectRecord today, so we read them defensively via a
+// permissive shape rather than tightening the central type for the demo.
+type ProjectLifecycleFields = {
+  start_date?: string | null;
+  milestone_date?: string | null;
+  created_at?: string | null;
+};
 
-  // Stage anchors with relative position (visual lane only — no real date math
-  // for the demo build). Real date-axis is a post-demo enhancement.
-  const STAGES = [
-    { id: 'lock', label: 'Lock', pct: 12 },
-    { id: 'build', label: 'Build', pct: 38 },
-    { id: 'adapt', label: 'Adapt', pct: 64 },
-    { id: 'collect', label: 'Collect', pct: 90 },
-  ];
+// Categories whose lines represent money coming IN (inbound payments).
+// Per Ship 31 brief: profit margin + contingency tag as inbound; everything
+// else with a due date — including client-payment lines — stays outbound for
+// now since we don't have a dedicated client-payment category yet.
+const INBOUND_CATEGORIES = new Set(['profit', 'contingency']);
 
-  // Anchor lines to a stage by proportional due-date position.
-  // For demo: sort by due date and distribute evenly across the timeline.
-  const sorted = [...withDates].sort((a, b) =>
-    (a.dueDate ?? '').localeCompare(b.dueDate ?? ''),
+// Stage fractions across project span (Ship 31): Lock=0.20, Build=0.45,
+// Adapt=0.70, Collect=0.92.
+const STAGE_FRACTIONS: { id: string; label: string; frac: number }[] = [
+  { id: 'lock', label: 'Lock', frac: 0.2 },
+  { id: 'build', label: 'Build', frac: 0.45 },
+  { id: 'adapt', label: 'Adapt', frac: 0.7 },
+  { id: 'collect', label: 'Collect', frac: 0.92 },
+];
+
+function parseDateMs(s: string | null | undefined): number | null {
+  if (!s) return null;
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? t : null;
+}
+
+function formatMonthShort(ms: number): string {
+  const d = new Date(ms);
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${month} ${yy}`;
+}
+
+function formatDueShort(s: string): string {
+  const t = Date.parse(s);
+  if (!Number.isFinite(t)) return s;
+  const d = new Date(t);
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
+}
+
+interface CashFlowStripProps {
+  lines: BudgetLine[];
+  project: (ProjectLifecycleFields & { id?: string }) | null;
+}
+
+function CashFlowStrip({ lines, project }: CashFlowStripProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // 1. Compute date range with documented fallbacks.
+  const nowMs = Date.now();
+  const startMs =
+    parseDateMs(project?.start_date) ??
+    parseDateMs(project?.created_at) ??
+    nowMs;
+  const TWELVE_MONTHS_MS = 365 * 24 * 60 * 60 * 1000;
+  const endMsRaw =
+    parseDateMs(project?.milestone_date) ?? startMs + TWELVE_MONTHS_MS;
+  // Guard against degenerate or reversed ranges.
+  const endMs = endMsRaw > startMs ? endMsRaw : startMs + TWELVE_MONTHS_MS;
+  const span = endMs - startMs;
+
+  const xPctForMs = (ms: number): number => {
+    const raw = (ms - startMs) / span;
+    return Math.max(0, Math.min(1, raw)) * 100;
+  };
+
+  // 2. Axis ticks — 4 evenly-spaced month markers across the strip.
+  const monthTicks = [0.1, 0.37, 0.63, 0.9].map((frac) => {
+    const ms = startMs + span * frac;
+    return { pct: frac * 100, label: formatMonthShort(ms) };
+  });
+
+  // Stage markers anchored to estimated dates.
+  const stageMarkers = STAGE_FRACTIONS.map((s) => ({
+    id: s.id,
+    label: s.label,
+    pct: s.frac * 100,
+  }));
+
+  // "Now" marker — clipped if outside [start, end].
+  const nowPct = xPctForMs(nowMs);
+  const nowInRange = nowMs >= startMs && nowMs <= endMs;
+
+  // 3. Bucket items: dated → date-axis lane, undated → "Unscheduled" lane.
+  const datedLines = lines.filter((l) => {
+    if (!l.dueDate || l.amount <= 0) return false;
+    return parseDateMs(l.dueDate) != null;
+  });
+  const undatedLines = lines.filter(
+    (l) => !l.dueDate && l.amount > 0,
   );
+
+  // Pre-compute x positions and direction for each dated line, then cluster
+  // items whose positions are within 2% of one another vertically.
+  type Placed = {
+    line: BudgetLine;
+    pct: number;
+    isOutbound: boolean;
+    yOffsetPx: number;
+  };
+  const placedSorted = [...datedLines]
+    .map<Omit<Placed, 'yOffsetPx'>>((l) => {
+      const ms = parseDateMs(l.dueDate)!;
+      const isOutbound = !INBOUND_CATEGORIES.has(l.category);
+      return { line: l, pct: xPctForMs(ms), isOutbound };
+    })
+    .sort((a, b) => a.pct - b.pct);
+
+  // Cluster logic: when two arrows fall within 2% of axis width on the same
+  // side (outbound vs inbound), nudge each successive one down by 8px.
+  const CLUSTER_THRESHOLD_PCT = 2;
+  const CLUSTER_OFFSET_PX = 8;
+  let lastOutPct = -Infinity;
+  let lastInPct = -Infinity;
+  let outRun = 0;
+  let inRun = 0;
+  const placed: Placed[] = placedSorted.map((p) => {
+    if (p.isOutbound) {
+      if (p.pct - lastOutPct < CLUSTER_THRESHOLD_PCT) {
+        outRun += 1;
+      } else {
+        outRun = 0;
+      }
+      lastOutPct = p.pct;
+      return { ...p, yOffsetPx: outRun * CLUSTER_OFFSET_PX };
+    }
+    if (p.pct - lastInPct < CLUSTER_THRESHOLD_PCT) {
+      inRun += 1;
+    } else {
+      inRun = 0;
+    }
+    lastInPct = p.pct;
+    return { ...p, yOffsetPx: inRun * CLUSTER_OFFSET_PX };
+  });
+
+  const totalItems = datedLines.length + undatedLines.length;
 
   return (
     <section
@@ -1265,7 +1389,7 @@ function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
         </div>
       </div>
 
-      {/* The lane */}
+      {/* The lane (date axis) */}
       <div
         style={{
           position: 'relative',
@@ -1277,7 +1401,7 @@ function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
           overflow: 'hidden',
         }}
       >
-        {/* Center rule */}
+        {/* Center rule (the axis itself) */}
         <div
           style={{
             position: 'absolute',
@@ -1290,8 +1414,28 @@ function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
           }}
         />
 
+        {/* Month ticks (Aug 26 / Nov 26 / Feb 27 / May 27 etc.) */}
+        {monthTicks.map((t, i) => (
+          <div
+            key={`tick-${i}`}
+            style={{
+              position: 'absolute',
+              bottom: 4,
+              left: `${t.pct}%`,
+              transform: 'translateX(-50%)',
+              fontSize: 9,
+              fontFamily: fonts.mono,
+              color: PAL.graphite,
+              opacity: 0.55,
+              pointerEvents: 'none',
+            }}
+          >
+            {t.label}
+          </div>
+        ))}
+
         {/* Stage markers */}
-        {STAGES.map((s) => (
+        {stageMarkers.map((s) => (
           <div
             key={s.id}
             style={{
@@ -1323,8 +1467,28 @@ function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
           </div>
         ))}
 
-        {/* Empty state */}
-        {sorted.length === 0 && (
+        {/* "Now" marker — 12px brass diamond on the center axis. */}
+        {nowInRange && (
+          <div
+            aria-label="Today"
+            title={`Today · ${formatDueShort(new Date(nowMs).toISOString())}`}
+            style={{
+              position: 'absolute',
+              top: 'calc(50% - 6px)',
+              left: `${nowPct}%`,
+              width: 12,
+              height: 12,
+              background: PAL.brass,
+              transform: 'translateX(-50%) rotate(45deg)',
+              borderRadius: 2,
+              boxShadow: '0 0 0 2px rgba(255,255,255,0.85)',
+              zIndex: 2,
+            }}
+          />
+        )}
+
+        {/* Empty state — preserved copy. */}
+        {totalItems === 0 && (
           <div
             style={{
               position: 'absolute',
@@ -1344,40 +1508,41 @@ function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
           </div>
         )}
 
-        {/* Arrows — outbound red down (paid/locked-in bills),
-            inbound green up (everything else with a due date is treated
-            as an "expected client payment" milestone for the demo). */}
-        {sorted.map((l, idx) => {
-          const pct = ((idx + 0.5) / Math.max(1, sorted.length)) * 100;
-          // Heuristic for direction (demo only): subcontractor/materials/labor
-          // categories are bills going out; everything else with a due date
-          // we render as an inbound milestone for narrative purposes.
-          const outboundCategories = new Set([
-            'materials',
-            'raw-supplies',
-            'labor',
-            'subcontractors',
-            'equipment',
-            'permits',
-          ]);
-          const isOutbound = outboundCategories.has(l.category);
+        {/* Arrows positioned on the real date axis. */}
+        {placed.map(({ line: l, pct, isOutbound, yOffsetPx }) => {
           const color = isOutbound ? PAL.redline : PAL.green;
           const arrow = isOutbound ? '↓' : '↑';
-          const yOffset = isOutbound ? 'bottom' : 'top';
-          return (
-            <div
-              key={l.id}
-              title={`${l.description || 'Untitled'} · ${formatUSD(l.amount)} · ${l.dueDate ?? ''}`}
-              style={{
+          const cat = CATEGORIES.find((c) => c.id === l.category);
+          const isHovered = hoveredId === l.id;
+          const wrapperStyle: CSSProperties = isOutbound
+            ? {
                 position: 'absolute',
-                [yOffset]: 8,
+                bottom: 8 + yOffsetPx,
                 left: `${pct}%`,
                 transform: 'translateX(-50%)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 2,
-              }}
+                zIndex: isHovered ? 5 : 1,
+              }
+            : {
+                position: 'absolute',
+                top: 8 + yOffsetPx,
+                left: `${pct}%`,
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                zIndex: isHovered ? 5 : 1,
+              };
+          return (
+            <div
+              key={l.id}
+              onMouseEnter={() => setHoveredId(l.id)}
+              onMouseLeave={() => setHoveredId((cur) => (cur === l.id ? null : cur))}
+              style={wrapperStyle}
             >
               <span
                 style={{
@@ -1403,10 +1568,105 @@ function CashFlowStrip({ lines }: { lines: BudgetLine[] }) {
               >
                 {formatUSD(l.amount)}
               </span>
+              {isHovered && (
+                <div
+                  role="tooltip"
+                  style={{
+                    position: 'absolute',
+                    [isOutbound ? 'bottom' : 'top']: 38,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: PAL.navyDeep,
+                    color: PAL.white,
+                    padding: '6px 10px',
+                    borderRadius: radii.md,
+                    fontSize: 11,
+                    whiteSpace: 'nowrap',
+                    pointerEvents: 'none',
+                    zIndex: 60,
+                    fontFamily: fonts.mono,
+                    boxShadow: shadows.md,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  {cat && <CategoryDot hex={cat.hex} size={8} />}
+                  <span>
+                    {l.description || 'Untitled'} · {formatUSD(l.amount)}
+                    {l.dueDate ? ` · ${formatDueShort(l.dueDate)}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {/* Unscheduled lane (Ship 31): items without a dueDate live here so users
+          can see them and drag a date on later. */}
+      {undatedLines.length > 0 && (
+        <div
+          style={{
+            marginTop: 10,
+            padding: '8px 12px',
+            background: PAL.trace,
+            border: `1px dashed ${PAL.fadedRule}`,
+            borderRadius: radii.md,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              fontFamily: fonts.mono,
+              color: PAL.graphite,
+              opacity: 0.7,
+              marginBottom: 6,
+              letterSpacing: letterSpacing.wide,
+              textTransform: 'uppercase',
+            }}
+          >
+            Unscheduled — no date yet — drop one to place it on the timeline
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 6,
+            }}
+          >
+            {undatedLines.map((l) => {
+              const cat = CATEGORIES.find((c) => c.id === l.category);
+              const isOutbound = !INBOUND_CATEGORIES.has(l.category);
+              return (
+                <span
+                  key={l.id}
+                  title={`${l.description || 'Untitled'} · ${formatUSD(l.amount)}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '3px 8px',
+                    background: PAL.white,
+                    border: `1px solid ${PAL.fadedRule}`,
+                    borderRadius: radii.full,
+                    fontSize: 11,
+                    color: PAL.graphite,
+                    fontFamily: fonts.mono,
+                  }}
+                >
+                  {cat && <CategoryDot hex={cat.hex} size={8} />}
+                  <span style={{ color: isOutbound ? PAL.redline : PAL.green }}>
+                    {isOutbound ? '↓' : '↑'}
+                  </span>
+                  <span>{l.description || 'Untitled'}</span>
+                  <span style={{ opacity: 0.7 }}>· {formatUSD(l.amount)}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -2037,7 +2297,7 @@ export default function BudgetClient() {
         )}
 
         {/* Cash flow strip */}
-        <CashFlowStrip lines={lines} />
+        <CashFlowStrip lines={lines} project={project} />
 
         {/* Help strip */}
         <HelpStrip projectId={projectId} />
