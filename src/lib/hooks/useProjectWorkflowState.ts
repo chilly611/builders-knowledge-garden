@@ -349,7 +349,19 @@ export function useProjectWorkflowState(
         method: 'PATCH',
         body: JSON.stringify({ id: projectId, [column]: stateRef.current }),
       });
-      if (res.ok) setLastSavedAt(Date.now());
+      if (res.ok) {
+        setLastSavedAt(Date.now());
+        // 2026-05-18 (Wave 2): notify cockpit/budget widgets that something
+        // saved so they can refetch derived data (budget totals, etc.)
+        // without polling. Consumed by ProjectCockpit.
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('bkg:workflow:autosaved', {
+              detail: { projectId, column },
+            })
+          );
+        }
+      }
     } catch (e) {
       console.error('Project autosave error:', e);
     } finally {
@@ -504,7 +516,18 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
         method: 'PATCH',
         body: JSON.stringify({ id: projectId, [column]: stateRef.current }),
       });
-      if (res.ok) setLastSavedAt(Date.now());
+      if (res.ok) {
+        setLastSavedAt(Date.now());
+        // 2026-05-18 (Wave 2): see sibling flush() above — broadcast for
+        // cockpit/budget refetch.
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('bkg:workflow:autosaved', {
+              detail: { projectId, column },
+            })
+          );
+        }
+      }
     } catch (e) {
       console.error('Project blob autosave error:', e);
     } finally {
