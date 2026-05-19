@@ -81,6 +81,20 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
   const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  // 2026-05-19 (Ship 17): re-frame the workflow with a relationship lens
+  // per Chilly's directive. The voice intake captures one person; this
+  // state tells us WHO that person is in relation to the user:
+  //   'myself'    — the user is describing themselves (DIY / self-onboard)
+  //   'loved-one' — the user is building for family / friend, not paid
+  //                 (still DIY-flavored; no estimated_value relevant)
+  //   'customer'  — the user is describing a paying customer asking for
+  //                 their work (the original B7 "lead intake" case)
+  // estimated_value field renders ONLY in 'customer' mode. Save-button
+  // label adapts to the picked relationship.
+  const [relationship, setRelationship] = useState<
+    'myself' | 'loved-one' | 'customer'
+  >('myself');
+
   // Combine the finalized transcript + interim chunk for the pill display
   // and for the "what we'll send" value. When the user types manually, that
   // takes precedence.
@@ -255,7 +269,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
               marginBottom: spacing[2],
             }}
           >
-            Tell us who&apos;s asking.
+            Tell us about you — or who&apos;s asking for your work.
           </h2>
           <p
             style={{
@@ -429,7 +443,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
                 ? 'Uploading photo…'
                 : status === 'extracting'
                   ? 'Catching it…'
-                  : 'Capture lead'}
+                  : 'Save what we heard'}
             </button>
           </div>
         </section>
@@ -447,18 +461,93 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
               marginBottom: spacing[2],
             }}
           >
-            We caught:
+            Here&apos;s what we caught:
           </h2>
           <p
             style={{
               fontSize: fontSizes.sm,
               color: colors.ink[500],
               margin: 0,
-              marginBottom: spacing[5],
+              marginBottom: spacing[4],
             }}
           >
-            Look it over. Fix anything that&apos;s off. Good?
+            Look it over. Fix anything that&apos;s off.
           </p>
+
+          {/* 2026-05-19 (Ship 17): relationship lens — who is this person?
+              Drives the save-button label, which fields render, and how
+              the saved record is tagged in the CRM. */}
+          <div
+            style={{
+              marginBottom: spacing[4],
+              padding: spacing[4],
+              border: `1px solid ${colors.ink[200]}`,
+              borderRadius: radii.md,
+              backgroundColor: '#FFFFFF',
+            }}
+          >
+            <div
+              style={{
+                fontSize: fontSizes.xs,
+                fontWeight: fontWeights.semibold,
+                color: colors.ink[500],
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: spacing[2],
+              }}
+            >
+              Who is this?
+            </div>
+            <p
+              style={{
+                fontSize: fontSizes.sm,
+                color: colors.ink[700],
+                margin: 0,
+                marginBottom: spacing[3],
+              }}
+            >
+              If you&apos;re building for someone else, tell us if it&apos;s a
+              loved one or a customer — that changes what we save and how
+              we serve you.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+              {(
+                [
+                  { v: 'myself', label: "That's me" },
+                  { v: 'loved-one', label: 'A loved one' },
+                  { v: 'customer', label: 'A customer' },
+                ] as const
+              ).map((opt) => {
+                const active = relationship === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => setRelationship(opt.v)}
+                    aria-pressed={active}
+                    style={{
+                      padding: `${spacing[2]} ${spacing[4]}`,
+                      fontSize: fontSizes.sm,
+                      fontWeight: fontWeights.semibold,
+                      fontFamily: fonts.body,
+                      borderRadius: radii.full,
+                      cursor: 'pointer',
+                      minHeight: 40,
+                      border: active
+                        ? `1.5px solid ${colors.navy}`
+                        : `1px solid ${colors.ink[300]}`,
+                      backgroundColor: active ? colors.navy : 'transparent',
+                      color: active ? '#FFFFFF' : colors.ink[700],
+                      transition: 'all 150ms ease',
+                    }}
+                    data-testid={`wia-relationship-${opt.v}`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div
             style={{
@@ -476,7 +565,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
               onChange={(v) => handleDraftChange('first_name', v)}
             />
             <DraftField
-              label="Company"
+              label={relationship === 'customer' ? 'Their company' : 'Company'}
               value={draft.company || ''}
               onChange={(v) => handleDraftChange('company', v)}
             />
@@ -485,11 +574,14 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
               value={draft.role || ''}
               onChange={(v) => handleDraftChange('role', v)}
             />
-            <DraftField
-              label="Estimated value (USD)"
-              value={draft.estimated_value ? String(draft.estimated_value) : ''}
-              onChange={(v) => handleDraftChange('estimated_value', v)}
-            />
+            {/* estimated_value only makes sense for paid customer relationships */}
+            {relationship === 'customer' && (
+              <DraftField
+                label="Estimated job value (USD)"
+                value={draft.estimated_value ? String(draft.estimated_value) : ''}
+                onChange={(v) => handleDraftChange('estimated_value', v)}
+              />
+            )}
             <DraftField
               label="Notes"
               value={draft.notes || ''}
@@ -535,7 +627,11 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
                 }}
                 data-testid="wia-confirm-button"
               >
-                Add to CRM
+                {relationship === 'myself'
+                  ? 'Save who I am'
+                  : relationship === 'loved-one'
+                    ? 'Save my loved one'
+                    : 'Save my customer'}
               </button>
               <button
                 type="button"
