@@ -122,7 +122,16 @@ function Sparkline({
         return (
           <g
             key={stage.id}
-            onClick={() => onZoomToStage?.(stage.id)}
+            // 2026-05-19 (Ship 26, demo prep): Ship 23 wrapped this whole
+            // component in <Link href="/killerapp/budget?...">. Without the
+            // stopPropagation below, clicking a stage column fires BOTH the
+            // inner zoom AND the outer navigation. For the May 20 investor
+            // demo we let the outer Link win — the in-cockpit stage zoom
+            // stays wired up but is now suppressed inside the Link wrapper.
+            onClick={(e) => {
+              e.stopPropagation();
+              onZoomToStage?.(stage.id);
+            }}
             onMouseEnter={() => setHoveredStageId(stage.id)}
             onMouseLeave={() => setHoveredStageId(null)}
             style={{

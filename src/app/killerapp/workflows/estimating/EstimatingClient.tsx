@@ -150,6 +150,20 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   const [lastRecordedAmount, setLastRecordedAmount] = useState<number | null>(null);
   const [csiEstimate, setCsiEstimate] = useState<EstimateBlock | null>(null);
 
+  // 2026-05-19 (Ship 28): AI estimate → /killerapp/budget handoff.
+  // Re-uses the already-parsed csiEstimate.lines (low/high per division)
+  // and appends them as 'estimated'-state lines into the budget store
+  // BudgetClient reads from (`bkg-budget-{projectId}` localStorage + the
+  // new `project_budgets` JSONB column from Ship 25). Demo flow:
+  // estimating runs → user clicks "Push to budget" → opens /budget
+  // pre-populated so they don't have to retype 10 division totals.
+  const [pushReceipt, setPushReceipt] = useState<
+    | { kind: 'idle' }
+    | { kind: 'pushing' }
+    | { kind: 'pushed'; added: number }
+    | { kind: 'error'; message: string }
+  >({ kind: 'idle' });
+
   // Project Spine v1: track step status locally; seed from hydrated.
   const [stepStatusMap, setStepStatusMap] = useState<
     Record<string, 'pending' | 'in_progress' | 'complete'>
@@ -461,6 +475,116 @@ export default function EstimatingClient({ workflow, stages }: Props) {
                 <span>Total estimate</span>
                 <span style={{ textAlign: 'right' }}>${csiEstimate.total.toLocaleString()}</span>
               </div>
+            )}
+          </div>
+
+          {/* Ship 28 — push this AI estimate into the dedicated /budget page. */}
+          <div style={{ marginTop: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3], flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (!csiEstimate || csiEstimate.lines.length === 0) return;
+                setPushReceipt({ kind: 'pushing' });
+                try {
+                  // Heuristic category mapping (case-insensitive).
+                  const categorize = (label: string): string => {
+                    const t = label.toLowerCase();
+                    if (/plumb|electric|hvac|mechanical|roof|drywall|insul|tile|stucco|paint|landscap|solar|fire/.test(t)) return 'subcontractors';
+                    if (/labor|crew|foreman|wages|payroll/.test(t)) return 'labor';
+                    if (/permit|plan check|fee|impact|inspect/.test(t)) return 'permits';
+                    if (/profit|overhead|o&p|markup|margin/.test(t)) return 'profit';
+                    if (/equipment|rental|scaffold|lift|generator|crane|excavat/.test(t)) return 'equipment';
+                    if (/insurance|bond|liability|workers comp/.test(t)) return 'insurance';
+                    if (/admin|office|software|phone|mileage/.test(t)) return 'admin';
+                    if (/contingency|reserve|buffer/.test(t)) return 'contingency';
+                    if (/concrete|gravel|rebar|sand|aggregate/.test(t)) return 'raw-supplies';
+                    return 'materials';
+                  };
+                  const now = new Date().toISOString();
+                  const newLines = csiEstimate.lines.map((line) => ({
+                    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                      ? crypto.randomUUID()
+                      : `est-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                    category: categorize(line.division),
+                    description: line.division,
+                    amount: Math.round((line.low + line.high) / 2),
+                    state: 'estimated' as const,
+                    notes: `AI estimate: $${line.low.toLocaleString()}–$${line.high.toLocaleString()} (from /workflows/estimating)`,
+                    createdAt: now,
+                    updatedAt: now,
+                  }));
+                  // Dedup by description+amount against existing localStorage lines.
+                  const lsKey = `bkg-budget-${projectId ?? 'anonymous'}`;
+                  let existing: Array<{ description?: string; amount?: number }> = [];
+                  try {
+                    const raw = window.localStorage.getItem(lsKey);
+                    if (raw) {
+                      const parsed = JSON.parse(raw);
+                      if (Array.isArray(parsed?.lines)) existing = parsed.lines;
+                    }
+                  } catch { /* localStorage corrupt — start fresh */ }
+                  const sig = (d: string | undefined, a: number | undefined) =>
+                    `${(d ?? '').trim().toLowerCase()}::${Math.round(a ?? 0)}`;
+                  const existingSigs = new Set(existing.map((l) => sig(l.description, l.amount)));
+                  const fresh = newLines.filter((l) => !existingSigs.has(sig(l.description, l.amount)));
+                  const merged = [...existing, ...fresh];
+                  try {
+                    window.localStorage.setItem(lsKey, JSON.stringify({ lines: merged }));
+                  } catch { /* quota / disabled — fall through to API */ }
+                  // Fire-and-forget DB sync (Ship 25's project_budgets column).
+                  if (projectId) {
+                    void fetch('/api/v1/projects', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id: projectId, project_budgets: { lines: merged } }),
+                    }).catch(() => { /* offline / no-auth — localStorage is the source of truth */ });
+                  }
+                  setPushReceipt({ kind: 'pushed', added: fresh.length });
+                } catch (err) {
+                  setPushReceipt({
+                    kind: 'error',
+                    message: err instanceof Error ? err.message : 'Push failed',
+                  });
+                }
+              }}
+              disabled={pushReceipt.kind === 'pushing'}
+              style={{
+                padding: `${spacing[2]} ${spacing[4]}`,
+                fontSize: fontSizes.sm,
+                fontWeight: fontWeights.semibold,
+                fontFamily: fonts.body,
+                background: 'var(--brass, #C9913F)',
+                color: 'var(--trace, #F4F0E6)',
+                border: 'none',
+                borderRadius: radii.full,
+                cursor: 'pointer',
+                minHeight: 40,
+              }}
+              data-testid="estimating-push-to-budget"
+            >
+              Push to budget →
+            </button>
+            {pushReceipt.kind === 'pushed' && (
+              <span
+                role="status"
+                aria-live="polite"
+                style={{ fontSize: fontSizes.sm, color: colors.ink[600] }}
+              >
+                {pushReceipt.added > 0
+                  ? `Added ${pushReceipt.added} line${pushReceipt.added === 1 ? '' : 's'} — `
+                  : 'Already in your budget — '}
+                <a
+                  href={`/killerapp/budget${projectId ? `?project=${encodeURIComponent(projectId)}` : ''}`}
+                  style={{ color: 'var(--brass, #C9913F)', textDecoration: 'underline' }}
+                >
+                  Open budget →
+                </a>
+              </span>
+            )}
+            {pushReceipt.kind === 'error' && (
+              <span style={{ fontSize: fontSizes.sm, color: '#A02A1F' }}>
+                Push failed: {pushReceipt.message}
+              </span>
             )}
           </div>
         </div>

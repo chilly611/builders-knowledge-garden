@@ -39,6 +39,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { useProject } from '@/lib/hooks/useProject';
+import { supabase } from '@/lib/supabase';
 import { colors } from '@/design-system/tokens/colors';
 import {
   fonts,
@@ -290,6 +291,73 @@ function writeLines(projectId: string | null, lines: BudgetLine[]): void {
     );
   } catch {
     // Quota exceeded or storage disabled — silently no-op for the demo.
+  }
+}
+
+// ─── DB persistence (Ship 25) ────────────────────────────────────────────
+// Ship 25 (2026-05-19): project_budgets JSONB column on command_center_projects
+// is now the source of truth for /killerapp/budget. localStorage stays as the
+// offline / anonymous fallback. Same authedFetch pattern as
+// useProjectWorkflowState — bearer token from the supabase session.
+
+async function authedFetchJSON(input: RequestInfo, init: RequestInit = {}) {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  const headers = new Headers(init.headers || {});
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (!headers.has('Content-Type') && init.body) {
+    headers.set('Content-Type', 'application/json');
+  }
+  return fetch(input, { ...init, headers });
+}
+
+/**
+ * Fetch the persisted budget lines for a project. Returns:
+ *   - { lines: BudgetLine[] } when the column is populated
+ *   - { lines: [] }           when the column is empty (NEW project, needs migration)
+ *   - null                    on auth/network failure (caller falls back to localStorage)
+ */
+async function fetchProjectBudgets(
+  projectId: string,
+): Promise<{ lines: BudgetLine[] } | null> {
+  try {
+    const res = await authedFetchJSON(
+      `/api/v1/projects?id=${encodeURIComponent(projectId)}`,
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { project_budgets?: { lines?: unknown } };
+    const raw = json.project_budgets?.lines;
+    if (!Array.isArray(raw)) return { lines: [] };
+    const safe = raw.filter(
+      (l): l is BudgetLine =>
+        l != null &&
+        typeof l === 'object' &&
+        typeof (l as BudgetLine).id === 'string' &&
+        typeof (l as BudgetLine).category === 'string' &&
+        typeof (l as BudgetLine).amount === 'number' &&
+        STATE_ORDER.includes((l as BudgetLine).state),
+    );
+    return { lines: safe };
+  } catch {
+    return null;
+  }
+}
+
+async function patchProjectBudgets(
+  projectId: string,
+  lines: BudgetLine[],
+): Promise<boolean> {
+  try {
+    const res = await authedFetchJSON('/api/v1/projects', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        id: projectId,
+        project_budgets: { lines },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
@@ -1669,24 +1737,79 @@ export default function BudgetClient() {
   const savedAtRef = useRef<number>(0);
   const hydratedRef = useRef(false);
   const saveTimerRef = useRef<number | null>(null);
+  // Ship 25: when DB is empty for a project but localStorage has lines, do a
+  // one-shot migration on the FIRST save. Stays false otherwise so we never
+  // clobber a real DB row with a stale offline cache.
+  const needsLocalStorageMigrationRef = useRef(false);
 
-  // Hydrate from localStorage when the projectId changes.
+  // Hydrate when the projectId changes.
+  // Ship 25: prefer DB (project_budgets JSONB) over localStorage. If DB is
+  // empty for this project_id but localStorage has lines, hold them and flag
+  // for one-shot migration on first save. Anon / fetch failures fall through
+  // to localStorage so the offline demo path still works.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const initial = readLines(projectId);
-    setLines(initial);
+    let cancelled = false;
+    // Always reset UI state immediately so the project switch feels snappy.
     setExpanded(new Set());
-    savedAtRef.current = Date.now();
-    setSavedSecondsAgo(0);
-    hydratedRef.current = true;
+    hydratedRef.current = false;
+    needsLocalStorageMigrationRef.current = false;
+
+    const localLines = readLines(projectId);
+
+    (async () => {
+      // No projectId → anonymous / drafts path. localStorage only.
+      if (!projectId) {
+        if (cancelled) return;
+        setLines(localLines);
+        savedAtRef.current = Date.now();
+        setSavedSecondsAgo(0);
+        hydratedRef.current = true;
+        return;
+      }
+
+      const dbResult = await fetchProjectBudgets(projectId);
+      if (cancelled) return;
+
+      if (dbResult === null) {
+        // Auth/network failure — graceful fallback to localStorage.
+        setLines(localLines);
+      } else if (dbResult.lines.length > 0) {
+        // DB has data — use it as the source of truth.
+        setLines(dbResult.lines);
+      } else if (localLines.length > 0) {
+        // DB empty, localStorage has lines → seed UI from localStorage and
+        // queue a one-shot migration on the next save.
+        setLines(localLines);
+        needsLocalStorageMigrationRef.current = true;
+      } else {
+        setLines([]);
+      }
+      savedAtRef.current = Date.now();
+      setSavedSecondsAgo(0);
+      hydratedRef.current = true;
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Autosave (debounced 500ms).
+  // Ship 25: PATCH project_budgets on command_center_projects AND mirror to
+  // localStorage so the offline / anon path still works. The DB write is
+  // best-effort — failure leaves localStorage as the fallback.
   useEffect(() => {
     if (!hydratedRef.current) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
       writeLines(projectId, lines);
+      if (projectId) {
+        // Fire-and-forget. The migration flag is cleared after the first DB
+        // write regardless of outcome so we don't loop on repeated failures.
+        void patchProjectBudgets(projectId, lines);
+        needsLocalStorageMigrationRef.current = false;
+      }
       savedAtRef.current = Date.now();
       setSavedSecondsAgo(0);
     }, 500);

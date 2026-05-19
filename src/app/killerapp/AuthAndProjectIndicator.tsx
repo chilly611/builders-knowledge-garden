@@ -473,7 +473,7 @@ export default function AuthAndProjectIndicator() {
           zIndex: 100,
           pointerEvents: 'none',
         }}
-        data-testid="auth-and-project-indicator"
+        data-testid="auth-and-project-indicator-mobile"
       >
         {/* Hamburger / chevron button — always visible on mobile */}
         <button
@@ -498,7 +498,7 @@ export default function AuthAndProjectIndicator() {
             lineHeight: 1,
             padding: 0,
           }}
-          data-testid="auth-indicator-mobile-toggle"
+          data-testid="auth-and-project-indicator-mobile-toggle"
         >
           {/* Plain unicode hamburger — keeps bundle tiny; close becomes ✕ */}
           <span aria-hidden>{drawerOpen ? '✕' : '☰'}</span>

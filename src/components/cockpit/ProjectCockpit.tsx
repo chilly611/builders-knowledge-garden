@@ -13,8 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import JourneyArc from './JourneyArc';
-import TimeMachineDial from './TimeMachineDial';
+import JourneyTimeline from './JourneyTimeline';
 import BudgetSnapshot from './BudgetSnapshot';
 
 import {
@@ -260,28 +259,32 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
       alignItems: 'stretch',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
-      {/* Journey (40%) */}
+      {/* Journey + Time (merged, 65%) — Ship 24: single time-aware surface.
+          Per Chilly's directive (2026-05-19), the journey map and time
+          machine are one band: present-tense stage states (visited/
+          completed/unvisited/active) with scrub-back-and-forward in time. */}
       <div style={{
-        flex: isMobile ? '0 0 auto' : '0 0 40%',
+        flex: isMobile ? '0 0 auto' : '0 0 65%',
         display: 'flex', alignItems: 'center', padding: '12px 12px',
         borderRight: isMobile ? 'none' : `1px solid ${brass}`,
         borderBottom: isMobile ? `1px solid ${brass}` : 'none',
         position: 'relative',
       }}>
         {!isMobile && <BrassHinge />}
-        <JourneyArc stages={stageProgress} activeStageId={activeStageId} onStageClick={handleStageClick} />
-      </div>
-
-      {/* Time Machine (25%) */}
-      <div style={{
-        flex: isMobile ? '0 0 auto' : '0 0 25%',
-        display: 'flex', alignItems: 'center', padding: '12px 12px',
-        borderRight: isMobile ? 'none' : `1px solid ${brass}`,
-        borderBottom: isMobile ? `1px solid ${brass}` : 'none',
-        position: 'relative',
-      }}>
-        {!isMobile && <BrassHinge />}
-        <TimeMachineDial snapshots={snapshots} onScrub={handleTimeScrub} currentSnapshotId={currentSnapshotId ?? undefined} />
+        <JourneyTimeline
+          stages={stageProgress}
+          activeStageId={activeStageId}
+          snapshots={snapshots}
+          currentSnapshotId={currentSnapshotId ?? null}
+          onStageClick={handleStageClick}
+          onScrub={handleTimeScrub}
+          onPreviewFuture={(sid) => {
+            window.dispatchEvent(new CustomEvent('bkg:navigator:future-previewed', {
+              detail: { stageId: sid, projectId: effectiveProjectId },
+            }));
+          }}
+          onReturnToLive={() => rewindTo(null)}
+        />
       </div>
 
       {/* Budget (35%) */}
