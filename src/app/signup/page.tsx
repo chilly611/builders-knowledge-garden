@@ -46,34 +46,51 @@ function SignupPageContent() {
 
     setIsLoading(true);
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: email.split('@')[0],
-          },
-        },
+      // 2026-05-20 — switched from `supabase.auth.signUp` to the
+      // service-role /api/auth/signup-beta endpoint. Reason: stock Supabase
+      // signUp requires email confirmation, and SMTP isn't configured on
+      // this project, so beta testers were getting stuck on "Check your
+      // inbox" with no way to receive the confirmation link. The new route
+      // creates the user with email_confirm: true, then we sign in with
+      // password to obtain a session.
+      const signupRes = await fetch('/api/auth/signup-beta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name: email.split('@')[0] }),
       });
 
-      if (signUpError) {
-        setError(signUpError.message || 'Signup failed. Please try again.');
+      const signupJson = await signupRes.json().catch(() => ({}));
+      if (!signupRes.ok) {
+        setError(signupJson?.error || 'Signup failed. Please try again.');
         return;
       }
 
-      // Supabase returns a user with an empty `identities` array (or no
-      // session) when email confirmation is required. In that case, show the
-      // "Check your inbox" view instead of redirecting.
-      const needsConfirmation =
-        !data?.session &&
-        (!!data?.user && (data.user.identities?.length === 0 || !data.user.confirmed_at));
-
-      if (needsConfirmation || (!data?.session && !!data?.user)) {
-        setConfirmationSent(true);
+      // User exists with email pre-confirmed — sign them in to get a session.
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        // Edge case: account created but session couldn't be established.
+        // Send them to the login page rather than a dead end.
+        router.push(`/login?next=${encodeURIComponent(next)}&signup=ok`);
         return;
       }
 
-      // Otherwise we have a session — go to `next`.
+      // Fire-and-forget activity log.
+      void (async () => {
+        try {
+          const { data } = await supabase.auth.getSession();
+          const token = data.session?.access_token;
+          if (token) {
+            await fetch('/api/auth/track-signin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ event_type: 'signin' }),
+            });
+          }
+        } catch {
+          // Instrumentation only.
+        }
+      })();
+
       router.push(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed.');

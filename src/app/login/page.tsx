@@ -29,23 +29,27 @@ function LoginPageContent() {
 
     try {
       if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: email.split('@')[0],
-            },
-          },
+        // 2026-05-20 — use the /api/auth/signup-beta endpoint instead of
+        // supabase.auth.signUp so beta testers don't get stuck waiting for
+        // a confirmation email that never arrives. See signup/page.tsx for
+        // the full rationale.
+        const signupRes = await fetch('/api/auth/signup-beta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name: email.split('@')[0] }),
         });
-
-        if (signUpError) {
-          setError(signUpError.message);
+        const signupJson = await signupRes.json().catch(() => ({}));
+        if (!signupRes.ok) {
+          setError(signupJson?.error || 'Signup failed.');
         } else {
-          setSuccessMessage('Sign up successful! Check your email to confirm.');
-          setTimeout(() => {
-            router.push(nextParam);
-          }, 2000);
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) {
+            setError(signInError.message);
+          } else {
+            setSuccessMessage('Signed in successfully!');
+            void trackSignin();
+            setTimeout(() => router.push(nextParam), 500);
+          }
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -57,6 +61,7 @@ function LoginPageContent() {
           setError(signInError.message);
         } else {
           setSuccessMessage('Signed in successfully!');
+          void trackSignin();
           setTimeout(() => {
             router.push(nextParam);
           }, 500);
@@ -71,6 +76,24 @@ function LoginPageContent() {
 
   const handleContinueAsExplorer = () => {
     router.push('/killerapp');
+  };
+
+  // 2026-05-20 — best-effort sign-in event log. Pulled into a helper so
+  // both branches (login + the legacy isSignUp branch) can call it after a
+  // successful signInWithPassword. Never throws and never blocks.
+  const trackSignin = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return;
+      await fetch('/api/auth/track-signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ event_type: 'signin' }),
+      });
+    } catch {
+      // Instrumentation only.
+    }
   };
 
 
