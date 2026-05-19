@@ -1,0 +1,32 @@
+{
+  "manifest_version": "0.3",
+  "name": "builders-knowledge-garden",
+  "display_name": "Builder's Knowledge Garden",
+  "version": "0.1.0",
+  "description": "Construction codes, materials, safety, and CSI estimating for AI agents. Ask Claude about Marin energy code, OSHA fall protection, or your project's cost breakdown.",
+  "long_description": "Builder's Knowledge Garden (BKG) is an AI operating system for general contractors. This extension connects Claude Desktop to the BKG MCP server, exposing 12 tools that query 40,000+ construction entities across 142+ jurisdictions: building codes, material specs, safety requirements, permit timelines, cost estimates, schedules, team composition, and CRM pipeline data. The server is hosted at builders.theknowledgegardens.com; this bundle is a thin stdio bridge.",
+  "author": {
+    "name": "Builder's Knowledge Garden",
+    "url": "https://builders.theknowledgegardens.com"
+  },
+  "homepage": "https://builders.theknowledgegardens.com",
+  "documentation": "https://builders.theknowledgegardens.com/install-mcp",
+  "keywords": ["construction", "building-codes", "general-contractor", "estimating", "safety"],
+  "license": "UNLICENSED",
+  "server": {
+    "type": "node",
+    "entry_point": "mcp-bridge.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/mcp-bridge.js"],
+      "env": {
+        "BKG_API_URL": "https://builders.theknowledgegardens.com/api/v1/mcp"
+      }
+    }
+  },
+  "compatibility": {
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

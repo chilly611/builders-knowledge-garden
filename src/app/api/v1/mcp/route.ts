@@ -250,16 +250,44 @@ async function executeTool(tool: string, params: Record<string, unknown>): Promi
       const query = String(params.query || "");
       const limit = Math.min(Number(params.limit) || 10, 50);
       if (isSupabaseConfigured()) {
+        // Aligns with src/app/api/v1/search/route.ts and src/lib/rag.ts:
+        // search against the generated `search_text` tsvector, filter on
+        // status='published', with an ilike OR fallback when FTS returns
+        // nothing. The previous `body_plain` column doesn't exist on the
+        // table so every Supabase query errored silently and fell through
+        // to the mock data — Act 4 of the demo depends on this returning
+        // the seeded Marin entries.
+        const baseCols = "id, slug, title, summary, entity_type, domain, tags, metadata";
         let qb = supabase
           .from("knowledge_entities")
-          .select("id, slug, title, summary, entity_type, domain_id, tags, metadata")
+          .select(baseCols)
+          .eq("status", "published")
           .order("updated_at", { ascending: false })
           .limit(limit);
-        if (query) qb = qb.textSearch("body_plain", query, { type: "websearch", config: "english" });
-        if (params.domain) qb = qb.eq("domain_id", String(params.domain));
+        if (query) qb = qb.textSearch("search_text", query, { type: "plain", config: "english" });
+        if (params.domain) qb = qb.eq("domain", String(params.domain));
         if (params.entity_type) qb = qb.eq("entity_type", String(params.entity_type));
         const { data, error } = await qb;
-        if (!error && data) return { results: data, total: data.length, query, source: "supabase" };
+
+        let resultData = data;
+        if ((!data || data.length === 0) && query && !error) {
+          const words = query.split(/\s+/).filter((w) => w.length > 2).slice(0, 4);
+          if (words.length > 0) {
+            const orFilter = words.map((w) => `search_text.ilike.%${w}%`).join(",");
+            let fb = supabase
+              .from("knowledge_entities")
+              .select(baseCols)
+              .eq("status", "published")
+              .or(orFilter)
+              .order("updated_at", { ascending: false })
+              .limit(limit);
+            if (params.domain) fb = fb.eq("domain", String(params.domain));
+            if (params.entity_type) fb = fb.eq("entity_type", String(params.entity_type));
+            const fbRes = await fb;
+            if (!fbRes.error && fbRes.data) resultData = fbRes.data;
+          }
+        }
+        if (!error && resultData) return { results: resultData, total: resultData.length, query, source: "supabase" };
       }
       // Mock fallback
       return {
