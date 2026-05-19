@@ -68,34 +68,92 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
   const [proMode, setProMode] = useState(false);
   const [eventCount, setEventCount] = useState(0);
 
-  // Project Spine v1: when the project hydrates with a jurisdiction
-  // (e.g. AI take parsed "California" or raw_input mentions San Diego),
-  // default the picker to the matching jurisdiction instead of the
-  // first-in-list. The user can still change it manually after.
-  // Persona findings: Pete, Sarah, Diana ALL flagged this as a trust
-  // killer — code-compliance defaulting to "IBC 2024 generic" when the
-  // project clearly says California is the moment they walk away.
+  // Project Spine v1.6 (2026-05-19): when the project hydrates, infer the
+  // best jurisdiction from EVERY signal we have — explicit
+  // `project.jurisdiction`, `ai_summary`, `raw_input`, and `name` — not
+  // just `project.jurisdiction`. Many projects (especially those created
+  // via /killerapp's WorkflowPickerSearchBox) ship `jurisdiction: null`
+  // to /api/v1/projects because the search-box payload only sends
+  // raw_input. The earlier autofill returned early on null, leaving the
+  // dropdown wherever it last was — including a stale manual click on
+  // the wrong city. P0 demo bug: a project described as SF would show
+  // Santa Monica citations because nothing reset the picker. Persona
+  // findings (Pete, Sarah, Diana) all flagged jurisdiction mismatch as
+  // an immediate trust killer.
+  //
+  // Scoring: prefer city > county > state level, then longer canonical
+  // names (more specific match) within the same level. Match against
+  // word-bounded normalized signals so "marin" doesn't accidentally
+  // match a word like "marina".
   useEffect(() => {
-    const projJurisdiction = project?.jurisdiction?.toLowerCase()?.trim();
-    if (!projJurisdiction) return;
+    const signalSrc = [
+      project?.jurisdiction,
+      project?.ai_summary,
+      project?.raw_input,
+      project?.name,
+    ]
+      .filter((s): s is string => typeof s === 'string' && s.length > 0)
+      .join(' ')
+      .toLowerCase();
+    if (!signalSrc) return;
 
-    // Look for a jurisdiction in the list whose name OR id matches.
-    // Match on substring so "California" matches "ca-title-24-part-2" or
-    // a city-level entry like "san-diego". Prefer a city/county match
-    // (more specific) over a state match if the project mentions one.
-    const matches = jurisdictions.filter((j) => {
-      const name = `${j.name ?? ''} ${j.state ?? ''} ${j.id}`.toLowerCase();
-      return projJurisdiction.split(/[,\s]+/).some(
-        (token) => token.length > 2 && name.includes(token)
-      );
-    });
+    // Normalize punctuation to spaces and pad with whitespace so we can
+    // match canonical names as whole tokens (avoid "marin" ⊂ "marina").
+    const signals = ` ${signalSrc.replace(/[^a-z0-9]+/g, ' ')} `;
 
-    if (matches.length === 0) return;
-    // If the user hasn't changed the default, adopt the project's jurisdiction.
+    const levelWeight: Record<string, number> = {
+      city: 30,
+      county: 20,
+      state: 10,
+      international: 0,
+    };
+
+    let best: { id: string; score: number } | null = null;
+    for (const j of jurisdictions) {
+      const rawName = (j.name ?? '').toLowerCase();
+      // Strip trailing ", CA"/etc and the "(statewide)" tag so canonical
+      // is just the locator phrase ("San Francisco" / "Marin County" /
+      // "California").
+      const canonical = rawName
+        .replace(/,\s*[a-z]{2}\b.*$/i, '')
+        .replace(/\(statewide\)/i, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+      if (canonical.length < 3) continue;
+
+      // Also accept the county base name without the " county" suffix —
+      // a project described as "in Marin" should resolve to Marin County
+      // even though the user didn't type the word "county".
+      const phrases = [canonical];
+      const baseName = canonical.replace(/\s+county$/, '').trim();
+      if (baseName !== canonical && baseName.length >= 3) phrases.push(baseName);
+
+      let matched = false;
+      for (const p of phrases) {
+        if (signals.includes(` ${p} `)) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) continue;
+
+      const score =
+        (levelWeight[j.level ?? 'state'] ?? 0) + canonical.length;
+      if (!best || score > best.score) best = { id: j.id, score };
+    }
+
+    if (!best) return;
+    // Only override if the user hasn't manually changed the picker.
     setJurisdictionId((current) =>
-      current === (jurisdictions[0]?.id ?? 'ibc-2024') ? matches[0].id : current
+      current === (jurisdictions[0]?.id ?? 'ibc-2024') ? best!.id : current,
     );
-  }, [project?.jurisdiction, jurisdictions]);
+  }, [
+    project?.jurisdiction,
+    project?.raw_input,
+    project?.ai_summary,
+    project?.name,
+    jurisdictions,
+  ]);
 
   // Project Spine v1: track step status locally; seed from hydrated.
   const [stepStatusMap, setStepStatusMap] = useState<
