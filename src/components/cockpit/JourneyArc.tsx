@@ -284,11 +284,11 @@ export default function JourneyArc({
                   y={y + 38}
                   textAnchor="middle"
                   dominantBaseline="text-before-edge"
-                  fontSize="9"
+                  fontSize="11"
                   fontWeight="500"
                   fill={navyInk}
                   style={{
-                    opacity: isHovered || isActive ? 1 : 0.6,
+                    opacity: isHovered || isActive ? 1 : 0.85,
                     transition: 'opacity 200ms ease',
                   }}
                 >
