@@ -450,40 +450,65 @@ export default function KillerappProjectShell() {
             )}
           </div>
 
+          {/* 2026-05-19 (Ship 16): contextual "Choose your next move" panel.
+              Replaces the prior 3-chip strip (Estimate / Codes / Contracts).
+              Now 9 chips across 3 lifecycle stages (Size Up / Lock It In /
+              Plan It Out) with stage-color accents + plain-English label +
+              pro-term sublabel — matches the dual-label format used in the
+              workflow picker so the platform feels consistent stem-to-stern. */}
           <div
             style={{
               borderTop: '1px solid var(--faded-rule)',
-              paddingTop: 16,
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              alignItems: 'center',
+              paddingTop: 20,
+              marginTop: 4,
             }}
           >
-            <span
+            <div
               style={{
                 fontSize: 11,
                 letterSpacing: 1.5,
                 textTransform: 'uppercase',
                 color: 'var(--graphite)',
                 opacity: 0.6,
-                marginRight: 8,
+                marginBottom: 14,
               }}
             >
-              What next?
-            </span>
-            <NextStepLink
-              href={`/killerapp/workflows/estimating?project=${encodeURIComponent(projectId)}`}
-              label="Estimate the job"
-            />
-            <NextStepLink
-              href={`/killerapp/workflows/code-compliance?project=${encodeURIComponent(projectId)}`}
-              label="Check codes"
-            />
-            <NextStepLink
-              href={`/killerapp/workflows/contract-templates?project=${encodeURIComponent(projectId)}`}
-              label="Contract templates"
-            />
+              Choose your next move
+            </div>
+            {NEXT_STEP_GROUPS.map((group) => (
+              <div key={group.stageLabel} style={{ marginBottom: 18 }}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                    textTransform: 'uppercase',
+                    color: group.stageColor,
+                    opacity: 0.9,
+                    fontWeight: 600,
+                    marginBottom: 8,
+                  }}
+                >
+                  {group.stageLabel}
+                </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 8,
+                  }}
+                >
+                  {group.items.map((item) => (
+                    <NextStepCard
+                      key={item.label}
+                      href={`${item.href}?project=${encodeURIComponent(projectId)}`}
+                      label={item.label}
+                      subLabel={item.subLabel}
+                      accentColor={group.stageColor}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -526,6 +551,105 @@ function NextStepLink({ href, label }: { href: string; label: string }) {
       data-testid={`next-step-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       {label} →
+    </Link>
+  );
+}
+
+// 2026-05-19 (Ship 16): 9-chip contextual next-step panel.
+// Three lifecycle stages × 3 chips each, with plain-English labels +
+// pro-term sublabel so investors + contractors both grok what each
+// surface does. Stage colors match STAGE_ACCENTS used in the journey
+// strip so the cockpit / picker / shell all speak the same visual
+// language stage-by-stage.
+const NEXT_STEP_GROUPS: ReadonlyArray<{
+  stageLabel: string;
+  stageColor: string;
+  items: ReadonlyArray<{ label: string; subLabel: string; href: string }>;
+}> = [
+  {
+    stageLabel: '1 · Size up',
+    stageColor: '#C9913F', // brass (Size Up)
+    items: [
+      { label: 'Quick estimate', subLabel: 'What might it cost?', href: '/killerapp/workflows/estimating' },
+      { label: 'Check codes', subLabel: 'Which codes apply?', href: '/killerapp/workflows/code-compliance' },
+      { label: "Who's asking?", subLabel: 'Capture a lead by voice', href: '/killerapp/who-is-asking' },
+    ],
+  },
+  {
+    stageLabel: '2 · Lock it in',
+    stageColor: '#3E3A6E', // indigo (Lock In)
+    items: [
+      { label: 'Contract drafts', subLabel: 'Generate paperwork', href: '/killerapp/workflows/contract-templates' },
+      { label: 'Permit checklist', subLabel: 'What permits do I need?', href: '/killerapp/workflows/permit-applications' },
+      { label: 'Compare sub bids', subLabel: 'Pick the right sub', href: '/killerapp/workflows/sub-management' },
+    ],
+  },
+  {
+    stageLabel: '3 · Plan it out',
+    stageColor: '#2E9E9A', // teal (Plan)
+    items: [
+      { label: 'Supply ordering', subLabel: 'Order the materials', href: '/killerapp/workflows/supply-ordering' },
+      { label: 'Crew sizing', subLabel: 'How many people?', href: '/killerapp/workflows/worker-count' },
+      { label: 'Equipment', subLabel: 'Rent or buy?', href: '/killerapp/workflows/equipment' },
+    ],
+  },
+];
+
+function NextStepCard({
+  href,
+  label,
+  subLabel,
+  accentColor,
+}: {
+  href: string;
+  label: string;
+  subLabel: string;
+  accentColor: string;
+}) {
+  return (
+    <Link
+      href={href}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
+        padding: '12px 14px',
+        minHeight: 56,
+        border: '0.5px solid var(--faded-rule)',
+        borderLeft: `3px solid ${accentColor}`,
+        borderRadius: 8,
+        background: 'rgba(255,255,255,0.55)',
+        color: 'var(--graphite)',
+        textDecoration: 'none',
+        transition: 'background 180ms ease, border-color 180ms ease, transform 180ms ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
+        e.currentTarget.style.borderColor = accentColor;
+        e.currentTarget.style.borderLeftColor = accentColor;
+        e.currentTarget.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'rgba(255,255,255,0.55)';
+        e.currentTarget.style.borderColor = 'var(--faded-rule)';
+        e.currentTarget.style.borderLeftColor = accentColor;
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+      data-testid={`next-step-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
+    >
+      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.3 }}>
+        {label} →
+      </div>
+      <div
+        style={{
+          fontSize: 11,
+          opacity: 0.7,
+          lineHeight: 1.3,
+          fontStyle: 'italic',
+        }}
+      >
+        {subLabel}
+      </div>
     </Link>
   );
 }
