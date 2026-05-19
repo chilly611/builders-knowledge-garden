@@ -139,9 +139,11 @@ export default function KillerappProjectShell() {
   }, [projectId, router, searchParams]);
 
   useEffect(() => {
+    // Always clear stale streaming text when the active project changes.
+    setStreamingResponse('');
+
     if (!projectId) {
       setConversations([]);
-      setStreamingResponse('');
       setStreaming(false);
       return;
     }
@@ -183,6 +185,7 @@ export default function KillerappProjectShell() {
   // Auto-trigger stream when project has no assistant message yet.
   useEffect(() => {
     if (!projectId || !project) return;
+    if (project.id !== projectId) return; // guard: project record not yet refreshed for this id
     if (loading || streaming) return;
     if (triggeredStreamFor.current === projectId) return;
 
