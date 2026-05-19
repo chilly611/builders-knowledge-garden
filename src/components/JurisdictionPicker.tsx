@@ -110,13 +110,40 @@ function searchJurisdictions(
   return results;
 }
 
+// USPS-style two-letter codes for every state + DC. Used by getShortLabel
+// below; the previous "first-letter-of-each-word" heuristic broke on every
+// single-word state ("California" -> "C", "Texas" -> "T", "Ohio" -> "O")
+// and produced trailing artifacts like "San Francisco, CA, C" because the
+// jurisdiction `name` already includes the state code.
+const STATE_CODES: Record<string, string> = {
+  Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR',
+  California: 'CA', Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE',
+  Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID',
+  Illinois: 'IL', Indiana: 'IN', Iowa: 'IA', Kansas: 'KS',
+  Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD',
+  Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN', Mississippi: 'MS',
+  Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV',
+  'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+  'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH', Oklahoma: 'OK',
+  Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT',
+  Vermont: 'VT', Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV',
+  Wisconsin: 'WI', Wyoming: 'WY', 'District of Columbia': 'DC',
+};
+
 function getShortLabel(jurisdiction: Jurisdiction): string {
+  // State-level / country-level: just the state name.
   if (jurisdiction.level === 'state' || jurisdiction.level === 'country') {
     return jurisdiction.state || jurisdiction.name;
   }
-  const stateCode = jurisdiction.state
-    ? jurisdiction.state.split(' ').map((w) => w[0]).join('').substring(0, 2).toUpperCase()
-    : 'US';
+  // City and county entries usually already include a ", XX" state suffix in
+  // the name itself (e.g. "San Francisco, CA"). If so, return as-is to avoid
+  // double-tagging ("San Francisco, CA, CA" or the previously-broken
+  // "San Francisco, CA, C").
+  if (/,\s+[A-Z]{2}\b/.test(jurisdiction.name)) return jurisdiction.name;
+  // Otherwise look up the proper USPS code; fall back to "US" only if the
+  // state isn't recognized (international entries).
+  const stateCode = jurisdiction.state ? STATE_CODES[jurisdiction.state] || 'US' : 'US';
   return `${jurisdiction.name}, ${stateCode}`;
 }
 
