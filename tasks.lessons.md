@@ -989,3 +989,35 @@ The ONLY usable signal is the GitHub commit-status API.
 **Rule:** Trust signals (source count, freshness, provenance, "verified by", "updated N min ago", "synced from Supabase") sit at the intersection of platform infrastructure and demo content. They are NOT polish to do after the demo — they ARE the demo. When a pitch has a claim like "no hallucinations" / "live data" / "verified citations", build the on-screen artifact that proves the claim BEFORE the demo, not after. Same as for "100% test coverage" badges, security audit stamps, SOC2 logos on landing pages — the artifact is part of the product, not commentary on it.
 
 ---
+
+
+---
+
+### Subagent Read→Edit→Write can silently stomp the working tree when HEAD has drifted
+**Date:** 2026-05-19 (Burn 4 Wave 2 incident)
+**What happened:** Dispatched a code-writing subagent with 5 surgical fixes to apply across 5 files. For 3 files (JourneyArc, AuthAndProjectIndicator, BudgetSnapshot) the result was clean and additive. For TWO files (`useProjectWorkflowState.ts` and `ProjectCockpit.tsx`) the agent's local working tree was a stale snapshot — the file on disk did NOT match HEAD on main. The agent's standard Read→Edit→Write loop silently reverted critical unrelated work that had landed between its base snapshot and the current HEAD, INCLUDING:
+
+- In `useProjectWorkflowState.ts`: the W11 emergency-batch demo-id rescue (`!raw.startsWith('demo-')` allowing demo-seeded project IDs to hydrate) AND 14 lines of SOON workflow state column types (`bid_risk_state`, `client_lookup_state`, `change_orders_state`, `draw_requests_state`, `lien_waivers_state`, `payroll_check_state`, `walk_through_state`, `retainage_state`, `warranty_state`, `project_review_state`). The columns are referenced elsewhere in the codebase via TypeScript; removing them turned the build red ~50s into the Vercel job with `Property 'X' does not exist on type 'ProjectStateColumns'`.
+
+- In `ProjectCockpit.tsx`: the ENTIRE `useTimeMachineRewind` hook import + invocation (29 lines), the `REWIND_EVENT` listener that pulls historical journey + budget state into the cockpit when the user scrubs the dial, the `RewindToast` import + render wrapper, the `currentSnapshotId` prop pass-through to TimeMachineDial, the `rewindTo(snapshotId)` call inside `handleTimeScrub`, AND the W11 emergency-batch comment about rendering the cockpit on the picker route. The agent REPLACED that with an `if (pathname === '/killerapp') return null;` regression that would have hidden the cockpit entirely on the picker — reverting the exact W11 fix that shipped 2026-05-11.
+
+Vercel caught both via the same TS error pattern, but the rewind stomp would NOT have been visible in a typecheck — the rewind functionality would have silently disappeared from prod. Could have shipped to investors before anyone noticed.
+
+**Detection path:** PARALLEL-AGENT-PLAYBOOK Pattern C (bisect by re-layering). Re-pushed each Wave 2 file individually to main. `useProjectWorkflowState` failed alone → confirmed culprit. PROACTIVELY diffed each remaining file against canonical HEAD before pushing it. Found the ProjectCockpit stomp before pushing it broken.
+
+**Fix:** for each stomped file:
+1. Fetch the canonical version from main via Contents API.
+2. `cp` it over the local working tree (replacing the agent's stomped version).
+3. Re-read via the Read tool so the harness re-registers state.
+4. Apply ONLY the intended surgical edits via the Edit tool.
+5. Diff the result against the canonical version — confirm ONLY the intended hunks are present.
+6. Push via Trees API.
+
+**Rule:** never trust a subagent's Write on a file when the agent's view of HEAD may have drifted. Specifically: when a subagent is asked to edit a file, the build orchestrator MUST diff the agent's output against the canonical main version BEFORE pushing — or instruct the agent to fetch the canonical version itself BEFORE editing. Diff-before-push is non-negotiable for any file that has shipped material in the last 7 days (it has unaccounted-for-by-the-agent work).
+
+**Tactical heuristics:**
+- If the agent's "lines changed" estimate is wildly off (LOC delta says +24 but the visible logic is only +14), there are ghost changes — probably reverts. Investigate before pushing.
+- For high-risk files (the spine: `ProjectContext.tsx`, `useProjectWorkflowState.ts`, `ProjectCockpit.tsx`, `layout.tsx`, `page.tsx` of demo routes), always fetch canonical AND diff before push, regardless of agent claims.
+- After pushing any subagent-written file, if Vercel fails fast (<60s = typecheck error), assume a stomp and bisect with canonical-restoration as step 1 — not edit-the-edit.
+
+**Generalization:** this is a specific instance of the broader "agent self-reports lie pleasantly" pattern (lesson 2026-04-22). Subagents report their intent and what they believe they did. They don't know what the parent's main is. Trust the build output, not the agent narrative.

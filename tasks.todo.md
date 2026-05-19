@@ -1192,3 +1192,24 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 3. Either: a11y quick wins on TimeMachineDial + JourneyArc (~15 min)
 4. Either: 30-second contracts-autofill smoke test on each of the 3 demo projects (~5 min)
 5. Optional spare-cycle ship: `/killerapp/who-is-asking` voice extract per Agent E's plan (~2-3 hr)
+
+
+## ═══ 2026-05-19 mid-day (Burn 4) — who-is-asking + reactivity + bisect ═══
+
+### Shipped this burn (final HEAD f8c2f3c)
+- [x] `/killerapp/who-is-asking` voice-extract surface (commit `e6f3c75`) — Brief 1 of CRM v1. POST route + client component + page + workflow registration + journey event emit.
+- [x] 96-line WIP cleanup (same commit) — committed Chilly's KillerappProjectShell C1 spine refactor + layout ProjectProvider/Suspense wrap.
+- [x] AuthAndProjectIndicator always renders w/ Sign in / Sign up CTAs (commit `f141498`).
+- [x] JourneyArc label contrast 9px→11px / 0.6→0.85 opacity (commit `d1bb1ae`).
+- [x] useProjectWorkflowState autosave event dispatch (commit `a76a20c` — surgical fix after Wave 2 stomp).
+- [x] BudgetSnapshot 250ms scale + robin-tint pulse on committed-total change (commit `c60e3aa`).
+- [x] ProjectCockpit useActiveProject + autosave listener + stage-click refetch (commit `f8c2f3c` — surgical fix after Wave 2 stomp; rewind support preserved).
+- [x] Two new demo projects in Supabase: ADU in Sausalito + Commercial TI in SoMa.
+
+### Burn 4 follow-ups (carried forward)
+- [ ] `/signup` route — currently both anon CTAs link to `/login?next=/killerapp`. Cleaner to have a distinct signup form.
+- [ ] Replace `/api/v1/crm` MOCK_CONTACTS in-memory array with a real Supabase write to `crm_contacts`. The voice-extract surface currently POSTs to the mock; works for demo, won't persist across redeploys.
+- [ ] Real photo upload pipeline behind WhoIsAskingClient (currently sends `placeholder://<filename>` URL).
+- [ ] Time Machine rewind should also pulse BudgetSnapshot when a snapshot's historical totals load. Today the pulse only fires on autosave-driven changes.
+- [ ] AuthAndProjectIndicator's "Sign in / Sign up" link target preservation — currently both go to `/login?next=/killerapp`. When the user signs in from a workflow page, they should come back to that workflow, not the picker. Pass `next=` from the current pathname.
+- [ ] Add diff-before-push enforcement to any future code-writing subagent prompt: "Before reporting done, fetch the canonical version of every file you touched from main via Contents API and diff against your local version. Confirm only your intended hunks are present. If anything else is changed, flag it and stop."

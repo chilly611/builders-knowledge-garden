@@ -1221,3 +1221,50 @@ Modified (3):
 **Files touched (commit -> paths):**
 - `4776e6a` — `src/lib/specialists.ts` (sourceCount field + return), `src/design-system/components/SourceCountBadge.tsx` (new), `src/design-system/components/AnalysisPane.tsx` (import + JSX), `src/lib/knowledge-data.ts` (10 new city entries in JURISDICTIONS array)
 - **Supabase MCP** — 23 inserts into `jurisdictions`, 16 inserts into `knowledge_entities`.
+
+
+---
+
+## 2026-05-19 mid-day — Cowork Session: Burn 4 (who-is-asking + reactivity + bisect)
+**Agent:** Cowork (claude-opus-4-7)
+**Outcome:** SHIPPED + BURNED IN.
+
+**What was built (final HEAD: f8c2f3c):**
+- **/killerapp/who-is-asking voice-extract surface** (Wave 1, commit `e6f3c75`). Brief 1 of the CRM v1 spec. New POST `/api/v1/crm/voice-extract` route (185 LOC) with Claude extraction + deterministic first-word fallback. WhoIsAskingClient.tsx (571 LOC) with `useSpeechRecognition` + transcript pill + photo upload + editable draft card + journey-event emission. Server page (92 LOC). Registered in `workflows.json` + `LIVE_WORKFLOWS` map + `WORKFLOW_BLURBS`.
+- **96-line WIP cleanup** (Wave 1, same commit): committed Chilly's uncommitted local diffs in `KillerappProjectShell.tsx` (C1 spine pattern via `useProject` hook) and `layout.tsx` (ProjectProvider + Suspense + AuthAndProjectIndicator wrap closing the 2026-05-11 auth-pill regression).
+- **Visible Sign in / Sign up CTAs** on every `/killerapp/*` route (Wave 2 → `f141498`). AuthAndProjectIndicator no longer returns `null` while auth is checking; shows "Checking…" placeholder, then "Signed in as {email}" or "Not signed in · Sign in / Sign up" (both anon CTAs link to `/login?next=/killerapp`; `/signup` route doesn't exist yet — follow-up).
+- **Cockpit refetches on every workflow autosave** (Wave 2 → `a76a20c`, `f8c2f3c`). `useProjectWorkflowState` now dispatches `bkg:workflow:autosaved` on flush success. `ProjectCockpit` listens and refetches budget when the event matches the active project. Plus `void fetchBudget()` fires before `router.push` in `handleStageClick` so the destination page mounts with fresh totals.
+- **BudgetSnapshot visible pulse** (Wave 2 → `c60e3aa`). 250ms scale + robin-tint pulse on the committed-total span when `data.totalCommittedCents` changes; auto-clears after 600ms. The cockpit visibly REACTS to autosaves so the demo can say "watch the budget update live" and the eye is drawn.
+- **JourneyArc label contrast fix** (Wave 2 → `d1bb1ae`). Stage labels bumped from 9px @ 0.6 opacity to 11px @ 0.85 opacity. Closes the WCAG-AA contrast gap Agent G flagged.
+- **useActiveProject hook in ProjectCockpit** (`f8c2f3c`). Project switches via the project switcher or another tab now propagate reactively to the cockpit, not only on next render. Legacy `getActiveProjectId()` kept as SSR fallback.
+
+**Companion data work (Supabase MCP):** two additional demo projects seeded earlier in the session:
+- `ADU in Sausalito` — UUID `aa11b22c-1111-4d78-aaaa-bbccdd112233`, Marin County, $180k–$320k
+- `Commercial TI in SoMa` — UUID `bb22c33d-2222-4d78-bbbb-ccddee223344`, San Francisco, $850k–$1.4M
+
+**The big incident — subagent stomped two files:**
+The Wave 2 build subagent was asked to apply 5 surgical fixes across 5 files. For 3 files the result was clean. For TWO files (`useProjectWorkflowState.ts` and `ProjectCockpit.tsx`) the agent's local working tree was a stale snapshot of HEAD, and when it Wrote the file back with its changes it SILENTLY REVERTED unrelated work that had landed in between its Read and Write — including the W11 emergency-batch demo-id rescue, 14 lines of SOON workflow state column types, the entire Time Machine rewind hook + REWIND_EVENT listener + RewindToast wrapper + currentSnapshotId prop in ProjectCockpit, AND the W11 "render everywhere" comment (replaced with a regression-introducing `if (pathname === '/killerapp') return null;`).
+
+Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the deleted SOON workflow state types). I bisected by re-layering one file at a time, found `useProjectWorkflowState.ts` was the immediate culprit, then ALSO audited `ProjectCockpit.tsx` proactively and discovered the bigger Time-Machine rewind stomp. Both fixed surgically by fetching the canonical version from main and applying ONLY the intended additions on top.
+
+**Lesson appended below.**
+
+**Files touched (commit -> path):**
+- `e6f3c75` — Wave 1 (7 files): voice-extract route + WhoIsAskingClient + who-is-asking page + workflows.json + killerapp/page.tsx + layout.tsx + KillerappProjectShell.tsx
+- `3f5d2bd` — Wave 2 attempt (FAILED, rolled back): 5 files, 2 stomped
+- `296376` — Wave 2a bisect attempt (FAILED, rolled back): 3 of 5 files
+- `d1bb1ae` — JourneyArc.tsx (bisect step 1, GREEN)
+- `f141498` — AuthAndProjectIndicator.tsx (bisect step 2, GREEN)
+- `11822a6` — useProjectWorkflowState.ts FIRST attempt (FAILED — proved the file was the culprit)
+- `a76a20c` — useProjectWorkflowState.ts SURGICAL fix (GREEN — restored canonical version, applied only the 2 dispatch blocks)
+- `c60e3aa` — BudgetSnapshot.tsx (GREEN — clean additive)
+- `f8c2f3c` — ProjectCockpit.tsx SURGICAL fix (GREEN — restored canonical version, applied only the 4 reactivity additions; rewind support preserved)
+
+**Supabase MCP:** 2 inserts into `command_center_projects` (aa11b22c + bb22c33d).
+
+**Status entering Tuesday dress rehearsal:** all 5 of Chilly's "I am certain the demo needs" requirements landed:
+- Sign in / Sign up visible everywhere ✓
+- Sequencing visible in journey map (stage 3 wired with teal accent, ProjectCockpit mounted globally) ✓
+- Time Machine + dynamic adaptive budget visibly update on autosave, project switch, stage click, navigation ✓
+- Trust badge on every code-compliance answer (from prior burn) ✓
+- Three diverse demo projects ready (Marin farmhouse / ADU Sausalito / SoMa TI) ✓
