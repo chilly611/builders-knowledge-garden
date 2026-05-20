@@ -86,6 +86,14 @@ function setActiveProjectInLocalStorage(id: string) {
  * truth for which workflows the next-step links go to (the prompt
  * sometimes omits one or all three; the static row is always reliable).
  */
+// Replace the first City, State [ZIP] pattern in text with a new location string.
+// Used to keep the displayed raw_input consistent with an explicitly saved jurisdiction.
+function applyJurisdictionOverride(text: string, jurisdiction: string): string {
+  // Matches patterns like "San Francisco, CA 94122", "San Jose, ca", "Los Angeles, CA 90001-1234"
+  const locationPattern = /\b([A-Z][a-zA-Z\s]+),\s*([A-Za-z]{2})\s*(\d{5}(?:-\d{4})?)?/;
+  return locationPattern.test(text) ? text.replace(locationPattern, jurisdiction) : text;
+}
+
 function stripTrailingActionBlock(text: string): string {
   if (!text) return text;
   // Match `**What next?**` (case-insensitive, optional surrounding
@@ -318,6 +326,12 @@ export default function KillerappProjectShell() {
     [project?.raw_input, conversations]
   );
 
+  const displayQuery = useMemo(
+    () =>
+      project?.jurisdiction ? applyJurisdictionOverride(userQuery, project.jurisdiction) : userQuery,
+    [userQuery, project?.jurisdiction]
+  );
+
   if (!projectId) return null;
 
   // 2026-05-19 (Ship 14): the prior `streaming ? streamingResponse : …`
@@ -381,7 +395,7 @@ export default function KillerappProjectShell() {
             boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
           }}
         >
-          {userQuery && (
+          {displayQuery && (
             <div style={{ marginBottom: 20 }}>
               <div
                 style={{
@@ -402,7 +416,7 @@ export default function KillerappProjectShell() {
                   margin: 0,
                 }}
               >
-                {userQuery}
+                {displayQuery}
               </p>
             </div>
           )}
