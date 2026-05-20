@@ -442,24 +442,22 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     // and update local state immediately so the banner and summary reflect
     // the value without a full page reload.
     if (stepResult.stepId === 's2-2' && stepResult.type === 'step_completed' && stepValue && projectId) {
-      void patchProject(projectId, { jurisdiction: stepValue });
       setLocalProject((prev) => {
         const base = prev ?? activeProject;
         if (!base) return prev;
         return { ...base, jurisdiction: stepValue };
       });
-      refreshProject();
+      patchProject(projectId, { jurisdiction: stepValue }).then(() => refreshProject());
     }
 
     if (stepResult.stepId === 's2-3' && stepResult.type === 'step_completed' && stepValue && projectId) {
-      void patchProject(projectId, { sqft: stepValue });
       setLocalSqft(stepValue);
       if (!existingSqft) {
         if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
         setSqftFlag(true);
         sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
       }
-      refreshProject();
+      patchProject(projectId, { sqft: stepValue }).then(() => refreshProject());
     }
 
     // Project Spine v1: persist this step's payload into estimating_state.
@@ -575,7 +573,6 @@ export default function EstimatingClient({ workflow, stages }: Props) {
         return { ...base, raw_input: value };
       });
     } else if (field === 's2-2') {
-      void patchProject(projectId, { jurisdiction: value });
       setLocalProject((prev) => {
         const base = prev ?? project;
         if (!base) return prev;
@@ -584,14 +581,13 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       if (locationFlagTimer.current) clearTimeout(locationFlagTimer.current);
       setLocationFlag(true);
       locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
-      refreshProject();
+      patchProject(projectId, { jurisdiction: value }).then(() => refreshProject());
     } else if (field === 's2-3') {
-      void patchProject(projectId, { sqft: value });
       setLocalSqft(value);
       if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
       setSqftFlag(true);
       sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
-      refreshProject();
+      patchProject(projectId, { sqft: value }).then(() => refreshProject());
     }
 
     setPendingScopeChange(null);
