@@ -217,11 +217,16 @@ export function seedPayloadsFromRaw(
     !!label && /\b(square|sqft|sq\s?ft|footage|size|area)\b/i.test(label);
 
   for (const step of steps) {
-    if (out[step.id]) continue; // saved values win
+    if (step.type === 'analysis_result') {
+      // Always keep input in sync with the current project description so the
+      // "Input for analysis" shown to the user matches the banner. Preserve
+      // any saved value (manual answer / prior AI result) — only input refreshes.
+      out[step.id] = { ...out[step.id], input: raw };
+      continue;
+    }
+    if (out[step.id]) continue; // saved values win for all other step types
     if (step.type === 'text_input' || step.type === 'voice_input') {
       out[step.id] = { value: raw };
-    } else if (step.type === 'analysis_result') {
-      out[step.id] = { input: raw };
     } else if (step.type === 'location_input' && parsed.location) {
       out[step.id] = { value: parsed.location };
     } else if (step.type === 'number_input' && parsed.sqft && labelHintsSqft(step.label)) {
