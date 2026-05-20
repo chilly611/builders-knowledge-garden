@@ -1428,3 +1428,17 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - `src/lib/contract-templates/*.md` × 7 (`**⚠ DRAFT NOTICE...**` → `*** DRAFT NOTICE... ***`)
 
 **Commits:** `200927a` `0e81a71` `bd26693` `9b07034`. Final commit landed green; Michael confirmed in the demo browser.
+
+## 2026-05-19 — Chat Session: Ship 35 — Estimate page syncs back to project summary
+**Agent:** Chat (Claude Sonnet 4.6 / Claude Code)
+**What was built:**
+- `d62bf88` — Estimate page (`EstimatingClient.tsx`) now syncs field changes back to the project record:
+  - **"Describe the job" (s2-1):** Intercepts step completion when project already has a description. Shows a scope-change confirmation modal ("This could affect estimations, code compliance, permits, and contracts"). Holds the step event until confirmed; cancel discards with no side effects. On confirm, PATCHes `raw_input` and updates the ProjectContextBanner in-session via `localProject` state.
+  - **Location (s2-2):** PATCHes `jurisdiction` immediately, updates the banner in-session (no reload), and shows an amber inline flag ("Project location updated") that auto-dismisses after 6 s. Flag only fires when overwriting an existing value.
+  - **Square footage (s2-3):** No new DB column — sqft is persisted in `estimating_state` and surfaced in the banner via `bannerSqft` (`localSqft` wins in-session; `seededPayloads`/`hydratedPayloads` on reload). Shows amber inline flag on update.
+  - `ProjectContextBanner.tsx`: new optional `sqft` prop appended to facts row (e.g. "2,400 sq ft").
+
+**Key decisions:**
+- **No DB migration for sqft:** stored in `estimating_state` (already persisted per-workflow), surfaced to banner via a new `sqft` prop on `ProjectContextBanner`. Avoids a migration for a value that lives naturally in the workflow step.
+- **Modal holds the step event:** for s2-1 scope changes, `recordStepEvent` is NOT called until the user confirms. Cancel leaves the project untouched. This is cleaner than calling + reverting.
+- **`localProject` + `localSqft` for instant banner updates:** rather than re-fetching after each PATCH, local state overrides the hook's `project` until the next page load.
