@@ -30,6 +30,9 @@ interface Props {
   project: ProjectContext | null;
   // Accept any workflow slug. PEER_LINKS only dims/dimensions the curated set.
   selfWorkflow: PeerWorkflowId | string;
+  // Optional extra facts surfaced by individual workflow clients (e.g. sqft
+  // from estimating_state when there is no dedicated DB column for it yet).
+  sqft?: string | null;
 }
 
 const PEER_LINKS: Array<{
@@ -74,7 +77,7 @@ const PEER_LINKS: Array<{
   },
 ];
 
-export default function ProjectContextBanner({ project, selfWorkflow }: Props) {
+export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Props) {
   if (!project) return null;
 
   const rawInput = project.raw_input?.trim();
@@ -87,6 +90,7 @@ export default function ProjectContextBanner({ project, selfWorkflow }: Props) {
   const factsRow: string[] = [];
   if (project.project_type) factsRow.push(project.project_type);
   if (project.jurisdiction) factsRow.push(project.jurisdiction);
+  if (sqft) factsRow.push(`${Number(sqft).toLocaleString()} sq ft`);
   if (project.estimated_cost_low && project.estimated_cost_high) {
     factsRow.push(
       `$${project.estimated_cost_low.toLocaleString()}–$${project.estimated_cost_high.toLocaleString()}`

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import WorkflowShell from '@/design-system/components/WorkflowShell';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import type { LifecycleStage } from '@/components/JourneyMapHeader';
@@ -7,9 +7,11 @@ import type { StepResult } from '@/design-system/components/StepCard.types';
 import { getProjectBudget, recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
+import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
 import AttachmentSection from '@/components/AttachmentSection';
 import { colors, spacing, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   workflow: Workflow;
@@ -257,6 +259,42 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   const [lastRecordedAmount, setLastRecordedAmount] = useState<number | null>(null);
   const [csiEstimate, setCsiEstimate] = useState<EstimateBlock | null>(null);
 
+  // ── Project-summary sync state ────────────────────────────────────────
+  // Local override of the project context so the banner reflects changes
+  // immediately after the user confirms an update, without a full re-fetch.
+  const [localProject, setLocalProject] = useState<ProjectContext | null>(null);
+
+  // Pending scope change: holds the stepResult + new raw_input until the
+  // user confirms the modal. We don't call recordStepEvent until confirmed
+  // so the step card isn't committed if the user cancels.
+  const [pendingScopeChange, setPendingScopeChange] = useState<{
+    value: string;
+    stepResult: StepResult & { workflowId: string };
+  } | null>(null);
+
+  // In-session sqft override: updates immediately when s2-3 completes so the
+  // banner reflects the new value without waiting for the server round-trip.
+  const [localSqft, setLocalSqft] = useState<string | null>(null);
+
+  // Inline update flags — auto-dismiss after 6 s.
+  const [locationFlag, setLocationFlag] = useState(false);
+  const [sqftFlag, setSqftFlag] = useState(false);
+  const locationFlagTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sqftFlagTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Helper: PATCH a project field through the API with the supabase auth token.
+  const patchProject = useCallback(async (id: string, updates: Record<string, unknown>) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    await fetch('/api/v1/projects', {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ id, ...updates }),
+    }).catch(() => { /* offline / demo — best-effort */ });
+  }, []);
+
   // 2026-05-19 (Ship 28): AI estimate → /killerapp/budget handoff.
   // Re-uses the already-parsed csiEstimate.lines (low/high per division)
   // and appends them as 'estimated'-state lines into the budget store
@@ -350,6 +388,52 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   }, [projectId]);
 
   async function handleStepComplete(stepResult: StepResult & { workflowId: string }) {
+    const activeProject = localProject ?? project;
+    const payload = stepResult.payload as { value?: string; input?: string } | undefined;
+    const stepValue = payload?.value?.trim() ?? '';
+
+    // ── s2-1 "Describe the job" ───────────────────────────────────────────
+    // If the project already has a description AND it's changing, show the
+    // scope-change confirmation modal before committing anything.
+    if (
+      stepResult.stepId === 's2-1' &&
+      stepResult.type === 'step_completed' &&
+      stepValue &&
+      activeProject?.raw_input &&
+      stepValue !== activeProject.raw_input
+    ) {
+      setPendingScopeChange({ value: stepValue, stepResult });
+      return; // hold — don't persist yet
+    }
+
+    // ── s2-2 "Where is it?" ──────────────────────────────────────────────
+    // PATCH jurisdiction and show inline flag when the location changes.
+    if (stepResult.stepId === 's2-2' && stepResult.type === 'step_completed' && stepValue && projectId) {
+      const wasSet = !!activeProject?.jurisdiction;
+      void patchProject(projectId, { jurisdiction: stepValue });
+      setLocalProject((prev) => {
+        const base = prev ?? activeProject;
+        if (!base) return prev;
+        return { ...base, jurisdiction: stepValue };
+      });
+      if (wasSet) {
+        if (locationFlagTimer.current) clearTimeout(locationFlagTimer.current);
+        setLocationFlag(true);
+        locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
+      }
+    }
+
+    // ── s2-3 "Approximate square footage" ────────────────────────────────
+    // No dedicated DB column — sqft is persisted in estimating_state (via
+    // recordStepEvent below) and displayed in the banner via seededPayloads.
+    // Show inline flag when the value changes.
+    if (stepResult.stepId === 's2-3' && stepResult.type === 'step_completed' && stepValue) {
+      setLocalSqft(stepValue);
+      if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
+      setSqftFlag(true);
+      sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
+    }
+
     // Project Spine v1: persist this step's payload into estimating_state.
     recordStepEvent(stepResult);
 
@@ -366,7 +450,6 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     // Only the final step (s2-6 AI estimate) drives a budget write.
     if (stepResult.stepId !== 's2-6' || stepResult.type !== 'step_completed') return;
 
-    const payload = stepResult.payload as { input?: string; value?: string } | undefined;
     // Manual-fill answer (payload.value) wins over AI input (payload.input).
     const finalText = (payload?.value && payload.value.trim()) || payload?.input || '';
     const block = parseEstimateBlock(finalText);
@@ -437,6 +520,38 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     () => statusFromSeeded(seededPayloads, stepStatusMap),
     [seededPayloads, stepStatusMap]
   );
+
+  // sqft for the ProjectContextBanner.
+  // Priority: in-session edit (localSqft) → persisted workflow state (seededPayloads
+  // merges hydratedPayloads, which survives reload via estimating_state).
+  const bannerSqft = useMemo(
+    () => localSqft ?? seededPayloads['s2-3']?.value ?? hydratedPayloads['s2-3']?.value ?? null,
+    [localSqft, seededPayloads, hydratedPayloads]
+  );
+
+  // ── Scope-change modal handlers ───────────────────────────────────────
+  async function confirmScopeChange() {
+    if (!pendingScopeChange || !projectId) {
+      setPendingScopeChange(null);
+      return;
+    }
+    const { value, stepResult } = pendingScopeChange;
+    recordStepEvent(stepResult);
+    setStepStatusMap((prev) => ({ ...prev, [stepResult.stepId]: 'complete' }));
+    void patchProject(projectId, { raw_input: value });
+    setLocalProject((prev) => {
+      const base = prev ?? project;
+      if (!base) return prev;
+      return { ...base, raw_input: value };
+    });
+    setPendingScopeChange(null);
+  }
+
+  function cancelScopeChange() {
+    setPendingScopeChange(null);
+  }
+
+  const activeProject = localProject ?? project;
 
   const topPanel = (
     <section
@@ -756,7 +871,216 @@ export default function EstimatingClient({ workflow, stages }: Props) {
 
   return (
     <>
-      <ProjectContextBanner project={project} selfWorkflow="estimating" />
+      {/* ── Scope-change confirmation modal ─────────────────────────────── */}
+      {pendingScopeChange && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="scope-modal-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: spacing[4],
+            backgroundColor: 'rgba(14, 14, 14, 0.55)',
+            backdropFilter: 'blur(2px)',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--trace, #F4F0E6)',
+              borderRadius: radii.lg,
+              padding: spacing[6],
+              maxWidth: 460,
+              width: '100%',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+              fontFamily: fonts.body,
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                letterSpacing: 1.5,
+                textTransform: 'uppercase',
+                color: '#A02A1F',
+                marginBottom: spacing[2],
+              }}
+            >
+              Heads up
+            </p>
+            <h2
+              id="scope-modal-title"
+              style={{
+                fontSize: fontSizes.lg,
+                fontWeight: fontWeights.semibold,
+                color: 'var(--graphite, #2E2E30)',
+                marginBottom: spacing[3],
+              }}
+            >
+              Change the scope of your project?
+            </h2>
+            <p
+              style={{
+                fontSize: fontSizes.sm,
+                lineHeight: 1.55,
+                color: 'var(--graphite, #2E2E30)',
+                opacity: 0.75,
+                marginBottom: spacing[4],
+              }}
+            >
+              Updating the job description changes the foundation of your entire project.
+              This could affect <strong>all</strong> aspects — estimations, code compliance,
+              permits, and contracts — and may require you to re-run those workflows.
+            </p>
+            <blockquote
+              style={{
+                margin: `0 0 ${spacing[5]}`,
+                padding: `${spacing[3]} ${spacing[4]}`,
+                background: colors.ink[100],
+                borderLeft: `3px solid var(--brass, #C9913F)`,
+                borderRadius: radii.sm,
+                fontSize: fontSizes.sm,
+                lineHeight: 1.45,
+                color: 'var(--graphite, #2E2E30)',
+              }}
+            >
+              {pendingScopeChange.value.length > 180
+                ? `${pendingScopeChange.value.slice(0, 177)}…`
+                : pendingScopeChange.value}
+            </blockquote>
+            <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={cancelScopeChange}
+                style={{
+                  padding: `${spacing[2]} ${spacing[4]}`,
+                  fontSize: fontSizes.sm,
+                  fontFamily: fonts.body,
+                  background: 'transparent',
+                  color: 'var(--graphite, #2E2E30)',
+                  border: `1px solid ${colors.ink[300]}`,
+                  borderRadius: radii.full,
+                  cursor: 'pointer',
+                  minHeight: 40,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmScopeChange()}
+                style={{
+                  padding: `${spacing[2]} ${spacing[4]}`,
+                  fontSize: fontSizes.sm,
+                  fontWeight: fontWeights.semibold,
+                  fontFamily: fonts.body,
+                  background: '#A02A1F',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: radii.full,
+                  cursor: 'pointer',
+                  minHeight: 40,
+                }}
+              >
+                Yes, update project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Location updated flag ─────────────────────────────────────────── */}
+      {locationFlag && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            maxWidth: 900,
+            margin: '0 auto',
+            marginBottom: spacing[3],
+            padding: `${spacing[3]} ${spacing[4]}`,
+            background: 'var(--trace, #F4F0E6)',
+            border: `1px solid var(--brass, #C9913F)`,
+            borderRadius: radii.md,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[3],
+            fontFamily: fonts.body,
+            fontSize: fontSizes.sm,
+            color: 'var(--graphite, #2E2E30)',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>📍</span>
+          <span>
+            <strong>Project location updated.</strong> Your project summary now reflects the new location.
+          </span>
+          <button
+            type="button"
+            onClick={() => setLocationFlag(false)}
+            aria-label="Dismiss"
+            style={{
+              marginLeft: 'auto',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 16,
+              color: colors.ink[500],
+              padding: spacing[1],
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Square footage updated flag ───────────────────────────────────── */}
+      {sqftFlag && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            maxWidth: 900,
+            margin: '0 auto',
+            marginBottom: spacing[3],
+            padding: `${spacing[3]} ${spacing[4]}`,
+            background: 'var(--trace, #F4F0E6)',
+            border: `1px solid var(--brass, #C9913F)`,
+            borderRadius: radii.md,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[3],
+            fontFamily: fonts.body,
+            fontSize: fontSizes.sm,
+            color: 'var(--graphite, #2E2E30)',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>📐</span>
+          <span>
+            <strong>Square footage updated.</strong> Your project summary now reflects the new size.
+          </span>
+          <button
+            type="button"
+            onClick={() => setSqftFlag(false)}
+            aria-label="Dismiss"
+            style={{
+              marginLeft: 'auto',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 16,
+              color: colors.ink[500],
+              padding: spacing[1],
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      <ProjectContextBanner project={activeProject} selfWorkflow="estimating" sqft={bannerSqft} />
       <AttachmentSection
         projectId={projectId}
         workflowId="q2"
