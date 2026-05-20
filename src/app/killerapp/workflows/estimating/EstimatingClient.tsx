@@ -9,6 +9,7 @@ import { resolveProjectId } from '@/lib/journey-progress';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 import { useProject } from '@/lib/hooks/useProject';
+import { applyJurisdictionOverride } from '@/lib/project-display';
 import ProjectContextBanner from '../ProjectContextBanner';
 import AttachmentSection from '@/components/AttachmentSection';
 import { colors, spacing, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
@@ -534,9 +535,15 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   // location + sqft for location_input/number_input steps. User
   // feedback 2026-05-06: "I shouldn't have to answer the questions of
   // where is the location or square footage if I already put those in."
+  const effectiveRawInput = (() => {
+    const p = localProject ?? project;
+    return p?.jurisdiction && p?.raw_input
+      ? applyJurisdictionOverride(p.raw_input, p.jurisdiction)
+      : p?.raw_input;
+  })();
   const seededPayloads = useMemo(
-    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
-    [hydratedPayloads, project, workflow.steps]
+    () => seedPayloadsFromRaw(workflow.steps, effectiveRawInput, hydratedPayloads),
+    [hydratedPayloads, effectiveRawInput, workflow.steps]
   );
 
   // Mark seeded steps as 'complete' so the XP counter credits the user
