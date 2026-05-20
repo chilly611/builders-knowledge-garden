@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Archivo_Black } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import CompassBloom from "@/components/CompassBloom";
-import GlobalAiFab from "@/components/GlobalAiFab";
+import GlobalChromeGate from "@/components/GlobalChromeGate";
 import { GamificationProvider } from "@/components/GamificationProvider";
 
 const archivo = Archivo({
@@ -73,9 +72,10 @@ export default function RootLayout({
                 the root layout anymore. AI fab (bottom-right above
                 CompassBloom) and CompassBloom (bottom-right corner)
                 remain. Order matters for z-index layering when they
-                animate. */}
-            <CompassBloom />
-            <GlobalAiFab />
+                animate. GlobalChromeGate hides these on /intro and inside
+                the /intro Act 4 iframe (?hideShell=1) so the cinematic
+                frame isn't cluttered. */}
+            <GlobalChromeGate />
           </GamificationProvider>
         </Providers>
       </body>

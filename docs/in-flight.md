@@ -10,6 +10,7 @@ Each agent: keep the list short — only files actively being edited *right now*
 |---|---|---|---|---|
 | _none_ | _none_ | _—_ | _—_ | _Tuesday May 19, 2026 — session start_ |
 | _none_ | _none_ | _—_ | _—_ | _Claude Code released layout.tsx lock (2026-05-19 ~15:30 PT) — user reverted refactor; not pushing perf changes._ |
+| Claude Code | `src/app/layout.tsx` + new `src/components/GlobalChromeGate.tsx` | 2026-05-20 ~16:05 PT | LOCKED | Demo-breaker fix: CompassBloom + GlobalAiFab in root layout render on every page including /intro and inside the hideShell iframe. Adding a tiny client wrapper that bails on /intro and `?hideShell=1`. |
 
 ## Recently released (last 1 hour)
 
