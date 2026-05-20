@@ -594,12 +594,8 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       setLocationFlag(true);
       locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
       patchProject(projectId, { jurisdiction: value }).then((result) => {
-        if (result.ok) {
-          refreshProject();
-        } else {
-          console.error('[s2-2] jurisdiction patch failed:', result.error);
-          alert(`Could not save location: ${result.error ?? 'unknown error'}`);
-        }
+        if (result.ok) refreshProject();
+        else console.error('[s2-2] jurisdiction patch failed:', result.error);
       });
     } else if (field === 's2-3') {
       setLocalSqft(value);
