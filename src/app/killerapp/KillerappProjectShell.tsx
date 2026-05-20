@@ -414,24 +414,13 @@ export default function KillerappProjectShell() {
             const sqft = project?.sqft ?? (sqftMatch ? sqftMatch[1].replace(/,/g, '') : null);
             const facts: string[] = [];
             if (project?.project_type) facts.push(project.project_type);
-            // jurisdiction shown as dedicated labeled row below — omit from dot-separated facts
+            if (project?.jurisdiction) facts.push(project.jurisdiction);
             if (sqft) facts.push(`${Number(sqft).toLocaleString()} sq ft`);
-            const hasDetails = facts.length > 0 || !!project?.jurisdiction;
-            if (!hasDetails) return null;
+            if (!facts.length) return null;
             return (
-              <div style={{ margin: '0 0 20px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 16px' }}>
-                {project?.jurisdiction && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--graphite)', fontWeight: 500 }}>
-                    <span style={{ opacity: 0.5 }}>📍</span>
-                    {project.jurisdiction}
-                  </span>
-                )}
-                {facts.length > 0 && (
-                  <span style={{ fontSize: 13, color: 'var(--graphite)', opacity: 0.6 }}>
-                    {facts.join(' · ')}
-                  </span>
-                )}
-              </div>
+              <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--graphite)', opacity: 0.7 }}>
+                {facts.join(' · ')}
+              </p>
             );
           })()}
 
