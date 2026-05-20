@@ -112,7 +112,14 @@ export default function KillerappProjectShell() {
   // C1 spine (2026-05-18): project identity + record now come from
   // ProjectContext. This component still owns conversations + streaming
   // (those are copilot concerns, not project-identity concerns).
-  const { project, projectId, loading: projectLoading, setActiveProject } = useProject();
+  const { project, projectId, loading: projectLoading, setActiveProject, refreshProject } = useProject();
+
+  // Re-fetch the project record every time this page mounts so facts like
+  // jurisdiction and sqft are always current after workflow edits.
+  useEffect(() => {
+    if (projectId) refreshProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [loading, setLoading] = useState(false);
