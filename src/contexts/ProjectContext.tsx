@@ -50,6 +50,7 @@ export interface ProjectRecord {
   raw_input: string | null;
   ai_summary: string | null;
   jurisdiction: string | null;
+  sqft: string | null;
   project_type: string | null;
   estimated_cost_low: number | null;
   estimated_cost_high: number | null;
@@ -63,6 +64,7 @@ interface ProjectContextValue {
   error: string | null;
   setActiveProject: (id: string) => void;
   clearActiveProject: () => void;
+  refreshProject: () => void;
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
@@ -105,6 +107,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const urlProjectId = searchParams.get('project');
 
   // Compute initial projectId: URL wins, localStorage rescues, else null.
+  const [fetchKey, setFetchKey] = useState(0);
   const [projectId, setProjectId] = useState<string | null>(() => {
     if (urlProjectId && isValidProjectId(urlProjectId)) return urlProjectId;
     return readActiveProjectFromStorage();
@@ -112,7 +115,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [loading, setLoading] = useState<boolean>(!!projectId);
   const [error, setError] = useState<string | null>(null);
-  const inFlight = useRef<string | null>(null);
+  const inFlight = useRef<{ id: string; key: number } | null>(null);
 
   // First-paint persistence: if initial state came from URL, write
   // to localStorage so cross-tab + rescue logic stays in sync. Runs
@@ -141,9 +144,11 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       setError(null);
       return;
     }
-    // Skip duplicate in-flight fetches for the same id.
-    if (inFlight.current === projectId) return;
-    inFlight.current = projectId;
+    // Skip concurrent in-flight fetches for the same (id, fetchKey) pair.
+    // A fetchKey bump (from refreshProject) bypasses this guard so a
+    // re-fetch always fires even when the project id hasn't changed.
+    if (inFlight.current?.id === projectId && inFlight.current?.key === fetchKey) return;
+    inFlight.current = { id: projectId, key: fetchKey };
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -175,6 +180,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           raw_input: json.raw_input ?? null,
           ai_summary: json.ai_summary ?? null,
           jurisdiction: json.jurisdiction ?? null,
+          sqft: (json as { sqft?: string | null }).sqft ?? null,
           project_type: json.project_type ?? null,
           estimated_cost_low: json.estimated_cost_low ?? null,
           estimated_cost_high: json.estimated_cost_high ?? null,
@@ -192,14 +198,20 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         setError('Failed to load project');
         setLoading(false);
       } finally {
-        if (inFlight.current === projectId) inFlight.current = null;
+        if (inFlight.current?.id === projectId && inFlight.current?.key === fetchKey) {
+          inFlight.current = null;
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, fetchKey]);
+
+  const refreshProject = useCallback(() => {
+    setFetchKey((k) => k + 1);
+  }, []);
 
   // setActiveProject — atomic URL + localStorage + state update.
   const setActiveProject = useCallback(
@@ -287,6 +299,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         error,
         setActiveProject,
         clearActiveProject,
+        refreshProject,
       }}
     >
       {children}

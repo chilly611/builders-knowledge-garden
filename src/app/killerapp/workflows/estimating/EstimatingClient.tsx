@@ -8,6 +8,7 @@ import { getProjectBudget, recordMaterialCost } from '@/lib/budget-spine';
 import { resolveProjectId } from '@/lib/journey-progress';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
+import { useProject } from '@/lib/hooks/useProject';
 import ProjectContextBanner from '../ProjectContextBanner';
 import AttachmentSection from '@/components/AttachmentSection';
 import { colors, spacing, fonts, fontSizes, fontWeights, radii } from '@/design-system/tokens';
@@ -253,6 +254,8 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     workflowId: workflow.id,
   });
 
+  const { refreshProject } = useProject();
+
   const [budgetSnapshot, setBudgetSnapshot] = useState<BudgetSnapshot | null>(null);
   const [budgetError, setBudgetError] = useState<'no-active-project' | null>(null);
   const [loadingBudget, setLoadingBudget] = useState(true);
@@ -433,6 +436,32 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       return;
     }
 
+    // ── Direct patch for s2-2 / s2-3 (first-time or unchanged saves) ────
+    // Overwrites trigger the modal above and early-return. Reaching here
+    // means it's either a first-time set or the same value — patch the DB
+    // and update local state immediately so the banner and summary reflect
+    // the value without a full page reload.
+    if (stepResult.stepId === 's2-2' && stepResult.type === 'step_completed' && stepValue && projectId) {
+      void patchProject(projectId, { jurisdiction: stepValue });
+      setLocalProject((prev) => {
+        const base = prev ?? activeProject;
+        if (!base) return prev;
+        return { ...base, jurisdiction: stepValue };
+      });
+      refreshProject();
+    }
+
+    if (stepResult.stepId === 's2-3' && stepResult.type === 'step_completed' && stepValue && projectId) {
+      void patchProject(projectId, { sqft: stepValue });
+      setLocalSqft(stepValue);
+      if (!existingSqft) {
+        if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
+        setSqftFlag(true);
+        sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
+      }
+      refreshProject();
+    }
+
     // Project Spine v1: persist this step's payload into estimating_state.
     recordStepEvent(stepResult);
 
@@ -555,11 +584,14 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       if (locationFlagTimer.current) clearTimeout(locationFlagTimer.current);
       setLocationFlag(true);
       locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
+      refreshProject();
     } else if (field === 's2-3') {
+      void patchProject(projectId, { sqft: value });
       setLocalSqft(value);
       if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
       setSqftFlag(true);
       sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
+      refreshProject();
     }
 
     setPendingScopeChange(null);

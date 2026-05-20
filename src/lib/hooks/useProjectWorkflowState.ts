@@ -106,6 +106,7 @@ export interface ProjectContext {
   raw_input: string | null;
   ai_summary: string | null;
   jurisdiction: string | null;
+  sqft: string | null;
   project_type: string | null;
   estimated_cost_low: number | null;
   estimated_cost_high: number | null;
@@ -328,6 +329,7 @@ export function useProjectWorkflowState(
           raw_input: json.raw_input ?? null,
           ai_summary: json.ai_summary ?? null,
           jurisdiction: json.jurisdiction ?? null,
+          sqft: (json.sqft as string | null) ?? null,
           project_type: json.project_type ?? null,
           estimated_cost_low: json.estimated_cost_low ?? null,
           estimated_cost_high: json.estimated_cost_high ?? null,
@@ -535,6 +537,7 @@ export function useProjectStateBlob<T extends Record<string, unknown>>(
           raw_input: json.raw_input ?? null,
           ai_summary: json.ai_summary ?? null,
           jurisdiction: json.jurisdiction ?? null,
+          sqft: (json.sqft as string | null) ?? null,
           project_type: json.project_type ?? null,
           estimated_cost_low: json.estimated_cost_low ?? null,
           estimated_cost_high: json.estimated_cost_high ?? null,

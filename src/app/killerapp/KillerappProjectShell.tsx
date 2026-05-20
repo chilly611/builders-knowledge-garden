@@ -400,6 +400,19 @@ export default function KillerappProjectShell() {
             </div>
           )}
 
+          {(() => {
+            const facts: string[] = [];
+            if (project?.project_type) facts.push(project.project_type);
+            if (project?.jurisdiction) facts.push(project.jurisdiction);
+            if (project?.sqft) facts.push(`${Number(project.sqft).toLocaleString()} sq ft`);
+            if (!facts.length) return null;
+            return (
+              <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--graphite)', opacity: 0.7 }}>
+                {facts.join(' · ')}
+              </p>
+            );
+          })()}
+
           <div style={{ marginBottom: 20 }}>
             <div
               style={{
