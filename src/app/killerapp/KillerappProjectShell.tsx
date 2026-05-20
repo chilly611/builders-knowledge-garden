@@ -401,10 +401,14 @@ export default function KillerappProjectShell() {
           )}
 
           {(() => {
+            const sqftMatch = !project?.sqft && project?.raw_input
+              ? project.raw_input.match(/\b([\d,]+)\s*(?:sf|sqft|sq\s?ft|square\s?(?:feet|foot|ft))\b/i)
+              : null;
+            const sqft = project?.sqft ?? (sqftMatch ? sqftMatch[1].replace(/,/g, '') : null);
             const facts: string[] = [];
             if (project?.project_type) facts.push(project.project_type);
             if (project?.jurisdiction) facts.push(project.jurisdiction);
-            if (project?.sqft) facts.push(`${Number(project.sqft).toLocaleString()} sq ft`);
+            if (sqft) facts.push(`${Number(sqft).toLocaleString()} sq ft`);
             if (!facts.length) return null;
             return (
               <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--graphite)', opacity: 0.7 }}>
