@@ -1521,3 +1521,35 @@ end-to-end.
 - Cinematic intro `/intro` not yet built (Phase 4 of next session)
 - 5 trial contractor accounts not yet seeded
 - Wednesday morning fallback narration documented in DEMO-MAY20-PLAN.md
+
+## 2026-05-19 Tuesday afternoon — Chat (Claude Code, chilly@laptop): hideShell + Suspense fix + /intro Act 1 polish + coord docs
+**Agent:** Chat (claude-opus-4-7[1m])
+**Branch:** `claude-code/2026-05-19-hideshell-intro-polish` (feature branch → PR)
+**What was built:**
+- `src/app/killerapp/layout.tsx` — Restored `?hideShell=1` branch (Ship 36d intent) so `/intro` Act 4 can iframe `/killerapp/budget?...&hideShell=1` without the chrome leaking through. Did **not** restore Ship 36d's dynamic-imports section (user reverted that earlier in this session). Wrapped the entire layout body in `<Suspense fallback={null}>` so `useSearchParams()` doesn't bail out static prerender of `/killerapp/workflows/*` routes — the bailout was the real reason Ship 36d's `next build` failed and got marked "bisect step".
+- `src/app/intro/page.tsx` — Two small polish edits on Cowork's untracked WIP:
+  - Trimmed Act 1 duration `8000ms → 6000ms` in `ACT_DURATIONS_MS[0]`. Both typewriters finish around 4s; the old 8s left ~4s of dead hold that read as "is it broken?". 6s gives ~1.5s of breathing room after the second line lands.
+  - Fixed Cowork typo at `WhiteboardArt` (line 392): `COLORS.red` → `CHROME.red`. `COLORS` has no `red` key; would have broken `next build` the moment Cowork pushed `/intro/` to origin.
+- `docs/in-flight.md` — New coordination file for Claude Code ↔ Cowork file-edit locks (replaces the implicit "hope we don't collide" model).
+- `docs/intro-cross-browser-notes.md` — Empty template, ready to populate once `/intro` is live in Chrome/Safari/Firefox per Tuesday plan §4.
+- `docs/contractor-walkthrough-notes.md` — Empty template, ready for §5 walkthrough notes once Cowork seeds the 5 trial accounts.
+
+**Verifications run locally:**
+- `npm run build` → **green** (exit 0, 22.5s compile + ~30s TS + static prerender of all 171 pages). Both `/intro` and `/killerapp/workflows/daily-log` build statically.
+- Dev-server probes (200s):
+  - `/killerapp` → 200 · `/killerapp?hideShell=1` → 200 · `/killerapp/budget?project=55730cd3-…&hideShell=1` → 200
+  - `/killerapp/workflows/daily-log` → 200 · `/intro` → 200
+- `hideShell=1` strips ~13KB of DOM chrome from `/killerapp/budget` body (60KB → 46KB). Act 4 iframe will get a clean view.
+- **Lighthouse production /killerapp (before this branch deploys):** Performance 63 / A11y 91 / BP 96 / SEO 100. Top issue: TBT 2,250ms (target ≤200). Diagnosis: `'use client'` at the layout root cascades the entire cockpit subtree client-side; ~600ms savings available from "Reduce unused JavaScript" alone. Real fix is multi-hour shell-split refactor — explicitly **out of scope for this branch** at user direction (post-demo).
+
+**Key decisions:**
+- **No dynamic imports in this commit.** User explicitly reverted Ship 36d's dynamic-imports-of-Compass/Voice/CommandPalette/SaveStatusToast earlier in the session. Stayed faithful to that — the perf win has to wait for post-demo to land cleanly.
+- **`useSearchParams` must be wrapped in Suspense at the top of the layout.** Splitting into outer (`KillerAppLayout`) + inner (`KillerAppLayoutInner`) is the standard Next 16 pattern. Without it, every statically-prerendered route under `/killerapp/**` fails build.
+
+**Mistakes made + recovered:**
+- Initially attempted to delete 6 "orphan" Three.js component files (`TimeMachine.tsx`, `Worldwalker.tsx`, `ConstructionCosmos.tsx`, `WebXRViewer.tsx`, `CaptureFirst.tsx`, `three/BuildingViewer.tsx`). My grep missed importers in `src/app/dream/*` routes + `BuildingDesigner.tsx`. Build failed; restored via `git restore`. Took ~3 minutes to recover, no lasting damage. Lesson: when grep'ing for imports, search by base name (`from ['"].*ComponentName`) not by `.tsx` filename.
+
+**Issues / open follow-ups:**
+- Two test files have stale expectations: `src/app/killerapp/workflows/estimating/__tests__/happy-path.test.tsx` (9 failures) expects step `s2-1` (removed in commit `ac70f49`). Pre-existing, not from this branch. Should be swept independently — outside this PR.
+- Dev test environment is broken in two places: 5 test files fail to load due to missing `@testing-library/react` + `jsdom` deps. Pre-existing infra issue.
+- Layout perf TBT = 2,250ms refactor (server-component shell, leaves `'use client'`) deferred post-demo. Captured in this entry; not in tasks.todo.md yet (let user decide priority).

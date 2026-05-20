@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
 import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 import { Suspense } from 'react';
@@ -19,15 +19,53 @@ import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
 
+// Outer wrapper exists so the useSearchParams call inside the inner layout
+// is wrapped in Suspense, which Next 16 requires for any static prerender
+// to succeed. Without this, every statically-generated /killerapp/** route
+// fails with a "useSearchParams should be wrapped in a Suspense boundary"
+// bailout (see Ship 36d which shipped this code without the outer wrap and
+// broke `next build` — that's why it was reverted).
 export default function KillerAppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <KillerAppLayoutInner>{children}</KillerAppLayoutInner>
+    </Suspense>
+  );
+}
+
+function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
+  // /intro Act 4 embeds /killerapp/budget in an iframe and needs the global
+  // chrome (KillerAppNav, AuthAndProjectIndicator, CompassWorkflowNav, etc.)
+  // suppressed. ?hideShell=1 renders only the providers + the page body.
+  // BudgetClient still needs ProjectContext, so the providers must wrap the
+  // children. Auto-seed is also skipped inside the iframe so the embed doesn't
+  // touch global localStorage.
+  const searchParams = useSearchParams();
+  const hideShell = searchParams?.get('hideShell') === '1';
   const stageId = stageFromPathname(pathname);
 
-  // W9.D.3: Auto-seed demo project on first visit (investor demo)
+  // W9.D.3: Auto-seed demo project on first visit (investor demo). Skip inside
+  // the /intro iframe — see hideShell note above.
   useEffect(() => {
+    if (hideShell) return;
     autoSeedDemoOnFirstVisit();
-  }, []);
+  }, [hideShell]);
+
+  if (hideShell) {
+    return (
+      <GreenFlashProvider>
+        <Suspense fallback={null}>
+          <ProjectProvider>
+            <NavigatorProvider initialCollapseState="expanded">
+              <div style={{ minHeight: '100vh' }}>{children}</div>
+            </NavigatorProvider>
+          </ProjectProvider>
+        </Suspense>
+      </GreenFlashProvider>
+    );
+  }
 
   // W9 — Navigator renders on every /killerapp route including the picker.
   // Founder feedback: picker needs the journey context, not hides from it.
