@@ -949,8 +949,6 @@ export default function StepCard({
         ? 'Done'
         : 'Not Started';
 
-  // Hero treatment: step code and peak moment detection
-  const stepCode = step.id ? `${step.id.split('-').pop()}` : `${stepNumber}`;
   const isPeakStep = PEAK_STEP_IDS.has(step.id);
 
   const headerStyle: React.CSSProperties = {
@@ -1086,20 +1084,8 @@ export default function StepCard({
             backgroundColor: colors.paper.cream,
           }}
         >
-          {/* Hero treatment: step code and label */}
+          {/* Hero treatment: step label */}
           <div style={{ marginBottom: spacing[6] }}>
-            <div
-              style={{
-                fontSize: fontSizes.xs,
-                fontWeight: fontWeights.semibold,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: 'var(--brass)',
-                marginBottom: spacing[2],
-              }}
-            >
-              {stepCode}
-            </div>
             <h2
               style={{
                 margin: 0,

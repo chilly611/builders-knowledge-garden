@@ -19,7 +19,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii } from '../tokens';
 import { runSpecialist } from '../../lib/specialists.client';
-import LearningBadge from '@/components/LearningBadge';
 import RSIBadge from './RSIBadge';
 import SourceCountBadge from './SourceCountBadge';
 import { sanitizeNarrative } from './utils/sanitizeNarrative';
@@ -474,28 +473,6 @@ export default function AnalysisPane({
           </ul>
         </div>
       )}
-
-      {/* Meta footer — model + latency + learning badge */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: spacing[2],
-          borderTop: `${borders.thin} ${colors.ink[100]}`,
-        }}
-      >
-        <div
-          style={{
-            fontSize: fontSizes.xs,
-            color: colors.ink[400],
-            fontFamily: fonts.mono,
-          }}
-        >
-          {result.model} · {result.latency_ms}ms
-        </div>
-        <LearningBadge variant="run" runId={specialistId} />
-      </div>
 
       {/* Hidden machine-legible output — Goal 8, includes extracted JSON if present */}
       <script
