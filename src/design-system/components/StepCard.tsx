@@ -84,8 +84,8 @@ export default function StepCard({
     if (typeof initialPayload.value === 'string' && !inputValue) {
       setInputValue(initialPayload.value);
     }
-    if (typeof initialPayload.input === 'string' && !analysisInput) {
-      setAnalysisInput(initialPayload.input);
+    if (typeof initialPayload.input === 'string') {
+      setAnalysisInput(initialPayload.input); // always sync — this is system-generated, not user-typed
     }
     if (Array.isArray(initialPayload.selected) && selectedOptions.length === 0) {
       setSelectedOptions(initialPayload.selected);
