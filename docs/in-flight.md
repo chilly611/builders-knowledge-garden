@@ -11,6 +11,7 @@ Each agent: keep the list short — only files actively being edited *right now*
 | _none_ | _none_ | _—_ | _—_ | _Tuesday May 19, 2026 — session start_ |
 | _none_ | _none_ | _—_ | _—_ | _Claude Code released layout.tsx lock (2026-05-19 ~15:30 PT) — user reverted refactor; not pushing perf changes._ |
 | Claude Code | `src/app/layout.tsx` + new `src/components/GlobalChromeGate.tsx` | 2026-05-20 ~16:05 PT | LOCKED | Demo-breaker fix: CompassBloom + GlobalAiFab in root layout render on every page including /intro and inside the hideShell iframe. Adding a tiny client wrapper that bails on /intro and `?hideShell=1`. |
+| _none_ | _none_ | _—_ | RELEASED | Claude Code shipped V2 items 1-5 to /intro (see Recently released). |
 
 ## Recently released (last 1 hour)
 
@@ -18,6 +19,7 @@ Each agent: keep the list short — only files actively being edited *right now*
 |---|---|---|---|---|
 | Claude Code | `src/app/killerapp/layout.tsx` | 2026-05-19 ~15:50 | RELEASED | Added `hideShell=1` branch back (user-approved). Did **not** restore Ship 36d's dynamic imports. Local-only, not yet pushed. |
 | Claude Code | `src/app/intro/page.tsx` | 2026-05-19 ~15:50 | RELEASED | Trimmed Act 1 duration 8s → 6s (`ACT_DURATIONS_MS[0]`). Both typewriters finish ~4s; old 4s of dead air now ~1.5s. **`intro/` is still untracked locally — not on origin/main yet.** |
+| Claude Code | `src/app/intro/page.tsx` | 2026-05-20 ~16:45 PT | RELEASED | V2 items 1-5 (structural, no copy): Act 4 mobile CTA (stack vertical + 88px paddingBottom to clear ActIndicator + trimmed header padding), Act 3 timing 30s→22s with re-timed cards (2/5/9/14/18s), Act 3 mobile grid stacks below 768px, CardJourney converted to light register matching other cards, Act 5 dot delay 1.6+i*0.12 → 0.8+i*0.10. |
 
 ## Recently released (last 1 hour)
 

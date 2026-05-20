@@ -47,12 +47,16 @@ const COLORS = {
 
 const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 
-// Act durations in ms. Act 3 (index 2) is the marquee 30s slot. Act 4
-// (index 3) is user-controlled — see auto-advance effect.
-// Act 1 trimmed 8s → 6s (2026-05-19): both typewriters finish around 4s, so
-// 8s left 4s of dead hold that read as "is it broken?". 6s gives ~1.5s of
-// breathing room after the second line lands.
-const ACT_DURATIONS_MS = [6000, 12000, 30000, Number.POSITIVE_INFINITY, 12000];
+// Act durations in ms. Act 4 (index 3) is user-controlled — see auto-advance
+// effect.
+//   Act 1 (index 0) trimmed 8s → 6s (2026-05-19): both typewriters finish
+//     around 4s, so 8s left 4s of dead hold. 6s gives ~1.5s of breathing
+//     room after the second line lands.
+//   Act 3 (index 2) trimmed 30s → 22s (2026-05-20, per V2 spec): the last
+//     card landed at 25s and the act ended at 30s — too much dead air after
+//     a marquee moment. Re-timed cards now land at 2/5/9/14/18s so the
+//     final Journey card has ~4s of read-time before the auto-advance.
+const ACT_DURATIONS_MS = [6000, 12000, 22000, Number.POSITIVE_INFINITY, 12000];
 const TOTAL_ACTS = 5;
 
 // — K Logomark SVG ————————————————————————————————————————————————————
@@ -420,12 +424,15 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
   }, [reduced]);
 
   // Schedule of right-panel cards. Cards appear at offsets in seconds.
+  // Re-timed 2026-05-20 alongside the 30s → 22s act-duration trim. Cards now
+  // land at 2/5/9/14/18s; final Journey card has ~4s of read-time before
+  // auto-advance to Act 4.
   const cards: Array<{ at: number; render: () => React.ReactNode; key: string }> = useMemo(() => [
     { at: 2,  key: 'project',  render: () => <CardProject /> },
-    { at: 6,  key: 'estimate', render: () => <CardEstimate /> },
-    { at: 12, key: 'code',     render: () => <CardCode /> },
-    { at: 20, key: 'contract', render: () => <CardContract /> },
-    { at: 25, key: 'journey',  render: () => <CardJourney /> },
+    { at: 5,  key: 'estimate', render: () => <CardEstimate /> },
+    { at: 9,  key: 'code',     render: () => <CardCode /> },
+    { at: 14, key: 'contract', render: () => <CardContract /> },
+    { at: 18, key: 'journey',  render: () => <CardJourney /> },
   ], []);
 
   const [elapsed, setElapsed] = useState(0);
@@ -462,7 +469,7 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
         </p>
       </div>
 
-      <div style={{
+      <div className="bkg-intro-act3-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(280px, 38%) 1fr',
         gap: 28,
@@ -508,6 +515,12 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
 
       <style jsx global>{`
         @keyframes bkg-caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+        @media (max-width: 768px) {
+          .bkg-intro-act3-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+        }
       `}</style>
     </motion.section>
   );
@@ -592,19 +605,18 @@ function CardContract() {
   );
 }
 function CardJourney() {
+  // 2026-05-20: swapped from a dark #15151A card to the same light register
+  // as the other 4 cards. The dark version read as "broken/empty" on mobile
+  // and broke the visual rhythm of the right-panel card stream.
   return (
-    <div style={{
-      ...card(COLORS.ink),
-      background: '#15151A',
-      color: '#F1ECDD',
-    }}>
-      <div style={{ ...cardEyebrow, color: '#F1ECDD', opacity: 0.7 }}>JOURNEY</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, fontSize: 12 }}>
-        <span style={{ ...journeyPill('#F1ECDD'), background: 'rgba(241,236,221,0.22)' }}>Size up</span>
+    <div style={card(COLORS.ink)}>
+      <div style={cardEyebrow}>JOURNEY</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, flexWrap: 'wrap' }}>
+        <span style={{ ...journeyPill(COLORS.graphite), background: 'rgba(15,15,17,0.06)' }}>Size up</span>
         <span style={journeyArrow}>→</span>
-        <span style={{ ...journeyPill('#15151A'), background: '#F1ECDD' }}>Lock it in</span>
+        <span style={{ ...journeyPill('#FFFFFF'), background: COLORS.ink }}>Lock it in</span>
         <span style={journeyArrow}>→</span>
-        <span style={{ ...journeyPill('#F1ECDD'), background: 'transparent', border: `1px dashed rgba(241,236,221,0.35)` }}>Plan it out</span>
+        <span style={{ ...journeyPill(COLORS.graphite), background: 'transparent', border: `1px dashed ${COLORS.rule}` }}>Plan it out</span>
       </div>
     </div>
   );
@@ -632,13 +644,13 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
       }}
       aria-label="Act 4: live killer app"
     >
-      <div style={{ padding: '64px 40px 12px', textAlign: 'center' }}>
+      <div className="bkg-intro-act4-header" style={{ padding: '64px 40px 12px', textAlign: 'center' }}>
         <p style={eyebrow(COLORS.faded)}>THE ACTUAL PRODUCT — RIGHT NOW</p>
         <h2 style={{ ...h2Style, marginTop: 4, fontSize: 'clamp(22px, 3vw, 32px)' }}>
           You can use it. Real data. Live route.
         </h2>
       </div>
-      <div style={{ flex: 1, position: 'relative', padding: '12px 40px 24px', minHeight: 0 }}>
+      <div className="bkg-intro-act4-iframe-wrap" style={{ flex: 1, position: 'relative', padding: '12px 40px 24px', minHeight: 0 }}>
         <div style={{
           position: 'relative', width: '100%', height: '100%',
           border: `1px solid ${COLORS.rule}`, borderRadius: 14, overflow: 'hidden',
@@ -670,9 +682,10 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
           )}
         </div>
       </div>
-      <div style={{
+      <div className="bkg-intro-act4-cta" style={{
         padding: '16px 40px 28px',
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
+        flexWrap: 'wrap',
       }}>
         <button type="button" onClick={onContinue} style={ctaPrimary(CHROME.red)}>
           Continue →
@@ -681,6 +694,37 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
           Open full app in a new tab
         </Link>
       </div>
+
+      {/* Mobile fixes 2026-05-20:
+          - Trim the 64px top header padding (it ate a third of the phone
+            viewport before the iframe even rendered).
+          - Tighten side padding so the iframe actually has room.
+          - Stack the Continue + ghost-link bar vertically AND pad-bottom
+            enough to clear the floating ActIndicator pill (which sits at
+            bottom: 24 and is ~40px tall). Without this, investors on
+            mobile literally cannot reach Act 5.
+          - Cap the iframe wrap height so the CTA bar can't be pushed below
+            the fold by a tall iframe payload. */}
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .bkg-intro-act4-header {
+            padding: 28px 18px 8px !important;
+          }
+          .bkg-intro-act4-iframe-wrap {
+            padding: 8px 12px 12px !important;
+          }
+          .bkg-intro-act4-cta {
+            padding: 12px 16px 88px !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+          .bkg-intro-act4-cta > * {
+            width: 100% !important;
+            max-width: 320px !important;
+            text-align: center !important;
+          }
+        }
+      `}</style>
     </motion.section>
   );
 }
@@ -737,7 +781,7 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
               key={d.label}
               initial={reduced ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.6 + i * 0.12 }}
+              transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 0.8 + i * 0.10 }}
               style={{
                 position: 'absolute',
                 top: `calc(50% + ${y}px)`,
@@ -920,8 +964,10 @@ function journeyPill(color: string): React.CSSProperties {
     color,
   };
 }
+// Light-card register: arrow uses graphite at low opacity so it sits on a
+// cream/white card instead of the prior dark-only color.
 const journeyArrow: React.CSSProperties = {
-  color: 'rgba(241,236,221,0.5)', fontSize: 12,
+  color: 'rgba(15,15,17,0.35)', fontSize: 12,
 };
 
 function ctaPrimary(color: string): React.CSSProperties {
