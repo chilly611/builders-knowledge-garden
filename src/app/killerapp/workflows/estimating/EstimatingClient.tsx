@@ -264,10 +264,12 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   // immediately after the user confirms an update, without a full re-fetch.
   const [localProject, setLocalProject] = useState<ProjectContext | null>(null);
 
-  // Pending scope change: holds the stepResult + new raw_input until the
-  // user confirms the modal. We don't call recordStepEvent until confirmed
-  // so the step card isn't committed if the user cancels.
+  // Pending scope change: holds the stepResult + new value until the user
+  // confirms the modal. recordStepEvent is NOT called until confirmed so
+  // the step card isn't committed if the user cancels.
   const [pendingScopeChange, setPendingScopeChange] = useState<{
+    field: 's2-1' | 's2-2' | 's2-3';
+    fieldLabel: string;
     value: string;
     stepResult: StepResult & { workflowId: string };
   } | null>(null);
@@ -393,8 +395,6 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     const stepValue = payload?.value?.trim() ?? '';
 
     // ── s2-1 "Describe the job" ───────────────────────────────────────────
-    // If the project already has a description AND it's changing, show the
-    // scope-change confirmation modal before committing anything.
     if (
       stepResult.stepId === 's2-1' &&
       stepResult.type === 'step_completed' &&
@@ -402,36 +402,35 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       activeProject?.raw_input &&
       stepValue !== activeProject.raw_input
     ) {
-      setPendingScopeChange({ value: stepValue, stepResult });
-      return; // hold — don't persist yet
+      setPendingScopeChange({ field: 's2-1', fieldLabel: 'job description', value: stepValue, stepResult });
+      return;
     }
 
     // ── s2-2 "Where is it?" ──────────────────────────────────────────────
-    // PATCH jurisdiction and show inline flag when the location changes.
-    if (stepResult.stepId === 's2-2' && stepResult.type === 'step_completed' && stepValue && projectId) {
-      const wasSet = !!activeProject?.jurisdiction;
-      void patchProject(projectId, { jurisdiction: stepValue });
-      setLocalProject((prev) => {
-        const base = prev ?? activeProject;
-        if (!base) return prev;
-        return { ...base, jurisdiction: stepValue };
-      });
-      if (wasSet) {
-        if (locationFlagTimer.current) clearTimeout(locationFlagTimer.current);
-        setLocationFlag(true);
-        locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
-      }
+    // Only show the modal when overwriting an existing location.
+    if (
+      stepResult.stepId === 's2-2' &&
+      stepResult.type === 'step_completed' &&
+      stepValue &&
+      activeProject?.jurisdiction &&
+      stepValue !== activeProject.jurisdiction
+    ) {
+      setPendingScopeChange({ field: 's2-2', fieldLabel: 'project location', value: stepValue, stepResult });
+      return;
     }
 
     // ── s2-3 "Approximate square footage" ────────────────────────────────
-    // No dedicated DB column — sqft is persisted in estimating_state (via
-    // recordStepEvent below) and displayed in the banner via seededPayloads.
-    // Show inline flag when the value changes.
-    if (stepResult.stepId === 's2-3' && stepResult.type === 'step_completed' && stepValue) {
-      setLocalSqft(stepValue);
-      if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
-      setSqftFlag(true);
-      sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
+    // Only show the modal when overwriting an existing sqft value.
+    const existingSqft = localSqft ?? seededPayloads['s2-3']?.value ?? hydratedPayloads['s2-3']?.value;
+    if (
+      stepResult.stepId === 's2-3' &&
+      stepResult.type === 'step_completed' &&
+      stepValue &&
+      existingSqft &&
+      stepValue !== String(existingSqft)
+    ) {
+      setPendingScopeChange({ field: 's2-3', fieldLabel: 'square footage', value: stepValue, stepResult });
+      return;
     }
 
     // Project Spine v1: persist this step's payload into estimating_state.
@@ -535,15 +534,34 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       setPendingScopeChange(null);
       return;
     }
-    const { value, stepResult } = pendingScopeChange;
+    const { field, value, stepResult } = pendingScopeChange;
     recordStepEvent(stepResult);
     setStepStatusMap((prev) => ({ ...prev, [stepResult.stepId]: 'complete' }));
-    void patchProject(projectId, { raw_input: value });
-    setLocalProject((prev) => {
-      const base = prev ?? project;
-      if (!base) return prev;
-      return { ...base, raw_input: value };
-    });
+
+    if (field === 's2-1') {
+      void patchProject(projectId, { raw_input: value });
+      setLocalProject((prev) => {
+        const base = prev ?? project;
+        if (!base) return prev;
+        return { ...base, raw_input: value };
+      });
+    } else if (field === 's2-2') {
+      void patchProject(projectId, { jurisdiction: value });
+      setLocalProject((prev) => {
+        const base = prev ?? project;
+        if (!base) return prev;
+        return { ...base, jurisdiction: value };
+      });
+      if (locationFlagTimer.current) clearTimeout(locationFlagTimer.current);
+      setLocationFlag(true);
+      locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
+    } else if (field === 's2-3') {
+      setLocalSqft(value);
+      if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
+      setSqftFlag(true);
+      sqftFlagTimer.current = setTimeout(() => setSqftFlag(false), 6000);
+    }
+
     setPendingScopeChange(null);
   }
 
@@ -920,7 +938,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
                 marginBottom: spacing[3],
               }}
             >
-              Change the scope of your project?
+              Update your {pendingScopeChange.fieldLabel}?
             </h2>
             <p
               style={{
@@ -931,9 +949,9 @@ export default function EstimatingClient({ workflow, stages }: Props) {
                 marginBottom: spacing[4],
               }}
             >
-              Updating the job description changes the foundation of your entire project.
-              This could affect <strong>all</strong> aspects — estimations, code compliance,
-              permits, and contracts — and may require you to re-run those workflows.
+              Changing your {pendingScopeChange.fieldLabel} could affect <strong>all</strong> aspects
+              of your project — estimations, code compliance, permits, and contracts — and may
+              require you to re-run those workflows.
             </p>
             <blockquote
               style={{

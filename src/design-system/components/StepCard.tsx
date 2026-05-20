@@ -330,7 +330,7 @@ export default function StepCard({
       checked?: Record<string, boolean>;
       input?: string;
     } =
-      step.type === 'text_input' || step.type === 'voice_input'
+      step.type === 'text_input' || step.type === 'voice_input' || step.type === 'location_input'
         ? { value: inputValue }
         : step.type === 'number_input'
           ? { value: inputValue }
