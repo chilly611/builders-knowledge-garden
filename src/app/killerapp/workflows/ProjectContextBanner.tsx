@@ -12,6 +12,7 @@
 
 import Link from 'next/link';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
+import { applyJurisdictionOverride } from '@/lib/project-display';
 
 // PEER_LINKS is the curated set of "Move to" buttons we surface in the
 // banner. Keep it small (6 items) so the row stays scannable. New
@@ -80,7 +81,9 @@ const PEER_LINKS: Array<{
 export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Props) {
   if (!project) return null;
 
-  const rawInput = project.raw_input?.trim();
+  const rawInput = project.jurisdiction && project.raw_input
+    ? applyJurisdictionOverride(project.raw_input.trim(), project.jurisdiction)
+    : project.raw_input?.trim();
   const aiSummary = project.ai_summary?.trim();
   const summaryPreview =
     aiSummary && aiSummary.length > 220

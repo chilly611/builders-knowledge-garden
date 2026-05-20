@@ -26,6 +26,7 @@ import JurisdictionPicker from '@/components/JurisdictionPicker';
 import { useProjectWorkflowState, seedPayloadsFromRaw, statusFromSeeded } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
 import AttachmentSection from '@/components/AttachmentSection';
+import { applyJurisdictionOverride } from '@/lib/project-display';
 
 interface CodeComplianceClientProps {
   workflow: Workflow;
@@ -86,15 +87,15 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
   // word-bounded normalized signals so "marin" doesn't accidentally
   // match a word like "marina".
   useEffect(() => {
-    const signalSrc = [
-      project?.jurisdiction,
-      project?.ai_summary,
-      project?.raw_input,
-      project?.name,
-    ]
-      .filter((s): s is string => typeof s === 'string' && s.length > 0)
-      .join(' ')
-      .toLowerCase();
+    // When jurisdiction is explicitly saved on the project, use it as the
+    // sole signal — mixing it with raw_input/ai_summary (which still mention
+    // the old location) causes the old city to outscore the updated one.
+    const signalSrc = project?.jurisdiction
+      ? project.jurisdiction.toLowerCase()
+      : [project?.ai_summary, project?.raw_input, project?.name]
+          .filter((s): s is string => typeof s === 'string' && s.length > 0)
+          .join(' ')
+          .toLowerCase();
     if (!signalSrc) return;
 
     // Normalize punctuation to spaces and pad with whitespace so we can
@@ -209,9 +210,14 @@ export default function CodeComplianceClient({ workflow, jurisdictions, stages }
       : null;
 
   // Pre-fill text/voice/analysis + location + sqft from raw_input.
+  // When jurisdiction is set, override the location in raw_input so analysis
+  // steps are seeded with the updated location, not the original description.
+  const effectiveRawInput = project?.jurisdiction && project?.raw_input
+    ? applyJurisdictionOverride(project.raw_input, project.jurisdiction)
+    : project?.raw_input;
   const seededPayloads = useMemo(
-    () => seedPayloadsFromRaw(workflow.steps, project?.raw_input, hydratedPayloads),
-    [hydratedPayloads, project, workflow.steps]
+    () => seedPayloadsFromRaw(workflow.steps, effectiveRawInput, hydratedPayloads),
+    [hydratedPayloads, effectiveRawInput, workflow.steps]
   );
   const mergedStatusMap = useMemo(
     () => statusFromSeeded(seededPayloads, stepStatusMap),

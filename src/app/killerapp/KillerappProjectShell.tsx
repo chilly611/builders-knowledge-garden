@@ -24,6 +24,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useProject } from '@/lib/hooks/useProject';
+import { applyJurisdictionOverride } from '@/lib/project-display';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -86,22 +87,6 @@ function setActiveProjectInLocalStorage(id: string) {
  * truth for which workflows the next-step links go to (the prompt
  * sometimes omits one or all three; the static row is always reliable).
  */
-// Replace the first City, State [ZIP] pattern in text with a new location string.
-// Used to keep the displayed raw_input consistent with an explicitly saved jurisdiction.
-function applyJurisdictionOverride(text: string, jurisdiction: string): string {
-  // Require each city word to be Title Case (e.g. "San Francisco") so we don't
-  // greedily consume preceding words like "ADU in" into the city-name match.
-  const titleCasePattern = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}),\s*([A-Za-z]{2})\b(\s+\d{5}(?:-\d{4})?)?/;
-  if (titleCasePattern.test(text)) {
-    return text.replace(titleCasePattern, jurisdiction);
-  }
-  // Fallback for all-lowercase inputs: anchor to the word "in" before the location
-  const inPattern = /(\bin\s+)([a-z]+(?:\s+[a-z]+){0,3}),\s*([a-z]{2})\b(\s+\d{5}(?:-\d{4})?)?/i;
-  if (inPattern.test(text)) {
-    return text.replace(inPattern, `$1${jurisdiction}`);
-  }
-  return text;
-}
 
 function stripTrailingActionBlock(text: string): string {
   if (!text) return text;
