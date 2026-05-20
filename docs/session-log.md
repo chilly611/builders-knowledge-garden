@@ -1442,3 +1442,17 @@ Vercel caught it: Wave 2 push (`3f5d2bd`) failed in ~50s (TS error from the dele
 - **No DB migration for sqft:** stored in `estimating_state` (already persisted per-workflow), surfaced to banner via a new `sqft` prop on `ProjectContextBanner`. Avoids a migration for a value that lives naturally in the workflow step.
 - **Modal holds the step event:** for s2-1 scope changes, `recordStepEvent` is NOT called until the user confirms. Cancel leaves the project untouched. This is cleaner than calling + reverting.
 - **`localProject` + `localSqft` for instant banner updates:** rather than re-fetching after each PATCH, local state overrides the hook's `project` until the next page load.
+
+## 2026-05-20 — Chat Session: UI cleanup — brass digits + AI meta footer
+**Agent:** Chat (Claude Sonnet 4.6 / Claude Code)
+**What was built:**
+- `17b7681` — Two visual cleanup changes ahead of the May 20 SF demo:
+  - **StepCard.tsx:** Removed the brass-colored `stepCode` digit that was rendering above each step heading inside the expanded body. The digit (last segment of the step ID, e.g. `2`, `3`) was leaking as a visible section number. The step number in the teal circle on the collapsed header is unchanged.
+  - **AnalysisPane.tsx:** Removed the meta footer div showing `{result.model} · {result.latency_ms}ms` and the `LearningBadge`. Also removed the now-unused `LearningBadge` import.
+
+**Key decisions:**
+- Both elements were surfacing internal implementation detail (step IDs, model names, latency) to end users — noise in a demo context.
+
+**Files touched:**
+- `src/design-system/components/StepCard.tsx` (-14 lines)
+- `src/design-system/components/AnalysisPane.tsx` (-25 lines)

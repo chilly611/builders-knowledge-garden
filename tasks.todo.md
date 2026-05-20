@@ -1256,3 +1256,10 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - [ ] Add image content-sniff to `/api/v1/uploads/photo` (currently trusts the browser-supplied mimetype).
 - [ ] Add auth gate to `/api/v1/uploads/photo` (currently no `getAuthUser` check).
 - [ ] Validate `next=` redirect target in `/signup` and `/login` — currently accepts any value. Restrict to same-origin paths starting with `/` (and reject `//`).
+
+
+## ═══ 2026-05-20 — Demo-day cleanup ═══
+
+### Shipped this burn (commit `17b7681`)
+- [x] **UI cleanup — brass step digits**: Removed brass-colored section number digit above each step heading in StepCard expanded body.
+- [x] **UI cleanup — AI meta footer**: Removed model name, latency ms, and "Learning from this run" badge from AnalysisPane.
