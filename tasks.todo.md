@@ -1263,3 +1263,68 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 ### Shipped this burn (commit `17b7681`)
 - [x] **UI cleanup — brass step digits**: Removed brass-colored section number digit above each step heading in StepCard expanded body.
 - [x] **UI cleanup — AI meta footer**: Removed model name, latency ms, and "Learning from this run" badge from AnalysisPane.
+
+
+## ═══ 2026-05-19 LATE EVENING — Final close-out (Ships 13–34 marathon) ═══
+
+### Shipped this session (22 ships landed clean on prod)
+
+- [x] **Ship 13** (`1d5a897`) — per-chunk SSE streaming re-enabled on /api/v1/copilot
+- [x] **Ship 14** (`7f5fe17`) — KillerappProjectShell render conditional fixed (no more spinner snap-back)
+- [x] **Ship 15** (`a1b5fd3`) — stripTrailingActionBlock removes orphan lead-in headers
+- [x] **Ship 16** (`24e72a2`) — 9-chip contextual "Choose your next move" panel
+- [x] **Ship 17** (`4572ef1`) — /killerapp/who-is-asking relationship lens
+- [x] **Ship 18** (`a74d997`) — AuthAndProjectIndicator mobile drawer + saved-Xs-ago
+- [x] **Ship 19** (`a74d997`) — CompassWorkflowNav real navigator with 18 LIVE workflows
+- [x] **Ship 21** (`62ae433`) — auth pill z-index hotfix (P0 demo blocker)
+- [x] **Ship 22** (`62ae433`) — dedicated /killerapp/budget interface (~1100 LOC, 10 categories, state chips, cash flow, hand-holding UX)
+- [x] **Ship 23** (`62ae433`) — BudgetSnapshot cockpit click-through
+- [x] **Ship 24** (`9d08e1e`) — JourneyTimeline merged journey + time machine (~660 LOC, all rewind preserved)
+- [x] **Ship 25** (`9d08e1e`) — project_budgets JSONB Supabase column + DB persistence
+- [x] **Ship 26** (`9d08e1e`) — BudgetSnapshot stopPropagation on inner sparkline
+- [x] **Ship 27** (`9d08e1e`) — AuthAndProjectIndicator testid dedup
+- [x] **Ship 28** (`9d08e1e`) — AI estimate → /budget handoff (Push to budget)
+- [x] **Ship 29** (`7909465`) — Stage 0 Money accent token (re-architected; `StageAccentKey = keyof typeof STAGE_ACCENTS`)
+- [x] **Ship 30** (`b73435c`) — JourneyTimeline mobile compact pill+slider treatment
+- [x] **Ship 31** (`b73435c`) — BudgetClient date-axis cash flow strip
+- [x] **Ship 32** (`b73435c`) — useProjectWorkflowState flush-and-go listener
+- [x] **Ship 33** (`b73435c`) — AI estimate handoff dedup by stable ID
+- [x] **Ship 34** (`b73435c`) — Parser fallback chain (markdown table + prose)
+
+### Tuesday May 19 morning checklist (for next session)
+- [ ] **Phase 0 orientation** — pull `Builder's Knowledge Garden/docs/onboarding/CHILLY-COWORK-NEXT-SESSION.md` and execute as the new Cowork prompt
+- [ ] **Phase 1 parallel cold-start verify** — 6 agents (demo path, cockpit reactivity, auth + identity, mobile, budget flow end-to-end, MCP Act 4)
+- [ ] **Phase 2 synthesize** — top 3 P0s from cold-start, ship in parallel
+- [ ] **Phase 4 cinematic intro** — `src/app/intro/page.tsx` 5-act cinematic per `docs/onboarding/DEMO-CINEMATIC-SPEC.md`
+- [ ] **Phase 5 contractor handover** — `/feedback` page + `contractor_feedback` table + 5 trial accounts seeded + `/welcome` landing per `docs/onboarding/CONTRACTOR-HANDOVER-PLAN.md`
+
+### Wednesday May 20 morning checklist (demo day, 5:30am SF)
+- [ ] Wake. `git pull origin main` on demo laptop. Run script cold from incognito.
+- [ ] If any step breaks: deploy fix (push to main, wait Vercel, re-test). NO pushes after 8am SF.
+- [ ] 7:00am SF — final cold-start in demo environment, same physical laptop, same wifi.
+- [ ] 8:30am SF — travel to demo location with Dream Builder pre-opened + mic permission granted.
+- [ ] 9:00am SF — go time.
+
+### Post-demo deferred (do NOT touch before Wednesday)
+- [ ] Legacy CompassBloom cleanup (still mounted in root layout alongside new CompassWorkflowNav)
+- [ ] Rename CompassWorkflowNav → CompassNav (after legacy is retired) or rename legacy CompassNav
+- [ ] Real cash-flow forecasting beyond proportional time-axis (currently month ticks + stage markers + due dates)
+- [ ] Telemetry on SourceCountBadge mount events (RSI Goal-2 feedback)
+- [ ] Telemetry on StateChip cycle clicks (BudgetClient learning loop)
+- [ ] Tooltip explaining "N sources verified" with the actual 3 source IDs
+- [ ] Backfill `metadata.adopted_by` + `jurisdiction_ids` on existing 542 pre-W11.B knowledge_entities rows
+- [ ] Audit non-compliance specialists for hidden "computed but not exposed" trust signals
+- [ ] AI estimate ID-based replacement instead of (description + amount) — partial (Ship 33 fixed for AI-pushed lines; manual rows still use the old dedup)
+- [ ] Date-axis cash flow real time-axis instead of fractional (currently month ticks + stage markers proportional)
+- [ ] Vercel toolbar overlay (cosmetic — only shows for Vercel-authed browsers; incognito demo bypasses)
+- [ ] `agent_identities` table — currently MCP endpoint is public; wire `mcp-auth.ts` post-demo or delete the dead module
+- [ ] Real photo upload auth gate (currently no `getAuthUser` check on `/api/v1/uploads/photo`)
+- [ ] Image content-sniff in photo upload (currently trusts browser mime)
+- [ ] `next=` validation in /signup + /login (currently accepts any value — restrict to same-origin paths)
+- [ ] Real Supabase write for `/api/v1/crm` POST (DONE via Ship 9)
+
+### New files seeded this session
+- `Builder's Knowledge Garden/docs/onboarding/CHILLY-COWORK-NEXT-SESSION.md`
+- `Builder's Knowledge Garden/docs/onboarding/CHILLY-CLAUDE-CODE-NEXT-SESSION.md`
+- `Builder's Knowledge Garden/docs/onboarding/DEMO-CINEMATIC-SPEC.md`
+- `Builder's Knowledge Garden/docs/onboarding/CONTRACTOR-HANDOVER-PLAN.md`

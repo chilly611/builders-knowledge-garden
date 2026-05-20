@@ -1176,3 +1176,125 @@ The breakthrough was Michael's screenshot showing the disclaimer paragraph rende
 2. **State flags that flip on but never flip off are a foot-gun.** `inSignatureBlock = true` set by `## SIGNATURES` and reset only by the next `## ` heading meant a `---` separator silently extended sig-block mode through the disclaimer. The fix is to give every persistent flag MULTIPLE explicit reset triggers (`---` AND any heading of any level), not just the inverse of what set it.
 
 3. **Visual artifacts (font, weight, color) are the cheapest debug signal.** A user reporting "doesn't wrap" is ambiguous. A screenshot showing courier vs. helvetica is unambiguous and points at the exact branch.
+
+
+---
+
+### Diff-before-push paid off three times in 6 hours
+**Date:** 2026-05-19 (Ships 13–34 marathon)
+**What happened:** The Burn 4 lesson "subagent Read→Write can silently stomp a stale tree" was operationalized as: the orchestrator MUST fetch the canonical version from main via Contents API and diff against the local working tree before pushing ANY file a subagent edited. This session it caught three near-shipping regressions:
+1. Ship 28 subagent removed the 69-line CSI breakdown table renderer (Ship 6237ebaf demo prereq) while adding AI handoff. Caught by 103-deletion-line discrepancy vs agent's "+377/-0" self-report.
+2. Ship 25 subagent rewrote the entire `/api/v1/crm` route. Diff confirmed no external consumers of removed exports (grep `from.*api/v1/crm/route` returned empty) → safe to ship.
+3. Ship 29 subagent widened `StageId` 1..7 → 0..7 affecting StageContextPill + StageBreadcrumb. Caught not by diff (the change was localized to stage-accents.ts) but by the Vercel build failure 50s in. Diff confirmed the type change was the ONLY semantic change in that file, narrowing the fix to "revert the type widening."
+
+**Rule:** for every file a subagent modifies, fetch canonical + diff before push. If the diff shows MORE deletions than the agent claimed, STOP. If the deletion is inside a documented demo-prereq region, STOP. Restore canonical and re-apply ONLY the intended additions. The cost (≈30 sec per file) is dwarfed by one bisect-and-rollback cycle (≈6 min).
+
+---
+
+### Bisect-by-re-layering (Pattern C) is the recovery playbook — never panic-fix-forward
+**Date:** 2026-05-19 (Ship 29 type-widening Vercel failure)
+**What happened:** Push of Ships 29-34 (6 files) failed Vercel ~50s in (typecheck error from StageId widening). Resisted the temptation to look at the build log + fix-forward. Instead:
+1. Rolled back main to last green via force-PATCH of refs/heads/main.
+2. Pushed 4 of the 6 files (excluding the stage-accents trio) — GREEN. Confirmed the failure was isolated to the stage-accents widening.
+3. Re-architected the type change (keep StageId narrow, add StageAccentKey for the wider key set), pushed the corrected stage-accents trio — GREEN.
+
+Total recovery: 2 push cycles, ~6 minutes. Compare to fix-forward attempts that historically take 20-30 minutes of guessing + multiple failed Vercel deploys.
+
+**Rule:** when Vercel fails, ALWAYS:
+1. Rollback main to last green (force-PATCH of refs/heads/main with the prior commit's SHA).
+2. Bisect the failed commit's files into 2-3 groups based on risk + isolation.
+3. Push the safest group first. Wait for green. If green, that group's clean — failure is in the other group(s).
+4. Narrow further if needed. Each step adds ~90s of Vercel time but removes ambiguity.
+5. Re-architect the failing change once the cause is isolated. NEVER guess.
+
+---
+
+### Const-assertion + derived type keys avoid widening regressions
+**Date:** 2026-05-19 (Ship 29 re-architecture)
+**What happened:** Original plan: add Stage 0 (Money) to `STAGE_ACCENTS` by widening `type StageId = 1..7` to `0..7`. Broken approach — any consumer doing `Record<StageId, T>` for lifecycle-only data (StageContextPill, StageBreadcrumb, KillerAppNav) now needed a `0` key that doesn't semantically exist.
+
+Fix: use const-assertion on the data + derive a separate type for the keys:
+```ts
+export const STAGE_ACCENTS = {
+  0: { ... }, 1: { ... }, ..., 7: { ... }
+} as const;
+export type StageId = 1 | 2 | 3 | 4 | 5 | 6 | 7;            // lifecycle-only consumers
+export type StageAccentKey = keyof typeof STAGE_ACCENTS;     // = 0|1|...|7 (wider)
+export function stageAccent(id: StageAccentKey) { ... }      // accepts 0..7
+```
+
+Lifecycle consumers (StageContextPill etc.) keep using `StageId` and stay narrow. STAGE_ACCENTS itself has all 8 keys. The Money group (stage 0) consumers index via `StageAccentKey`.
+
+**Rule:** when you need to add a NEW key to an existing typed map BUT some consumers want the narrower lifecycle set:
+- Const-assert the data
+- Derive `keyof typeof X` for the wider key type
+- Keep the narrower type (originally exported) UNCHANGED — it now represents the LIFECYCLE subset, not all keys
+- Comment block in the file explains the distinction for future agents
+
+This is general — applies any time you're tempted to widen an existing union type to accommodate a new variant. Don't widen. Add a parallel wider type and let lifecycle consumers keep using the narrow one.
+
+---
+
+### Streaming SSE: server can defeat itself with "accumulate before send" patterns
+**Date:** 2026-05-19 (Ship 13)
+**What happened:** `/api/v1/copilot` was instrumented for SSE streaming (ReadableStream, `Content-Type: text/event-stream`, client parses `data: {chunk}` frames). But someone added a `sanitizeCopilotResponse(fullText)` step that needed to run on the COMPLETE response, and they "solved" it by NOT emitting per-chunk delta events server-side — accumulate the entire Anthropic response, sanitize, send one `complete` event. Effect: 20-30 second dead-air period before the user saw any text (Claude Sonnet 4 takes that long for a 2048-token response).
+
+Fix: send per-chunk events live AS THEY ARRIVE, AND send the sanitized `complete` event at the end. Client (already coded for this) renders chunks immediately + swaps to the sanitized version on completion (imperceptible flicker). Net UX: user sees text materialize within 1-2 seconds + smooth streaming.
+
+**Rule:** if the design constraint is "sanitize the FULL output before showing", don't defeat streaming by accumulating server-side. Stream the raw + emit a sanitized `complete` event at the end + let the client swap on receipt. Users care about TTFB more than perfect-from-the-first-character.
+
+Belt-and-suspenders headers to add to any SSE route:
+- `Cache-Control: no-cache, no-transform` (no-transform prevents CDN rewriting of chunked encoding)
+- `X-Accel-Buffering: no` (disables Vercel/Nginx proxy buffering)
+- `Connection: keep-alive`
+- `export const dynamic = 'force-dynamic'` (explicit, no ISR caching)
+- `export const maxDuration = 60` (default 10s is shorter than typical long completions)
+
+---
+
+### State-after-stream needs a stable fallback chain, not a boolean ternary
+**Date:** 2026-05-19 (Ship 14)
+**What happened:** Render conditional was `streaming ? streamingResponse : persistedAssistant?.content ?? project?.ai_summary ?? ''`. Worked WHILE streaming (showed live chunks), failed AFTER streaming completed (snapped back to spinner). Why: `persistProjectExchange` writes to DB fire-and-forget after stream close; `refreshAfterStream` fetches conversations milliseconds later and gets empty (the write hasn't landed). `persistedAssistant` = undefined → falls through to `project?.ai_summary` (empty for new projects) → empty string → spinner.
+
+Fix: prefer the freshest available text regardless of streaming flag:
+```ts
+const rawAiText = streamingResponse || persistedAssistant?.content || project?.ai_summary || '';
+```
+
+`streaming` flag is purely cosmetic (drives a "streaming…" label suffix). The body text stays stable across the stream-end → persist-write window. When persist eventually lands later, persistedAssistant gets the same content → no visible swap.
+
+**Rule:** when state can come from multiple async sources (live stream + DB fetch + cached snapshot), order them by RECENCY in a `??` chain. Don't use a boolean flag to switch SOURCES — use it to switch DECORATIONS.
+
+---
+
+### Cinematic / animated content is HTML + CSS + SVG + Framer Motion, NOT video
+**Date:** 2026-05-19 (DEMO-CINEMATIC-SPEC drafted)
+**What happened:** The cinematic intro for the investor demo is a single-page animated presentation. Tempted to use Three.js + procedural 3D + audio. Resisted. Three reasons:
+1. Three.js renderers have a long debug tail in browsers — Vercel preview may render differently than local
+2. Video files balloon bundle size + need re-rendering every time a screenshot is stale
+3. Audio is investor-meeting hazard — a demo that surprise-plays sound loses the room
+
+Approach for the intro: pure HTML/CSS/SVG + Framer Motion timing. Five 8-30-second "acts" with scroll-triggered or auto-advance reveals. Act 4 embeds the actual live `/killerapp/budget` route (iframe with a `?hideShell=1` query param) so investors interact with REAL product, not a mockup.
+
+**Rule:** for any "cinematic" or "marketing" page in a working-software demo:
+- HTML/CSS/SVG/Framer Motion only
+- No video assets (use SVG illustrations + motion)
+- No audio (default off, no exceptions)
+- The "wow moment" is always the LIVE PRODUCT embedded, not a recorded version
+- Respect `prefers-reduced-motion` (motion off → final state still shows)
+- Skippable at any moment (Esc key + visible "Skip" link)
+
+---
+
+### Pre-seed Supabase schema discovery BEFORE dispatching code-writing subagents
+**Date:** 2026-05-19 (Ships 22 + 25 + Contractor handover plan)
+**What happened:** Multiple agents this session needed Supabase schema info (column names, types, RLS state, existing tables) before writing code. Without pre-seeding, agents either guessed (wrong) or did expensive discovery passes mid-build. With pre-seeding (orchestrator runs `list_tables` + `execute_sql` ahead of time, inlines results in the spawn prompt), agents wrote correct code first try.
+
+Concrete example for the contractor handover plan: pre-confirmed `crm_contacts` schema (33 columns, 5 NOT-NULL non-id, requires `time_machine_handle`), `crm-photos` bucket exists + public, `agent_identities` table doesn't exist. The agents that consumed this info shipped clean; the one Ship-25 agent that didn't get pre-seeded info had to discover at runtime + made a category-mapping mistake.
+
+**Rule:** for any subagent that will write Supabase-touching code, the orchestrator:
+1. Runs `list_tables` for relevant schema.
+2. Runs `execute_sql` for column types + sample rows of any table the agent will write to.
+3. Inlines the result in the spawn prompt as a "schema reference" block.
+
+Total cost: ~10 seconds per subagent. Savings: at least one Vercel build failure per dispatched agent.
