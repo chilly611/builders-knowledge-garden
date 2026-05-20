@@ -363,7 +363,7 @@ export default function AuthAndProjectIndicator() {
           flexShrink: 0,
         }}
       />
-      <span style={{ opacity: 0.5 }}>saved · </span>
+      <span style={{ opacity: 0.5 }}>Project Name: </span>
 
       {isRenaming ? (
         <input

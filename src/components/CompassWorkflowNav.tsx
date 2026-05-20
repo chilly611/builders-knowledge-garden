@@ -576,7 +576,7 @@ export default function CompassWorkflowNav() {
               title={savedProjectName ?? projectId ?? 'no project'}
             >
               {savedProjectName || projectId
-                ? `saved · ${savedProjectName ?? projectId}`
+                ? `Project Name: ${savedProjectName ?? projectId}`
                 : 'no project selected'}
             </span>
           </div>
