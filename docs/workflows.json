@@ -235,12 +235,6 @@
       "totalXp": 100,
       "steps": [
         {
-          "id": "s2-1",
-          "label": "Describe the job",
-          "type": "voice_input",
-          "placeholder": "e.g., Kitchen remodel, 320 sq ft. Removing wall between kitchen and dining room, adding granite island with gas cooktop. New appliances. Type or use voice."
-        },
-        {
           "id": "s2-2",
           "label": "Where is it?",
           "type": "location_input"

@@ -271,7 +271,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   // confirms the modal. recordStepEvent is NOT called until confirmed so
   // the step card isn't committed if the user cancels.
   const [pendingScopeChange, setPendingScopeChange] = useState<{
-    field: 's2-1' | 's2-2' | 's2-3';
+    field: 's2-2' | 's2-3';
     fieldLabel: string;
     value: string;
     stepResult: StepResult & { workflowId: string };
@@ -408,18 +408,6 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     const activeProject = localProject ?? project;
     const payload = stepResult.payload as { value?: string; input?: string } | undefined;
     const stepValue = payload?.value?.trim() ?? '';
-
-    // ── s2-1 "Describe the job" ───────────────────────────────────────────
-    if (
-      stepResult.stepId === 's2-1' &&
-      stepResult.type === 'step_completed' &&
-      stepValue &&
-      activeProject?.raw_input &&
-      stepValue !== activeProject.raw_input
-    ) {
-      setPendingScopeChange({ field: 's2-1', fieldLabel: 'job description', value: stepValue, stepResult });
-      return;
-    }
 
     // ── s2-2 "Where is it?" ──────────────────────────────────────────────
     // Only show the modal when overwriting an existing location.
@@ -577,14 +565,7 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     recordStepEvent(stepResult);
     setStepStatusMap((prev) => ({ ...prev, [stepResult.stepId]: 'complete' }));
 
-    if (field === 's2-1') {
-      void patchProject(projectId, { raw_input: value });
-      setLocalProject((prev) => {
-        const base = prev ?? project;
-        if (!base) return prev;
-        return { ...base, raw_input: value };
-      });
-    } else if (field === 's2-2') {
+    if (field === 's2-2') {
       setLocalProject((prev) => {
         const base = prev ?? project;
         if (!base) return prev;
