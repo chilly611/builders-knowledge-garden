@@ -89,9 +89,18 @@ function setActiveProjectInLocalStorage(id: string) {
 // Replace the first City, State [ZIP] pattern in text with a new location string.
 // Used to keep the displayed raw_input consistent with an explicitly saved jurisdiction.
 function applyJurisdictionOverride(text: string, jurisdiction: string): string {
-  // Matches patterns like "San Francisco, CA 94122", "San Jose, ca", "Los Angeles, CA 90001-1234"
-  const locationPattern = /\b([A-Z][a-zA-Z\s]+),\s*([A-Za-z]{2})\s*(\d{5}(?:-\d{4})?)?/;
-  return locationPattern.test(text) ? text.replace(locationPattern, jurisdiction) : text;
+  // Require each city word to be Title Case (e.g. "San Francisco") so we don't
+  // greedily consume preceding words like "ADU in" into the city-name match.
+  const titleCasePattern = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}),\s*([A-Za-z]{2})\b(\s+\d{5}(?:-\d{4})?)?/;
+  if (titleCasePattern.test(text)) {
+    return text.replace(titleCasePattern, jurisdiction);
+  }
+  // Fallback for all-lowercase inputs: anchor to the word "in" before the location
+  const inPattern = /(\bin\s+)([a-z]+(?:\s+[a-z]+){0,3}),\s*([a-z]{2})\b(\s+\d{5}(?:-\d{4})?)?/i;
+  if (inPattern.test(text)) {
+    return text.replace(inPattern, `$1${jurisdiction}`);
+  }
+  return text;
 }
 
 function stripTrailingActionBlock(text: string): string {
