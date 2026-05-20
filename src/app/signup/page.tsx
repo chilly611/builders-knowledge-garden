@@ -91,7 +91,11 @@ function SignupPageContent() {
         }
       })();
 
-      router.push(next);
+      // 2026-05-20 — brand-new signups have never seen /welcome, so the flag
+      // can't be set yet. Route through /welcome on first signup so the user
+      // gets the handover orientation; the page stamps welcomed_at on
+      // click-through so subsequent sign-ins go straight to the killerapp.
+      router.push(`/welcome?next=${encodeURIComponent(next)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed.');
     } finally {

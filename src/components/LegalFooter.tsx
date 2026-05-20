@@ -93,6 +93,26 @@ export default function LegalFooter() {
           >
             Disclaimer
           </a>
+          {/* 2026-05-20: handover feedback channel for early-tester contractors. */}
+          <a
+            href="/feedback"
+            style={{
+              color: 'var(--graphite, var(--ink))',
+              textDecoration: 'none',
+              borderBottom: '1px solid transparent',
+              transition: 'border-bottom 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLAnchorElement).style.borderBottomColor =
+                'var(--graphite, var(--ink))';
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLAnchorElement).style.borderBottomColor =
+                'transparent';
+            }}
+          >
+            Help us improve
+          </a>
         </div>
       </div>
     </footer>

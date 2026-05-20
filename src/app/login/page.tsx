@@ -48,7 +48,8 @@ function LoginPageContent() {
           } else {
             setSuccessMessage('Signed in successfully!');
             void trackSignin();
-            setTimeout(() => router.push(nextParam), 500);
+            const dest = await destinationAfterSignIn(nextParam);
+            setTimeout(() => router.push(dest), 500);
           }
         }
       } else {
@@ -62,8 +63,9 @@ function LoginPageContent() {
         } else {
           setSuccessMessage('Signed in successfully!');
           void trackSignin();
+          const dest = await destinationAfterSignIn(nextParam);
           setTimeout(() => {
-            router.push(nextParam);
+            router.push(dest);
           }, 500);
         }
       }
@@ -76,6 +78,23 @@ function LoginPageContent() {
 
   const handleContinueAsExplorer = () => {
     router.push('/killerapp');
+  };
+
+  // 2026-05-20 — first-session detection: when the just-signed-in user
+  // does NOT have `welcomed_at` on their auth metadata, route them through
+  // /welcome (which stamps the flag on click-through). Trial-contractor
+  // accounts seeded via app/scripts/seed-trial-accounts.mjs come in without
+  // the flag set, so they get the handover landing on their first visit and
+  // the killerapp directly afterward.
+  const destinationAfterSignIn = async (intended: string): Promise<string> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const meta = (user?.user_metadata || {}) as Record<string, unknown>;
+      if (meta.welcomed_at) return intended;
+      return `/welcome?next=${encodeURIComponent(intended)}`;
+    } catch {
+      return intended;
+    }
   };
 
   // 2026-05-20 — best-effort sign-in event log. Pulled into a helper so
