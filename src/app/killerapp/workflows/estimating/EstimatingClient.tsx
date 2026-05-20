@@ -288,16 +288,28 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   const sqftFlagTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Helper: PATCH a project field through the API with the supabase auth token.
-  const patchProject = useCallback(async (id: string, updates: Record<string, unknown>) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    await fetch('/api/v1/projects', {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ id, ...updates }),
-    }).catch(() => { /* offline / demo — best-effort */ });
+  // Returns the parsed JSON response so callers can detect failures.
+  const patchProject = useCallback(async (id: string, updates: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/v1/projects', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ id, ...updates }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        console.error('[patchProject] failed', res.status, body);
+        return { ok: false, error: body.error ?? `HTTP ${res.status}` };
+      }
+      return { ok: true };
+    } catch (e) {
+      console.error('[patchProject] network error', e);
+      return { ok: false, error: 'Network error' };
+    }
   }, []);
 
   // 2026-05-19 (Ship 28): AI estimate → /killerapp/budget handoff.
@@ -581,7 +593,14 @@ export default function EstimatingClient({ workflow, stages }: Props) {
       if (locationFlagTimer.current) clearTimeout(locationFlagTimer.current);
       setLocationFlag(true);
       locationFlagTimer.current = setTimeout(() => setLocationFlag(false), 6000);
-      patchProject(projectId, { jurisdiction: value }).then(() => refreshProject());
+      patchProject(projectId, { jurisdiction: value }).then((result) => {
+        if (result.ok) {
+          refreshProject();
+        } else {
+          console.error('[s2-2] jurisdiction patch failed:', result.error);
+          alert(`Could not save location: ${result.error ?? 'unknown error'}`);
+        }
+      });
     } else if (field === 's2-3') {
       setLocalSqft(value);
       if (sqftFlagTimer.current) clearTimeout(sqftFlagTimer.current);
