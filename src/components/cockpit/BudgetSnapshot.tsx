@@ -206,11 +206,11 @@ function Sparkline({
             </div>
             <div style={{ fontSize: '9px', opacity: 0.85 }}>
               {formatCurrency(
-                (data.byStage[hoveredStageId]?.committedCents || 0) * 100
+                data.byStage[hoveredStageId]?.committedCents || 0
               )}{' '}
-              / $
-              {Math.round(
-                (data.byStage[hoveredStageId]?.spentCents || 0) / 100
+              /{' '}
+              {formatCurrency(
+                data.byStage[hoveredStageId]?.spentCents || 0
               )}
             </div>
           </div>

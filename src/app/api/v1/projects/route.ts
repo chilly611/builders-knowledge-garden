@@ -5,6 +5,21 @@ function getSupabase() {
   return getServiceClient();
 }
 
+/**
+ * Demo project allowlist (2026-05-20):
+ * The three seeded demo projects are readable by ANY authenticated user, so
+ * trial-contractor accounts (and any signed-in observer) can run the demo
+ * without account-juggling. Writes (PATCH/DELETE) remain owner-only — trial
+ * users can explore but cannot pollute demo data. Tracked in tasks.todo.md
+ * (Burn 5 follow-ups) as the lowest-risk handover-week pattern; the long-term
+ * fix is the `is_demo_project boolean` column scoped post-handover.
+ */
+const DEMO_PROJECT_IDS = new Set<string>([
+  '55730cd3-5225-493d-8b5c-49086d942565', // Marin farmhouse
+  'aa11b22c-1111-4d78-aaaa-bbccdd112233', // ADU in Sausalito
+  'bb22c33d-2222-4d78-bbbb-ccddee223344', // Commercial TI in SoMa
+]);
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request);
@@ -15,14 +30,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('id');
 
-    // Single project fetch by ID
+    // Single project fetch by ID — bypass user_id filter for the demo
+    // allowlist so trial accounts can hydrate the seeded demo projects.
     if (projectId) {
-      const { data: project, error } = await getSupabase()
+      let query = getSupabase()
         .from('command_center_projects')
         .select('*')
-        .eq('id', projectId)
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', projectId);
+      if (!DEMO_PROJECT_IDS.has(projectId)) {
+        query = query.eq('user_id', user.id);
+      }
+      const { data: project, error } = await query.single();
 
       if (error || !project) {
         return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -44,11 +62,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // List all projects
+    // List all projects — own projects PLUS the demo allowlist so trial
+    // accounts always see the 3 demo projects in their picker.
+    const allowedIds = Array.from(DEMO_PROJECT_IDS).join(',');
     const { data, error } = await getSupabase()
       .from('command_center_projects')
       .select('*')
-      .eq('user_id', user.id)
+      .or(`user_id.eq.${user.id},id.in.(${allowedIds})`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

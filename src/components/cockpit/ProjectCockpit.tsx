@@ -177,13 +177,19 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
       if (detail.budget) {
         const tEst = Math.round((detail.budget.totalEstimated || 0) * 100);
         const tSpent = Math.round((detail.budget.totalSpent || 0) * 100);
-        setBudgetData({
-          byStage: {} as BudgetTimelineData['byStage'],
+        // 2026-05-20: preserve live byStage during rewind so the sparkline
+        // doesn't collapse to a flat strip when scrubbing back. Snapshot
+        // totals override the totals, but the per-stage SHAPE is the live
+        // shape — better optics than a blank chart, and the sparkline is
+        // a relative-magnitude visual anyway. (If we later persist byStage
+        // on snapshots themselves we can swap to detail.budget.byStage.)
+        setBudgetData((prev) => ({
+          byStage: prev.byStage,
           totalCommittedCents: tEst,
           totalSpentCents: tSpent,
           isOverbudget: tSpent > tEst,
           overAmountCents: tSpent > tEst ? tSpent - tEst : 0,
-        });
+        }));
       }
     };
     window.addEventListener(REWIND_EVENT, onRewind);
