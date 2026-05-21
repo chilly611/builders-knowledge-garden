@@ -47,16 +47,23 @@ const COLORS = {
 
 const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 
-// Act durations in ms. Act 4 (index 3) is user-controlled — see auto-advance
-// effect.
+// Act durations in ms.
 //   Act 1 (index 0) trimmed 8s → 6s (2026-05-19): both typewriters finish
 //     around 4s, so 8s left 4s of dead hold. 6s gives ~1.5s of breathing
 //     room after the second line lands.
-//   Act 3 (index 2) trimmed 30s → 22s (2026-05-20, per V2 spec): the last
-//     card landed at 25s and the act ended at 30s — too much dead air after
-//     a marquee moment. Re-timed cards now land at 2/5/9/14/18s so the
-//     final Journey card has ~4s of read-time before the auto-advance.
-const ACT_DURATIONS_MS = [6000, 12000, 22000, Number.POSITIVE_INFINITY, 12000];
+//   Act 2 (index 1) trimmed 12s → 8s (2026-05-21 AM, Chilly): tighter pacing
+//     across Acts 2/3/4. Vignette interval drops 2.8s → 2.0s to match
+//     (4 × 2s = 8s).
+//   Act 3 (index 2) trimmed 22s → 11s (2026-05-21 AM, Chilly): roughly half
+//     the prior length + sliding-window card animation for a "hyper-speed
+//     feed" feel. Cards re-timed to 1/2.5/4/6/8s; the final Journey card
+//     gets ~3s of read-time before the auto-advance.
+//   Act 4 (index 3) was user-controlled (Continue button) — flipped to
+//     auto-advance at 14s (2026-05-21 AM, Chilly). 14s gives the iframe
+//     time to mount + breathe before the cinematic moves on. "Open full
+//     app in new tab" link is still present for investors who want to
+//     escape into the real product.
+const ACT_DURATIONS_MS = [6000, 8000, 11000, 14000, 12000];
 const TOTAL_ACTS = 5;
 
 // — Garden Logo (with SVG fallback) ————————————————————————————————————
@@ -263,7 +270,7 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           (800x800) instead of the explicit 440 — bled into the typewriter
           below. Now constrained to 440x440 with maxHeight: 55vh so on any
           viewport the image stays within reasonable bounds. */}
-      <div style={{ position: 'relative', width: 460, height: 440, maxWidth: '92vw', zIndex: 1 }}>
+      <div className="bkg-intro-act1-canvas" style={{ position: 'relative', width: 460, height: 440, maxWidth: '92vw', zIndex: 1 }}>
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -279,18 +286,32 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           />
         </motion.div>
 
-        {/* Three chrome dots — orbit out from behind the hammer and sit
-            ON TOP of it (zIndex 2 above the hammer's zIndex 1). Offsets
-            tuned to stay within container at 92vw (~340px on iPhone)
-            while still reading as decorative satellites on the hammer's
-            edges. */}
+        {/* Three chrome satellites — orbit out from behind the hammer and
+            sit ON TOP of it (zIndex 2 above the hammer's zIndex 1).
+            2026-05-21 AM (Chilly): wired GardenLogo so when chrome logo
+            PNGs are dropped at the predictable paths below, they render
+            instead of the colored fallback dots. Until then the dots +
+            text labels stay (so the demo never breaks on missing assets).
+            Files to drop in app/public/logos/gardens/ when ready:
+              chrome-killer-app.png
+              chrome-dream-machine.png
+              chrome-knowledge-garden.png
+            Offsets tuned to stay within container at 92vw (~340px on
+            iPhone) while still reading as decorative satellites on the
+            hammer's edges. */}
         <motion.div
           initial={{ opacity: 0, x: 0, y: 0 }}
           animate={{ opacity: 1, x: 170, y: -160 }}
           transition={orbitTransition}
           style={{ ...chromeOrbitDot(CHROME.red), zIndex: 2 }}
         >
-          <span style={chromeLabel}>Killer App</span>
+          <GardenLogo
+            src="/logos/gardens/chrome-killer-app.png"
+            alt="Killer App"
+            size={56}
+            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+            fallback={<span style={chromeLabel}>Killer App</span>}
+          />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 0, y: 0 }}
@@ -298,7 +319,13 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           transition={{ ...orbitTransition, delay: (orbitTransition.delay ?? 0) + 0.12 }}
           style={{ ...chromeOrbitDot(CHROME.warm), zIndex: 2 }}
         >
-          <span style={chromeLabel}>Dream Machine</span>
+          <GardenLogo
+            src="/logos/gardens/chrome-dream-machine.png"
+            alt="Dream Machine"
+            size={56}
+            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+            fallback={<span style={chromeLabel}>Dream Machine</span>}
+          />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 0, y: 0 }}
@@ -306,14 +333,20 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           transition={{ ...orbitTransition, delay: (orbitTransition.delay ?? 0) + 0.24 }}
           style={{ ...chromeOrbitDot(CHROME.green), zIndex: 2 }}
         >
-          <span style={chromeLabel}>Knowledge Garden</span>
+          <GardenLogo
+            src="/logos/gardens/chrome-knowledge-garden.png"
+            alt="Knowledge Garden"
+            size={56}
+            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+            fallback={<span style={chromeLabel}>Knowledge Garden</span>}
+          />
         </motion.div>
       </div>
 
       {/* Typewriter sits BELOW the hammer with explicit z-index higher
           than the hammer's z-index so any visual overlap renders the text
           on top, not the image. */}
-      <div style={{ textAlign: 'center', marginTop: 36, maxWidth: 720, position: 'relative', zIndex: 5 }}>
+      <div className="bkg-intro-act1-tagline" style={{ textAlign: 'center', marginTop: 36, maxWidth: 720, position: 'relative', zIndex: 5 }}>
         <Typewriter
           text="the operating system for knowledge work,"
           delaySec={reduced ? 0 : 2.2}
@@ -326,6 +359,31 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           style={{ marginTop: 4 }}
         />
       </div>
+
+      {/* Mobile fix (2026-05-21 AM, Chilly): on iPhone the hammer was
+          taking ~55vh + the typewriter's marginTop of 36 + two lines of
+          Archivo Black were pushing the second tagline line below the
+          fold. Shrink the hammer harder on small viewports, tighten the
+          gap, and drop the typewriter min font from 20px → 15px so both
+          lines fit. */}
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .bkg-intro-act1-canvas {
+            width: 320px !important;
+            height: 300px !important;
+          }
+          .bkg-intro-act1-canvas img {
+            max-height: 38vh !important;
+          }
+          .bkg-intro-act1-tagline {
+            margin-top: 18px !important;
+          }
+          .bkg-intro-act1-tagline p {
+            font-size: clamp(15px, 4.2vw, 22px) !important;
+            line-height: 1.2 !important;
+          }
+        }
+      `}</style>
     </motion.section>
   );
 }
@@ -337,15 +395,25 @@ function Act2Problem({ reduced }: { reduced: boolean }) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (reduced) { setTick(3); return; }
-    const t = setInterval(() => setTick((v) => Math.min(v + 1, 3)), 2800);
+    // 2026-05-21 AM (Chilly): 2.8s → 2.0s to match Act 2's 12s → 8s trim.
+    const t = setInterval(() => setTick((v) => Math.min(v + 1, 3)), 2000);
     return () => clearInterval(t);
   }, [reduced]);
 
+  // 2026-05-21 AM (Chilly): vignette 3 and 4 titles flipped from
+  // problem-statement labels ("Contract in Word" / "Schedule on a
+  // whiteboard") to BKG-pitch lines ("plain speak creates legit contracts"
+  // / "sequence, schedule & budget with voice, whiteboard, sketches or
+  // excel files…"). Two concerns surfaced to Chilly: (a) "Contract in Word"
+  // read as "Microsoft Word" to non-tech contractors; (b) the whiteboard
+  // line was too narrow about what tools work. Title fontSize is responsive
+  // below to keep the 100+ char vignette 4 title from overflowing the 280px
+  // text column.
   const vignettes = [
     { title: 'Estimate on a napkin',     accent: CHROME.warmB, art: <NapkinArt /> },
     { title: 'Code lookup by text',      accent: CHROME.warm,  art: <TextThreadArt /> },
-    { title: 'Contract in Word',         accent: CHROME.green, art: <ContractArt /> },
-    { title: 'Schedule on a whiteboard', accent: CHROME.red,   art: <WhiteboardArt /> },
+    { title: 'plain speak creates legit contracts', accent: CHROME.green, art: <ContractArt /> },
+    { title: 'sequence, schedule & budget with voice, whiteboard, sketches or excel files — whatever works for you works!', accent: CHROME.red, art: <WhiteboardArt /> },
   ];
 
   return (
@@ -394,7 +462,15 @@ function Act2Problem({ reduced }: { reduced: boolean }) {
                 width: 12, height: 12, borderRadius: 6,
                 background: vignettes[tick].accent, marginBottom: 12,
               }} />
-              <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.ink, fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)", lineHeight: 1.2 }}>
+              <div style={{
+                // 2026-05-21 AM (Chilly): fontSize responsive to title
+                // length so vignette 4's 100+ char line wraps cleanly
+                // inside the 280px text column instead of overflowing.
+                fontSize: vignettes[tick].title.length > 50 ? 16 : 22,
+                fontWeight: 800, color: COLORS.ink,
+                fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
+                lineHeight: 1.25,
+              }}>
                 {vignettes[tick].title}
               </div>
               <div style={{ fontSize: 13, color: COLORS.faded, marginTop: 10, lineHeight: 1.5 }}>
@@ -479,28 +555,34 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
     if (reduced) { setChars(fullTranscript.length); return; }
     let i = 0;
     const tick = setInterval(() => {
-      i += 2; // ~25ms per char ≈ 5s to type the line
+      // 2026-05-21 AM (Chilly): increment 2 → 4 per 80ms tick so the
+      // ~150-char transcript types in ~1.5s instead of ~5s. Matches the
+      // act-wide "hyper-speed" feel.
+      i += 4;
       setChars((c) => {
         if (c >= fullTranscript.length) {
           clearInterval(tick);
           return fullTranscript.length;
         }
-        return Math.min(fullTranscript.length, c + 2);
+        return Math.min(fullTranscript.length, c + 4);
       });
     }, 80);
     return () => clearInterval(tick);
   }, [reduced]);
 
   // Schedule of right-panel cards. Cards appear at offsets in seconds.
-  // Re-timed 2026-05-20 alongside the 30s → 22s act-duration trim. Cards now
-  // land at 2/5/9/14/18s; final Journey card has ~4s of read-time before
-  // auto-advance to Act 4.
+  // 2026-05-21 AM (Chilly): re-timed alongside the 22s → 11s act-duration
+  // trim. Cards land at 1/2.5/4/6/8s so the Journey card has ~3s of
+  // read-time before auto-advance to Act 4. Pairs with the sliding-window
+  // render below (only the latest 2 cards visible at any time — older ones
+  // fade and drift upward as new ones populate, for the "hyper-speed feed"
+  // feel Chilly asked for).
   const cards: Array<{ at: number; render: () => React.ReactNode; key: string }> = useMemo(() => [
-    { at: 2,  key: 'project',  render: () => <CardProject /> },
-    { at: 5,  key: 'estimate', render: () => <CardEstimate /> },
-    { at: 9,  key: 'code',     render: () => <CardCode /> },
-    { at: 14, key: 'contract', render: () => <CardContract /> },
-    { at: 18, key: 'journey',  render: () => <CardJourney /> },
+    { at: 1,   key: 'project',  render: () => <CardProject /> },
+    { at: 2.5, key: 'estimate', render: () => <CardEstimate /> },
+    { at: 4,   key: 'code',     render: () => <CardCode /> },
+    { at: 6,   key: 'contract', render: () => <CardContract /> },
+    { at: 8,   key: 'journey',  render: () => <CardJourney /> },
   ], []);
 
   const [elapsed, setElapsed] = useState(0);
@@ -562,22 +644,52 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
           </p>
         </div>
 
-        {/* RIGHT: cards stream in */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-          {cards.map(({ at, key, render }) => (
-            <AnimatePresence key={key} mode="wait">
-              {elapsed >= at && (
-                <motion.div
-                  initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: reduced ? 0 : 0.4, ease: 'easeOut' }}
-                >
-                  {render()}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          ))}
+        {/* RIGHT: cards stream in. 2026-05-21 AM (Chilly): switched from a
+            stack-everything render to a sliding window of the latest 2
+            cards. New cards rise in from the bottom (y: 30 → 0); when a
+            third arrives, the oldest exits upward (y: 0 → -40) and fades
+            out. The trailing card in the visible window dims to 0.55 to
+            keep emphasis on the newest. Result is a "hyper-speed feed"
+            feel that matches the halved Act 3 duration. The Journey card
+            (final) is never displaced — Act 3 ends before a 6th card
+            could enter, so AnimatePresence holds it through the act
+            transition. */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          minWidth: 0,
+          // Stable height prevents the layout from jumping as cards enter
+          // and exit. Two cards × ~80px each + gap ≈ 175px; padding for
+          // exit-translate room.
+          minHeight: 220,
+        }}>
+          <AnimatePresence>
+            {cards
+              .filter((c) => elapsed >= c.at)
+              // Reduced motion: show all visible cards (no sliding
+              // window). Normal motion: latest 2 only — older ones exit
+              // upward as new ones populate.
+              .slice(reduced ? 0 : -2)
+              .map((card, idx, arr) => {
+                const isLatest = idx === arr.length - 1;
+                return (
+                  <motion.div
+                    key={card.key}
+                    initial={reduced ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.96 }}
+                    animate={{
+                      opacity: isLatest ? 1 : 0.55,
+                      y: 0,
+                      scale: isLatest ? 1 : 0.96,
+                    }}
+                    exit={{ opacity: 0, y: -40, scale: 0.94 }}
+                    transition={{ duration: reduced ? 0 : 0.4, ease: 'easeOut' }}
+                  >
+                    {card.render()}
+                  </motion.div>
+                );
+              })}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -721,7 +833,12 @@ function CardJourney() {
 }
 
 // — ACT 4: Live killer app ————————————————————————————————————————————
-function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
+// 2026-05-21 AM (Chilly): removed the `Continue →` button — Act 4 now
+// auto-advances at 14s like every other act. Kept the "Open full app in
+// new tab" ghost link so investors who want to actually use the budget can
+// escape the cinematic without losing it. The "Hover the categories →"
+// floating hint still appears for the first 6.5s.
+function Act4LiveBudget() {
   const src = `/killerapp/budget?project=${DEMO_PROJECT_ID}&hideShell=1`;
   const [showPrompt, setShowPrompt] = useState(true);
   useEffect(() => {
@@ -780,10 +897,12 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
           )}
         </div>
       </div>
-      {/* 2026-05-20 PM: paddingBottom bumped 28px → 80px on desktop too
-          so the Continue + ghost-link bar clears the floating ActIndicator
-          (position: fixed, bottom: 24, ~40px tall). zIndex 5 puts the CTAs
-          above any other overlapping chrome. */}
+      {/* 2026-05-21 AM: Continue button removed (Act 4 auto-advances now).
+          Single ghost link "Open full app in a new tab" remains — investors
+          who want to actually use the budget can pop it out without losing
+          the cinematic. paddingBottom kept at 80 so the bar clears the
+          floating ActIndicator (position: fixed, bottom: 24, ~40px tall).
+          zIndex 5 keeps the CTA above other overlapping chrome. */}
       <div className="bkg-intro-act4-cta" style={{
         padding: '16px 40px 80px',
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
@@ -791,9 +910,6 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
         position: 'relative',
         zIndex: 5,
       }}>
-        <button type="button" onClick={onContinue} style={ctaPrimary(CHROME.red)}>
-          Continue →
-        </button>
         <Link href={`/killerapp/budget?project=${DEMO_PROJECT_ID}`} style={ctaGhost} target="_blank">
           Open full app in a new tab
         </Link>
@@ -1193,9 +1309,13 @@ export default function IntroPage() {
     setAct(TOTAL_ACTS - 1);
   }, []);
 
-  // Auto-advance, except Act 4 which is user-controlled.
+  // Auto-advance every act, including Act 4 (flipped 2026-05-21 AM, Chilly:
+  // dropping the Continue button and letting Act 4 ride a 14s timer so the
+  // cinematic flows end-to-end without investor input). Paused state still
+  // freezes the timer; act === N keeps a finite dur sentinel just in case
+  // someone re-introduces an Infinity later.
   useEffect(() => {
-    if (paused || act === 3) return;
+    if (paused) return;
     const dur = ACT_DURATIONS_MS[act];
     if (!isFinite(dur)) return;
     const id = window.setTimeout(() => {
@@ -1230,7 +1350,7 @@ export default function IntroPage() {
         {act === 0 && <Act1Umbrella reduced={reduced} />}
         {act === 1 && <Act2Problem reduced={reduced} />}
         {act === 2 && <Act3Aikido reduced={reduced} />}
-        {act === 3 && <Act4LiveBudget onContinue={goNext} />}
+        {act === 3 && <Act4LiveBudget />}
         {act === 4 && <Act5Vision reduced={reduced} />}
       </AnimatePresence>
 
