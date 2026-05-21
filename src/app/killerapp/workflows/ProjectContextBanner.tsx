@@ -8,8 +8,15 @@
  * Shows the user's original raw_input and a short AI-derived summary,
  * plus quick links to peer workflows so the user can move sideways
  * without retyping.
+ *
+ * Staleness handling: when project.ai_summary was generated for a
+ * different location than the current project.jurisdiction, the banner
+ * silently fires POST /api/v1/projects/summarize to regenerate it. The
+ * stale text is shown while the request is in-flight, then swapped for
+ * the fresh summary — no visible loading state, no user action required.
  */
 
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 import { applyJurisdictionOverride } from '@/lib/project-display';
@@ -79,29 +86,48 @@ const PEER_LINKS: Array<{
 ];
 
 export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Props) {
-  if (!project) return null;
+  const [liveSummary, setLiveSummary] = useState<string | null>(null);
+  const regeneratedRef = useRef(false);
 
   // Only rewrite the location in raw_input when the saved jurisdiction is
   // consistent with the description — same guard as EstimatingClient.
-  const jCity = project.jurisdiction?.replace(/,.*$/, '').trim().toLowerCase() ?? '';
+  const jCity = project?.jurisdiction?.replace(/,.*$/, '').trim().toLowerCase() ?? '';
   const jurisdictionConsistent =
-    !!jCity && !!project.raw_input && project.raw_input.toLowerCase().includes(jCity);
+    !!jCity && !!project?.raw_input && project.raw_input.toLowerCase().includes(jCity);
   const rawInput =
-    jurisdictionConsistent && project.raw_input
+    jurisdictionConsistent && project?.raw_input
       ? applyJurisdictionOverride(project.raw_input.trim(), project.jurisdiction!)
-      : project.raw_input?.trim();
+      : project?.raw_input?.trim();
 
-  const aiSummary = project.ai_summary?.trim();
+  const storedSummary = project?.ai_summary?.trim() ?? null;
+  const displaySummary = liveSummary ?? storedSummary;
   const summaryPreview =
-    aiSummary && aiSummary.length > 220
-      ? `${aiSummary.slice(0, 217).trimEnd()}…`
-      : aiSummary;
+    displaySummary && displaySummary.length > 220
+      ? `${displaySummary.slice(0, 217).trimEnd()}…`
+      : displaySummary;
 
-  // The AI summary is stale when it doesn't mention the current project
-  // location — e.g. was generated for NYC before the user corrected to
-  // Flagstaff. Only flag when we have both a jurisdiction city and a summary.
+  // Silently regenerate when the stored AI Take doesn't mention the current
+  // jurisdiction city. Shows the stale text while the request is in-flight,
+  // then swaps it for the fresh summary with no visible loading state.
   const aiTakeIsStale =
-    !!jCity && !!aiSummary && !aiSummary.toLowerCase().includes(jCity);
+    !!jCity && !!storedSummary && !storedSummary.toLowerCase().includes(jCity);
+
+  useEffect(() => {
+    if (!aiTakeIsStale || !project?.id || regeneratedRef.current) return;
+    regeneratedRef.current = true;
+    fetch('/api/v1/projects/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: project.id }),
+    })
+      .then((r) => r.json())
+      .then((data: { ai_summary?: string }) => {
+        if (data.ai_summary) setLiveSummary(data.ai_summary);
+      })
+      .catch(() => {/* silently ignore — stale summary is still shown */});
+  }, [aiTakeIsStale, project?.id]);
+
+  if (!project) return null;
 
   const factsRow: string[] = [];
   if (project.project_type) factsRow.push(project.project_type);
@@ -184,7 +210,7 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
         </p>
       )}
 
-      {summaryPreview && !aiTakeIsStale && (
+      {summaryPreview && (
         <p
           style={{
             margin: '0 0 14px',
