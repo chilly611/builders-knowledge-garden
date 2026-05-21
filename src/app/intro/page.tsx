@@ -670,17 +670,47 @@ function CardContract() {
 }
 function CardJourney() {
   // 2026-05-20: swapped from a dark #15151A card to the same light register
-  // as the other 4 cards. The dark version read as "broken/empty" on mobile
-  // and broke the visual rhythm of the right-panel card stream.
+  // as the other 4 cards, then upgraded the journey pills from plain text to
+  // actual stage illustrations (builder-sizeup.png + builder-lockin.png).
+  // Plan-it-out stays as a dashed placeholder — illustration is TBD. Each
+  // image falls back to a colored pill if the asset isn't on disk.
+  const stage = (label: string, src: string | null, active: boolean) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 60 }}>
+      {src ? (
+        <GardenLogo
+          src={src}
+          alt={label}
+          size={44}
+          fallback={
+            <span style={{
+              display: 'inline-block', width: 44, height: 44, borderRadius: 4,
+              background: active ? COLORS.ink : 'rgba(15,15,17,0.06)',
+            }} />
+          }
+        />
+      ) : (
+        <span style={{
+          display: 'inline-block', width: 44, height: 44, borderRadius: 4,
+          border: `1px dashed ${COLORS.rule}`, background: 'transparent',
+        }} />
+      )}
+      <span style={{
+        fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+        color: active ? COLORS.ink : COLORS.graphite,
+      }}>
+        {label}
+      </span>
+    </div>
+  );
   return (
     <div style={card(COLORS.ink)}>
       <div style={cardEyebrow}>JOURNEY</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, flexWrap: 'wrap' }}>
-        <span style={{ ...journeyPill(COLORS.graphite), background: 'rgba(15,15,17,0.06)' }}>Size up</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+        {stage('Size up', '/logos/gardens/builder-sizeup.png', false)}
         <span style={journeyArrow}>→</span>
-        <span style={{ ...journeyPill('#FFFFFF'), background: COLORS.ink }}>Lock it in</span>
+        {stage('Lock it in', '/logos/gardens/builder-lockin.png', true)}
         <span style={journeyArrow}>→</span>
-        <span style={{ ...journeyPill(COLORS.graphite), background: 'transparent', border: `1px dashed ${COLORS.rule}` }}>Plan it out</span>
+        {stage('Plan it out', null, false)}
       </div>
     </div>
   );
@@ -800,6 +830,11 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
   // labeled colored dot (so the demo never breaks on a missing asset).
   // Builder's is listed first — it's the vertical that's already shipping;
   // the rest are "the rest of the umbrella" the investor's about to see.
+  // 2026-05-20 redesign: this is the LAST image investors see. Clean,
+  // prominent, no overlaps. Removed the 3 chrome orbit dots (they were
+  // cluttering on top of the verticals). Six verticals now arc across the
+  // TOP semicircle around a larger tree, leaving the bottom CLEAR for the
+  // typewriter text + CTAs. Bigger logos (96px vs 56px) so they read.
   const domains = [
     {
       label: "Builder's",
@@ -826,12 +861,38 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       alt: 'Orchid Garden',
     },
     {
+      label: 'Legal',
+      color: '#6B4FBB',
+      src: '/logos/gardens/legal.png',
+      alt: 'Legal Garden',
+    },
+    {
       label: 'Coming',
       color: COLORS.faded,
       src: null,
       alt: 'More gardens coming',
     },
   ];
+
+  // Six verticals across the top 240° (from lower-left through top to
+  // lower-right). The bottom 120° below the tree stays clear. With y-down
+  // CSS coords and our angle convention (Math.cos/sin), we want angles in
+  // the half-plane where sin(angle) < ~0.3 — i.e., the top + upper sides.
+  // Linear sweep from 195° (lower-left) to 345° (lower-right) skips the
+  // bottom entirely.
+  const positions = domains.map((d, i) => {
+    const startDeg = 195;
+    const endDeg = 345;
+    const t = domains.length === 1 ? 0.5 : i / (domains.length - 1);
+    const angleDeg = startDeg + t * (endDeg - startDeg);
+    const angleRad = (angleDeg * Math.PI) / 180;
+    const r = 240;
+    return {
+      ...d,
+      x: Math.cos(angleRad) * r,
+      y: Math.sin(angleRad) * r,
+    };
+  });
   return (
     <motion.section
       key="act5"
@@ -842,42 +903,28 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       style={actWrap(COLORS.paper)}
       aria-label="Act 5: the vision"
     >
-      <div style={{ position: 'relative', width: 460, height: 460 }}>
-        {/* The umbrella tree at center — replaces the K from Act 1. */}
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
+      <div className="bkg-intro-act5-canvas" style={{ position: 'relative', width: 640, height: 380, maxWidth: '94vw' }}>
+        {/* The umbrella tree, bigger than Act 1's hammer was for Act 1. */}
+        <motion.div
+          initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: reduced ? 0 : 1, ease: 'easeOut' }}
+          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}
+        >
           <GardenLogo
             src="/logos/gardens/knowledge-gardens-tree.png"
-            alt="Knowledge Gardens"
-            size={180}
-            fallback={<KLogomark size={140} color={COLORS.ink} />}
+            alt="Knowledge Gardens — the umbrella"
+            size={280}
+            fallback={<KLogomark size={200} color={COLORS.ink} />}
           />
-        </div>
+        </motion.div>
 
-        {/* Three chromes — pulled apart further than Act 1 */}
-        {[
-          { color: CHROME.red,   x: 200, y: -130 },
-          { color: CHROME.warm,  x: -200, y: -50 },
-          { color: CHROME.green, x: 60,  y: 200 },
-        ].map((c, i) => (
-          <motion.div
-            key={`chrome-${i}`}
-            initial={reduced ? { opacity: 1, x: c.x, y: c.y } : { opacity: 0, x: 0, y: 0 }}
-            animate={{ opacity: 1, x: c.x, y: c.y }}
-            transition={{ duration: reduced ? 0 : 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number], delay: i * 0.08 }}
-            style={{ ...chromeOrbitDot(c.color, 18), top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-          />
-        ))}
-
-        {/* Five verticals around the umbrella — real logos with dot fallback. */}
-        {domains.map((d, i) => {
-          const angle = (i / domains.length) * Math.PI * 2 + Math.PI / 2;
-          const r = 220;
-          const x = Math.cos(angle) * r;
-          const y = Math.sin(angle) * r;
+        {/* Six verticals arc across the top — bottom stays clear for text. */}
+        {positions.map((d, i) => {
           const dotFallback = (
             <span style={{
               display: 'inline-block',
-              width: 14, height: 14, borderRadius: 7,
+              width: 28, height: 28, borderRadius: 14,
               background: d.color, opacity: 0.95,
               outline: `2px dashed ${COLORS.rule}`,
               outlineOffset: 2,
@@ -886,23 +933,23 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
           return (
             <motion.div
               key={d.label}
-              initial={reduced ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+              initial={reduced ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 0.8 + i * 0.10 }}
               style={{
                 position: 'absolute',
-                top: `calc(50% + ${y}px)`,
-                left: `calc(50% + ${x}px)`,
+                top: `calc(50% + ${d.y}px)`,
+                left: `calc(50% + ${d.x}px)`,
                 transform: 'translate(-50%, -50%)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
               }}
             >
               {d.src ? (
-                <GardenLogo src={d.src} alt={d.alt} size={56} fallback={dotFallback} />
+                <GardenLogo src={d.src} alt={d.alt} size={96} fallback={dotFallback} />
               ) : (
                 dotFallback
               )}
-              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.graphite, letterSpacing: '0.08em' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: COLORS.graphite, letterSpacing: '0.1em' }}>
                 {d.label.toUpperCase()}
               </span>
             </motion.div>
@@ -933,6 +980,19 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
           Show me the demo project →
         </Link>
       </div>
+
+      {/* Mobile: scale the whole Act 5 canvas down so the 240px-radius
+          orbit positions don't clip off the 92vw container. The negative
+          margin reclaims the visual gap the transform leaves behind. */}
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .bkg-intro-act5-canvas {
+            transform: scale(0.55);
+            transform-origin: top center;
+            margin-bottom: -160px;
+          }
+        }
+      `}</style>
     </motion.section>
   );
 }
