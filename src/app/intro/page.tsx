@@ -255,45 +255,55 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
       style={actWrap(COLORS.paper)}
       aria-label="Act 1: the umbrella"
     >
-      <div style={{ position: 'relative', width: 360, height: 360 }}>
-        {/* The umbrella — Knowledge Gardens tree, scales up then settles.
-            Falls back to the K logomark if the PNG isn't yet uploaded. */}
+      {/* 2026-05-20: Act 1 now leads with the BUILDER'S HAMMER as the
+          hero — it's the killer app the investor is about to see in Act 4
+          and represents the vertical we're shipping today. The chrome dots
+          + labels layer in FRONT of it (z-index higher) so they read as
+          "context on top of the artifact". Container is taller than wide
+          to match the hammer's natural portrait orientation. The tree
+          umbrella reveal is held back for Act 5. */}
+      <div style={{ position: 'relative', width: 520, height: 560, maxWidth: '92vw' }}>
         <motion.div
-          initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.85, opacity: 0 }}
+          initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: reduced ? 0 : 1, ease: 'easeOut' }}
-          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}
+          transition={{ duration: reduced ? 0 : 1.1, ease: 'easeOut' }}
+          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 1 }}
         >
           <GardenLogo
-            src="/logos/gardens/knowledge-gardens-tree.png"
-            alt="Knowledge Gardens — the umbrella"
-            size={260}
-            fallback={<KLogomark size={220} color={COLORS.ink} />}
+            src="/logos/gardens/builders-hammer.png"
+            alt="Builder's Garden — the killer app"
+            size={520}
+            style={{ maxWidth: '92vw', maxHeight: '70vh', width: 'auto', height: 'auto' }}
+            fallback={<KLogomark size={320} color={COLORS.ink} />}
           />
         </motion.div>
 
-        {/* Three chrome dots orbit out from behind the K */}
+        {/* Three chrome dots — orbit out from behind the hammer and sit
+            ON TOP of it (zIndex 2 above the hammer's zIndex 1). Offsets
+            tuned to stay within container at 92vw (~340px on iPhone)
+            while still reading as decorative satellites on the hammer's
+            edges. */}
         <motion.div
           initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{ opacity: 1, x: 180, y: -40 }}
+          animate={{ opacity: 1, x: 170, y: -160 }}
           transition={orbitTransition}
-          style={chromeOrbitDot(CHROME.red)}
+          style={{ ...chromeOrbitDot(CHROME.red), zIndex: 2 }}
         >
           <span style={chromeLabel}>Killer App</span>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{ opacity: 1, x: -160, y: 100 }}
+          animate={{ opacity: 1, x: -170, y: -30 }}
           transition={{ ...orbitTransition, delay: (orbitTransition.delay ?? 0) + 0.12 }}
-          style={chromeOrbitDot(CHROME.warm)}
+          style={{ ...chromeOrbitDot(CHROME.warm), zIndex: 2 }}
         >
           <span style={chromeLabel}>Dream Machine</span>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{ opacity: 1, x: 170, y: 110 }}
+          animate={{ opacity: 1, x: 150, y: 160 }}
           transition={{ ...orbitTransition, delay: (orbitTransition.delay ?? 0) + 0.24 }}
-          style={chromeOrbitDot(CHROME.green)}
+          style={{ ...chromeOrbitDot(CHROME.green), zIndex: 2 }}
         >
           <span style={chromeLabel}>Knowledge Garden</span>
         </motion.div>
