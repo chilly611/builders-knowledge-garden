@@ -1298,3 +1298,64 @@ Concrete example for the contractor handover plan: pre-confirmed `crm_contacts` 
 3. Inlines the result in the spawn prompt as a "schema reference" block.
 
 Total cost: ~10 seconds per subagent. Savings: at least one Vercel build failure per dispatched agent.
+
+
+---
+
+### useSearchParams() in a Next 16 layout: the layout itself must be Suspense-wrapped, not just its returned JSX
+**Date:** 2026-05-20 (Cowork Ship 36d failure → Claude Code commit `53f2421` recovery)
+**What happened:** Cowork added `useSearchParams()` at the top of `KillerAppLayout` to read a `?hideShell=1` flag. The layout's JSX already contained `<Suspense fallback={null}>` wrapping the providers. Reasoned (wrongly) that this would satisfy Next 16's prerender requirement. Vercel build failed:
+
+> useSearchParams() should be wrapped in a suspense boundary at page …
+
+The Next.js rule is stricter than I assumed. `<Suspense>` INSIDE the JSX returned by a component does not retroactively wrap the hook call — by the time JSX is being built, the hook has already executed at the top of the function. Next.js requires the component-that-calls-`useSearchParams` to itself be wrapped in `<Suspense>` at its USE SITE, OR the hook to be in a child component that is `<Suspense>`-wrapped.
+
+**Two correct patterns:**
+1. Split the layout into an outer + inner:
+   ```tsx
+   export default function KillerAppLayout({ children }) {
+     return <Suspense fallback={null}><KillerAppLayoutInner>{children}</KillerAppLayoutInner></Suspense>;
+   }
+   function KillerAppLayoutInner({ children }) { const sp = useSearchParams(); … }
+   ```
+2. Pull the searchParams-reading logic into a dedicated child component that's already mounted under Suspense (Claude Code's `53f2421` used this pattern — moved the `hideShell` derivation into a new `GlobalChromeGate` child that runs under the existing top-level Suspense).
+
+**Diagnostic shortcut:** when you add `useSearchParams()` to ANY file that's a layout or other always-rendered shell, BEFORE pushing: look up where the file is mounted by Next's router, confirm it's already inside a `<Suspense>` boundary in the parent (it isn't, for top-level layouts), and either split into outer/inner or move the hook into a child component.
+
+**Rule:** for `useSearchParams()` in a layout or root-level client component, the file CALLING the hook must itself be Suspense-wrapped at its call site. Never trust JSX-internal Suspense to retroactively cover an already-executed hook. Match the pattern of an existing successful file (`/signup/page.tsx` and `/login/page.tsx` both use the outer/inner split — copy that shape).
+
+---
+
+### Cross-surface coordination via `docs/in-flight.md` lock-file works
+**Date:** 2026-05-20 (Cowork + Claude Code collaborating on /intro)
+**What happened:** Claude Code introduced `docs/in-flight.md` as a soft lock-file when both surfaces could plausibly edit the same files (`src/app/intro/page.tsx`, `src/app/killerapp/layout.tsx`, etc.). Pattern: append a row when starting an edit, mark RELEASED with a one-line "what changed" when done. Stale locks (> 30 min) treated as abandoned.
+
+This session validated the pattern end-to-end. Cowork drafted `/intro` to disk, marked it released-with-note ("untracked, not yet on origin/main"). Claude Code then git-pulled, integrated, and shipped 9 commits on top including a wholesale V2 spec revision. Zero edit collisions; no stomps.
+
+**Rule:** when multiple agent surfaces are likely to touch the same files concurrently, ship a `docs/in-flight.md` lock-file pattern alongside `tasks.todo.md`. Keep entries tight (current 15-min window). The orchestrator-of-the-moment should glance at it before opening any hot file.
+
+---
+
+### Surface-divergence pattern: when Cowork and Claude Code edit the same file across windows, read disk before every push
+**Date:** 2026-05-20 (Cowork Ship 36d aftermath)
+**What happened:** While Cowork was waiting on a permission prompt mid-flight, Chilly (or Claude Code) reverted local edits Cowork had made to `login/page.tsx`, `signup/page.tsx`, `LegalFooter.tsx`, and `layout.tsx`. System reminders surfaced these reverts ("This change was intentional, so make sure to take it into account"). The pattern from Burn 4's "Read→Write subagent stomp" lesson applies one level up: any time the agent has been idle for non-trivial wall-clock time AND any external surface (chat, Claude Code, IDE, human) might have edited the file, re-Read the file before Edit-ing.
+
+**Rule:** before any Edit or Write on a file the agent has touched earlier in the session, re-Read it if (a) more than a few minutes have passed AND (b) any other surface might have changed it. The `git status` + canonical-diff dance from Burn 4 catches subagent stomps within a session; the pre-Edit re-Read catches HUMAN or other-surface stomps between sessions. Both checks are cheap (~1 tool call); the cost of either missing is a silent overwrite of intentional work.
+
+---
+
+### Bisect-by-relayering Pattern C remains the recovery playbook (used 3× in one session)
+**Date:** 2026-05-20 (Cowork Ships 36 / 36b / 36c / 36d)
+**What happened:** Cowork shipped a batched Phase 5 + Phase 4 commit (`c544b1b`, "Ship 36"). Vercel failed. Identified `/welcome` lacking Suspense as the cause, applied fix, re-pushed everything together as "Ship 36b" — Vercel failed AGAIN (suggesting more than one issue). Instead of guessing the third change, executed Pattern C strictly:
+
+1. Rollback main to last green (`4f417f7`, Ship 35).
+2. Push Phase 5 ONLY (no /intro, no layout.tsx) as "Ship 36c" — GREEN. Confirmed Phase 5 was clean.
+3. Push layout.tsx ALONE as "Ship 36d" — FAILED. Bisect confirmed: layout.tsx was the second issue (the Suspense-in-layout problem above).
+4. Rolled back to Ship 36c; paused for direction rather than guess a fourth push. Claude Code picked up and shipped the layout fix correctly (`53f2421`) by reading the existing successful pattern.
+
+Total: 2 successful pushes (Ship 35, Ship 36c) + 3 rollbacks + 1 bisect-step (Ship 36d). Recovery time across 3 failures: ~12 minutes of pushing + polling.
+
+**Rule:** when a batched commit fails Vercel and the first targeted re-push fails AGAIN, the right move is NOT to layer more fixes on top — it's to ROLL BACK and bisect into smaller groups. The cost of an extra 90s Vercel cycle is dwarfed by the cost of a guessing-loop. Three failed pushes is a signal to stop coding and start bisecting.
+
+**Pairs well with:** the `docs/in-flight.md` lock-file pattern above. The bisect surface needs to be sure no other agent is concurrently editing the same files.
+

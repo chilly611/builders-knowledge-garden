@@ -1328,3 +1328,66 @@ Full detail in `docs/killer-app-direction.md` and `docs/revenue-plan.md`. This s
 - `Builder's Knowledge Garden/docs/onboarding/CHILLY-CLAUDE-CODE-NEXT-SESSION.md`
 - `Builder's Knowledge Garden/docs/onboarding/DEMO-CINEMATIC-SPEC.md`
 - `Builder's Knowledge Garden/docs/onboarding/CONTRACTOR-HANDOVER-PLAN.md`
+
+
+## ═══ 2026-05-20 — Wed afternoon Cowork session + Claude Code follow-through ═══
+
+**State of prod:** HEAD `f22f6e1` GREEN. Demo path live for the rescheduled **Thursday May 21 AM** investor demo.
+
+### Shipped by Cowork this session
+- [x] **Ship 35** (`4f417f7`) — P0 demo fixes (3 files): BudgetSnapshot Sparkline tooltip currency math (was 100× inflated + missing $); ProjectCockpit rewind preserves live byStage shape so sparkline doesn't go blank during Act 3; `/api/v1/projects` GET allowlist bypasses user_id filter for the 3 demo UUIDs (lets trial accounts and any signed-in observer hydrate demo projects).
+- [x] **Ship 36c** (`6552dc9`) — Phase 5 contractor handover (8 files atomic): `contractor_feedback` Supabase table + RLS, `/api/v1/feedback` POST, `/feedback` form, `/welcome` first-session landing (Suspense-wrapped), `seed-trial-accounts.mjs` idempotent admin.createUser script, LegalFooter "Help us improve" link, login + signup `destinationAfterSignIn()` first-session redirect to `/welcome`.
+- [x] **/intro draft** (1011 LOC) handed off in working tree — picked up + iterated + shipped by Claude Code.
+
+### Shipped by Claude Code this session (9 commits, all on top of Cowork's Ship 36c)
+- [x] `53f2421` — hideShell=1 branch on `/killerapp/layout.tsx` WITH the Suspense fix Cowork had identified but couldn't ship cleanly; /intro Act 1 polish + COLORS.red typo fix. Did NOT restore Ship 36d's dynamic imports (user-reverted).
+- [x] `8a47a4f` — 5 trial contractor accounts SEEDED in Supabase + auth-verified. Credentials table in `docs/contractor-walkthrough-notes.md`.
+- [x] `d5d6dbc` — new `src/components/GlobalChromeGate.tsx` hides CompassBloom + GlobalAiFab on `/intro` and inside any `?hideShell=1` iframe (those mount from the ROOT layout, which `/killerapp/layout.tsx` hideShell didn't touch).
+- [x] `668e14f` — `docs/cinematic-intro-v2-spec.md` rewrite (V2 spec, story arc tightened).
+- [x] `d53b7d8` — V2 items 1-5 structural: Act 4 mobile CTA stack + 88px bottom padding (clear ActIndicator); Act 3 timing 30s→22s with re-timed cards (2/5/9/14/18s); Act 3 mobile grid stacks <768px; CardJourney to light register; Act 5 dot delay 1.6+i*0.12 → 0.8+i*0.10.
+- [x] `f26f9e9` + `9f9b8dd` — 5 garden logos in `public/logos/gardens/` with safe SVG fallbacks on each `<img>` (KLogomark or labeled dot).
+- [x] `19b237c` — Act 1 hammer-hero (520px) + chromes layered on top.
+- [x] `8a526ca` — Act 5 clean redesign + CardJourney with stage images + 11 new logos.
+- [x] `f22f6e1` — fix text obscured by images in Acts 1, 4, 5.
+
+### 2026-05-21 morning fallback plan (Thursday demo, ~9am SF)
+The cinematic + handover path are deployed. The blocker before flight was Cowork waiting on a permission prompt; not a code defect. Demo morning checklist:
+
+- [ ] **5:30am PT** — wake. On whichever laptop is running the demo (Chilly's primary; backup is Poulina's MacBook Air after move): `git pull origin main`. Confirm HEAD = `f22f6e1` or later. Confirm Vercel status green via `gh pr` or the GitHub API (script in `scripts/probes/`).
+- [ ] **5:45am PT** — incognito cold-start on the demo MacBook: open `/intro` and let the 5-act cinematic play through. Confirm: hammer hero loads, 3 chromes orbit, Act 3 voice transcript types + 5 cards stream in (last card ~18s), Act 4 iframe of `/killerapp/budget?project=...&hideShell=1` renders without chrome leak, Act 5 final CTAs visible.
+- [ ] **6:00am PT** — sign in as `gc-trial-01@theknowledgegardens.com` / `BuildersGarden!01`. Confirm `/welcome` → "Marin farmhouse" → "Take me to my project" → `/killerapp?project=55730cd3-...` opens with budget/estimate/journey populated. Run through Act 1-4 of the killer-app demo script (`docs/onboarding/DEMO-MAY20-PLAN.md`).
+- [ ] **6:15am PT** — Act 4 MCP test on Claude Desktop: ask "What are the Marin County building code requirements for a single-family home?" — confirm `lookup_code` and/or `search_knowledge` MCP tools fire and return seeded Marin codes. Bridge install per `scripts/mcp-bridge.README.md`.
+- [ ] **6:30am PT** — if anything stumbles, narrate around per `docs/onboarding/DEMO-MAY20-PLAN.md` "What happens if a step breaks." NO PUSHES TO MAIN AFTER 8:00am PT.
+- [ ] **7:00am PT** — final cold-start in the demo environment, same physical laptop, same wifi the demo will use.
+- [ ] **8:30am PT** — travel with the demo laptop pre-loaded with `/intro` open and mic permission granted on `/dream/oracle`.
+- [ ] **9:00am PT** — go time.
+
+### If a step breaks during the demo (narrate, don't fix-forward)
+- **Mic doesn't work** → type the prompt; tell investor "wifi here is funny."
+- **/intro stalls or animation jumps** → press Esc to skip to Act 5 CTAs; jump straight to `/killerapp?project=55730cd3-...` (the killer app is the meat).
+- **Act 4 iframe shows chrome leak** → narrate "this would be a clean embed in the final demo; here it's the real app for transparency."
+- **Trial account 404s on a workflow** → fall back to Chilly's signed-in account on the Marin project (DEMO_PROJECT_IDS allowlist still applies).
+- **Time Machine doesn't rewind** → narrate "ships this week."
+- **MCP closer doesn't return** → narrate "the integration is rolling out next week."
+
+### Trial contractor accounts (live + verified, 2026-05-20)
+| Email | Password | Lane | Project |
+|---|---|---|---|
+| `gc-trial-01@theknowledgegardens.com` | `BuildersGarden!01` | builder | Marin farmhouse |
+| `gc-trial-02@theknowledgegardens.com` | `BuildersGarden!02` | builder | ADU in Sausalito |
+| `gc-trial-03@theknowledgegardens.com` | `BuildersGarden!03` | builder | Commercial TI in SoMa |
+| `specialty-trial-01@theknowledgegardens.com` | `BuildersGarden!04` | specialist | Marin farmhouse |
+| `diy-trial-01@theknowledgegardens.com` | `BuildersGarden!05` | dreamer | ADU in Sausalito |
+
+### Poulina-MacBook handoff state (continuation after SF flight)
+- Latest main: `f22f6e1`. `git pull origin main` to sync.
+- 3 cross-surface docs are authoritative: `tasks.todo.md` (this file), `tasks.lessons.md`, `docs/session-log.md`. Read the most recent entries before starting.
+- `docs/in-flight.md` is Claude Code's lock-file pattern — append a row before editing a hot file; mark RELEASED when done.
+- `.env.local` needs `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` for the trial seed script to re-run if accounts need re-seeding.
+- `node scripts/seed-trial-accounts.mjs` is idempotent — safe to re-run.
+
+### Open follow-ups carried over to post-demo
+- [ ] Local working-tree reverts on `login/page.tsx`, `signup/page.tsx`, `LegalFooter.tsx` are NOT reflected on main — main has Ship 36c's `destinationAfterSignIn()` redirect to `/welcome` and the "Help us improve" footer link. Decide post-demo whether to ship reverts to main or accept Ship 36c's behavior as the canonical.
+- [ ] `useSearchParams()` in `/killerapp/layout.tsx` — Ship 36d failed because the layout itself wasn't Suspense-wrapped. Claude Code's `53f2421` shipped the fix. Pattern captured in `tasks.lessons.md`.
+- [ ] Chrome (Claude in Chrome MCP) was not paired during the Cowork audit pass — re-pair if a live cold-start audit is needed.
+

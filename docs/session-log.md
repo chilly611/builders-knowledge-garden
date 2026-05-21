@@ -1553,3 +1553,56 @@ end-to-end.
 - Two test files have stale expectations: `src/app/killerapp/workflows/estimating/__tests__/happy-path.test.tsx` (9 failures) expects step `s2-1` (removed in commit `ac70f49`). Pre-existing, not from this branch. Should be swept independently — outside this PR.
 - Dev test environment is broken in two places: 5 test files fail to load due to missing `@testing-library/react` + `jsdom` deps. Pre-existing infra issue.
 - Layout perf TBT = 2,250ms refactor (server-component shell, leaves `'use client'`) deferred post-demo. Captured in this entry; not in tasks.todo.md yet (let user decide priority).
+
+## 2026-05-20 — Cowork Session: P0 demo fixes + Phase 5 handover + /intro draft (then handed off to Claude Code)
+**Agent:** Cowork (claude-opus-4-7)
+**Outcome:** SHIPPED Ship 35 + Ship 36c green to prod; drafted /intro + identified Suspense fix for hideShell; handed in-flight to Claude Code which finished Phase 4 V2 + chrome gating across 9 follow-up commits. HEAD `f22f6e1` GREEN on Vercel for the rescheduled Thursday May 21 AM demo.
+
+**Cowork work landed on prod:**
+- **Ship 35** (`4f417f7`) — P0 demo fixes, 3 files atomic:
+  - `BudgetSnapshot.tsx` Sparkline tooltip currency math: was `formatCurrency(cents * 100)` (100× inflated) on the committed value and raw `Math.round(spentCents/100)` (no formatting) on the spent value. Both now route through `formatCurrency(cents)` consistently. Found by Agent B finding #10.
+  - `ProjectCockpit.tsx` rewind effect was clearing `budgetData.byStage` on scrub-back, collapsing the per-stage Sparkline to a flat strip during demo Act 3. Functional setter now preserves the live `byStage` shape while snapshot totals override the totals — better optics than a blank chart.
+  - `/api/v1/projects/route.ts` GET filter blocked trial-contractor accounts from reading the 3 demo projects → silent 404s + empty autofills across every workflow page. Added a `DEMO_PROJECT_IDS` allowlist that bypasses the `user_id` filter for the 3 demo UUIDs on both single-fetch and list paths. Writes (PATCH/DELETE) remain owner-only.
+- **Ship 36c** (`6552dc9`) — Phase 5 contractor handover, 8 files atomic (bisect-step after Ship 36/36b failed):
+  - `supabase/migrations/20260520_contractor_feedback.sql` — new `public.contractor_feedback` table with anon-insert + authenticated-select-own + service-role-all RLS. Applied to prod via Supabase MCP.
+  - `src/app/api/v1/feedback/route.ts` — public POST endpoint, auth-optional, validates trade enum + clamps text fields.
+  - `src/app/feedback/page.tsx` — single-screen form (first name, trade, project, what worked/didn't/missing, email + follow-up). Prefills name + email when signed in.
+  - `src/app/welcome/page.tsx` — first-time contractor landing wrapped in Suspense (the Ship 36 build-blocker was this page using `useSearchParams()` without a Suspense wrap). Stamps `welcomed_at` on click-through; redirects on subsequent sign-ins.
+  - `scripts/seed-trial-accounts.mjs` — idempotent `admin.createUser` seed (NOT raw `auth.users` INSERT) for the 5 trial accounts.
+  - `src/components/LegalFooter.tsx` — "Help us improve" → /feedback.
+  - `src/app/login/page.tsx` + `src/app/signup/page.tsx` — `destinationAfterSignIn()` helper checks `user_metadata.welcomed_at`; first-session signs route via `/welcome`.
+
+**Cowork build-failure recovery (Pattern C, bisect-by-relayering):**
+- Ship 36 (`c544b1b`) failed Vercel — root cause `WelcomePage` calling `useSearchParams()` without a Suspense parent. Rolled back main to Ship 35.
+- Ship 36b (Phase 5 + /intro + layout hideShell, with Suspense wrap on /welcome) also failed Vercel. Rolled back main to Ship 35.
+- Ship 36c (Phase 5 ONLY, without /intro and without layout hideShell) — GREEN. Confirmed Phase 5 is clean.
+- Ship 36d (layout.tsx hideShell + dynamic interaction-gated imports, ALONE) — FAILED Vercel. Bisect isolated layout.tsx as the failure source. Root cause: `useSearchParams()` at the top of `KillerAppLayout` requires the layout function itself to be Suspense-wrapped, not just its returned JSX. Cowork rolled back to Ship 36c, paused for confirmation rather than guess at a third push.
+
+**Cowork /intro draft (in working tree, picked up by Claude Code):**
+- `src/app/intro/page.tsx` — 1011 LOC initial draft, 5 acts per `docs/onboarding/DEMO-CINEMATIC-SPEC.md`. Inline SVG K logomark, Framer Motion only, no Three.js/video/audio, respects `prefers-reduced-motion`, Esc skips, Space pauses, arrow keys jump acts. Live iframe of `/killerapp/budget?project=...&hideShell=1` for Act 4. Hardcoded 3 chrome hex (Green #1D9E75 / Warm #D85A30 / Red #E8443A). Cowork did NOT push this — Claude Code committed it on top with V2 revisions.
+
+**Claude Code finished Phase 4 + chrome gating** (9 follow-up commits, all green):
+- `53f2421` — hideShell + Suspense fix for /killerapp layout; /intro Act 1 polish + COLORS.red typo fix. Did NOT restore Ship 36d's dynamic imports (user-reverted).
+- `8a47a4f` — `docs/contractor-walkthrough-notes.md` — 5 trial accounts SEEDED + auth-verified via direct Supabase `/auth/v1/token` POST. All 5 emails + passwords + `user_metadata.demo_project_id` confirmed.
+- `d5d6dbc` — new `src/components/GlobalChromeGate.tsx` hides CompassBloom + GlobalAiFab on `/intro` and inside any `?hideShell=1` iframe. Demo-breaker fix: those global chromes mount in the ROOT `src/app/layout.tsx`, not in `/killerapp/layout.tsx`, so the `hideShell` branch alone didn't suppress them.
+- `668e14f` — `docs/cinematic-intro-v2-spec.md` story rewrite (V2 spec).
+- `d53b7d8` — V2 spec items 1-5 (structural, no copy): Act 4 mobile CTA stack + 88px paddingBottom (clear ActIndicator), Act 3 timing 30s→22s with re-timed cards (2/5/9/14/18s), Act 3 mobile grid stacks below 768px, CardJourney converted to light register, Act 5 dot delay 1.6+i*0.12 → 0.8+i*0.10.
+- `f26f9e9` — wired 5 garden logos with safe SVG fallbacks. Each `<img>` has `onError` → KLogomark or labeled dot.
+- `9f9b8dd` — 5 garden logo assets in `public/logos/gardens/`.
+- `19b237c` — Act 1 leads with hammer-hero (520px) + chromes layered on top.
+- `8a526ca` — Act 5 clean redesign + CardJourney with stage images + 11 new logos.
+- `f22f6e1` — fix text obscured by images in Acts 1, 4, 5.
+
+**Cross-surface coordination working well:** Claude Code introduced `docs/in-flight.md` as a lock-file pattern. Cowork released `/intro` + layout edits with a clear "untracked, not yet on origin/main" note; Claude Code git-pulled, integrated, and shipped — no edit collisions in this session.
+
+**Sandbox state after Cowork handoff:**
+- HEAD: `f22f6e1`, GREEN on Vercel.
+- Local working tree clean against `origin/main`. Only untracked: `.claude/` (sandbox scratch) and `supabase/.temp/` (Supabase CLI scratch).
+- contractor_feedback table live in Supabase; 5 trial accounts seeded + auth-verified.
+- /intro live at https://builders.theknowledgegardens.com/intro with all 5 acts.
+- /killerapp/budget?...&hideShell=1 verified-working iframe target.
+
+**The interrupted "auth loop":** Cowork was waiting on an AskUserQuestion (Act 4 hideShell strategy + login/signup revert handling) at the moment Chilly closed the laptop for the SF flight. Not actually a loop — just a permission prompt mid-flight. Everything Cowork had in-flight (Ship 36c + the /intro draft on disk) is now ON prod thanks to Claude Code's follow-through.
+
+**Open Thursday-morning items** — see `tasks.todo.md` "2026-05-21 morning fallback plan."
+
