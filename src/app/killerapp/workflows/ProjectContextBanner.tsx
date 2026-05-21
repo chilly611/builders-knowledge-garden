@@ -184,48 +184,29 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
         </p>
       )}
 
-      {summaryPreview && (
-        <div style={{ marginBottom: 14 }}>
-          {aiTakeIsStale && (
-            <p
-              style={{
-                margin: '0 0 8px',
-                padding: '6px 10px',
-                background: 'rgba(182,135,58,0.10)',
-                border: '0.5px solid rgba(182,135,58,0.35)',
-                borderRadius: 6,
-                fontSize: 12,
-                lineHeight: 1.4,
-                color: 'var(--brass, #B6873A)',
-              }}
-            >
-              This analysis was run for a different location. Re-run the estimate to get{' '}
-              {project.jurisdiction}-specific advice.
-            </p>
-          )}
-          <p
+      {summaryPreview && !aiTakeIsStale && (
+        <p
+          style={{
+            margin: '0 0 14px',
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: 'var(--graphite, #2E2E30)',
+            opacity: 0.75,
+          }}
+        >
+          <span
             style={{
-              margin: 0,
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: 'var(--graphite, #2E2E30)',
-              opacity: 0.75,
+              fontSize: 11,
+              letterSpacing: 1.5,
+              textTransform: 'uppercase',
+              color: 'var(--brass, #B6873A)',
+              marginRight: 8,
             }}
           >
-            <span
-              style={{
-                fontSize: 11,
-                letterSpacing: 1.5,
-                textTransform: 'uppercase',
-                color: 'var(--brass, #B6873A)',
-                marginRight: 8,
-              }}
-            >
-              AI take
-            </span>
-            {summaryPreview}
-          </p>
-        </div>
+            AI take
+          </span>
+          {summaryPreview}
+        </p>
       )}
 
       <nav
