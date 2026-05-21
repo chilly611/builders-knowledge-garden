@@ -255,14 +255,15 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
       style={actWrap(COLORS.paper)}
       aria-label="Act 1: the umbrella"
     >
-      {/* 2026-05-20: Act 1 now leads with the BUILDER'S HAMMER as the
-          hero — it's the killer app the investor is about to see in Act 4
-          and represents the vertical we're shipping today. The chrome dots
-          + labels layer in FRONT of it (z-index higher) so they read as
-          "context on top of the artifact". Container is taller than wide
-          to match the hammer's natural portrait orientation. The tree
-          umbrella reveal is held back for Act 5. */}
-      <div style={{ position: 'relative', width: 520, height: 560, maxWidth: '92vw' }}>
+      {/* 2026-05-20: Act 1 leads with the BUILDER'S HAMMER. Container is
+          shorter than the image so the hammer ANCHORS the upper portion of
+          the act and the typewriter has guaranteed room below.
+          Bug fix (2026-05-20 PM): previous version had width:auto/height:auto
+          in the style override which made the img render at NATURAL size
+          (800x800) instead of the explicit 440 — bled into the typewriter
+          below. Now constrained to 440x440 with maxHeight: 55vh so on any
+          viewport the image stays within reasonable bounds. */}
+      <div style={{ position: 'relative', width: 460, height: 440, maxWidth: '92vw', zIndex: 1 }}>
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -272,9 +273,9 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           <GardenLogo
             src="/logos/gardens/builders-hammer.png"
             alt="Builder's Garden — the killer app"
-            size={520}
-            style={{ maxWidth: '92vw', maxHeight: '70vh', width: 'auto', height: 'auto' }}
-            fallback={<KLogomark size={320} color={COLORS.ink} />}
+            size={420}
+            style={{ maxWidth: '88vw', maxHeight: '55vh' }}
+            fallback={<KLogomark size={280} color={COLORS.ink} />}
           />
         </motion.div>
 
@@ -309,7 +310,10 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
         </motion.div>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 36, maxWidth: 720 }}>
+      {/* Typewriter sits BELOW the hammer with explicit z-index higher
+          than the hammer's z-index so any visual overlap renders the text
+          on top, not the image. */}
+      <div style={{ textAlign: 'center', marginTop: 36, maxWidth: 720, position: 'relative', zIndex: 5 }}>
         <Typewriter
           text="the operating system for knowledge work,"
           delaySec={reduced ? 0 : 2.2}
@@ -776,10 +780,16 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
           )}
         </div>
       </div>
+      {/* 2026-05-20 PM: paddingBottom bumped 28px → 80px on desktop too
+          so the Continue + ghost-link bar clears the floating ActIndicator
+          (position: fixed, bottom: 24, ~40px tall). zIndex 5 puts the CTAs
+          above any other overlapping chrome. */}
       <div className="bkg-intro-act4-cta" style={{
-        padding: '16px 40px 28px',
+        padding: '16px 40px 80px',
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
         flexWrap: 'wrap',
+        position: 'relative',
+        zIndex: 5,
       }}>
         <button type="button" onClick={onContinue} style={ctaPrimary(CHROME.red)}>
           Continue →
@@ -903,7 +913,7 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       style={actWrap(COLORS.paper)}
       aria-label="Act 5: the vision"
     >
-      <div className="bkg-intro-act5-canvas" style={{ position: 'relative', width: 640, height: 380, maxWidth: '94vw' }}>
+      <div className="bkg-intro-act5-canvas" style={{ position: 'relative', width: 640, height: 360, maxWidth: '94vw', zIndex: 1 }}>
         {/* The umbrella tree, bigger than Act 1's hammer was for Act 1. */}
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
@@ -957,7 +967,11 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
         })}
       </div>
 
-      <div style={{ marginTop: 32, textAlign: 'center', maxWidth: 760 }}>
+      {/* Typewriter + CTAs sit BELOW the canvas with z-index 5 so any
+          overlapping vertical logo (shouldn't happen with the top-arc
+          layout, but defensive) renders behind the text. paddingBottom on
+          CTAs gives the floating ActIndicator clearance. */}
+      <div style={{ marginTop: 32, textAlign: 'center', maxWidth: 760, position: 'relative', zIndex: 5 }}>
         <Typewriter
           text="Today: Builder's Garden."
           delaySec={reduced ? 0 : 2.0}
@@ -972,7 +986,7 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
         />
       </div>
 
-      <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ marginTop: 28, marginBottom: 60, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center', position: 'relative', zIndex: 5 }}>
         <Link href="/killerapp" style={ctaPrimary(CHROME.red)}>
           Start building →
         </Link>
