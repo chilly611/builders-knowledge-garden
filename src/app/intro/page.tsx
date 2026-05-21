@@ -59,10 +59,50 @@ const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 const ACT_DURATIONS_MS = [6000, 12000, 22000, Number.POSITIVE_INFINITY, 12000];
 const TOTAL_ACTS = 5;
 
+// — Garden Logo (with SVG fallback) ————————————————————————————————————
+// Loads a brand image from /public/logos/gardens/<file>; if the file is
+// missing (404) or fails to decode, transparently falls back to the
+// inline KLogomark / colored-dot below. Demo-safe: nothing breaks if the
+// PNGs aren't yet uploaded.
+//
+// Expected files (drop these in app/public/logos/gardens/):
+//   knowledge-gardens-tree.png   — umbrella mark (Act 1 + Act 5 center)
+//   builders-hammer.png          — Builder's Garden (TopBar + Act 5 vertical)
+//   health-garden-caduceus.png   — Health Garden (Act 5 vertical)
+//   toxicology-caduceus.png      — Toxicology Garden (Act 5 vertical)
+//   orchid-garden.png            — Orchid Garden (Act 5 vertical)
+function GardenLogo({
+  src,
+  alt,
+  size = 140,
+  fallback,
+  style,
+}: {
+  src: string;
+  alt: string;
+  size?: number;
+  fallback: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  const [errored, setErrored] = useState(false);
+  if (errored) return <>{fallback}</>;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      style={{ width: size, height: size, objectFit: 'contain', ...style }}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
 // — K Logomark SVG ————————————————————————————————————————————————————
 // Inline so the cinematic has no asset dependencies (the /public folder
 // only has B-marks; no K). Stylized monogram in the same compass-rose
-// register as the rest of the platform.
+// register as the rest of the platform. Still used as the fallback for
+// GardenLogo when the tree PNG isn't yet uploaded.
 function KLogomark({ size = 140, color = COLORS.ink, accentColor }: { size?: number; color?: string; accentColor?: string }) {
   const stroke = Math.max(6, size / 14);
   const accent = accentColor || color;
@@ -98,7 +138,15 @@ function TopBar({ onSkip }: { onSkip: () => void }) {
       pointerEvents: 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: COLORS.graphite, pointerEvents: 'auto' }}>
-        <KLogomark size={28} color={COLORS.ink} />
+        {/* Builder's hammer throughout the cinematic — the killer app's
+            day-to-day mark. Falls back to the K logomark if the PNG isn't
+            yet uploaded. */}
+        <GardenLogo
+          src="/logos/gardens/builders-hammer.png"
+          alt="Builder's Garden"
+          size={28}
+          fallback={<KLogomark size={28} color={COLORS.ink} />}
+        />
         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Knowledge Gardens
         </span>
@@ -208,14 +256,20 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
       aria-label="Act 1: the umbrella"
     >
       <div style={{ position: 'relative', width: 360, height: 360 }}>
-        {/* The K, scales up then settles */}
+        {/* The umbrella — Knowledge Gardens tree, scales up then settles.
+            Falls back to the K logomark if the PNG isn't yet uploaded. */}
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: reduced ? 0 : 1, ease: 'easeOut' }}
           style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}
         >
-          <KLogomark size={220} color={COLORS.ink} />
+          <GardenLogo
+            src="/logos/gardens/knowledge-gardens-tree.png"
+            alt="Knowledge Gardens — the umbrella"
+            size={260}
+            fallback={<KLogomark size={220} color={COLORS.ink} />}
+          />
         </motion.div>
 
         {/* Three chrome dots orbit out from behind the K */}
@@ -731,13 +785,42 @@ function Act4LiveBudget({ onContinue }: { onContinue: () => void }) {
 
 // — ACT 5: The vision ——————————————————————————————————————————————————
 function Act5Vision({ reduced }: { reduced: boolean }) {
-  // Three existing chromes orbit back in, then five future-domain dots fade.
+  // Five verticals around the umbrella. Each renders a real garden logo
+  // if uploaded to /public/logos/gardens/; otherwise falls back to a
+  // labeled colored dot (so the demo never breaks on a missing asset).
+  // Builder's is listed first — it's the vertical that's already shipping;
+  // the rest are "the rest of the umbrella" the investor's about to see.
   const domains = [
-    { label: 'Health',    color: '#2F7DC1' },
-    { label: 'Legal',     color: '#6B4FBB' },
-    { label: 'Education', color: '#C24A8B' },
-    { label: 'Energy',    color: '#E4A14C' },
-    { label: 'Coming',    color: COLORS.faded },
+    {
+      label: "Builder's",
+      color: CHROME.red,
+      src: '/logos/gardens/builders-hammer.png',
+      alt: "Builder's Garden — the killer app shipping today",
+    },
+    {
+      label: 'Health',
+      color: '#2F7DC1',
+      src: '/logos/gardens/health-garden-caduceus.png',
+      alt: 'Health Garden',
+    },
+    {
+      label: 'Toxicology',
+      color: '#4A6FA0',
+      src: '/logos/gardens/toxicology-caduceus.png',
+      alt: 'Toxicology Garden',
+    },
+    {
+      label: 'Orchid',
+      color: '#C24A8B',
+      src: '/logos/gardens/orchid-garden.png',
+      alt: 'Orchid Garden',
+    },
+    {
+      label: 'Coming',
+      color: COLORS.faded,
+      src: null,
+      alt: 'More gardens coming',
+    },
   ];
   return (
     <motion.section
@@ -750,9 +833,14 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       aria-label="Act 5: the vision"
     >
       <div style={{ position: 'relative', width: 460, height: 460 }}>
-        {/* K at center */}
+        {/* The umbrella tree at center — replaces the K from Act 1. */}
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-          <KLogomark size={140} color={COLORS.ink} />
+          <GardenLogo
+            src="/logos/gardens/knowledge-gardens-tree.png"
+            alt="Knowledge Gardens"
+            size={180}
+            fallback={<KLogomark size={140} color={COLORS.ink} />}
+          />
         </div>
 
         {/* Three chromes — pulled apart further than Act 1 */}
@@ -770,12 +858,21 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
           />
         ))}
 
-        {/* Five future-domain dots fade in (smaller, dashed border) */}
+        {/* Five verticals around the umbrella — real logos with dot fallback. */}
         {domains.map((d, i) => {
           const angle = (i / domains.length) * Math.PI * 2 + Math.PI / 2;
           const r = 220;
           const x = Math.cos(angle) * r;
           const y = Math.sin(angle) * r;
+          const dotFallback = (
+            <span style={{
+              display: 'inline-block',
+              width: 14, height: 14, borderRadius: 7,
+              background: d.color, opacity: 0.95,
+              outline: `2px dashed ${COLORS.rule}`,
+              outlineOffset: 2,
+            }} />
+          );
           return (
             <motion.div
               key={d.label}
@@ -790,12 +887,11 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
               }}
             >
-              <span style={{
-                width: 14, height: 14, borderRadius: 7,
-                background: d.color, opacity: 0.95,
-                outline: `2px dashed ${COLORS.rule}`,
-                outlineOffset: 2,
-              }} />
+              {d.src ? (
+                <GardenLogo src={d.src} alt={d.alt} size={56} fallback={dotFallback} />
+              ) : (
+                dotFallback
+              )}
               <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.graphite, letterSpacing: '0.08em' }}>
                 {d.label.toUpperCase()}
               </span>
