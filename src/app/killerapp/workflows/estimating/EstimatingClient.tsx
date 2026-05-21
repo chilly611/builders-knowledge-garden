@@ -448,7 +448,15 @@ export default function EstimatingClient({ workflow, stages }: Props) {
         if (!base) return prev;
         return { ...base, jurisdiction: stepValue };
       });
-      patchProject(projectId, { jurisdiction: stepValue }).then(() => refreshProject());
+      // Also sync raw_input so jurisdiction and description stay consistent
+      // in the DB. Without this, applyJurisdictionOverride must rewrite the
+      // location at read time, and a stale jurisdiction column from a prior
+      // session or workflow silently injects the wrong city into AI context.
+      const currentRaw = (localProject ?? project)?.raw_input ?? null;
+      const updatedRaw = currentRaw ? applyJurisdictionOverride(currentRaw, stepValue) : null;
+      const updates: Record<string, unknown> = { jurisdiction: stepValue };
+      if (updatedRaw && updatedRaw !== currentRaw) updates.raw_input = updatedRaw;
+      patchProject(projectId, updates).then(() => refreshProject());
     }
 
     if (stepResult.stepId === 's2-3' && stepResult.type === 'step_completed' && stepValue && projectId) {
@@ -537,9 +545,20 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   // where is the location or square footage if I already put those in."
   const effectiveRawInput = (() => {
     const p = localProject ?? project;
-    return p?.jurisdiction && p?.raw_input
+    if (!p?.raw_input) return p?.raw_input;
+    if (!p?.jurisdiction) return p.raw_input;
+    // Only rewrite the location in raw_input when the jurisdiction is
+    // consistent with what the description already says, OR when the user
+    // just changed it this session (localProject carries the fresh value).
+    // Guards against stale DB jurisdictions (set from Code Compliance or a
+    // prior session on a different project) silently injecting the wrong
+    // city into the AI specialist's context.
+    const jCity = p.jurisdiction.replace(/,.*$/, '').trim().toLowerCase();
+    const isConsistent = p.raw_input.toLowerCase().includes(jCity);
+    const changedThisSession = !!localProject?.jurisdiction;
+    return isConsistent || changedThisSession
       ? applyJurisdictionOverride(p.raw_input, p.jurisdiction)
-      : p?.raw_input;
+      : p.raw_input;
   })();
   const seededPayloads = useMemo(
     () => seedPayloadsFromRaw(workflow.steps, effectiveRawInput, hydratedPayloads),
