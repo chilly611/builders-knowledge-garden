@@ -81,14 +81,27 @@ const PEER_LINKS: Array<{
 export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Props) {
   if (!project) return null;
 
-  const rawInput = project.jurisdiction && project.raw_input
-    ? applyJurisdictionOverride(project.raw_input.trim(), project.jurisdiction)
-    : project.raw_input?.trim();
+  // Only rewrite the location in raw_input when the saved jurisdiction is
+  // consistent with the description — same guard as EstimatingClient.
+  const jCity = project.jurisdiction?.replace(/,.*$/, '').trim().toLowerCase() ?? '';
+  const jurisdictionConsistent =
+    !!jCity && !!project.raw_input && project.raw_input.toLowerCase().includes(jCity);
+  const rawInput =
+    jurisdictionConsistent && project.raw_input
+      ? applyJurisdictionOverride(project.raw_input.trim(), project.jurisdiction!)
+      : project.raw_input?.trim();
+
   const aiSummary = project.ai_summary?.trim();
   const summaryPreview =
     aiSummary && aiSummary.length > 220
       ? `${aiSummary.slice(0, 217).trimEnd()}…`
       : aiSummary;
+
+  // The AI summary is stale when it doesn't mention the current project
+  // location — e.g. was generated for NYC before the user corrected to
+  // Flagstaff. Only flag when we have both a jurisdiction city and a summary.
+  const aiTakeIsStale =
+    !!jCity && !!aiSummary && !aiSummary.toLowerCase().includes(jCity);
 
   const factsRow: string[] = [];
   if (project.project_type) factsRow.push(project.project_type);
@@ -172,28 +185,47 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
       )}
 
       {summaryPreview && (
-        <p
-          style={{
-            margin: '0 0 14px',
-            fontSize: 13,
-            lineHeight: 1.5,
-            color: 'var(--graphite, #2E2E30)',
-            opacity: 0.75,
-          }}
-        >
-          <span
+        <div style={{ marginBottom: 14 }}>
+          {aiTakeIsStale && (
+            <p
+              style={{
+                margin: '0 0 8px',
+                padding: '6px 10px',
+                background: 'rgba(182,135,58,0.10)',
+                border: '0.5px solid rgba(182,135,58,0.35)',
+                borderRadius: 6,
+                fontSize: 12,
+                lineHeight: 1.4,
+                color: 'var(--brass, #B6873A)',
+              }}
+            >
+              This analysis was run for a different location. Re-run the estimate to get{' '}
+              {project.jurisdiction}-specific advice.
+            </p>
+          )}
+          <p
             style={{
-              fontSize: 11,
-              letterSpacing: 1.5,
-              textTransform: 'uppercase',
-              color: 'var(--brass, #B6873A)',
-              marginRight: 8,
+              margin: 0,
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: 'var(--graphite, #2E2E30)',
+              opacity: 0.75,
             }}
           >
-            AI take
-          </span>
-          {summaryPreview}
-        </p>
+            <span
+              style={{
+                fontSize: 11,
+                letterSpacing: 1.5,
+                textTransform: 'uppercase',
+                color: 'var(--brass, #B6873A)',
+                marginRight: 8,
+              }}
+            >
+              AI take
+            </span>
+            {summaryPreview}
+          </p>
+        </div>
       )}
 
       <nav
