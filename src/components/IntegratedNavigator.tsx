@@ -198,7 +198,6 @@ export default function IntegratedNavigator(
 
   // ─── Time Machine snapshot state ──────────────────────────────────────────
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
-  const [hasCreatedWelcomeSnapshot, setHasCreatedWelcomeSnapshot] = useState(false);
 
   const fetchBudget = useCallback(async () => {
     if (!effectiveProjectId) {
@@ -265,29 +264,28 @@ export default function IntegratedNavigator(
   useEffect(() => {
     if (!effectiveProjectId) {
       setSnapshots([]);
-      setHasCreatedWelcomeSnapshot(false);
       return;
     }
 
+    // welcomeCreated guards within this effect's lifetime so we only
+    // create one welcome snapshot per mount even if the callback fires
+    // multiple times (e.g., a rapid budget event right after mount).
+    let welcomeCreated = false;
+
+    // subscribeSnapshots fires its callback synchronously with the current
+    // localStorage state before returning, so newSnapshots.length here
+    // reflects real persisted data — not the stale React state that a
+    // separate useEffect would see before the batched setState applies.
     const unsubscribe = subscribeSnapshots(effectiveProjectId, (newSnapshots) => {
       setSnapshots(newSnapshots);
+      if (!welcomeCreated && newSnapshots.length === 0) {
+        createWelcomeSnapshot(effectiveProjectId);
+        welcomeCreated = true;
+      }
     });
 
     return unsubscribe;
   }, [effectiveProjectId]);
-
-  // Create welcome snapshot on first project load
-  useEffect(() => {
-    if (!effectiveProjectId || hasCreatedWelcomeSnapshot) {
-      return;
-    }
-
-    // Only create welcome snapshot if none exist yet
-    if (snapshots.length === 0) {
-      createWelcomeSnapshot(effectiveProjectId);
-      setHasCreatedWelcomeSnapshot(true);
-    }
-  }, [effectiveProjectId, hasCreatedWelcomeSnapshot, snapshots.length]);
 
   // ─── Derived data ───────────────────────────────────────────────────────
   const stageProgress = useMemo(

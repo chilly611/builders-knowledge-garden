@@ -184,6 +184,12 @@ export default function StepCard({
     });
   }, [onAction, buildDraftPayload, step.id]);
 
+  // Always-current ref so the unmount flush captures the latest state.
+  const persistDraftRef = useRef(persistDraft);
+  useEffect(() => {
+    persistDraftRef.current = persistDraft;
+  }, [persistDraft]);
+
   // Debounced auto-persist on local-state change. Only fires once expanded
   // so we don't echo the hydrate before the user has interacted.
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -197,13 +203,13 @@ export default function StepCard({
   }, [inputValue, selectedOptions, checkedItems, analysisInput, manualAnswer, manualMode, isExpanded, persistDraft]);
 
   // Final flush on unmount — preserves whatever was typed if the user
-  // navigates away mid-debounce.
+  // navigates away mid-debounce. Uses a ref so it always calls the
+  // latest version of persistDraft, not the stale closure from mount.
   useEffect(() => {
     return () => {
       if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
-      persistDraft();
+      persistDraftRef.current();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
