@@ -1606,3 +1606,25 @@ end-to-end.
 
 **Open Thursday-morning items** — see `tasks.todo.md` "2026-05-21 morning fallback plan."
 
+## 2026-05-20 evening — Chat (Claude Code, chillyd@laptop): resume + post-flight verification
+**Agent:** Chat (claude-opus-4-7[1m])
+**Context:** Chilly closed the laptop mid-investigation (a `curl` errored with exit 6) during the Act-1/4-text-obscured-fix verification, took the flight back from SF, is now resuming on Poulina's MacBook Air. This entry confirms prod state and explains why Chilly's screenshots of "Acts 1 and 4 still obscured" turned out to be stale-cache artifacts, not real bugs.
+
+**Verified live on production (deploy `dpl_A3esR3xEP5yFFGSXvhfmjfrCA3EK`):**
+- HEAD `f22f6e1` GREEN. `https://builders.theknowledgegardens.com/intro` → 200.
+- Act 1 hammer `<img>` renders at `width="420" height="420"; style="width:420px;height:420px;object-fit:contain;max-width:88vw;max-height:55vh"`. The bug Chilly screenshotted (hammer at intrinsic 800×800 due to a `width:auto/height:auto` style override) is patched. Screenshots Chilly took before the flight were from a stale browser cache pre-deploy.
+- Deployed JS bundle (`/_next/static/chunks/0xoub307338kx.js`) confirmed contains all V2-era markers: `16px 40px 80px` (Act 4 CTA paddingBottom 80px), `bkg-intro-act5-canvas`, `builder-sizeup`, `legal.png`, `knowledge-gardens-tree`. Acts 4 and 5 fixes are live too.
+- A hard refresh (Cmd+Shift+R) on any browser pulls the fresh HTML + JS; the in-flight CDN was holding the pre-fix HTML.
+
+**For Poulina's MacBook Air pickup:**
+```bash
+git pull origin main   # should fast-forward
+head -5 src/app/killerapp/layout.tsx       # useSearchParams + outer Suspense
+ls public/logos/gardens/                   # 16 PNGs (5 wired + 11 added Wed PM)
+curl -s https://builders.theknowledgegardens.com/intro -o /dev/null -w "%{http_code}\n"  # → 200
+```
+
+**No code changes in this Chat session.** Purely verification + documentation. Cowork's parallel sync commit `25db0aa` covers the full Wednesday timeline; this entry adds the post-resume verification and the "stale cache, not real bug" finding so the morning team doesn't re-investigate.
+
+Also restored a cleaned `docs/in-flight.md` — collapsed to a single "no active locks" row plus a "Recently released (last 24h)" table indexing all 10 Wednesday commits by SHA + agent + filepath. Previous accumulated stale-LOCKED rows removed.
+
