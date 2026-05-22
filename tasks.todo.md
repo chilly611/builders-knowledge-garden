@@ -1712,7 +1712,7 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 - [ ] Resend domain DNS verification at registrar (TXT/CNAME/DMARC records copy-pasteable in `/admin/email-status`); send-path auto-enables once status flips to verified. Onboarding reminder cron is queueing sends but they're refused at pre-flight until DNS is done. **Still gated since round 4.**
 - [ ] Sign UpCodes API contract → flip adapter to live mode (currently stub). **Still gated since round 4.**
 - [ ] Backfill remaining 1318 `knowledge_entities` rows (material / construction_method / jurisdiction types — slug naming inconsistent, warrants LLM-assisted backfill). **Carried from round 4.**
-- [ ] Drop legacy `command_center_projects.project_budgets` JSONB column on 2026-06-30 (round 5 dropped on demo project's row + installed trigger-block; keep schema column one more month to catch lagging consumers).
+- [x] Drop legacy `command_center_projects.project_budgets` JSONB column (DONE 2026-05-24 by JSONB-DROP-V2). Trigger + function dropped in the same migration (`20260524_drop_legacy_project_budgets_column.sql`). Lagging consumer `src/app/api/v1/budget/items/route.ts` deleted in the same commit; budget-spine refactored to write through canonical `PATCH /api/v1/budget`.
 - [ ] Add SECURITY DEFINER RPCs for full pg_cron + RLS healthcheck introspection (current `/api/v1/healthcheck` does what it can as calling user; "is every RLS policy correct" needs elevated privileges).
 - [ ] Multi-region Redis/KV-backed code-source cache (currently per-Vercel-instance hand-rolled LRU — works for ~100 RPS single-instance; needs shared cache for multi-region).
 - [ ] Stripe wiring for real billing (deferred until pricing model lands; webhook receivers ready, no checkout sessions issued yet).
