@@ -6,13 +6,16 @@ import { normalizeBudgetLinesPayload } from "./normalize";
 /**
  * /api/v1/budget — read/write the per-project budget summary.
  *
- * 2026-05-22 (DATA+DEMO consolidation): rewritten on top of
- * `project_budget_lines` (CSI-MasterFormat rows in Supabase) — the previous
- * implementation read/wrote a `project_budgets` TABLE that was never applied
- * to prod, so every call 404'd silently. We now synthesize the legacy
- * `{ budget, items, summary }` payload from `project_budget_lines` so the
- * existing consumers (BudgetWidget, GlobalBudgetWidget, budget-spine.ts) keep
- * working without a coordinated client-side rewrite.
+ * JSONB-DROP-V2 (2026-05-24): canonical store is `project_budget_lines`
+ * (CSI-MasterFormat rows in Supabase). The route synthesizes the legacy
+ * `{ budget, items, summary }` payload from those lines so existing consumers
+ * (BudgetWidget, GlobalBudgetWidget, budget-spine.ts, BudgetClient autosave,
+ * EstimatingClient push-to-budget) all stay on a single source of truth.
+ *
+ * History: a `project_budgets` TABLE was referenced by older code but never
+ * applied to prod (every call 404'd). A `command_center_projects.project_budgets`
+ * JSONB column existed briefly (Ship 25) but was retired 2026-05-23 and
+ * DROPPED 2026-05-24. Neither is read or written by this route.
  *
  * Source of truth: public.project_budget_lines (project_id, csi_division,
  *   description, budgeted, committed, actual_spent).

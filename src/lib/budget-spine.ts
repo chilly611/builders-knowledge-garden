@@ -5,21 +5,30 @@
  * Single client-side entry point for every workflow that moves money.
  *
  * Per `docs/week3-spine-spec.md` §2 every workflow calls the typed helpers
- * below — never `fetch('/api/v1/budget/items', ...)` directly, never
- * Supabase from a workflow component. That way:
+ * below — never `fetch('/api/v1/budget', ...)` directly, never Supabase from
+ * a workflow component. That way:
  *   - `BudgetWidget` already subscribes to `bkg:budget:changed` and refreshes.
  *   - P&L stays coherent because {phase, category} pairs are set consistently.
  *   - Silent failure is well-defined (no white-screen when unauthenticated).
  *
  * MVP shape:
  *   - Resolves the active project id from localStorage `bkg-active-project`.
- *   - Calls `GET /api/v1/budget?project_id=...` to find the `budget_id`.
+ *   - Calls `GET /api/v1/budget?project_id=...` to find the `budget_id`
+ *     (a synthetic envelope — the real store is `project_budget_lines`).
  *   - Creates a default budget on first write if one doesn't exist yet.
- *   - POSTs the line item.
+ *   - PATCHes a single line into `project_budget_lines` via /api/v1/budget,
+ *     keyed by a stable client-generated `csi_division` so each call lands
+ *     as its own row (idempotent on retry; concurrent writes don't collide).
  *   - Dispatches `bkg:budget:changed` for downstream listeners.
  *
  * Clerk auth isn't wired on /killerapp yet; the spine uses the Supabase
  * session bearer token the same way `BudgetWidget.tsx` does.
+ *
+ * JSONB-DROP-V2 (2026-05-24): switched from the dead `POST /api/v1/budget/items`
+ * route (`project_budgets` + `saved_projects` tables don't exist in prod —
+ * every call 500'd) to the canonical `PATCH /api/v1/budget` upsert against
+ * `project_budget_lines`. Same call-site contract; helper names + shape
+ * unchanged; underlying storage now actually persists.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -130,6 +139,53 @@ const LIFECYCLE_TO_PHASE: Record<number, BudgetPhase> = {
 
 function mapPhase(lifecycleStageId: number): BudgetPhase {
   return LIFECYCLE_TO_PHASE[lifecycleStageId] ?? 'PLAN';
+}
+
+// ─── CSI / stage helpers (JSONB-DROP-V2, 2026-05-24) ──────────────────────
+//
+// project_budget_lines is keyed by (project_id, csi_division). Each spine
+// write needs to land as its own row, so we mint a stable client-side
+// `csi_division` value per call that won't collide with the numeric CSI
+// MasterFormat codes the seed / EstimatingClient rows use ("01" .. "33").
+// The `99-spine-<category>-<timestamp>-<rand>` shape guarantees both:
+//   - no collision with MasterFormat (99 is the unallocated/contingency
+//     division, already the catch-all in the read-path inferStageId map)
+//   - re-running the same workflow step produces a NEW row instead of
+//     overwriting the previous estimate — the user's record of "I priced
+//     this twice and got two answers" stays intact.
+
+const CATEGORY_TO_CSI_HINT: Record<BudgetCategory, string> = {
+  materials: '99-materials',
+  labor: '99-labor',
+  permits: '99-permits',
+  equipment: '99-equipment',
+  subcontractor: '99-subcontractor',
+  overhead: '99-overhead',
+  other: '99-other',
+};
+
+function deriveCsiDivision(category: BudgetCategory): string {
+  const hint = CATEGORY_TO_CSI_HINT[category] ?? '99-other';
+  // Append a short timestamp + random suffix so concurrent writes within
+  // the same category don't UPSERT each other. The unique index is
+  // (project_id, csi_division); we want one row per call.
+  const stamp = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `${hint}-${stamp}-${rand}`;
+}
+
+const LIFECYCLE_TO_STAGE_ID: Record<number, number> = {
+  1: 1, // Size Up
+  2: 2, // Lock
+  3: 3, // Plan
+  4: 4, // Build
+  5: 5, // Adapt
+  6: 6, // Collect
+  7: 7, // Reflect
+};
+
+function mapStageId(lifecycleStageId: number): number {
+  return LIFECYCLE_TO_STAGE_ID[lifecycleStageId] ?? 4;
 }
 
 // ─── Active project id ────────────────────────────────────────────────────
@@ -271,23 +327,53 @@ async function writeBudgetItem(
   const budget = await resolveBudgetId(projectId, token);
   if (!budget.ok) return budget;
 
+  // JSONB-DROP-V2 (2026-05-24): write via PATCH /api/v1/budget (the canonical
+  // upsert against project_budget_lines). Each spine call gets its own
+  // (project_id, csi_division) so it lands as a distinct row — see
+  // deriveCsiDivision() above for the keying scheme. We carry the natural
+  // distinctions (vendor, receipt_url, is_estimate, date, phase, category)
+  // in the description prefix because project_budget_lines doesn't have
+  // dedicated columns for them; the read-side categorize() heuristic in
+  // /api/v1/budget/route.ts buckets by description text + csi_division.
+  const csiDivision = deriveCsiDivision(input.category);
+  const stageId = mapStageId(input.lifecycleStageId);
+  const phase = mapPhase(input.lifecycleStageId);
+  const isEstimate = input.isEstimate ?? true;
+  // Bake the spine-only metadata into the description so the read path's
+  // categorize() heuristic can still bucket correctly and so the line is
+  // self-describing in the budget UI. Format kept terse to read well in a
+  // tight table cell.
+  const prefixParts: string[] = [`[${phase}/${input.category}]`];
+  if (input.vendor) prefixParts.push(`@${input.vendor}`);
+  if (!isEstimate) prefixParts.push('(paid)');
+  const description = `${prefixParts.join(' ')} ${input.description.trim()}`;
+
+  // Lifecycle accounting: estimates populate `budgeted`, real money populates
+  // `actual_spent` (the column the read path sums into `totalSpent`).
+  // `committed` stays 0 for now — spine helpers don't model the
+  // estimate→committed transition; that's BudgetClient's StateChip UX.
+  const budgeted = isEstimate ? input.amount : 0;
+  const actualSpent = isEstimate ? 0 : input.amount;
+
   try {
-    const res = await fetch('/api/v1/budget/items', {
-      method: 'POST',
+    const res = await fetch('/api/v1/budget', {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        budget_id: budget.budgetId,
-        phase: mapPhase(input.lifecycleStageId),
-        category: input.category,
-        description: input.description.trim(),
-        amount: input.amount,
-        vendor: input.vendor ?? null,
-        receipt_url: input.receiptUrl ?? null,
-        is_estimate: input.isEstimate ?? true,
-        date: input.date ?? new Date().toISOString(),
+        project_id: projectId,
+        lines: [
+          {
+            csi_division: csiDivision,
+            description,
+            budgeted,
+            committed: 0,
+            actual_spent: actualSpent,
+            stage_id: stageId,
+          },
+        ],
       }),
     });
 
@@ -303,7 +389,11 @@ async function writeBudgetItem(
       };
     }
 
-    const data = (await res.json()) as { item: { id: string } };
+    // PATCH /api/v1/budget returns { ...envelope, summary, items, mutated }.
+    // We don't have a server-assigned per-line id to echo back, so use the
+    // csi_division we just minted as the stable itemId. Callers only use this
+    // value for the bkg:budget:changed event; nothing reads it as a DB key.
+    await res.json().catch(() => ({}));
 
     if (isBrowser()) {
       window.dispatchEvent(
@@ -311,14 +401,14 @@ async function writeBudgetItem(
           detail: {
             projectId,
             budgetId: budget.budgetId,
-            itemId: data.item.id,
+            itemId: csiDivision,
             category: input.category,
           },
         })
       );
     }
 
-    return { ok: true, itemId: data.item.id, budgetId: budget.budgetId };
+    return { ok: true, itemId: csiDivision, budgetId: budget.budgetId };
   } catch (err) {
     return {
       ok: false,

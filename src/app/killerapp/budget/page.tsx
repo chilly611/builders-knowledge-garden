@@ -19,11 +19,13 @@ import BudgetClient from './BudgetClient';
  *    their whole project with what they have figured out so far and sees
  *    a visual representation of how it is getting spent in categories."
  *
- * Persistence note (Ship 22): the JSONB column on command_center_projects
- * for budget lines does NOT exist yet (grep'd 2026-05-19, only the
- * project_budgets TABLE exists for the legacy budget-spine). For the
- * Wednesday investor demo, BudgetClient writes to localStorage keyed by
- * `bkg-budget-{projectId}`. Real persistence is a post-demo migration.
+ * Persistence note (JSONB-DROP-V2, 2026-05-24): canonical store is
+ * `public.project_budget_lines`, written through `PATCH /api/v1/budget`
+ * (upserts by `(project_id, csi_division)`). BudgetClient mirrors to
+ * localStorage keyed by `bkg-budget-{projectId}` so the offline / anon
+ * demo path still works. The legacy
+ * `command_center_projects.project_budgets` JSONB column has been DROPPED;
+ * no code path should reference it.
  */
 
 export const metadata = {

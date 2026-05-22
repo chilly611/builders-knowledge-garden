@@ -120,11 +120,11 @@ export default function QxClient({ workflow, stages }: Props) {
 
 ## 2. Budget spine — `@/lib/budget-spine`
 
-**Every write to money flows through this module.** Do not `fetch('/api/v1/budget/items', ...)` directly; do not touch Supabase from a workflow component. The spine gives you typed helpers that:
+**Every write to money flows through this module.** Do not `fetch('/api/v1/budget', ...)` directly; do not touch Supabase from a workflow component. The spine gives you typed helpers that:
 
-- Look up the active project's `project_budgets.id` (creating it lazily if the user doesn't have one yet with a sensible default budget).
-- Map workflow-local concepts to the existing `{phase, category}` pair the API demands.
-- Post the row, refresh the summary, and dispatch a `bkg:budget:changed` event so `BudgetWidget` and the Journey Map both light up live.
+- Look up the active project's synthetic budget envelope from `GET /api/v1/budget?project_id=…` (creating one lazily if the user doesn't have one yet — the envelope is synthetic because `project_budget_lines` is the canonical store, no per-project envelope row exists).
+- Map workflow-local concepts to a `csi_division` + `stage_id` per call so each spine write lands as its own row in `project_budget_lines`.
+- PATCH the line through `/api/v1/budget`, then dispatch a `bkg:budget:changed` event so `BudgetWidget` and the Journey Map both light up live.
 
 ```ts
 // Import everything from this one barrel. Do not reach into submodules.

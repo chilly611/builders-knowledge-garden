@@ -318,8 +318,9 @@ export default function EstimatingClient({ workflow, stages }: Props) {
   // csiEstimate.lines (low/high per division) and appends them as
   // 'estimated'-state lines into the budget store BudgetClient reads
   // from (`bkg-budget-{projectId}` localStorage + project_budget_lines
-  // via /api/v1/budget — the legacy Ship 25 `project_budgets` JSONB
-  // column is now soft-deprecated). Demo flow: estimating runs → user
+  // via /api/v1/budget — the legacy `project_budgets` JSONB column on
+  // command_center_projects was DROPPED on 2026-05-24, so this is the
+  // only DB target). Demo flow: estimating runs → user
   // clicks "Push to budget" → opens /budget pre-populated so they don't
   // have to retype 10 division totals.
   const [pushReceipt, setPushReceipt] = useState<
@@ -879,10 +880,10 @@ export default function EstimatingClient({ workflow, stages }: Props) {
                 try {
                   window.localStorage.setItem(lsKey, JSON.stringify({ lines: merged }));
                 } catch { /* quota / disabled — fall through to API */ }
-                // BUDGET-WRITE round-3 (2026-05-22): write to the canonical
+                // JSONB-DROP-V2 (2026-05-24): write to the canonical
                 // project_budget_lines table via /api/v1/budget (upserts by
-                // project_id + csi_division). Replaces the dead Ship 25
-                // JSONB path on command_center_projects.project_budgets.
+                // project_id + csi_division). The legacy JSONB path on
+                // command_center_projects.project_budgets was DROPPED.
                 //
                 // We use the stable estimate-line ID as csi_division so:
                 //  - re-pushing the same division UPDATEs in place (the

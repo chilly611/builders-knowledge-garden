@@ -128,6 +128,10 @@ export default function WorkerCountClient({ workflow, stages }: Props) {
             amount: cost,
             lifecycleStageId: 3,
             isEstimate: true,
+            // JSONB-DROP-V2 (2026-05-24): prefer URL-bound project id over the
+            // localStorage `bkg-active-project` fallback so multi-tab use
+            // doesn't write to the wrong project.
+            projectId: spineProjectId ?? projectIdLocal,
           });
 
           if (!result.ok && result.reason !== 'no-active-project') {

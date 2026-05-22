@@ -35,50 +35,35 @@ once writes start landing for real users.
 Both BudgetClient autosave and EstimatingClient's "Push to budget" go
 through the same route.
 
-### RETIRED: `command_center_projects.project_budgets` (jsonb)
+### DROPPED 2026-05-24: `command_center_projects.project_budgets` (jsonb)
 
 Ship 25 (2026-05-19) added this column as the source of truth, but the
 read path was never moved off the lines table. BUDGET-WRITE round-3
 (2026-05-22) demoted it to read-only legacy. JSONB-CLEANUP (2026-05-23)
 backfilled the residue and installed a write-blocking trigger.
+JSONB-DROP-V2 (2026-05-24) dropped the column + trigger.
 
-**Status (2026-05-23): RETIRED — DROP scheduled for 2026-06-30.**
+**Status (2026-05-24): DROPPED.**
 
-What the JSONB-CLEANUP pass found and did:
+Drop migration: `supabase/migrations/20260524_drop_legacy_project_budgets_column.sql`.
 
-- 34 rows had `project_budgets != '{}'::jsonb`. 33 of those held
-  `{"lines": []}` (empty arrays, nothing to backfill). 1 row
-  (`7cb274af-1a80-462b-bdfb-ad96e0ae06f6`) held a single stub line
-  with `amount=0`, `category=materials`, empty description.
-- The 1 real line was backfilled into `project_budget_lines` with
-  `csi_division = '99-orphan-materials-<line.id>'` so the partial
-  unique index `(project_id, csi_division)` treats it as a one-off.
-  `project_budget_lines` went from 49 → 50 rows.
-- The backfill query is idempotent (`ON CONFLICT (project_id,
-  csi_division) DO NOTHING` against `project_budget_lines_proj_div_idx`).
-  Preserved in `20260523_retire_legacy_project_budgets_jsonb.sql` as
-  comments for replay if needed.
-- A `BEFORE UPDATE OF project_budgets` trigger
-  (`block_legacy_project_budgets_write_trg`) now rejects any write that
-  puts a non-empty `lines[]` array into the column. The trigger allows
-  no-change updates and writes of `NULL` / `{}` / `{"lines": []}` so
-  unrelated UPDATEs on `command_center_projects` rows don't get caught
-  in the crossfire.
+Drop pre-conditions confirmed before the migration ran:
 
-**Do not** add new readers or writers to `project_budgets`. The trigger
-will reject any non-empty write at the database layer. The canonical
-store is `project_budget_lines`; the write path is
-`PATCH /api/v1/budget`.
+- 33 of 34 historical rows held `{"lines": []}` (empty placeholders).
+- The 34th row (`7cb274af-1a80-462b-bdfb-ad96e0ae06f6`) was already
+  backfilled into `project_budget_lines` during the 2026-05-23
+  retirement pass with `csi_division = '99-orphan-materials-<line.id>'`.
+- No live writers — `BudgetClient` autosave, `EstimatingClient`
+  push-to-budget, and `budget-spine.ts` all target `PATCH /api/v1/budget`
+  (which writes `project_budget_lines`). The only lagging consumer was
+  `src/app/api/v1/budget/items/route.ts`, which 500'd in prod against
+  the non-existent `project_budgets` / `saved_projects` tables; it was
+  deleted in the same commit as the migration.
 
-**Drop timing:** 2026-06-30 is the earliest the column should be
-dropped (5-week rollback window from 2026-05-23). The trigger and
-trigger function should be dropped in the same migration that drops
-the column. Coordinate with whoever runs the drop migration to also
-delete the dead `src/app/api/v1/budget/items/route.ts` route — it
-references a `project_budgets` *table* (different from this column)
-that never existed in prod, and a `saved_projects` table that also
-doesn't exist. Every call to that route 404s; it's been dead code
-since at least 2026-05-22.
+If you find a code path that still references this column, treat it as
+dead code — the column does not exist and Postgres will reject the
+reference with a `column does not exist` error. Canonical store is
+`project_budget_lines`; canonical write path is `PATCH /api/v1/budget`.
 
 ## Other consolidation notes (TODO)
 
@@ -128,6 +113,25 @@ anywhere in prod, so the composite PK is invisible to the app. The
 Same as before: RLS enabled, one INSERT policy `"Service insert audit"`
 with `WITH CHECK true`. Reads still gated by the absence of any SELECT
 policy (only the `postgres` / `service_role` bypass RLS).
+
+**Partition leaves — added in `supabase/migrations/20260524_audit_log_partition_rls.sql`
+(AUDIT-PARTITIONS-RLS, 2026-05-22):** Postgres declarative partitioning
+does NOT propagate RLS from the parent to the leaf tables, so every
+`audit_log_yYYYYmMM` partition is now locked down independently:
+
+- `ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY` on every leaf.
+- `REVOKE SELECT, INSERT, UPDATE, DELETE` on every leaf from `anon` and
+  `authenticated`. `service_role` and `postgres` retain access (and
+  bypass RLS via `BYPASSRLS`).
+- `create_audit_log_partition()` was patched so every future partition
+  created by the monthly `maintain-audit-log-partitions` cron job
+  inherits the same lockdown at creation time.
+
+Net effect: direct-leaf reads (`SELECT FROM audit_log_y2026m05`) return
+`permission denied` for `anon`/`authenticated`. All queries must go
+through the parent `audit_log` table, which applies the partitioning +
+the RLS policy. `audit_trigger_fn` writes are unaffected because
+`service_role` bypasses RLS and routes INSERTs through the parent.
 
 ### Maintenance functions
 

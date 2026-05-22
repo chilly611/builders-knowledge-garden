@@ -297,11 +297,13 @@ function writeLines(projectId: string | null, lines: BudgetLine[]): void {
   }
 }
 
-// ─── DB persistence (Ship 25) ────────────────────────────────────────────
-// Ship 25 (2026-05-19): project_budgets JSONB column on command_center_projects
-// is now the source of truth for /killerapp/budget. localStorage stays as the
-// offline / anonymous fallback. Same authedFetch pattern as
-// useProjectWorkflowState — bearer token from the supabase session.
+// ─── DB persistence ──────────────────────────────────────────────────────
+// JSONB-DROP-V2 (2026-05-24): the legacy `command_center_projects.project_budgets`
+// JSONB column has been DROPPED. Canonical store is `project_budget_lines`,
+// accessed through `GET /api/v1/budget?project_id=…` (read) and
+// `PATCH /api/v1/budget` (upsert keyed by `(project_id, csi_division)`).
+// localStorage stays as the offline / anonymous fallback. Same authedFetch
+// pattern as useProjectWorkflowState — bearer token from the Supabase session.
 
 async function authedFetchJSON(input: RequestInfo, init: RequestInit = {}) {
   const { data } = await supabase.auth.getSession();
@@ -320,13 +322,12 @@ async function authedFetchJSON(input: RequestInfo, init: RequestInit = {}) {
  *   - { lines: [] }           when no rows exist (NEW project, needs seed)
  *   - null                    on auth/network failure (caller falls back to localStorage)
  *
- * 2026-05-22 (BUDGET+SEC2 fix): switched from
- *   GET /api/v1/projects?id=…  (reads command_center_projects.project_budgets JSONB,
- *                               empty for all 3 demo projects — HeroStrip showed $0)
- * to
+ * Read source (JSONB-DROP-V2, 2026-05-24):
  *   GET /api/v1/budget?project_id=…  (synthesizes {summary, items} from the
  *                                     project_budget_lines source of truth that
  *                                     the cockpit BudgetSnapshot already reads).
+ * The legacy `command_center_projects.project_budgets` JSONB column was
+ * DROPPED on 2026-05-24; no code path reads it any more.
  * The endpoint emits BudgetItem rows, not BudgetLine rows — we map each
  * `is_estimate: true` item to a BudgetLine so the rest of the UI stays
  * backward-compatible. Items without an `is_estimate` flag are treated as
@@ -420,12 +421,12 @@ function csiKeyFor(line: BudgetLine): string {
 }
 
 /**
- * BUDGET-WRITE round-3 (2026-05-22): the JSONB write path
- * (`/api/v1/projects` PATCH with `{ project_budgets: { lines } }`) wrote
- * to a column we already deprecated — user edits never reached the
- * canonical `project_budget_lines` store. This now talks to the unified
- * `/api/v1/budget` PATCH endpoint, which upserts by
- * (project_id, csi_division) and returns a fresh summary.
+ * Write path (JSONB-DROP-V2, 2026-05-24): PATCH /api/v1/budget upserts by
+ * (project_id, csi_division) into the canonical `project_budget_lines`
+ * store and returns a fresh summary. The legacy JSONB column on
+ * `command_center_projects.project_budgets` was DROPPED on 2026-05-24;
+ * any historical "PATCH /api/v1/projects with { project_budgets: {…} }"
+ * paths no longer exist.
  *
  * NB: we send the BudgetLine.amount as `budgeted` (the column the read
  * path totals) and keep `committed`/`actual_spent` at 0 because
@@ -2174,12 +2175,12 @@ export default function BudgetClient() {
   }, [projectId]);
 
   // Autosave (debounced 500ms).
-  // BUDGET-WRITE round-3 (2026-05-22): PATCH /api/v1/budget (upserts into
+  // JSONB-DROP-V2 (2026-05-24): PATCH /api/v1/budget (upserts into
   // project_budget_lines, the canonical store) AND mirror to localStorage
-  // so the offline / anon path still works. The Ship 25 JSONB path on
-  // command_center_projects.project_budgets was a dead end — the column
-  // is now soft-deprecated. The DB write is best-effort; failure leaves
-  // localStorage as the fallback.
+  // so the offline / anon path still works. The legacy JSONB column on
+  // command_center_projects.project_budgets was DROPPED on 2026-05-24;
+  // project_budget_lines is the only DB write target. The DB write is
+  // best-effort; failure leaves localStorage as the fallback.
   useEffect(() => {
     if (!hydratedRef.current) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
