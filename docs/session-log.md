@@ -1628,3 +1628,79 @@ curl -s https://builders.theknowledgegardens.com/intro -o /dev/null -w "%{http_c
 
 Also restored a cleaned `docs/in-flight.md` — collapsed to a single "no active locks" row plus a "Recently released (last 24h)" table indexing all 10 Wednesday commits by SHA + agent + filepath. Previous accumulated stale-LOCKED rows removed.
 
+## 2026-05-22 evening — Cowork ship-prep + 2nd dogfood round (14 parallel agents, 10 commits, RLS migration to prod)
+**Agent:** Cowork (claude-opus-4-7[1m]) orchestrating 14 subagent fleet across two rounds.
+**Branch:** `main`, HEAD `af57ed2` → HEAD `335077b` on origin/main (10 commits, all Vercel green).
+**Context:** Chilly returned saying "ship to contractors ASAP." Built on the 2026-05-21 EVENING dogfood verdict ("NOT ready to ship as-is, 9 P0 clusters"). This session executed Round 1 (security + data + claims) shipped in commits 1-5, then ran a Round 2 dogfood with verifiers (NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS) which surfaced 6 more P0s, shipped in commits 6-9. Commit 10 was Chilly's intro copy edits preserved from earlier in the day.
+
+**Commits shipped (af57ed2 → 335077b on origin/main, all green):**
+- `0e8b580` feat(autofill): sanitize AI prose from contract Scope of Work — new `src/lib/sanitize-ai-text.ts` strips meta-prose patterns (`"Alright, here's how I'd read it"`, `"Here's where I'd start:"`, etc.), 24-case test suite. ContractsClient autofill now pipes through it.
+- `1556ef9` fix(claims): honest code-source sourcing + R-3 routing + real DB tables — `src/lib/code-sources/icc.ts` discipline map corrected (`electrical → NEC`, `fire → IFC`, was IEC/NFPA); citation-only paths now set `verified: false` on `CodeSourceResult`; new `SourceCountBadge` 4-tier (0 / 1 / 2 / 3+) with the 3+ tier requiring `verified: true` from at least 3 distinct organizations; `/api/v1/context` rewritten to query `knowledge_entities` + `building_codes` (the tables that actually exist) instead of `kg_entities` / `kg_assertions` (which don't).
+- `5df1324` fix(workflows): real labels for q20-q27 + preview banners + dead-link fix — `NextWorkflowCard.WORKFLOW_LABELS` `(TBD)` strings replaced with stage labels; `StageWelcome` dead `href="#"` fallback replaced with `/killerapp`; new `WorkflowPreviewBanner` rendered on draw / lien-waiver / retainage routes pending statutory templates.
+- `25825ce` fix(data): unify budget storage on `project_budget_lines` — `/api/v1/budget` rewritten to read/write `project_budget_lines` only; the `command_center_projects.project_budgets` JSONB column and the nonexistent `project_budgets` table are no longer referenced anywhere. SQL data fixes applied to prod via Supabase MCP `execute_sql`: SoMa `estimated_cost_low=1050000, estimated_cost_high=1200000` (was 180/240 literal-dollar values), `sqft` backfilled on all 3 demos, `project_budget_lines` seeded for ADU (8 CSI lines) and SoMa (12 CSI lines).
+- `7d84d48` fix(sec+auth): auth gates + RLS lockdown + safe-redirect + session UX — `src/lib/safe-url.ts` adds `safeNext(url)` that rejects external schemes + protocol-relative URLs (closes the `?next=https://evil.com` open redirect on login/signup/auth-callback); `getAuthUser` gate added to `/api/v1/uploads/photo`, `/api/v1/render`, `/api/v1/mcp`; new migration `supabase/migrations/20260522_secauth_rls_lockdown.sql` replaces every `"Allow all for now"` policy on 7 tables with owner-or-demo policies + enables RLS on `crm_contacts` + `crm_messages` (previously OFF); login form race fixed (button now `disabled` until form-state ready, eliminates the "first click silently noops" bug); `/welcome` calls `supabase.auth.refreshSession()` before reading the user (eliminates the stale-cookie identity drift Reza hit); `ProjectContext` no longer caches `project.user_id` across account switches.
+- `2ce4ecc` fix(budget+sec): reconcile budget reads + auth-gate rfis/punch routes — `BudgetClient` reads `/api/v1/budget` (the unified route from `25825ce`) instead of the JSONB column; `ContractsClient` autofill now uses `budget-lines sum` instead of `(low+high)/2`; `/api/v1/rfis` + `/api/v1/punch-list` + `/api/v1/budget` now check auth AND honor `user_metadata.demo_project_id` so trial accounts can read their seeded demo without owning the row.
+- `d7a3e13` feat(stage-welcome): mount the StageWelcome modal — `src/app/killerapp/layout.tsx:111` TODO comment converted to the actual `<StageWelcome />` JSX. Component had 17 passing tests + Storybook entry but was never instantiated in any production route until this commit.
+- `914c935` fix(sequencing): open q1/q3/q20-q27 in `LIVE_WORKFLOWS` + restage q25 — all 27 workflows now visible in the picker; q25 retainage moved from stage 7 (Reflect) to stage 6 (Collect) to match the foreman mental model; route registry rebuilt.
+- `6183f90` fix(mcp+demo): honest entity counts + autofill re-runs on summary change — MCP capability text "40,000+ entities" replaced with a live SQL count rendered server-side at request time (currently 2,246 entities / 44 buildings); ContractsClient `didAutofill: boolean` one-shot guard replaced with `lastAutofilledSummaryRef = useRef<string | null>(null)` content-hash, so editing scope/sqft now correctly triggers a re-autofill of the contract Scope of Work field.
+- `335077b` intro: Act 2/3/4 timing + content updates — Chilly's local intro edits from earlier 2026-05-22 AM preserved (timing tweaks + copy adjustments on Acts 2/3/4).
+
+**Supabase live data work (project `vlezoyalutexenbnzzui`):**
+- Applied migration `20260522_secauth_rls_lockdown.sql` via Supabase MCP `apply_migration`. Result: 11 owner-or-demo policies live across `project_budget_lines`, `project_rfis`, `project_change_orders`, `project_punch_items`, `project_submittals`, `crm_contacts`, `crm_messages`. Every previous `"Allow all for now" qual=true` policy dropped. `crm_contacts` + `crm_messages` `ALTER TABLE ENABLE ROW LEVEL SECURITY` confirmed.
+- Data fixes via `execute_sql`:
+  - SoMa: `UPDATE command_center_projects SET estimated_cost_low=1050000, estimated_cost_high=1200000 WHERE id='bb22c33d-...'` (was `180, 240` literal dollars).
+  - sqft backfill: Marin 2800, ADU 1100, SoMa 4200 (all 3 had NULL).
+  - `INSERT INTO project_budget_lines` — 8 CSI lines for ADU summing $382K (within the $350-450K range), 12 CSI lines for SoMa summing $1.078M (within the new $1.05-1.2M range).
+- Verified via `get_advisors`: previously-flagged "Allow all for now" violations now gone from the 7 tables. 23 remaining RLS-disabled tables (substances, specialist_runs, etc.) still flagged — deferred to next session.
+
+**Dogfood + verifier fleet (10 agents this session, plus the 4 build agents = 14 total):**
+- Round 1 (after commits 1-5): Lisa (architect), Tom (MEP), Diego (plumbing sub), Tony (foreman), Rachel (commercial owner), Nick (dreamer/homeowner), Jenny (bookkeeper), Mike (VC) walked actual job-to-be-done on the freshly-deployed code.
+- Round 1 verifiers: NUMBERS (cross-cut every $ figure), CONTRACTS (read every generated PDF + Scope of Work), SEQUENCING+INSTRUCTIONS (walk the full 7-stage flow + verify every CTA).
+- Findings that drove the round-2 commits (6-9):
+  - NUMBERS verifier: HeroStrip $0 on /killerapp/budget (read wrong table) — fix in `2ce4ecc`.
+  - NUMBERS verifier: Contract autofill `(low+high)/2 = $1.05M` vs `budget-lines sum = $914K` drift of $136K — fix in `2ce4ecc`.
+  - Tom + Diego: `/api/v1/rfis` + `/api/v1/punch-list` returned 401 then on bypass returned every project's data (service-role no-auth) — fix in `2ce4ecc`.
+  - Diego + Tony: trial accounts hitting `/api/v1/budget?project=...` got 404 because route didn't honor `demo_project_id` — fix in `2ce4ecc`.
+  - Tony: `StageWelcome` never appeared on stage transitions despite the copy existing (layout.tsx:111 TODO) — fix in `d7a3e13`.
+  - SEQUENCING+INSTRUCTIONS: q20-q27 hidden behind `(TBD)` labels despite real route implementations; broke stage 5/6/7 transitions — fix in `914c935`.
+  - Mike (VC) + CONTRACTS verifier: MCP capability blurb claims "40,000+ entities" against a 2,246-row table → fix in `6183f90`. Same agent also caught: contract scope-of-work didn't update when user edited the project summary (didAutofill stale) — fix in `6183f90`.
+  - CONTRACTS verifier: stale `contracts_state.scopeOfWork` JSONB on Marin project. Cleared via SQL; new sanitizer prevents re-pollution.
+
+**Key decisions:**
+- **Service-role routes need auth gates.** Lessons-learned entry added. The pattern of "RLS will protect us" doesn't apply when the route itself bypasses RLS via service-role key.
+- **Open all 27 workflows with preview banners, not "(TBD)" hides.** The route exists and returns 200; either ship it with honest disclosure or remove it. No middle ground.
+- **`demo_project_id` ownership must be checked EVERYWHERE.** Ship 35 (2026-05-20) added it to `/api/v1/projects` only; this session added it to `/api/v1/budget` + `/api/v1/rfis` + `/api/v1/punch-list`. Next session should audit every route that does `eq('user_id', user.id)` and either add the demo check or extract a shared `userOwnsOrDemoes(projectId, user)` helper.
+- **Content-hash ref over one-shot boolean** for AI-summary-triggered effects (the contract autofill bug). Pattern captured in lessons.
+
+**What worked (process):**
+- Pre-seeded schema discovery for every subagent (lesson from 2026-05-19) paid off again — zero "table not found" rework this session.
+- 3-verifier cross-cut (NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS) caught the $914K / $1.05M / $0 budget drift that all 8 persona agents missed individually. Lessons entry added.
+- `docs/in-flight.md` lock-file: zero edit collisions across 14 agents.
+- Pattern C (bisect-by-relayering) NOT needed this session — every push went green first try. Suggests the orchestrator's "1 ship = 1 atomic concern" discipline is settling in.
+
+**What's still open (P1, deferred to next session):**
+- CA-LAW statutory blocks for §7159 HIC contracts (3-day cancel notice, Mechanics Lien Warning, deposit cap); §§8132 statutory waiver templates; `_shared/disclaimer.md` citation typo `§§8032 → §§8132`.
+- DREAM lane gating: zero `user_metadata.lane` reads in any production route; `TermTooltip` wired exactly once across the killerapp surface; no find-a-GC stub for dreamer/homeowner users.
+- BUDGET WRITE path: BudgetClient still PATCHes the JSONB column on save (read fixed in `2ce4ecc`, write not). Will silently lose data on next save.
+- MEP equipment-schedule + panel-schedule generator (Tom found nothing for it).
+- Sub-bid submission flow: no route, no table, no UX (Diego + Reza-2026-05-21 both blocked).
+- `audit_log` table exists with 0 rows ever — nothing writes to it across the entire app.
+- `vendors` / `subcontractors` tables don't exist (no EIN, W-9, CSLB # capture).
+- `/api/v1/invoices` writes to nonexistent tables (Jenny hit this).
+- Cockpit sparkline phase distribution buckets everything to BUILD (regression from the `byStage` shape fix in Ship 35).
+- Architect-of-Record lane + B141 template (Lisa requested).
+- CALGreen Tier 1 + Title 24 Part 6 compliance touchpoint missing.
+- AI summary `$/sf` math uses stale 1800 sqft denominator on 2800-sqft Marin (cost range / sqft drift).
+- 23 RLS-disabled tables still flagged by Supabase advisor (substances, specialist_runs, knowledge_entities, etc.).
+
+**Lessons added to `tasks.lessons.md` (5):**
+1. Service-role API routes need the same auth gate as anon routes.
+2. Triple-source verifier beats N-person dogfood at catching numerical drift.
+3. "Hide unless ready" is the wrong default when the route already has a real implementation.
+4. `didAutofill` (any one-shot boolean) is an anti-pattern when upstream can update post-mount.
+5. Modal mounted in the design system ≠ modal rendered in production.
+
+**Files touched (commits 1-10):** 30+ across `src/app/api/v1/*`, `src/app/killerapp/*`, `src/lib/*`, `supabase/migrations/`, plus new `src/lib/sanitize-ai-text.ts` and `src/lib/safe-url.ts`. Test files added: `src/lib/__tests__/sanitize-ai-text.test.ts` (24 cases).
+
+**Verification:** every commit GREEN on Vercel within ~90s of push. Local `npm run build` green at HEAD `335077b`. RLS advisor: 11 prior "Allow all for now" violations resolved, 23 RLS-disabled tables remain (next session).
+

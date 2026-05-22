@@ -1391,3 +1391,163 @@ The cinematic + handover path are deployed. The blocker before flight was Cowork
 - [ ] `useSearchParams()` in `/killerapp/layout.tsx` — Ship 36d failed because the layout itself wasn't Suspense-wrapped. Claude Code's `53f2421` shipped the fix. Pattern captured in `tasks.lessons.md`.
 - [ ] Chrome (Claude in Chrome MCP) was not paired during the Cowork audit pass — re-pair if a live cold-start audit is needed.
 
+
+
+## ═══ 2026-05-21 EVENING — Post-demo dogfood audit (Cowork, 11 parallel agents) ═══
+
+**Context:** Demo shipped Thu AM. Now triaging for "ready to ship to real contractors ASAP" per Chilly. Spawned 11 parallel agents: 8 AEC persona walkthroughs (Sarah-GC res / Marcus-ADU GC / Linda-Commercial PM / Reza-electrical sub / Casey-DIY owner / Daniel-PE structural / Janelle-cost estimator / Maya-construction lender) + 1 VC diligence + 3 deep code audits (3-sources-of-truth / security+mock / numbers+sequencing+contracts+instructions). Each agent walked actual job-to-be-done.
+
+### Headline verdict (consensus across personas)
+**NOT ready to ship to real contractors as-is.** Trial accounts hit "Unauthorized: you do not own this project" errors on their seeded demos. Numbers contradict themselves across 5 views of the same project. CRM data is world-readable+writable via unauthenticated API. 10 of 27 workflows hard-code "(TBD)" labels visible to users. The "3 sources verified" badge is structurally false (URL-string-builders count as "sources"). VC verdict: "Pass at Series A valuation."
+
+### P0 cluster 1 — SECURITY (block any public signups)
+- **`/api/v1/crm` + sibling routes**: NO `getAuthUser`, RLS DISABLED on `crm_contacts` / `crm_messages`. Anon key (in client bundle) reads/edits every contractor's leads, phones, emails, deal sizes. (Reza, Linda, Security audit.)
+- **`/api/v1/mcp`**: no auth, no rate limit. Unauthenticated path to Anthropic spend; trivially DOS-able. (Open follow-up, confirmed live.)
+- **`/api/v1/uploads/photo`**: no auth, trusts client mime, public bucket, signed URLs absent. Uploaded `<script>alert(1)</script>` as `evil.png` and got a permanent public URL. (Maya audit confirmed live.)
+- **`/api/v1/render`**: no auth, unlimited public Replicate spend.
+- **`project_*` tables** (`project_budget_lines`, `project_rfis`, `project_change_orders`, `project_punch_items`, `project_submittals`): RLS enabled but policy is literally `"Allow all for now" qual=true`. Anyone scrapes/rewrites every project. (Security audit.)
+- **`next=` / `redirectTo=` open redirect** on `/login`, `/signup`, `/auth/callback` — accepts any URL including `https://evil.com`. (Security audit.)
+- **Supabase `get_advisors`** flagged 23 tables with RLS disabled + 2 security_definer_view escalation surfaces.
+
+### P0 cluster 2 — DATA STORAGE FRAGMENTATION (cockpit + budget contradict each other)
+- **`/api/v1/budget` reads `project_budgets` TABLE which DOES NOT EXIST in Supabase.** Cockpit BudgetSnapshot will return empty / error in prod. (Numbers audit + Sarah + Janelle.)
+- **3 storage locations that never reconcile** for the same data: `project_budget_lines` table (estimate route writes here, 11 rows for Marin only); `command_center_projects.project_budgets` JSONB (BudgetClient PATCHes here, empty for all 3 demos); `project_budgets` TABLE (referenced by `/api/v1/budget`, doesn't exist).
+- **localStorage shape mismatch**: EstimatingClient writes `{lines:[...]}` to `bkg-budget-{projectId}`; BudgetClient reads with `if (!Array.isArray(parsed)) return []`. AI-handoff push silently drops everything offline. (Janelle, Numbers audit.)
+- **Sarah saw 5 different totals** for the same Marin project: header $900K-$1.2M / AI take $750K-$1.06M / contracts autofill $1,050,000 / estimating "Budget snapshot $337,800" / DB lines sum $914K.
+
+### P0 cluster 3 — DEMO DATA CORRUPTION
+- **Commercial TI SoMa: `estimated_cost_low=180, estimated_cost_high=240`** (literal dollars, not thousands or millions). Contract autofill computes midpoint = **$210** for a $1.125M commercial TI. (Janelle, Sarah, Numbers audit, Linda.)
+- **ADU Sausalito**: DB cols say $350-450K, AI summary says $180-320K, task docs say $250K — three sources, all disagree.
+- **ADU + Commercial TI have ZERO rows in `project_budget_lines`** despite the demo script promising CSI breakdowns on all three.
+- **All 3 projects: `sqft` column is NULL.** Estimate prompt silently defaults to `10000 sqft` for any missing value. Two runs of the same project produce different numbers.
+
+### P0 cluster 4 — AUTH SESSION + IDENTITY CHAOS (every persona hit this)
+- **"Unauthorized: you do not own this project"** displayed on upload widgets for the trial-seeded demo project (Sarah, Casey, Linda, Reza all hit this).
+- **Login form silently noops on first 1-2 submissions** then succeeds (Sarah).
+- **Cross-account stale identity**: Linda signed in as `gc-trial-03` but footer rendered `specialty-trial-01` on next navigation. URL `?project=bb22c33d` (SoMa) silently rewrote to `aa11b22c` (ADU) within 3 clicks.
+- **`/welcome` reads stale `supabase.auth.getUser()`** and pre-routes to whichever session-cookie is loudest, ignoring the just-signed-in user (Reza).
+
+### P0 cluster 5 — "3 SOURCES VERIFIED" CLAIM IS THEATER
+- **0 of 2,246 `knowledge_entities` rows have ≥3 `source_urls`.** 15 of 569 building_codes have ≥1 url. Backfill follow-up cites 542 rows; actual is 2,246. (3-sources audit, confirmed via SQL.)
+- **`src/lib/code-sources/icc.ts` + `nfpa.ts`**: never HTTP-fetch. They return a `CodeSourceResult` whose `content` is `"See ICC DigitalCodes: <url>"` — just URL-string construction. The badge's `sourceCount` set counts these as sources.
+- **`icc.ts` discipline map wrong**: `electrical → "IEC"` (European IEC, fabricated URL — should be NEC), `fire → "NFPA"` (wrong org, should be IFC).
+- **Structural routing**: R-3 single-family dwellings get IBC 1604/1613/1809 citations (should be IRC/CRC; IBC 1.1.8 exempts R-3).
+- **`/api/v1/context` references tables that don't exist** in Supabase (`kg_entities` / `kg_assertions`). Will throw in prod.
+- **No drill-through**: entity_id synthesized as `${source}/${section}` (`icc-digital-codes/800`), not a real UUID. Click-through is impossible because the link target doesn't exist.
+
+### P0 cluster 6 — WORKFLOW DEAD-ENDS
+- **q20–q27 (10 workflows) NOT in `LIVE_WORKFLOWS` map** but routes exist at 200 OK. `NextWorkflowCard.WORKFLOW_LABELS` literally hardcodes `"Adapt (TBD)"`, `"Collect (TBD)"`, `"Reflect (TBD)"` strings visible to users.
+- **StageWelcome stages 5/6/7**: CTA href falls back to `#` — dead click.
+- **q21 draw-requests** = 5 generic steps (AI % guess, free-text, 1 number_input, 2 checklists). No schedule of values, no G702/G703, no sworn statement, no inspector signoff, no photo capture, no audit trail. Maya would not disburse on this.
+- **q22 lien-waivers** collapses 4 CA statutory forms (Civ Code §§8132/8134/8136/8138) into 2 generic checklist items. No templates, no fields.
+- **q25 retainage** is a free-text `$` input. No 10% × completed math, no held-to-date ledger, no SB 800 cap.
+
+### P0 cluster 7 — MOCK DATA PASSING AS REAL
+- **`/api/v1/weather`**: `Math.random()` seasonal generator. No NOAA / OpenWeather call. (Marcus.)
+- **`/api/v1/marketplace`**: entirely `mockListings` / `mockQuoteRequests` / `mockOrders` in-memory.
+- **Resource broker `demo-fixtures.ts`**: 1068 lines hardcoded vendors. Surfaces in supply-ordering, equipment, hiring, sub-management.
+- **`/launch` wizard**: 849 lines pure `useState`, zero `fetch` / `supabase` calls.
+- **`audit_log` Supabase table exists with 0 rows** — nothing writes to it. No audit trail anywhere.
+
+### P0 cluster 8 — CONTRACT AUTOFILL CONTAMINATED
+- Sarah: "Scope of Work autofills raw AI prose including 'Alright, here's how I'd read it:' and dangling 'Here's where I'd start:' — not client-ready, you'd retype before sending." (Marin project autofill.)
+
+### P0 cluster 9 — PERFORMANCE (visible Vercel toolbar)
+- **3,098ms INP** on /welcome button click. **5,100ms INP** on contract PDF generation. **TBT 2,250ms** on killerapp layout (Lighthouse refactor was already on follow-up list).
+
+### P1 cluster — Lane divergence is theatrical
+- `user_metadata.lane` is stored (builder / specialist / dreamer) but NO UI gates on it. `CompassWorkflowNav` has zero `meta.lane` references. `/welcome` shows identical contractor steps for all lanes. Casey (dreamer) hit 16+ undefined AEC jargon terms — `TermTooltip` exists with a glossary but is wired exactly once. Reza (sub) has no way to submit a bid back to a GC.
+
+### P1 cluster — Regional multiplier missing
+- Estimate prompt has NO Marin coastal premium logic (open follow-up confirmed live). `sqft` NULL → defaults to 10k silently. No O&P / contingency added on push-to-budget midpoint. Two runs of same project diverge.
+
+### What worked — keep these
+- /welcome page copy + structure is genuinely good for a builder.
+- DRAFT watermark + CA attorney-review disclaimer on contracts is the responsible move.
+- Stage welcome copy (foreman voice) is the strongest directive UX in the app.
+- Project banner with Marin scope is concise and human ("Marin permitting is strict and slow", calls out long-lead millwork & T24 glazing).
+- MCP bridge + 12 tools + `.mcpb` download is the wedge per VC verdict.
+- Receipt OCR auto-budget flow exists (if it works on real receipts, that's saved time per Marcus).
+- jsPDF contract generation pipeline is clean (watermark on every page, mm letter, 22mm margins).
+
+### Tonight's ship plan (paused for user judgment on 3 forks — see next section)
+- **SHIP NOW (unambiguous)**: P0-A security batch (auth gates on /api/v1/uploads/photo + /api/v1/render, RLS policies on project_* tables, safeNext() open redirect close).
+- **PAUSED ON USER FORK**: P0-B data integrity (Commercial TI cost cols fix, localStorage shape, demo project budget seeds). 
+- **PAUSED ON USER FORK**: P0-C honest-claims (3-sources badge softening, contract autofill sanitization, workflow visibility).
+- **DEFERRED for daylight**: real ICC/NFPA fetchers (counterparty contracts needed), real weather API (key + cost), real vendor pricing, sub-bid-submission flow (architectural), regional multiplier in estimate prompt, 569-row knowledge_entities backfill.
+
+
+
+## ═══ 2026-05-22 EVENING — Ship-prep + 2nd dogfood round (Cowork, 14 parallel agents) ═══
+
+**Context:** Chilly returned saying "ship to contractors ASAP" + dogfood from all AEC angles + triple-source verification on numbers/sequencing/contracts/instructions. Built on the 2026-05-21 EVENING verdict (NOT ready as-is, 9 P0 clusters). This session ran two rounds: Round 1 shipped 5 commits clearing the 2026-05-21 P0 forks; Round 2 (10-agent dogfood with NUMBERS/CONTRACTS/SEQUENCING verifiers) surfaced 6 more bugs cleared in commits 6-9. All 10 commits GREEN on Vercel.
+
+### Shipped (10 commits, af57ed2 → 335077b on origin/main, all Vercel green)
+- [x] `0e8b580` feat(autofill): sanitize AI prose from contract Scope of Work — new `src/lib/sanitize-ai-text.ts`, 24-case test suite, ContractsClient autofill pipes through it.
+- [x] `1556ef9` fix(claims): honest code-source sourcing + R-3 routing + real DB tables — `icc.ts` discipline map corrected (electrical→NEC, fire→IFC); citation-only paths set `verified:false`; new 4-tier `SourceCountBadge`; `/api/v1/context` queries `knowledge_entities` + `building_codes` (real tables) instead of `kg_entities`/`kg_assertions` (don't exist).
+- [x] `5df1324` fix(workflows): real labels for q20-q27 + preview banners + dead-link fix — `(TBD)` strings out; `StageWelcome` `href="#"` → `/killerapp`; preview banners on draw / lien-waiver / retainage.
+- [x] `25825ce` fix(data): unify budget storage on `project_budget_lines` — `/api/v1/budget` rewritten; JSONB column + nonexistent `project_budgets` table no longer referenced.
+- [x] `7d84d48` fix(sec+auth): auth gates + RLS lockdown + safe-redirect + session UX — `safe-url.ts` `safeNext()`; auth on photo/render/mcp; RLS lockdown migration on 7 tables; login form race fix; `/welcome` `refreshSession()`; ProjectContext cross-account drift fix.
+- [x] `2ce4ecc` fix(budget+sec): reconcile budget reads + auth-gate rfis/punch routes — BudgetClient → `/api/v1/budget`; contract autofill uses budget-lines sum; rfis+punch-list+budget honor `demo_project_id`.
+- [x] `d7a3e13` feat(stage-welcome): mount the StageWelcome modal — layout.tsx:111 TODO resolved with actual JSX.
+- [x] `914c935` fix(sequencing): open q1/q3/q20-q27 in `LIVE_WORKFLOWS` + restage q25 — all 27 workflows visible; q25 retainage moved stage 7 → stage 6.
+- [x] `6183f90` fix(mcp+demo): honest entity counts + autofill re-runs on summary change — MCP "40K+" → live SQL count (2,246/44); `didAutofill: boolean` → `lastAutofilledSummaryRef` content-hash.
+- [x] `335077b` intro: Act 2/3/4 timing + content updates (Chilly's edits preserved from earlier today).
+
+### Live data fixes (Supabase project `vlezoyalutexenbnzzui` via MCP `apply_migration` + `execute_sql`)
+- [x] Migration `20260522_secauth_rls_lockdown.sql` applied — 11 owner-or-demo policies live across 7 tables; every prior `"Allow all for now" qual=true` policy dropped; `crm_contacts` + `crm_messages` RLS ENABLED.
+- [x] SoMa: `UPDATE command_center_projects SET estimated_cost_low=1050000, estimated_cost_high=1200000` (was `180, 240` literal dollars from 2026-05-21 cluster 3).
+- [x] sqft backfilled on all 3 demos: Marin 2800, ADU 1100, SoMa 4200 (all NULL before; estimate prompt was silently defaulting to 10K sqft).
+- [x] `project_budget_lines` seeded: 8 CSI lines for ADU summing $382K (within $350-450K range), 12 CSI lines for SoMa summing $1.078M (within new $1.05-1.2M range). Marin's 11 existing lines preserved.
+- [x] Cleared stale `contracts_state.scopeOfWork` JSONB on Marin (sanitizer prevents recurrence).
+
+### 2nd dogfood + verifier findings (10 agents, P1+ work below)
+Personas: Lisa (architect), Tom (MEP), Diego (plumbing sub), Tony (foreman), Rachel (commercial owner), Nick (dreamer/homeowner), Jenny (bookkeeper), Mike (VC).  
+Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
+
+- [x] **P0 — `/killerapp/budget` HeroStrip $0** (NUMBERS verifier): BudgetClient read wrong table. → fixed in `2ce4ecc`.
+- [x] **P0 — Contract autofill $1.05M vs lines sum $914K drift of $136K** (NUMBERS verifier): autofill used `(low+high)/2`. → fixed in `2ce4ecc` (now uses budget-lines sum).
+- [x] **P0 — `/api/v1/rfis` + `/api/v1/punch-list` no auth** (Tom + Diego): service-role routes with no `getAuthUser`. → fixed in `2ce4ecc`.
+- [x] **P0 — Trial accounts get 404 on `/api/v1/budget`** (Diego, Tony): route didn't honor `demo_project_id`. → fixed in `2ce4ecc`.
+- [x] **P0 — StageWelcome never appears** (Tony): layout.tsx:111 had `// TODO mount StageWelcome` comment instead of JSX. → fixed in `d7a3e13`.
+- [x] **P0 — q20-q27 hidden behind `(TBD)`** (SEQUENCING verifier): routes existed and worked; navigation said "TBD". → fixed in `5df1324` + `914c935`.
+- [x] **P0 — MCP claims "40,000+ entities" vs DB reality 2,246** (Mike VC + CONTRACTS verifier): marketing copy out of sync with prod. → fixed in `6183f90` (live SQL count).
+- [x] **P0 — Contract scope-of-work doesn't update on summary edit** (Mike + CONTRACTS): `didAutofill` one-shot boolean. → fixed in `6183f90` (content-hash ref).
+- [x] **P0 — Stale `contracts_state.scopeOfWork` on Marin** (CONTRACTS): pre-sanitizer pollution. → cleared via SQL.
+
+### What's still open for next session (ranked by P0→P1→P2)
+
+#### P0 — block ship to contractors
+- [ ] **CA-LAW statutory blocks** for §7159 HIC contracts: 3-day cancellation notice, Mechanics Lien Warning block, deposit cap (≤$1K or 10% of contract whichever lower). Lisa/Rachel both flagged.
+- [ ] **§§8132/8134/8136/8138 statutory lien-waiver templates** (q22): current implementation is a checklist; CA Civ Code requires exact statutory form text.
+- [ ] **Citation typo fix:** `_shared/disclaimer.md` says `§§8032` (doesn't exist), should be `§§8132`. One-line fix.
+- [ ] **BUDGET WRITE path:** `BudgetClient` still PATCHes the JSONB column on save. Read fixed in `2ce4ecc`, write not. Will silently lose data on next save.
+- [ ] **23 RLS-disabled tables** still flagged by Supabase advisor (`substances`, `specialist_runs`, `knowledge_entities`, etc.). Lock down or document the model.
+
+#### P1 — high-friction but not blocking
+- [ ] **DREAM lane gating:** zero `user_metadata.lane` reads in any production route despite the field being set. Nick (dreamer) saw identical contractor steps. `TermTooltip` wired exactly once. No find-a-GC stub for dreamer/homeowner.
+- [ ] **MEP equipment-schedule + panel-schedule generator** (Tom): nothing for it currently.
+- [ ] **Sub-bid submission flow** (Diego, Reza-2026-05-21): no route, no table, no UX — subs can read but never submit back to GC.
+- [ ] **`audit_log` writes:** table exists with 0 rows ever; nothing writes to it. Every mutation should append.
+- [ ] **`vendors` / `subcontractors` tables:** don't exist. No EIN, W-9, CSLB # capture path.
+- [ ] **`/api/v1/invoices`** writes to nonexistent tables (Jenny). Either build or remove.
+- [ ] **Cockpit sparkline phase distribution:** everything buckets to BUILD. Regression from the `byStage` shape fix in Ship 35.
+- [ ] **Architect-of-Record lane + B141 template** (Lisa requested explicitly).
+- [ ] **CALGreen Tier 1 + Title 24 Part 6** compliance touchpoint missing across workflows.
+- [ ] **AI summary $/sf math drift:** 2800-sqft Marin still divides by old 1800 sqft denominator in the cost-range / sqft line.
+
+#### P2 — polish + future
+- [ ] **569-row `knowledge_entities` backfill** with real `source_urls` arrays (still ≥3-source theater on most rows).
+- [ ] **Equipment-schedule template** (q-MEP-schedules — needs route).
+- [ ] **Real weather API** (NOAA / OpenWeather; key + cost).
+- [ ] **Real ICC/NFPA fetchers** (counterparty contracts needed).
+- [ ] **Marin coastal premium** regional multiplier in estimate prompt.
+- [ ] **Centralize ownership checks** — extract `userOwnsOrDemoes(projectId, user)` helper; audit every `eq('user_id', user.id)` route and switch.
+
+### Lessons added to `tasks.lessons.md` (5)
+- Service-role API routes need the same auth gate as anon routes — `SUPABASE_SERVICE_ROLE_KEY` is an RLS-bypass.
+- Triple-source verifier beats N-person dogfood at catching numerical drift.
+- "Hide unless ready" is the wrong default when the route already has a real implementation — preview banners > hidden navigation.
+- `didAutofill` (any one-shot boolean) is an anti-pattern when upstream can update post-mount — use a content-hash ref.
+- Modal mounted in the design system ≠ modal rendered in production — search for the instantiation site, not the component file.
+
