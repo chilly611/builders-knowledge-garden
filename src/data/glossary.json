@@ -117,5 +117,174 @@
     "plain": "National Fire Protection Association — develops fire and safety codes. NFPA 13 covers sprinkler systems, NFPA 70 is the Electrical Code, NFPA 101 is the Life Safety Code. Used nationwide, often referenced in local codes.",
     "pro": "National Fire Protection Association",
     "source": "Industry standard"
+  },
+  {
+    "term": "AEC",
+    "plain": "Architecture, Engineering, and Construction — the umbrella term for the whole industry that designs and builds buildings. When you hear 'AEC firms' or 'AEC software,' that means companies/tools serving any of those three trades together.",
+    "pro": "Architecture / Engineering / Construction industry",
+    "source": "Industry standard"
+  },
+  {
+    "term": "GC",
+    "aliases": ["General Contractor", "general contractor"],
+    "plain": "General Contractor — the licensed company that runs your whole construction project. They hire and manage the subs, pull permits, schedule the work, and are responsible for delivering the finished building. You sign one contract with the GC; they handle the rest.",
+    "pro": "Prime contractor / construction manager",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Sub",
+    "aliases": ["subcontractor", "Subcontractor"],
+    "plain": "Subcontractor — a specialist trade (electrician, plumber, framer, drywall, roofer, etc.) hired by the GC to handle one slice of the work. You usually don't talk to subs directly; the GC manages them.",
+    "pro": "Specialty trade contractor",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Lien waiver",
+    "plain": "A signed document from a sub, supplier, or laborer saying they've been paid in full and won't file a lien against your property. Your GC needs these from everyone before final payment goes out. Missing one can block your closing or refinance for weeks.",
+    "pro": "Mechanic's lien release",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Retainage",
+    "plain": "Money the owner holds back from each payment to the GC (usually 5-10%) until the project is fully complete and signed off. It's a safety net — if something's wrong at the end, there's money left to fix it. Released after the final walkthrough.",
+    "pro": "Holdback reserve",
+    "source": "Industry standard"
+  },
+  {
+    "term": "CSI",
+    "aliases": ["CSI division", "CSI MasterFormat"],
+    "plain": "Construction Specifications Institute — the industry's numbering system for organizing construction costs. Division 03 is Concrete, 06 is Wood, 26 is Electrical, etc. When you see your budget split by '03 Concrete' or '15 Mechanical,' that's CSI.",
+    "pro": "CSI MasterFormat divisions",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Draw",
+    "aliases": ["Draw request", "progress draw"],
+    "plain": "A bill from your GC for work completed so far. On most jobs, you don't pay everything upfront — the GC bills monthly or by milestone, you (or your lender) review what's done, and pay that portion. Most projects have 3-8 draws total.",
+    "pro": "Progress payment requisition",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Change order",
+    "aliases": ["CO", "change orders"],
+    "plain": "A written amendment to your contract when scope changes mid-project — you decide to add a window, the slab hits rock and needs more excavation, you upgrade to quartz countertops. Each change order spells out: what changed, how much more it costs, and how many extra days. Sign before the work happens.",
+    "pro": "Contract modification",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Scope",
+    "aliases": ["scope of work", "SOW"],
+    "plain": "The detailed list of exactly what's included in your project — every wall, every fixture, every finish. 'In scope' means the GC has to do it for the contract price; 'out of scope' means it's extra. Most fights between owners and GCs come from fuzzy scope.",
+    "pro": "Scope of work / SOW",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Allowance",
+    "plain": "A placeholder dollar amount in your contract for something you haven't picked yet — like '$8,000 tile allowance' or '$15,000 cabinet allowance.' If you pick something cheaper, you save the difference; pricier, you pay the upcharge as a change order. Watch the allowances — they hide budget overruns.",
+    "pro": "Contract allowance / cash allowance",
+    "source": "Industry standard"
+  },
+  {
+    "term": "T&M",
+    "aliases": ["time and materials", "Time & Materials"],
+    "plain": "Time and Materials — a billing structure where you pay the GC for actual hours worked plus the cost of materials, instead of a fixed price. Used for unpredictable work like demo or repairs where nobody knows what's behind the wall yet. Higher risk for the owner — no cap on cost.",
+    "pro": "Time and materials / cost-plus billing",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Lump sum",
+    "aliases": ["fixed price", "stipulated sum"],
+    "plain": "A single fixed price for the whole project, no matter how long it takes or what materials cost. The GC takes the risk — if they underestimated, they eat the loss; if they're efficient, they keep the savings. Most homeowner contracts are lump sum because it's predictable.",
+    "pro": "Stipulated sum / fixed-price contract",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Soft costs",
+    "plain": "Project costs that aren't construction itself — architect/engineer fees, permits, plan check fees, surveys, financing fees, insurance, legal. Usually 10-25% of total project cost. Easy to forget; budget them upfront.",
+    "pro": "Indirect / pre-construction costs",
+    "source": "Industry standard"
+  },
+  {
+    "term": "Hard costs",
+    "plain": "The actual construction costs — labor, materials, equipment. The stuff that becomes the building. Roughly 75-90% of total project cost. When the GC gives you a number, that's hard costs unless they say otherwise.",
+    "pro": "Direct construction costs",
+    "source": "Industry standard"
+  },
+  {
+    "term": "COI",
+    "aliases": ["Certificate of Insurance"],
+    "plain": "Certificate of Insurance — a one-page document proving your GC (or sub) actually has the insurance they say they have: general liability, workers' comp, auto. Demand a fresh one before work starts, and ask to be listed as an additional insured. If they balk, that's a red flag.",
+    "pro": "Certificate of Insurance",
+    "source": "Industry standard"
+  },
+  {
+    "term": "AIA G702/G703",
+    "aliases": ["AIA G702", "AIA G703", "G702", "G703"],
+    "plain": "The industry-standard payment application forms from the American Institute of Architects. G702 is the summary page (this draw, total to date, retainage); G703 is the detailed breakdown by cost code. Most lenders require these forms for every draw on a financed project.",
+    "pro": "AIA payment application forms",
+    "source": "American Institute of Architects"
+  },
+  {
+    "term": "B&P 7159",
+    "aliases": ["B&P §7159", "Business and Professions Code 7159"],
+    "plain": "California's Home Improvement Contract law. Spells out exactly what has to be in a residential remodel contract over $500: down payment limits (10% or $1,000, whichever is less), required notices, 3-day right to cancel, finance disclosures. If your CA contractor skips B&P 7159 requirements, the contract may be unenforceable against you.",
+    "pro": "California Business & Professions Code §7159",
+    "source": "California Contractors State License Board"
+  },
+  {
+    "term": "Civ Code 8132",
+    "aliases": ["Civ Code §8132", "Civil Code 8132", "Civil Code §8132"],
+    "plain": "The California Civil Code section that defines the legally valid form of a conditional lien waiver upon progress payment. When your GC's subs hand you waivers, they need to match this exact statutory language or they don't actually waive lien rights.",
+    "pro": "California Civil Code §8132 conditional progress waiver",
+    "source": "California Civil Code"
+  },
+  {
+    "term": "T24",
+    "aliases": ["Title 24", "T24 compliance"],
+    "plain": "California's energy code — the rules for insulation, HVAC efficiency, lighting, solar panels, and water heating that every CA project has to meet. Stricter every few years. You'll see line items for 'T24 calcs' (a consultant runs the energy model) and 'T24 inspection' (the AHJ verifies installed equipment matches the model).",
+    "pro": "California Title 24 Energy Code (Part 6)",
+    "source": "California Building Standards Commission"
+  },
+  {
+    "term": "CRC",
+    "aliases": ["California Residential Code"],
+    "plain": "California Residential Code — California's version of the IRC, with CA-specific amendments (seismic bracing, T24 energy, water conservation). The CRC governs single-family homes, duplexes, and townhomes. Your GC and the building inspector both work from the same CRC.",
+    "pro": "California Residential Code",
+    "source": "California Building Standards Commission"
+  },
+  {
+    "term": "R-3",
+    "aliases": ["R-3 occupancy"],
+    "plain": "The code classification for residential occupancies — single-family homes, duplexes, small apartments. When you see 'R-3' on plans or permits, it means the building falls under residential code (CRC/IRC), not commercial. Different rules for fire separation, egress, and sprinklers than R-1 (hotels) or R-2 (larger apartments).",
+    "pro": "IBC/CRC R-3 occupancy classification",
+    "source": "International Building Code"
+  },
+  {
+    "term": "ADU",
+    "aliases": ["accessory dwelling unit"],
+    "plain": "Accessory Dwelling Unit — a second, smaller home on a single-family lot. Could be a detached cottage in the back yard, a unit above the garage, or a basement conversion. California law makes ADUs much easier to permit than other additions: streamlined plan check, no extra parking requirements, can be rented separately.",
+    "pro": "Accessory Dwelling Unit",
+    "source": "California Government Code §65852.2"
+  },
+  {
+    "term": "Junior ADU",
+    "aliases": ["JADU", "junior accessory dwelling unit"],
+    "plain": "A Junior ADU is a smaller carve-out from your existing home — up to 500 sqft, must include an efficiency kitchen, can share a bathroom with the main house. Easier and cheaper than a full ADU because you're not adding to the building footprint. One JADU is allowed per lot in CA, on top of the regular ADU rules.",
+    "pro": "Junior Accessory Dwelling Unit (≤500 sqft)",
+    "source": "California Government Code §65852.22"
+  },
+  {
+    "term": "SB 9",
+    "aliases": ["Senate Bill 9", "California SB 9"],
+    "plain": "California Senate Bill 9 (effective 2022) — lets owners of single-family lots split the lot in two and/or build a duplex, by-right, in most CA cities. Bypasses much of the usual zoning review. If your lot qualifies and you follow the rules (size, owner-occupancy, etc.), the city can't say no.",
+    "pro": "California Senate Bill 9 (2021) — Urban Lot Split",
+    "source": "California Government Code §65852.21 / §66411.7"
+  },
+  {
+    "term": "AB 68",
+    "aliases": ["Assembly Bill 68"],
+    "plain": "California Assembly Bill 68 (2019) — the law that opened up ADUs statewide. Limited cities' ability to block them, killed the parking requirement near transit, capped permit timelines, and required ministerial (no-discretion) approval. The reason ADUs exploded in CA.",
+    "pro": "California Assembly Bill 68 (2019)",
+    "source": "California Government Code §65852.2"
   }
 ]

@@ -1,0 +1,140 @@
+[
+  {
+    "csi_prefix": "01",
+    "label": "01 General Requirements",
+    "plain_label": "Permits, supervision, and overhead",
+    "explainer": "The GC's cost of running the job site — supervision, dumpsters, temporary fencing, port-a-potties, and most permit fees. Roughly 5-10% of total project cost. Higher on tight urban sites where staging and storage cost more."
+  },
+  {
+    "csi_prefix": "02",
+    "label": "02 Existing Conditions",
+    "plain_label": "Demo and site prep",
+    "explainer": "Tearing out what's already there — removing old finishes, hauling debris, abatement of any hazardous materials like lead paint or asbestos. Surprises live here: behind walls and under floors costs more than you'd think."
+  },
+  {
+    "csi_prefix": "03",
+    "label": "03 Concrete",
+    "plain_label": "Concrete",
+    "explainer": "Foundations, slabs, footings, and any structural concrete. Higher in hillside areas (Marin, the East Bay hills) because engineered fill and seismic rebar add cost. About 8-15% of a typical ground-up build."
+  },
+  {
+    "csi_prefix": "04",
+    "label": "04 Masonry",
+    "plain_label": "Masonry",
+    "explainer": "Brick, stone, block walls, fireplaces, and chimneys. Not common on modern California homes; more in older remodels or feature walls. Skilled labor — masons are pricey when you find one."
+  },
+  {
+    "csi_prefix": "05",
+    "label": "05 Metals",
+    "plain_label": "Steel and metal work",
+    "explainer": "Structural steel beams, posts, custom railings, gates. Steel prices are volatile — they swing 15-30% year-over-year with global metal markets. A line item to lock in early via your contract."
+  },
+  {
+    "csi_prefix": "06",
+    "label": "06 Wood, Plastics & Composites",
+    "plain_label": "Framing and carpentry",
+    "explainer": "The wood skeleton of your house — studs, joists, rafters, sheathing — plus finish carpentry like trim, cabinets, doors. Usually 15-25% of total cost. Lumber prices have been wild since 2020; locking in early protects you."
+  },
+  {
+    "csi_prefix": "07",
+    "label": "07 Thermal & Moisture Protection",
+    "plain_label": "Insulation, roofing, and weatherproofing",
+    "explainer": "Roof, siding, insulation, waterproofing, sealants. Critical for Title 24 energy compliance in CA. Spending more here pays back in energy bills for decades — cheap insulation is the single most common regret."
+  },
+  {
+    "csi_prefix": "08",
+    "label": "08 Openings",
+    "plain_label": "Windows and doors",
+    "explainer": "All windows, exterior doors, garage doors, and skylights. Title 24 sets minimum energy ratings, so cheap big-box windows often won't pass inspection. Custom or tall windows can be 20-40% of this line."
+  },
+  {
+    "csi_prefix": "09",
+    "label": "09 Finishes",
+    "plain_label": "Finishes (drywall, paint, flooring, tile)",
+    "explainer": "Everything you actually see — drywall, paint, tile, flooring, cabinets-as-finish, countertops. The most volatile category — you can spend $30K or $300K on finishes for the same square footage."
+  },
+  {
+    "csi_prefix": "10",
+    "label": "10 Specialties",
+    "plain_label": "Built-ins and specialties",
+    "explainer": "Bathroom accessories, closet systems, partition walls, signage. Small-dollar line on most residential projects but easy to forget — when budgets blow, it's usually because nobody priced these."
+  },
+  {
+    "csi_prefix": "11",
+    "label": "11 Equipment",
+    "plain_label": "Appliances and equipment",
+    "explainer": "Stoves, refrigerators, dishwashers, washers/dryers, and any other built-in equipment. Appliance prices have a 3-4x spread (basic vs premium). Pick early — lead times on Sub-Zero or Wolf can be 6+ months."
+  },
+  {
+    "csi_prefix": "12",
+    "label": "12 Furnishings",
+    "plain_label": "Built-in furniture",
+    "explainer": "Built-in seating, custom millwork, window treatments. Most residential budgets fold this into 06 (carpentry) instead. If it's a separate line, expect bespoke and pricey."
+  },
+  {
+    "csi_prefix": "13",
+    "label": "13 Special Construction",
+    "plain_label": "Special construction",
+    "explainer": "Pre-fab buildings, swimming pools, saunas. Uncommon on most home projects. If you see this line, it usually means a pool or spa was included."
+  },
+  {
+    "csi_prefix": "14",
+    "label": "14 Conveying Equipment",
+    "plain_label": "Elevators and lifts",
+    "explainer": "Elevators, dumbwaiters, accessibility lifts. Required by code for some multi-story or accessible projects. A residential elevator runs $30-80K installed, more if you're retrofitting an existing house."
+  },
+  {
+    "csi_prefix": "21",
+    "label": "21 Fire Suppression",
+    "plain_label": "Fire sprinklers",
+    "explainer": "Sprinkler systems. California requires residential sprinklers on most new single-family homes built since 2011 — typically $1.50-$3.00 per square foot."
+  },
+  {
+    "csi_prefix": "22",
+    "label": "22 Plumbing",
+    "plain_label": "Plumbing",
+    "explainer": "Water supply lines, drain/waste/vent, gas lines, fixtures, water heater. About 5-10% of total cost. Tankless water heaters and water filtration are common upgrades worth pricing here."
+  },
+  {
+    "csi_prefix": "23",
+    "label": "23 HVAC",
+    "plain_label": "Heating and cooling (HVAC)",
+    "explainer": "Furnace, AC, ductwork, heat pumps, mini-splits, ventilation. Title 24 keeps pushing toward heat pumps. About 5-10% of total — higher when your existing system needs full replacement and not just an extension."
+  },
+  {
+    "csi_prefix": "26",
+    "label": "26 Electrical",
+    "plain_label": "Electrical",
+    "explainer": "Panel, wiring, outlets, switches, lighting, EV chargers, solar tie-in. About 6-10% of total. If you're adding load (EVs, induction cooking, heat pumps), you may need a 200A or 400A service upgrade."
+  },
+  {
+    "csi_prefix": "27",
+    "label": "27 Communications",
+    "plain_label": "Networking and AV",
+    "explainer": "Structured wiring for internet, TV, security, smart-home. Run conduit during framing or live with wireless forever — retrofit pulls cost 3-5x more than installing during the rough-in phase."
+  },
+  {
+    "csi_prefix": "28",
+    "label": "28 Electronic Safety & Security",
+    "plain_label": "Security and life safety",
+    "explainer": "Burglar alarms, security cameras, smoke and CO detectors. Code requires hardwired interconnected smoke alarms — DIY battery-only doesn't pass inspection."
+  },
+  {
+    "csi_prefix": "31",
+    "label": "31 Earthwork",
+    "plain_label": "Excavation and grading",
+    "explainer": "Digging, hauling dirt, retaining walls, soil compaction. Massively variable — flat lots are cheap, hillside lots can run 5-10x more. Always get a geotech report before pricing this on a sloped or filled lot."
+  },
+  {
+    "csi_prefix": "32",
+    "label": "32 Exterior Improvements",
+    "plain_label": "Hardscape and landscaping",
+    "explainer": "Driveways, patios, fences, walkways, landscape irrigation. Often pushed off the main contract and bid separately to landscape contractors. Budget 5-15% of building cost depending on lot size."
+  },
+  {
+    "csi_prefix": "33",
+    "label": "33 Utilities",
+    "plain_label": "Utility connections",
+    "explainer": "Connecting to (or running new) water, sewer, gas, and electrical service lines from the street to your house. Big variable — a 200ft run from the street can add $30-100K, especially if you need a sewer ejector or trenching through pavement."
+  }
+]
