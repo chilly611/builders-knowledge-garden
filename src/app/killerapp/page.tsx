@@ -162,14 +162,11 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   'q-cost-explainer': '/killerapp/workflows/cost-explainer',
 };
 
-// Roles allowed to discover each workflow in the picker. Today only used
-// for DIY-LANE additions; pro workflows are visible to all roles by
-// default (omitting them from this map = "no restriction"). Future
-// agents can extend this to gate other pro/owner workflows.
-const WORKFLOW_ROLES: Record<string, ReadonlyArray<string>> = {
-  'q-find-gc': ['diy', 'owner'],
-  'q-cost-explainer': ['diy', 'owner'],
-};
+// NOTE: the workflow → roles map moved to `@/lib/workflow-roles` as part
+// of the WORKFLOW-ROLES-NAV sprint (2026-05-22). CompassWorkflowNav,
+// NextWorkflowCard, and DiyCockpitOverlay all consult the same map so
+// the picker never surfaces a tile that would LaneGate-redirect on click.
+// Import retained at the top of this file for any future page-level use.
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
 // without forcing each workflow route to export its own metadata yet.

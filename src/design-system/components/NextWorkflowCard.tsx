@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LIFECYCLE_STAGES, STAGE_WORKFLOWS, WORKFLOW_TO_STAGE } from '@/lib/lifecycle-stages';
+import { useUserLane } from '@/lib/use-user-lane';
+import { isWorkflowAllowedForLane } from '@/lib/workflow-roles';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '../tokens';
 import { stageAccent } from '../tokens/stage-accents';
 
@@ -162,22 +164,43 @@ export default function NextWorkflowCard({
   const currentWorkflowLabel = WORKFLOW_LABELS[currentWorkflowId] || 'This workflow';
   const currentStageName = LIFECYCLE_STAGES.find((s) => s.id === currentStageId)?.name || 'the current stage';
 
-  // Determine next workflow in current stage
+  // WORKFLOW-ROLES-NAV (2026-05-22): consult the shared role map so we
+  // never suggest a workflow that would LaneGate-redirect the user the
+  // moment they click. While loading, fall back to the unfiltered list
+  // (useUserLane defaults to `gc` until resolved — picking a wrong "next"
+  // for ~150ms is preferable to no next CTA at all).
+  const { effectiveLane, loading: laneLoading } = useUserLane();
+  const allowedForLane = (id: string) =>
+    laneLoading || isWorkflowAllowedForLane(id, effectiveLane);
+
+  // Determine next workflow in current stage — skip past any IDs the
+  // current lane isn't allowed to discover.
   const currentStageWorkflows = STAGE_WORKFLOWS[currentStageId] || [];
   const currentIndex = currentStageWorkflows.indexOf(currentWorkflowId);
-  const isLastInStage = currentIndex === -1 || currentIndex === currentStageWorkflows.length - 1;
+
+  // Walk forward from the current index to find the next allowed workflow.
+  let nextInStageId: string | null = null;
+  for (let i = currentIndex + 1; i < currentStageWorkflows.length; i++) {
+    const candidate = currentStageWorkflows[i];
+    if (candidate && allowedForLane(candidate)) {
+      nextInStageId = candidate;
+      break;
+    }
+  }
+  const isLastInStage = nextInStageId === null;
 
   let nextCTALabel = 'Continue to next workflow';
   let nextStageId: number | null = null;
   let nextWorkflowId: string | null = null;
 
   if (isLastInStage) {
-    // Move to next stage
+    // Move to next stage — find its first allowed workflow.
     nextStageId = currentStageId < 7 ? currentStageId + 1 : null;
     if (nextStageId) {
       const nextStageName = LIFECYCLE_STAGES.find((s) => s.id === nextStageId)?.name || `Stage ${nextStageId}`;
       const nextStageWorkflows = STAGE_WORKFLOWS[nextStageId] || [];
-      nextWorkflowId = nextStageWorkflows[0] ?? null;
+      nextWorkflowId =
+        nextStageWorkflows.find((id) => allowedForLane(id)) ?? null;
       const nextWorkflowLabel = nextWorkflowId
         ? WORKFLOW_LABELS[nextWorkflowId] || 'next workflow'
         : 'next workflow';
@@ -186,9 +209,11 @@ export default function NextWorkflowCard({
       nextCTALabel = 'You\'ve completed the journey';
     }
   } else {
-    // Continue within stage
-    nextWorkflowId = currentStageWorkflows[currentIndex + 1];
-    const nextLabel = WORKFLOW_LABELS[nextWorkflowId] || 'next workflow';
+    // Continue within stage (already filtered above).
+    nextWorkflowId = nextInStageId;
+    const nextLabel = nextWorkflowId
+      ? WORKFLOW_LABELS[nextWorkflowId] || 'next workflow'
+      : 'next workflow';
     nextCTALabel = `Continue to ${nextLabel}`;
   }
 
@@ -225,7 +250,10 @@ export default function NextWorkflowCard({
   const handleStageSelect = (selectedStageId: number) => {
     setShowStagePicker(false);
     const workflows = STAGE_WORKFLOWS[selectedStageId] || [];
-    const firstId = workflows[0];
+    // Pick the first workflow in that stage that the user's lane is
+    // allowed to discover (WORKFLOW-ROLES-NAV, 2026-05-22). Falls back to
+    // workflows[0] if none match, which then falls back to /killerapp.
+    const firstId = workflows.find((id) => allowedForLane(id)) ?? workflows[0];
     const livePath = firstId ? LIVE_WORKFLOW_PATHS[firstId] : undefined;
     // Land on the first live workflow in the chosen stage; fall back to
     // /killerapp if nothing in that stage is wired up yet. Preserve

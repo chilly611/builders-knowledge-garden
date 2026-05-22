@@ -32,6 +32,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 import { useUserLane, type ProjectRole } from '@/lib/use-user-lane';
+import { isWorkflowAllowedForLane } from '@/lib/workflow-roles';
 
 // ---------------------------------------------------------------------------
 // Workflow catalog — mirror of LIVE_WORKFLOWS in /killerapp/page.tsx.
@@ -202,14 +203,30 @@ export default function CompassWorkflowNav() {
     return `${href}${sep}project=${encodeURIComponent(projectId)}`;
   }, [projectId]);
 
-  // Filter all workflow rows by (a) lane and (b) search query. Lane gate:
-  // a row with no `roles` field is universal; a row with `roles` is hidden
-  // unless effectiveLane is in the list. While the lane is loading we
-  // render everything so the panel doesn't pop in.
+  // Filter all workflow rows by (a) lane and (b) search query.
+  //
+  // Lane gating consults TWO sources for backward compat:
+  //   1) the central `WORKFLOW_ROLES` map (via isWorkflowAllowedForLane) —
+  //      the source of truth shared by killerapp/page.tsx + NextWorkflowCard;
+  //   2) the inline `entry.roles` allowlist on a WorkflowEntry — legacy,
+  //      kept so existing entries with role overrides still work.
+  // A row passes lane gating if BOTH sources allow it (the more
+  // restrictive wins).
+  //
+  // While the lane is resolving (`laneLoading`) we render a skeleton
+  // placeholder rather than the full unfiltered list — otherwise a DIY
+  // user momentarily sees pro workflows flash in before they're filtered
+  // out. See `skeletonRows` below.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const byLane = (w: WorkflowEntry) =>
-      laneLoading || !w.roles || w.roles.length === 0 || w.roles.includes(effectiveLane);
+    const byLane = (w: WorkflowEntry) => {
+      if (laneLoading) return true; // Loading: don't filter; skeleton handles UX.
+      if (!isWorkflowAllowedForLane(w.id, effectiveLane)) return false;
+      if (w.roles && w.roles.length > 0 && !w.roles.includes(effectiveLane)) {
+        return false;
+      }
+      return true;
+    };
     const byQuery = (w: WorkflowEntry) =>
       !q ||
       w.label.toLowerCase().includes(q) ||
@@ -417,7 +434,58 @@ export default function CompassWorkflowNav() {
               minHeight: 80,
             }}
           >
-            {GROUPS.map((group) => {
+            {/* Lane-resolution skeleton (WORKFLOW-ROLES-NAV, 2026-05-22).
+                Renders 8 placeholder rows while useUserLane() is resolving
+                so a diy user never sees pro workflows flash in before
+                being filtered out. ~80-200ms in practice; never blocks
+                interaction past the first paint. */}
+            {laneLoading ? (
+              <div aria-label="Loading workflows" aria-busy="true" style={{ padding: '8px 10px' }}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 0',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 4,
+                        background: COLORS.fadedRule,
+                        opacity: 0.45,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div
+                        style={{
+                          height: 10,
+                          width: `${55 + ((i * 7) % 35)}%`,
+                          borderRadius: 3,
+                          background: COLORS.fadedRule,
+                          opacity: 0.55,
+                        }}
+                      />
+                      <div
+                        style={{
+                          height: 8,
+                          width: `${30 + ((i * 5) % 25)}%`,
+                          borderRadius: 3,
+                          background: COLORS.fadedRule,
+                          opacity: 0.35,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+            GROUPS.map((group) => {
               const rows = filtered.filter((w) => w.stage === group.stage);
               if (rows.length === 0) return null;
               // Stage 0 = the Ship 22 "Money" group. Ship 29 adds an
@@ -534,8 +602,8 @@ export default function CompassWorkflowNav() {
                   </ul>
                 </div>
               );
-            })}
-            {filtered.length === 0 && (
+            }))}
+            {!laneLoading && filtered.length === 0 && (
               <div
                 style={{
                   padding: '20px 12px',
