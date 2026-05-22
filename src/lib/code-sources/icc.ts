@@ -35,6 +35,7 @@
  *   residential  → IRC      (in CA: CRC = Title 24 Pt 2.5; R-3 SFD exempt from IBC)
  */
 
+import { z } from "zod";
 import type { CodeQuery, CodeSourceResult } from "./types";
 import { fetchPublisher, hasApiKey } from "./http-fetcher";
 
@@ -43,16 +44,41 @@ const ICC_API_BASE = process.env.ICC_API_BASE_URL || "https://api.iccsafe.org/v1
 const ICC_API_KEY_ENV = "ICC_API_KEY";
 
 /**
- * Shape we expect from the ICC API (or our stub) when live-mode succeeds.
- * Conservative — only fields we'll actually surface.
+ * Zod schema for ICC DigitalCodes section response.
+ *
+ * ICC does not publish an OpenAPI doc — this shape is reverse-engineered from
+ * (a) the JSON DigitalCodes serves to its own SPA when you watch network in
+ * devtools on a paid session, and (b) third-party integration writeups
+ * (UpCodes' migration notes, Hover's code-validation blog). Field names are
+ * inconsistent across editions; some endpoints return `text`, some `body`,
+ * some `content`. We accept all three and derive a single canonical `text`.
+ *
+ * All fields are optional because:
+ *   - Partial responses are valid when the user queried by section heading
+ *     only and ICC returns the metadata block without body text.
+ *   - We want parse to succeed even on a thin response so we can decide
+ *     downstream (in `queryIcc`) whether to fall back to citation-only.
  */
-interface IccApiResponse {
-  code: string;       // e.g. "NEC"
-  edition?: string;   // e.g. "2023"
-  section?: string;   // e.g. "210.52(C)(5)"
-  title?: string;
-  text?: string;      // The actual rule text
-  url?: string;       // Canonical publisher URL
+export const IccSectionResponseSchema = z.object({
+  title: z.string().optional(),
+  text: z.string().optional(),
+  body: z.string().optional(),
+  content: z.string().optional(),
+  url: z.string().url().optional(),
+  edition: z.string().optional(),
+  code: z.string().optional(),
+  code_id: z.string().optional(),
+  section: z.string().optional(),
+  chapter: z.string().optional(),
+});
+export type IccSectionResponse = z.infer<typeof IccSectionResponseSchema>;
+
+/**
+ * Derive the canonical rule-text string from a parsed response.
+ * Field-name variation tolerated: prefer `text`, then `body`, then `content`.
+ */
+function deriveText(parsed: IccSectionResponse): string {
+  return parsed.text || parsed.body || parsed.content || "";
 }
 
 /**
@@ -149,7 +175,7 @@ export async function queryIcc(query: CodeQuery): Promise<CodeSourceResult[]> {
   // Live mode: attempt fetch. On any failure, fall back to citation-only.
   try {
     const apiUrl = constructIccApiUrl(codeId, edition, query.section);
-    const fetched = await fetchPublisher<IccApiResponse>({
+    const fetched = await fetchPublisher<unknown>({
       url: apiUrl,
       apiKeyEnv: ICC_API_KEY_ENV,
       timeoutMs: 5000,
@@ -157,11 +183,39 @@ export async function queryIcc(query: CodeQuery): Promise<CodeSourceResult[]> {
       retryBaseDelayMs: 250,
     });
 
-    if (fetched.ok && fetched.data && fetched.data.text) {
-      const data = fetched.data;
+    if (fetched.ok && fetched.data) {
+      // Validate the raw response with Zod. A parse failure here means the
+      // publisher returned an unexpected shape — surface as warning + fall
+      // back to citation-only rather than crashing the orchestrator.
+      const parseResult = IccSectionResponseSchema.safeParse(fetched.data);
+      if (!parseResult.success) {
+        if (process.env.NODE_ENV !== "test") {
+          console.warn(
+            "ICC response failed schema validation:",
+            parseResult.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
+          );
+        }
+        return [buildPreviewResult(query, codeId, edition, userUrl)];
+      }
+
+      const data = parseResult.data;
+      const text = deriveText(data);
+
+      // Even on a successful parse the body fields may all be empty (ICC
+      // sometimes returns metadata-only for outline rows). Treat that as
+      // "no usable text retrieved" and fall back to citation-only so the
+      // badge doesn't flip to verified on an empty payload.
+      if (!text) {
+        if (process.env.NODE_ENV !== "test") {
+          console.warn("ICC response parsed but had no text/body/content");
+        }
+        return [buildPreviewResult(query, codeId, edition, userUrl)];
+      }
+
       const resolvedSection = data.section || query.section || "General";
       const resolvedEdition = data.edition || edition;
-      const citation = `${data.code || codeId} ${resolvedSection} (${resolvedEdition})`;
+      const resolvedCode = data.code || data.code_id || codeId;
+      const citation = `${resolvedCode} ${resolvedSection} (${resolvedEdition})`;
       return [
         {
           source: "icc-digital-codes",
@@ -169,7 +223,7 @@ export async function queryIcc(query: CodeQuery): Promise<CodeSourceResult[]> {
           section: resolvedSection,
           jurisdiction: query.jurisdiction,
           title: data.title || `${codeId} ${resolvedSection}`,
-          text: data.text ?? "",
+          text,
           citation,
           confidenceTier: "primary",
           retrievedAt: new Date().toISOString(),

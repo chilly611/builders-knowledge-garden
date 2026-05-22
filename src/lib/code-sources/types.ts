@@ -10,6 +10,14 @@ export type CodeSourceName =
   | "nfpa"
   | "local-amendment"
   /**
+   * UpCodes — third-party publisher with a public API and jurisdiction
+   * overlays for ICC content. Cheapest paid option with real API docs
+   * (https://up.codes/about/api). Acts as a substitute / supplement for the
+   * `icc-digital-codes` adapter when an ICC enterprise contract isn't yet
+   * in place. Same citation-only fallback semantics — no key → not verified.
+   */
+  | "upcodes"
+  /**
    * RAG over the local code corpus (knowledge_entities filtered to
    * entity_type IN ('building_code','code_section','safety_regulation',
    * 'standard'), or the dedicated building_codes table when present).

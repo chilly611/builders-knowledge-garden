@@ -22,6 +22,7 @@
  *   fire         → NFPA 1   (Fire Code)
  */
 
+import { z } from "zod";
 import type { CodeQuery, CodeSourceResult } from "./types";
 import { fetchPublisher, hasApiKey } from "./http-fetcher";
 
@@ -29,13 +30,30 @@ const NFPA_BASE_URL = "https://nfpa.org";
 const NFPA_API_BASE = process.env.NFPA_API_BASE_URL || "https://api.nfpa.org/v1";
 const NFPA_API_KEY_ENV = "NFPA_API_KEY";
 
-interface NfpaApiResponse {
-  standard: string;   // e.g. "NFPA 70"
-  edition?: string;   // e.g. "2023"
-  section?: string;
-  title?: string;
-  text?: string;
-  url?: string;
+/**
+ * Zod schema for NFPA Link section response.
+ *
+ * NFPA Link's enterprise API is not publicly documented. The shape below is
+ * derived from (a) the JSON nfpa.org/link serves to its SPA on a paid session
+ * and (b) public posts from RedVector and Brightly's integrations. Like ICC,
+ * NFPA varies between `text` and `body`; we accept both.
+ *
+ * All fields optional for the same reason as ICC: thin / metadata-only
+ * responses are valid, and we'd rather degrade to citation-only than crash.
+ */
+export const NfpaSectionResponseSchema = z.object({
+  title: z.string().optional(),
+  text: z.string().optional(),
+  body: z.string().optional(),
+  url: z.string().url().optional(),
+  standard: z.string().optional(),
+  section: z.string().optional(),
+  edition: z.string().optional(),
+});
+export type NfpaSectionResponse = z.infer<typeof NfpaSectionResponseSchema>;
+
+function deriveText(parsed: NfpaSectionResponse): string {
+  return parsed.text || parsed.body || "";
 }
 
 function getDisciplineStandard(discipline: string): string {
@@ -114,7 +132,7 @@ export async function queryNfpa(query: CodeQuery): Promise<CodeSourceResult[]> {
 
   try {
     const apiUrl = constructNfpaApiUrl(standard, edition, query.section);
-    const fetched = await fetchPublisher<NfpaApiResponse>({
+    const fetched = await fetchPublisher<unknown>({
       url: apiUrl,
       apiKeyEnv: NFPA_API_KEY_ENV,
       timeoutMs: 5000,
@@ -122,8 +140,28 @@ export async function queryNfpa(query: CodeQuery): Promise<CodeSourceResult[]> {
       retryBaseDelayMs: 250,
     });
 
-    if (fetched.ok && fetched.data && fetched.data.text) {
-      const data = fetched.data;
+    if (fetched.ok && fetched.data) {
+      const parseResult = NfpaSectionResponseSchema.safeParse(fetched.data);
+      if (!parseResult.success) {
+        if (process.env.NODE_ENV !== "test") {
+          console.warn(
+            "NFPA response failed schema validation:",
+            parseResult.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
+          );
+        }
+        return [buildPreviewResult(query, standard, edition, userUrl)];
+      }
+
+      const data = parseResult.data;
+      const text = deriveText(data);
+
+      if (!text) {
+        if (process.env.NODE_ENV !== "test") {
+          console.warn("NFPA response parsed but had no text/body");
+        }
+        return [buildPreviewResult(query, standard, edition, userUrl)];
+      }
+
       const resolvedSection = data.section || query.section || "General";
       const resolvedEdition = data.edition || edition;
       const resolvedStandard = data.standard || standard;
@@ -135,7 +173,7 @@ export async function queryNfpa(query: CodeQuery): Promise<CodeSourceResult[]> {
           section: resolvedSection,
           jurisdiction: query.jurisdiction,
           title: data.title || `${resolvedStandard} ${resolvedSection}`,
-          text: data.text ?? "",
+          text,
           citation,
           confidenceTier: "primary",
           retrievedAt: new Date().toISOString(),
