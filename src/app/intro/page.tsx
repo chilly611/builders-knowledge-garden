@@ -51,19 +51,19 @@ const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 //   Act 1 (index 0) trimmed 8s → 6s (2026-05-19): both typewriters finish
 //     around 4s, so 8s left 4s of dead hold. 6s gives ~1.5s of breathing
 //     room after the second line lands.
-//   Act 2 (index 1) trimmed 12s → 8s (2026-05-21 AM, Chilly): tighter pacing
-//     across Acts 2/3/4. Vignette interval drops 2.8s → 2.0s to match
-//     (4 × 2s = 8s).
-//   Act 3 (index 2) trimmed 22s → 11s (2026-05-21 AM, Chilly): roughly half
-//     the prior length + sliding-window card animation for a "hyper-speed
-//     feed" feel. Cards re-timed to 1/2.5/4/6/8s; the final Journey card
-//     gets ~3s of read-time before the auto-advance.
-//   Act 4 (index 3) was user-controlled (Continue button) — flipped to
-//     auto-advance at 14s (2026-05-21 AM, Chilly). 14s gives the iframe
-//     time to mount + breathe before the cinematic moves on. "Open full
-//     app in new tab" link is still present for investors who want to
-//     escape into the real product.
-const ACT_DURATIONS_MS = [6000, 8000, 11000, 14000, 12000];
+//   Act 2 (index 1) trimmed 12s → 8s → 10s (2026-05-21 AM, Chilly):
+//     intermediate 8s left vignette 4's long "sequence, schedule…" title
+//     unreadable. Back up to 10s with the vignette interval still 2s, so
+//     vignettes 1-3 get 2s each and vignette 4 holds for 4s.
+//   Act 3 (index 2) rewritten 2026-05-22 AM (Chilly): multi-input modality
+//     panel (voice → sketch → blueprint → excel). 11s → 13s to fit the 4
+//     input events. Cards re-timed to land alongside each input.
+//   Act 4 (index 3) rewritten 2026-05-22 AM (Chilly): scripted cinematic
+//     budget animation (numbers type in, hero number scales, page
+//     auto-scrolls) instead of the live iframe — "nobody scrolls a
+//     cinematic for themselves." 14s. "Open full app in new tab" still
+//     present as escape hatch.
+const ACT_DURATIONS_MS = [6000, 10000, 13000, 14000, 12000];
 const TOTAL_ACTS = 5;
 
 // — Garden Logo (with SVG fallback) ————————————————————————————————————
@@ -546,6 +546,16 @@ function WhiteboardArt() {
 }
 
 // — ACT 3: #aikidotheAI ————————————————————————————————————————————————
+// 2026-05-22 AM (Chilly): rewrite of the left panel from "one voice
+// transcript" to "four input modalities accumulating" — voice transcript,
+// then a sketch upload, then a blueprint upload, then an Excel upload.
+// Each input module appears in sequence to show the platform ingesting
+// diverse artifact types (the killer-app idea: contractors don't speak
+// alone — they sketch, they email blueprints, they wrangle Excel). Right
+// pane keeps the sliding-window card stream from yesterday, but cards are
+// re-timed so each one materializes just after its triggering input.
+// Total Act 3 stretched 11s → 13s to fit the 4 input events without
+// rushing.
 function Act3Aikido({ reduced }: { reduced: boolean }) {
   const fullTranscript =
     "I want to build a custom modern farmhouse in Marin. 1,800 square feet. 3 bed 2 bath. Slab on grade. Late summer 2026.";
@@ -555,9 +565,6 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
     if (reduced) { setChars(fullTranscript.length); return; }
     let i = 0;
     const tick = setInterval(() => {
-      // 2026-05-21 AM (Chilly): increment 2 → 4 per 80ms tick so the
-      // ~150-char transcript types in ~1.5s instead of ~5s. Matches the
-      // act-wide "hyper-speed" feel.
       i += 4;
       setChars((c) => {
         if (c >= fullTranscript.length) {
@@ -570,19 +577,26 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
     return () => clearInterval(tick);
   }, [reduced]);
 
-  // Schedule of right-panel cards. Cards appear at offsets in seconds.
-  // 2026-05-21 AM (Chilly): re-timed alongside the 22s → 11s act-duration
-  // trim. Cards land at 1/2.5/4/6/8s so the Journey card has ~3s of
-  // read-time before auto-advance to Act 4. Pairs with the sliding-window
-  // render below (only the latest 2 cards visible at any time — older ones
-  // fade and drift upward as new ones populate, for the "hyper-speed feed"
-  // feel Chilly asked for).
+  // Four input modalities, accumulating left-to-right (top-to-bottom in
+  // the panel). Each appears at its `at` offset. Voice is at 0 and
+  // contains the live transcript above; the other three are upload-style
+  // modules with a filename + an inline SVG artifact representation.
+  const inputs: Array<{ at: number; key: string; kind: 'voice' | 'sketch' | 'blueprint' | 'excel'; filename?: string }> = useMemo(() => [
+    { at: 0,   key: 'voice',     kind: 'voice' },
+    { at: 2.8, key: 'sketch',    kind: 'sketch',    filename: 'marin-floorplan-rough.jpg' },
+    { at: 5.0, key: 'blueprint', kind: 'blueprint', filename: 'foundation-plan-v3.dwg' },
+    { at: 7.2, key: 'excel',     kind: 'excel',     filename: 'preliminary-budget.xlsx' },
+  ], []);
+
+  // Right-panel cards — re-timed so each lands ~1.0-1.5s after the input
+  // that triggered it. Pattern: Voice → Project, Sketch → Estimate,
+  // Blueprint → Code, Excel → Contract, Final-beat → Journey synthesis.
   const cards: Array<{ at: number; render: () => React.ReactNode; key: string }> = useMemo(() => [
-    { at: 1,   key: 'project',  render: () => <CardProject /> },
-    { at: 2.5, key: 'estimate', render: () => <CardEstimate /> },
-    { at: 4,   key: 'code',     render: () => <CardCode /> },
-    { at: 6,   key: 'contract', render: () => <CardContract /> },
-    { at: 8,   key: 'journey',  render: () => <CardJourney /> },
+    { at: 1.5,  key: 'project',  render: () => <CardProject /> },
+    { at: 4.0,  key: 'estimate', render: () => <CardEstimate /> },
+    { at: 6.5,  key: 'code',     render: () => <CardCode /> },
+    { at: 9.0,  key: 'contract', render: () => <CardContract /> },
+    { at: 11.0, key: 'journey',  render: () => <CardJourney /> },
   ], []);
 
   const [elapsed, setElapsed] = useState(0);
@@ -615,7 +629,7 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
           <span style={{ color: COLORS.ink }}>AI</span>
         </h2>
         <p style={{ marginTop: 8, fontSize: 15, color: COLORS.graphite, maxWidth: 640, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>
-          Voice in. Estimate, code, contract, schedule out. The platform does the parsing.
+          Voice, sketches, blueprints, spreadsheets — whatever you have. Estimate, code, contract, schedule out. The platform does the parsing.
         </p>
       </div>
 
@@ -626,50 +640,39 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
         width: 'min(1080px, 92vw)',
         maxWidth: '100%',
       }}>
-        {/* LEFT: mic + transcript */}
-        <div style={voicePanel}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <MicPulse reduced={reduced} />
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: CHROME.warm, textTransform: 'uppercase' }}>
-              Listening
-            </span>
-          </div>
-          <p style={transcriptStyle}>
-            {fullTranscript.slice(0, chars)}
-            <span style={{
-              display: 'inline-block', width: 7, height: 22, marginLeft: 2,
-              background: COLORS.ink, verticalAlign: 'text-bottom',
-              animation: reduced ? 'none' : 'bkg-caret 0.9s steps(2) infinite',
-            }} />
-          </p>
+        {/* LEFT: input modalities accumulate as new ones arrive. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+            <AnimatePresence>
+              {inputs.filter((i) => elapsed >= i.at).map((input) => (
+                <motion.div
+                  key={input.key}
+                  initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 18, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: reduced ? 0 : 0.5, ease: 'easeOut' }}
+                >
+                  {input.kind === 'voice' ? (
+                    <VoiceInputModule chars={chars} fullTranscript={fullTranscript} reduced={reduced} />
+                  ) : (
+                    <UploadInputModule kind={input.kind} filename={input.filename ?? ''} reduced={reduced} />
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
         </div>
 
-        {/* RIGHT: cards stream in. 2026-05-21 AM (Chilly): switched from a
-            stack-everything render to a sliding window of the latest 2
-            cards. New cards rise in from the bottom (y: 30 → 0); when a
-            third arrives, the oldest exits upward (y: 0 → -40) and fades
-            out. The trailing card in the visible window dims to 0.55 to
-            keep emphasis on the newest. Result is a "hyper-speed feed"
-            feel that matches the halved Act 3 duration. The Journey card
-            (final) is never displaced — Act 3 ends before a 6th card
-            could enter, so AnimatePresence holds it through the act
-            transition. */}
+        {/* RIGHT: cards stream in. Sliding window of 2 visible cards
+            (oldest drifts up + fades as new ones populate). Reduced
+            motion: show all visible cards. */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
           gap: 14,
           minWidth: 0,
-          // Stable height prevents the layout from jumping as cards enter
-          // and exit. Two cards × ~80px each + gap ≈ 175px; padding for
-          // exit-translate room.
           minHeight: 220,
         }}>
           <AnimatePresence>
             {cards
               .filter((c) => elapsed >= c.at)
-              // Reduced motion: show all visible cards (no sliding
-              // window). Normal motion: latest 2 only — older ones exit
-              // upward as new ones populate.
               .slice(reduced ? 0 : -2)
               .map((card, idx, arr) => {
                 const isLatest = idx === arr.length - 1;
@@ -703,6 +706,137 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
         }
       `}</style>
     </motion.section>
+  );
+}
+
+// Voice input module — the mic + the live transcript. Used as the first
+// of four input modalities in Act 3.
+function VoiceInputModule({ chars, fullTranscript, reduced }: { chars: number; fullTranscript: string; reduced: boolean }) {
+  const done = chars >= fullTranscript.length;
+  return (
+    <div style={voicePanel}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <MicPulse reduced={reduced} />
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: CHROME.warm, textTransform: 'uppercase' }}>
+          {done ? 'Voice captured ✓' : 'Listening'}
+        </span>
+      </div>
+      <p style={{ ...transcriptStyle, fontSize: 15 }}>
+        {fullTranscript.slice(0, chars)}
+        <span style={{
+          display: 'inline-block', width: 6, height: 18, marginLeft: 2,
+          background: COLORS.ink, verticalAlign: 'text-bottom',
+          opacity: done ? 0 : 1,
+          animation: reduced || done ? 'none' : 'bkg-caret 0.9s steps(2) infinite',
+        }} />
+      </p>
+    </div>
+  );
+}
+
+// Upload input module — used for sketch, blueprint, excel. Each has a
+// distinct mini-art SVG, a filename, and an "Uploaded ✓" indicator.
+function UploadInputModule({ kind, filename, reduced }: { kind: 'sketch' | 'blueprint' | 'excel'; filename: string; reduced: boolean }) {
+  const meta = {
+    sketch:    { label: 'Sketch uploaded',    accent: CHROME.warmB, art: <UploadArtSketch /> },
+    blueprint: { label: 'Blueprint uploaded', accent: CHROME.warm,  art: <UploadArtBlueprint /> },
+    excel:     { label: 'Excel uploaded',     accent: CHROME.green, art: <UploadArtExcel /> },
+  }[kind];
+  return (
+    <div style={{
+      padding: '12px 14px',
+      borderRadius: 12,
+      background: '#fff',
+      border: `1px solid ${COLORS.rule}`,
+      borderLeft: `3px solid ${meta.accent}`,
+      display: 'flex', alignItems: 'center', gap: 12,
+      minWidth: 0,
+    }}>
+      <div style={{
+        flexShrink: 0,
+        width: 44, height: 44, borderRadius: 8,
+        background: 'rgba(15,15,17,0.04)',
+        border: `1px solid ${COLORS.rule}`,
+        display: 'grid', placeItems: 'center',
+      }}>
+        {meta.art}
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: '0.1em',
+          color: meta.accent, textTransform: 'uppercase',
+        }}>
+          {meta.label}
+        </div>
+        <div style={{
+          fontSize: 12, fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
+          color: COLORS.graphite, marginTop: 2,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {filename}
+        </div>
+      </div>
+      <motion.span
+        initial={reduced ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: reduced ? 0 : 0.4, delay: reduced ? 0 : 0.25, ease: 'backOut' }}
+        style={{ flexShrink: 0, fontSize: 18, color: CHROME.green, fontWeight: 700 }}
+        aria-hidden
+      >
+        ✓
+      </motion.span>
+    </div>
+  );
+}
+
+// Mini SVG artifacts for the upload modules. Each ~28x28 inside a 44x44
+// tile. Kept simple so they read at this size.
+function UploadArtSketch() {
+  return (
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden>
+      {/* Rough rectangle "floorplan" with a couple interior walls */}
+      <g fill="none" stroke={COLORS.ink} strokeWidth="1.5" strokeLinecap="round">
+        <path d="M5 6 L27 6 L27 26 L5 26 Z" strokeDasharray="0" transform="rotate(-2 16 16)" />
+        <path d="M16 6 L16 18" strokeWidth="1.2" />
+        <path d="M16 18 L27 18" strokeWidth="1.2" />
+        <path d="M9 22 L13 22" strokeWidth="1.6" stroke={CHROME.warm} />
+      </g>
+    </svg>
+  );
+}
+function UploadArtBlueprint() {
+  return (
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden>
+      {/* Technical grid + a dimensioned frame */}
+      <g stroke="rgba(15,15,17,0.20)" strokeWidth="0.6">
+        <line x1="0" y1="8" x2="32" y2="8" />
+        <line x1="0" y1="16" x2="32" y2="16" />
+        <line x1="0" y1="24" x2="32" y2="24" />
+        <line x1="8" y1="0" x2="8" y2="32" />
+        <line x1="16" y1="0" x2="16" y2="32" />
+        <line x1="24" y1="0" x2="24" y2="32" />
+      </g>
+      <rect x="6" y="8" width="20" height="14" fill="none" stroke={COLORS.ink} strokeWidth="1.6" />
+      <line x1="6" y1="6" x2="26" y2="6" stroke={CHROME.warm} strokeWidth="1" />
+      <line x1="6" y1="4" x2="6" y2="8" stroke={CHROME.warm} strokeWidth="1" />
+      <line x1="26" y1="4" x2="26" y2="8" stroke={CHROME.warm} strokeWidth="1" />
+    </svg>
+  );
+}
+function UploadArtExcel() {
+  return (
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden>
+      {/* Spreadsheet — header row + 3 data rows */}
+      <rect x="4" y="5" width="24" height="22" fill="#fff" stroke={COLORS.ink} strokeWidth="1.2" rx="1" />
+      <rect x="4" y="5" width="24" height="5" fill={CHROME.green} />
+      <line x1="4" y1="14" x2="28" y2="14" stroke={COLORS.rule} strokeWidth="0.8" />
+      <line x1="4" y1="20" x2="28" y2="20" stroke={COLORS.rule} strokeWidth="0.8" />
+      <line x1="12" y1="10" x2="12" y2="27" stroke={COLORS.rule} strokeWidth="0.8" />
+      <line x1="20" y1="10" x2="20" y2="27" stroke={COLORS.rule} strokeWidth="0.8" />
+      <text x="6" y="18" fontSize="3.5" fill={COLORS.graphite} fontFamily="ui-monospace">86k</text>
+      <text x="14" y="18" fontSize="3.5" fill={COLORS.graphite} fontFamily="ui-monospace">142k</text>
+      <text x="22" y="18" fontSize="3.5" fill={COLORS.graphite} fontFamily="ui-monospace">71k</text>
+    </svg>
   );
 }
 
@@ -832,19 +966,100 @@ function CardJourney() {
   );
 }
 
-// — ACT 4: Live killer app ————————————————————————————————————————————
-// 2026-05-21 AM (Chilly): removed the `Continue →` button — Act 4 now
-// auto-advances at 14s like every other act. Kept the "Open full app in
-// new tab" ghost link so investors who want to actually use the budget can
-// escape the cinematic without losing it. The "Hover the categories →"
-// floating hint still appears for the first 6.5s.
+// — ACT 4: Cinematic budget ————————————————————————————————————————————
+// 2026-05-22 AM (Chilly): replaced the live /killerapp/budget iframe with
+// a fully-scripted cinematic budget mockup. The original iframe required
+// investor interaction (scroll, hover) to reveal the platform — but
+// "nobody scrolls a cinematic for themselves." This rewrite animates the
+// platform AS IF a hyper-speed power user were driving:
+//   0.0-1.0s   Header fades in (project + jurisdiction)
+//   1.0-2.5s   Hero total types in: $0 → $905,000
+//   2.8-7.0s   10 category cards cascade in, dollar amounts type per card
+//   7.0-9.5s   Page auto-scrolls down through the category list
+//   9.5-12.5s  Hero total scales 1.0 → 1.4 → 0.85 → 1.0 (emphasis pulse)
+//   12.5-14s   Contract amount banner highlights + holds
+// "Open full app in new tab" CTA still present (now linking out to the
+// real /killerapp/budget so investors who want to actually use the
+// product can escape into it).
+// Categories rebalanced 2026-05-22 to sum to exactly $905,000 (the
+// canonical Marin farmhouse midpoint per DEMO-MAY20-PLAN). Percentages
+// are roughly real-world residential GC: shell ~45%, systems ~12%,
+// finishes ~35%, soft ~8%.
+const BUDGET_CATEGORIES: Array<{ label: string; amount: number; group: 'shell' | 'systems' | 'finishes' | 'soft' }> = [
+  { label: 'Foundation',             amount: 110000, group: 'shell'    },
+  { label: 'Framing',                amount: 165000, group: 'shell'    },
+  { label: 'Title 24 envelope',      amount: 78000,  group: 'shell'    },
+  { label: 'MEP rough-in',           amount: 112000, group: 'systems'  },
+  { label: 'Roofing',                amount: 58000,  group: 'shell'    },
+  { label: 'Exterior finishes',      amount: 82000,  group: 'finishes' },
+  { label: 'Interior finishes',      amount: 125000, group: 'finishes' },
+  { label: 'Fixtures + appliances',  amount: 56000,  group: 'finishes' },
+  { label: 'Permits + soft costs',   amount: 42000,  group: 'soft'     },
+  { label: 'Contingency (8%)',       amount: 77000,  group: 'soft'     },
+];
+const BUDGET_TOTAL = BUDGET_CATEGORIES.reduce((s, c) => s + c.amount, 0); // = $905,000
+
+function formatUsd(n: number, withDollar = true): string {
+  const sign = withDollar ? '$' : '';
+  return sign + Math.round(n).toLocaleString('en-US');
+}
+
+// Pure: returns the current count-up value at the given `elapsedSec`,
+// animating 0 → target between `startAt` and `startAt + durationSec`.
+// Ease-out-quart for a "fast at first, settles" feel. Pure so it can be
+// called inside .map() — React Hooks rules don't apply.
+function countUpValue(target: number, durationSec: number, startAt: number, elapsedSec: number): number {
+  if (elapsedSec < startAt) return 0;
+  if (elapsedSec >= startAt + durationSec) return target;
+  const p = (elapsedSec - startAt) / durationSec;
+  const eased = 1 - Math.pow(1 - p, 4);
+  return target * eased;
+}
+
 function Act4LiveBudget() {
-  const src = `/killerapp/budget?project=${DEMO_PROJECT_ID}&hideShell=1`;
-  const [showPrompt, setShowPrompt] = useState(true);
+  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
-    const t = setTimeout(() => setShowPrompt(false), 6500);
-    return () => clearTimeout(t);
+    const start = performance.now();
+    // 33ms ≈ 30fps. Smooth enough for the number-count and scroll, light
+    // enough on React re-renders (a 14s act × 30fps = ~420 renders).
+    const id = window.setInterval(() => setElapsed((performance.now() - start) / 1000), 33);
+    return () => window.clearInterval(id);
   }, []);
+
+  // Hero total counts up 1.0 → 2.5s (1.5s duration)
+  const heroVal = countUpValue(BUDGET_TOTAL, 1.5, 1.0, elapsed);
+
+  // Hero scale animation (emphasis pulse) 9.5-12.5s
+  let heroScale = 1;
+  if (elapsed >= 9.5 && elapsed < 10.5) {
+    heroScale = 1 + 0.4 * (elapsed - 9.5);  // 1.0 → 1.4
+  } else if (elapsed >= 10.5 && elapsed < 11.5) {
+    heroScale = 1.4 - 0.55 * (elapsed - 10.5);  // 1.4 → 0.85
+  } else if (elapsed >= 11.5 && elapsed < 12.5) {
+    heroScale = 0.85 + 0.15 * (elapsed - 11.5);  // 0.85 → 1.0
+  } else if (elapsed >= 12.5) {
+    heroScale = 1;
+  }
+
+  // Each category card has its own appearance time + count-up timing.
+  // Cards cascade from 2.8s to 7.0s — 10 cards × 0.42s gap.
+  const cardSchedule = BUDGET_CATEGORIES.map((c, i) => ({
+    ...c,
+    appearAt: 2.8 + i * 0.42,
+  }));
+
+  // Auto-scroll y-offset: 7.0s → 9.5s shifts the category list up by 180px
+  // to reveal the lower cards near the top, then holds.
+  let scrollY = 0;
+  if (elapsed >= 7.0 && elapsed < 9.5) {
+    scrollY = -180 * ((elapsed - 7.0) / 2.5);
+  } else if (elapsed >= 9.5) {
+    scrollY = -180;
+  }
+
+  // Contract amount banner pulses 12.5s → 14s
+  const showContractPulse = elapsed >= 12.5;
+
   return (
     <motion.section
       key="act4"
@@ -857,84 +1072,209 @@ function Act4LiveBudget() {
         background: COLORS.paper,
         display: 'flex', flexDirection: 'column',
       }}
-      aria-label="Act 4: live killer app"
+      aria-label="Act 4: cinematic budget"
     >
-      <div className="bkg-intro-act4-header" style={{ padding: '64px 40px 12px', textAlign: 'center' }}>
-        <p style={eyebrow(COLORS.faded)}>THE ACTUAL PRODUCT — RIGHT NOW</p>
-        <h2 style={{ ...h2Style, marginTop: 4, fontSize: 'clamp(22px, 3vw, 32px)' }}>
-          You can use it. Real data. Live route.
+      <div className="bkg-intro-act4-header" style={{ padding: '54px 40px 8px', textAlign: 'center' }}>
+        <p style={eyebrow(COLORS.faded)}>THE PLATFORM, AT HYPER-SPEED</p>
+        <h2 style={{ ...h2Style, marginTop: 4, fontSize: 'clamp(22px, 3vw, 30px)' }}>
+          Watch a $905k farmhouse come together in fourteen seconds.
         </h2>
       </div>
-      <div className="bkg-intro-act4-iframe-wrap" style={{ flex: 1, position: 'relative', padding: '12px 40px 24px', minHeight: 0 }}>
+
+      {/* The "screen" — a faux killer-app budget surface that animates. */}
+      <div className="bkg-intro-act4-canvas" style={{
+        flex: 1, position: 'relative', padding: '16px 40px 8px', minHeight: 0,
+        display: 'flex', justifyContent: 'center',
+      }}>
         <div style={{
-          position: 'relative', width: '100%', height: '100%',
-          border: `1px solid ${COLORS.rule}`, borderRadius: 14, overflow: 'hidden',
+          width: 'min(820px, 100%)', height: '100%',
           background: '#fff',
+          border: `1px solid ${COLORS.rule}`,
+          borderRadius: 14,
           boxShadow: '0 12px 48px rgba(15,15,17,0.08)',
+          overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
         }}>
-          <iframe
-            src={src}
-            title="Builder's Garden — Marin farmhouse budget (live)"
-            style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-            loading="eager"
-          />
-          {showPrompt && (
+          {/* Browser-chrome strip */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 14px',
+            borderBottom: `1px solid ${COLORS.rule}`,
+            background: 'rgba(15,15,17,0.025)',
+          }}>
+            <span style={{ width: 10, height: 10, borderRadius: 5, background: '#E8443A', opacity: 0.6 }} />
+            <span style={{ width: 10, height: 10, borderRadius: 5, background: '#E8B53A', opacity: 0.6 }} />
+            <span style={{ width: 10, height: 10, borderRadius: 5, background: '#3AE863', opacity: 0.6 }} />
+            <span style={{ marginLeft: 10, fontSize: 11, color: COLORS.faded, fontFamily: 'ui-monospace, Menlo, monospace' }}>
+              builders.theknowledgegardens.com/killerapp/budget
+            </span>
+          </div>
+
+          {/* App content */}
+          <div style={{ flex: 1, padding: '20px 28px', overflow: 'hidden', position: 'relative' }}>
+            {/* Header */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: elapsed >= 0.1 ? 1 : 0, y: elapsed >= 0.1 ? 0 : -8 }}
+              transition={{ duration: 0.5 }}
+              style={{ marginBottom: 14 }}
+            >
+              <div style={{
+                fontSize: 12, fontWeight: 700, letterSpacing: '0.1em',
+                color: COLORS.faded, textTransform: 'uppercase',
+              }}>
+                Modern farmhouse in Marin
+              </div>
+              <div style={{ fontSize: 13, color: COLORS.graphite, marginTop: 2 }}>
+                Marin County, CA · 1,800 sf · slab on grade · Q3 2026
+              </div>
+            </motion.div>
+
+            {/* Hero total */}
+            <motion.div
+              animate={{ scale: heroScale }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
               style={{
-                position: 'absolute', top: 18, left: 18,
-                padding: '8px 14px', borderRadius: 999,
-                background: 'rgba(15,15,17,0.86)', color: '#fff',
-                fontSize: 12, fontWeight: 600, letterSpacing: '0.04em',
-                pointerEvents: 'none',
+                textAlign: 'center', margin: '8px 0 20px',
+                transformOrigin: 'center center',
               }}
             >
-              Hover the categories →
+              <div style={{
+                fontSize: 11, fontWeight: 800, letterSpacing: '0.14em',
+                color: COLORS.faded, textTransform: 'uppercase', marginBottom: 4,
+              }}>
+                Midpoint estimate
+              </div>
+              <div style={{
+                fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
+                fontSize: 'clamp(36px, 6vw, 64px)',
+                color: COLORS.ink,
+                lineHeight: 1,
+                letterSpacing: '-0.02em',
+              }}>
+                {formatUsd(heroVal)}
+              </div>
             </motion.div>
-          )}
+
+            {/* Category list — wrapped in a translate-Y motion.div for
+                the auto-scroll. */}
+            <motion.div
+              animate={{ y: scrollY }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8,
+              }}
+            >
+              {cardSchedule.map((c) => {
+                const visible = elapsed >= c.appearAt;
+                const amountVal = countUpValue(c.amount, 0.6, c.appearAt + 0.05, elapsed);
+                return (
+                  <motion.div
+                    key={c.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 10 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '10px 12px',
+                      border: `1px solid ${COLORS.rule}`,
+                      borderLeft: `3px solid ${
+                        c.group === 'shell'    ? CHROME.warmB :
+                        c.group === 'systems'  ? CHROME.warm :
+                        c.group === 'finishes' ? CHROME.green :
+                                                 COLORS.graphite
+                      }`,
+                      borderRadius: 8,
+                      background: '#fff',
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: COLORS.ink, fontWeight: 600 }}>
+                      {c.label}
+                    </span>
+                    <span style={{
+                      fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
+                      fontSize: 12, color: COLORS.graphite, fontWeight: 600,
+                    }}>
+                      {visible ? formatUsd(amountVal) : '—'}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Contract amount banner — pulses at the end */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{
+                opacity: showContractPulse ? 1 : 0,
+                y: showContractPulse ? 0 : 16,
+                boxShadow: showContractPulse
+                  ? ['0 0 0 0 rgba(232,68,58,0)', '0 0 0 8px rgba(232,68,58,0.18)', '0 0 0 0 rgba(232,68,58,0)']
+                  : '0 0 0 0 rgba(232,68,58,0)',
+              }}
+              transition={{ duration: 0.6, ease: 'easeOut', boxShadow: { duration: 1.2, repeat: Infinity } }}
+              style={{
+                marginTop: 14,
+                padding: '12px 16px',
+                background: 'rgba(232, 68, 58, 0.06)',
+                border: `1px solid rgba(232, 68, 58, 0.3)`,
+                borderLeft: `4px solid ${CHROME.red}`,
+                borderRadius: 10,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                position: 'absolute', bottom: 20, left: 28, right: 28,
+              }}
+            >
+              <div>
+                <div style={{
+                  fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
+                  color: CHROME.red, textTransform: 'uppercase',
+                }}>
+                  Contract amount · auto-populated
+                </div>
+                <div style={{
+                  fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
+                  fontSize: 22, color: COLORS.ink, marginTop: 2,
+                }}>
+                  $905,000
+                </div>
+              </div>
+              <div style={{
+                fontSize: 11, color: COLORS.graphite,
+                textAlign: 'right', lineHeight: 1.3,
+              }}>
+                Modern farmhouse · Marin<br/>
+                Client Agreement drafted
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
-      {/* 2026-05-21 AM: Continue button removed (Act 4 auto-advances now).
-          Single ghost link "Open full app in a new tab" remains — investors
-          who want to actually use the budget can pop it out without losing
-          the cinematic. paddingBottom kept at 80 so the bar clears the
-          floating ActIndicator (position: fixed, bottom: 24, ~40px tall).
-          zIndex 5 keeps the CTA above other overlapping chrome. */}
+
+      {/* Bottom CTA: still let investors escape into the real product */}
       <div className="bkg-intro-act4-cta" style={{
-        padding: '16px 40px 80px',
+        padding: '12px 40px 80px',
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
         flexWrap: 'wrap',
         position: 'relative',
         zIndex: 5,
       }}>
         <Link href={`/killerapp/budget?project=${DEMO_PROJECT_ID}`} style={ctaGhost} target="_blank">
-          Open full app in a new tab
+          Open the real budget in a new tab
         </Link>
       </div>
 
-      {/* Mobile fixes 2026-05-20:
-          - Trim the 64px top header padding (it ate a third of the phone
-            viewport before the iframe even rendered).
-          - Tighten side padding so the iframe actually has room.
-          - Stack the Continue + ghost-link bar vertically AND pad-bottom
-            enough to clear the floating ActIndicator pill (which sits at
-            bottom: 24 and is ~40px tall). Without this, investors on
-            mobile literally cannot reach Act 5.
-          - Cap the iframe wrap height so the CTA bar can't be pushed below
-            the fold by a tall iframe payload. */}
       <style jsx global>{`
         @media (max-width: 768px) {
           .bkg-intro-act4-header {
-            padding: 28px 18px 8px !important;
+            padding: 28px 18px 6px !important;
           }
-          .bkg-intro-act4-iframe-wrap {
-            padding: 8px 12px 12px !important;
+          .bkg-intro-act4-canvas {
+            padding: 8px 12px 8px !important;
           }
           .bkg-intro-act4-cta {
-            padding: 12px 16px 88px !important;
+            padding: 8px 16px 88px !important;
             flex-direction: column !important;
             gap: 10px !important;
           }
