@@ -1,0 +1,44 @@
+{
+  "$schema": "internal",
+  "notes": [
+    "Default CSI division → QuickBooks GL account mapping for IIF/CSV export.",
+    "GC firms with custom charts of accounts should override at the org level.",
+    "Numbers follow the AICPA construction-industry standard 5000-series COGS range.",
+    "Add 9999 fallback to keep IIF exports valid when a line item has no CSI tag."
+  ],
+  "default": {
+    "income": { "account": "4000", "name": "Construction Income" },
+    "ar":     { "account": "1200", "name": "Accounts Receivable" },
+    "ap":     { "account": "2000", "name": "Accounts Payable" },
+    "bank":   { "account": "1000", "name": "Operating Bank" },
+    "retainage_receivable": { "account": "1250", "name": "Retainage Receivable" },
+    "retainage_payable":    { "account": "2050", "name": "Retainage Payable" },
+    "fallback_cogs":        { "account": "5999", "name": "COGS - Uncategorized" }
+  },
+  "csi": {
+    "01": { "account": "5100", "name": "COGS - General Requirements" },
+    "02": { "account": "5200", "name": "COGS - Site Construction" },
+    "03": { "account": "5300", "name": "COGS - Concrete" },
+    "04": { "account": "5400", "name": "COGS - Masonry" },
+    "05": { "account": "5500", "name": "COGS - Metals" },
+    "06": { "account": "5600", "name": "COGS - Wood & Plastics" },
+    "07": { "account": "5700", "name": "COGS - Thermal & Moisture" },
+    "08": { "account": "5800", "name": "COGS - Doors & Windows" },
+    "09": { "account": "5900", "name": "COGS - Finishes" },
+    "10": { "account": "6000", "name": "COGS - Specialties" },
+    "11": { "account": "6100", "name": "COGS - Equipment" },
+    "12": { "account": "6200", "name": "COGS - Furnishings" },
+    "13": { "account": "6300", "name": "COGS - Special Construction" },
+    "14": { "account": "6400", "name": "COGS - Conveying Systems" },
+    "15": { "account": "6500", "name": "COGS - Mechanical (Plumbing/HVAC)" },
+    "16": { "account": "6600", "name": "COGS - Electrical" },
+    "21": { "account": "6700", "name": "COGS - Fire Suppression" },
+    "22": { "account": "6800", "name": "COGS - Plumbing (MasterFormat 2004+)" },
+    "23": { "account": "6850", "name": "COGS - HVAC (MasterFormat 2004+)" },
+    "26": { "account": "6900", "name": "COGS - Electrical (MasterFormat 2004+)" },
+    "27": { "account": "6950", "name": "COGS - Communications" },
+    "31": { "account": "5210", "name": "COGS - Earthwork" },
+    "32": { "account": "5220", "name": "COGS - Exterior Improvements" },
+    "33": { "account": "5230", "name": "COGS - Utilities" }
+  }
+}

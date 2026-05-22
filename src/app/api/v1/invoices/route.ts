@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { getAuthUser, unauthorizedResponse } from '@/lib/auth-server';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+
+/**
+ * /api/v1/invoices — AR/AP invoice CRUD over the union-schema invoices table.
+ *
+ * 2026-05-22 BOOKKEEPER-UI hardening:
+ *   - Bearer-token auth on all verbs (was previously wide open with the
+ *     service-role key — fixed inline today). Same SEC2 pattern as
+ *     /api/v1/rfis.
+ *   - createInvoice / updateInvoice now forward the union-schema columns
+ *     (direction, invoice_number, vendor_id, total_amount, invoice_date,
+ *     due_date, subtotal, tax_amount, amount_paid, notes) so the AR/AP
+ *     ledger can read them back without column-not-found errors.
+ *   - PDF generation still uses the legacy AIA G702/G703 fields for the
+ *     draw-request flow — those continue to work because the union schema
+ *     keeps both column sets present (SCHEMA-ALPHA).
+ */
 
 // Type definitions
 interface InvoiceLineItem {
@@ -267,7 +284,19 @@ async function listInvoices(
 }
 
 // Create new invoice
-async function createInvoice(body: Partial<Invoice>): Promise<Invoice> {
+async function createInvoice(body: Partial<Invoice> & {
+  direction?: string;
+  invoice_number?: string;
+  vendor_id?: string | null;
+  invoice_date?: string;
+  due_date?: string | null;
+  total_amount?: number;
+  subtotal?: number;
+  tax_amount?: number;
+  amount_paid?: number;
+  user_id?: string;
+  notes?: string;
+}): Promise<Invoice> {
   const supabase = getServiceClient();
 
   const invoiceData = {
@@ -284,6 +313,18 @@ async function createInvoice(body: Partial<Invoice>): Promise<Invoice> {
     retainage_amount: body.retainage_amount || 0,
     total_earned_less_retainage: body.total_earned_less_retainage || 0,
     previous_certificates: body.previous_certificates || 0,
+    // 2026-05-22 BOOKKEEPER-UI — union-schema columns:
+    direction: body.direction || 'AR',
+    invoice_number: body.invoice_number || null,
+    vendor_id: body.vendor_id || null,
+    invoice_date: body.invoice_date || new Date().toISOString().split('T')[0],
+    due_date: body.due_date || null,
+    total_amount: body.total_amount ?? body.total_completed_and_stored ?? 0,
+    subtotal: body.subtotal ?? body.total_completed_and_stored ?? 0,
+    tax_amount: body.tax_amount || 0,
+    amount_paid: body.amount_paid || 0,
+    user_id: body.user_id || null,
+    notes: body.notes || null,
     current_payment_due: body.current_payment_due || 0,
     balance_to_finish: body.balance_to_finish || 0,
     status: body.status || 'Draft',
@@ -367,11 +408,16 @@ async function recordPayment(body: {
 }): Promise<PaymentRecord> {
   const supabase = getServiceClient();
 
+  // 2026-05-22 BOOKKEEPER-UI — invoice_payments has both amount/amount_paid
+  // and method/payment_method (union schema). Fill both pairs so legacy and
+  // new readers stay consistent.
   const paymentData = {
     invoice_id: body.invoiceId,
     amount_paid: body.amount_paid,
+    amount: body.amount_paid,
     payment_date: body.payment_date,
     payment_method: body.payment_method,
+    method: body.payment_method,
     notes: body.notes || '',
     created_at: new Date().toISOString(),
   };
@@ -386,11 +432,21 @@ async function recordPayment(body: {
     throw new Error(`Failed to record payment: ${error.message}`);
   }
 
-  // Update invoice status if fully paid
-  const { data: invoice } = await supabase.from('invoices').select('current_payment_due').eq('id', body.invoiceId).single();
+  // Update invoice status if fully paid. Check both total_amount (new
+  // union-schema column for plain AR/AP) and current_payment_due (legacy
+  // AIA G702 column for draws). Whichever is larger gates the "Paid" flip.
+  const { data: invoice } = await supabase
+    .from('invoices')
+    .select('current_payment_due, total_amount, amount_paid')
+    .eq('id', body.invoiceId)
+    .single();
 
-  if (invoice && body.amount_paid >= invoice.current_payment_due) {
-    await supabase.from('invoices').update({ status: 'Paid' }).eq('id', body.invoiceId);
+  if (invoice) {
+    const target = Math.max(Number(invoice.total_amount) || 0, Number(invoice.current_payment_due) || 0);
+    const newPaid = (Number(invoice.amount_paid) || 0) + Number(body.amount_paid || 0);
+    const updates: Record<string, unknown> = { amount_paid: newPaid };
+    if (target > 0 && newPaid >= target) updates.status = 'Paid';
+    await supabase.from('invoices').update(updates).eq('id', body.invoiceId);
   }
 
   return payment;
@@ -398,6 +454,8 @@ async function recordPayment(body: {
 
 // GET handler
 export async function GET(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) return unauthorizedResponse();
   try {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action');
@@ -452,6 +510,8 @@ export async function GET(req: NextRequest) {
 
 // POST handler
 export async function POST(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) return unauthorizedResponse();
   try {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action');
@@ -463,8 +523,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ payment }, { status: 201 });
     }
 
-    // Create new invoice
-    const invoice = await createInvoice(body);
+    // Create new invoice — tag caller's user_id so we can scope later.
+    const invoice = await createInvoice({ ...body, user_id: body.user_id || user.id });
     return NextResponse.json({ invoice }, { status: 201 });
   } catch (error) {
     console.error('POST /api/v1/invoices error:', error);
@@ -477,6 +537,8 @@ export async function POST(req: NextRequest) {
 
 // PATCH handler
 export async function PATCH(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) return unauthorizedResponse();
   try {
     const body = await req.json();
     const invoiceId = body.id;
@@ -498,6 +560,8 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE handler (optional - for deleting invoices)
 export async function DELETE(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) return unauthorizedResponse();
   try {
     const { searchParams } = new URL(req.url);
     const invoiceId = searchParams.get('id');
