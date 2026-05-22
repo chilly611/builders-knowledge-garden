@@ -14,8 +14,8 @@ You **must**:
    - License numbers, insurance requirements, and bonding mandates differ by state and trade
    - Some states require specific contract forms (e.g., AIA, ConsensusDocs) for certain project types
 
-3. **California Lien Waivers (Conditional & Unconditional only):**
-   If your project is in California, lien waivers MUST include the statutory language from California Business & Professions Code §§ 8032–8032.2. The generic form above does NOT satisfy California requirements. Use the California State Bar-approved statutory form or have an attorney draft state-compliant language.
+3. **California Lien Waivers (Conditional & Unconditional, Progress & Final):**
+   If your project is in California, lien waivers MUST include the statutory language from California Civil Code §§ 8132 et seq. (Civ. Code § 8132 — Conditional Waiver on Progress Payment; § 8134 — Unconditional Waiver on Progress Payment; § 8136 — Conditional Waiver on Final Payment; § 8138 — Unconditional Waiver on Final Payment). The prior lien-waiver statutes at Business & Professions Code §§ 8032–8032.2 were recodified into the Civil Code effective July 1, 2012. The generic forms above do NOT satisfy California requirements — use the statutory-form templates (`lien-waiver-progress-conditional`, `lien-waiver-progress-unconditional`, `lien-waiver-final-conditional`, `lien-waiver-final-unconditional`) or have an attorney draft state-compliant language.
 
 4. **Verify that insurance requirements, indemnity language, and payment terms match your actual credentials, upstream contracts with the owner, and state law** (some states limit or prohibit broad-form indemnification).
 
