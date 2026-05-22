@@ -18,8 +18,9 @@
  * that flag to `false` from the UI; it ships locked on.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type LifecycleStage } from '@/components/JourneyMapHeader';
 import type { Workflow } from '@/design-system/components/WorkflowRenderer.types';
 import {
@@ -37,12 +38,19 @@ import type {
   ContractField,
   TemplateBodies,
 } from '@/lib/contract-templates';
-import { fillTemplate } from '@/lib/contract-templates';
+import {
+  fillTemplate,
+  filterTemplatesByQuery,
+  getDefaultTemplateIdForJurisdiction,
+  getTemplateMeta,
+  groupTemplatesByCategory,
+} from '@/lib/contract-templates';
 import { sanitizeAiText } from '@/lib/sanitize-ai-text';
 import { downloadContractPdf } from '@/lib/pdf/contract-pdf';
 import { useProjectStateBlob } from '@/lib/hooks/useProjectWorkflowState';
 import { supabase } from '@/lib/supabase';
 import ProjectContextBanner from '../ProjectContextBanner';
+import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
 import AttachmentSection from '@/components/AttachmentSection';
 
 // Project Spine v1 — JSONB shape for contracts_state.
@@ -76,6 +84,7 @@ export default function ContractTemplatesClient({
     setState: setContractsState,
     lastSavedAt,
     saving,
+    loading: projectLoading,
     project,
     projectId: spineProjectId,
   } = useProjectStateBlob<ContractsState>({
@@ -94,6 +103,120 @@ export default function ContractTemplatesClient({
   const [proMode, setProMode] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string[]>([]);
+
+  // -----------------------------------------------------------------
+  // CONTRACT-PICKER (2026-05-22): top-of-page picker UI.
+  // -----------------------------------------------------------------
+  // Lets the GC search free-text ("hiring a sub", "California", "architect")
+  // and pick a template from a category-grouped dropdown. Selecting a
+  // template:
+  //   1. Updates URL ?template={id} so the choice is shareable.
+  //   2. Updates contracts_state.selectedIds so the existing
+  //      multi-select cards stay in sync and the existing field-merge /
+  //      autofill / PDF-generation code keeps working unchanged.
+  //
+  // We do NOT replace the multi-select cards below — the picker is an
+  // ADDITIVE quick-access UI on top of them. That way the existing
+  // autofill flow (contractAmount, scopeOfWork, etc.) keeps working,
+  // and a user who wants to generate multiple contracts at once can
+  // still tick multiple cards.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlTemplate = searchParams?.get('template') ?? null;
+  const [pickerQuery, setPickerQuery] = useState('');
+
+  // The currently "primary" template the picker is focused on. Sources, in
+  // priority order: URL param → first selected card → jurisdiction default.
+  const activeTemplateId = useMemo<string>(() => {
+    if (urlTemplate && getTemplateMeta(urlTemplate)) return urlTemplate;
+    const firstSelected = contractsState.selectedIds?.[0];
+    if (firstSelected && getTemplateMeta(firstSelected)) return firstSelected;
+    return getDefaultTemplateIdForJurisdiction(project?.jurisdiction);
+  }, [urlTemplate, contractsState.selectedIds, project?.jurisdiction]);
+
+  const activeTemplate = useMemo(
+    () => getTemplateMeta(activeTemplateId),
+    [activeTemplateId],
+  );
+
+  // Filter templates against the free-text query, then group by category.
+  const filteredGroups = useMemo(
+    () => groupTemplatesByCategory(filterTemplatesByQuery(templates, pickerQuery)),
+    [templates, pickerQuery],
+  );
+
+  // On first load: if the URL has no ?template= but we DO know a sensible
+  // default for the project's jurisdiction, push it to the URL so a refresh
+  // or share is deterministic. Also auto-select the default template if
+  // nothing is currently selected (so the user lands with a working form).
+  const didSyncDefaultRef = React.useRef(false);
+  useEffect(() => {
+    if (didSyncDefaultRef.current) return;
+    // Wait for the project hydration to finish before deciding the default —
+    // otherwise we'd seed `client-agreement` on a CA project just because
+    // `project` is still null on first paint.
+    if (projectLoading) return;
+    didSyncDefaultRef.current = true;
+    if (!urlTemplate) {
+      const defaultId = getDefaultTemplateIdForJurisdiction(project?.jurisdiction);
+      // Only push if we actually have a pathname (server-side renders pass
+      // null). useRouter is a no-op on the server.
+      if (pathname) {
+        const params = new URLSearchParams(searchParams?.toString() ?? '');
+        params.set('template', defaultId);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+      // If the user has no cards selected, pre-select the default so they
+      // don't see the "Pick at least one" empty state on first visit.
+      if ((contractsState.selectedIds ?? []).length === 0) {
+        setContractsState((prev: ContractsState) => ({
+          ...prev,
+          selectedIds: [defaultId],
+        }));
+      }
+    }
+  }, [
+    project,
+    projectLoading,
+    urlTemplate,
+    pathname,
+    searchParams,
+    router,
+    contractsState.selectedIds,
+    setContractsState,
+  ]);
+
+  /**
+   * Switch to a different template via the picker. Updates URL, swaps
+   * the (single) selection in contracts_state so the existing field-merge
+   * + autofill + generate flow targets the new template. Does NOT clear
+   * the field values — overlapping placeholders (clientName,
+   * contractAmount, projectAddress, …) carry over.
+   */
+  const handlePickTemplate = useCallback(
+    (id: string) => {
+      if (!getTemplateMeta(id)) return;
+      // 1. URL
+      if (pathname) {
+        const params = new URLSearchParams(searchParams?.toString() ?? '');
+        params.set('template', id);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+      // 2. selectedIds: replace any single-template selection with the new
+      //    pick. If the user has multiple cards ticked, ADD the new id
+      //    instead of clobbering their multi-select.
+      setContractsState((prev: ContractsState) => {
+        const prevIds = prev.selectedIds ?? [];
+        if (prevIds.length <= 1) {
+          return { ...prev, selectedIds: [id] };
+        }
+        if (prevIds.includes(id)) return prev;
+        return { ...prev, selectedIds: [...prevIds, id] };
+      });
+    },
+    [pathname, searchParams, router, setContractsState],
+  );
 
   // Project Spine v1.5: autofill contract fields from project context.
   // Re-runs whenever the project's `ai_summary` changes so a server-side
@@ -383,6 +506,16 @@ export default function ContractTemplatesClient({
         {/* DRAFT disclaimer — read before signing */}
         <DraftDisclaimer />
 
+        {/* CONTRACT-PICKER (2026-05-22): top-of-page picker */}
+        <ContractPicker
+          activeTemplate={activeTemplate}
+          query={pickerQuery}
+          onQueryChange={setPickerQuery}
+          filteredGroups={filteredGroups}
+          onPick={handlePickTemplate}
+          totalTemplates={templates.length}
+        />
+
         {/* Step 1: Pick templates */}
         <StepHeading n={1} total={3} title="Pick the contracts you need" />
         <p
@@ -522,13 +655,27 @@ export default function ContractTemplatesClient({
                   extraHint = parts.length > 0 ? parts.join(' · ') : null;
                 }
                 return (
-                  <FieldInput
-                    key={f.key}
-                    field={f}
-                    value={fields[f.key] ?? ''}
-                    onChange={(v) => updateField(f.key, v)}
-                    extraHint={extraHint}
-                  />
+                  <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
+                    <FieldInput
+                      field={f}
+                      value={fields[f.key] ?? ''}
+                      onChange={(v) => updateField(f.key, v)}
+                      extraHint={extraHint}
+                    />
+                    {f.key === 'contractAmount' && project && (
+                      // COCKPIT-FIXES Pain 1 (2026-05-22): live $/sf
+                      // derived from project.estimated_cost_low/high ÷ sqft,
+                      // surfaced next to the contract dollar amount so the
+                      // GC has the per-square-foot context the AI summary
+                      // used to (incorrectly) bake into prose.
+                      <CostPerSquareFootBadge
+                        costLow={project.estimated_cost_low ?? null}
+                        costHigh={project.estimated_cost_high ?? null}
+                        sqft={project.sqft ?? null}
+                        style={{ alignSelf: 'flex-start' }}
+                      />
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -701,6 +848,186 @@ function StepHeading({ n, total, title }: { n: number; total: number; title: str
         {title}
       </h2>
     </div>
+  );
+}
+
+/**
+ * Top-of-page contract picker.
+ *
+ * Two controls:
+ *   1. Free-text search box — case-insensitive substring filter against the
+ *      template name + desc + whenToUse + id. Filters the dropdown below it.
+ *   2. Category-grouped <select> dropdown listing every (filtered) template.
+ *
+ * Selecting from the dropdown calls `onPick(id)`, which the parent uses to
+ * update the URL `?template=` param AND mirror the choice into
+ * `contracts_state.selectedIds` so the existing Step-1 cards / Step-2
+ * field-merge / Step-3 PDF generation flow targets the new template.
+ *
+ * The picker is ADDITIVE — the multi-select cards below still work for
+ * generating multiple contracts in one go.
+ */
+function ContractPicker({
+  activeTemplate,
+  query,
+  onQueryChange,
+  filteredGroups,
+  onPick,
+  totalTemplates,
+}: {
+  activeTemplate: ContractTemplateMeta | undefined;
+  query: string;
+  onQueryChange: (q: string) => void;
+  filteredGroups: Array<{
+    id: string;
+    label: string;
+    templates: ContractTemplateMeta[];
+  }>;
+  onPick: (id: string) => void;
+  totalTemplates: number;
+}) {
+  const filteredCount = filteredGroups.reduce((n, g) => n + g.templates.length, 0);
+  const noMatches = query.trim().length > 0 && filteredCount === 0;
+
+  return (
+    <section
+      aria-label="Pick a contract"
+      style={{
+        padding: spacing[5],
+        marginBottom: spacing[6],
+        borderRadius: radii.lg,
+        border: `${borders.thin} ${colors.ink[200]}`,
+        backgroundColor: colors.paper.white,
+      }}
+    >
+      <label
+        htmlFor="contract-picker-query"
+        style={{
+          display: 'block',
+          fontFamily: fonts.display ?? fonts.body,
+          fontSize: fontSizes.lg,
+          fontWeight: fontWeights.semibold,
+          color: colors.ink[900],
+          marginBottom: spacing[2],
+        }}
+      >
+        What kind of contract do you need?
+      </label>
+      <input
+        id="contract-picker-query"
+        type="text"
+        value={query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        placeholder="Search for a contract type — e.g., &quot;hiring a sub&quot;, &quot;California&quot;, &quot;architect&quot;…"
+        aria-describedby="contract-picker-help"
+        data-testid="contract-picker-query"
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: spacing[3],
+          fontSize: fontSizes.sm,
+          fontFamily: fonts.body,
+          border: `1px solid ${colors.ink[300]}`,
+          borderRadius: radii.sm,
+          backgroundColor: 'var(--trace)',
+          color: colors.ink[900],
+        }}
+      />
+      <div
+        id="contract-picker-help"
+        style={{
+          fontSize: fontSizes.xs,
+          color: colors.ink[500],
+          marginTop: spacing[1],
+          marginBottom: spacing[4],
+        }}
+      >
+        {query.trim().length === 0
+          ? `${totalTemplates} templates available — filter by typing above.`
+          : noMatches
+            ? 'No matches. Try a broader word like "sub", "lien", or "California".'
+            : `${filteredCount} of ${totalTemplates} templates match.`}
+      </div>
+
+      <label
+        htmlFor="contract-picker-select"
+        style={{
+          display: 'block',
+          fontSize: fontSizes.xs,
+          fontWeight: fontWeights.semibold,
+          color: colors.ink[600],
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginBottom: spacing[1],
+        }}
+      >
+        Or pick from the list
+      </label>
+      <select
+        id="contract-picker-select"
+        value={activeTemplate?.id ?? ''}
+        onChange={(e) => {
+          const id = e.target.value;
+          if (id) onPick(id);
+        }}
+        data-testid="contract-picker-select"
+        disabled={noMatches}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: spacing[3],
+          fontSize: fontSizes.sm,
+          fontFamily: fonts.body,
+          border: `1px solid ${colors.ink[300]}`,
+          borderRadius: radii.sm,
+          backgroundColor: 'var(--trace)',
+          color: colors.ink[900],
+          cursor: noMatches ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {filteredGroups.map((group) => (
+          <optgroup key={group.id} label={group.label}>
+            {group.templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.icon} {t.name}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+
+      {activeTemplate && (
+        <div
+          role="note"
+          aria-label="Why this contract"
+          title={activeTemplate.whenToUse}
+          style={{
+            marginTop: spacing[3],
+            padding: spacing[3],
+            borderRadius: radii.sm,
+            backgroundColor: 'var(--trace)',
+            border: `1px solid var(--faded-rule, ${colors.ink[100]})`,
+            fontSize: fontSizes.xs,
+            color: colors.ink[700],
+            lineHeight: 1.5,
+          }}
+        >
+          <strong
+            style={{
+              fontSize: fontSizes.xs,
+              fontWeight: fontWeights.semibold,
+              color: colors.ink[900],
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginRight: spacing[2],
+            }}
+          >
+            Why this contract?
+          </strong>
+          {activeTemplate.whenToUse}
+        </div>
+      )}
+    </section>
   );
 }
 
