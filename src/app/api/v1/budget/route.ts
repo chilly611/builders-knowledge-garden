@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
 
 /**
@@ -244,11 +245,58 @@ function buildSummaryFromLines(
   return { budget, items, summary };
 }
 
+/**
+ * Demo project allowlist — mirrors /api/v1/projects/route.ts. Any
+ * authenticated user can READ the 3 seeded demo projects so trial-contractor
+ * accounts can run the demo without account-juggling.
+ */
+const DEMO_PROJECT_IDS = new Set<string>([
+  '55730cd3-5225-493d-8b5c-49086d942565', // Marin farmhouse
+  'aa11b22c-1111-4d78-aaaa-bbccdd112233', // ADU in Sausalito
+  'bb22c33d-2222-4d78-bbbb-ccddee223344', // Commercial TI in SoMa
+]);
+
+/**
+ * 2026-05-22 (BUDGET+SEC2 fix): trial-contractor accounts carry their seeded
+ * demo project id in user_metadata.demo_project_id. Diego (specialty-trial-01)
+ * and Tony hit "Unauthorized" on the Marin budget because the strict user_id
+ * check rejected their accounts even though their JWT named Marin. Mirror the
+ * helper from /api/v1/projects/route.ts so this route accepts the same three
+ * ownership signals.
+ */
+async function getCallerDemoProjectId(request: NextRequest): Promise<string | null> {
+  try {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) return null;
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    const sb = createClient(supabaseUrl, supabaseAnonKey);
+    const { data, error } = await sb.auth.getUser(token);
+    if (error || !data.user) return null;
+    const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
+    const v = meta.demo_project_id;
+    return typeof v === 'string' && v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 async function verifyProjectOwnership(
   db: ReturnType<typeof getServiceClient>,
   projectId: string,
   userId: string,
+  request?: NextRequest,
 ): Promise<boolean> {
+  // (a) Demo allowlist — read access for the 3 seeded projects.
+  if (DEMO_PROJECT_IDS.has(projectId)) return true;
+  // (b) JWT demo_project_id — trial contractors.
+  if (request) {
+    const callerDemoProjectId = await getCallerDemoProjectId(request);
+    if (callerDemoProjectId && callerDemoProjectId === projectId) return true;
+  }
+  // (c) Strict ownership.
   const { data, error } = await db
     .from("command_center_projects")
     .select("id, user_id")
@@ -276,7 +324,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = getServiceClient();
 
-    const owns = await verifyProjectOwnership(db, projectId, user.id);
+    const owns = await verifyProjectOwnership(db, projectId, user.id, request);
     if (!owns) {
       return NextResponse.json(
         { error: "Project not found or unauthorized" },
@@ -344,7 +392,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getServiceClient();
-    const owns = await verifyProjectOwnership(db, project_id, user.id);
+    const owns = await verifyProjectOwnership(db, project_id, user.id, request);
     if (!owns) {
       return NextResponse.json(
         { error: "Project not found or unauthorized" },
@@ -422,7 +470,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const db = getServiceClient();
-    const owns = await verifyProjectOwnership(db, targetProjectId, user.id);
+    const owns = await verifyProjectOwnership(db, targetProjectId, user.id, request);
     if (!owns) {
       return NextResponse.json(
         { error: "Budget not found or unauthorized" },
@@ -499,7 +547,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const db = getServiceClient();
-    const owns = await verifyProjectOwnership(db, id, user.id);
+    const owns = await verifyProjectOwnership(db, id, user.id, request);
     if (!owns) {
       return NextResponse.json(
         { error: "Budget not found or unauthorized" },

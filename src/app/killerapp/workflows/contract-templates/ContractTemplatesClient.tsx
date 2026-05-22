@@ -41,6 +41,7 @@ import { fillTemplate } from '@/lib/contract-templates';
 import { sanitizeAiText } from '@/lib/sanitize-ai-text';
 import { downloadContractPdf } from '@/lib/pdf/contract-pdf';
 import { useProjectStateBlob } from '@/lib/hooks/useProjectWorkflowState';
+import { supabase } from '@/lib/supabase';
 import ProjectContextBanner from '../ProjectContextBanner';
 import AttachmentSection from '@/components/AttachmentSection';
 
@@ -94,26 +95,52 @@ export default function ContractTemplatesClient({
   const [generating, setGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<string[]>([]);
 
-  // Project Spine v1.5: autofill contract fields from project context on
-  // first hydration. Runs ONCE per session (guarded by `didAutofill`); the
-  // user can always overwrite. Never clobbers a field the user already
-  // typed into. See tasks.lessons.md 2026-05-18 for the trap this avoids:
+  // Project Spine v1.5: autofill contract fields from project context.
+  // Re-runs whenever the project's `ai_summary` changes so a server-side
+  // backfill of sanitized prose flows through to existing trial accounts
+  // that already touched this page. The `seed` helper still refuses to
+  // clobber a field the user actually typed — it only writes when the
+  // stored value is empty/whitespace.
+  //
+  // 2026-05-22 (Demo2 fix): the previous implementation used a one-shot
+  // `didAutofill` boolean. Once flipped true on first visit, a later
+  // update to `ai_summary` (e.g. the sanitizer fix that landed after
+  // first run) could never reach the contract field — the stale prose
+  // stayed baked into `contracts_state.fields.scopeOfWork` forever. We
+  // now track the last summary string we autofilled from in a ref;
+  // identical summary → skip (idempotent), new summary → re-seed any
+  // empty fields. Non-empty (user-typed) fields are still protected
+  // by the per-field check inside `seed`.
+  //
+  // See tasks.lessons.md 2026-05-18 for the typing trap this avoids:
   // ContractsState extends `Record<string, unknown>`, and the hook's
   // hydration spread (`{ ...defaultValue, ...blob } as T` in
   // useProjectStateBlob) widens `fields` to `Record<string, unknown>` at
   // the spread site. We declare `f: Record<string, string>` LOCALLY to
   // narrow the assignment target back to string-only, so `String(val)`
   // assigns cleanly and `f[key].trim()` is type-safe.
-  const [didAutofill, setDidAutofill] = useState(false);
+  const lastAutofilledSummaryRef = React.useRef<string | null>(null);
+  // 2026-05-22 (BUDGET+SEC2 fix): track the real budget total (sum of
+  // project_budget_lines.budgeted) separately from the AI low/high midpoint.
+  // The cockpit BudgetSnapshot reads this same number; if we let the AI
+  // midpoint into the contract while the cockpit shows the lines total,
+  // Marin gets a $1.05M contract autofilled while the budget page says
+  // $914K. We prefer the real total when it's > 0, fall back to AI midpoint,
+  // and show the user both numbers so they can choose.
+  const [budgetTotalFromLines, setBudgetTotalFromLines] = useState<number | null>(null);
+  const [aiMidpoint, setAiMidpoint] = useState<number | null>(null);
   useEffect(() => {
-    if (didAutofill) return;
     if (!project) return;
+    const summaryKey = project.ai_summary ?? project.raw_input ?? '';
+    if (lastAutofilledSummaryRef.current === summaryKey) return;
     setContractsState((prev: ContractsState) => {
       const f: Record<string, string> = { ...(prev.fields ?? {}) };
       let changed = false;
       const seed = (key: string, val: string | number | null | undefined): void => {
         if (val === null || val === undefined || val === '') return;
         const existing: string | undefined = f[key];
+        // Skip only when the user (or a prior fill) put real content here.
+        // Empty string / whitespace → autofill is welcome to write.
         if (existing && existing.trim().length > 0) return;
         f[key] = String(val);
         changed = true;
@@ -121,8 +148,15 @@ export default function ContractTemplatesClient({
       seed('projectName', project.name);
       const low = project.estimated_cost_low;
       const high = project.estimated_cost_high;
+      let mid: number | null = null;
       if (typeof low === 'number' && typeof high === 'number' && high > 0) {
-        const mid = Math.round((low + high) / 2);
+        mid = Math.round((low + high) / 2);
+        setAiMidpoint(mid);
+      }
+      // Provisional seed using AI midpoint so the field isn't blank while we
+      // wait for /api/v1/budget. The budget-fetch effect below will overwrite
+      // this (but only this) value when the lines total comes back > 0.
+      if (mid !== null) {
         seed('contractAmount', `$${mid.toLocaleString()}`);
       }
       // Sarah-GC reported (2026-05-22) that the autofill Scope of Work
@@ -138,8 +172,57 @@ export default function ContractTemplatesClient({
       if (summary) seed('scopeOfWork', summary);
       return changed ? { ...prev, fields: f } : prev;
     });
-    setDidAutofill(true);
-  }, [project, didAutofill, setContractsState]);
+    lastAutofilledSummaryRef.current = summaryKey;
+  }, [project, setContractsState]);
+
+  // 2026-05-22 (BUDGET+SEC2 fix): fetch the project's budget total from
+  // /api/v1/budget (the project_budget_lines source of truth that the
+  // cockpit BudgetSnapshot reads). When totalBudget > 0 AND the field
+  // currently holds the AI midpoint we just seeded (i.e. the user hasn't
+  // typed over it), upgrade contractAmount to the real total so all three
+  // surfaces (cockpit, /killerapp/budget HeroStrip, contract autofill)
+  // agree on the same number.
+  useEffect(() => {
+    if (!spineProjectId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        const headers: HeadersInit = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(
+          `/api/v1/budget?project_id=${encodeURIComponent(spineProjectId)}`,
+          { headers },
+        );
+        if (cancelled) return;
+        // 404 = no budget yet → leave AI midpoint in place.
+        if (!res.ok) return;
+        const json = (await res.json()) as { summary?: { totalBudget?: number } };
+        const total = json.summary?.totalBudget;
+        if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) return;
+        if (cancelled) return;
+        setBudgetTotalFromLines(total);
+        const formatted = `$${Math.round(total).toLocaleString()}`;
+        setContractsState((prev: ContractsState) => {
+          const f: Record<string, string> = { ...(prev.fields ?? {}) };
+          const existing = (f.contractAmount ?? '').trim();
+          // Only upgrade if the field is empty OR still holds the AI midpoint
+          // we seeded a moment ago. Never clobber a user-typed value.
+          const aiSeed = aiMidpoint !== null ? `$${aiMidpoint.toLocaleString()}` : null;
+          if (existing && aiSeed && existing !== aiSeed) return prev;
+          if (existing === formatted) return prev;
+          f.contractAmount = formatted;
+          return { ...prev, fields: f };
+        });
+      } catch {
+        // Network/auth failure — leave AI midpoint in place. Not fatal.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [spineProjectId, aiMidpoint, setContractsState]);
 
   // Saved indicator string.
   const savedLabel = saving
@@ -419,14 +502,35 @@ export default function ContractTemplatesClient({
                 marginBottom: spacing[8],
               }}
             >
-              {requiredFields.map((f) => (
-                <FieldInput
-                  key={f.key}
-                  field={f}
-                  value={fields[f.key] ?? ''}
-                  onChange={(v) => updateField(f.key, v)}
-                />
-              ))}
+              {requiredFields.map((f) => {
+                // BUDGET+SEC2 2026-05-22: show the two competing numbers on
+                // the contractAmount field so the user picks deliberately
+                // instead of trusting whichever one autofilled.
+                let extraHint: string | null = null;
+                if (f.key === 'contractAmount') {
+                  const lineTotal = budgetTotalFromLines;
+                  const ai = aiMidpoint;
+                  const parts: string[] = [];
+                  if (lineTotal !== null && lineTotal > 0) {
+                    parts.push(
+                      `Budget total: $${Math.round(lineTotal).toLocaleString()} (from line items)`,
+                    );
+                  }
+                  if (ai !== null && (lineTotal === null || ai !== Math.round(lineTotal))) {
+                    parts.push(`AI midpoint: $${ai.toLocaleString()}`);
+                  }
+                  extraHint = parts.length > 0 ? parts.join(' · ') : null;
+                }
+                return (
+                  <FieldInput
+                    key={f.key}
+                    field={f}
+                    value={fields[f.key] ?? ''}
+                    onChange={(v) => updateField(f.key, v)}
+                    extraHint={extraHint}
+                  />
+                );
+              })}
             </div>
           </>
         )}
@@ -643,10 +747,12 @@ function FieldInput({
   field,
   value,
   onChange,
+  extraHint,
 }: {
   field: ContractField;
   value: string;
   onChange: (v: string) => void;
+  extraHint?: string | null;
 }) {
   const labelStyle: React.CSSProperties = {
     display: 'flex',
@@ -677,6 +783,17 @@ function FieldInput({
       {field.hint}
     </span>
   ) : null;
+  const budgetHint = extraHint ? (
+    <span
+      style={{
+        fontSize: fontSizes.xs,
+        color: colors.ink[600],
+        fontWeight: fontWeights.medium,
+      }}
+    >
+      {extraHint}
+    </span>
+  ) : null;
 
   if (field.type === 'textarea') {
     return (
@@ -692,6 +809,7 @@ function FieldInput({
           rows={4}
           style={{ ...inputStyle, fontFamily: fonts.body, resize: 'vertical' }}
         />
+        {budgetHint}
         {hint}
       </label>
     );
@@ -717,6 +835,7 @@ function FieldInput({
         placeholder={field.placeholder}
         style={inputStyle}
       />
+      {budgetHint}
       {hint}
     </label>
   );

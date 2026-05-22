@@ -310,31 +310,83 @@ async function authedFetchJSON(input: RequestInfo, init: RequestInit = {}) {
 
 /**
  * Fetch the persisted budget lines for a project. Returns:
- *   - { lines: BudgetLine[] } when the column is populated
- *   - { lines: [] }           when the column is empty (NEW project, needs migration)
+ *   - { lines: BudgetLine[] } when the project has budget rows
+ *   - { lines: [] }           when no rows exist (NEW project, needs seed)
  *   - null                    on auth/network failure (caller falls back to localStorage)
+ *
+ * 2026-05-22 (BUDGET+SEC2 fix): switched from
+ *   GET /api/v1/projects?id=…  (reads command_center_projects.project_budgets JSONB,
+ *                               empty for all 3 demo projects — HeroStrip showed $0)
+ * to
+ *   GET /api/v1/budget?project_id=…  (synthesizes {summary, items} from the
+ *                                     project_budget_lines source of truth that
+ *                                     the cockpit BudgetSnapshot already reads).
+ * The endpoint emits BudgetItem rows, not BudgetLine rows — we map each
+ * `is_estimate: true` item to a BudgetLine so the rest of the UI stays
+ * backward-compatible. Items without an `is_estimate` flag are treated as
+ * estimated. Actual-spend items (`is_estimate: false`) are skipped because
+ * BudgetLine has a single amount field; their value is already rolled into
+ * `summary.totalSpent` and surfaced via the HeroStrip.
  */
+interface BudgetApiItem {
+  id: string;
+  category?: string;
+  description?: string;
+  amount: number;
+  vendor?: string;
+  date?: string;
+  created_at?: string;
+  is_estimate?: boolean;
+}
+
+function mapApiItemToLine(item: BudgetApiItem): BudgetLine | null {
+  if (!item || typeof item.amount !== 'number' || !Number.isFinite(item.amount)) {
+    return null;
+  }
+  const created = item.created_at || item.date || nowIso();
+  return {
+    id: item.id,
+    category: item.category || 'materials',
+    description: item.description || '',
+    amount: item.amount,
+    // Source rows don't carry the 4-state lifecycle yet — treat estimates as
+    // 'estimated' and actuals as 'paid'. Matches what the user would set
+    // manually for a row that's already booked spend.
+    state: item.is_estimate === false ? 'paid' : 'estimated',
+    vendor: item.vendor,
+    createdAt: created,
+    updatedAt: created,
+  };
+}
+
 async function fetchProjectBudgets(
   projectId: string,
 ): Promise<{ lines: BudgetLine[] } | null> {
   try {
     const res = await authedFetchJSON(
-      `/api/v1/projects?id=${encodeURIComponent(projectId)}`,
+      `/api/v1/budget?project_id=${encodeURIComponent(projectId)}`,
     );
+    // 404 = no budget lines yet (route's "empty budget" contract). Surface as
+    // an empty list so the caller can fall back to localStorage / show the
+    // empty-state UI instead of treating it as a network failure.
+    if (res.status === 404) return { lines: [] };
     if (!res.ok) return null;
-    const json = (await res.json()) as { project_budgets?: { lines?: unknown } };
-    const raw = json.project_budgets?.lines;
+    const json = (await res.json()) as { items?: unknown };
+    const raw = json.items;
     if (!Array.isArray(raw)) return { lines: [] };
-    const safe = raw.filter(
-      (l): l is BudgetLine =>
-        l != null &&
-        typeof l === 'object' &&
-        typeof (l as BudgetLine).id === 'string' &&
-        typeof (l as BudgetLine).category === 'string' &&
-        typeof (l as BudgetLine).amount === 'number' &&
-        STATE_ORDER.includes((l as BudgetLine).state),
+
+    // Prefer is_estimate rows (they map 1:1 to BudgetLine). If a project
+    // somehow has only actual-spend rows, fall through to those so the
+    // HeroStrip still shows real numbers instead of $0.
+    const estimateItems = raw.filter(
+      (l): l is BudgetApiItem =>
+        l != null && typeof l === 'object' && (l as BudgetApiItem).is_estimate === true,
     );
-    return { lines: safe };
+    const source = estimateItems.length > 0 ? estimateItems : (raw as BudgetApiItem[]);
+    const lines = source
+      .map(mapApiItemToLine)
+      .filter((l): l is BudgetLine => l !== null);
+    return { lines };
   } catch {
     return null;
   }
