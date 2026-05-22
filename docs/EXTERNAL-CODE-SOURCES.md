@@ -4,29 +4,41 @@ _Status: 2026-05-22 · Owner: code-sources adapter team_
 
 ## Source URL coverage (knowledge_entities)
 
-Updated 2026-05-22 via a pattern-based SQL backfill (KB-BACKFILL).
+Updated 2026-05-22 via two pattern-based SQL backfills (KB-BACKFILL +
+KB-BACKFILL-V2).
 
 | Snapshot | total published | `source_urls` set | `last_verified` set |
 |---|---|---|---|
-| Before backfill | 2,256 | 15 (0.7%) | 13 |
-| After backfill  | 2,256 | **938 (41.6%)** | **938 (41.6%)** |
+| Pre-Round-1 | 2,256 | 15 (0.7%) | 13 |
+| Post-Round-1 (KB-BACKFILL) | 2,256 | 938 (41.6%) | 938 (41.6%) |
+| Post-Round-5 (KB-BACKFILL-V2, 2026-05-22) | 2,256 | **2,256 (100.0%)** | **2,256 (100.0%)** |
 
-Coverage by entity_type after backfill:
+Coverage by entity_type after Round 5 backfill:
 
 | entity_type | total | with_url | notes |
 |---|---|---|---|
 | building_code | 569 | 569 (100%) | IBC/IRC/IFC/IMC/IPC/IECC → ICC content URL; CA Title 24 family → ICC California; NFPA & state-specific → publisher landing |
-| safety_regulation | 325 | 325 (100%) | OSHA 1910/1926 → osha.gov standard pages; EPA/DOT/MSHA → agency root; 50 states × 3 codes → ICC state index |
-| standard | 24 | 24 (100%) | ACI/AISC/ASCE/ASHRAE/ASTM/NFPA/TMS/AWC publisher pages |
+| material | 486 | 486 (100%) | **R5** — concrete/cement → cement.org; lumber/wood → awc.org; steel/rebar → aisc.org; insulation → insulationinstitute.org; gypsum/drywall → gypsum.org; roofing → nrca.net; masonry/stone → masonrystandards.org; paint/coatings/sealants → paint.org; plumbing pipe/fittings → iapmo.org; electrical wire/conduit → nema.org; HVAC equipment → ashrae.org; fire-rated → nfpa.org; flooring/tile → tcnatile.com; doors/windows/glass → aamanet.org; PPE → osha.gov; geotextiles → geosyntheticssociety.org |
+| safety_regulation | 325 | 325 (100%) | OSHA 1910/1926, EPA/DOT/MSHA, 50 states × 3 codes |
+| construction_method | 214 | 214 (100%) | **R5** — concrete methods → concrete.org; wood framing/carpentry → awc.org; MEP → NFPA/IAPMO/ASHRAE; masonry → masonrystandards.org; roofing → nrca.net; safety/demo/excavation → osha.gov 1926; structural → asce.org; technology/BIM → buildingsmart.org; envelope/cladding → buildingenclosureonline.com |
+| jurisdiction | 131 | 131 (100%) | **R5** — major US AHJs curated to actual building/development dept URLs (LADBS, SF DBI, NYC DOB, etc.); other US jurisdictions → ICC state-index URL; international jurisdictions → national or city government landing |
+| sustainability | 74 | 74 (100%) | **R5** — LEED → usgbc.org; WELL → wellcertified.com; LBC → living-future.org; Passive House → phius.org; energy → energystar.gov; water → epa.gov/watersense; embodied carbon → carbonleadershipforum.org; IAQ → epa.gov/indoor-air-quality |
+| inspection | 70 | 70 (100%) | **R5** — ICC certification index for building/structural/envelope; NFPA for fire; IAPMO for plumbing; ASHRAE for HVAC; NEC for electrical |
+| legal | 61 | 61 (100%) | **R5** — AIA contracts → aiacontracts.org; ConsensusDocs / EJCDC publisher pages; Miller Act → law.cornell.edu USC 40 ch 31; mechanics liens → law.cornell.edu/wex; insurance → iii.org; prevailing wage → dol.gov; catch-all → law.cornell.edu/wex/contract |
+| certification | 58 | 58 (100%) | **R5** — ICC → iccsafe.org/professional-development; NFPA → nfpa.org/professional-development; NICET → nicet.org; LEED → usgbc.org/credentials; PE/SE → ncees.org; AIA → aia.org licensure; state GC → CSLB / TDLR / FL DBPR; AWS → aws.org; PMP → pmi.org |
+| project_delivery | 31 | 31 (100%) | **R5** — AIA contracts; ConsensusDocs; EJCDC; DBIA for design-build / IPD / CM / P3 / alliance |
+| architectural_style | 30 | 30 (100%) | **R5** — aia.org (general architecture reference; deeper per-style sources are a follow-up) |
+| trade | 28 | 28 (100%) | **R5** — bls.gov Occupational Outlook Handbook (construction & extraction) — canonical taxonomic source |
+| building_type | 26 | 26 (100%) | **R5** — IBC use groups → codes.iccsafe.org; healthcare → ashe.org; data center → uptimeinstitute.com |
+| method | 25 | 25 (100%) | **R5** — same publisher map as construction_method, defaulting to OSHA 1926 |
+| standard | 24 | 24 (100%) | ACI/AISC/ASCE/ASHRAE/ASTM/NFPA/TMS/AWC |
+| permit_requirement | 22 | 22 (100%) | **R5** — jurisdiction-specific permits → AHJ landing (LADBS, NYC DOB, Austin DS, Miami-Dade); generic permit types → iccsafe.org |
+| sequence_rule | 20 | 20 (100%) | **R5** — cmaanet.org (Construction Management Association of America) |
+| inspection_protocol | 18 | 18 (100%) | **R5** — iccsafe.org |
+| equipment | 16 | 16 (100%) | **R5** — osha.gov 1926 (cranes/excavators/scaffolding all OSHA-regulated) |
+| climate_zone | 12 | 12 (100%) | **R5** — codes.iccsafe.org IECC2021 (defines ASHRAE-aligned climate zones) |
+| zoning_district | 8 | 8 (100%) | **R5** — planning.org Planning & Law division |
 | code_section, code | 8 | 8 (100%) | Existing curated URLs (untouched by backfill) |
-| material | 486 | 3 | **gap** — need manufacturer/spec backfill |
-| construction_method | 214 | 0 | **gap** — research-paper / NIST / industry-association backfill needed |
-| jurisdiction | 131 | 1 | **gap** — link to AHJ landing pages |
-| sustainability | 74 | 0 | **gap** — LEED / WELL / Living Building / GreenSeal pages |
-| inspection | 70 | 1 | **gap** |
-| legal | 61 | 0 | **gap** — link to relevant USC/CFR sections |
-| certification | 58 | 7 | partial — extend to LEED AP, OSHA 30, etc. |
-| project_delivery, architectural_style, trade, building_type, method, permit_requirement, sequence_rule, inspection_protocol, equipment, climate_zone, zoning_district | <30 each | mostly 0 | content-by-content follow-up |
 
 ### Pattern map applied
 
@@ -93,19 +105,61 @@ these resolve cleanly in a browser, and the agency root is the best public
 landing for the slug family. Section-level deep-linking is deferred to the
 `icc-digital-codes` adapter once licensed.
 
-### Patterns that did NOT map (follow-up backfill needed)
+### Round 5 backfill (KB-BACKFILL-V2, 2026-05-22)
 
-These entity_types contain mostly generic taxonomy entries with no obvious
-canonical publisher — they need content-by-content URL curation rather than
-slug-pattern backfill:
+Round 5 closed the remaining 1,318 gap rows from the original KB-BACKFILL.
+Same execution model: pure SQL `UPDATE` statements via the Supabase MCP
+`execute_sql` (no schema migrations, only `source_urls` + `last_verified`
+were touched, and only for rows where `source_urls = '{}'`).
 
-- `construction_method` (214 rows) — candidate sources: NIST, ASCE, association whitepapers
-- `material` (483 rows pending) — manufacturer spec sheets, MasterFormat sections
-- `sustainability` (74 rows) — usgbc.org, wellcertified.com, living-future.org, energystar.gov
-- `jurisdiction` (130 rows pending) — AHJ websites
-- `legal` (61 rows) — law.cornell.edu / eCFR
-- `inspection`, `inspection_protocol`, `permit_requirement`, `sequence_rule` — internal SOP or AHJ-specific
-- `architectural_style`, `building_type`, `trade`, `method`, `equipment`, `climate_zone`, `zoning_district`, `project_delivery` — research/industry sites, case-by-case
+The pattern map above was extended with publisher landings for each
+non-code entity type. The Round 5 patterns lean on:
+
+- **Trade-association publishers** (ACI, AISC, ASCE, AWC, ASHRAE, NRCA,
+  TMS, IAPMO, NEMA, PCI, AAMA, TCNA, Gypsum Association, Insulation
+  Institute) for materials and construction methods.
+- **AHJ landing pages** for the top 40 US jurisdictions (LADBS, SF DBI,
+  NYC DOB, Phoenix PDD, Seattle SDCI, etc.); other US jurisdictions
+  default to their ICC state-index URL; international jurisdictions
+  resolve to the national or city government landing.
+- **Standards-body certification indexes** (USGBC / NFPA / ICC / NICET /
+  AWS / NCEES / AIA / PMI) for `certification` rows.
+- **Legal canonical sources** (Cornell Law, AIA Contracts, ConsensusDocs,
+  EJCDC, DOL, III) for `legal` rows.
+- **BLS Occupational Outlook Handbook** for `trade` rows — the
+  authoritative US occupation taxonomy.
+
+All Round 5 URLs are publisher root or section landings, not deep
+section anchors. Deep-section coverage is still a job for the licensed
+`icc-digital-codes` / `nfpa` / `upcodes` adapters once contracts land.
+
+### AI-assisted residue (optional)
+
+The pattern-based passes reached 100% coverage on the existing 2,256
+published rows. For future drift (new entities added with slugs that
+don't fit the patterns), the residue tool is:
+
+```
+npm run kb:ai-backfill
+```
+
+It uses Claude Haiku to suggest 1-3 canonical URLs per row from a
+curated trusted-publisher list (the same list above), HEAD-validates
+each suggestion with a 5-second timeout, and only writes the
+validated subset. Gated on `ANTHROPIC_API_KEY` — if the env var is
+missing, the script exits 0 with a log message so CI/builds never
+break. Cost estimate (Haiku, 2026): ≈ $0.0001 per row, ≈ $0.13 for
+the original 1,318-row gap.
+
+Useful overrides:
+
+- `AI_BACKFILL_DRY_RUN=1` — log suggestions without writing
+- `AI_BACKFILL_LIMIT=50` — process at most 50 rows per run
+- `AI_BACKFILL_VALIDATE_URLS=0` — skip HEAD validation (faster, riskier)
+- `ANTHROPIC_MODEL=claude-sonnet-4-5` — switch to Sonnet if Haiku
+  returns too many off-topic URLs (≈10× the cost)
+
+The script implementation is at `src/scripts/ai-backfill-kb-urls.ts`.
 
 ## TL;DR
 
@@ -210,8 +264,13 @@ through the `rag` adapter:
    corpus as the third verified source. Target: green badge ("3 sources
    verified") on the queries where the local corpus has URLed entries.
 2. **Q3**: ingest CFR + state amendments to back-fill RAG coverage. Goal:
-   ≥50% of compliance queries hit a URLed RAG row (after 2026-05-22 backfill:
-   938 / 2256 = 41.6%; before backfill: 15 / 916 = 1.6%).
+   ≥50% of compliance queries hit a URLed RAG row (after KB-BACKFILL-V2
+   on 2026-05-22: **2,256 / 2,256 = 100%** of published rows now carry a
+   `source_urls` value; pre-Round-1: 15 / 916 = 1.6%; post-Round-1: 938 /
+   2256 = 41.6%). Round 5 URLs are publisher landing pages (not deep
+   section anchors) — they're enough to drive the trust-badge "verified
+   source" count but the RAG adapter still needs the licensed publisher
+   APIs for section-level body text.
 3. **Q4**: license ICC DigitalCodes for the top 3 codes by query volume
    (likely CBC, CRC, NEC). Flip `ICC_API_KEY` env, point `ICC_API_BASE_URL`
    at the contracted endpoint, done.
@@ -454,9 +513,93 @@ corpus. Recall-vs-speed knobs to remember when the corpus grows:
   matching `your|placeholder|set me|todo|<.*>` to prevent accidentally
   flipping live mode without a real contract. If your key starts with
   any of those strings, the adapter quietly stays in preview mode.
-- **Caching:** none yet. Once contracts land we should LRU-cache by
-  `(code, edition, section)` for at least 1 hour — paywall providers
-  charge per call.
+- **Caching (per-instance, default):** `src/lib/code-sources/cache.ts`
+  wraps every paywalled adapter (`icc.ts`, `nfpa.ts`, `upcodes.ts`) and
+  the `rag.ts` adapter in `withCache(source, query, fetcher)`. Keys are
+  deterministic over `(discipline, section, edition, jurisdiction,
+  sorted-keywords)`. TTL is 1h for paywall sources, 30m for RAG.
+  Citation-only fallbacks (every result `confidenceTier: 'summary'`)
+  are deliberately NOT cached so a paywall transient doesn't pin a bad
+  answer for an hour.
+
+## Multi-region cache (Vercel KV / Upstash Redis)
+
+The default cache backend is module-scoped — fine for single-instance
+deploys, but on Vercel each lambda gets its own Map. Once any paywall
+key (UpCodes / ICC / NFPA) is live, every cold lambda invocation pays
+full price per region. To deduplicate across regions, wire a shared
+Redis backend.
+
+### Option A: Vercel KV (one click)
+
+1. In the Vercel dashboard: Storage → Create → KV. Pick the region
+   closest to the rest of your infra.
+2. Vercel auto-populates two env vars on every deployment in this
+   project: `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+3. Redeploy. `cache.ts` detects the env vars at module load and
+   switches `withCache` to the Upstash REST-based backend. Existing
+   adapter call sites need no change.
+
+### Option B: Upstash Redis (provider-agnostic)
+
+1. Sign up at upstash.com, create a global Redis database.
+2. Set env vars (works in any host — Vercel, Fly, Render, bare Node):
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+3. `cache.ts` reads either env var pair (Vercel's `KV_REST_API_*` OR
+   Upstash's native names) — both resolve to the same Upstash REST
+   endpoint because `@vercel/kv` is itself just a wrapper.
+
+### Cost ceiling
+
+Upstash free tier: 10,000 commands/day ≈ 333/hour. At a baseline
+load of 100 unique queries/hour with the 80% hit ratio we see in
+preview probes:
+
+- 20 cache writes (misses) × 1 SET command  = 20
+- 80 cache reads (hits)   × 1 GET command  = 80
+- 100 GETs for the miss path (every call starts with a GET) = 100
+- Total ≈ 120 commands/hour. Headroom 213/hour for invalidation
+  scans, size queries, and burst traffic. Stays under the free tier
+  by a comfortable margin.
+
+Paid tier starts at ~$0.20/100k commands and includes per-region
+replication if cross-region latency becomes the bottleneck.
+
+### Behavior when env vars are absent
+
+`cache.ts` silently falls back to the in-memory backend (Round 5
+behavior). No tests change, no deploys break — just per-instance
+cache, same as before.
+
+### Health visibility
+
+`GET /api/v1/healthcheck?detailed=1` returns `checks.rag_cache.value`
+including `backend: 'kv' | 'in-memory'`. Use it to confirm at a
+glance that the multi-region path is actually wired up after the
+Vercel KV provisioning step.
+
+### Risk callouts
+
+- **Latency vs in-memory**: Upstash REST adds ~10–30ms per get/set
+  vs <1ms for the Map backend. Negligible compared to a paywall
+  round-trip (~500ms–2s), but it's not free. If hot-path RAG queries
+  start regressing on p95, the fix is a two-layer cache (in-memory
+  in front of KV, like a CDN with origin shielding).
+- **`KEYS` is O(N)**: `invalidateCache(source)` and the per-bucket
+  `size()` use Redis `KEYS prefix:*`. Safe at our cardinality (a
+  few thousand keys/bucket worst case) but DON'T use `invalidateCache()`
+  with no argument under load — it scans the entire keyspace. If we
+  ever exceed ~10k keys, switch to `SCAN`.
+- **Eviction**: Upstash evicts under memory pressure (allkeys-lru by
+  default). At free-tier 256MB and our average payload of ~2KB per
+  cached query, we can hold ~120k entries before pressure kicks in
+  — far above the CodeQuery cardinality.
+- **Stats are still per-instance**: hits/misses/bypasses counters
+  live in the lambda's memory, not in Redis. The hit_ratio on the
+  healthcheck reflects ONE instance's view. Centralizing telemetry
+  is a future round; the cost-control goal of this round (shared
+  cache state) is met regardless.
 - **Compliance:** licensing terms typically forbid LLM training on
   retrieved text. Citation surfaces in our UI are fine; persisting
   fetched rule text into long-term storage may not be. Re-read the
