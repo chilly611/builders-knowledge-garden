@@ -40,6 +40,7 @@ import {
 import Link from 'next/link';
 import { useProject } from '@/lib/hooks/useProject';
 import { supabase } from '@/lib/supabase';
+import { normalizeStoredLines } from './budget-storage';
 import { colors } from '@/design-system/tokens/colors';
 import {
   fonts,
@@ -260,23 +261,19 @@ function storageKeyFor(projectId: string | null): string {
   return `bkg-budget-${projectId ?? 'anonymous'}`;
 }
 
+// 2026-05-22 (DATA+DEMO fix): readLines now delegates to
+// `normalizeStoredLines` in ./budget-storage, which accepts BOTH the legacy
+// bare-`BudgetLine[]` shape AND the `{ lines: BudgetLine[] }` envelope that
+// EstimatingClient writes during the AI-handoff push. Previously the
+// envelope path silently dropped to `[]`. Helper is split out so the unit
+// test (./__tests__/normalizeStoredLines.test.ts) doesn't drag in the full
+// BudgetClient module graph.
 function readLines(projectId: string | null): BudgetLine[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(storageKeyFor(projectId));
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    // Defensive narrowing — never trust localStorage contents.
-    return parsed.filter(
-      (l): l is BudgetLine =>
-        l &&
-        typeof l === 'object' &&
-        typeof l.id === 'string' &&
-        typeof l.category === 'string' &&
-        typeof l.amount === 'number' &&
-        STATE_ORDER.includes(l.state),
-    );
+    return normalizeStoredLines(JSON.parse(raw)) as BudgetLine[];
   } catch {
     return [];
   }
