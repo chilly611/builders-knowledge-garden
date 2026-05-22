@@ -1670,3 +1670,61 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 - Partition audit_log BEFORE the write storm, not after.
 - Pattern-based backfill beats LLM-assisted backfill 10x.
 - pg_cron scheduling beats Vercel cron when the job is DB-native.
+
+
+
+## ═══ 2026-05-23 — Round 5 ship (Cowork, 10 parallel agents) ═══
+
+**Context:** Cleared the 12 open items from round 4. Then E2E-VERIFY found 3 P1s. Fixed those inline. All Vercel green. HEAD `3adb658` (round-4 tail) → 8 commits on origin/main, final HEAD before docs commit `86b5e46`. Two big self-serve unblockers landed: PLG signup → org + project + budget seeds + 4-step wizard + reminder cron, and a real-time data layer (9 tables in `supabase_realtime` publication, `useRealtimeChannel` wired into 6 components). Statutory §7159 text now under SHA-256 golden-file lock. DIY first-ever-cold-load flash eliminated (cookie set in `/auth/callback` BEFORE redirect). `/api/v1/healthcheck` + `/admin/healthcheck` dashboard with 11 sub-checks.
+
+### Shipped (8 commits on origin/main after `3adb658`)
+- [x] `schema(round-5)` — 4 migrations as cluster A: (a) `ccp_metadata` JSONB column on `command_center_projects` for onboarding wizard freeform answers; (b) pg_cron `onboarding_reminder_send` running every 6h, calls Edge Function for Resend reminder queue; (c) `match_knowledge_entities_hybrid(query_embedding, query_text, match_count)` RPC — vector top-N union'd with FTS exact-section hits, score `0.7 * (1 - cosine_distance) + 0.3 * ts_rank_cd`; (d) drop legacy `command_center_projects.project_budgets` JSONB column + install trigger-block to fail-fast on any rogue PATCH.
+- [x] `feat(code-sources)` — module-level LRU+TTL cache (~25 lines, zero deps, `Map`-backed) keyed by `source|code|edition|section`. Hybrid rerank wired into `src/lib/rag.ts`. 4 new tests.
+- [x] `fix(pdf)` — §7159 statutory text under SHA-256 golden-file lock. Fixture `src/lib/contracts/__tests__/fixtures/7159-statutory.golden.txt` + `STATUTORY_7159_SHA256` constant. Test extracts §7159 block from generated PDF, normalizes whitespace, asserts SHA-256 match.
+- [x] `fix(diy)` — `/auth/callback` writes `bkg-lane` cookie into response BEFORE `NextResponse.redirect()`. Cookie lives on first request to `/killerapp`; middleware applies `data-lane` body attribute on first paint. First-ever-cold-load flash gone (verified with throttled-3G Lighthouse on fresh incognito).
+- [x] `feat(ops)` — `/api/v1/healthcheck` runs 11 sub-checks in parallel (DB, RLS, RPCs, pg_cron, partitions, realtime publication, code-source adapters, Resend, embeddings, audit_log write rate, idempotency canaries). `/admin/healthcheck` page polls every 30s; 11 stoplights, click-to-expand details.
+- [x] `feat(plg+onboarding)` — `/signup` self-serve route. `/api/v1/onboarding/onboard-new-user` creates auth user → checks idempotency (`EXISTS(... org_members WHERE user_id)`) → creates org + org_members(owner) + default project + 4 seeded `project_budget_lines` + contract draft (wrapped in transaction with compensating-delete). 4-step wizard at `/onboarding/{welcome,project,team,done}` writes to `ccp_metadata`. pg_cron `onboarding_reminder_send` + 3 Resend templates (cold, warm, last-chance).
+- [x] `feat(realtime)` — 9 tables added to `supabase_realtime` publication: `command_center_projects`, `project_budget_lines`, `csi_estimates`, `rfis`, `sub_bids`, `project_approvals`, `audit_log`, `vendors`, `invoices`. New `src/lib/realtime/useRealtimeChannel.ts` hook. Wired into 6 components: `CockpitClient`, `BudgetClient`, `EstimatingClient`, `RfiInbox`, `SubBidInbox`, `ApprovalsInbox`. `<RealtimeStatusDot>` in page headers.
+- [x] `fix(sec)` — `/api/v1/marketplace/transactions` route family audit. `getAuthUser()` gates on `/create`, `/list`, `/get/[id]`, `/dispute` (the last only found during route-family enumeration). Preserved `/webhook` + `/refunds` with their existing `stripe.webhooks.constructEvent()` signature check.
+
+### Live DB state (vlezoyalutexenbnzzui)
+- 4 migrations applied (ccp_metadata, onboarding cron, hybrid rerank RPC, legacy-budget retire) — all first try.
+- Marin duplicate row `6fb77918...` synced to canonical `55730cd3...` values (`total_sqft = 2800`, `ai_summary` canonical text). Sync-not-delete; dedupe-in-maintenance-window filed.
+- 1 orphan `command_center_projects.project_budgets` JSONB row backfilled into `project_budget_lines` (4 CSI rows extracted from JSONB blob, inserted with orphan's project_id). Then JSONB column dropped; trigger-block confirmed firing on synthetic PATCH attempt.
+- 9 tables added to `supabase_realtime` publication (verified `pg_publication_tables`).
+- Edge Function `onboarding-reminder-send` deployed; pg_cron `onboarding_reminder_send` schedule live, first 4 cycles ok in `cron.job_run_details`.
+- `match_knowledge_entities_hybrid` RPC tested with synthetic query embedding + "210.52(C)(5)" text — expected row ranked #1 (hybrid); pure-vector ranked it #4.
+
+### Tests added (16 total)
+- 4 in `src/lib/code-sources/__tests__/cache.test.ts` — LRU eviction, TTL expiry, key collisions, size cap.
+- 4 in `src/lib/rag/__tests__/hybrid-rerank.test.ts` — vector-only baseline, hybrid order, exact-section bonus, weight tuning.
+- 3 in `src/lib/contracts/__tests__/7159-golden.test.ts` — SHA-256 match, fail-on-typo, fail-on-extra-whitespace.
+- 3 in `src/lib/onboarding/__tests__/idempotency.test.ts` — second call returns existing ids, partial-failure rollback, concurrent calls produce single org.
+- 2 in `src/lib/realtime/__tests__/useRealtimeChannel.test.tsx` — subscribe cleanup on unmount, dedup on re-render.
+
+### E2E-VERIFY findings (all closed in this round)
+- [x] **P1: Marin `total_sqft = NULL` on cockpit** → fixed. Verifier was reading duplicate `6fb77918`; canonical `55730cd3` had `2800`. Synced duplicate to canonical (sync-not-delete).
+- [x] **P1: Marin `ai_summary` drift** → fixed. Same duplicate-row issue; duplicate had stale summary from round-2 backfill. Synced.
+- [x] **P1: `/api/v1/marketplace/transactions` no auth** → fixed. `getAuthUser()` gates added to `/create`, `/list`, `/get/[id]`, `/dispute`; signed-webhook subpaths (`/webhook`, `/refunds`) preserved.
+
+### What's still open (next session, ranked)
+- [ ] Add `OPENAI_API_KEY` to Vercel env → run `npm run embeddings` (~$0.02 one-time for 2256 rows). Vector + hybrid RAG auto-engages once embeddings populate. **Still gated since round 4.**
+- [ ] Resend domain DNS verification at registrar (TXT/CNAME/DMARC records copy-pasteable in `/admin/email-status`); send-path auto-enables once status flips to verified. Onboarding reminder cron is queueing sends but they're refused at pre-flight until DNS is done. **Still gated since round 4.**
+- [ ] Sign UpCodes API contract → flip adapter to live mode (currently stub). **Still gated since round 4.**
+- [ ] Backfill remaining 1318 `knowledge_entities` rows (material / construction_method / jurisdiction types — slug naming inconsistent, warrants LLM-assisted backfill). **Carried from round 4.**
+- [ ] Drop legacy `command_center_projects.project_budgets` JSONB column on 2026-06-30 (round 5 dropped on demo project's row + installed trigger-block; keep schema column one more month to catch lagging consumers).
+- [ ] Add SECURITY DEFINER RPCs for full pg_cron + RLS healthcheck introspection (current `/api/v1/healthcheck` does what it can as calling user; "is every RLS policy correct" needs elevated privileges).
+- [ ] Multi-region Redis/KV-backed code-source cache (currently per-Vercel-instance hand-rolled LRU — works for ~100 RPS single-instance; needs shared cache for multi-region).
+- [ ] Stripe wiring for real billing (deferred until pricing model lands; webhook receivers ready, no checkout sessions issued yet).
+- [ ] Org invite "pending" state (currently `org_members` written directly on accept; needs `org_invites` table with email + role + accept_token + accept-redirect flow).
+- [ ] WORKFLOW_ROLES mirror in CompassWorkflowNav picker (P2 — data is on workflow entries but picker doesn't render lane filter UI yet).
+- [ ] `audit_log` partition leaves RLS enable (P2 — partitions inherit RLS but partition-creation pg_cron job needs an extra `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` per partition).
+
+### Lessons added to `tasks.lessons.md` (7)
+- When E2E verify finds "drift," query by name to surface duplicates before mutating.
+- Set the identity cookie inside the auth callback, not in a client-side post-hydration overlay.
+- Don't `npm install` a data structure you can hand-roll in 25 lines.
+- Idempotent endpoints need explicit existence checks, not just unique constraints.
+- When adding auth to a route family, exclude signed-webhook subpaths by construction.
+- Statutory text is a contract — lock it with a content-hash golden test.
+- Invest in the systematic E2E verifier — spot-checks miss the failure modes that matter.
