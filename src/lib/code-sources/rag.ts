@@ -14,11 +14,12 @@
  *   the badge and back-fills the trust signal until we license publishers.
  *
  * Retrieval strategy (in priority order):
- *   1. If pgvector is enabled AND the row has an embedding column populated,
- *      use cosine similarity. (Embedding generation is OUT OF SCOPE here —
- *      flagged for follow-up.)
- *   2. Otherwise, Postgres full-text search via `search_text` column +
- *      `ts_rank_cd` ordering.
+ *   1. If pgvector is enabled, OPENAI_API_KEY is set, AND any rows in the
+ *      corpus have a non-NULL `embedding`, compute a query embedding and
+ *      run cosine similarity (`embedding <=> $1`). Backfill script:
+ *      `npm run embeddings`.
+ *   2. Otherwise (no key, no embeddings yet, or vector call fails), fall
+ *      back to Postgres full-text search via `search_text`.
  *
  * Verification gate:
  *   A returned row is `verified: true` IFF
@@ -46,6 +47,19 @@ const CODE_ENTITY_TYPES = [
 
 const VERIFIED_MIN_CONTENT_LEN = 100;
 const RAG_LIMIT = 5;
+const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || "text-embedding-3-small";
+
+// Per-process cache so two specialists in the same request don't re-embed
+// the same query string. Keys are model+text. Bounded by code-query
+// cardinality which is small in practice.
+const queryEmbeddingCache = new Map<string, number[] | null>();
+
+// Memoized check for whether the corpus has ANY embeddings yet. Avoids
+// repeatedly probing the DB once we've answered "no embeddings, FTS-only".
+// Re-checked every CORPUS_VECTOR_TTL_MS so the live flip-on (after backfill
+// finishes) is picked up without a redeploy.
+const CORPUS_VECTOR_TTL_MS = 60_000;
+let corpusHasVectors: { value: boolean; checkedAt: number } | null = null;
 
 interface RawRow {
   id: string;
@@ -231,9 +245,113 @@ async function queryBuildingCodesTable(
 }
 
 /**
+ * Compute an embedding for a free-text query via OpenAI's embeddings API.
+ * Returns null when OPENAI_API_KEY isn't set or the call fails — callers
+ * MUST treat null as "fall back to FTS" rather than as an error.
+ *
+ * Cached per-process by `${model}::${text}` so multi-specialist requests
+ * that share a query string only pay one round-trip.
+ */
+export async function embedQuery(text: string): Promise<number[] | null> {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const key = `${EMBEDDING_MODEL}::${trimmed}`;
+  if (queryEmbeddingCache.has(key)) return queryEmbeddingCache.get(key) ?? null;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ model: EMBEDDING_MODEL, input: trimmed }),
+    });
+    if (!res.ok) {
+      queryEmbeddingCache.set(key, null);
+      if (process.env.NODE_ENV !== "test") {
+        console.warn(`embedQuery: ${res.status} ${await res.text()}`);
+      }
+      return null;
+    }
+    const json = (await res.json()) as { data: Array<{ embedding: number[] }> };
+    const vector = json.data[0]?.embedding ?? null;
+    queryEmbeddingCache.set(key, vector);
+    return vector;
+  } catch (err) {
+    queryEmbeddingCache.set(key, null);
+    if (process.env.NODE_ENV !== "test") {
+      console.warn("embedQuery error:", err);
+    }
+    return null;
+  }
+}
+
+/**
+ * Check (with short cache) whether ANY row in the corpus has an embedding.
+ * Cheap: index-only count on `WHERE embedding IS NOT NULL`. Avoids paying
+ * for an embedding round-trip when we know the vector path will produce
+ * zero candidates.
+ */
+async function corpusHasAnyVectors(): Promise<boolean> {
+  const now = Date.now();
+  if (corpusHasVectors && now - corpusHasVectors.checkedAt < CORPUS_VECTOR_TTL_MS) {
+    return corpusHasVectors.value;
+  }
+  try {
+    const { count, error } = await supabase
+      .from("knowledge_entities")
+      .select("id", { count: "exact", head: true })
+      .not("embedding", "is", null)
+      .eq("status", "published")
+      .limit(1);
+    const has = !error && (count ?? 0) > 0;
+    corpusHasVectors = { value: has, checkedAt: now };
+    return has;
+  } catch {
+    corpusHasVectors = { value: false, checkedAt: now };
+    return false;
+  }
+}
+
+/**
+ * pgvector cosine-similarity retrieval. We call an RPC because supabase-js
+ * has no ergonomic way to express `ORDER BY embedding <=> $1::vector`. The
+ * RPC is defined in the same migration that adds the HNSW index
+ * (`20260522c_knowledge_entities_embedding_hnsw.sql`). If the RPC is not
+ * yet deployed, we return null and the caller falls back to FTS.
+ */
+async function queryByVector(vector: number[]): Promise<RawRow[] | null> {
+  try {
+    const { data, error } = await supabase.rpc("match_knowledge_entities", {
+      query_embedding: vector,
+      match_limit: RAG_LIMIT,
+      entity_types: CODE_ENTITY_TYPES,
+    });
+    if (error) {
+      // 42883 (undefined_function) → RPC not deployed yet. Anything else
+      // is a real failure but we still want FTS to take over.
+      if (process.env.NODE_ENV !== "test") {
+        console.warn("queryByVector RPC error:", error.message);
+      }
+      return null;
+    }
+    if (!data) return [];
+    return data as RawRow[];
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Main entry point. Returns up to RAG_LIMIT CodeSourceResults.
  * - Empty array when Supabase isn't configured or no terms to search on.
- * - Otherwise: best-effort FTS, with the verification gate applied per row.
+ * - Vector-first when (OPENAI_API_KEY is set) AND (corpus has embeddings).
+ * - Falls back to FTS for cold-start (pre-backfill), missing API key, or
+ *   any error along the vector path. Verification gate applied per row.
  */
 export async function queryRag(query: CodeQuery): Promise<CodeSourceResult[]> {
   if (!isSupabaseConfigured()) {
@@ -244,7 +362,19 @@ export async function queryRag(query: CodeQuery): Promise<CodeSourceResult[]> {
   if (!q) return [];
 
   try {
-    // Prefer dedicated building_codes table when SCHEMA-ALPHA ships it.
+    // 1. Vector path (only when both key AND populated corpus are present).
+    if (process.env.OPENAI_API_KEY && (await corpusHasAnyVectors())) {
+      const vector = await embedQuery(q);
+      if (vector) {
+        const vrows = await queryByVector(vector);
+        if (vrows && vrows.length > 0) {
+          return vrows.map((row) => rowToResult(row, query));
+        }
+        // Empty vector result is suspicious; fall through to FTS.
+      }
+    }
+
+    // 2. Prefer dedicated building_codes table when SCHEMA-ALPHA ships it.
     let rows = await queryBuildingCodesTable(q);
     if (rows === null) {
       // Table absent → use knowledge_entities (current production path).
