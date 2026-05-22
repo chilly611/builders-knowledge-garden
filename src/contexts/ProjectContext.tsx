@@ -298,6 +298,11 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   // user's id changes — same key, different tenant). The ProjectProvider
   // is mounted high in the killerapp tree so this fires once per auth
   // transition.
+  //
+  // 2026-05-22 (W9.D-W2 mount): also wipe `bkg:stage-welcome:*` dismissal
+  // flags. Otherwise the new tenant inherits the prior tenant's "I've
+  // seen the foreman copy" state for any (projectId, stageId) where the
+  // two users happen to share a projectId via the demo seed.
   useEffect(() => {
     let lastUserId: string | null = null;
     let initialized = false;
@@ -307,6 +312,18 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       initialized = true;
     })();
 
+    const clearStageWelcomeFlags = () => {
+      try {
+        const ls = window.localStorage;
+        const toRemove: string[] = [];
+        for (let i = 0; i < ls.length; i++) {
+          const key = ls.key(i);
+          if (key && key.startsWith('bkg:stage-welcome:')) toRemove.push(key);
+        }
+        for (const k of toRemove) ls.removeItem(k);
+      } catch { /* ignore */ }
+    };
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       const nextUserId = session?.user?.id ?? null;
 
@@ -314,6 +331,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       if (event === 'SIGNED_OUT' || nextUserId === null) {
         try { window.localStorage.removeItem(ACTIVE_PROJECT_KEY); } catch { /* ignore */ }
         try { window.localStorage.removeItem('last-project-id'); } catch { /* ignore */ }
+        clearStageWelcomeFlags();
         setProjectId(null);
         setProject(null);
         setError(null);
@@ -328,6 +346,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       if (initialized && lastUserId && nextUserId && lastUserId !== nextUserId) {
         try { window.localStorage.removeItem(ACTIVE_PROJECT_KEY); } catch { /* ignore */ }
         try { window.localStorage.removeItem('last-project-id'); } catch { /* ignore */ }
+        clearStageWelcomeFlags();
         setProjectId(null);
         setProject(null);
         setError(null);

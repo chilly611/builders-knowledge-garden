@@ -15,6 +15,7 @@ import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
 import CommandPalette from '@/design-system/components/CommandPalette';
 import CompassWorkflowNav from '@/components/CompassWorkflowNav';
 import SaveStatusToast from '@/components/SaveStatusToast';
+import StageWelcomeMount from '@/components/StageWelcomeMount';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
@@ -108,7 +109,13 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
         <CommandPalette />
         <CompassWorkflowNav />
         <SaveStatusToast />
-        {/* TODO(W9.D-W2): mount StageWelcome once project/workflow context is stable. */}
+        {/* W9.D-W2 (2026-05-22): StageWelcome mounted via StageWelcomeMount.
+            Renders nothing when there is no active project, when we're on
+            the picker landing (stageId=0), or when the per-(project,stage)
+            dismissal flag is set in localStorage. Re-shows on stage cross-
+            ings via `key={projectId}:{stageId}`. See StageWelcomeMount.tsx
+            for the full mounting contract. */}
+        <StageWelcomeMount />
           </NavigatorProvider>
         </ProjectProvider>
       </Suspense>
