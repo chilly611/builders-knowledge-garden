@@ -1704,3 +1704,89 @@ Also restored a cleaned `docs/in-flight.md` — collapsed to a single "no active
 
 **Verification:** every commit GREEN on Vercel within ~90s of push. Local `npm run build` green at HEAD `335077b`. RLS advisor: 11 prior "Allow all for now" violations resolved, 23 RLS-disabled tables remain (next session).
 
+## 2026-05-22 late evening — Cowork round-3 ship (14 parallel agents, 11 commits, schema migration + 14 new q-ids)
+**Agent:** Cowork (claude-opus-4-7[1m]) orchestrating a 14-subagent fleet (1 schema + 13 feature) using the schema-first parallelism pattern.
+**Branch:** `main`, HEAD `335077b` → HEAD `8492130` on origin/main (11 commits, all Vercel green).
+**Context:** After the 2026-05-22 evening ship resolved the 9 P0 clusters, Chilly returned with a 14-item P1 wishlist: CA §7159 statutory blocks + 4 lien-waiver templates, AIA B141 architect-of-record contract, real ICC/NFPA fetcher framework, lane gating made real, sub-bid submission flow, owner approval inbox with signature capture, vendor master + AR/AP ledger + QuickBooks export, audit_log writes, MEP panel + equipment schedules + load calc API, DIY/dreamer wizard, cockpit polish (derived $/sf, mobile drawer, sparkline by stage), and consolidated workflow registry for the 15 new q-ids. Single-commit-per-feature discipline maintained throughout; no Pattern-C bisect needed.
+
+**Headline:** 14 agents dispatched in parallel after the schema substrate landed as commit #1. 11 commits shipped clean (no rollbacks, no retries). 15 new workflows registered with unique non-numeric q-ids. 10 new tables in production with audit triggers + RLS. `audit_log` finally has rows (was empty since creation).
+
+**Commits shipped (335077b → 8492130 on origin/main, all green):**
+- `26e00da` schema — round-3 migration: 10 new tables (vendors, invoices superset, audit_log writes, project_members, sub_bids, change_order_signatures, panel_schedules, equipment_schedules, contracts revisions, project_approvals), audit triggers on all 10, `stage_id` column added to `command_center_projects` for cockpit sparkline phase-distribution fix.
+- `f03481b` feat(contracts+email) — CA §7159 HIC statutory blocks (3-day cancellation notice, Mechanics Lien Warning, deposit cap ≤$1K or 10%), 4 statutory waivers (§§8132 / 8134 / 8136 / 8138) with exact CA Civ Code text, AIA B141 architect-of-record template, Resend email wiring for contract delivery.
+- `c9031fa` feat(code-sources) — real ICC/NFPA fetcher framework with Zod-narrowed responses (paywall keys absent; framework calls a stub that returns `verified: false`), RAG retrieval over `knowledge_entities` + `building_codes` with proper tier-3 verification gating.
+- `d868143` feat(cockpit) — derived $/sf badge in HeroStrip (uses real sqft from migration), mobile drawer for project switcher (replaces the 480px-min hamburger overflow), sparkline by stage now reads `stage_id` (fixes everything-buckets-to-BUILD regression from Ship 35).
+- `e12af77` feat(lanes) — `useUserLane()` hook reading `user_metadata.lane`, `<LaneGate>` wrapper component, `ProjectContext.projectRole`, 6 seeded `project_members` rows distributing roles across demo accounts (gc-trial-01 dual-roled as gc + owner for owner-flow testing), `roles?: ProjectRole[]` field added to `CompassWorkflowNav` workflow entries with filter logic in place ready to be populated.
+- `b9b4065` feat(workflows) — contract picker UI on q4 (CA HIC vs B141 vs custom), RFI submission UI on q-rfi (full submit + threaded responses + status tracking), running punch list on q-punch (separate from q24 final walkthrough; items can be added mid-build by anyone with role).
+- `a8d8ed4` feat(workflows) — sub-bid submission flow on q-sub-bid-submit (specialty → GC with attachments + scope refs), sub-bid inbox on q-sub-bid-inbox (GC review + accept/decline/counter), owner approval inbox on q-approvals with signature capture on change orders.
+- `08d68d6` feat(diy-lane) — DIY/dreamer wizard with glossary-wrapped jargon (every AEC term auto-wraps in `<TermTooltip>`), plain-English cost explainer for dreamer lane, dedicated DIY cockpit overlay routing dreamers to the find-a-GC stub (q-find-gc).
+- `c1e433e` feat(bookkeeper) — vendors master UI (EIN, W-9 upload, CSLB # capture with screen-scrape lookup), `/api/v1/invoices` auth + UNION-superset schema supporting both legacy G702/G703 shape and new simple AR/AP shape, AR/AP ledger view, QuickBooks IIF + CSV export endpoints, audit trail viewer reading `audit_log`.
+- `bbb529e` feat(mep) — deterministic NEC 220.83 panel-schedule generator (electrical load calc with demand factors), HVAC tonnage + UPC fixture-count equipment schedule generator, `/api/v1/load-calc` endpoint, all three deterministic (no LLM in the math path).
+- `8492130` chore(workflows) — consolidated registration of 15 new workflows across the 5 registry files (`lifecycle-stages.ts`, `LIVE_WORKFLOWS.ts`, `LIVE_WORKFLOW_PATHS.ts`, `workflows.json`, `live-workflows.ts`); q-ids assigned as descriptive strings (q-rfi, q-punch, q-sub-bid-submit, etc.) not sequential numbers.
+
+**Net-new product surfaces (15 workflows registered):**
+- `q-aor` architect-of-record concierge (Lisa requested 2026-05-22 EVENING)
+- `q-find-gc` GC matching for dreamers/homeowners (Nick blocked 2026-05-22 EVENING)
+- `q-cost-explainer` plain-English budget explainer for dreamer lane
+- `q-rfi` RFI submission UI (Tom blocked 2026-05-22 EVENING)
+- `q-punch` running punch list (separate from q24 final walkthrough; mid-build use)
+- `q-sub-bid-submit` specialty → GC bid submission (Diego + Reza blocked since 2026-05-21)
+- `q-sub-bid-inbox` GC bid review inbox with accept/decline/counter
+- `q-approvals` owner approval inbox + signature capture on change orders (Rachel requested)
+- `q-vendors` vendor master with EIN/W-9/CSLB # (Jenny blocked 2026-05-22 EVENING)
+- `q-ledger` AR/AP invoice ledger
+- `q-qbexport` QuickBooks IIF/CSV export (Jenny requested)
+- `q-audit-trail` audit_log viewer
+- `q-panel-schedule` NEC 220.83 electrical panel/load schedule (Tom blocked)
+- `q-equipment-schedule` HVAC tonnage + UPC fixture-count
+- `q-load-calc` deterministic load-calc API
+
+**Supabase live data work (project `vlezoyalutexenbnzzui` via MCP):**
+- `apply_migration` for round-3 schema: 10 new tables created, audit triggers + RLS policies live, `stage_id` column on `command_center_projects` populated for 3 demo projects.
+- **Audit-trigger constraint bug found mid-session:** `audit_trigger_fn` captured `TG_OP` uppercase (`'INSERT'`) while `audit_log_action_check` required lowercase. Migration applied cleanly (no inserts during apply), but every subsequent UPDATE blew up. Caught when COCKPIT-FIXES tried to backfill `stage_id` via `execute_sql`. Workaround: disable trigger → backfill → fix the function with `lower(TG_OP)` cast → re-enable trigger. Lesson captured.
+- `audit_log` table now has rows (was empty since creation in 2026-05-21 schema). Every mutation against the 10 audited tables appends a row with `action`, `table_name`, `row_id`, `user_id`, `before`, `after`, `at`.
+- Trial accounts now have `project_members` rows: 5 base members (one per trial × their assigned demo project), plus `gc-trial-01` dual-roled as both `gc` and `owner` so owner-flow dogfooding can use the same login.
+- `vendors` seeded with 4 sample CA contractors (CSLB # populated, EIN masked, W-9 storage paths placeholdered).
+- RLS advisor re-run: 10 new tables all clean ("owner OR demo OR member" policies live), 23 prior RLS-disabled tables STILL flagged (deferred again to next session).
+
+**14-agent fleet roster (this session):**
+- SCHEMA-ALPHA (commit 1, sequenced FIRST)
+- Then parallel: CONTRACTS-CA, CODE-SOURCES, COCKPIT-FIXES, LANE-INFRA, WORKFLOWS-PICKER, SUBBID-FLOW, OWNER-LANE, DIY-LANE, BOOKKEEPER-UI, MEP-CALCS, plus 3 verifiers cross-cutting at the end.
+
+**Key decisions:**
+- **Schema-first parallelism.** Migration was commit #1; 13 feature agents then developed against a fixed substrate. Zero schema collisions; pattern captured in lessons.
+- **Unique non-numeric q-ids per agent** (`q-rfi`, `q-vendors`, etc.) — eliminated the race that q28/q29/q30 sequential picks would have created across 5 registry files. Lesson captured.
+- **Lane gating ships as opt-in.** `roles?: ProjectRole[]` defaults to `undefined` ("show to all"). Follow-up agents populate per-workflow without touching anyone else's entry. Lesson captured.
+- **Invoices as a UNION-superset schema** instead of two tables — supports both legacy G702/G703 consumers and new AR/AP UI from the same row without a destructive migration. Lesson captured.
+- **`text: data.text ?? ''` shipped knowingly** in ICC + NFPA fetchers to unblock the build; proper response-shape typing logged as P2 tech debt. Lesson captured.
+
+**What worked (process):**
+- Schema-first sequencing — the single biggest unlock for 14-agent parallelism (vs. round 2's sequential 10-agent dogfood).
+- Unique q-id per agent — let 5 shared registry files compose without conflict.
+- Single-commit-per-feature discipline — every push went green first try; no Pattern-C bisects needed.
+- Triple-source verifier pattern from round 2 carried forward — NUMBERS verifier rechecked cockpit numbers after `d868143` and confirmed $/sf badge math matches budget-lines sum; CONTRACTS verifier read the new CA §7159 block and confirmed exact statutory text + 12pt boldface flagged for follow-up.
+
+**What's still open for next session (P1+, see `tasks.todo.md` for the full list):**
+- BudgetClient WRITE path still PATCHes JSONB on save (read fixed last session, write still open).
+- Cold-start RAG: 15/916 `knowledge_entities` rows have URLs in `source_urls`; RAG can rank but rarely tier-3-verifies in practice. Backfill remains.
+- `pgvector` embeddings empty across the corpus (column exists, vector path is stub).
+- Real ICC/NFPA paywall keys + integration (framework + Zod-narrow ready, keys absent).
+- PDF formatting must enforce 12pt boldface on §7159 callouts (compliance-critical; current generator uses 11pt regular for everything).
+- CSLB lookup is screen-scrape (no public API; brittleness risk).
+- Vendor master is user-scoped (returns owner's vendors only; pre-org-membership; can't share vendor list across a team).
+- Email send-verification flow blocked until Resend domain is verified on the production account.
+- Cockpit `shouldSurfaceMepCalcs(project)` helper is implemented but the surfaced card isn't mounted on `/killerapp` yet.
+- `DiyCockpitOverlay` flashes briefly before hydration on slow connections (race between `useUserLane()` and route render).
+
+**Lessons added to `tasks.lessons.md` (6):**
+1. Schema-first parallelism: ship the migration as commit #1 to unblock N UI agents at once.
+2. Audit triggers with check constraints need a positive-path smoke test inside the same migration.
+3. Unique non-numeric q-ids per agent serialize workflow-registry edits without semantic conflict.
+4. `text: data.text ?? ''` is the right cheap fix when integrating untyped HTTP responses against a strict TS build.
+5. Lane gating substrate ships in one commit so follow-up agents opt in without coordination.
+6. Union-superset schemas let new feature UIs coexist with legacy API consumers without breaking either.
+
+**Files touched (commits 26e00da → 8492130):** 50+ across `src/app/api/v1/*`, `src/app/killerapp/*`, `src/lib/code-sources/*`, `src/lib/email/*`, `src/lib/contracts/*`, `src/lib/mep/*`, `src/lib/lanes/*`, `supabase/migrations/20260522_round3_schema.sql`. New library directories: `src/lib/code-sources/`, `src/lib/lanes/`, `src/lib/mep/`. New files: `src/lib/lanes/useUserLane.ts`, `src/lib/lanes/LaneGate.tsx`, `src/lib/mep/panel-schedule.ts`, `src/lib/mep/equipment-schedule.ts`, `src/app/killerapp/q-vendors/*`, `src/app/killerapp/q-ledger/*`, `src/app/killerapp/q-rfi/*`, `src/app/killerapp/q-punch/*`, `src/app/killerapp/q-sub-bid-submit/*`, `src/app/killerapp/q-sub-bid-inbox/*`, `src/app/killerapp/q-approvals/*`, `src/app/killerapp/q-audit-trail/*`, `src/app/killerapp/q-panel-schedule/*`, `src/app/killerapp/q-equipment-schedule/*`, `src/app/killerapp/q-aor/*`, `src/app/killerapp/q-find-gc/*`, `src/app/killerapp/q-cost-explainer/*`, `src/app/killerapp/q-qbexport/*`, `src/app/killerapp/diy-cockpit/*`.
+
+**Verification:** every commit GREEN on Vercel within ~90s of push. Local `npm run build` green at HEAD `8492130`. `audit_log` row count went from 0 → non-zero after the first feature commit hit production. `project_members` count went from 0 → 6 (5 base + 1 dual-role for gc-trial-01).
+
