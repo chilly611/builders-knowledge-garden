@@ -44,6 +44,26 @@ export const ACTIVE_PROJECT_KEY = 'bkg-active-project';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PROJECT_CHANGED_EVENT = 'bkg:project:changed';
 
+// COCKPIT-PERSONALIZATION (2026-05-22): the bkg-lane cookie is read SSR
+// by app/layout.tsx and middleware so the root <body> can stamp the
+// correct data-diy-cockpit value on the first byte and dodge the DIY
+// overlay flash. Cookie is non-HttpOnly (client read+write) and
+// SameSite=Lax. Treat as UI hint only — server-side auth must keep using
+// project_members + RLS for real access decisions.
+const LANE_COOKIE = 'bkg-lane';
+const LANE_COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+function writeLaneCookie(lane: string | null): void {
+  if (typeof document === 'undefined') return;
+  if (!lane) {
+    document.cookie = `${LANE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+    return;
+  }
+  document.cookie =
+    `${LANE_COOKIE}=${encodeURIComponent(lane)}; Path=/; ` +
+    `Max-Age=${LANE_COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
 export interface ProjectRecord {
   id: string;
   name: string | null;
@@ -273,6 +293,10 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         } else {
           const winner = [...roles].sort((a, b) => PRIORITY[b] - PRIORITY[a])[0];
           setProjectRole(winner);
+          // Mirror to bkg-lane cookie so the next SSR has the right
+          // body data-attr without waiting for the DIY overlay to
+          // hydrate. See LANE_COOKIE notes at top of file.
+          writeLaneCookie(winner);
         }
       }
     }
@@ -413,6 +437,9 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         setProject(null);
         setProjectRole(null);
         setError(null);
+        // COCKPIT-PERSONALIZATION: clear bkg-lane so the next anonymous
+        // SSR pass defaults to 'gc' (== pro picker visible).
+        writeLaneCookie(null);
         lastUserId = null;
         return;
       }
@@ -429,6 +456,9 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         setProject(null);
         setProjectRole(null);
         setError(null);
+        // Wipe lane cookie — the new tenant's role will be written by
+        // the projectRole-resolution effect once their project loads.
+        writeLaneCookie(null);
       }
       lastUserId = nextUserId;
     });

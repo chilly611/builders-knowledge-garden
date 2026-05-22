@@ -4,16 +4,20 @@
  * DiyCockpitOverlay — DIY-LANE simplified workflow picker (2026-05-22).
  *
  * Mounts on /killerapp. When the effective lane is `diy`:
- *   1. Hides the full 27-workflow lifecycle picker via a body class (the
- *      page's existing CSS targets [data-diy-cockpit="1"] body to display:none
- *      the stage sections).
+ *   1. The `body[data-diy-cockpit="1"]` attribute is set SERVER-SIDE by
+ *      the root layout from the `bkg-lane` cookie, so the CSS hide-picker
+ *      rule fires before hydration (no flash). This overlay no longer
+ *      flips the attribute on initial render — it only reconciles when
+ *      the in-memory lane diverges from the cookie (sign-in/out, project
+ *      switch, role swap). See ../layout.tsx + ../../middleware.ts.
  *   2. Renders a 3-column "Plan / Hire / Track" simplified view tuned for
  *      the dreamer-homeowner persona.
  *   3. Surfaces a quiet "Show all workflows" link that flips off the override
  *      for users who want the full picker.
  *
- * For non-diy lanes this component renders nothing and removes any class it
- * may have added on a previous render — so the pro flow is untouched.
+ * Cookie write contract: when the effective lane changes, this component
+ * writes `bkg-lane=<role>; SameSite=Lax; Max-Age=604800` so the next SSR
+ * pass picks up the new lane. On sign-out, ProjectContext clears it.
  */
 
 import { useEffect, useState } from 'react';
@@ -108,23 +112,41 @@ export default function DiyCockpitOverlay() {
 
   const isDiy = effectiveLane === 'diy' && !showAll;
 
-  // Toggle a body-level data attribute so the picker CSS can hide itself.
-  // We keep this in an effect (rather than rendering it inline) because the
-  // killerapp page is a Server Component — we can't pass a className down.
+  // COCKPIT-PERSONALIZATION (2026-05-22): the body[data-diy-cockpit] flag
+  // is now stamped server-side by the root layout from the bkg-lane
+  // cookie. On INITIAL render we only mark this component as mounted —
+  // we do NOT touch the body attribute, since the SSR value is already
+  // correct and overwriting it would re-introduce the flash.
+  //
+  // After mount, when the in-memory lane diverges from the cookie
+  // (sign-in, project switch, role swap, ?showAllWorkflows= toggle), we:
+  //   1. Update the body attribute to match the live lane.
+  //   2. Re-write the bkg-lane cookie so the next SSR pass agrees.
+  // Cookie is NOT HttpOnly (so the client can read+write) and SameSite=Lax.
   useEffect(() => {
-    setMounted(true);
-    if (typeof document === 'undefined') return;
-    if (isDiy) {
-      document.body.dataset.diyCockpit = '1';
-    } else {
-      delete document.body.dataset.diyCockpit;
+    if (!mounted) {
+      setMounted(true);
+      return;
     }
-    return () => {
-      if (typeof document !== 'undefined') {
-        delete document.body.dataset.diyCockpit;
+    if (loading) return;
+    if (typeof document === 'undefined') return;
+
+    // Reconcile body attribute against the live effective lane.
+    const want = isDiy ? '1' : '0';
+    if (document.body.dataset.diyCockpit !== want) {
+      document.body.dataset.diyCockpit = want;
+    }
+
+    // Reconcile the cookie. ?showAllWorkflows=1 is a TEMPORARY override
+    // (preserves the user's underlying lane) — don't persist it.
+    if (!showAll) {
+      const cookieLane = effectiveLane;
+      const existing = readBkgLaneCookie();
+      if (existing !== cookieLane) {
+        writeBkgLaneCookie(cookieLane);
       }
-    };
-  }, [isDiy]);
+    }
+  }, [mounted, loading, isDiy, effectiveLane, showAll]);
 
   if (loading || !mounted || !isDiy) return null;
 
@@ -132,13 +154,9 @@ export default function DiyCockpitOverlay() {
 
   return (
     <>
-      {/* Global CSS rule: hide the full lifecycle picker when in DIY mode.
-          We do this with a body[data-diy-cockpit] attribute selector instead
-          of a CSS Module class so the rule reaches the Server Component
-          markup without us threading classes through the picker tree. */}
-      <style>{`
-        body[data-diy-cockpit="1"] [data-diy-hide-picker="1"] { display: none !important; }
-      `}</style>
+      {/* Global hide-picker CSS rule lives in the ROOT layout now so it
+          applies before this client island hydrates — see app/layout.tsx.
+          Leaving this comment as a forwarding signpost. */}
     <section
       data-testid="diy-cockpit-overlay"
       style={{
@@ -267,4 +285,18 @@ function appendQs(search: URLSearchParams, key: string, value: string): string {
   const next = new URLSearchParams(search.toString());
   next.set(key, value);
   return next.toString();
+}
+
+/** Read the `bkg-lane` cookie, returning '' if absent. */
+function readBkgLaneCookie(): string {
+  if (typeof document === 'undefined') return '';
+  const m = document.cookie.match(/(?:^|;\s*)bkg-lane=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+/** Write the `bkg-lane` cookie. Non-HttpOnly so client can read it back. */
+function writeBkgLaneCookie(lane: string): void {
+  if (typeof document === 'undefined') return;
+  const oneWeek = 60 * 60 * 24 * 7;
+  document.cookie = `bkg-lane=${encodeURIComponent(lane)}; Path=/; Max-Age=${oneWeek}; SameSite=Lax`;
 }

@@ -16,6 +16,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import JourneyTimeline from './JourneyTimeline';
 import BudgetSnapshot from './BudgetSnapshot';
 import MobileCockpitDrawer from './MobileCockpitDrawer';
+import MepCalcsCard from './MepCalcsCard';
+import { shouldSurfaceMepCalcs } from '@/lib/mep-calc-router';
 
 import {
   STAGE_REGISTRY,
@@ -122,6 +124,18 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   const mobileProjectName = projectCtx.project?.name ?? null;
   const effectiveProjectId =
     propProjectId ?? activeProjectFromHook ?? getActiveProjectId() ?? null;
+
+  // COCKPIT-PERSONALIZATION (2026-05-22): surface the MEP calc generators
+  // on commercial / TI / etc. projects. Pure-keyword router — see
+  // src/lib/mep-calc-router.ts. Scope description isn't on ProjectRecord
+  // today; we feed ai_summary as a coarse proxy (it usually summarises
+  // the scope text the user typed in). Safe to pass undefined for fields
+  // we don't have — the helper handles nulls.
+  const showMepCalcs = shouldSurfaceMepCalcs({
+    projectType: projectCtx.project?.project_type ?? null,
+    jurisdiction: projectCtx.project?.jurisdiction ?? null,
+    scope: projectCtx.project?.ai_summary ?? projectCtx.project?.raw_input ?? null,
+  });
   const [journeyState, setJourneyState] = useState<Record<string, any>>({});
   const [budgetData, setBudgetData] = useState<BudgetTimelineData>({
     byStage: {} as any, totalCommittedCents: 0, totalSpentCents: 0, isOverbudget: false, overAmountCents: 0,
@@ -287,6 +301,11 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
           }}
           onReturnToLive={() => rewindTo(null)}
         />
+        {showMepCalcs && (
+          <div style={{ padding: '0 12px' }}>
+            <MepCalcsCard projectId={effectiveProjectId} variant="compact" />
+          </div>
+        )}
       </>
     );
   }
@@ -343,6 +362,14 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
         <BudgetSnapshot data={budgetData} activeStageId={activeStageId} />
       </div>
     </header>
+    {/* COCKPIT-PERSONALIZATION (2026-05-22): MEP-calcs card mounts UNDER
+        the cockpit band on desktop when the project shape suggests
+        commercial / TI / office / etc. See shouldSurfaceMepCalcs. */}
+    {showMepCalcs && (
+      <div style={{ padding: '0 24px' }}>
+        <MepCalcsCard projectId={effectiveProjectId} variant="desktop" />
+      </div>
+    )}
     </>
   );
 }

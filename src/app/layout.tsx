@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Archivo_Black } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import GlobalChromeGate from "@/components/GlobalChromeGate";
@@ -57,12 +58,42 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Builder's KG" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // COCKPIT-PERSONALIZATION (2026-05-22): read the `bkg-lane` cookie on
+  // the server so we can stamp `data-diy-cockpit` on <body> BEFORE the
+  // page paints. Previous pattern flipped the attribute in a useEffect
+  // inside DiyCockpitOverlay, which produced a visible flash of the pro
+  // picker while the client hydrated. Reading the cookie here (with a
+  // safe 'gc' default when absent) collapses the gap to zero. The
+  // middleware (src/middleware.ts) keeps the cookie under our control on
+  // every /killerapp request; cookie value is client-writable, so the
+  // attribute is UI hint only — never an authorization gate.
+  const cookieStore = await cookies();
+  const lane = cookieStore.get('bkg-lane')?.value ?? 'gc';
+  const isDiy = lane === 'diy';
+
   return (
     <html lang="en" className={`${archivo.variable} ${archivoBlack.variable}`}>
-      <body className="min-h-screen" style={{ background: "var(--bg)", color: "var(--fg)", fontFamily: "var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+      <head>
+        {/* DIY-overlay hide rule — server-rendered so it applies before
+            DiyCockpitOverlay hydrates. Was previously emitted by the
+            overlay's own <style> block, which only existed AFTER client
+            hydration → caused the pro picker to flash. Server-rendered
+            <style> is honoured by Next 16's RSC streamer. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              'body[data-diy-cockpit="1"] [data-diy-hide-picker="1"]{display:none!important;}',
+          }}
+        />
+      </head>
+      <body
+        className="min-h-screen"
+        data-diy-cockpit={isDiy ? '1' : '0'}
+        style={{ background: "var(--bg)", color: "var(--fg)", fontFamily: "var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+      >
         <Providers>
           <GamificationProvider>
             {children}
