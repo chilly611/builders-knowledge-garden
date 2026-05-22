@@ -11,7 +11,9 @@ import { stageAccent } from '../tokens/stage-accents';
 // doesn't depend on the page module's internals.
 // Workflows not in this map have no live route yet ("coming soon").
 const LIVE_WORKFLOW_PATHS: Record<string, string> = {
+  q1: '/killerapp/workflows/bid-risk',
   q2: '/killerapp/workflows/estimating',
+  q3: '/killerapp/workflows/client-lookup',
   q4: '/killerapp/workflows/contract-templates',
   q5: '/killerapp/workflows/code-compliance',
   q6: '/killerapp/workflows/job-sequencing',
@@ -28,6 +30,17 @@ const LIVE_WORKFLOW_PATHS: Record<string, string> = {
   q17: '/killerapp/workflows/expenses',
   q18: '/killerapp/workflows/outreach',
   q19: '/killerapp/workflows/compass-nav',
+  // Sequence-open (2026-05-22): q20-q27 paths added so stage 5/6/7
+  // transitions resolve to real workflows. Inline preview banners on
+  // q21/q22/q25 disclose "under construction" without hiding the route.
+  q20: '/killerapp/workflows/change-orders',
+  q21: '/killerapp/workflows/draw-requests',
+  q22: '/killerapp/workflows/lien-waivers',
+  q23: '/killerapp/workflows/payroll-check',
+  q24: '/killerapp/workflows/final-walk-through',
+  q25: '/killerapp/workflows/retainage-tracker',
+  q26: '/killerapp/workflows/warranty-handoff',
+  q27: '/killerapp/workflows/project-review',
 };
 
 /**
@@ -72,11 +85,9 @@ const WORKFLOW_LABELS: Record<string, string> = {
   q17: 'Expenses',
   q18: 'Outreach',
   q19: 'Compass Nav',
-  // q20-q27: routes exist (deep-link OK) but are intentionally absent
-  // from LIVE_WORKFLOW_PATHS above so the picker treats them as "Soon."
-  // Labels here are still used by NextWorkflowCard's stage-transition copy
-  // ("Move to Adapt: Manage scope changes"), so they must read like real
-  // workflow names — not "(TBD)". Mirror docs/workflows.json labels.
+  // q20-q27: opened in LIVE_WORKFLOW_PATHS as of 2026-05-22. Labels mirror
+  // docs/workflows.json and are used both for stage-transition copy
+  // ("Move to Adapt: Manage scope changes") and the picker rows.
   q20: 'Manage scope changes',
   q21: 'Request payment draws',
   q22: 'Collect lien waivers',

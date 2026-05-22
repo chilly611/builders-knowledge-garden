@@ -27,6 +27,13 @@ export const LIFECYCLE_STAGES: LifecycleStage[] = [
 /**
  * Which workflow ids live in which stage. Extracted from
  * docs/workflows.json 2026-04-19 (27 workflows, q1-q27).
+ *
+ * Sequencing note (2026-05-22): Stage 6 (Collect) order follows the
+ * industry-norm Close sequence — walk-through first (q24) gates final
+ * release, then retainage tracking begins (q25), then draws (q21) and
+ * waivers (q22) reconcile against it, with payroll close (q23) last.
+ * q25 was moved from Stage 7 to Stage 6 because retainage is a Close
+ * activity, not a Reflect activity. Stage 7 keeps warranty + lessons.
  */
 export const STAGE_WORKFLOWS: Record<number, string[]> = {
   1: ['q1', 'q2', 'q3'],
@@ -34,8 +41,8 @@ export const STAGE_WORKFLOWS: Record<number, string[]> = {
   3: ['q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13'],
   4: ['q14', 'q15', 'q16', 'q17', 'q18', 'q19'],
   5: ['q20'],
-  6: ['q21', 'q22', 'q23', 'q24'],
-  7: ['q25', 'q26', 'q27'],
+  6: ['q24', 'q21', 'q25', 'q22', 'q23'],
+  7: ['q26', 'q27'],
 };
 
 /**
@@ -46,7 +53,9 @@ export const STAGE_WORKFLOWS: Record<number, string[]> = {
  * Keep in sync with `LIVE_WORKFLOWS` in src/app/killerapp/page.tsx.
  */
 export const ROUTE_TO_WORKFLOW_ID: Record<string, string> = {
+  '/killerapp/workflows/bid-risk': 'q1',
   '/killerapp/workflows/estimating': 'q2',
+  '/killerapp/workflows/client-lookup': 'q3',
   '/killerapp/workflows/contract-templates': 'q4',
   '/killerapp/workflows/code-compliance': 'q5',
   '/killerapp/workflows/job-sequencing': 'q6',
@@ -63,6 +72,14 @@ export const ROUTE_TO_WORKFLOW_ID: Record<string, string> = {
   '/killerapp/workflows/expenses': 'q17',
   '/killerapp/workflows/outreach': 'q18',
   '/killerapp/workflows/compass-nav': 'q19',
+  '/killerapp/workflows/change-orders': 'q20',
+  '/killerapp/workflows/draw-requests': 'q21',
+  '/killerapp/workflows/lien-waivers': 'q22',
+  '/killerapp/workflows/payroll-check': 'q23',
+  '/killerapp/workflows/final-walk-through': 'q24',
+  '/killerapp/workflows/retainage-tracker': 'q25',
+  '/killerapp/workflows/warranty-handoff': 'q26',
+  '/killerapp/workflows/project-review': 'q27',
 };
 
 /** Inverse of STAGE_WORKFLOWS — workflow id → stageId. */

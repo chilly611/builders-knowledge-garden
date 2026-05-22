@@ -88,7 +88,9 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q4: '/killerapp/workflows/contract-templates',
   q5: '/killerapp/workflows/code-compliance',
   // Week 3 — Size Up
+  q1: '/killerapp/workflows/bid-risk',
   q2: '/killerapp/workflows/estimating',
+  q3: '/killerapp/workflows/client-lookup',
   // Week 3 — Plan
   q6: '/killerapp/workflows/job-sequencing',
   q7: '/killerapp/workflows/worker-count',
@@ -105,6 +107,19 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q17: '/killerapp/workflows/expenses',
   q18: '/killerapp/workflows/outreach',
   q19: '/killerapp/workflows/compass-nav',
+  // Sequence-open (2026-05-22): q20-q27 opened so stage 5/6/7 transitions
+  // in NextWorkflowCard + StageWelcome CTAs land on real workflows instead
+  // of falling back to the picker. q21/q22/q25 carry their own inline
+  // "under construction" preview banners — handled at the workflow level,
+  // not by hiding them from LIVE_WORKFLOWS.
+  q20: '/killerapp/workflows/change-orders',
+  q21: '/killerapp/workflows/draw-requests',
+  q22: '/killerapp/workflows/lien-waivers',
+  q23: '/killerapp/workflows/payroll-check',
+  q24: '/killerapp/workflows/final-walk-through',
+  q25: '/killerapp/workflows/retainage-tracker',
+  q26: '/killerapp/workflows/warranty-handoff',
+  q27: '/killerapp/workflows/project-review',
   // Sprint B7 — voice-first lead intake
   'crm-lead-intake': '/killerapp/who-is-asking',
 };
