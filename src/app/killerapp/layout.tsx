@@ -16,6 +16,7 @@ import CommandPalette from '@/design-system/components/CommandPalette';
 import CompassWorkflowNav from '@/components/CompassWorkflowNav';
 import SaveStatusToast from '@/components/SaveStatusToast';
 import StageWelcomeMount from '@/components/StageWelcomeMount';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
@@ -116,6 +117,12 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
             ings via `key={projectId}:{stageId}`. See StageWelcomeMount.tsx
             for the full mounting contract. */}
         <StageWelcomeMount />
+        {/* ONBOARDING-V1 (2026-05-22): first-run modal. Renders nothing
+            unless the user is gc/owner-lane AND has an open onboarding
+            state (or ?first_run=1 on a fresh account). Self-contained —
+            reads user_metadata via supabase and writes back through the
+            auth.updateUser API. See src/components/onboarding/. */}
+        <OnboardingModal />
           </NavigatorProvider>
         </ProjectProvider>
       </Suspense>

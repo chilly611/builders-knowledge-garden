@@ -5,6 +5,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { safeNext } from '@/lib/safe-url';
+import { LEGACY_LANE_TO_PROJECT_ROLE } from '@/lib/use-user-lane';
+
+// DIY-COLD (2026-05-22): /signup → signInWithPassword → /welcome bypasses
+// /auth/callback, so we need to write the bkg-lane cookie here too. Same
+// constants as the writers in ProjectContext + DiyCockpitOverlay +
+// /auth/callback. Cookie is non-HttpOnly + SameSite=Lax. UI hint only —
+// server auth still goes through project_members + RLS.
+const LANE_COOKIE = 'bkg-lane';
+const LANE_COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 7;
+
+function writeLaneCookie(lane: string): void {
+  if (typeof document === 'undefined') return;
+  document.cookie =
+    `${LANE_COOKIE}=${encodeURIComponent(lane)}; Path=/; ` +
+    `Max-Age=${LANE_COOKIE_MAX_AGE_SEC}; SameSite=Lax`;
+}
 
 function SignupPageContent() {
   const router = useRouter();
@@ -99,6 +115,56 @@ function SignupPageContent() {
           // Instrumentation only.
         }
       })();
+
+      // DIY-COLD (2026-05-22): write the bkg-lane cookie BEFORE the push
+      // into /welcome so the next render carries it. signup-beta does
+      // not currently set user_metadata.lane (brand-new accounts default
+      // to 'gc'), but if a future variant of the signup form ever lets
+      // the user pre-select a lane this will pick it up automatically.
+      try {
+        const { data: ud } = await supabase.auth.getUser();
+        const raw = (ud.user?.user_metadata?.lane as string | undefined) ?? null;
+        const projectRole =
+          raw === 'builder' || raw === 'specialist' || raw === 'dreamer'
+            ? LEGACY_LANE_TO_PROJECT_ROLE[raw]
+            : 'gc';
+        writeLaneCookie(projectRole);
+      } catch {
+        // Non-fatal — /welcome will write the cookie as a fallback.
+      }
+
+      // PLG-SIGNUP (2026-05-22) — call /api/v1/onboard-new-user to bootstrap
+      // an org + first project + budget seed + welcome email BEFORE we push
+      // the user anywhere. If onboarding succeeds we skip /welcome and drop
+      // them straight into their newly-seeded project with `first_run=1` so
+      // the cockpit shows the orientation banner. If onboarding fails we
+      // fall back to /welcome (the user can manually create stuff there).
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (token) {
+          const onboardRes = await fetch('/api/v1/onboard-new-user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({}),
+          });
+          const onboardJson = await onboardRes.json().catch(() => ({} as Record<string, unknown>));
+          if (onboardRes.ok && onboardJson && typeof onboardJson === 'object' && (onboardJson as { ok?: boolean }).ok && (onboardJson as { project_id?: string }).project_id) {
+            const projectId = (onboardJson as { project_id: string }).project_id;
+            router.push(`/killerapp?project=${encodeURIComponent(projectId)}&first_run=1`);
+            return;
+          }
+          // Onboarding non-OK — log and fall through to /welcome.
+          console.warn('[signup] onboard-new-user did not return a project_id:', onboardJson);
+        }
+      } catch (err) {
+        // Onboarding failed for whatever reason — never block the signup.
+        // The user lands on /welcome where they can manually create stuff.
+        console.warn('[signup] onboard-new-user threw:', err);
+      }
 
       // 2026-05-20 — brand-new signups have never seen /welcome, so the flag
       // can't be set yet. Route through /welcome on first signup so the user
