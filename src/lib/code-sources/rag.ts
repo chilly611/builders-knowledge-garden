@@ -14,12 +14,21 @@
  *   the badge and back-fills the trust signal until we license publishers.
  *
  * Retrieval strategy (in priority order):
- *   1. If pgvector is enabled, OPENAI_API_KEY is set, AND any rows in the
- *      corpus have a non-NULL `embedding`, compute a query embedding and
- *      run cosine similarity (`embedding <=> $1`). Backfill script:
- *      `npm run embeddings`.
- *   2. Otherwise (no key, no embeddings yet, or vector call fails), fall
- *      back to Postgres full-text search via `search_text`.
+ *   1. Hybrid (vector + FTS + section bonus). When pgvector is enabled,
+ *      OPENAI_API_KEY is set, AND any rows in the corpus have a non-NULL
+ *      `embedding`, we call `hybrid_match_knowledge_entities` which
+ *      combines server-side cosine similarity with normalized
+ *      `ts_rank_cd`. The TS adapter layers a γ · section-bonus on top
+ *      (1.0 for exact section match in slug/title, 0.5 for numeric
+ *      prefix). See `combineHybridScores`. Backfill script:
+ *      `npm run embeddings`. Migration:
+ *      `20260523_hybrid_rerank_rpc.sql`.
+ *   2. If the hybrid RPC isn't deployed yet, fall back to the pure
+ *      vector RPC (`match_knowledge_entities`) so older deploys keep
+ *      working through the rollout window.
+ *   3. If neither is available (no API key, no embeddings yet, vector
+ *      call fails, hybrid returned empty), fall back to Postgres
+ *      full-text search via `search_text`.
  *
  * Verification gate:
  *   A returned row is `verified: true` IFF
@@ -37,6 +46,7 @@
 
 import { supabase, isSupabaseConfigured } from "../supabase";
 import type { CodeQuery, CodeSourceResult } from "./types";
+import { withCache } from "./cache";
 
 const CODE_ENTITY_TYPES = [
   "building_code",
@@ -47,7 +57,65 @@ const CODE_ENTITY_TYPES = [
 
 const VERIFIED_MIN_CONTENT_LEN = 100;
 const RAG_LIMIT = 5;
+const HYBRID_CANDIDATE_LIMIT = 20;
 const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || "text-embedding-3-small";
+
+// Hybrid score weighting. Sum SHOULD be 1.0 but isn't enforced — these
+// are linear weights, the rerank only cares about relative ordering.
+//   ALPHA → semantic similarity weight (vector cosine)
+//   BETA  → token-match weight (FTS ts_rank_cd, normalized per query)
+//   GAMMA → section-number bonus weight (exact / prefix slug+title match)
+// Tuned for the "NEC 210.52(C)(5)" class of query where section precision
+// matters more than fuzzy semantic neighbors. Bump GAMMA if probe runs
+// show section misses; bump ALPHA if natural-language queries regress.
+const ALPHA_VECTOR = 0.6;
+const BETA_FTS = 0.3;
+const GAMMA_SECTION = 0.1;
+
+/**
+ * Linear combination of the three normalized scores. Kept as a free
+ * function so tests can pin behavior without touching the adapter.
+ */
+export function combineHybridScores(
+  vectorScore: number,
+  ftsScore: number,
+  sectionBonus: number
+): number {
+  return (
+    ALPHA_VECTOR * vectorScore +
+    BETA_FTS * ftsScore +
+    GAMMA_SECTION * sectionBonus
+  );
+}
+
+// Regex that catches code-style section numbers across publishers:
+//   "210", "210.52", "210.52(C)", "210.52(C)(5)", "1107.6.1", "R602.10.6.2"
+// The leading word boundary keeps random short numbers from leaking in.
+// Two-digit minimum (\d{2,4}) avoids matching "5" or "1" alone.
+// We deliberately omit a trailing \b because `\b` does NOT exist between
+// `)` and end-of-string (both are non-word characters), which would
+// truncate "210.52(C)(5)" to "210.52". Greedy quantifiers on the
+// (\([A-Z]\)) and (\(\d+\)) groups extend the match as far as possible.
+const SECTION_NUMBER_RE = /\b[A-Z]?\d{2,4}(?:\.\d+)*(?:\([A-Za-z]\))*(?:\(\d+\))*/g;
+
+/**
+ * Pull plausible section numbers out of the query's structured fields.
+ * Returns deduped, lowercased tokens. Empty when none found (caller
+ * treats that as "no section bonus available", not an error).
+ */
+export function extractSectionNumbers(query: CodeQuery): string[] {
+  const sources: string[] = [];
+  if (query.section) sources.push(query.section);
+  if (query.keywords) sources.push(...query.keywords);
+  if (query.edition) sources.push(query.edition);
+  const out: string[] = [];
+  for (const s of sources) {
+    if (!s) continue;
+    const matches = s.match(SECTION_NUMBER_RE);
+    if (matches) out.push(...matches);
+  }
+  return Array.from(new Set(out.map((s) => s.toLowerCase())));
+}
 
 // Per-process cache so two specialists in the same request don't re-embed
 // the same query string. Keys are model+text. Bounded by code-query
@@ -87,6 +155,60 @@ function unwrapJsonbText(value: unknown): string {
     return JSON.stringify(obj);
   }
   return String(value);
+}
+
+/**
+ * Score a candidate row's section affinity against the parsed query
+ * sections. Returns:
+ *   1.0  exact section token appears in slug or title
+ *   0.5  the leading numeric prefix (e.g. "210" of "210.52") appears
+ *   0    no signal
+ * Exported for unit tests.
+ */
+export function sectionBonusForRow(
+  row: { slug?: string | null; title?: unknown },
+  sections: string[]
+): number {
+  if (!sections.length) return 0;
+  const titleStr = unwrapJsonbText(row.title).toLowerCase();
+  // Slugs use dashes where canonical citations use dots / parens:
+  //   "210.52(C)(5)" lives in slug as "nec-210-52-c-5". We normalize
+  //   BOTH sides by collapsing every non-alphanumeric run to a single
+  //   dash. This lets "210.52" match "210-52" and vice versa without
+  //   pulling in false positives like "21052".
+  const normalize = (s: string): string =>
+    s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const hay = `-${normalize(`${row.slug || ""} ${titleStr}`)}-`;
+
+  // Exact match first — that's the precision win we built this for.
+  for (const sec of sections) {
+    if (!sec) continue;
+    const needle = normalize(sec);
+    if (needle.length >= 2 && hay.includes(`-${needle}-`)) return 1.0;
+    if (needle.length >= 2 && hay.includes(needle)) return 1.0;
+  }
+  // Prefix fallback (e.g. "210.52" → "210"). Skip prefixes shorter than
+  // 2 chars to avoid spurious matches on single-digit tokens.
+  for (const sec of sections) {
+    const prefix = sec.split(".")[0].replace(/[^a-z0-9]/gi, "");
+    if (prefix.length >= 2 && hay.includes(`-${prefix.toLowerCase()}-`)) {
+      return 0.5;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Per-candidate working state during hybrid rerank. Public so tests
+ * can assert on individual score components without re-implementing
+ * the merge.
+ */
+export interface HybridCandidate {
+  row: RawRow;
+  vectorScore: number;
+  ftsScore: number;
+  sectionBonus: number;
+  combinedScore: number;
 }
 
 /**
@@ -347,9 +469,100 @@ async function queryByVector(vector: number[]): Promise<RawRow[] | null> {
 }
 
 /**
+ * Hybrid retrieval RPC. Calls `hybrid_match_knowledge_entities` which
+ * runs both a vector and an FTS search server-side, normalizes both
+ * scores to [0,1], and returns a union with α·vector + β·fts pre-applied.
+ * The TS adapter then layers the section-number bonus (γ) on top.
+ *
+ * Returns null when:
+ *   - the RPC isn't deployed yet (42883)
+ *   - any other DB error happens (caller falls back to FTS path)
+ * Returns [] when the RPC ran but found nothing.
+ */
+async function queryByHybrid(
+  vector: number[],
+  q: string
+): Promise<RawHybridRow[] | null> {
+  try {
+    const { data, error } = await supabase.rpc(
+      "hybrid_match_knowledge_entities",
+      {
+        query_embedding: vector,
+        query_text: q,
+        match_limit: HYBRID_CANDIDATE_LIMIT,
+        entity_types: CODE_ENTITY_TYPES,
+      }
+    );
+    if (error) {
+      if (process.env.NODE_ENV !== "test") {
+        console.warn("queryByHybrid RPC error:", error.message);
+      }
+      return null;
+    }
+    if (!data) return [];
+    return data as RawHybridRow[];
+  } catch {
+    return null;
+  }
+}
+
+interface RawHybridRow extends RawRow {
+  vector_score?: number | string | null;
+  fts_score?: number | string | null;
+  combined_score?: number | string | null;
+}
+
+/**
+ * Coerce a numeric/string score from the RPC into a finite number in
+ * [0,1]. Postgres `numeric` arrives as a string in supabase-js; we
+ * parseFloat it and clamp. Null / NaN → 0 (treat as "missing signal").
+ */
+function toScore(v: number | string | null | undefined): number {
+  if (v == null) return 0;
+  const n = typeof v === "number" ? v : parseFloat(v);
+  if (!Number.isFinite(n)) return 0;
+  if (n < 0) return 0;
+  if (n > 1) return 1;
+  return n;
+}
+
+/**
+ * Apply the section-number bonus to RPC output and re-rank.
+ *
+ * The RPC already gave us `α·vector + β·fts`. We layer `γ·section_bonus`
+ * on top in TS so we can tune γ without redeploying SQL — and because
+ * section matching is fundamentally a slug/title string test, easier to
+ * iterate in TS than in plpgsql.
+ *
+ * Exported for unit tests; not part of the public adapter surface.
+ */
+export function hybridRerank(
+  rows: RawHybridRow[],
+  query: CodeQuery
+): HybridCandidate[] {
+  const sections = extractSectionNumbers(query);
+  const candidates: HybridCandidate[] = rows.map((row) => {
+    const vectorScore = toScore(row.vector_score);
+    const ftsScore = toScore(row.fts_score);
+    const sectionBonus = sectionBonusForRow(row, sections);
+    return {
+      row,
+      vectorScore,
+      ftsScore,
+      sectionBonus,
+      combinedScore: combineHybridScores(vectorScore, ftsScore, sectionBonus),
+    };
+  });
+  candidates.sort((a, b) => b.combinedScore - a.combinedScore);
+  return candidates;
+}
+
+/**
  * Main entry point. Returns up to RAG_LIMIT CodeSourceResults.
  * - Empty array when Supabase isn't configured or no terms to search on.
- * - Vector-first when (OPENAI_API_KEY is set) AND (corpus has embeddings).
+ * - Hybrid (vector + FTS + section bonus) when OPENAI_API_KEY is set AND
+ *   corpus has embeddings AND the hybrid RPC is deployed.
+ * - Falls back to pure vector if hybrid RPC is missing (older deploy).
  * - Falls back to FTS for cold-start (pre-backfill), missing API key, or
  *   any error along the vector path. Verification gate applied per row.
  */
@@ -361,16 +574,30 @@ export async function queryRag(query: CodeQuery): Promise<CodeSourceResult[]> {
   const q = buildQueryString(query);
   if (!q) return [];
 
+  return withCache("rag", query, async () => {
   try {
-    // 1. Vector path (only when both key AND populated corpus are present).
+    // 1. Hybrid path (vector + FTS + section bonus). Requires both an
+    //    embedding API key AND a populated corpus. The hybrid RPC handles
+    //    the merge server-side; we re-rank locally with the section bonus.
     if (process.env.OPENAI_API_KEY && (await corpusHasAnyVectors())) {
       const vector = await embedQuery(q);
       if (vector) {
-        const vrows = await queryByVector(vector);
-        if (vrows && vrows.length > 0) {
-          return vrows.map((row) => rowToResult(row, query));
+        const hybridRows = await queryByHybrid(vector, q);
+        if (hybridRows && hybridRows.length > 0) {
+          const ranked = hybridRerank(hybridRows, query).slice(0, RAG_LIMIT);
+          return ranked.map((c) => rowToResult(c.row, query));
         }
-        // Empty vector result is suspicious; fall through to FTS.
+
+        // 1b. Hybrid RPC absent or returned nothing? Try the older
+        //     pure-vector RPC so we keep working during the rollout
+        //     window before the migration is applied.
+        if (hybridRows === null) {
+          const vrows = await queryByVector(vector);
+          if (vrows && vrows.length > 0) {
+            return vrows.map((row) => rowToResult(row, query));
+          }
+        }
+        // Empty result on either path → fall through to FTS.
       }
     }
 
@@ -390,4 +617,5 @@ export async function queryRag(query: CodeQuery): Promise<CodeSourceResult[]> {
     }
     return [];
   }
+  });
 }

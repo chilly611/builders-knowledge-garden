@@ -25,6 +25,7 @@
 import { z } from "zod";
 import type { CodeQuery, CodeSourceResult } from "./types";
 import { fetchPublisher, hasApiKey } from "./http-fetcher";
+import { withCache } from "./cache";
 
 const NFPA_BASE_URL = "https://nfpa.org";
 const NFPA_API_BASE = process.env.NFPA_API_BASE_URL || "https://api.nfpa.org/v1";
@@ -126,6 +127,7 @@ export async function queryNfpa(query: CodeQuery): Promise<CodeSourceResult[]> {
   const edition = query.edition || "2023";
   const userUrl = constructNfpaUrl(standard, query.section);
 
+  return withCache("nfpa", query, async () => {
   if (!hasApiKey(NFPA_API_KEY_ENV)) {
     return [buildPreviewResult(query, standard, edition, userUrl)];
   }
@@ -194,4 +196,5 @@ export async function queryNfpa(query: CodeQuery): Promise<CodeSourceResult[]> {
     }
     return [buildPreviewResult(query, standard, edition, userUrl)];
   }
+  });
 }

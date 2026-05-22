@@ -27,6 +27,8 @@ export { queryIcc } from "./icc";
 export { queryNfpa } from "./nfpa";
 export { queryUpCodes } from "./upcodes";
 export { queryLocalAmendments } from "./local-amendments";
+export { getCacheStats, invalidateCache } from "./cache";
+export type { CacheableSource } from "./cache";
 
 /**
  * Query all 6 code sources in parallel.

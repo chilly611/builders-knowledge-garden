@@ -26,6 +26,7 @@
 import { z } from "zod";
 import type { CodeQuery, CodeSourceResult } from "./types";
 import { fetchPublisher, hasApiKey } from "./http-fetcher";
+import { withCache } from "./cache";
 
 const UPCODES_BASE_URL = "https://up.codes";
 const UPCODES_API_BASE =
@@ -150,6 +151,7 @@ export async function queryUpCodes(query: CodeQuery): Promise<CodeSourceResult[]
   const edition = query.edition || "2021";
   const userUrl = constructUpCodesUrl(codeId, query.section, query.jurisdiction);
 
+  return withCache("upcodes", query, async () => {
   if (!hasApiKey(UPCODES_API_KEY_ENV)) {
     return [buildPreviewResult(query, codeId, edition, userUrl)];
   }
@@ -232,4 +234,5 @@ export async function queryUpCodes(query: CodeQuery): Promise<CodeSourceResult[]
     }
     return [buildPreviewResult(query, codeId, edition, userUrl)];
   }
+  });
 }

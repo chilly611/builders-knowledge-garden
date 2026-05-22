@@ -38,6 +38,7 @@
 import { z } from "zod";
 import type { CodeQuery, CodeSourceResult } from "./types";
 import { fetchPublisher, hasApiKey } from "./http-fetcher";
+import { withCache } from "./cache";
 
 const ICC_BASE_URL = "https://codes.iccsafe.org";
 const ICC_API_BASE = process.env.ICC_API_BASE_URL || "https://api.iccsafe.org/v1";
@@ -167,6 +168,7 @@ export async function queryIcc(query: CodeQuery): Promise<CodeSourceResult[]> {
   const edition = query.edition || "2021";
   const userUrl = constructIccUrl(codeId, query.section);
 
+  return withCache("icc-digital-codes", query, async () => {
   // Preview mode: no key, no network. Identical behavior to pre-refactor.
   if (!hasApiKey(ICC_API_KEY_ENV)) {
     return [buildPreviewResult(query, codeId, edition, userUrl)];
@@ -246,4 +248,5 @@ export async function queryIcc(query: CodeQuery): Promise<CodeSourceResult[]> {
     }
     return [buildPreviewResult(query, codeId, edition, userUrl)];
   }
+  });
 }

@@ -259,20 +259,42 @@ to citation-only. Wire these into Loop 5 once we're live so we can track:
 - p95 latency per publisher
 - distribution of `reason` values (which kind of failures dominate)
 
-## Vector RAG (pgvector + OpenAI embeddings)
+## Hybrid RAG: vector + FTS + section bonus
 
-_Added 2026-05-22 alongside the `match_knowledge_entities` RPC + HNSW index._
+_Added 2026-05-22 (vector RPC + HNSW index, migration `20260522c`)._
+_Extended 2026-05-23 (hybrid RPC + section-bonus rerank, migration `20260523`)._
 
-The `rag` adapter now has a **vector-first retrieval path** that engages
-automatically when two conditions are met:
+The `rag` adapter now uses a **hybrid retrieval path** that combines
+three signals:
 
-1. `OPENAI_API_KEY` is set in the runtime environment.
-2. At least one row in `knowledge_entities` has a non-NULL `embedding`
-   (column is `vector(1536)`, pgvector 0.8.0).
+| Signal | Source | Range | Weight (α/β/γ) | Strong when… |
+|---|---|---|---|---|
+| **vector** | pgvector cosine similarity (HNSW-indexed) on OpenAI embeddings | [0, 1] | α = 0.6 | the query is semantically expressed ("kitchen counter outlets near sink") |
+| **fts** | Postgres `ts_rank_cd` on `search_text`, normalized to [0,1] per query | [0, 1] | β = 0.3 | the query carries distinctive tokens (publisher names, exotic terms) |
+| **section_bonus** | TS-side: 1.0 for exact section in slug/title, 0.5 for numeric prefix match | {0, 0.5, 1.0} | γ = 0.1 | the query carries a section number ("NEC 210.52(C)(5)") |
 
-When either is missing, the adapter silently falls back to the FTS path
-that has shipped to prod since 2026-04. **No code edits required to flip
-the path on** — wire the env var, backfill the embeddings, done.
+`combined_score = 0.6·vector + 0.3·fts + 0.1·section_bonus`
+
+The α/β split is computed server-side by the
+`hybrid_match_knowledge_entities` RPC. The γ bonus is applied in
+TypeScript (`hybridRerank` in `src/lib/code-sources/rag.ts`) so we can
+tune section-matching heuristics without redeploying SQL.
+
+### Why this exists
+
+Pure vector retrieval is fuzzy: embeddings rank "NEC Article 210 —
+Branch Circuits Overview" above "NEC 210.52(C)(5) — Island Countertop
+Receptacles" when the query is "NEC 210.52(C)(5) receptacle outlet
+spacing", because the semantic neighborhood is dense. FTS on
+`ts_rank_cd` catches the literal "210.52" token but loses to fuzzy
+phrasing. Section-bonus catches the case where the embedding model
+also stripped section-number precision but the slug/title still has it.
+
+Combining all three gives:
+- Section-aware queries → top result is the right section (γ tips it).
+- Natural-language queries → embeddings still drive (α dominates).
+- Distinctive-token queries → ts_rank_cd catches matches the embedding
+  blurred (β backstops).
 
 ### Fallback chain
 
@@ -281,8 +303,13 @@ queryRag(query)
   │
   ├─ if OPENAI_API_KEY && corpusHasAnyVectors():
   │     ├─ embedQuery(q)            → 1536-dim vector
+  │     ├─ rpc("hybrid_match_knowledge_entities", vector, query_text, ...)
+  │     │     vector top-20 ∪ FTS top-20, normalized scores
+  │     ├─ hybridRerank()           → apply γ·section_bonus, sort desc
+  │     └─ if ranked.length > 0: return rowToResult(top-5)
+  │
+  │     [fallback if hybrid RPC missing — older deploys]
   │     ├─ rpc("match_knowledge_entities", vector, limit, entity_types)
-  │     │     ORDER BY embedding <=> $1   (HNSW-indexed)
   │     └─ if vrows.length > 0: return rowToResult(vrows)
   │
   ├─ try building_codes table (SCHEMA-ALPHA, currently absent)
@@ -292,8 +319,45 @@ queryRag(query)
 ```
 
 Every leg applies the same `verified: true IFF source_urls non-empty AND
-contentText >= 100 chars` gate. The vector path does **not** weaken the
+contentText >= 100 chars` gate. The hybrid path does **not** weaken the
 verification gate — it only changes ranking.
+
+### Section-number extractor
+
+The TS adapter parses likely section numbers from the structured query
+(`query.section`, `query.keywords`, `query.edition`) using:
+
+```
+/\b[A-Z]?\d{2,4}(?:\.\d+)*(?:\([A-Za-z]\))*(?:\(\d+\))*/g
+```
+
+Captures: `210`, `210.52`, `210.52(C)`, `210.52(C)(5)`, `1107.6.1`,
+`R602.10.6.2`. Two-digit minimum prevents single-digit false positives.
+
+Each candidate row's slug + title is normalized (every non-alphanumeric
+run collapsed to `-`) before substring-matching, so `nec-210-52-c-5`
+matches a section of `210.52(C)(5)`.
+
+### Tuning notes
+
+If contractor probe runs show:
+- **Wrong section returned for section-anchored queries** → bump γ to 0.2
+  and drop α to 0.5.
+- **Natural-language queries regress** → drop γ to 0.05; the bonus only
+  helps when sections were extracted.
+- **Distinctive-token queries miss** (e.g. brand names, NFPA standard
+  numbers like "NFPA 13D") → bump β to 0.4 / α to 0.5.
+
+Weights live in `src/lib/code-sources/rag.ts` as `ALPHA_VECTOR`,
+`BETA_FTS`, `GAMMA_SECTION` constants.
+
+### Backward compatibility
+
+- **No API key** → vector branch short-circuits; FTS path serves traffic.
+- **No embeddings backfilled yet** → `corpusHasAnyVectors()` returns
+  false; FTS path serves traffic.
+- **Hybrid RPC missing** (older deploy, migration not yet applied) →
+  adapter falls through to the pure-vector RPC, then to FTS. No regression.
 
 ### Model + cost
 
@@ -354,10 +418,10 @@ corpus. Recall-vs-speed knobs to remember when the corpus grows:
   (2,256 rows) the build is sub-second so we use the standard form.
 - **Recall vs FTS**: vector recall is fuzzier — semantically related rows
   outrank exact-term matches. For specialists where the query already
-  contains a section number ("NEC 210.52(C)(5)"), FTS still beats vector.
-  The current code uses vector when available, with no hybrid score; if
-  contractor probe runs surface section-lookup regressions, add a hybrid
-  rerank step (vector top-N + FTS exact-section bonus).
+  contains a section number ("NEC 210.52(C)(5)"), pure vector loses to
+  FTS. **Resolved 2026-05-23** by the hybrid rerank above
+  (`hybrid_match_knowledge_entities` + γ·section_bonus). See the
+  "Hybrid RAG" section above for tuning knobs.
 - **Pre-backfill behavior**: until `npm run embeddings` runs, the vector
   branch short-circuits via `corpusHasAnyVectors()` and FTS continues
   serving traffic. No regression risk from deploying the code before the
@@ -368,6 +432,21 @@ corpus. Recall-vs-speed knobs to remember when the corpus grows:
 - **Stale embeddings**: re-embed when content changes substantively.
   Today there is no trigger; the script only re-fills NULL rows. A future
   follow-up is a `content_hash` column + re-embed-on-change job.
+- **Hybrid RPC `search_path` security**: `hybrid_match_knowledge_entities`
+  runs SECURITY DEFINER. We pin `search_path = public` in the function
+  body to prevent privilege-escalation via a hijacked search_path. Mirror
+  this on any future RPC that touches `knowledge_entities`.
+- **Hybrid RPC nullability**: the function unions vector top-N and FTS
+  top-N. Rows present in one set and absent from the other have the
+  missing score COALESCEd to 0 — they are still re-ranked, just with no
+  contribution from the missing leg. Display columns are pulled from a
+  final JOIN onto `knowledge_entities` so we never surface a row with a
+  null slug / title from the union side.
+- **Weighting drift**: α/β/γ live in `rag.ts` as TypeScript constants.
+  The SQL function takes `alpha_vector` and `beta_fts` as parameters with
+  defaults that match the TS constants — keep these in sync if you tune
+  either side, otherwise the server-side combined_score and the TS-side
+  combined_score will disagree on the α/β split.
 
 ## Risk callouts
 
