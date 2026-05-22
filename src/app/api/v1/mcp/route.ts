@@ -78,7 +78,7 @@ const TOOLS = [
   },
   {
     name: "search_knowledge",
-    description: "Search the construction knowledge base (40K+ entities). Full-text search across codes, materials, methods, safety rules, and building types.",
+    description: "Search the construction knowledge base. Full-text search across codes, materials, methods, safety rules, and building types.",
     parameters: {
       type: "object",
       properties: {
@@ -171,7 +171,7 @@ const TOOLS = [
   },
   {
     name: "list_jurisdictions",
-    description: "List all supported jurisdictions (142+) with code references and years.",
+    description: "List all supported jurisdictions with code references and years.",
     parameters: { type: "object", properties: {} },
   },
   {
@@ -194,15 +194,59 @@ const TOOLS = [
 ];
 
 // ─── GET: List available tools ───
+// 2026-05-22 (Demo2 fix): `capabilities.entities` and `capabilities.jurisdictions`
+// used to be hardcoded marketing copy ("40,000+", "142+"). Mike-the-investor
+// (and any probing agent) can hit GET /api/v1/mcp without auth and the numbers
+// need to match reality, otherwise we look like a vaporware MCP server. We now
+// query Supabase at request time and cache for `MCP_CAPABILITIES_TTL_MS`. If
+// Supabase isn't configured or the query fails, we fall back to 0 (honest
+// "we don't know") rather than fake marketing numbers.
+const MCP_CAPABILITIES_TTL_MS = 60 * 1000;
+let mcpCapabilitiesCache: { at: number; entities: number; jurisdictions: number } | null = null;
+
+async function getCapabilityCounts(): Promise<{ entities: number; jurisdictions: number }> {
+  const now = Date.now();
+  if (mcpCapabilitiesCache && now - mcpCapabilitiesCache.at < MCP_CAPABILITIES_TTL_MS) {
+    return { entities: mcpCapabilitiesCache.entities, jurisdictions: mcpCapabilitiesCache.jurisdictions };
+  }
+  if (!isSupabaseConfigured()) {
+    return { entities: 0, jurisdictions: 0 };
+  }
+  try {
+    // `knowledge_entities.status = 'published'` is the same filter the
+    // search_knowledge tool uses, so the count matches what the API can
+    // actually return. The `jurisdictions` table is the catalog of every
+    // supported jurisdiction (codes/years live here), not the count of
+    // projects — that's what `list_jurisdictions` exposes, so it's the
+    // honest number to advertise here too.
+    const [entitiesRes, jurisdictionsRes] = await Promise.all([
+      supabase
+        .from("knowledge_entities")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "published"),
+      supabase
+        .from("jurisdictions")
+        .select("*", { count: "exact", head: true }),
+    ]);
+    const entities = entitiesRes.count ?? 0;
+    const jurisdictions = jurisdictionsRes.count ?? 0;
+    mcpCapabilitiesCache = { at: now, entities, jurisdictions };
+    return { entities, jurisdictions };
+  } catch {
+    return { entities: 0, jurisdictions: 0 };
+  }
+}
+
 export async function GET() {
+  const { entities, jurisdictions } = await getCapabilityCounts();
   return NextResponse.json({
     name: "builders-knowledge-garden",
     version: "0.1.0",
-    description: "Construction knowledge API for AI agents. 40K+ entities, 142+ jurisdictions, codes, materials, methods, safety.",
+    description: `Construction knowledge API for AI agents. ${entities} entities, ${jurisdictions} jurisdictions, codes, materials, methods, safety.`,
     tools: TOOLS,
     capabilities: {
-      entities: "40,000+",
-      jurisdictions: "142+",
+      entities: String(entities),
+      jurisdictions: String(jurisdictions),
       domains: ["codes", "materials", "methods", "safety", "building_types", "hazards", "equipment"],
       languages: "30+ (planned)",
     },
@@ -379,7 +423,7 @@ async function executeTool(tool: string, params: Record<string, unknown>): Promi
           { id: "mock-3", title: "Concrete — 4000 PSI Normal Weight", type: "material", summary: "Standard structural concrete, 28-day strength, ACI 318." },
         ],
         total: 3, query, source: "mock",
-        note: "Connect Supabase for 40K+ real entities",
+        note: "Connect Supabase to query real entities",
       };
     }
 
