@@ -1603,7 +1603,7 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 ### What's still open for next session (P1+)
 - [ ] **BUDGET WRITE path:** `BudgetClient` still PATCHes the JSONB column on save (read fixed in 2ce4ecc last session, write still open). Will silently lose data on next save.
 - [ ] **Cold-start RAG:** 15/916 `knowledge_entities` have URLs in `source_urls`; RAG can rank but rarely tier-3-verifies in practice. Full backfill remains.
-- [ ] **`pgvector` embeddings empty** across the corpus (column exists, vector retrieval path is stub).
+- [ ] **`pgvector` embeddings empty** across the corpus (column exists; backfill pipeline ships 2026-05-22 — RPC `match_knowledge_entities` + HNSW index live; `src/scripts/generate-embeddings.ts` ready). **Next action:** add `OPENAI_API_KEY` to Vercel env, then run `npm run embeddings` to populate all 2,256 rows (~$0.02 OpenAI cost). Vector path in `rag.ts` auto-engages once any rows have embeddings — no redeploy needed.
 - [ ] **Real ICC/NFPA paywall keys + integration** (framework + Zod-narrow ready, keys absent — counterparty contracts needed).
 - [ ] **§7159 PDF formatting must enforce 12pt boldface on statutory callouts** (compliance-critical; current generator uses 11pt regular for everything). Cal Bus & Prof Code is explicit on the typeface requirement.
 - [ ] **CSLB lookup is screen-scrape** (no public API; brittleness risk; needs caching layer).
