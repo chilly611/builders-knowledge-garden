@@ -20,6 +20,9 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 import { applyJurisdictionOverride } from '@/lib/project-display';
+import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
+import { useUserLane } from '@/lib/use-user-lane';
+import { wrapGlossaryTerms } from '@/lib/glossary-render';
 
 // PEER_LINKS is the curated set of "Move to" buttons we surface in the
 // banner. Keep it small (6 items) so the row stays scannable. New
@@ -88,6 +91,11 @@ const PEER_LINKS: Array<{
 export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Props) {
   const [liveSummary, setLiveSummary] = useState<string | null>(null);
   const regeneratedRef = useRef(false);
+  // DIY-LANE (2026-05-22): when the active lane is `diy`, the AI Take and
+  // raw_input paragraphs run through wrapGlossaryTerms so jargon ("CSI",
+  // "RFI", "lien waiver") becomes a hover-able TermTooltip. For pro lanes
+  // wrapGlossaryTerms is a passthrough — same string, no extra DOM nodes.
+  const { effectiveLane } = useUserLane();
 
   // Only rewrite the location in raw_input when the saved jurisdiction is
   // consistent with the description — same guard as EstimatingClient.
@@ -193,7 +201,7 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
             fontWeight: 500,
           }}
         >
-          {rawInput}
+          {wrapGlossaryTerms(rawInput, effectiveLane)}
         </p>
       )}
 
@@ -204,9 +212,21 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
             fontSize: 13,
             color: 'var(--graphite, #2E2E30)',
             opacity: 0.7,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
-          {factsRow.join(' · ')}
+          <span>{factsRow.join(' · ')}</span>
+          {/* COCKPIT-FIXES Pain 1 (2026-05-22): derived $/sf so the badge
+              always agrees with the live cost-range × sqft math. AI prose
+              no longer claims a $/sf figure — this is the canonical UI. */}
+          <CostPerSquareFootBadge
+            costLow={project.estimated_cost_low ?? null}
+            costHigh={project.estimated_cost_high ?? null}
+            sqft={sqft ?? project.sqft ?? null}
+          />
         </p>
       )}
 
@@ -231,7 +251,7 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
           >
             AI take
           </span>
-          {summaryPreview}
+          {wrapGlossaryTerms(summaryPreview, effectiveLane)}
         </p>
       )}
 

@@ -8,6 +8,7 @@ export { default as WorkflowRenderer } from './WorkflowRenderer';
 export { default as WorkflowShell } from './WorkflowShell';
 export { default as WorkflowTurkeyInput } from './WorkflowTurkeyInput';
 export { default as NextWorkflowCard } from './NextWorkflowCard';
+export { default as CostPerSquareFootBadge } from './CostPerSquareFootBadge';
 export { StarterPromptButtons } from './StarterPromptButtons';
 export type { StepCardProps, WorkflowStep, StepStatus, StepResult, TemplateOption } from './StepCard.types';
 export type { Workflow, WorkflowRendererProps, WorkflowContext } from './WorkflowRenderer.types';

@@ -41,6 +41,7 @@ import Link from 'next/link';
 import { useProject } from '@/lib/hooks/useProject';
 import { supabase } from '@/lib/supabase';
 import { normalizeStoredLines } from './budget-storage';
+import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
 import { colors } from '@/design-system/tokens/colors';
 import {
   fonts,
@@ -532,6 +533,11 @@ interface HeroProps {
   total: number;
   rangeLow: number | null;
   rangeHigh: number | null;
+  // COCKPIT-FIXES Pain 1 (2026-05-22): pass-through so the HeroStrip can
+  // render a live, derived $/sf next to the cost range. Authoritative
+  // source for the badge is cost range ÷ sqft — keeps the AI summary,
+  // banner, and HeroStrip all telling the same story.
+  sqft: number | string | null;
   savedSecondsAgo: number;
 }
 
@@ -541,6 +547,7 @@ function HeroStrip({
   total,
   rangeLow,
   rangeHigh,
+  sqft,
   savedSecondsAgo,
 }: HeroProps) {
   return (
@@ -642,6 +649,13 @@ function HeroStrip({
                 est. {formatUSD(rangeLow)}–{formatUSD(rangeHigh)}
               </span>
             )}
+            {/* Derived $/sf — sourced from rangeLow/High ÷ sqft so the prose,
+                cockpit, banner, and HeroStrip all agree. */}
+            <CostPerSquareFootBadge
+              costLow={rangeLow}
+              costHigh={rangeHigh}
+              sqft={sqft}
+            />
           </div>
         </div>
 
@@ -2280,6 +2294,7 @@ export default function BudgetClient() {
         total={grandTotal}
         rangeLow={project?.estimated_cost_low ?? null}
         rangeHigh={project?.estimated_cost_high ?? null}
+        sqft={project?.sqft ?? null}
         savedSecondsAgo={savedSecondsAgo}
       />
 

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import JourneyTimeline from './JourneyTimeline';
 import BudgetSnapshot from './BudgetSnapshot';
+import MobileCockpitDrawer from './MobileCockpitDrawer';
 
 import {
   STAGE_REGISTRY,
@@ -26,13 +27,19 @@ import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { getActiveProjectId, getProjectBudget } from '@/lib/budget-spine';
 import { useActiveProject } from '@/lib/hooks/use-active-project';
+import { useProjectContext } from '@/contexts/ProjectContext';
 import { subscribeJourney } from '@/lib/journey-progress';
 import { subscribeSnapshots } from '@/lib/time-machine';
 import { useTimeMachineRewind, REWIND_EVENT, type RewindEventDetail } from '@/lib/use-time-machine-rewind';
 import RewindToast from './RewindToast';
 
+// COCKPIT-FIXES Pain 3 (2026-05-22): the previous map collapsed stages
+// 4 (BUILD) and 5 (ADAPT) into the same "BUILD" bucket AND used legacy
+// stage names (DREAM/DESIGN/DELIVER/GROW) that no longer match the
+// 7-stage canon. Aligned with /api/v1/budget/route.ts phase labels so
+// every stage gets its own sparkline column.
 const STAGE_TO_PHASE: Record<StageId, string> = {
-  1: 'DREAM', 2: 'DESIGN', 3: 'PLAN', 4: 'BUILD', 5: 'BUILD', 6: 'DELIVER', 7: 'GROW',
+  1: 'SIZE_UP', 2: 'LOCK', 3: 'PLAN', 4: 'BUILD', 5: 'ADAPT', 6: 'COLLECT', 7: 'REFLECT',
 };
 
 function deriveStageProgress(journeyState: Record<string, any>): StageProgress[] {
@@ -106,6 +113,13 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   // legacy getActiveProjectId() snapshot when the hook returns null on
   // first paint.
   const [activeProjectFromHook] = useActiveProject();
+  // COCKPIT-FIXES Pain 2 (2026-05-22): read the live project record so
+  // MobileCockpitDrawer can show the name in its collapsed bar. The
+  // ProjectCockpit is always mounted inside <ProjectProvider> (killerapp
+  // layout), so this hook is safe; project may still be null while
+  // hydrating.
+  const projectCtx = useProjectContext();
+  const mobileProjectName = projectCtx.project?.name ?? null;
   const effectiveProjectId =
     propProjectId ?? activeProjectFromHook ?? getActiveProjectId() ?? null;
   const [journeyState, setJourneyState] = useState<Record<string, any>>({});
@@ -248,6 +262,35 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
     </div>
   );
 
+  // COCKPIT-FIXES Pain 2 (2026-05-22): on mobile, surface a collapsible
+  // drawer (56px collapsed, 280px expanded) instead of the 180px always-on
+  // band. Tony's feedback ("I want to see the task, not the dashboard")
+  // drove this. Desktop unchanged.
+  if (isMobile) {
+    return (
+      <>
+        <RewindToast onReturnToLive={() => rewindTo(null)} />
+        <MobileCockpitDrawer
+          projectId={effectiveProjectId}
+          projectName={mobileProjectName}
+          stageProgress={stageProgress}
+          activeStageId={activeStageId}
+          snapshots={snapshots}
+          currentSnapshotId={currentSnapshotId ?? null}
+          budgetData={budgetData}
+          onStageClick={handleStageClick}
+          onScrub={handleTimeScrub}
+          onPreviewFuture={(sid) => {
+            window.dispatchEvent(new CustomEvent('bkg:navigator:future-previewed', {
+              detail: { stageId: sid, projectId: effectiveProjectId },
+            }));
+          }}
+          onReturnToLive={() => rewindTo(null)}
+        />
+      </>
+    );
+  }
+
   return (
     <>
     <RewindToast onReturnToLive={() => rewindTo(null)} />
@@ -259,9 +302,9 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
       backgroundSize: '4px 4px',
       borderTop: `1px solid ${brass}`,
       borderBottom: `1px solid ${brass}`,
-      height: isMobile ? 180 : 96,
+      height: 96,
       display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
+      flexDirection: 'row',
       alignItems: 'stretch',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
@@ -270,13 +313,12 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
           machine are one band: present-tense stage states (visited/
           completed/unvisited/active) with scrub-back-and-forward in time. */}
       <div style={{
-        flex: isMobile ? '0 0 auto' : '0 0 65%',
+        flex: '0 0 65%',
         display: 'flex', alignItems: 'center', padding: '12px 12px',
-        borderRight: isMobile ? 'none' : `1px solid ${brass}`,
-        borderBottom: isMobile ? `1px solid ${brass}` : 'none',
+        borderRight: `1px solid ${brass}`,
         position: 'relative',
       }}>
-        {!isMobile && <BrassHinge />}
+        <BrassHinge />
         <JourneyTimeline
           stages={stageProgress}
           activeStageId={activeStageId}
@@ -295,7 +337,7 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
 
       {/* Budget (35%) */}
       <div style={{
-        flex: isMobile ? '0 0 auto' : '0 0 35%',
+        flex: '0 0 35%',
         display: 'flex', alignItems: 'center', padding: '12px 12px',
       }}>
         <BudgetSnapshot data={budgetData} activeStageId={activeStageId} />

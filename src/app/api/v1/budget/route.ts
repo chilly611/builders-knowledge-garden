@@ -22,10 +22,12 @@ import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-
  *     can distinguish "spent" vs "planned".
  *   - `category` is heuristically derived from `csi_division` + description
  *     (matches EstimatingClient's categorize() so AI-pushed rows round-trip).
- *   - `phase` defaults to "BUILD" — we don't have a stage column on
- *     project_budget_lines yet. Phase-level analytics will look like a
- *     single bucket until that's added; that's a known limitation, not a
- *     regression vs the old (always-empty) implementation.
+ *   - `phase` is derived per row via resolveStageId(): if the row carries a
+ *     stage_id (SCHEMA-ALPHA migration), it wins; otherwise inferStageId-
+ *     FromDivision() maps the CSI MasterFormat number to a stage.  Each
+ *     phase aggregates correctly across all 7 stages so the cockpit
+ *     sparkline shows a real distribution.  Previous default-to-BUILD
+ *     behaviour was a known limitation; this is the fix.
  *   - `totalBudget` is the sum of all `budgeted` columns.
  *
  * Ownership check: command_center_projects.user_id (saved_projects table
@@ -98,9 +100,72 @@ interface BudgetLineRow {
   actual_spent: number | string | null;
   created_at: string;
   updated_at: string;
+  // COCKPIT-FIXES Pain 3 (2026-05-22): optional column landing via the
+  // SCHEMA-ALPHA migration. Read defensively — undefined when the column
+  // hasn't shipped yet, which we backfill from csi_division below.
+  stage_id?: number | string | null;
 }
 
 const DEFAULT_PHASE = "BUILD";
+
+// Stage IDs → cockpit phase labels. Mirrors STAGE_TO_PHASE in
+// ProjectCockpit.tsx; keep in sync if either side changes.
+const STAGE_ID_TO_PHASE: Record<number, string> = {
+  1: 'SIZE_UP',
+  2: 'LOCK',
+  3: 'PLAN',
+  4: 'BUILD',
+  5: 'ADAPT',
+  6: 'COLLECT',
+  7: 'REFLECT',
+};
+
+/**
+ * COCKPIT-FIXES Pain 3 (2026-05-22): until every row has a stage_id
+ * (SCHEMA-ALPHA backfill is pending), infer the stage from the CSI
+ * MasterFormat division. The mapping mirrors the construction lifecycle —
+ * mobilization/site work happen in PLAN, vertical construction is BUILD,
+ * commissioning/specialties land in COLLECT, etc. Default is BUILD when
+ * the division is anything not explicitly listed.
+ *
+ * NOTE: this is a READ-PATH heuristic. When the stage_id column ships +
+ * is backfilled, the row's value wins — this function only fires when
+ * row.stage_id is null/undefined.
+ */
+function inferStageIdFromDivision(division: string): number {
+  const d = parseInt((division || '').replace(/[^0-9]/g, ''), 10);
+  if (!Number.isFinite(d)) return 4;
+  // Procurement, general requirements, demo, site prep → PLAN
+  if (d <= 2) return 3;
+  // Concrete, masonry, metals, wood, thermal, openings, finishes → BUILD
+  if (d >= 3 && d <= 9) return 4;
+  // Specialties, equipment, furnishings, special construction → COLLECT
+  if (d >= 10 && d <= 14) return 6;
+  // Fire suppression, plumbing → BUILD
+  if (d === 15 || d === 21 || d === 22) return 4;
+  // HVAC, integrated automation, communications, electronic safety → BUILD
+  if (d === 23 || d === 25 || d === 27 || d === 28) return 4;
+  // Electrical (legacy + current) → BUILD
+  if (d === 16 || d === 26) return 4;
+  // Earthwork, exterior improvements, utilities → PLAN
+  if (d >= 31 && d <= 33) return 3;
+  // Contingency / unallocated (99) → BUILD bucket so the sparkline
+  // doesn't show a phantom 8th stage.
+  return 4;
+}
+
+function resolveStageId(row: BudgetLineRow): number {
+  const raw = row.stage_id;
+  if (raw !== null && raw !== undefined) {
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    if (Number.isFinite(n) && n >= 1 && n <= 7) return n;
+  }
+  return inferStageIdFromDivision(row.csi_division);
+}
+
+function phaseLabelForStage(stageId: number): string {
+  return STAGE_ID_TO_PHASE[stageId] ?? DEFAULT_PHASE;
+}
 
 /**
  * Mirrors the categorize() heuristic in EstimatingClient.tsx so AI-pushed
@@ -147,7 +212,12 @@ function buildSummaryFromLines(
     const spent = num(line.actual_spent);
     const description = line.description || `CSI ${line.csi_division}`;
     const category = categorize(description);
-    const phase = DEFAULT_PHASE;
+    // COCKPIT-FIXES Pain 3 (2026-05-22): bucket each line by its stage
+    // (column when present, csi_division-inferred otherwise) so the
+    // cockpit sparkline shows a real distribution instead of one tall
+    // BUILD column with six empty neighbours.
+    const stageId = resolveStageId(line);
+    const phase = phaseLabelForStage(stageId);
 
     totalBudget += budgeted;
     totalSpent += spent;

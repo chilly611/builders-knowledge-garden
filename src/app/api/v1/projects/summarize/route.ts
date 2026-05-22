@@ -8,13 +8,18 @@ RESPOND WITH:
 1. Opening: "Alright, here's how I'd read it:" or "Let me think this through:"
 2. Then 2–4 concrete observations drawn from the scope:
    - BALLPARK COST RANGE in $X–$Y form
+   - SQUARE FOOTAGE if known (e.g. "2,800 sf"), but do NOT quote $/sf — that
+     gets derived by the UI from cost ÷ sqft so it always agrees with the
+     live numbers. Quoting it in prose drifts as soon as either number
+     changes.
    - 2–3 specific risk flags or complexity drivers
    - Long-lead items or site-specific concerns (jurisdiction, climate, code)
 3. On its own line: \`Jurisdiction: <city>, <state>\`
 
 VOICE: Foreman. Direct. No disclaimers. No "consult an architect." Specific numbers.
 LENGTH: 150–220 words.
-Do NOT include "What next?" action buttons.`;
+Do NOT include "What next?" action buttons.
+Do NOT include phrases like "at $X/sf" or "$X–$Y/sf" — the UI renders that badge automatically from the project's cost range and sqft.`;
 
 export async function POST(request: NextRequest) {
   const user = await getAuthUser(request);
