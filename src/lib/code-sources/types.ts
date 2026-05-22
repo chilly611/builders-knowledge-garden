@@ -4,7 +4,20 @@
  * against ≥2 sources before returning confidence: high
  */
 
-export type CodeSourceName = "bkg-seed" | "icc-digital-codes" | "nfpa" | "local-amendment";
+export type CodeSourceName =
+  | "bkg-seed"
+  | "icc-digital-codes"
+  | "nfpa"
+  | "local-amendment"
+  /**
+   * RAG over the local code corpus (knowledge_entities filtered to
+   * entity_type IN ('building_code','code_section','safety_regulation',
+   * 'standard'), or the dedicated building_codes table when present).
+   * Distinct from "bkg-seed" because bkg-seed pulls from the curated
+   * knowledge layer via retrieveEntities(); "rag" pulls broader code
+   * corpus rows scored by FTS / vector similarity.
+   */
+  | "rag";
 export type ConfidenceTier = "primary" | "summary" | "historical";
 
 /**

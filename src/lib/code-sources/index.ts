@@ -1,7 +1,13 @@
 /**
  * Code Sources Orchestrator
- * Coordinates queries across all 4 sources (BKG seed, ICC, NFPA, local amendments)
- * Aggregates results and provides multi-source confidence gating
+ * Coordinates queries across all 5 sources:
+ *   1. BKG seed (curated knowledge entities, verified)
+ *   2. Local amendments (hand-vetted JSON in repo, verified)
+ *   3. RAG over local code corpus (FTS / vector, verified when row has URL + content)
+ *   4. ICC DigitalCodes (citation-only until contract; live-mode wired)
+ *   5. NFPA Link (citation-only until contract; live-mode wired)
+ *
+ * Aggregates results and provides multi-source confidence gating.
  */
 
 export type { CodeQuery, CodeSourceResult, CodeSourceName, ConfidenceTier } from "./types";
@@ -10,32 +16,43 @@ import { queryBkgSeed } from "./bkg-seed";
 import { queryIcc } from "./icc";
 import { queryNfpa } from "./nfpa";
 import { queryLocalAmendments } from "./local-amendments";
+import { queryRag } from "./rag";
 import type { CodeQuery, CodeSourceResult } from "./types";
 
+export { queryRag } from "./rag";
+export { queryBkgSeed } from "./bkg-seed";
+export { queryIcc } from "./icc";
+export { queryNfpa } from "./nfpa";
+export { queryLocalAmendments } from "./local-amendments";
+
 /**
- * Query all 4 code sources in parallel
- * Returns merged results from any source that succeeds
- * Graceful failure: if a source times out or errors, continue with others
+ * Query all 5 code sources in parallel.
+ * Graceful failure: if a source times out or errors, continue with others.
  */
 export async function queryAllSources(query: CodeQuery): Promise<CodeSourceResult[]> {
-  const [seed, icc, nfpa, amendments] = await Promise.allSettled([
+  const [seed, icc, nfpa, amendments, rag] = await Promise.allSettled([
     queryBkgSeed(query),
     queryIcc(query),
     queryNfpa(query),
     queryLocalAmendments(query),
+    queryRag(query),
   ]);
 
-  return [seed, icc, nfpa, amendments]
+  return [seed, icc, nfpa, amendments, rag]
     .filter((r) => r.status === "fulfilled")
     .flatMap((r) => (r as PromiseFulfilledResult<CodeSourceResult[]>).value);
 }
 
 /**
- * Check if results span ≥2 distinct code sources
- * Used for confidence gating: only return confidence: high if multiple sources present
- *
- * @param results Array of CodeSourceResult from queryAllSources
- * @returns true if ≥2 distinct source values are present
+ * Back-compat alias. `aggregateSources` is the name some callers were
+ * expected to use; map it to queryAllSources.
+ */
+export const aggregateSources = queryAllSources;
+
+/**
+ * Check if results span ≥2 distinct code sources.
+ * Used for confidence gating: only return confidence: high if multiple
+ * sources are present.
  */
 export function hasMultipleSources(results: CodeSourceResult[]): boolean {
   const sources = new Set(results.map((r) => r.source));
@@ -46,8 +63,9 @@ export function hasMultipleSources(results: CodeSourceResult[]): boolean {
  * Count distinct VERIFIED code sources in a result set.
  *
  * A source is verified iff the adapter actually retrieved the cited text
- * (currently: BKG seed entities and local amendments). Citation-only
- * adapters (ICC DigitalCodes, NFPA Link — both paywalled, no fetch yet)
+ * (currently: BKG seed entities, local amendments, and RAG hits that
+ * have a source URL + non-trivial content). Citation-only adapters
+ * (ICC DigitalCodes, NFPA Link — paywalled, no live contract yet)
  * return `verified: false` and are NOT counted.
  *
  * This is the input the SourceCountBadge uses. Treat it as the structural
