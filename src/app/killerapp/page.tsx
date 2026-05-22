@@ -39,6 +39,7 @@ import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
 import AuthAndProjectIndicator from './AuthAndProjectIndicator';
+import DiyCockpitOverlay from './DiyCockpitOverlay';
 import TermTooltip from '@/components/TermTooltip';
 import styles from './landing.module.css';
 
@@ -122,6 +123,52 @@ const LIVE_WORKFLOWS: Record<string, string> = {
   q27: '/killerapp/workflows/project-review',
   // Sprint B7 — voice-first lead intake
   'crm-lead-intake': '/killerapp/who-is-asking',
+  // 2026-05-22 — architect of record concierge form
+  'q-aor': '/killerapp/workflows/architect-of-record',
+  // 2026-05-22 — running punch list (field-grade). Build-stage, distinct
+  // from q24's final-walk-through closeout.
+  'q-punch': '/killerapp/workflows/punch-list',
+  // 2026-05-22 — RFIs (Submit RFIs). Build-stage. UI over /api/v1/rfis.
+  'q-rfi': '/killerapp/workflows/rfis',
+  // 2026-05-22 — MEP scheduling generators (deterministic, no LLM).
+  // q-panel-schedule = NEC 220 service-load calc + 40-circuit panel directory.
+  // q-equipment-schedule = HVAC tonnage + UPC 422.1 plumbing fixture count.
+  // q-load-calc = the underlying /api/v1/load-calc endpoint; surfaced via
+  // the panel-schedule UI (no separate page).
+  'q-panel-schedule': '/killerapp/workflows/panel-schedule',
+  'q-equipment-schedule': '/killerapp/workflows/equipment-schedule',
+  'q-load-calc': '/killerapp/workflows/panel-schedule',
+  // 2026-05-22 — OWNER-LANE approvals inbox (change orders / draws /
+  // lien waivers). LaneGate restricts the visible UI to owner+gc; the
+  // /api/v1/signatures endpoint additionally enforces required_signers
+  // membership server-side.
+  'q-approvals': '/killerapp/workflows/approvals',
+  // 2026-05-22 — SUBBID-FLOW: lane-gated bid surfaces. q-sub-bid-submit
+  // = sub-lane (specialist/contractor) push-bid form. q-sub-bid-inbox =
+  // GC-lane (gc/owner/teammate) review-and-respond. The LaneGate on each
+  // client redirects mismatched lanes to the right surface.
+  'q-sub-bid-submit': '/killerapp/workflows/sub-bid-submit',
+  'q-sub-bid-inbox': '/killerapp/workflows/sub-bid-inbox',
+  // 2026-05-22 — BOOKKEEPER-UI: vendor master + AR/AP ledger + QB export +
+  // audit-trail viewer. The bookkeeper-must-haves Jenny called out.
+  'q-vendors':     '/killerapp/workflows/vendor-master',
+  'q-ledger':      '/killerapp/workflows/ar-ap-ledger',
+  'q-qbexport':    '/killerapp/workflows/quickbooks-export',
+  'q-audit-trail': '/killerapp/workflows/audit-trail',
+  // 2026-05-22 — DIY-LANE: GC matching concierge form (q-find-gc, stage 2).
+  // Roles: ['diy', 'owner'] — see ROLES below.
+  'q-find-gc': '/killerapp/workflows/find-a-gc',
+  // 2026-05-22 — DIY-LANE: plain-English budget walkthrough (q-cost-explainer, stage 1).
+  'q-cost-explainer': '/killerapp/workflows/cost-explainer',
+};
+
+// Roles allowed to discover each workflow in the picker. Today only used
+// for DIY-LANE additions; pro workflows are visible to all roles by
+// default (omitting them from this map = "no restriction"). Future
+// agents can extend this to gate other pro/owner workflows.
+const WORKFLOW_ROLES: Record<string, ReadonlyArray<string>> = {
+  'q-find-gc': ['diy', 'owner'],
+  'q-cost-explainer': ['diy', 'owner'],
 };
 
 // Short human-readable blurbs per workflow. Keeps the picker scannable
@@ -151,11 +198,30 @@ const WORKFLOW_BLURBS: Record<string, string> = {
   q21: 'Request your payment draw. *(Draw requests)*',
   q22: 'Collect lien waivers. *(Lien waiver tracker)*',
   q23: 'Are workers classified right? *(Payroll check)*',
-  q24: 'Walk the job — punch list. *(Final walk-through)*',
+  q24: 'Sign off at substantial completion. *(Final walk-through — gates retainage release)*',
   q25: 'Follow up on retainage. *(Retainage tracker)*',
   q26: 'Log warranties. *(Warranty handoff)*',
   q27: 'What went well — and what didn\'t? *(Project review)*',
   'crm-lead-intake': 'Who\'s asking? *(Voice lead intake)*',
+  'q-aor': 'Need an architect of record? *(Email us)*',
+  'q-punch': 'Field-grade punch list. Add items with photo + voice. Swipe to resolve. *(Running punch list)*',
+  'q-rfi': 'Ask the design team a clarification question — with photos, voice, and a response timer. *(Submit RFIs)*',
+  'q-approvals': 'Sign off on change orders and draws. *(Approvals inbox — owner lane)*',
+  // 2026-05-22 — MEP scheduling generators.
+  'q-panel-schedule': 'How big a service do you need? *(Panel schedule — NEC Article 220)*',
+  'q-equipment-schedule': 'How many tons and how many toilets? *(Equipment schedule — ASHRAE / UPC 422.1)*',
+  'q-load-calc': 'Run the electrical load calc. *(NEC 220 service-load math, no LLM)*',
+  // 2026-05-22 — SUBBID-FLOW.
+  'q-sub-bid-submit': 'Push a bid to the GC. *(Sub-lane bid form — scope, line items, CSLB, insurance)*',
+  'q-sub-bid-inbox': 'Bids your subs pushed. *(GC-lane inbox — review, accept, reject, counter)*',
+  // 2026-05-22 — BOOKKEEPER-UI bookkeeper-must-haves.
+  'q-vendors':     'Who you pay. *(Vendor master — CSLB#, W-9, insurance, terms)*',
+  'q-ledger':      'Money in, money out. *(AR / AP ledger with payment history)*',
+  'q-qbexport':    'Hand off to QuickBooks. *(IIF / CSV export for month-end close)*',
+  'q-audit-trail': 'Every change, who and when. *(Audit trail — bookkeeper trust)*',
+  // 2026-05-22 — DIY-LANE additions.
+  'q-find-gc':        'Find a vetted GC for your project. *(GC matching concierge)*',
+  'q-cost-explainer': 'Why does it cost what it does? *(Plain-English budget breakdown)*',
 };
 
 function loadWorkflows(): WorkflowsJson {
@@ -276,8 +342,17 @@ export default async function KillerAppPage({
         <KillerappProjectShell />
       </Suspense>
 
+      {/* DIY-LANE (2026-05-22): when the active lane is `diy`, the overlay
+          mounts a 3-column simplified picker (Plan / Hire / Track) AND
+          flips a body data-attr that hides the pro lifecycle picker via
+          a [data-diy-hide-picker="1"] CSS rule. Non-diy lanes render
+          nothing here. The full picker is reachable with ?showAllWorkflows=1. */}
+      <Suspense fallback={null}>
+        <DiyCockpitOverlay />
+      </Suspense>
+
       {/* Stage groups: typographic TOC treatment */}
-      <main className={styles.mainContent}>
+      <main className={styles.mainContent} data-diy-hide-picker="1">
         {/* Subtle one-line stage-progress indicator.
             Project Spine v1 (2026-05-05): made context-aware. Hides
             itself when ?project=<id> is present in the URL — the

@@ -22,6 +22,12 @@ export const LIVE_WORKFLOW_PATHS: Record<string, string> = {
   // Lock it in
   q4: '/killerapp/workflows/contract-templates',
   q5: '/killerapp/workflows/code-compliance',
+  // 2026-05-22 — architect-of-record concierge form
+  'q-aor': '/killerapp/workflows/architect-of-record',
+  // 2026-05-22 — DIY-LANE: GC matching concierge form (stage 2 / Lock).
+  'q-find-gc': '/killerapp/workflows/find-a-gc',
+  // 2026-05-22 — DIY-LANE: plain-English budget walkthrough (stage 1 / Size Up).
+  'q-cost-explainer': '/killerapp/workflows/cost-explainer',
   // Plan it out
   q6: '/killerapp/workflows/job-sequencing',
   q7: '/killerapp/workflows/worker-count',
@@ -31,6 +37,17 @@ export const LIVE_WORKFLOW_PATHS: Record<string, string> = {
   q11: '/killerapp/workflows/supply-ordering',
   q12: '/killerapp/workflows/services-todos',
   q13: '/killerapp/workflows/hiring',
+  // 2026-05-22 — MEP scheduling generators (deterministic, no LLM).
+  // q-panel-schedule = NEC 220 service load + 40-circuit panel directory.
+  // q-equipment-schedule = HVAC tonnage + UPC 422.1 plumbing fixtures.
+  // q-load-calc = the underlying calculator endpoint, surfaced via panel-schedule UI.
+  'q-panel-schedule': '/killerapp/workflows/panel-schedule',
+  'q-equipment-schedule': '/killerapp/workflows/equipment-schedule',
+  'q-load-calc': '/killerapp/workflows/panel-schedule',
+  // 2026-05-22 — SUBBID-FLOW: lane-gated bid surfaces. q-sub-bid-submit
+  // is for the sub pushing a bid; q-sub-bid-inbox is for the GC reviewing.
+  'q-sub-bid-submit': '/killerapp/workflows/sub-bid-submit',
+  'q-sub-bid-inbox': '/killerapp/workflows/sub-bid-inbox',
   // Build
   q14: '/killerapp/workflows/weather-scheduling',
   q15: '/killerapp/workflows/daily-log',
@@ -38,6 +55,21 @@ export const LIVE_WORKFLOW_PATHS: Record<string, string> = {
   q17: '/killerapp/workflows/expenses',
   q18: '/killerapp/workflows/outreach',
   q19: '/killerapp/workflows/compass-nav',
+  // 2026-05-22 — running punch list. Build-stage; distinct surface from
+  // q24 (final walk-through / substantial completion).
+  'q-punch': '/killerapp/workflows/punch-list',
+  // 2026-05-22 — RFIs (request for information). Build-stage; consumes
+  // /api/v1/rfis (auth-gated, demo_project_id-aware).
+  'q-rfi': '/killerapp/workflows/rfis',
+  // Adapt (OWNER-LANE, 2026-05-22): the owner's approvals inbox.
+  'q-approvals': '/killerapp/workflows/approvals',
+  // 2026-05-22 — BOOKKEEPER-UI bookkeeper-must-haves. Vendor master =
+  // Plan / procure subs. AR/AP ledger = Collect. QB export + audit trail =
+  // Reflect (month-end close).
+  'q-vendors':     '/killerapp/workflows/vendor-master',
+  'q-ledger':      '/killerapp/workflows/ar-ap-ledger',
+  'q-qbexport':    '/killerapp/workflows/quickbooks-export',
+  'q-audit-trail': '/killerapp/workflows/audit-trail',
   // Adapt / Collect / Reflect — intentionally absent until shipped.
 };
 

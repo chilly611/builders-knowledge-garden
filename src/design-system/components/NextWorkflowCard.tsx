@@ -41,6 +41,33 @@ const LIVE_WORKFLOW_PATHS: Record<string, string> = {
   q25: '/killerapp/workflows/retainage-tracker',
   q26: '/killerapp/workflows/warranty-handoff',
   q27: '/killerapp/workflows/project-review',
+  // 2026-05-22 — architect-of-record concierge form (stage 2 / Lock).
+  'q-aor': '/killerapp/workflows/architect-of-record',
+  // 2026-05-22 — running punch list (stage 4 / Build). Separate surface
+  // from q24's final walk-through.
+  'q-punch': '/killerapp/workflows/punch-list',
+  // 2026-05-22 — RFIs (stage 4 / Build). UI over /api/v1/rfis.
+  'q-rfi': '/killerapp/workflows/rfis',
+  // 2026-05-22 — OWNER-LANE approvals inbox (stage 5 / Adapt).
+  'q-approvals': '/killerapp/workflows/approvals',
+  // 2026-05-22 — MEP scheduling generators (stage 3 / Plan).
+  // Deterministic NEC / ASHRAE / UPC math — no LLM.
+  'q-panel-schedule': '/killerapp/workflows/panel-schedule',
+  'q-equipment-schedule': '/killerapp/workflows/equipment-schedule',
+  'q-load-calc': '/killerapp/workflows/panel-schedule',
+  // 2026-05-22 — SUBBID-FLOW: lane-gated bid surfaces (stage 3 / Plan).
+  'q-sub-bid-submit': '/killerapp/workflows/sub-bid-submit',
+  'q-sub-bid-inbox': '/killerapp/workflows/sub-bid-inbox',
+  // 2026-05-22 — BOOKKEEPER-UI: vendor master (stage 3), AR/AP ledger
+  // (stage 6 / Collect), QuickBooks export + audit trail (stage 7 / Reflect).
+  'q-vendors':     '/killerapp/workflows/vendor-master',
+  'q-ledger':      '/killerapp/workflows/ar-ap-ledger',
+  'q-qbexport':    '/killerapp/workflows/quickbooks-export',
+  'q-audit-trail': '/killerapp/workflows/audit-trail',
+  // 2026-05-22 — DIY-LANE: GC matching concierge form (stage 2 / Lock).
+  'q-find-gc':        '/killerapp/workflows/find-a-gc',
+  // 2026-05-22 — DIY-LANE: plain-English budget walkthrough (stage 1 / Size Up).
+  'q-cost-explainer': '/killerapp/workflows/cost-explainer',
 };
 
 /**
@@ -96,6 +123,29 @@ const WORKFLOW_LABELS: Record<string, string> = {
   q25: 'Collect retainage',
   q26: 'Warranty handoff',
   q27: 'What we learned',
+  // 2026-05-22 — architect-of-record concierge form (stage 2 / Lock).
+  'q-aor': 'Find an architect of record',
+  // 2026-05-22 — running punch list (stage 4 / Build).
+  'q-punch': 'Running punch list',
+  // 2026-05-22 — RFIs (stage 4 / Build).
+  'q-rfi': 'Submit RFIs',
+  // 2026-05-22 — OWNER-LANE approvals inbox (stage 5 / Adapt).
+  'q-approvals': 'Approvals inbox',
+  // 2026-05-22 — MEP scheduling generators (stage 3 / Plan).
+  'q-panel-schedule': 'Panel schedule (NEC 220)',
+  'q-equipment-schedule': 'Equipment schedule (HVAC + plumbing)',
+  'q-load-calc': 'Electrical load calc',
+  // 2026-05-22 — SUBBID-FLOW (stage 3 / Plan).
+  'q-sub-bid-submit': 'Submit a bid (sub lane)',
+  'q-sub-bid-inbox': 'Sub-bid inbox (GC lane)',
+  // 2026-05-22 — BOOKKEEPER-UI bookkeeper-must-haves.
+  'q-vendors':     'Vendor master',
+  'q-ledger':      'AR / AP ledger',
+  'q-qbexport':    'QuickBooks export',
+  'q-audit-trail': 'Audit trail',
+  // 2026-05-22 — DIY-LANE.
+  'q-find-gc':        'Find a vetted GC',
+  'q-cost-explainer': 'Why does it cost what it does?',
 };
 
 export default function NextWorkflowCard({

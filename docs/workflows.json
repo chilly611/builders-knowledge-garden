@@ -2,7 +2,7 @@
   "metadata": {
     "source": "chilly611/bkg-killer-app v3.2 prototype (bkg-killer-app-v3.html, 3322 lines, build tag: bkg-killer-app-v3.2-2026-04-16)",
     "extracted_at": "2026-04-17",
-    "total_workflows": 27,
+    "total_workflows": 28,
     "total_prompts": 22,
     "notes": [
       "In the prototype, lifecycle stages are called 'levels' and stage 1 is 'Scout'. Per task spec, stage 1 is renamed 'Size Up' here and the original name is preserved as original_prototype_name.",
@@ -1081,6 +1081,31 @@
       ]
     },
     {
+      "id": "q-punch",
+      "stageId": 4,
+      "label": "Running punch list",
+      "description": "Field-grade running punch list used during construction. Snap a photo, add a one-liner, swipe to resolve. Separate from q24 (the final-walk-through closeout gate).",
+      "totalXp": 80,
+      "steps": [
+        {
+          "id": "s-punch-1",
+          "label": "Add punch with photo",
+          "type": "file_upload",
+          "accept": "JPG, PNG, HEIC"
+        },
+        {
+          "id": "s-punch-2",
+          "label": "Track open items",
+          "type": "checklist"
+        },
+        {
+          "id": "s-punch-3",
+          "label": "Resolve as trades complete",
+          "type": "checklist"
+        }
+      ]
+    },
+    {
       "id": "q20",
       "stageId": 5,
       "label": "Manage scope changes",
@@ -1258,8 +1283,8 @@
     {
       "id": "q24",
       "stageId": 6,
-      "label": "Final walk-through",
-      "description": "Take photos, AI spots punch items, assign fixes to trades, and track completion. Close the loop on quality before final payment.",
+      "label": "Final walk-through (substantial completion)",
+      "description": "The substantial-completion gate. Walk the job with the client/architect, sign off on the closeout punch list, and clear the path for retainage release. Distinct from the running punch list (q-punch) used during construction.",
       "totalXp": 100,
       "steps": [
         {
@@ -1466,6 +1491,362 @@
           "promptId": null,
           "analysisTitle": "Catching who's asking",
           "exampleOutput": "Captured Mike Tanaka from Tanaka Roofing — re-roof on 2200 sqft tile job in Pasadena. Added to pipeline as a new lead."
+        }
+      ]
+    },
+    {
+      "id": "q-panel-schedule",
+      "stageId": 3,
+      "label": "Panel schedule (NEC Article 220)",
+      "description": "Deterministic electrical service-load calculator. Enter sqft + occupancy and we compute total connected load, apply NEC 220.83 / 220.42 demand factors, and recommend a service size (200A / 400A / etc). Generates a 40-circuit panel directory with auto-balanced legs, breaker sizes, and THHN/THWN wire sizes per NEC 310.16. Exports to PDF. No LLM — all math is reproducible on paper.",
+      "totalXp": 100,
+      "roles": ["gc", "contractor", "specialist", "teammate", "owner"],
+      "steps": [
+        {
+          "id": "s-ps-1",
+          "label": "Building type + sqft",
+          "type": "select",
+          "options": ["Office", "Retail", "Restaurant", "Warehouse", "Industrial", "Medical", "School", "Hospital", "Single-family", "Multi-family", "ADU"]
+        },
+        {
+          "id": "s-ps-2",
+          "label": "Optional loads — HVAC kW, water heater, range, EV charger",
+          "type": "number_input",
+          "placeholder": "e.g. HVAC 12 kW"
+        },
+        {
+          "id": "s-ps-3",
+          "label": "Calculate + render panel directory",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Computing NEC 220 service load",
+          "exampleOutput": "4,200 sqft Class B office → 14,700 VA general lighting (3.5 VA/sqft × 4,200). With 12 kW HVAC at 1.25 = 15,000 VA + 4.5 kW water heater = 4,500 VA. Total connected 34,200 VA. Demand applied per NEC 220.42 = ~25,400 VA / 240V = 106 A. Recommended service: 125A single-phase 120/240V."
+        }
+      ]
+    },
+    {
+      "id": "q-equipment-schedule",
+      "stageId": 3,
+      "label": "Equipment schedule (HVAC + plumbing)",
+      "description": "HVAC tonnage rule-of-thumb (350 sqft/ton Class B office, 200 restaurant, etc.) plus UPC 422.1 plumbing fixture count (WC / lav / urinal / drinking fountain / mop sink). For commercial TI and new build scoping. Exports to PDF with ASHRAE 90.1, ASHRAE 62.1, UPC 422.1, CPC Table 4-1 citations. Rule-of-thumb only — permit-grade HVAC needs ACCA Manual J/N.",
+      "totalXp": 75,
+      "roles": ["gc", "contractor", "specialist", "teammate", "owner"],
+      "steps": [
+        {
+          "id": "s-es-1",
+          "label": "Building type + sqft",
+          "type": "select",
+          "options": ["Office", "Retail", "Restaurant", "Warehouse", "Industrial", "Medical", "School", "Hospital"]
+        },
+        {
+          "id": "s-es-2",
+          "label": "Generate equipment schedule",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Computing HVAC tonnage + plumbing fixtures",
+          "exampleOutput": "4,200 sqft office → 12 tons cooling (350 sqft/ton). Recommend 2× 6-ton RTUs OR 1× 12-ton split. Occupant load 42 (100 sqft/person UPC). Fixtures: 1 WC, 1 lav, 0 urinals, 1 drinking fountain, 1 mop sink per UPC 422.1."
+        }
+      ]
+    },
+    {
+      "id": "q-load-calc",
+      "stageId": 3,
+      "label": "Electrical load calculator",
+      "description": "Direct access to the NEC 220 service-load math. Same calculator that powers the panel-schedule workflow — useful when you just need a service-amp answer without the full panel directory.",
+      "totalXp": 50,
+      "roles": ["gc", "contractor", "specialist", "teammate", "owner"],
+      "steps": [
+        {
+          "id": "s-lc-1",
+          "label": "Building type + sqft + optional big loads",
+          "type": "number_input",
+          "placeholder": "sqft"
+        },
+        {
+          "id": "s-lc-2",
+          "label": "Returns demand VA + recommended service amps",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "NEC 220 service-load math",
+          "exampleOutput": "See /api/v1/load-calc?buildingType=office&sqft=4200&hvacKW=12 for JSON."
+        }
+      ]
+    },
+    {
+      "id": "q-aor",
+      "stageId": 2,
+      "label": "Find an architect of record",
+      "description": "Need a CA-licensed architect to stamp your set? Tell us about the project and the Knowledge Gardens team (Charlie, Bou, John, Chilly) personally connects you with one within 1 business day.",
+      "totalXp": 50,
+      "steps": [
+        {
+          "id": "s-aor-1",
+          "label": "Tell us about the project",
+          "type": "text_input",
+          "placeholder": "Name, email, project type, address, scope, jurisdiction, budget, timeline."
+        },
+        {
+          "id": "s-aor-2",
+          "label": "We email an architect intro",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Routing to an architect of record",
+          "exampleOutput": "Request received. Charlie or Bou will email you within 1 business day with an intro to a CA-licensed architect matched to your project's scope, jurisdiction, and timeline."
+        }
+      ]
+    },
+    {
+      "id": "q-rfi",
+      "stageId": 4,
+      "label": "Submit RFIs",
+      "description": "Ask the design team a clarification question — with photos, voice dictation, and a response timer so nothing gets buried.",
+      "totalXp": 60,
+      "steps": [
+        {
+          "id": "s-rfi-1",
+          "label": "What's unclear?",
+          "type": "text_input",
+          "placeholder": "Short subject — e.g. 'Beam pocket detail on north wall'."
+        },
+        {
+          "id": "s-rfi-2",
+          "label": "Describe the question",
+          "type": "voice_input",
+          "placeholder": "Reference sheet numbers, dimensions, materials. Hit the mic if your hands are full."
+        },
+        {
+          "id": "s-rfi-3",
+          "label": "Attach photos",
+          "type": "file_upload",
+          "placeholder": "Snap what you're looking at — rear camera, multiple shots OK."
+        },
+        {
+          "id": "s-rfi-4",
+          "label": "Submit to the design team",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "RFI filed",
+          "exampleOutput": "RFI filed. The response clock is now running — you'll see it on the list with days-open."
+        }
+      ]
+    },
+    {
+      "id": "q-approvals",
+      "stageId": 5,
+      "label": "Approvals inbox",
+      "description": "Sign off on pending change orders, draw requests, and lien waivers. Every signature captures IP + timestamp + document hash and lands in the audit log. System-of-record for the owner lane.",
+      "totalXp": 80,
+      "allowedRoles": ["owner", "gc"],
+      "steps": [
+        {
+          "id": "s-approvals-1",
+          "label": "Review what's pending",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Your inbox",
+          "exampleOutput": "3 items pending: 1 change order ($42,800), 1 draw request ($118,000), 1 lien waiver. Tap any row to review the PDF."
+        },
+        {
+          "id": "s-approvals-2",
+          "label": "Sign or reject",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Signature recorded",
+          "exampleOutput": "Signed change order #4. Document hash locked. Counter-party signature pending — both parties must sign for the CO to become a permanent record."
+        }
+      ]
+    },
+    {
+      "id": "q-sub-bid-submit",
+      "stageId": 3,
+      "label": "Submit a bid (sub lane)",
+      "description": "You're a sub bidding on a GC's project. Build the bid here — scope, line items, CSLB, insurance — and push it to the GC's inbox.",
+      "totalXp": 75,
+      "allowedRoles": ["specialist", "contractor"],
+      "steps": [
+        {
+          "id": "s-sub-bid-1",
+          "label": "Pick the project + trade",
+          "type": "select",
+          "options": ["Electrical", "Plumbing", "HVAC", "Framing", "Concrete", "Drywall", "Paint", "Roofing", "Tile", "Other"]
+        },
+        {
+          "id": "s-sub-bid-2",
+          "label": "Draft scope (AI expand available)",
+          "type": "text_input",
+          "placeholder": "e.g. Rough + finish plumbing for ADU. PEX domestic, ABS waste, gas line to range."
+        },
+        {
+          "id": "s-sub-bid-3",
+          "label": "Add line items",
+          "type": "text_input",
+          "placeholder": "Description / Qty / Unit / Unit price — subtotal + tax + total computed."
+        },
+        {
+          "id": "s-sub-bid-4",
+          "label": "CSLB number + insurance",
+          "type": "text_input",
+          "placeholder": "CA license #. Confirm GL / WC / Auto coverage."
+        },
+        {
+          "id": "s-sub-bid-5",
+          "label": "Submit to the GC",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Bid submitted",
+          "exampleOutput": "Your bid is on the GC's desk. They'll review and respond — you'll see the status flip to reviewed, then accepted or rejected."
+        }
+      ]
+    },
+    {
+      "id": "q-sub-bid-inbox",
+      "stageId": 3,
+      "label": "Sub-bid inbox (GC lane)",
+      "description": "You're the GC. Every bid your subs push lands here. Review, accept (drafts a sub-agreement), reject, or counter-offer.",
+      "totalXp": 75,
+      "allowedRoles": ["gc", "owner", "teammate"],
+      "steps": [
+        {
+          "id": "s-sub-inbox-1",
+          "label": "Open a bid row",
+          "type": "select",
+          "options": ["Trade", "Sub name", "Total", "Status", "Days open"]
+        },
+        {
+          "id": "s-sub-inbox-2",
+          "label": "Verify CSLB + insurance",
+          "type": "text_input",
+          "placeholder": "Click the CSLB link to verify license. Confirm insurance coverage."
+        },
+        {
+          "id": "s-sub-inbox-3",
+          "label": "Decide",
+          "type": "select",
+          "options": ["Mark reviewed", "Accept (draft sub-agreement)", "Reject (with reason)", "Counter-offer"]
+        }
+      ]
+    },
+    {
+      "id": "q-vendors",
+      "stageId": 3,
+      "label": "Vendor master",
+      "description": "Single source of truth for every sub, supplier, and 1099 payee. CSLB#, W-9, insurance, payment terms — the bookkeeper's must-have. Procurement starts here.",
+      "totalXp": 80,
+      "allowedRoles": ["gc", "owner", "teammate"],
+      "steps": [
+        {
+          "id": "s-vendors-1",
+          "label": "Browse vendors",
+          "type": "checklist"
+        },
+        {
+          "id": "s-vendors-2",
+          "label": "Add or edit a vendor",
+          "type": "text_input",
+          "placeholder": "Legal name, CSLB#, W-9 status, insurance expiries, payment terms."
+        }
+      ]
+    },
+    {
+      "id": "q-ledger",
+      "stageId": 6,
+      "label": "AR / AP ledger",
+      "description": "Money in (billed to clients) and money out (paid to subs). Grouped by project / vendor with payment history. Record payments against any invoice.",
+      "totalXp": 100,
+      "allowedRoles": ["gc", "owner", "teammate"],
+      "steps": [
+        {
+          "id": "s-ledger-1",
+          "label": "Review AR / AP balances",
+          "type": "checklist"
+        },
+        {
+          "id": "s-ledger-2",
+          "label": "Create a new invoice",
+          "type": "text_input"
+        },
+        {
+          "id": "s-ledger-3",
+          "label": "Record a payment",
+          "type": "number_input",
+          "unit": "$"
+        }
+      ]
+    },
+    {
+      "id": "q-qbexport",
+      "stageId": 7,
+      "label": "QuickBooks export",
+      "description": "Month-end close. Export invoices, payments, or vendors as IIF (QuickBooks Desktop) or CSV with GL accounts (QuickBooks Online).",
+      "totalXp": 60,
+      "allowedRoles": ["gc", "owner", "teammate"],
+      "steps": [
+        {
+          "id": "s-qbexport-1",
+          "label": "Pick a date range",
+          "type": "text_input"
+        },
+        {
+          "id": "s-qbexport-2",
+          "label": "Generate IIF or CSV",
+          "type": "checklist"
+        }
+      ]
+    },
+    {
+      "id": "q-audit-trail",
+      "stageId": 7,
+      "label": "Audit trail",
+      "description": "Every insert, update, delete on vendors, invoices, line items, and payments. Filter by table, user, date. Cross-cutting — also available from any stage.",
+      "totalXp": 40,
+      "allowedRoles": ["gc", "owner", "teammate"],
+      "steps": [
+        {
+          "id": "s-audit-1",
+          "label": "Browse audit events",
+          "type": "checklist"
+        }
+      ]
+    },
+    {
+      "id": "q-find-gc",
+      "stageId": 2,
+      "label": "Find a vetted GC",
+      "description": "DIY-LANE concierge: tell us about your project and we connect you with 2-3 vetted general contractors in your area within 2 business days. Targets homeowner/dreamer lane.",
+      "allowedRoles": ["diy", "owner"],
+      "totalXp": 60,
+      "steps": [
+        {
+          "id": "s-find-gc-1",
+          "label": "Tell us about your project",
+          "type": "text_input",
+          "placeholder": "Name, email, project type, scope, budget, timeline, and anything you're worried about."
+        },
+        {
+          "id": "s-find-gc-2",
+          "label": "We send vetted GC intros",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Matching with vetted GCs",
+          "exampleOutput": "Request received. Charlie, Bou, or John will email you within 2 business days with 2-3 vetted GCs who've done work like yours in your area."
+        }
+      ]
+    },
+    {
+      "id": "q-cost-explainer",
+      "stageId": 1,
+      "label": "Why does it cost what it does?",
+      "description": "DIY-LANE budget walkthrough: each CSI line translated into plain English with a one-sentence explainer of what drives that cost. Targets homeowner/dreamer lane.",
+      "allowedRoles": ["diy", "owner"],
+      "totalXp": 40,
+      "steps": [
+        {
+          "id": "s-cost-explainer-1",
+          "label": "Walk me through my budget",
+          "type": "analysis_result",
+          "promptId": null,
+          "analysisTitle": "Plain-English budget breakdown",
+          "exampleOutput": "Concrete (~$140K): Foundations + slab + footings. Higher in Marin because hillsides need engineered fill and seismic rebar. Framing (~$280K): Wood skeleton — studs, joists, sheathing. About 18% of total — lumber prices have been wild since 2020."
         }
       ]
     }
