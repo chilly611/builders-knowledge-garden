@@ -1,0 +1,66 @@
+{
+  "client-agreement-ca-hic.md": {
+    "downpayment-cap-bus-prof-7159-d-8": {
+      "sha256": "510d10c9bff7d19132c4e41a8696c0cf2a6c384ba0765534e0ad07b7885744ad",
+      "approx_len": 261,
+      "first_30_chars": "THE DOWNPAYMENT MAY NOT EXCEED",
+      "source": "Cal. Bus. & Prof. Code § 7159(d)(8)"
+    },
+    "schedule-of-progress-payments-bus-prof-7159-d-9": {
+      "sha256": "a83209d18ece7df98ebb7594d686e5f789e30e8dd659dc0519a481e3593fb968",
+      "approx_len": 398,
+      "first_30_chars": "The schedule of progress payme",
+      "source": "Cal. Bus. & Prof. Code § 7159(d)(9)"
+    },
+    "mechanics-lien-warning": {
+      "sha256": "fdc992075fad73d3f4dadb9ddf5027768309da07856e21ee8393f7ce40370c8d",
+      "approx_len": 2353,
+      "first_30_chars": "Anyone who helps improve your ",
+      "source": "Cal. Bus. & Prof. Code § 7159(e)(4)"
+    },
+    "three-day-right-to-cancel": {
+      "sha256": "386d1ff434b3dbcd91f1cbc064283f4f5dfb84189d0d8a5181d5588979830ea9",
+      "approx_len": 1301,
+      "first_30_chars": "You, the buyer, have the right",
+      "source": "Cal. Bus. & Prof. Code § 7159(e)(6)"
+    },
+    "notice-of-cancellation": {
+      "sha256": "4c2acc5224c24a74e2ba3134ad5cebcbd016bc32ee44263bf7216767a8abddbe",
+      "approx_len": 1567,
+      "first_30_chars": "Date of Transaction: {{contrac",
+      "source": "Cal. Bus. & Prof. Code § 7159(d)(4)"
+    }
+  },
+  "lien-waiver-progress-conditional.md": {
+    "notice": {
+      "sha256": "986c8a0f9ac2d4572d1274abcf62d811a115411fa29bce0175f4736e464910c9",
+      "approx_len": 218,
+      "first_30_chars": "THIS DOCUMENT WAIVES THE CLAIM",
+      "source": "Cal. Civ. Code § 8132"
+    }
+  },
+  "lien-waiver-progress-unconditional.md": {
+    "notice-to-claimant": {
+      "sha256": "36ab23a6bb60a2059f2924ea3517e77abf38e048d83e2bae1c476a52e3dadea7",
+      "approx_len": 322,
+      "first_30_chars": "THIS DOCUMENT WAIVES AND RELEA",
+      "source": "Cal. Civ. Code § 8134"
+    }
+  },
+  "lien-waiver-final-conditional.md": {
+    "notice": {
+      "sha256": "986c8a0f9ac2d4572d1274abcf62d811a115411fa29bce0175f4736e464910c9",
+      "approx_len": 218,
+      "first_30_chars": "THIS DOCUMENT WAIVES THE CLAIM",
+      "source": "Cal. Civ. Code § 8136"
+    }
+  },
+  "lien-waiver-final-unconditional.md": {
+    "notice-to-claimant": {
+      "sha256": "36ab23a6bb60a2059f2924ea3517e77abf38e048d83e2bae1c476a52e3dadea7",
+      "approx_len": 322,
+      "first_30_chars": "THIS DOCUMENT WAIVES AND RELEA",
+      "source": "Cal. Civ. Code § 8138"
+    }
+  }
+}

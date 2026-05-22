@@ -106,11 +106,110 @@ through to the existing block-classification path.
    typeface) would require shipping font data with the bundle — out of
    scope for the current renderer.
 
-4. **No machine compliance check.** The renderer enforces 12 pt bold on
-   callout blocks but does not validate that the *content* matches the
-   verbatim statutory text. Template authors must keep the wrapped text
-   identical to the § 7159 / § 8132–8138 statutory language. The wrapper
-   is purely a presentation marker.
+4. **No machine compliance check on the *rendered PDF* output.** The
+   renderer enforces 12 pt bold on callout blocks but does not validate
+   the *layout* of the rendered PDF (signature proximity, page-break
+   placement, etc.). Visual review by counsel is still required.
+
+   The *content* of each callout body **is** now machine-locked: see
+   "Statutory text golden-file lock" below.
+
+## Statutory text golden-file lock
+
+Every `:::7159-callout` body in the templates listed above is hashed
+(SHA-256, after CRLF→LF + trailing-whitespace normalization) and the
+hashes are committed to:
+
+```
+src/lib/contract-templates/__tests__/statutory-text-hashes.json
+```
+
+The test `src/lib/contract-templates/__tests__/statutory-text-golden.test.ts`
+re-parses, re-hashes, and re-compares on every `npm test` run. If a PR
+modifies a single byte of a callout body without also updating the JSON,
+the test fails and the build is blocked. **This is the legal-compliance
+defense against accidental drift** (smart-quote autocorrect, paragraph
+break shuffling, hyphen replacement, etc.).
+
+### How to intentionally update statutory text
+
+If a California legislative amendment changes the text of one of the
+locked callouts (e.g. an amendment to Bus. & Prof. § 7159 or Civ. Code
+§§ 8132 / 8134 / 8136 / 8138):
+
+1. Pull the new verbatim language from leginfo.legislature.ca.gov.
+2. Update the affected template markdown(s) inside the `:::7159-callout`
+   fence — and ONLY inside the fence; the surrounding context can stay.
+3. Run:
+
+   ```
+   npm run statutory:hash
+   ```
+
+   This regenerates `statutory-text-hashes.json` from the current
+   markdown.
+4. Inspect the JSON diff. Every changed `sha256` must correspond to a
+   callout you intentionally edited; if an unrelated hash also changed,
+   you have accidental drift in another callout — investigate before
+   committing.
+5. Commit the template change(s) + the regenerated JSON in the SAME PR.
+   In the PR description, include:
+   - The leginfo.legislature.ca.gov URL for the new statutory text.
+   - The effective date of the legislative amendment.
+   - The chapter / bill number (e.g. "Stats. 2025, ch. 123, § 4").
+6. Run `npm test` locally to confirm the golden test now passes against
+   the regenerated JSON before opening the PR.
+
+A PR that changes a callout body WITHOUT updating the JSON will fail
+`statutory-text-golden.test.ts` on Vercel preview / CI and cannot merge.
+
+### How to verify the statutory chain end-to-end
+
+Auditors can re-verify the entire compliance chain:
+
+| Layer | Source | How to verify |
+|---|---|---|
+| Markdown | `src/lib/contract-templates/*.md` | Read the file. |
+| Hash | `statutory-text-hashes.json` | Run `npm run statutory:hash` and compare diff. |
+| Statute (BPC § 7159) | https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=7159 | Compare callout body word-for-word. |
+| Statute (Civ. § 8132) | https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=8132 | Conditional progress waiver. |
+| Statute (Civ. § 8134) | https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=8134 | Unconditional progress waiver. |
+| Statute (Civ. § 8136) | https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=8136 | Conditional final waiver. |
+| Statute (Civ. § 8138) | https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=8138 | Unconditional final waiver. |
+
+**Last manual verification against leginfo.legislature.ca.gov:** _not
+yet performed — fill in this date and reviewer initials after the first
+verification pass._
+
+### Risk callouts (normalization edge cases)
+
+The normalization the hash is computed over does the following — keep
+this in mind when editing or auditing:
+
+- **CRLF / CR → LF.** A Windows checkout (`git config core.autocrlf
+  true`) would otherwise produce different bytes than a macOS / Linux
+  checkout. The hash is line-ending-agnostic so the test is stable
+  across contributor environments.
+- **UTF-8 BOM stripped.** If an editor adds a BOM, it does not change
+  the hash.
+- **3+ consecutive blank lines collapse to 1 blank line.** Editor
+  autoformat or `prettier --write` may add a stray blank line at the
+  end of a callout; this is tolerated.
+- **Trailing whitespace stripped per line.** Tolerates accidental
+  trailing spaces.
+- **Internal whitespace is NOT collapsed.** A double space between
+  two words *is* part of the hash. So is the indentation of a numbered
+  list line. So is the position of paragraph breaks.
+- **Smart quotes / curly apostrophes ARE part of the hash.** If your
+  editor autocorrects `'` to `’` inside a callout, the test will fail.
+  Configure your editor to disable smart-quote substitution for
+  `.md` files in the `contract-templates/` directory, or revert the
+  substitution before committing.
+- **Template placeholders are part of the hash.** `{{contractorName}}`
+  inside the Notice of Cancellation callout is intentionally hashed —
+  changing the placeholder name (e.g. to `{{vendorName}}`) would change
+  the rendered text for every customer and is therefore a drift event
+  by design.
 
 ## Pre-deployment checklist
 

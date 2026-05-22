@@ -11,7 +11,8 @@
     "seed:codes": "node scripts/seed-code-entities.mjs",
     "probe:adversarial": "node scripts/probes/adversarial-codes.mjs",
     "build:mcpb": "node scripts/build-mcpb.mjs",
-    "embeddings": "tsx src/scripts/generate-embeddings.ts"
+    "embeddings": "tsx src/scripts/generate-embeddings.ts",
+    "statutory:hash": "tsx src/scripts/generate-statutory-hashes.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
