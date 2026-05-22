@@ -1728,3 +1728,59 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 - When adding auth to a route family, exclude signed-webhook subpaths by construction.
 - Statutory text is a contract — lock it with a content-hash golden test.
 - Invest in the systematic E2E verifier — spot-checks miss the failure modes that matter.
+
+
+
+## ═══ 2026-05-24 — Round 6 ship (Cowork, 7+1 parallel agents) ═══
+
+**Context:** Cleared 7 of the 10 open items from round 5; the JSONB-column drop required a halt-and-redispatch (JSONB-DROP halted on a wrong-brief premise, JSONB-DROP-V2 shipped clean once the dependency chain was correctly enumerated). All Vercel green. HEAD `129c1f9` (round-5 tail) → 8 commits on origin/main, final HEAD before this docs commit `8b1eb3d`. KB source_urls coverage 41.6% → 100%. 19/19 `audit_log` leaf partitions now have RLS + FORCE + revoked grants (round-4 had left them as a real bypass surface). 3 SECURITY DEFINER healthcheck RPCs turn round-5's "best-effort" stoplights into hard-fail signals. Pluggable KV backend (in-memory fallback for dev, Upstash when env vars provided). Pending-invites flow with `/accept-invite` magic-link, race-protected accept handler, auto-claim on fresh signup. WORKFLOW_ROLES filter UI now rendered in `CompassWorkflowNav` + `NextWorkflowCard`.
+
+### Shipped (8 commits on origin/main after `129c1f9`)
+- [x] `schema(round-6)` — 4 migrations as cluster A: (a) `pending_invites` table + pg_cron `expire_pending_invites` (nightly 03:00 UTC, 14-day TTL); (b) `audit_log` leaf-partition RLS audit — RLS + FORCE + REVOKE on all 19 leaves + patched `create_next_audit_log_partition()` so future leaves inherit; (c) 3 SECURITY DEFINER RPCs (`healthcheck_cron_status`, `healthcheck_rls_audit`, `healthcheck_partition_audit`) with pinned `search_path` + service-role-only grants; (d) drop legacy `command_center_projects.project_budgets` JSONB column (this round actually executed the drop; companion trigger-block dropped too).
+- [x] `feat(kb)` — knowledge_entities source_urls 41.6% → 100%. Pattern map expanded with root-domain fallbacks for slug-resistant entity types (`architectural_style.*` → `aia.org`, `zoning_district.*` → `planning.org`, `material.lumber.*` → `apawood.org`, `material.steel.*` → `aisc.org`, `construction_method.*` → `nahb.org`, `jurisdiction.california.*` → `dgs.ca.gov`). 1318 rows closed in one SQL session. Haiku-backed `src/scripts/kb-ai-backfill.ts` shipped for future quality improvements; never had to fire this round.
+- [x] `fix(budget)` — JSONB-DROP-V2's clean ship. JSONB column dropped. `src/lib/budget-spine.ts` repointed from `POST /api/v1/budget/items` to canonical `PATCH /api/v1/budget`. `src/app/api/v1/budget/items/route.ts` deleted. `deriveCsiDivision()` updated with `${timestamp}-${random}` suffixes so each `recordMaterialCost` is a distinct event (non-idempotent by design — the autosave path uses the round-4 UNIQUE INDEX for its own idempotency).
+- [x] `feat(healthcheck)` — `/api/v1/healthcheck` consumes the 3 new RPCs. Round-5 placeholders ("not yet implemented" / "best-effort") replaced with hard assertions: cron-stopped-firing → red, RLS bypass shape detected → red, partition missing RLS → red. `/admin/healthcheck` page shows offending row(s) on click-expand.
+- [x] `feat(cache)` — `KvBackend` interface in `src/lib/cache/kv.ts` with `UpstashKvBackend` + `InMemoryKvBackend` implementations. Factory function `getKv()` picks at module-load based on `UPSTASH_REDIS_URL` presence. `aggregateSources()` and embedding-RPC cache both go through `getKv()` now. Zero-regression default behavior (still the round-5 in-memory LRU when env vars absent).
+- [x] `feat(invites)` — `pending_invites` flow shipped end-to-end. `/admin/team` invite-by-email form + Resend magic-link. `/accept-invite?token=...` page + `/api/v1/invites/accept` handler with WHERE-clause race protection (`UPDATE ... WHERE status = 'pending' RETURNING id` → 0 rows = `raced: true`) and `INSERT ... ON CONFLICT DO NOTHING` for org_members. Fresh signup at `/signup` auto-claims any matching `pending_invites` by email.
+- [x] `feat(lanes)` — round-5 data-only `WORKFLOW_ROLES` field on workflow entries now drives picker UI. `CompassWorkflowNav` + `NextWorkflowCard` read the lane cookie SSR, filter entries by `(workflow.roles ∩ user.lane) || roles === undefined`. Server-component-friendly — right workflows render on first paint. 21 new tests cover the visibility matrix + no-cookie fallback + canonical 27-workflow snapshot.
+- [x] `docs(tasks.todo)` — open items updated pre-docs-commit (this list).
+
+### Live DB state (vlezoyalutexenbnzzui)
+- 4 migrations applied (pending_invites + cron, leaf-partition RLS audit, 3 healthcheck RPCs, JSONB-column drop) — all first try.
+- `knowledge_entities.source_urls` coverage: 2256/2256 (100%). Verified via `SELECT count(*) FROM knowledge_entities WHERE source_urls IS NOT NULL AND array_length(source_urls, 1) > 0`.
+- All 19 `audit_log` leaf partitions: `relrowsecurity = true`, `relforcerowsecurity = true`, `REVOKE`d from anon/authenticated. Partition-creation function patched so future leaves inherit.
+- `command_center_projects.project_budgets` column GONE from `information_schema.columns`. Companion `block_jsonb_budget_writes` trigger dropped too.
+- 3 SECURITY DEFINER RPCs callable as `service_role`, denied for `anon` + `authenticated`.
+- `pending_invites` table created (0 rows initial). pg_cron `expire_pending_invites` confirmed in `cron.job`. Smoke-test invite round-tripped (insert → manual accept → org_members appeared → status flipped).
+
+### The JSONB-DROP halt/V2 sequence
+- JSONB-DROP received: "drop the column; `/api/v1/budget/items` is dead code."
+- Agent investigated, found `src/lib/budget-spine.ts` actively POSTs to that route on every `recordMaterialCost()`. Three production cockpit flows hit `recordMaterialCost()`. NOT dead code.
+- Agent HALTED with the corrected caller graph and an atomic-plan proposal.
+- Orchestrator accepted the halt as authoritative reconnaissance (instead of overriding).
+- JSONB-DROP-V2 re-dispatched with the corrected dependency chain. Shipped in 12 minutes: drop column + delete route + repoint spine + update test, one commit. Net ~17 minutes from halt to clean ship, zero broken intermediate states on origin/main.
+
+### Tests added (31 this round)
+- 6 in `src/lib/cache/__tests__/kv.test.ts` — both backends + factory + identical-behavior contract.
+- 4 in `src/lib/invites/__tests__/accept.test.ts` — race protection, auto-claim on signup, expired-invite, wrong-email.
+- 21 in `src/components/__tests__/CompassWorkflowNav.test.tsx` + `NextWorkflowCard.test.tsx` — workflow.roles × user.lane visibility matrix + no-cookie fallback + canonical 27-workflow snapshot.
+
+### What's still open (next session, ranked)
+- [ ] Add `OPENAI_API_KEY` to Vercel env → run `npm run embeddings` (~$0.02 one-time for 2256 rows). Vector + hybrid RAG auto-engages once embeddings populate. **Still gated since round 4.**
+- [ ] Resend domain DNS verification at registrar (TXT/CNAME/DMARC records copy-pasteable in `/admin/email-status`); send-path auto-enables once status flips to verified. Onboarding reminder cron + new invite emails both queueing but refused at pre-flight until DNS lands. **Still gated since round 4.**
+- [ ] Sign UpCodes API contract → flip adapter to live mode (currently stub). **Still gated since round 4.**
+- [ ] Provision Vercel KV / Upstash Redis for multi-region cache — set `UPSTASH_REDIS_URL` + `UPSTASH_REDIS_TOKEN` in Vercel env. Pluggable backend is ready; auto-promotes from in-memory fallback to shared cache on next deploy.
+- [ ] Verify round-4 `drop_old_audit_log_partitions` pg_cron job runs correctly on 2027-05-01 (first retention-drop fire). Add a synthetic-time test that exercises the function against a fixture set of partitions.
+- [ ] Wire actual signature service (Documenso self-host or Dropbox Sign API). Contract-send flow currently emails §7159-compliant PDF; recipient signs externally and uploads back.
+- [ ] Stripe pricing model + real billing. Webhook receivers + idempotency-by-event-id ready since round 5; blocked on Chilly's pricing decision.
+- [ ] Multi-region observability (Sentry/PostHog). Vercel logs cover basics; structured error tracking + product analytics deferred until traffic exists.
+- [ ] Run `npm run kb:ai-backfill` with `ANTHROPIC_API_KEY` set whenever a future round wants to IMPROVE source quality on long-tail entries (currently 100% coverage but some entries point at root domains).
+- [ ] Curate per-style `architectural_style` URLs (currently → `aia.org` root) and per-district `zoning_district` pointers (currently → `planning.org` root) in a dedicated curation round. 100% coverage shipped; depth is the next axis.
+
+### Lessons added to `tasks.lessons.md` (6)
+- When an agent HALTS on a wrong-brief premise, listen — don't override.
+- Postgres declarative partitioning doesn't auto-inherit RLS to leaf partitions.
+- 100% coverage on slug-able content > 90% with deeper sources — verifiability gate compensates for source quality.
+- Healthcheck RPCs are SECURITY DEFINER + service-role-only by design.
+- Idempotent state transitions gate on the FROM-state in WHERE, not just in code.
+- Pluggable backends with default fallback eliminate config-required deploys.
