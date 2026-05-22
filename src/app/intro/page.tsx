@@ -351,15 +351,21 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
             chrome PNGs themselves are the visual. zIndex 2 puts chromes
             BELOW the hammer (zIndex 3) so when they're at peak scale
             and may overlap, the hammer stays the focal anchor. */}
+        {/* Chrome LOGOS — animated (orbit-out + zoom-past). Labels are
+            NOT inside these motion.divs anymore (per Chilly 2026-05-22 PM:
+            labels were scaling huge with the logos and overlapping the
+            hammer); see separate labels block below. mixBlendMode:
+            'multiply' on the image dissolves the cream PNG backgrounds
+            into the parchment so the rectangular boxes disappear. */}
         <motion.div {...chromeAnim(170, -160, 0)} style={chromeOrbitContainer}>
           <div style={chromeOrbitInner}>
             <GardenLogo
               src="/logos/gardens/chrome-killer-app.png"
               alt="Killer App"
-              size={56}
+              size={84}
+              style={{ mixBlendMode: 'multiply' }}
               fallback={<span style={chromeOrbitFallback(CHROME.red)} />}
             />
-            <span style={chromeOrbitLabel}>Killer App</span>
           </div>
         </motion.div>
         <motion.div {...chromeAnim(-170, -30, 0.18)} style={chromeOrbitContainer}>
@@ -367,10 +373,10 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
             <GardenLogo
               src="/logos/gardens/chrome-dream-machine.png"
               alt="Dream Machine"
-              size={56}
+              size={84}
+              style={{ mixBlendMode: 'multiply' }}
               fallback={<span style={chromeOrbitFallback(CHROME.warm)} />}
             />
-            <span style={chromeOrbitLabel}>Dream Machine</span>
           </div>
         </motion.div>
         <motion.div {...chromeAnim(150, 160, 0.36)} style={chromeOrbitContainer}>
@@ -378,12 +384,25 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
             <GardenLogo
               src="/logos/gardens/chrome-knowledge-garden.png"
               alt="Knowledge Garden"
-              size={56}
+              size={84}
+              style={{ mixBlendMode: 'multiply' }}
               fallback={<span style={chromeOrbitFallback(CHROME.green)} />}
             />
-            <span style={chromeOrbitLabel}>Knowledge Garden</span>
           </div>
         </motion.div>
+
+        {/* Three labels at fixed canvas positions, diagonally opposite
+            from each logo's orbit position so they're far from the logo
+            throughout the zoom-past (logos zoom in direction of their
+            orbit vector; labels sit in the opposite half-plane). Labels
+            fade in around 1.5s (after the logos have appeared), hold
+            through the swell phase, fade out as logos zoom past (~5.5s).
+            They DON'T scale — so they stay readable independent of the
+            logo dramatic motion. Positions chosen to avoid overlap with
+            the centered hammer (extends ±130px from center). */}
+        <Act1ChromeLabel x={-180} y={-180} text="KILLER APP"       reduced={reduced} />
+        <Act1ChromeLabel x={ 190} y={-100} text="DREAM MACHINE"    reduced={reduced} />
+        <Act1ChromeLabel x={-180} y={ 140} text="KNOWLEDGE GARDEN" reduced={reduced} />
       </div>
 
       {/* Typewriter sits BELOW the hammer with explicit z-index higher
@@ -428,6 +447,42 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
         }
       `}</style>
     </motion.section>
+  );
+}
+
+// Standalone label for Act 1's three chromes — positioned at fixed canvas
+// coordinates, fades in/out without scaling. Lives outside the chrome
+// motion.divs so the dramatic zoom-past can't drag the labels into
+// illegibly-large overlapping text.
+function Act1ChromeLabel({ x, y, text, reduced }: { x: number; y: number; text: string; reduced: boolean }) {
+  return (
+    <motion.div
+      initial={reduced ? { opacity: 1 } : { opacity: 0 }}
+      animate={reduced ? { opacity: 1 } : { opacity: [0, 0, 1, 1, 0] }}
+      transition={reduced ? { duration: 0 } : {
+        duration: 7.0,
+        delay: 0.4,
+        times: [0, 0.18, 0.28, 0.72, 0.95],
+        ease: 'linear',
+      }}
+      style={{
+        position: 'absolute',
+        top: `calc(50% + ${y}px)`,
+        left: `calc(50% + ${x}px)`,
+        transform: 'translate(-50%, -50%)',
+        fontSize: 14,
+        fontWeight: 800,
+        letterSpacing: '0.12em',
+        color: COLORS.ink,
+        whiteSpace: 'nowrap',
+        textTransform: 'uppercase',
+        textShadow: '0 1px 0 rgba(250,246,235,0.9)',
+        zIndex: 4,
+        pointerEvents: 'none',
+      }}
+    >
+      {text}
+    </motion.div>
   );
 }
 
@@ -588,6 +643,109 @@ function WhiteboardArt() {
   );
 }
 
+// Journey strip assets (2026-05-22 PM, Chilly): 12 conceptual stage
+// illustrations from `photos research/` copied into app/public/journey/.
+// Scroll across the bottom of Act 3 as a marquee to show the FULL build
+// journey investors are watching unfold. Order = build sequence narrative:
+// begin → sketch → plan → structural → sizeup → sequence → tools →
+// equipment → build → lock-in → journey-map → tree-portal-end.
+const JOURNEY_STAGES: Array<{ file: string; label: string }> = [
+  { file: 'beginning-journey.jpg',    label: 'Begin'      },
+  { file: 'sketch-journey.JPG',       label: 'Sketch'     },
+  { file: 'plan-journey.png',         label: 'Plan'       },
+  { file: 'Structural-journey.jpeg',  label: 'Structural' },
+  { file: 'sizeup-journey.png',       label: 'Size up'    },
+  { file: 'sequencing-journey.JPG',   label: 'Sequence'   },
+  { file: 'tool-journey.PNG',         label: 'Tools'      },
+  { file: 'equipment-journey.PNG',    label: 'Equipment'  },
+  { file: 'build-journey.png',        label: 'Build'      },
+  { file: 'lock-journey.png',         label: 'Lock it in' },
+  { file: 'Journey-map-sketch.png',   label: 'The map'    },
+  { file: 'tree-portal-journey.PNG',  label: 'The garden' },
+];
+
+// Horizontal marquee of all 12 journey stages, scrolling right → left
+// across Act 3's 13s duration. Lives at the bottom of Act 3 as a "this
+// is the full build" visual sub-text under the input/output cards.
+function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
+  return (
+    <div
+      className="bkg-intro-act3-strip"
+      style={{
+        position: 'absolute',
+        bottom: 70,   // clears ActIndicator (sits at bottom: 24, ~40px tall)
+        left: 0,
+        right: 0,
+        height: 130,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        // Faint top/bottom edge fades so the strip blends into the act
+        // instead of looking like a hard band.
+        maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+      }}
+    >
+      <motion.div
+        initial={reduced ? { x: '0%' } : { x: '110vw' }}
+        animate={reduced ? { x: '0%' } : { x: '-110%' }}
+        transition={reduced ? { duration: 0 } : { duration: 13, ease: 'linear' }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          display: 'flex',
+          gap: 26,
+          alignItems: 'flex-end',
+          padding: '0 12px',
+          width: 'max-content',
+          height: '100%',
+        }}
+      >
+        {JOURNEY_STAGES.map((s) => (
+          <div key={s.file} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <img
+              src={`/journey/${encodeURIComponent(s.file)}`}
+              alt={s.label}
+              style={{
+                width: 110,
+                height: 92,
+                objectFit: 'contain',
+                mixBlendMode: 'multiply',  // dissolve white/cream image backgrounds into parchment
+              }}
+              loading="eager"
+            />
+            <span style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              color: COLORS.ink,
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}>
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </motion.div>
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .bkg-intro-act3-strip {
+            bottom: 60px !important;
+            height: 90px !important;
+          }
+          .bkg-intro-act3-strip img {
+            width: 70px !important;
+            height: 60px !important;
+          }
+          .bkg-intro-act3-strip span {
+            font-size: 9px !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // — ACT 3: #aikidotheAI ————————————————————————————————————————————————
 // 2026-05-22 AM (Chilly): rewrite of the left panel from "one voice
 // transcript" to "four input modalities accumulating" — voice transcript,
@@ -738,6 +896,11 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Journey marquee — scrolls all 12 stages across the bottom over
+          Act 3's full 13s duration. Positioned absolute inside the act
+          section so it doesn't disturb the centered content above. */}
+      <Act3JourneyStrip reduced={reduced} />
 
       <style jsx global>{`
         @keyframes bkg-caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
