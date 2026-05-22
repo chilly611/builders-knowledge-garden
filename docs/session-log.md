@@ -1790,3 +1790,74 @@ Also restored a cleaned `docs/in-flight.md` — collapsed to a single "no active
 
 **Verification:** every commit GREEN on Vercel within ~90s of push. Local `npm run build` green at HEAD `8492130`. `audit_log` row count went from 0 → non-zero after the first feature commit hit production. `project_members` count went from 0 → 6 (5 base + 1 dual-role for gc-trial-01).
 
+## 2026-05-22 deep evening — Cowork round-4 ship (9 parallel agents, 9 commits, 5 migrations, 938 KB URLs backfilled, audit_log partitioned)
+**Agent:** Cowork (claude-opus-4-7[1m]) orchestrating a 9-subagent fleet (1 schema-cluster + 8 feature/UI/data agents) with the schema-first parallelism pattern extended to a multi-migration cluster.
+**Branch:** `main`, HEAD `0f803fa` (round-3 tail) → 9 commits on origin/main, all Vercel green.
+**Context:** After the round-3 ship cleared the 14-item P1 wishlist, the post-ship backlog had 12 follow-up items: budget WRITE path still PATCHing JSONB, 15/2256 `knowledge_entities` source_urls (vector path stub), §7159 PDF formatting (compliance-critical 12pt boldface), CSLB lookup as screen-scrape (brittle), vendor master user-scoped (no org), Resend domain unverified (silent bounces), MepCalcsCard helper ready but card not mounted, DiyCockpitOverlay flash, `text: data.text ?? ''` Zod tech debt, 23 RLS-disabled tables, audit_log not partitioned ahead of the BudgetClient write storm, no UpCodes adapter. This round was about converting the round-3 substrate from "framework in place" to "actually delivered" and pre-paying for the next round's load.
+
+**Headline:** 9 agents, 9 commits, 5 migrations shipped as a single cluster (commit #1 batch) BEFORE any feature agent dispatched. `audit_log` pre-partitioned to 19 monthly partitions with pg_cron retention before the BudgetClient write storm. `knowledge_entities` source_urls went from 15 to 938 (41.6% coverage, 62× improvement) via pattern-based SQL backfill in <60 seconds. Vendor master upgraded from user-scoped to org-scoped with `organizations` + `org_members` + `vendors.org_id`. Resend now refuses to send on unverified domains (no more silent bounces). PDF generator now enforces 12pt Helvetica-Bold on §7159 statutory callouts (mechanically verified: 42 `/F2 12 Tf` instances in CA HIC PDF).
+
+**Commits shipped (9 commits on origin/main after `0f803fa`, all green):**
+- `schema(round-4)` — 5 separate migrations applied as a cluster: (a) `project_budgets` UNIQUE INDEX on `(project_id, csi_division)` for idempotent upsert; (b) `cslb_lookup_cache` table with 3-day TTL for CSLB scrape-result caching; (c) `knowledge_entities` HNSW vector index + `match_knowledge_entities(query_embedding, match_count)` RPC; (d) `organizations` + `org_members` tables + `vendors.org_id` column (vendor master now org-scoped); (e) `audit_log` converted to monthly partitioned table with 19 partitions seeded (`y2025m11` → `y2027m05`) and pg_cron jobs scheduled for monthly partition rollover + retention.
+- `fix(budget)` — `BudgetClient` + `EstimatingClient` now write via `/api/v1/budget` using idempotent upsert (`INSERT ... ON CONFLICT (project_id, csi_division) DO UPDATE`). Legacy JSONB column on `command_center_projects.project_budgets` soft-deprecated (still readable by legacy consumers; new writes go to normalized `project_budgets` table only). Closes the autosave write-loss race that's been open since round 2.
+- `fix(code-sources)` — Zod schemas (`IccSectionResponseSchema`, `NfpaSectionResponseSchema`) added on ICC + NFPA adapters; round-3's `text: data.text ?? ''` cheap fix replaced with `safeParse() + deriveText()`. New `UpCodesAdapter` shipped as third adapter (still stub mode pending API key). 30 new integration tests covering schema-drift warnings, fallback paths, and the three-adapter aggregator.
+- `feat(rag)` — `src/scripts/generate-embeddings.ts` script (batches 100 rows/call, uses OpenAI `text-embedding-3-small`, ~$0.02 for 2256 rows); `src/lib/rag.ts` upgraded to vector-first with FTS fallback. Vector path auto-engages once any rows have embeddings — no redeploy needed once `OPENAI_API_KEY` is in Vercel env.
+- `fix(pdf)` — §7159 callouts now use `:::7159-callout ... :::` fenced markdown blocks; PDF generator detects the fence and switches to 12pt Helvetica-Bold (CA Bus & Prof Code requirement). Mechanical verification: parsed the generated CA HIC PDF and counted 42 instances of `/F2 12 Tf` in the content stream, matching expected statutory callout count. Sample PDFs added to `src/lib/contracts/__tests__/fixtures/`.
+- `feat(vendor-prod)` — `cheerio`-based CSLB license scraper with the 3-day-TTL cache table from migration (b); `organizations` + `org_members` schema applied; `vendors.org_id` column wired throughout the vendor master UI; RLS policy updated to "owner OR demo OR org_member." End-to-end smoke test: looked up CSLB license `1029384`, parsed name + classifications + status, cached the response, second lookup served from cache.
+- `feat(email)` — `/api/v1/email/healthcheck` endpoint queries Resend's `/domains` API + checks the project's required DNS records (TXT for SPF, CNAME for DKIM, optional DMARC); `/admin/email-status` page renders the current state with copy-pasteable values for the registrar (Cloudflare, Namecheap, etc.). Resend send-path now pre-flights the domain status and REFUSES unverified-domain sends unless `?force=true`. No more silent bounces.
+- `feat(cockpit)` — `MepCalcsCard` finally mounted in the cockpit grid (round-3 shipped the helper but not the mount site); middleware reads `bkg-lane` cookie and applies `data-lane` body attribute server-side, eliminating the `DiyCockpitOverlay` post-hydration flash. Cookie set on auth + on any lane-change action.
+- `docs(round-4)` — `docs/CA-HIC-COMPLIANCE.md` updated with the 12pt boldface enforcement + mechanical verification recipe; `docs/ENV-VARS.md` updated with `OPENAI_API_KEY` + `UPCODES_API_KEY` + Resend domain-verification flow; `docs/SCHEMA.md` updated with the 5 new migrations + partition layout; `docs/EXTERNAL-CODE-SOURCES.md` updated with the three-adapter pattern.
+
+**Supabase live data work (project `vlezoyalutexenbnzzui` via MCP):**
+- 5 `apply_migration` calls in the cluster A batch — each a single concern, each independently revertable. All applied cleanly first try (no constraint-bug discoveries this round; the round-3 lessons paid off).
+- `knowledge_entities.source_urls` backfill: 15 rows → 938 rows populated via one `execute_sql` session running 30 slug-pattern CASE branches. SQL transform took <60 seconds; LLM-per-row would have taken hours and ~$5 in API calls. Patterns captured for the remaining 1318 (material/construction_method/jurisdiction types) where slug naming isn't consistent enough — those warrant the LLM call next round.
+- `audit_log` partitioned to monthly partitions, 19 seeded (y2025m11 → y2027m05). pg_cron jobs scheduled: `audit_log_maintain` runs monthly to create next month's partition + drop partitions beyond retention. `cron.job_run_details` confirms first run succeeded.
+- `organizations` + `org_members` tables created; existing `vendors` rows backfilled with `org_id` derived from owner's default org (one per existing user).
+- `cslb_lookup_cache` table created with 3-day TTL; first cache row populated during end-to-end smoke (`license_number = '1029384'`).
+- `knowledge_entities` HNSW index built (`m = 16, ef_construction = 64`); `match_knowledge_entities` RPC live and tested with a synthetic query embedding (returns expected top-K rows).
+
+**Tests added (38 total):**
+- 30 new integration tests in `src/lib/code-sources/__tests__/` covering ICC + NFPA + UpCodes Zod schemas, schema-drift warnings, fallback to FTS, and the three-adapter aggregator merge logic.
+- 8 new tests in `src/lib/budget/__tests__/normalize.test.ts` covering the idempotent upsert path + concurrent-write scenarios + JSONB-to-normalized migration helpers.
+
+**9-agent fleet roster (this session):**
+- SCHEMA-CLUSTER (commit #1 batch — 5 migrations applied before any feature agent dispatched)
+- Then parallel: BUDGET-WRITE, CODE-SOURCES-ZOD, RAG-VECTOR, PDF-12PT, VENDOR-PROD, EMAIL-DELIVERY, COCKPIT-MEP-MOUNT, DOCS-4.
+
+**Key decisions:**
+- **5 migrations as a cluster, not 1 bundled migration.** Each migration covered a single concern (budget index / CSLB cache / HNSW / orgs / partition). A bug in HNSW config would only have rolled back HNSW, not the orgs tables. Lesson captured.
+- **UNIQUE INDEX over delete-then-insert** for budget upsert. The autosave-every-500ms write rate would race delete-then-insert; UNIQUE INDEX + `ON CONFLICT` is atomic at the row-lock level. Lesson captured.
+- **Cookie + middleware** for lane-flash fix, not client-side state. Three client-side attempts all failed because the flash IS the first paint. SSR cookie was the only option. Lesson captured.
+- **Pre-partition audit_log at 22 rows**, not later at 10M rows. Partitioning at 22 rows is sub-second; at 10M rows it's `AccessExclusiveLock` for minutes. Pre-paying for the BudgetClient write storm. Lesson captured.
+- **Pattern-based SQL backfill** for the 938 source_urls instead of LLM-per-row. 30 slug patterns covered 41.6% of the corpus in <60 seconds at zero API cost. Lesson captured.
+- **pg_cron for DB-native jobs** (partition maintenance) instead of Vercel cron. No network hop, no auth, runs even if Vercel is broken. Lesson captured.
+- **Resend pre-flight `/domains` check** on every send; refuse unverified domains with a wizard URL. Closes the "silent ok: true" trap. Lesson captured.
+
+**What worked (process):**
+- Schema-cluster-as-commit-#1 pattern from round 3 extended cleanly to multi-migration. All 5 migrations applied first; feature agents read the cluster as a unit.
+- No constraint-bug surprises this round — round-3's positive-path smoke-test lesson paid off; every new trigger/constraint pair was exercised inside the migration.
+- Zod schemas + integration tests landed together (CODE-SOURCES-ZOD shipped 30 tests in the same commit as the schemas). Catches schema drift as a CI signal, not a runtime bug.
+- Mechanical verification on the §7159 PDF (counting `/F2 12 Tf` instances in the content stream) is a stronger compliance signal than "looks right in Preview."
+
+**What's still open for next session (P1+, ranked):**
+- Add `OPENAI_API_KEY` to Vercel env → run `npm run embeddings` (~$0.02 for 2256 rows). Vector RAG auto-engages once embeddings populate.
+- Set up Resend DNS at registrar (TXT/CNAME records copy-pasteable in `/admin/email-status`); send-path will auto-enable once domain status flips to verified.
+- Sign UpCodes API contract → add `UPCODES_API_KEY` → flip the adapter to live mode (currently stub).
+- Backfill remaining 1318 `knowledge_entities` rows (material/construction_method/jurisdiction types — slug naming inconsistent, warrants LLM-assisted backfill).
+- Drop legacy `command_center_projects.project_budgets` JSONB column after 34 orphan rows are reconciled into `project_budgets` table.
+- First-ever-DIY-cold-load still flashes briefly (needs auth-cookie plumbing on the SIGNUP path, not just the SIGNIN path).
+- PDF callout-text golden-file test (lock the exact statutory text against drift; mechanical verification only counts font runs, not text content).
+- Caching layer on `aggregateSources` (LRU keyed by `source+code+edition+section` — currently re-fetches on every RAG call).
+- Hybrid rerank: vector top-N + FTS exact-section bonus (vector alone misses exact code-section matches like "210.52(C)(5)").
+
+**Lessons added to `tasks.lessons.md` (7):**
+1. Idempotent upsert needs a UNIQUE INDEX, not delete-then-insert.
+2. Schema-first parallelism extends to PUBLICATION patterns — bundle DDL by concern, ship as a cluster.
+3. Cookie + SSR is the only way to eliminate hydration flashes when DOM trees differ by user state.
+4. Resend's `ok: true` doesn't mean delivered — every external service needs a domain-specific "actually delivered" gate.
+5. Partition audit_log BEFORE the write storm, not after.
+6. Pattern-based backfill beats LLM-assisted backfill 10x.
+7. pg_cron scheduling beats Vercel cron when the job is DB-native.
+
+**Verification:** every commit GREEN on Vercel within ~90s of push. 5 migrations applied via `apply_migration` to `vlezoyalutexenbnzzui` (all succeeded first try). `knowledge_entities.source_urls` row count: 15 → 938. `audit_log` partition count: 0 → 19 monthly partitions. `vendors.org_id` populated for all existing rows. CSLB cache row count: 0 → 1 (post-smoke). End-to-end smoke: CSLB license `1029384` lookup succeeded, contract PDF generated with 42 `/F2 12 Tf` instances, BudgetClient autosave loop ran 200+ upserts in 60 seconds with zero duplicate rows in `project_budgets`.
+
