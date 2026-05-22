@@ -31,6 +31,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
+import { useUserLane, type ProjectRole } from '@/lib/use-user-lane';
 
 // ---------------------------------------------------------------------------
 // Workflow catalog — mirror of LIVE_WORKFLOWS in /killerapp/page.tsx.
@@ -50,6 +51,12 @@ interface WorkflowEntry {
   emoji: string;
   label: string;       // plain-English question
   sublabel: string;    // pro term
+  // LANE-INFRA (2026-05-22): optional role allowlist. When absent the row
+  // is visible to every role (current behaviour). When present we hide the
+  // row from any user whose effectiveLane isn't in the list. UI agents
+  // following this sprint should populate `roles` per workflow; the
+  // canonical mappings live as inline comments next to each entry.
+  roles?: ProjectRole[];
 }
 
 const WORKFLOWS: WorkflowEntry[] = [
@@ -138,6 +145,10 @@ export default function CompassWorkflowNav() {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get('project') ?? null;
   const savedProjectName = useSavedProjectName();
+  // LANE-INFRA: gate workflow rows by the user's effective role on the
+  // active project. While loading we render all rows (graceful default —
+  // hiding workflows during a 200ms hydrate would feel broken).
+  const { effectiveLane, loading: laneLoading } = useUserLane();
 
   const fabRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -191,14 +202,21 @@ export default function CompassWorkflowNav() {
     return `${href}${sep}project=${encodeURIComponent(projectId)}`;
   }, [projectId]);
 
-  // Filter all workflow rows by search query (label or sublabel).
+  // Filter all workflow rows by (a) lane and (b) search query. Lane gate:
+  // a row with no `roles` field is universal; a row with `roles` is hidden
+  // unless effectiveLane is in the list. While the lane is loading we
+  // render everything so the panel doesn't pop in.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return WORKFLOWS;
-    return WORKFLOWS.filter(
-      (w) => w.label.toLowerCase().includes(q) || w.sublabel.toLowerCase().includes(q) || w.id.toLowerCase().includes(q),
-    );
-  }, [query]);
+    const byLane = (w: WorkflowEntry) =>
+      laneLoading || !w.roles || w.roles.length === 0 || w.roles.includes(effectiveLane);
+    const byQuery = (w: WorkflowEntry) =>
+      !q ||
+      w.label.toLowerCase().includes(q) ||
+      w.sublabel.toLowerCase().includes(q) ||
+      w.id.toLowerCase().includes(q);
+    return WORKFLOWS.filter((w) => byLane(w) && byQuery(w));
+  }, [query, effectiveLane, laneLoading]);
 
   // Save-and-go (Ship 32): dispatch `bkg:nav:flush-and-go`, then await a
   // `bkg:nav:flush-ack` (emitted by useProjectWorkflowState /

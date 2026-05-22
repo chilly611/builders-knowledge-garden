@@ -57,11 +57,32 @@ export interface ProjectRecord {
   client_name?: string | null;
 }
 
+// LANE-INFRA (2026-05-22): mirror of `ProjectRole` in
+// `src/lib/use-user-lane.ts`. Inlined here to avoid a circular import
+// (use-user-lane.ts depends on this context for projectId).
+export type ProjectRole =
+  | 'owner'
+  | 'gc'
+  | 'contractor'
+  | 'teammate'
+  | 'day_hire'
+  | 'specialist'
+  | 'diy';
+
 interface ProjectContextValue {
   project: ProjectRecord | null;
   projectId: string | null;
   loading: boolean;
   error: string | null;
+  /**
+   * The signed-in user's `project_members.project_role` for the active
+   * project, or null if there's no row (anonymous user, or no project,
+   * or the user isn't a member). For the "best-guess effective lane"
+   * that falls back to legacy `user_metadata.lane`, use `useUserLane()`
+   * — this raw value is exposed for consumers that need to distinguish
+   * "no membership" from "membership with default role".
+   */
+  projectRole: ProjectRole | null;
   setActiveProject: (id: string) => void;
   clearActiveProject: () => void;
   refreshProject: () => void;
@@ -115,6 +136,8 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [loading, setLoading] = useState<boolean>(!!projectId);
   const [error, setError] = useState<string | null>(null);
+  // LANE-INFRA: per-(projectId, userId) project_members.project_role, or null.
+  const [projectRole, setProjectRole] = useState<ProjectRole | null>(null);
   const inFlight = useRef<{ id: string; key: number } | null>(null);
 
   // First-paint persistence: if initial state came from URL, write
@@ -208,6 +231,60 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       cancelled = true;
     };
   }, [projectId, fetchKey]);
+
+  // LANE-INFRA: hydrate projectRole whenever (projectId, userId) changes.
+  // Reads via the same anon Supabase client the auth session lives on, so
+  // RLS on project_members applies (users can only see their own rows).
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRole() {
+      if (!projectId) {
+        setProjectRole(null);
+        return;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) {
+        if (!cancelled) setProjectRole(null);
+        return;
+      }
+      // A user can hold multiple roles on the same project; pick the
+      // highest-priority one. Inline priority table to avoid pulling in
+      // use-user-lane (which would create a circular dep).
+      const PRIORITY: Record<ProjectRole, number> = {
+        owner: 100, gc: 90, contractor: 70, specialist: 60,
+        teammate: 50, diy: 40, day_hire: 30,
+      };
+      const { data, error } = await supabase
+        .from('project_members')
+        .select('project_role')
+        .eq('project_id', projectId)
+        .eq('user_id', userId);
+      if (cancelled) return;
+      if (error) {
+        // Quietly null out — useUserLane() handles the legacy fallback.
+        setProjectRole(null);
+      } else {
+        const roles = (data ?? [])
+          .map((r) => r.project_role as ProjectRole | null)
+          .filter((r): r is ProjectRole => !!r);
+        if (roles.length === 0) {
+          setProjectRole(null);
+        } else {
+          const winner = [...roles].sort((a, b) => PRIORITY[b] - PRIORITY[a])[0];
+          setProjectRole(winner);
+        }
+      }
+    }
+    void loadRole();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      void loadRole();
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [projectId]);
 
   const refreshProject = useCallback(() => {
     setFetchKey((k) => k + 1);
@@ -334,6 +411,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         clearStageWelcomeFlags();
         setProjectId(null);
         setProject(null);
+        setProjectRole(null);
         setError(null);
         lastUserId = null;
         return;
@@ -349,6 +427,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         clearStageWelcomeFlags();
         setProjectId(null);
         setProject(null);
+        setProjectRole(null);
         setError(null);
       }
       lastUserId = nextUserId;
@@ -365,6 +444,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         projectId,
         loading,
         error,
+        projectRole,
         setActiveProject,
         clearActiveProject,
         refreshProject,
