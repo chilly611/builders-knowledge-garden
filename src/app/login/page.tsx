@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { safeNext, safeCallbackRedirect } from '@/lib/safe-url';
 
 function LoginPageContent() {
   const router = useRouter();
@@ -12,7 +13,14 @@ function LoginPageContent() {
   // AuthAndProjectIndicator) so users return to whatever workflow page
   // they were on. `redirectTo` is kept as legacy fallback. Final fallback
   // is /killerapp (the demo entry).
-  const nextParam = searchParams.get('next') || searchParams.get('redirectTo') || '/killerapp';
+  // 2026-05-22 (Sec+Auth Burn 6): wrap in safeNext() — previously this
+  // page accepted arbitrary URLs in `next` / `redirectTo`, which let an
+  // attacker hand a phishing URL via /login?next=https://evil.example.com
+  // and we'd push the user off-site after a successful sign-in.
+  const nextParam = safeNext(
+    searchParams.get('next') || searchParams.get('redirectTo'),
+    '/killerapp'
+  );
   const redirectTo = nextParam;
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -20,9 +28,19 @@ function LoginPageContent() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  // 2026-05-22 (Sec+Auth Burn 6): double-submit guard. Sarah-GC reported
+  // that the first click of "Sign in" silently no-op'd and the second
+  // click worked. Root cause: React batches isLoading state updates after
+  // the event handler returns, so a rapid double-click could fire the
+  // handler twice before the first run set isLoading=true. We use a ref,
+  // which is synchronous and survives React batching, as the source of
+  // truth for "is a submission in flight."
+  const submittingRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setError('');
     setSuccessMessage('');
     setIsLoading(true);
@@ -73,6 +91,7 @@ function LoginPageContent() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
+      submittingRef.current = false;
     }
   };
 
@@ -86,14 +105,18 @@ function LoginPageContent() {
   // accounts seeded via app/scripts/seed-trial-accounts.mjs come in without
   // the flag set, so they get the handover landing on their first visit and
   // the killerapp directly afterward.
+  // 2026-05-22 — `intended` has already been through safeNext() at the
+  // top of this component, but defensively re-validate before composing
+  // the welcome URL in case a future caller bypasses the param read.
   const destinationAfterSignIn = async (intended: string): Promise<string> => {
     try {
+      const safeIntended = safeNext(intended, '/killerapp');
       const { data: { user } } = await supabase.auth.getUser();
       const meta = (user?.user_metadata || {}) as Record<string, unknown>;
-      if (meta.welcomed_at) return intended;
-      return `/welcome?next=${encodeURIComponent(intended)}`;
+      if (meta.welcomed_at) return safeIntended;
+      return `/welcome?next=${encodeURIComponent(safeIntended)}`;
     } catch {
-      return intended;
+      return safeNext(intended, '/killerapp');
     }
   };
 
@@ -123,7 +146,11 @@ function LoginPageContent() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/auth/callback?redirectTo=' + encodeURIComponent(redirectTo),
+          // 2026-05-22 (Sec+Auth Burn 6): safeCallbackRedirect re-runs
+          // safeNext() on the embedded redirect target so an attacker can't
+          // bypass the safeguard by smuggling an absolute URL through
+          // ?next= and having the OAuth provider hand it back to us.
+          redirectTo: safeCallbackRedirect(window.location.origin, redirectTo),
         },
       });
       if (error) {

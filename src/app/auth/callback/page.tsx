@@ -14,6 +14,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { safeNext } from '@/lib/safe-url';
 
 function CallbackInner() {
   const router = useRouter();
@@ -21,7 +22,11 @@ function CallbackInner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const redirectTo = params.get('redirectTo') || '/killerapp';
+    // 2026-05-22 (Sec+Auth Burn 6): the OAuth callback URL is round-tripped
+    // through the IdP, so even if /login encoded a safe value an attacker
+    // could craft `/auth/callback?redirectTo=https://evil` directly. Wrap
+    // in safeNext() to enforce relative paths only.
+    const redirectTo = safeNext(params.get('redirectTo'), '/killerapp');
     const code = params.get('code');
     const errParam = params.get('error_description') || params.get('error');
 

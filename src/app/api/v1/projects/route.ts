@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
 
 function getSupabase() {
@@ -19,6 +20,34 @@ const DEMO_PROJECT_IDS = new Set<string>([
   'aa11b22c-1111-4d78-aaaa-bbccdd112233', // ADU in Sausalito
   'bb22c33d-2222-4d78-bbbb-ccddee223344', // Commercial TI in SoMa
 ]);
+
+/**
+ * 2026-05-22 (Sec+Auth Burn 6): trial-contractor accounts (5 of them) carry
+ * their seeded demo project in user_metadata.demo_project_id. They were
+ * getting "Unauthorized: you do not own this project" on PATCH because the
+ * ownership check only compared user_id and the demo allowlist. Pull
+ * demo_project_id from the bearer-token user_metadata and treat it as
+ * an additional ownership grant for write paths. The token-side metadata
+ * is signed by Supabase so the client can't forge it.
+ */
+async function getCallerDemoProjectId(request: NextRequest): Promise<string | null> {
+  try {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) return null;
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    const sb = createClient(supabaseUrl, supabaseAnonKey);
+    const { data, error } = await sb.auth.getUser(token);
+    if (error || !data.user) return null;
+    const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
+    const v = meta.demo_project_id;
+    return typeof v === 'string' && v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -163,7 +192,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (existingProject.user_id !== user.id) {
+    // 2026-05-22 (Sec+Auth Burn 6): ownership = own the row OR the project
+    // is the caller's seeded demo (user_metadata.demo_project_id). Trial
+    // contractors were hitting 403 here on every PATCH because their demo
+    // project's user_id is the seed account, not theirs.
+    const callerDemoProjectId = await getCallerDemoProjectId(request);
+    const isOwner = existingProject.user_id === user.id;
+    const isDemoOwner = callerDemoProjectId && callerDemoProjectId === id;
+    if (!isOwner && !isDemoOwner) {
       return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
     }
 
@@ -204,6 +240,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // 2026-05-22 (Sec+Auth Burn 6): we deliberately do NOT honor the demo
+    // allowlist or demo_project_id here. Even trial users shouldn't be
+    // able to delete seeded demo projects — the worst case is they
+    // accidentally torch the SoMa project and break the demo for the
+    // other four trial accounts. Read + update are intentionally more
+    // permissive than delete.
     if (existingProject.user_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
     }

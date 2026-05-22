@@ -22,6 +22,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { safeNext } from '@/lib/safe-url';
 
 const COLORS = {
   paper: '#FAF8F2',
@@ -49,7 +50,11 @@ interface DemoProject {
 function WelcomePageContent() {
   const router = useRouter();
   const search = useSearchParams();
-  const nextParam = search.get('next') || null;
+  // 2026-05-22 (Sec+Auth Burn 6): pass `next` through safeNext() before
+  // any router.replace/push — previously this page accepted arbitrary
+  // URLs in the query param and used them in router.replace(nextParam).
+  const rawNext = search.get('next');
+  const nextParam = rawNext ? safeNext(rawNext, '/killerapp') : null;
 
   const [userName, setUserName] = useState<string>('');
   const [demoProjectId, setDemoProjectId] = useState<string>(FALLBACK_PROJECT_ID);
@@ -59,6 +64,33 @@ function WelcomePageContent() {
   useEffect(() => {
     void (async () => {
       try {
+        // 2026-05-22 (Sec+Auth Burn 6) — Reza-sub bug: this page was reading
+        // a stale cached `getUser()` result that still pointed at the
+        // *previous* tenant's session, causing /welcome to route into the
+        // wrong project. Force a session refresh so user_metadata reflects
+        // whoever JUST signed in. refreshSession() is a no-op when the
+        // current token is still valid, so this is cheap on the happy path.
+        try {
+          await supabase.auth.refreshSession();
+        } catch {
+          // Non-fatal — if the refresh fails we still have the old session
+          // and the auth-check below will bounce them to /login.
+        }
+
+        // Clear stale active-project state from a previous user's session
+        // before the route decision below runs. The ProjectContext layer
+        // also clears on SIGNED_IN events, but doing it here guarantees a
+        // clean slate even if the user lands on /welcome via a deep link
+        // without the killerapp shell mounted.
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('bkg-active-project');
+            window.localStorage.removeItem('last-project-id');
+          }
+        } catch {
+          // localStorage may be disabled — keep going.
+        }
+
         const { data: userData } = await supabase.auth.getUser();
         const user = userData.user;
 

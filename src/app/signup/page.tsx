@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { safeNext } from '@/lib/safe-url';
 
 function SignupPageContent() {
   const router = useRouter();
@@ -16,12 +17,18 @@ function SignupPageContent() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
+  // 2026-05-22 (Sec+Auth Burn 6): double-submit guard, same rationale as
+  // /login. Prevents a rapid double-click from firing the signup endpoint
+  // twice before isLoading state has rolled into React's render pass.
+  const submittingRef = useRef(false);
 
   // Read `next` query param on mount. Default to /killerapp (matches the
   // login page redirect behavior).
+  // 2026-05-22 (Sec+Auth Burn 6): wrap in safeNext() — same open-redirect
+  // defense as /login.
   useEffect(() => {
-    const n = searchParams.get('next');
-    if (n) setNext(n);
+    const n = safeNext(searchParams.get('next'), '/killerapp');
+    setNext(n);
   }, [searchParams]);
 
   const validate = (): string | null => {
@@ -36,6 +43,7 @@ function SignupPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError('');
 
     const validationError = validate();
@@ -44,6 +52,7 @@ function SignupPageContent() {
       return;
     }
 
+    submittingRef.current = true;
     setIsLoading(true);
     try {
       // 2026-05-20 — switched from `supabase.auth.signUp` to the
@@ -100,6 +109,7 @@ function SignupPageContent() {
       setError(err instanceof Error ? err.message : 'Signup failed.');
     } finally {
       setIsLoading(false);
+      submittingRef.current = false;
     }
   };
 

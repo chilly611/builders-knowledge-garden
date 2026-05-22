@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { emitMCPSignal } from "@/lib/events";
+import { getAuthUser, unauthorizedResponse } from "@/lib/auth-server";
 import {
   BUILDING_TYPES,
   JURISDICTIONS,
@@ -22,6 +23,44 @@ import {
   getMaterialSuggestions,
   generateSchedule,
 } from "@/lib/knowledge-data";
+
+// 2026-05-22 (Sec+Auth Burn 6): per-caller rate limit. The MCP server is
+// a public knowledge surface (we want AI agents to be able to call it),
+// but several tools — search_knowledge, get_safety — hit Supabase or fan
+// out to /api/v1/crm, which means an unauthenticated burst could drag
+// down the demo project. The MCP_API_KEY env var is the documented
+// agent-to-agent auth path; we also accept a signed-in user via Bearer
+// for our own UI calls. If neither is present, fall through to the IP-
+// based limit so external GETs (tool listing) still work.
+const MCP_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MCP_RATE_LIMIT_MAX_ANON = 10;   // per IP / window
+const MCP_RATE_LIMIT_MAX_USER = 120;  // per signed-in user / window
+const mcpRateLimitBuckets: Map<string, number[]> = new Map();
+function mcpRateLimitExceeded(key: string, max: number): boolean {
+  const now = Date.now();
+  const arr = (mcpRateLimitBuckets.get(key) || []).filter((t) => now - t < MCP_RATE_LIMIT_WINDOW_MS);
+  if (arr.length >= max) {
+    mcpRateLimitBuckets.set(key, arr);
+    return true;
+  }
+  arr.push(now);
+  mcpRateLimitBuckets.set(key, arr);
+  return false;
+}
+
+function getCallerKey(request: NextRequest): { key: string; isAuthed: boolean; max: number } {
+  // Agent-to-agent: MCP_API_KEY shared secret.
+  const apiKey = request.headers.get('x-mcp-api-key');
+  if (apiKey && process.env.MCP_API_KEY && apiKey === process.env.MCP_API_KEY) {
+    return { key: `mcp:apikey`, isAuthed: true, max: MCP_RATE_LIMIT_MAX_USER };
+  }
+  // Fall through — caller may be a signed-in user; the POST handler
+  // does the Bearer check before invoking executeTool. For the GET
+  // (tool listing) and the rate-limit decision before auth resolves,
+  // bucket by IP/UA fingerprint.
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+  return { key: `mcp:ip:${ip}`, isAuthed: false, max: MCP_RATE_LIMIT_MAX_ANON };
+}
 
 // ─── TOOL DEFINITIONS ───
 const TOOLS = [
@@ -187,6 +226,38 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const start = Date.now();
 
+  // 2026-05-22 (Sec+Auth Burn 6): auth gate — accept either a signed-in
+  // user (Bearer token, used by our UI) OR a valid X-MCP-API-KEY
+  // (agent-to-agent), OR fall through to a strict IP rate limit for the
+  // demo / public-tier explorer experience. POST is the spend-heavy
+  // surface (CRM fan-out, vector search) so we always rate-limit it.
+  const caller = getCallerKey(request);
+  let isAuthed = caller.isAuthed;
+  let limitKey = caller.key;
+  let limitMax = caller.max;
+
+  if (!isAuthed) {
+    // Try Bearer auth before falling back to anonymous IP buckets.
+    const user = await getAuthUser(request);
+    if (user) {
+      isAuthed = true;
+      limitKey = `mcp:user:${user.id}`;
+      limitMax = MCP_RATE_LIMIT_MAX_USER;
+    }
+  }
+
+  if (mcpRateLimitExceeded(limitKey, limitMax)) {
+    return NextResponse.json(
+      {
+        error: 'Rate limit exceeded',
+        hint: isAuthed
+          ? 'Slow down — too many tool calls in the last minute.'
+          : 'Sign in or supply X-MCP-API-KEY to raise this limit.',
+      },
+      { status: 429 }
+    );
+  }
+
   let body: { tool: string; parameters: Record<string, unknown> };
   try {
     body = await request.json();
@@ -203,6 +274,17 @@ export async function POST(request: NextRequest) {
   const toolDef = TOOLS.find(t => t.name === tool);
   if (!toolDef) {
     return NextResponse.json({ error: `Unknown tool: ${tool}`, available_tools: TOOLS.map(t => t.name) }, { status: 400 });
+  }
+
+  // 2026-05-22: tools that hit external paid services or expose tenant
+  // CRM data require an authed caller. The catalog/reference tools stay
+  // public so the explorer tier still demos.
+  const AUTHED_TOOLS = new Set([
+    'crm_list_contacts',
+    'crm_pipeline_stats',
+  ]);
+  if (AUTHED_TOOLS.has(tool) && !isAuthed) {
+    return unauthorizedResponse('This tool requires a signed-in user or MCP API key.');
   }
 
   try {

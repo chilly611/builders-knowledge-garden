@@ -290,6 +290,55 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
     };
   }, [projectId]);
 
+  // 2026-05-22 (Sec+Auth Burn 6): Linda bug — signing in as gc-trial-03 in
+  // a browser that previously held specialty-trial-01's session left the
+  // localStorage `bkg-active-project` pointing at the prior tenant's
+  // project, so the new user briefly saw the wrong project name & footer.
+  // Clear cached project state on SIGNED_OUT and on SIGNED_IN (where the
+  // user's id changes — same key, different tenant). The ProjectProvider
+  // is mounted high in the killerapp tree so this fires once per auth
+  // transition.
+  useEffect(() => {
+    let lastUserId: string | null = null;
+    let initialized = false;
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      lastUserId = data.session?.user?.id ?? null;
+      initialized = true;
+    })();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+
+      // SIGNED_OUT — wipe everything.
+      if (event === 'SIGNED_OUT' || nextUserId === null) {
+        try { window.localStorage.removeItem(ACTIVE_PROJECT_KEY); } catch { /* ignore */ }
+        try { window.localStorage.removeItem('last-project-id'); } catch { /* ignore */ }
+        setProjectId(null);
+        setProject(null);
+        setError(null);
+        lastUserId = null;
+        return;
+      }
+
+      // SIGNED_IN as a different user — drop the previous tenant's
+      // active-project pointer before the new user's components mount.
+      // Skip the very first auth event (which is the initial session load
+      // and isn't actually a user-switch).
+      if (initialized && lastUserId && nextUserId && lastUserId !== nextUserId) {
+        try { window.localStorage.removeItem(ACTIVE_PROJECT_KEY); } catch { /* ignore */ }
+        try { window.localStorage.removeItem('last-project-id'); } catch { /* ignore */ }
+        setProjectId(null);
+        setProject(null);
+        setError(null);
+      }
+      lastUserId = nextUserId;
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
     <ProjectContext.Provider
       value={{
