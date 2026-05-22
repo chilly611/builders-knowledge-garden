@@ -48,9 +48,11 @@ const COLORS = {
 const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 
 // Act durations in ms.
-//   Act 1 (index 0) trimmed 8s → 6s (2026-05-19): both typewriters finish
-//     around 4s, so 8s left 4s of dead hold. 6s gives ~1.5s of breathing
-//     room after the second line lands.
+//   Act 1 (index 0) 8s → 6s (2026-05-19) → 8s (2026-05-22 AM, Chilly).
+//     Rewound to 8s to fit the dramatic chrome zoom-past — chromes start
+//     tiny (56px) at orbit positions, scale up over 3-4s with labels
+//     readable, then zoom past the viewer (scale ~8×, fade out) leaving
+//     the hammer + tagline alone for the act-end beat.
 //   Act 2 (index 1) trimmed 12s → 8s → 10s (2026-05-21 AM, Chilly):
 //     intermediate 8s left vignette 4's long "sequence, schedule…" title
 //     unreadable. Back up to 10s with the vignette interval still 2s, so
@@ -63,7 +65,7 @@ const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 //     auto-scrolls) instead of the live iframe — "nobody scrolls a
 //     cinematic for themselves." 14s. "Open full app in new tab" still
 //     present as escape hatch.
-const ACT_DURATIONS_MS = [6000, 10000, 13000, 14000, 12000];
+const ACT_DURATIONS_MS = [8000, 10000, 13000, 14000, 12000];
 const TOTAL_ACTS = 5;
 
 // — Garden Logo (with SVG fallback) ————————————————————————————————————
@@ -248,10 +250,70 @@ function ActIndicator({ act, paused, onJump }: { act: number; paused: boolean; o
 }
 
 // — ACT 1: Umbrella ————————————————————————————————————————————————————
+// 2026-05-22 AM (Chilly): dramatic chrome zoom-past rewrite.
+// New choreography across Act 1's 8s window:
+//   0.0-0.5s   hammer fades in, smaller now (260px not 420px) so the
+//              "anchor" reads as the killer-app within the umbrella —
+//              the hammer + roots are the only fixed thing, the chromes
+//              are what passes through.
+//   0.5-1.8s   each chrome orbits out from behind the hammer at ~56px
+//              scale, label visible below. Labels are NOT inside the
+//              colored dot anymore; the dot background is removed since
+//              the chrome PNGs now ARE the visual.
+//   1.8-5.0s   chromes scale up from 1× to ~3.5×, drifting slightly
+//              further outward. Labels scale with them. At peak they're
+//              ~200px chrome + ~30px label, taking over the frame.
+//   5.0-7.0s   chromes zoom past the viewer: scale 3.5× → 8×, opacity
+//              fades 1 → 0. Each chrome staggered slightly so they don't
+//              all leave at the exact same moment.
+//   7.0-8.0s   hammer + tagline alone — the killer app holds the frame.
+// Reduced motion: skips the zoom-past entirely, leaves chromes at small
+// orbit positions with labels visible (the spec-equivalent still state).
 function Act1Umbrella({ reduced }: { reduced: boolean }) {
-  const orbitTransition = reduced
-    ? { duration: 0 }
-    : { duration: 1.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number], delay: 1.2 };
+  // Each chrome's full keyframe timeline. Per Framer Motion 12, when
+  // animating multiple keyframes simultaneously across x/y/scale/opacity,
+  // the cleanest API is to spread each prop independently with its own
+  // `transition` block. Single shared duration (7.2s), per-prop times to
+  // sequence the orbit-out (early), the hold (middle), and the zoom-past
+  // (late). Stagger zoom-past via per-chrome `delay` on the whole motion.
+  // Return type is intentionally `any` — Framer Motion 12's types can't
+  // narrow a union of "single-value animate" and "keyframe-array animate"
+  // without forcing the caller to disambiguate. Spread at the call site
+  // applies these as separate props on motion.div.
+  const chromeAnim = (orbitX: number, orbitY: number, staggerDelay: number): Record<string, unknown> => {
+    if (reduced) {
+      return {
+        initial: { opacity: 1, x: orbitX, y: orbitY, scale: 1 },
+        animate: { opacity: 1, x: orbitX, y: orbitY, scale: 1 },
+        transition: { duration: 0 },
+      };
+    }
+    const totalDelay = 0.4 + staggerDelay;
+    // Five-keyframe choreography over 7.2s:
+    //   K0 (t=0)      hidden behind hammer, scale 0.4
+    //   K1 (t=1.15s)  arrived at orbit, scale 1.0 (full read)
+    //   K2 (t=1.6s)   brief hold at orbit (so the label is readable)
+    //   K3 (t=4.5s)   scaled to 3.5×, drifting outward — now dominating frame
+    //   K4 (t=7.2s)   scale 8×, far past the frame, fully transparent
+    // `times` distributes those keyframes across the 7.2s duration. Easing
+    // is easeIn so motion accelerates into the zoom-past climax.
+    return {
+      initial: { opacity: 0, x: 0, y: 0, scale: 0.4 },
+      animate: {
+        opacity: [0, 1, 1, 1, 0],
+        x:       [0, orbitX, orbitX * 1.1, orbitX * 1.4, orbitX * 2.4],
+        y:       [0, orbitY, orbitY * 1.1, orbitY * 1.4, orbitY * 2.4],
+        scale:   [0.4, 1.0, 1.0, 3.5, 8.0],
+      },
+      transition: {
+        duration: 7.2,
+        delay: totalDelay,
+        times: [0, 0.16, 0.22, 0.62, 1],
+        ease: 'easeIn',
+      },
+    };
+  };
+
   return (
     <motion.section
       key="act1"
@@ -262,84 +324,65 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
       style={actWrap(COLORS.paper)}
       aria-label="Act 1: the umbrella"
     >
-      {/* 2026-05-20: Act 1 leads with the BUILDER'S HAMMER. Container is
-          shorter than the image so the hammer ANCHORS the upper portion of
-          the act and the typewriter has guaranteed room below.
-          Bug fix (2026-05-20 PM): previous version had width:auto/height:auto
-          in the style override which made the img render at NATURAL size
-          (800x800) instead of the explicit 440 — bled into the typewriter
-          below. Now constrained to 440x440 with maxHeight: 55vh so on any
-          viewport the image stays within reasonable bounds. */}
       <div className="bkg-intro-act1-canvas" style={{ position: 'relative', width: 460, height: 440, maxWidth: '92vw', zIndex: 1 }}>
+        {/* Hammer — smaller now (260px) so chromes can take over the
+            frame as they scale up. Hammer + roots remain visible
+            throughout the act per Chilly: "the hammer and the roots
+            being the important parts to be able to see." */}
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: reduced ? 0 : 1.1, ease: 'easeOut' }}
-          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 1 }}
+          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 3 }}
         >
           <GardenLogo
             src="/logos/gardens/builders-hammer.png"
             alt="Builder's Garden — the killer app"
-            size={420}
-            style={{ maxWidth: '88vw', maxHeight: '55vh' }}
-            fallback={<KLogomark size={280} color={COLORS.ink} />}
+            size={260}
+            style={{ maxWidth: '64vw', maxHeight: '40vh' }}
+            fallback={<KLogomark size={180} color={COLORS.ink} />}
           />
         </motion.div>
 
-        {/* Three chrome satellites — orbit out from behind the hammer and
-            sit ON TOP of it (zIndex 2 above the hammer's zIndex 1).
-            2026-05-21 AM (Chilly): wired GardenLogo so when chrome logo
-            PNGs are dropped at the predictable paths below, they render
-            instead of the colored fallback dots. Until then the dots +
-            text labels stay (so the demo never breaks on missing assets).
-            Files to drop in app/public/logos/gardens/ when ready:
-              chrome-killer-app.png
-              chrome-dream-machine.png
-              chrome-knowledge-garden.png
-            Offsets tuned to stay within container at 92vw (~340px on
-            iPhone) while still reading as decorative satellites on the
-            hammer's edges. */}
-        <motion.div
-          initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{ opacity: 1, x: 170, y: -160 }}
-          transition={orbitTransition}
-          style={{ ...chromeOrbitDot(CHROME.red), zIndex: 2 }}
-        >
-          <GardenLogo
-            src="/logos/gardens/chrome-killer-app.png"
-            alt="Killer App"
-            size={56}
-            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-            fallback={<span style={chromeLabel}>Killer App</span>}
-          />
+        {/* Three chrome satellites with the new zoom-past animation.
+            Each chrome is a flex column (image stacked above label) that
+            scales as a unit — image and label grow together. The
+            colored-dot background from the prior version is gone; the
+            chrome PNGs themselves are the visual. zIndex 2 puts chromes
+            BELOW the hammer (zIndex 3) so when they're at peak scale
+            and may overlap, the hammer stays the focal anchor. */}
+        <motion.div {...chromeAnim(170, -160, 0)} style={chromeOrbitContainer}>
+          <div style={chromeOrbitInner}>
+            <GardenLogo
+              src="/logos/gardens/chrome-killer-app.png"
+              alt="Killer App"
+              size={56}
+              fallback={<span style={chromeOrbitFallback(CHROME.red)} />}
+            />
+            <span style={chromeOrbitLabel}>Killer App</span>
+          </div>
         </motion.div>
-        <motion.div
-          initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{ opacity: 1, x: -170, y: -30 }}
-          transition={{ ...orbitTransition, delay: (orbitTransition.delay ?? 0) + 0.12 }}
-          style={{ ...chromeOrbitDot(CHROME.warm), zIndex: 2 }}
-        >
-          <GardenLogo
-            src="/logos/gardens/chrome-dream-machine.png"
-            alt="Dream Machine"
-            size={56}
-            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-            fallback={<span style={chromeLabel}>Dream Machine</span>}
-          />
+        <motion.div {...chromeAnim(-170, -30, 0.18)} style={chromeOrbitContainer}>
+          <div style={chromeOrbitInner}>
+            <GardenLogo
+              src="/logos/gardens/chrome-dream-machine.png"
+              alt="Dream Machine"
+              size={56}
+              fallback={<span style={chromeOrbitFallback(CHROME.warm)} />}
+            />
+            <span style={chromeOrbitLabel}>Dream Machine</span>
+          </div>
         </motion.div>
-        <motion.div
-          initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{ opacity: 1, x: 150, y: 160 }}
-          transition={{ ...orbitTransition, delay: (orbitTransition.delay ?? 0) + 0.24 }}
-          style={{ ...chromeOrbitDot(CHROME.green), zIndex: 2 }}
-        >
-          <GardenLogo
-            src="/logos/gardens/chrome-knowledge-garden.png"
-            alt="Knowledge Garden"
-            size={56}
-            style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-            fallback={<span style={chromeLabel}>Knowledge Garden</span>}
-          />
+        <motion.div {...chromeAnim(150, 160, 0.36)} style={chromeOrbitContainer}>
+          <div style={chromeOrbitInner}>
+            <GardenLogo
+              src="/logos/gardens/chrome-knowledge-garden.png"
+              alt="Knowledge Garden"
+              size={56}
+              fallback={<span style={chromeOrbitFallback(CHROME.green)} />}
+            />
+            <span style={chromeOrbitLabel}>Knowledge Garden</span>
+          </div>
         </motion.div>
       </div>
 
@@ -1513,6 +1556,12 @@ function actWrap(bg: string, extra: React.CSSProperties = {}): React.CSSProperti
   };
 }
 
+// 2026-05-22 AM: chromeOrbitDot + chromeLabel are no longer used by Act
+// 1 — they were the prior colored-dot-plus-side-label treatment. The
+// styles below replace them with a vertical stack (image above label)
+// that scales as a unit during the new zoom-past animation. Kept the
+// originals out for now in case any other surface uses them; they can
+// be removed in a follow-up sweep.
 function chromeOrbitDot(color: string, size = 16): React.CSSProperties {
   return {
     position: 'absolute',
@@ -1534,6 +1583,49 @@ const chromeLabel: React.CSSProperties = {
   whiteSpace: 'nowrap',
   textTransform: 'uppercase',
 };
+
+// New chrome-orbit treatment (2026-05-22 AM): the outer motion.div is a
+// zero-size anchor at canvas center — Framer Motion's x/y/scale animate
+// THAT anchor (because Framer strips any CSS transform we put on the
+// motion element itself). The inner div self-centers content on the
+// anchor via its own translate(-50%, -50%), which Framer doesn't touch.
+// This way scale grows the content outward from the anchor (i.e., from
+// each chrome's own visual center, not from the canvas center).
+const chromeOrbitContainer: React.CSSProperties = {
+  position: 'absolute',
+  top: '50%', left: '50%',
+  width: 0, height: 0,            // zero-size anchor
+  pointerEvents: 'none',
+  zIndex: 2,
+  transformOrigin: 'center center',
+};
+const chromeOrbitInner: React.CSSProperties = {
+  position: 'absolute',
+  top: 0, left: 0,
+  transform: 'translate(-50%, -50%)',  // self-center content on anchor
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 6,
+};
+const chromeOrbitLabel: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: '0.1em',
+  color: COLORS.ink,
+  whiteSpace: 'nowrap',
+  textTransform: 'uppercase',
+  textShadow: '0 1px 0 rgba(250,246,235,0.9)',
+};
+function chromeOrbitFallback(color: string): React.CSSProperties {
+  return {
+    display: 'inline-block',
+    width: 56, height: 56,
+    borderRadius: 28,
+    background: color,
+    boxShadow: '0 0 0 3px rgba(255,255,255,0.7), 0 6px 18px rgba(15,15,17,0.15)',
+  };
+}
 
 function eyebrow(c: string): React.CSSProperties {
   return {
