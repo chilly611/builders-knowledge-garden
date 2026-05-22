@@ -52,15 +52,19 @@ Any work not described above is excluded from this Agreement unless added throug
 
 **Downpayment:** {{downPayment}}
 
-> **THE DOWNPAYMENT MAY NOT EXCEED $1,000 OR 10 PERCENT OF THE CONTRACT PRICE, WHICHEVER IS LESS.**
->
-> *California law (Bus. & Prof. Code § 7159(d)(8)) limits the downpayment on a home improvement contract to 10% of the total contract price OR $1,000, whichever is less.*
+:::7159-callout title="Downpayment Cap (Bus. & Prof. § 7159(d)(8))"
+THE DOWNPAYMENT MAY NOT EXCEED $1,000 OR 10 PERCENT OF THE CONTRACT PRICE, WHICHEVER IS LESS.
+
+California law (Bus. & Prof. Code § 7159(d)(8)) limits the downpayment on a home improvement contract to 10% of the total contract price OR $1,000, whichever is less.
+:::
 
 ## 5. Schedule of Progress Payments
 
 {{paymentTerms}}
 
-> **The schedule of progress payments must specifically describe each phase of work, including the type and amount of work or services scheduled to be supplied in each phase, along with the amount of each proposed progress payment. IT IS AGAINST THE LAW FOR A CONTRACTOR TO COLLECT PAYMENT FOR WORK NOT YET COMPLETED, OR FOR MATERIALS NOT YET DELIVERED. HOWEVER, A CONTRACTOR MAY REQUIRE A DOWNPAYMENT.**
+:::7159-callout title="Schedule of Progress Payments (Bus. & Prof. § 7159(d)(9))"
+The schedule of progress payments must specifically describe each phase of work, including the type and amount of work or services scheduled to be supplied in each phase, along with the amount of each proposed progress payment. IT IS AGAINST THE LAW FOR A CONTRACTOR TO COLLECT PAYMENT FOR WORK NOT YET COMPLETED, OR FOR MATERIALS NOT YET DELIVERED. HOWEVER, A CONTRACTOR MAY REQUIRE A DOWNPAYMENT.
+:::
 
 Upon satisfactory payment being made for any portion of the work performed, the Contractor, prior to any further payment being made, shall furnish to the Owner a full and unconditional release from any potential lien claim or mechanics lien (per Civil Code §§ 8400 and 8404) for that portion of the work for which payment has been made.
 
@@ -115,27 +119,27 @@ The Owner has the right to require the Contractor to have a performance and paym
 
 ## MECHANICS LIEN WARNING
 
-*Required by California Business & Professions Code § 7159(e)(4).*
+*Required by California Business & Professions Code § 7159(e)(4). The block below is rendered at 12-point boldface per § 7159(c)(2).*
 
-> **MECHANICS LIEN WARNING:**
->
-> Anyone who helps improve your property, but who is not paid, may record what is called a mechanics lien on your property. A mechanics lien is a claim, like a mortgage or home equity loan, made against your property and recorded with the county recorder.
->
-> Even if you pay your contractor in full, unpaid subcontractors, suppliers, and laborers who helped to improve your property may record mechanics liens and sue you in court to foreclose the lien. If a court finds the lien is valid, you could be forced to pay twice or have a court officer sell your home to pay the lien. Liens can also affect your credit.
->
-> To preserve their right to record a lien, each subcontractor and material supplier must provide you with a document called a 'Preliminary Notice.' This notice is not a lien. The purpose of the notice is to let you know that the person who sends you the notice has the right to record a lien on your property if they are not paid.
->
-> **BE CAREFUL.** The Preliminary Notice can be sent up to 20 days after the subcontractor starts work or the supplier provides material. This can be a big problem if you pay your contractor before you have received the Preliminary Notices.
->
-> You will not get Preliminary Notices from your prime contractor or from laborers who work on your project. The law assumes that you already know they are improving your property.
->
-> **PROTECT YOURSELF FROM LIENS.** You can protect yourself from liens by getting a list from your contractor of all the subcontractors and material suppliers that work on your project. Find out from your contractor when these subcontractors started work and when these suppliers delivered goods or materials. Then wait 20 days, paying attention to the Preliminary Notices you receive.
->
-> **PAY WITH JOINT CHECKS.** One way to protect yourself is to pay with a joint check. When your contractor tells you it is time to pay for the work of a subcontractor or supplier who has provided you with a Preliminary Notice, write a joint check payable to both the contractor and the subcontractor or material supplier.
->
-> For other ways to prevent liens, visit CSLB's internet website at www.cslb.ca.gov or call CSLB at 800-321-CSLB (2752).
->
-> **REMEMBER, IF YOU DO NOTHING, YOU RISK HAVING A LIEN PLACED ON YOUR HOME.** This can mean that you may have to pay twice, or face the forced sale of your home to pay what you owe.
+:::7159-callout title="MECHANICS LIEN WARNING"
+Anyone who helps improve your property, but who is not paid, may record what is called a mechanics lien on your property. A mechanics lien is a claim, like a mortgage or home equity loan, made against your property and recorded with the county recorder.
+
+Even if you pay your contractor in full, unpaid subcontractors, suppliers, and laborers who helped to improve your property may record mechanics liens and sue you in court to foreclose the lien. If a court finds the lien is valid, you could be forced to pay twice or have a court officer sell your home to pay the lien. Liens can also affect your credit.
+
+To preserve their right to record a lien, each subcontractor and material supplier must provide you with a document called a 'Preliminary Notice.' This notice is not a lien. The purpose of the notice is to let you know that the person who sends you the notice has the right to record a lien on your property if they are not paid.
+
+BE CAREFUL. The Preliminary Notice can be sent up to 20 days after the subcontractor starts work or the supplier provides material. This can be a big problem if you pay your contractor before you have received the Preliminary Notices.
+
+You will not get Preliminary Notices from your prime contractor or from laborers who work on your project. The law assumes that you already know they are improving your property.
+
+PROTECT YOURSELF FROM LIENS. You can protect yourself from liens by getting a list from your contractor of all the subcontractors and material suppliers that work on your project. Find out from your contractor when these subcontractors started work and when these suppliers delivered goods or materials. Then wait 20 days, paying attention to the Preliminary Notices you receive.
+
+PAY WITH JOINT CHECKS. One way to protect yourself is to pay with a joint check. When your contractor tells you it is time to pay for the work of a subcontractor or supplier who has provided you with a Preliminary Notice, write a joint check payable to both the contractor and the subcontractor or material supplier.
+
+For other ways to prevent liens, visit CSLB's internet website at www.cslb.ca.gov or call CSLB at 800-321-CSLB (2752).
+
+REMEMBER, IF YOU DO NOTHING, YOU RISK HAVING A LIEN PLACED ON YOUR HOME. This can mean that you may have to pay twice, or face the forced sale of your home to pay what you owe.
+:::
 
 ---
 
@@ -157,13 +161,13 @@ Use only licensed contractors. If you file a complaint against a licensed contra
 
 ## THREE-DAY RIGHT TO CANCEL
 
-*Required by California Business & Professions Code § 7159(e)(6). Required in 12-point boldface type.*
+*Required by California Business & Professions Code § 7159(e)(6). Rendered at 12-point boldface as required by statute.*
 
-> **Three-Day Right to Cancel**
->
-> **You, the buyer, have the right to cancel this contract within three business days. You may cancel by emailing, mailing, faxing, or delivering a written notice to the contractor at the contractor's place of business by midnight of the third business day after you received a signed and dated copy of the contract that includes this notice. Include your name, your address, and the date you received the signed copy of the contract and this notice.**
->
-> **If you cancel, the contractor must return to you anything you paid within 10 days of receiving the notice of cancellation. For your part, you must make available to the contractor at your residence, in substantially as good condition as you received them, goods delivered to you under this contract or sale. Or, you may, if you wish, comply with the contractor's instructions on how to return the goods at the contractor's expense and risk. If you do make the goods available to the contractor and the contractor does not pick them up within 20 days of the date of your notice of cancellation, you may keep them without any further obligation. If you fail to make the goods available to the contractor, or if you agree to return the goods to the contractor and fail to do so, then you remain liable for performance of all obligations under the contract.**
+:::7159-callout title="Three-Day Right to Cancel"
+You, the buyer, have the right to cancel this contract within three business days. You may cancel by emailing, mailing, faxing, or delivering a written notice to the contractor at the contractor's place of business by midnight of the third business day after you received a signed and dated copy of the contract that includes this notice. Include your name, your address, and the date you received the signed copy of the contract and this notice.
+
+If you cancel, the contractor must return to you anything you paid within 10 days of receiving the notice of cancellation. For your part, you must make available to the contractor at your residence, in substantially as good condition as you received them, goods delivered to you under this contract or sale. Or, you may, if you wish, comply with the contractor's instructions on how to return the goods at the contractor's expense and risk. If you do make the goods available to the contractor and the contractor does not pick them up within 20 days of the date of your notice of cancellation, you may keep them without any further obligation. If you fail to make the goods available to the contractor, or if you agree to return the goods to the contractor and fail to do so, then you remain liable for performance of all obligations under the contract.
+:::
 
 The Notice of Cancellation may be sent to the contractor at:
 
@@ -179,10 +183,9 @@ Signature: ___________________________  Date: ___________
 
 ## NOTICE OF CANCELLATION
 
-*(Buyer keeps one copy; one copy attached to and detachable from the contract.)*
+*(Buyer keeps one copy; one copy attached to and detachable from the contract. Rendered at 12-point boldface per Bus. & Prof. § 7159(d)(4) and the FTC Cooling-Off Rule.)*
 
-**Notice of Cancellation**
-
+:::7159-callout title="Notice of Cancellation"
 Date of Transaction: {{contractDate}}
 
 You may cancel this transaction, without any penalty or obligation, within three business days from the above date.
@@ -193,16 +196,12 @@ If you cancel, you must make available to the seller at your residence, in subst
 
 If you do make the goods available to the seller and the seller does not pick them up within 20 days of the date of your notice of cancellation, you may retain or dispose of the goods without any further obligation. If you fail to make the goods available to the seller, or if you agree to return the goods to the seller and fail to do so, then you remain liable for performance of all obligations under the contract.
 
-To cancel this transaction, email, mail, or deliver a signed and dated copy of this cancellation notice, or any other written notice,
-
-to: **{{contractorName}}**
-at: **{{contractorAddress}}** / **{{contractorEmail}}**
-
-not later than midnight of: ___________ (Date)
+To cancel this transaction, email, mail, or deliver a signed and dated copy of this cancellation notice, or any other written notice, to: {{contractorName}} at: {{contractorAddress}} / {{contractorEmail}}, not later than midnight of: ___________ (Date).
 
 I hereby cancel this transaction.
 
 ___________ (Date)   ___________________________ (Buyer's signature)
+:::
 
 ---
 

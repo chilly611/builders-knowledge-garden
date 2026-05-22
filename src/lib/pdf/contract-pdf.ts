@@ -9,7 +9,13 @@
  * client component can trigger a download without a round-trip to the API.
  */
 
-import jsPDF from 'jspdf';
+// Named import (rather than default) so this module works under both the
+// Next.js / webpack bundler (production) and a plain Node ESM loader (used
+// by src/scripts/test-contract-pdf.ts). jspdf exposes `jsPDF` as both a
+// named export and a default — webpack-interop synthesizes the default
+// from CJS, but pure Node ESM hands you the module-namespace object, not
+// the class. Named import sidesteps the ambiguity.
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 
@@ -46,6 +52,14 @@ const TYPE = {
   body: 10,
   small: 8.5,
   watermark: 82,
+  // California Bus. & Prof. § 7159(c)(2) and § 7159(e)(6) require certain
+  // statutory callouts (Mechanics Lien Warning, Three-Day Right to Cancel,
+  // Notice of Cancellation, downpayment cap, progress-payment language) to
+  // be set in 12-point boldface. Civ. Code § 8136(c) similarly requires the
+  // "NOTICE TO CLAIMANT" block on lien waivers to be "at least as large as
+  // any other type in the document." 12pt clears both bars given our 10pt
+  // body baseline.
+  statutoryCallout: 12,
 };
 
 // ---------------------------------------------------------------------------
@@ -128,7 +142,8 @@ type Block =
   | { kind: 'ul'; items: string[] }
   | { kind: 'hr' }
   | { kind: 'table'; headers: string[]; rows: string[][] }
-  | { kind: 'signatureBlock'; text: string };
+  | { kind: 'signatureBlock'; text: string }
+  | { kind: 'statutoryCallout'; title?: string; paragraphs: string[] };
 
 class ContractRenderer {
   private doc: jsPDF;
@@ -192,6 +207,9 @@ class ContractRenderer {
         break;
       case 'signatureBlock':
         this.renderSignatureBlock(block.text);
+        break;
+      case 'statutoryCallout':
+        this.renderStatutoryCallout(block.title, block.paragraphs);
         break;
     }
   }
@@ -407,6 +425,92 @@ class ContractRenderer {
     this.y += 2;
   }
 
+  /**
+   * Render a § 7159 statutory callout — Mechanics Lien Warning, Three-Day
+   * Right to Cancel, Notice of Cancellation, downpayment-cap notice, progress
+   * payment language, and lien-waiver NOTICE TO CLAIMANT blocks.
+   *
+   * CA Bus. & Prof. § 7159 mandates 12-point boldface on these blocks.
+   * Civ. Code § 8136(c) requires the lien-waiver NOTICE TO CLAIMANT to be
+   * at least as large as any other text in the document — 12pt bold clears
+   * both bars given our 10pt body baseline.
+   *
+   * Visual treatment: 4mm extra padding above + below, a faint rule on the
+   * left edge, and (optionally) the title rendered as a bold uppercase
+   * heading at the same 12pt size. Keeps the block visually distinct from
+   * surrounding body copy without resorting to color (which compliance
+   * reviewers tend to discourage — bold black on white is the safe default).
+   */
+  private renderStatutoryCallout(title: string | undefined, paragraphs: string[]): void {
+    const padding = 4; // mm above and below
+    const leftRuleInset = 3; // mm — pull text right of a thin black rule
+    const lineHeight = 5; // mm per wrapped line at 12pt
+    const blockX = PAGE.marginLeft + leftRuleInset;
+    const blockWidth = this.contentWidth - leftRuleInset;
+
+    // Top padding + page-break protection. Reserve enough space for at least
+    // the title + first paragraph's first line so we don't strand the block
+    // header alone at the bottom of a page.
+    this.y += padding;
+    this.ensureSpace(lineHeight * 2);
+
+    const startY = this.y;
+
+    // Render title if present (uppercase, bold, 12pt).
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setFontSize(TYPE.statutoryCallout);
+    this.doc.setTextColor(...rgb(COLOR.text));
+
+    if (title && title.trim()) {
+      const cleanedTitle = sanitizeForPdf(stripInlineMarkers(title)).toUpperCase();
+      const titleLines = this.doc.splitTextToSize(cleanedTitle, blockWidth) as string[];
+      for (const ln of titleLines) {
+        this.ensureSpace(lineHeight);
+        this.doc.text(ln, blockX, this.y + 4);
+        this.y += lineHeight;
+      }
+      this.y += 1.5; // small gap between title and body
+    }
+
+    // Render paragraphs — bold, 12pt, with wrap. Each paragraph separated
+    // by a 2mm gap (matches renderParagraph spacing scaled for 12pt).
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.setFontSize(TYPE.statutoryCallout);
+    for (let p = 0; p < paragraphs.length; p++) {
+      const para = paragraphs[p];
+      const cleaned = sanitizeForPdf(stripInlineMarkers(para));
+      if (!cleaned.trim()) continue;
+      const wrapped = this.doc.splitTextToSize(cleaned, blockWidth) as string[];
+      for (const ln of wrapped) {
+        this.ensureSpace(lineHeight);
+        this.doc.text(ln, blockX, this.y + 4);
+        this.y += lineHeight;
+      }
+      if (p < paragraphs.length - 1) this.y += 2;
+    }
+
+    // Left rule from startY to current y. If the block spilled across
+    // pages, draw only the segment on the current page (start of page to y);
+    // multi-page rule strokes would require tracking page boundaries which
+    // isn't worth the complexity for what is essentially decorative emphasis.
+    const endY = this.y;
+    this.doc.setDrawColor(...rgb(COLOR.text));
+    this.doc.setLineWidth(0.6);
+    // Only draw the rule if start and end are on the same page (heuristic:
+    // endY > startY and no implicit page-break happened — if a break did
+    // happen, this.y would have reset to PAGE.marginTop on the new page,
+    // making endY < startY in the post-break frame). Skip the rule on
+    // multi-page callouts; the bold 12pt text carries the compliance load.
+    if (endY > startY) {
+      this.doc.line(PAGE.marginLeft, startY, PAGE.marginLeft, endY);
+    }
+
+    // Reset font for whatever block follows.
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setFontSize(TYPE.body);
+    this.y += padding;
+  }
+
   // -------------------------------------------------------------------------
   // (Removed 2026-05-19): the previous custom inline-styled wrap renderer
   // had measurement bugs that bled long paragraphs past the right margin.
@@ -565,6 +669,49 @@ function parseBlocks(source: string): Block[] {
       blocks.push({ kind: 'hr' });
       inSignatureBlock = false;
       i++;
+      continue;
+    }
+
+    // Statutory callout fence — :::7159-callout [title="..."]
+    //
+    // Wraps a Cal. Bus. & Prof. § 7159 mandatory-format block (Mechanics
+    // Lien Warning, Three-Day Right to Cancel, Notice of Cancellation,
+    // downpayment-cap notice, progress payment language), OR the Civ.
+    // Code § 8136(c) "NOTICE TO CLAIMANT" block on lien waivers. The
+    // renderer sets these in 12pt bold per statutory format requirements.
+    //
+    // Body paragraphs are separated by blank lines; leading `>` blockquote
+    // markers and `**bold**` runs are stripped (the renderer bolds the
+    // whole block). Closing fence is `:::` on its own line.
+    const calloutOpen = /^:::7159-callout(?:\s+title="([^"]*)")?\s*$/.exec(line.trim());
+    if (calloutOpen) {
+      const calloutTitle = calloutOpen[1];
+      i++; // consume the opening fence
+      const paragraphs: string[] = [];
+      let buf: string[] = [];
+      const flushBuf = () => {
+        const merged = buf.join(' ').trim();
+        if (merged) paragraphs.push(merged);
+        buf = [];
+      };
+      while (i < lines.length && lines[i].trim() !== ':::') {
+        const rawLine = lines[i];
+        const inner = rawLine.replace(/^\s*>\s?/, '').trimEnd(); // strip blockquote
+        if (inner.trim() === '') {
+          flushBuf();
+        } else {
+          buf.push(inner.trim());
+        }
+        i++;
+      }
+      flushBuf();
+      // Skip the closing fence (if we found it; tolerate EOF).
+      if (i < lines.length && lines[i].trim() === ':::') i++;
+      blocks.push({
+        kind: 'statutoryCallout',
+        title: calloutTitle,
+        paragraphs,
+      });
       continue;
     }
 
