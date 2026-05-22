@@ -23,6 +23,29 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { safeNext } from '@/lib/safe-url';
+import { LEGACY_LANE_TO_PROJECT_ROLE } from '@/lib/use-user-lane';
+
+// DIY-COLD (2026-05-22): belt-and-suspenders cookie writer. /auth/callback
+// is the primary place we set bkg-lane, but if a user lands on /welcome
+// from some other entry point (e.g. an already-authenticated session that
+// missed the callback, or the /signup direct sign-in path) we still want
+// the cookie populated BEFORE we router.push() into /killerapp so SSR
+// stamps body[data-diy-cockpit] correctly on the first byte.
+const LANE_COOKIE = 'bkg-lane';
+const LANE_COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 7;
+
+function readLaneCookie(): string {
+  if (typeof document === 'undefined') return '';
+  const m = document.cookie.match(/(?:^|;\s*)bkg-lane=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+function writeLaneCookie(lane: string): void {
+  if (typeof document === 'undefined') return;
+  document.cookie =
+    `${LANE_COOKIE}=${encodeURIComponent(lane)}; Path=/; ` +
+    `Max-Age=${LANE_COOKIE_MAX_AGE_SEC}; SameSite=Lax`;
+}
 
 const COLORS = {
   paper: '#FAF8F2',
@@ -179,6 +202,28 @@ function WelcomePageContent() {
           // Non-fatal — landingRouteForLane handles a null role.
         }
 
+        // DIY-COLD (2026-05-22): belt-and-suspenders cookie write. If the
+        // user got here without /auth/callback running (legacy session,
+        // direct signup-then-signin, etc.) the cookie may be absent. Write
+        // it SYNCHRONOUSLY before any router.replace() so the next SSR
+        // pass picks up the right lane on the first byte. If a valid
+        // cookie is already present we don't overwrite — ProjectContext
+        // owns the "switch projects / role change" update path and we
+        // don't want to race it with stale metadata-derived guesses.
+        try {
+          const existing = readLaneCookie();
+          if (!existing) {
+            const guessed: string =
+              resolvedRole ??
+              (metaLane === 'builder' || metaLane === 'specialist' || metaLane === 'dreamer'
+                ? LEGACY_LANE_TO_PROJECT_ROLE[metaLane]
+                : 'gc');
+            writeLaneCookie(guessed);
+          }
+        } catch {
+          // Non-fatal.
+        }
+
         if (welcomed) {
           const lanePath = landingRouteForLane({
             projectRole: resolvedRole,
@@ -223,6 +268,21 @@ function WelcomePageContent() {
     } catch {
       // Even if the mark fails, let them through — the worst case is they
       // see /welcome once more.
+    }
+    // DIY-COLD (2026-05-22): make sure the cookie reflects the resolved
+    // lane before we push into /killerapp so SSR stamps the body attr
+    // correctly on the first byte. The effect above already wrote it on
+    // mount if absent; this is a safety net for "lane changed between
+    // mount and click" (unlikely but cheap).
+    try {
+      const effective: string =
+        projectRole ??
+        (legacyLane === 'builder' || legacyLane === 'specialist' || legacyLane === 'dreamer'
+          ? LEGACY_LANE_TO_PROJECT_ROLE[legacyLane]
+          : 'gc');
+      writeLaneCookie(effective);
+    } catch {
+      // Non-fatal.
     }
     const lanePath = landingRouteForLane({
       projectRole,
@@ -382,6 +442,15 @@ function DiyWizard({ userName, demoProjectId, onComplete }: {
       });
     } catch {
       // Non-fatal — at worst the user re-sees the wizard once.
+    }
+    // DIY-COLD (2026-05-22): user picked the dreamer wizard, so by
+    // definition they're DIY. Write the cookie BEFORE the push into
+    // /killerapp so SSR stamps body[data-diy-cockpit=1] on the first
+    // byte and the pro picker never flashes.
+    try {
+      writeLaneCookie('diy');
+    } catch {
+      // Non-fatal.
     }
     if (target === 'cockpit') {
       router.push(`/killerapp?project=${encodeURIComponent(demoProjectId)}&cockpit=diy`);
