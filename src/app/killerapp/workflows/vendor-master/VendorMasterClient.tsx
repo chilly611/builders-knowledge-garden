@@ -5,13 +5,18 @@
  * ==================
  * Admin-style data table for the vendor master.
  *
- * - Columns: Legal name, DBA, CSLB# (expiry color), 1099 chip, W-9 chip, terms.
+ * - Columns: Legal name, DBA, Org, CSLB# (expiry color), 1099 chip, W-9 chip, terms.
  * - "+ Add vendor" modal (all schema fields).
- * - "Lookup CSLB" opens cslb.ca.gov check-license tool in a new tab.
+ * - "Lookup CSLB" calls server-side scraper /api/v1/cslb-lookup and
+ *   autofills name, classification, expiry, bond. Row-level button opens
+ *   the canonical CSLB page for human-eye verification.
+ * - Org switcher: filter vendors by the org you belong to. "Create org"
+ *   CTA appears for users with no orgs yet.
  * - Filter chips: All / 1099-eligible / W-9 missing / Insurance expiring soon.
  * - CSV export.
  *
- * Auth: requires Supabase session; calls /api/v1/vendors with Bearer token.
+ * Auth: requires Supabase session; calls /api/v1/vendors and
+ * /api/v1/cslb-lookup with Bearer token.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -21,6 +26,7 @@ import { supabase } from '@/lib/supabase';
 interface Vendor {
   id: string;
   project_id?: string | null;
+  org_id?: string | null;
   legal_name: string;
   dba?: string | null;
   ein?: string | null;
@@ -41,6 +47,14 @@ interface Vendor {
   email?: string | null;
   payment_terms?: string | null;
   is_1099_eligible?: boolean | null;
+}
+
+interface Org {
+  id: string;
+  slug: string;
+  legal_name: string;
+  dba?: string | null;
+  role: 'owner' | 'admin' | 'member';
 }
 
 const COLORS = {
@@ -93,17 +107,35 @@ export default function VendorMasterClient() {
   const projectId = search.get('project');
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [orgs, setOrgs] = useState<Org[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterMode>('all');
   const [showModal, setShowModal] = useState(false);
+  const [showOrgModal, setShowOrgModal] = useState(false);
   const [editing, setEditing] = useState<Vendor | null>(null);
+
+  async function loadOrgs() {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch('/api/v1/orgs', { headers });
+      if (!res.ok) return;
+      const j = await res.json();
+      setOrgs(j.orgs || []);
+    } catch {
+      // non-fatal — personal-mode users still work.
+    }
+  }
 
   async function refresh() {
     setLoading(true);
     try {
       const headers = await authHeaders();
-      const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : '';
+      const params = new URLSearchParams();
+      if (projectId) params.set('project_id', projectId);
+      else if (selectedOrgId !== 'all') params.set('org_id', selectedOrgId);
+      const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(`/api/v1/vendors${qs}`, { headers });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -119,7 +151,15 @@ export default function VendorMasterClient() {
     }
   }
 
-  useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [projectId]);
+  // Load orgs once on mount.
+  useEffect(() => { void loadOrgs(); }, []);
+  useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [projectId, selectedOrgId]);
+
+  const orgLabelFor = (id: string | null | undefined): string => {
+    if (!id) return '—';
+    const o = orgs.find((x) => x.id === id);
+    return o ? (o.dba || o.legal_name) : '(other org)';
+  };
 
   const filtered = useMemo(() => {
     switch (filter) {
@@ -156,11 +196,12 @@ export default function VendorMasterClient() {
   }
 
   function openCslbLookup(licNum?: string | null) {
-    // CSLB check-license is a JSP form, no clean ?licNum= GET; the URL still
-    // opens the lookup page. Passing the param is a no-op today but keeps
-    // the door open if CSLB ever wires a clean query param.
+    // Fallback / direct-link helper. The "+ Add vendor" modal hits the
+    // server-side scraping endpoint (/api/v1/cslb-lookup) for autofill;
+    // this button is the still-useful "open the canonical CSLB page in
+    // a new tab" shortcut used in the row actions.
     const u = licNum
-      ? `https://www2.cslb.ca.gov/onlineservices/checklicenseII/CheckLicense.aspx?LicNum=${encodeURIComponent(licNum)}`
+      ? `https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/LicenseDetail.aspx?LicNum=${encodeURIComponent(licNum)}`
       : 'https://www.cslb.ca.gov/onlineservices/checklicenseii/checklicense.aspx';
     window.open(u, '_blank', 'noopener,noreferrer');
   }
@@ -174,6 +215,46 @@ export default function VendorMasterClient() {
             Single source of truth for every sub, supplier, and 1099 payee. CSLB / W-9 / insurance / payment terms.
           </p>
         </header>
+
+        {/* Org switcher row — only shown when caller has 2+ orgs OR has none (CTA). */}
+        {(orgs.length === 0 || orgs.length > 1) && !projectId && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, padding: 10, background: '#F5F0E4', border: `1px solid ${COLORS.rule}`, borderRadius: 4 }}>
+            {orgs.length === 0 ? (
+              <>
+                <span style={{ fontSize: 13, color: COLORS.graphite, flex: 1 }}>
+                  You don't have an organization yet. Create one to share vendors with teammates.
+                </span>
+                <button
+                  onClick={() => setShowOrgModal(true)}
+                  style={{ padding: '6px 12px', background: COLORS.brass, color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 4, fontWeight: 600 }}
+                >
+                  Create organization
+                </button>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: 13, color: COLORS.graphite }}>Organization:</span>
+                <select
+                  value={selectedOrgId}
+                  onChange={(e) => setSelectedOrgId(e.target.value as string | 'all')}
+                  style={{ padding: '6px 8px', border: `1px solid ${COLORS.rule}`, borderRadius: 4, fontSize: 13, background: '#fff' }}
+                >
+                  <option value="all">All (personal + every org)</option>
+                  {orgs.map((o) => (
+                    <option key={o.id} value={o.id}>{o.dba || o.legal_name}</option>
+                  ))}
+                </select>
+                <div style={{ flex: 1 }} />
+                <button
+                  onClick={() => setShowOrgModal(true)}
+                  style={{ padding: '4px 10px', background: 'transparent', border: `1px solid ${COLORS.rule}`, cursor: 'pointer', borderRadius: 4, fontSize: 12 }}
+                >
+                  + New org
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, alignItems: 'center' }}>
           {(['all', '1099', 'w9-missing', 'expiring'] as FilterMode[]).map((m) => (
@@ -220,6 +301,7 @@ export default function VendorMasterClient() {
               <tr>
                 <th style={{ padding: 10 }}>Legal name</th>
                 <th style={{ padding: 10 }}>DBA</th>
+                <th style={{ padding: 10 }}>Org</th>
                 <th style={{ padding: 10 }}>CSLB#</th>
                 <th style={{ padding: 10 }}>1099</th>
                 <th style={{ padding: 10 }}>W-9</th>
@@ -228,14 +310,17 @@ export default function VendorMasterClient() {
               </tr>
             </thead>
             <tbody>
-              {loading && (<tr><td colSpan={7} style={{ padding: 20, textAlign: 'center', color: COLORS.faded }}>Loading…</td></tr>)}
+              {loading && (<tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', color: COLORS.faded }}>Loading…</td></tr>)}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: 20, textAlign: 'center', color: COLORS.faded }}>No vendors yet. Click "+ Add vendor" to start.</td></tr>
+                <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', color: COLORS.faded }}>No vendors yet. Click "+ Add vendor" to start.</td></tr>
               )}
               {filtered.map((v) => (
                 <tr key={v.id} style={{ borderTop: `1px solid ${COLORS.rule}` }}>
                   <td style={{ padding: 10, fontWeight: 600 }}>{v.legal_name}</td>
                   <td style={{ padding: 10, color: COLORS.graphite }}>{v.dba || '—'}</td>
+                  <td style={{ padding: 10, fontSize: 12, color: v.org_id ? COLORS.graphite : COLORS.faded }}>
+                    {v.org_id ? orgLabelFor(v.org_id) : <em>personal</em>}
+                  </td>
                   <td style={{ padding: 10 }}>
                     {v.cslb_number ? (
                       <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
@@ -283,10 +368,102 @@ export default function VendorMasterClient() {
           <VendorModal
             initial={editing}
             projectId={projectId}
+            orgs={orgs}
+            defaultOrgId={selectedOrgId !== 'all' ? selectedOrgId : (orgs.length === 1 ? orgs[0].id : null)}
             onClose={() => setShowModal(false)}
             onSaved={() => { setShowModal(false); void refresh(); }}
           />
         )}
+
+        {showOrgModal && (
+          <OrgCreateModal
+            onClose={() => setShowOrgModal(false)}
+            onCreated={(newOrg) => {
+              setOrgs((prev) => [...prev, newOrg]);
+              setSelectedOrgId(newOrg.id);
+              setShowOrgModal(false);
+              void refresh();
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Org create modal
+// ─────────────────────────────────────────────────────────────────────
+
+function OrgCreateModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (org: Org) => void;
+}) {
+  const [legalName, setLegalName] = useState('');
+  const [dba, setDba] = useState('');
+  const [slug, setSlug] = useState('');
+  const [primaryEmail, setPrimaryEmail] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    setErr(null);
+    try {
+      const headers = await authHeaders();
+      const res = await fetch('/api/v1/orgs', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ legal_name: legalName, dba: dba || null, slug: slug || undefined, primary_email: primaryEmail || null }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || `HTTP ${res.status}`);
+      }
+      const j = await res.json();
+      onCreated(j.org as Org);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to create org');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.paper, borderRadius: 8, padding: 24, maxWidth: 520, width: '90%' }}>
+        <h2 style={{ marginTop: 0 }}>Create organization</h2>
+        <p style={{ fontSize: 13, color: COLORS.graphite, marginTop: 0 }}>
+          An organization is your tenancy — share vendors with teammates, scope compliance docs, and invoice under one entity.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: COLORS.graphite }}>
+            <span>Legal name *</span>
+            <input value={legalName} onChange={(e) => setLegalName(e.target.value)} style={{ padding: 6, border: `1px solid ${COLORS.rule}`, borderRadius: 3, fontSize: 14 }} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: COLORS.graphite }}>
+            <span>DBA (doing-business-as)</span>
+            <input value={dba} onChange={(e) => setDba(e.target.value)} style={{ padding: 6, border: `1px solid ${COLORS.rule}`, borderRadius: 3, fontSize: 14 }} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: COLORS.graphite }}>
+            <span>URL slug (auto-derived from legal name if blank)</span>
+            <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="e.g. acme-construction" style={{ padding: 6, border: `1px solid ${COLORS.rule}`, borderRadius: 3, fontSize: 14 }} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: COLORS.graphite }}>
+            <span>Primary email</span>
+            <input type="email" value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} style={{ padding: 6, border: `1px solid ${COLORS.rule}`, borderRadius: 3, fontSize: 14 }} />
+          </label>
+        </div>
+        {err && <div style={{ marginTop: 12, color: COLORS.red }}>{err}</div>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} disabled={saving} style={{ padding: '8px 16px', border: `1px solid ${COLORS.rule}`, background: '#fff', cursor: 'pointer', borderRadius: 4 }}>Cancel</button>
+          <button onClick={save} disabled={saving || !legalName} style={{ padding: '8px 16px', background: COLORS.green, color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 4, fontWeight: 600 }}>
+            {saving ? 'Creating…' : 'Create org'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -295,20 +472,67 @@ export default function VendorMasterClient() {
 function VendorModal({
   initial,
   projectId,
+  orgs,
+  defaultOrgId,
   onClose,
   onSaved,
 }: {
   initial: Vendor | null;
   projectId: string | null;
+  orgs: Org[];
+  defaultOrgId: string | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState<Partial<Vendor>>(initial || { is_1099_eligible: true, payment_terms: 'Net 30' });
+  const [form, setForm] = useState<Partial<Vendor>>(
+    initial || {
+      is_1099_eligible: true,
+      payment_terms: 'Net 30',
+      org_id: defaultOrgId,
+    }
+  );
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [cslbLooking, setCslbLooking] = useState(false);
+  const [cslbStatus, setCslbStatus] = useState<string | null>(null);
 
   function set<K extends keyof Vendor>(k: K, v: Vendor[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function runCslbLookup() {
+    const lic = (form.cslb_number || '').toString().trim();
+    if (!lic) {
+      setCslbStatus('Enter a license number first.');
+      return;
+    }
+    setCslbLooking(true);
+    setCslbStatus(null);
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`/api/v1/cslb-lookup?license=${encodeURIComponent(lic)}`, { headers });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) {
+        setCslbStatus(j.reason || `Lookup failed (HTTP ${res.status}). Use the deep-link button.`);
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        // Only fill the legal name if the user hasn't already typed something.
+        legal_name: f.legal_name && f.legal_name.trim() ? f.legal_name : j.name,
+        cslb_classification: j.classification ?? f.cslb_classification,
+        cslb_expiry: j.expiry ?? f.cslb_expiry,
+        bond_number: j.bond_number ?? f.bond_number,
+        bond_amount: j.bond_amount ?? f.bond_amount,
+      }));
+      setCslbStatus(
+        `Filled from CSLB${j.cached ? ' (cached)' : ''}: ${j.name}${j.status ? ` — ${j.status}` : ''}`
+      );
+    } catch (e) {
+      setCslbStatus(e instanceof Error ? e.message : 'Lookup failed');
+    } finally {
+      setCslbLooking(false);
+    }
   }
 
   async function save() {
@@ -316,7 +540,11 @@ function VendorModal({
     setErr(null);
     try {
       const headers = await authHeaders();
-      const body = { ...form, project_id: form.project_id || projectId || null };
+      const body = {
+        ...form,
+        project_id: form.project_id || projectId || null,
+        org_id: form.org_id ?? defaultOrgId ?? null,
+      };
       const isEdit = !!initial?.id;
       const res = await fetch('/api/v1/vendors', {
         method: isEdit ? 'PATCH' : 'POST',
@@ -351,12 +579,54 @@ function VendorModal({
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: COLORS.paper, borderRadius: 8, padding: 24, maxWidth: 720, width: '90%', maxHeight: '90vh', overflow: 'auto' }}>
         <h2 style={{ marginTop: 0 }}>{initial ? 'Edit vendor' : 'Add vendor'}</h2>
+
+        {/* Org picker — only relevant when caller has 1+ orgs. */}
+        {orgs.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: COLORS.graphite }}>
+              <span>Organization (leave blank for personal vendor)</span>
+              <select
+                value={form.org_id ?? ''}
+                onChange={(e) => set('org_id', e.target.value || null)}
+                style={{ padding: 6, border: `1px solid ${COLORS.rule}`, borderRadius: 3, fontSize: 14, background: '#fff' }}
+              >
+                <option value="">— Personal (no org) —</option>
+                {orgs.map((o) => (
+                  <option key={o.id} value={o.id}>{o.dba || o.legal_name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {field('Legal name *', 'legal_name')}
           {field('DBA', 'dba')}
           {field('EIN', 'ein')}
           {field('W-9 on file date', 'w9_on_file_at', 'date')}
-          {field('CSLB #', 'cslb_number')}
+
+          {/* CSLB number + Lookup CTA. */}
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: COLORS.graphite }}>
+            <span>CSLB #</span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                type="text"
+                value={(form.cslb_number as string | undefined) ?? ''}
+                onChange={(e) => set('cslb_number', e.target.value)}
+                style={{ flex: 1, padding: 6, border: `1px solid ${COLORS.rule}`, borderRadius: 3, fontSize: 14 }}
+              />
+              <button
+                type="button"
+                onClick={() => void runCslbLookup()}
+                disabled={cslbLooking || !form.cslb_number}
+                style={{ padding: '6px 10px', background: COLORS.brass, color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 3, fontSize: 12, fontWeight: 600 }}
+                title="Auto-fill name, classification, expiry and bond from CSLB"
+              >
+                {cslbLooking ? 'Looking…' : 'Lookup CSLB'}
+              </button>
+            </div>
+          </label>
+
           {field('CSLB class', 'cslb_classification')}
           {field('CSLB expiry', 'cslb_expiry', 'date')}
           {field('Bond #', 'bond_number')}
@@ -380,6 +650,12 @@ function VendorModal({
             1099 eligible
           </label>
         </div>
+
+        {cslbStatus && (
+          <div style={{ marginTop: 12, fontSize: 12, color: COLORS.graphite, padding: 8, background: '#F5F0E4', border: `1px solid ${COLORS.rule}`, borderRadius: 3 }}>
+            {cslbStatus}
+          </div>
+        )}
         {err && <div style={{ marginTop: 12, color: COLORS.red }}>{err}</div>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
           <button onClick={onClose} disabled={saving} style={{ padding: '8px 16px', border: `1px solid ${COLORS.rule}`, background: '#fff', cursor: 'pointer', borderRadius: 4 }}>Cancel</button>

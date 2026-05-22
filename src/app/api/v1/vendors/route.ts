@@ -80,7 +80,20 @@ const VENDOR_FIELDS = [
   'payment_terms',
   'is_1099_eligible',
   'project_id',
+  'org_id',
 ] as const;
+
+/**
+ * List org ids the caller is a member of.
+ */
+async function getCallerOrgIds(userId: string): Promise<string[]> {
+  const { data, error } = await getServiceClient()
+    .from('org_members')
+    .select('org_id')
+    .eq('user_id', userId);
+  if (error || !data) return [];
+  return data.map((r: { org_id: string }) => r.org_id);
+}
 
 type VendorRecord = Record<(typeof VENDOR_FIELDS)[number], unknown>;
 
@@ -99,6 +112,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
+    const orgIdFilter = searchParams.get('org_id');
     const sb = getServiceClient();
 
     if (projectId) {
@@ -118,14 +132,60 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ vendors: data || [] });
     }
 
-    // No project filter — return caller's vendors (created_by = user.id).
-    const { data, error } = await sb
-      .from('vendors')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('legal_name', { ascending: true });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ vendors: data || [] });
+    // Resolve caller's orgs (used for org-scoped visibility + filter).
+    const callerOrgIds = await getCallerOrgIds(user.id);
+
+    // Optional explicit org filter — must be one the caller belongs to.
+    if (orgIdFilter) {
+      if (!callerOrgIds.includes(orgIdFilter)) {
+        return NextResponse.json({ error: 'Not a member of that org' }, { status: 403 });
+      }
+      const { data, error } = await sb
+        .from('vendors')
+        .select('*')
+        .eq('org_id', orgIdFilter)
+        .order('legal_name', { ascending: true });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ vendors: data || [] });
+    }
+
+    // No project / org filter — union of:
+    //   - vendors in any of caller's orgs        (org_id IN [...])
+    //   - vendors created by caller personally  (user_id = caller)
+    //   - vendors tagged to a demo project       (project_id IN demo allowlist)
+    //
+    // Supabase doesn't accept disparate OR conditions on different
+    // columns in a single .or() string without ambiguity around quoting,
+    // so we issue 3 queries in parallel and merge by id.
+    const demoIds = Array.from(DEMO_PROJECT_IDS);
+
+    const [orgRes, personalRes, demoRes] = await Promise.all([
+      callerOrgIds.length
+        ? sb.from('vendors').select('*').in('org_id', callerOrgIds)
+        : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
+      sb.from('vendors').select('*').eq('user_id', user.id),
+      sb.from('vendors').select('*').in('project_id', demoIds),
+    ]);
+
+    for (const r of [orgRes, personalRes, demoRes]) {
+      if ('error' in r && r.error) {
+        return NextResponse.json({ error: r.error.message }, { status: 500 });
+      }
+    }
+
+    const merged = new Map<string, Record<string, unknown>>();
+    for (const row of [
+      ...(orgRes.data || []),
+      ...(personalRes.data || []),
+      ...(demoRes.data || []),
+    ]) {
+      const id = String((row as { id: string }).id);
+      if (!merged.has(id)) merged.set(id, row);
+    }
+    const vendors = Array.from(merged.values()).sort((a, b) =>
+      String(a.legal_name || '').localeCompare(String(b.legal_name || ''))
+    );
+    return NextResponse.json({ vendors });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'Internal error' },
@@ -155,8 +215,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // org_id handling:
+    //   - if body.org_id is set, verify the caller is a member;
+    //   - else if the caller has exactly one org, default to it;
+    //   - else leave null (personal-vendor backward compat).
+    let orgId = body.org_id ? String(body.org_id) : null;
+    const callerOrgIds = await getCallerOrgIds(user.id);
+    if (orgId) {
+      if (!callerOrgIds.includes(orgId)) {
+        return NextResponse.json(
+          { error: 'Not a member of that org' },
+          { status: 403 }
+        );
+      }
+    } else if (callerOrgIds.length === 1) {
+      orgId = callerOrgIds[0];
+    }
+
     const insertData = {
       ...pickVendorFields(body),
+      org_id: orgId,
       user_id: user.id,
       created_by: user.id,
     };
@@ -189,10 +267,10 @@ export async function PATCH(request: NextRequest) {
 
     const sb = getServiceClient();
 
-    // Ownership check.
+    // Ownership check — owner | project access | org membership.
     const { data: existing, error: lookupErr } = await sb
       .from('vendors')
-      .select('id, user_id, project_id')
+      .select('id, user_id, project_id, org_id')
       .eq('id', vendorId)
       .maybeSingle();
     if (lookupErr) return NextResponse.json({ error: lookupErr.message }, { status: 500 });
@@ -202,7 +280,12 @@ export async function PATCH(request: NextRequest) {
     const projectAccess = existing.project_id
       ? await verifyProjectAccess(request, String(existing.project_id), user.id)
       : false;
-    if (!ownsRow && !projectAccess) {
+    let orgAccess = false;
+    if (existing.org_id) {
+      const callerOrgIds = await getCallerOrgIds(user.id);
+      orgAccess = callerOrgIds.includes(String(existing.org_id));
+    }
+    if (!ownsRow && !projectAccess && !orgAccess) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 403 });
     }
 
@@ -242,7 +325,7 @@ export async function DELETE(request: NextRequest) {
 
     const { data: existing, error: lookupErr } = await sb
       .from('vendors')
-      .select('id, user_id, project_id')
+      .select('id, user_id, project_id, org_id')
       .eq('id', vendorId)
       .maybeSingle();
     if (lookupErr) return NextResponse.json({ error: lookupErr.message }, { status: 500 });
@@ -252,7 +335,12 @@ export async function DELETE(request: NextRequest) {
     const projectAccess = existing.project_id
       ? await verifyProjectAccess(request, String(existing.project_id), user.id)
       : false;
-    if (!ownsRow && !projectAccess) {
+    let orgAccess = false;
+    if (existing.org_id) {
+      const callerOrgIds = await getCallerOrgIds(user.id);
+      orgAccess = callerOrgIds.includes(String(existing.org_id));
+    }
+    if (!ownsRow && !projectAccess && !orgAccess) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 403 });
     }
 

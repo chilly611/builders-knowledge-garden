@@ -1,19 +1,23 @@
 /**
  * /api/v1/sub-bids/cslb-lookup (GET ?license=XXXXX)
  * =================================================
- * Thin proxy / stub for the CSLB license-lookup service. The real CSLB
- * public site (https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/)
- * doesn't currently expose a stable JSON API, so this endpoint:
+ * Legacy endpoint kept for backward compat with the sub-bid UI.
+ * Forwards to the canonical /api/v1/cslb-lookup implementation
+ * (server-side CSLB form scrape with 3-day cache).
  *
- *   - validates the input is a plausible 4–8 digit license number,
- *   - returns a static "we couldn't verify automatically — open the
- *     CSLB lookup page" response with a deep-link URL,
- *   - shape is deliberately stable so the UI can swap in a real
- *     scrape / official API later without changes on the client.
+ * Response shape preserved from the original stub:
+ *   { ok, license, note?, lookup_url, ...extracted fields }
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser, unauthorizedResponse } from '@/lib/auth-server';
+import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
+import { lookupCslbLicense } from '@/lib/cslb-scraper';
+
+const CACHE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+
+function deepLink(license: string): string {
+  return `https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/LicenseDetail.aspx?LicNum=${encodeURIComponent(license)}`;
+}
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser(request);
@@ -31,13 +35,77 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Real lookup would slot in here. For now: route the user to CSLB's
-  // public page. We pre-fill the license in the URL hash.
-  return NextResponse.json({
-    ok: true,
-    license,
-    note:
-      'Automated CSLB lookup is not wired yet. Click the link to verify the license on CSLB.',
-    lookup_url: `https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/LicenseDetail.aspx?LicNum=${encodeURIComponent(license)}`,
-  });
+  const sb = getServiceClient();
+
+  // Cache lookup
+  const { data: cached } = await sb
+    .from('cslb_lookup_cache')
+    .select('*')
+    .eq('license_number', license)
+    .maybeSingle();
+  if (cached && cached.fetched_at && cached.name) {
+    const age = Date.now() - new Date(cached.fetched_at).getTime();
+    if (age < CACHE_TTL_MS) {
+      return NextResponse.json({
+        ok: true,
+        cached: true,
+        license,
+        name: cached.name,
+        classification: cached.classification,
+        status: cached.status,
+        expiry: cached.expiry,
+        bond_number: cached.bond_number,
+        bond_amount: cached.bond_amount,
+        lookup_url: deepLink(license),
+      });
+    }
+  }
+
+  try {
+    const result = await lookupCslbLicense(license, { includeRawHtml: true });
+    if (!result.ok) {
+      return NextResponse.json({
+        ok: false,
+        license,
+        reason: result.reason,
+        lookup_url: deepLink(license),
+      });
+    }
+
+    // Best-effort cache write
+    await sb.from('cslb_lookup_cache').upsert(
+      {
+        license_number: result.licenseNumber,
+        name: result.name ?? null,
+        classification: result.classification ?? null,
+        status: result.status ?? null,
+        expiry: result.expiry ?? null,
+        bond_number: result.bondNumber ?? null,
+        bond_amount: result.bondAmount ?? null,
+        fetched_at: new Date().toISOString(),
+        raw_html: result.rawHtml ?? null,
+      },
+      { onConflict: 'license_number' }
+    );
+
+    return NextResponse.json({
+      ok: true,
+      cached: false,
+      license,
+      name: result.name,
+      classification: result.classification,
+      status: result.status,
+      expiry: result.expiry,
+      bond_number: result.bondNumber,
+      bond_amount: result.bondAmount,
+      lookup_url: deepLink(license),
+    });
+  } catch (e) {
+    return NextResponse.json({
+      ok: false,
+      license,
+      reason: e instanceof Error ? e.message : 'scrape_failed',
+      lookup_url: deepLink(license),
+    });
+  }
 }
