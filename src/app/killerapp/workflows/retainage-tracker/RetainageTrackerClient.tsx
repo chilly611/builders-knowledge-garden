@@ -78,6 +78,27 @@ export default function RetainageTrackerClient({ workflow, stages }: Props) {
   return (
     <>
       <ProjectContextBanner project={project} selfWorkflow="retainage-tracker" />
+      {/* Preview banner — workflow audit (Maya construction-lender, 2026-05) flagged
+          this as too thin for production use. Currently a free-text $ input with no
+          ledger math, escalation, or statutory caps applied. CA SB 800 (private)
+          and SB 293 (public works) cap retainage at 5% on public projects.
+          Keeping the surface deep-linkable but visibly under-construction. */}
+      <div
+        role="note"
+        style={{
+          margin: '12px 16px 0',
+          padding: '12px 16px',
+          backgroundColor: '#FFF6E5',
+          border: '1px solid #B6873A',
+          borderRadius: 4,
+          color: '#0E2A47',
+          fontSize: 14,
+          lineHeight: 1.5,
+        }}
+      >
+        <strong>Preview — full retainage ledger coming soon.</strong>{' '}
+        CA SB 800 (private) and SB 293 (public works) cap retainage at 5% on public projects.
+      </div>
       <WorkflowShell
         workflow={workflow}
         stages={stages}

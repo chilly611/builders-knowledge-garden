@@ -162,11 +162,20 @@ describe('StageWelcome', () => {
       expect(ctaLabel).toBe('Start with Estimating');
     });
 
-    it('CTA href defaults to # when no workflow provided', () => {
+    it('CTA href falls back to /killerapp when no live workflow provided', () => {
+      // 2026-05-22 fix: empty/no-live workflows used to dead-end at "#",
+      // trapping the user in the modal. New behavior: fall through to the
+      // workflow picker (preserving ?project= when present) so they always
+      // have a way forward.
       const workflows: Array<{ id: string; label: string; href?: string }> = [];
+      const projectId = 'proj-xyz';
       const firstWithHref = workflows.find((w) => w.href);
-      const href = firstWithHref?.href || '#';
-      expect(href).toBe('#');
+      const fallback = projectId
+        ? `/killerapp?project=${encodeURIComponent(projectId)}`
+        : '/killerapp';
+      const href = firstWithHref?.href ?? fallback;
+      expect(href).toBe('/killerapp?project=proj-xyz');
+      expect(href).not.toBe('#');
     });
 
     it('CTA href is first workflow with href property', () => {

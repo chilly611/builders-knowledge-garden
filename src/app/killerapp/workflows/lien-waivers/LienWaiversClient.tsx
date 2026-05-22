@@ -79,6 +79,36 @@ export default function LienWaiversClient({ workflow, stages }: Props) {
   return (
     <>
       <ProjectContextBanner project={project} selfWorkflow="lien-waivers" />
+      {/* Preview banner — workflow audit (Maya construction-lender, 2026-05) flagged
+          this as too thin for production use. CA requires four distinct statutory
+          waiver forms (Civ Code §§ 8132 / 8134 / 8136 / 8138 — conditional vs.
+          unconditional × progress vs. final), not the 2 generic checklist items
+          here. Keeping the surface deep-linkable but visibly under-construction. */}
+      <div
+        role="note"
+        style={{
+          margin: '12px 16px 0',
+          padding: '12px 16px',
+          backgroundColor: '#FFF6E5',
+          border: '1px solid #B6873A',
+          borderRadius: 4,
+          color: '#0E2A47',
+          fontSize: 14,
+          lineHeight: 1.5,
+        }}
+      >
+        <strong>Preview — content under construction.</strong>{' '}
+        California requires statutory waiver forms (Civ Code §§ 8132, 8134, 8136, 8138).{' '}
+        <a
+          href="https://leginfo.legislature.ca.gov/faces/codes_displayText.xhtml?lawCode=CIV&division=4.&title=&part=6.&chapter=4.&article=2."
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#9E6F2F', textDecoration: 'underline' }}
+        >
+          CA Civil Code statutory templates
+        </a>
+        .
+      </div>
       <AttachmentSection
         projectId={spineProjectId}
         workflowId="q22"

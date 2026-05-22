@@ -36,10 +36,19 @@ export default function StageWelcome({ stageId, projectId, workflows, onDismiss 
   const localStorageKey = `bkg:stage-welcome:${projectId}:${stageId}`;
   const copy = STAGE_WELCOME[stageId];
 
-  // Find first workflow with href
+  // Find first workflow with href. If none of this stage's workflows have
+  // a live route yet (e.g. Adapt/Collect/Reflect on a stage-by-stage rollout),
+  // fall back to the workflow picker — preserving ?project= so the user
+  // doesn't lose their cockpit context. Never link to "#": that dead-ends
+  // the user inside the modal with no recovery path.
   const firstLiveWorkflow = workflows.find((w) => w.href);
-  const ctaHref = firstLiveWorkflow?.href || '#';
-  const ctaLabel = firstLiveWorkflow ? `${copy.ctaPrefix} ${firstLiveWorkflow.label}` : copy.ctaPrefix;
+  const cockpitFallbackHref = projectId
+    ? `/killerapp?project=${encodeURIComponent(projectId)}`
+    : '/killerapp';
+  const ctaHref = firstLiveWorkflow?.href ?? cockpitFallbackHref;
+  const ctaLabel = firstLiveWorkflow
+    ? `${copy.ctaPrefix} ${firstLiveWorkflow.label}`
+    : 'See all workflows';
 
   // Check localStorage on mount
   useEffect(() => {

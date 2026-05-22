@@ -78,6 +78,35 @@ export default function DrawRequestsClient({ workflow, stages }: Props) {
   return (
     <>
       <ProjectContextBanner project={project} selfWorkflow="draw-requests" />
+      {/* Preview banner — workflow audit (Maya construction-lender, 2026-05) flagged
+          this as too thin for production use. A real draw needs G702/G703 schedule
+          of values + sworn statement + lien waivers + inspector signoff + photos.
+          Keeping the surface deep-linkable but visibly under-construction. */}
+      <div
+        role="note"
+        style={{
+          margin: '12px 16px 0',
+          padding: '12px 16px',
+          backgroundColor: '#FFF6E5',
+          border: '1px solid #B6873A',
+          borderRadius: 4,
+          color: '#0E2A47',
+          fontSize: 14,
+          lineHeight: 1.5,
+        }}
+      >
+        <strong>Preview — content under construction.</strong>{' '}
+        For draw requests today, use the AIA G702/G703 forms.{' '}
+        <a
+          href="https://www.aiacontracts.com/contract-doc-pages/27156-payment-applications-g702-g703"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#9E6F2F', textDecoration: 'underline' }}
+        >
+          AIA contract documents
+        </a>
+        .
+      </div>
       <WorkflowShell
         workflow={workflow}
         stages={stages}

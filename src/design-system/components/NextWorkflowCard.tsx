@@ -72,14 +72,19 @@ const WORKFLOW_LABELS: Record<string, string> = {
   q17: 'Expenses',
   q18: 'Outreach',
   q19: 'Compass Nav',
-  q20: 'Adapt (TBD)',
-  q21: 'Collect (TBD)',
-  q22: 'Collect (TBD)',
-  q23: 'Collect (TBD)',
-  q24: 'Collect (TBD)',
-  q25: 'Reflect (TBD)',
-  q26: 'Reflect (TBD)',
-  q27: 'Reflect (TBD)',
+  // q20-q27: routes exist (deep-link OK) but are intentionally absent
+  // from LIVE_WORKFLOW_PATHS above so the picker treats them as "Soon."
+  // Labels here are still used by NextWorkflowCard's stage-transition copy
+  // ("Move to Adapt: Manage scope changes"), so they must read like real
+  // workflow names — not "(TBD)". Mirror docs/workflows.json labels.
+  q20: 'Manage scope changes',
+  q21: 'Request payment draws',
+  q22: 'Collect lien waivers',
+  q23: 'Payroll check',
+  q24: 'Final walk-through',
+  q25: 'Collect retainage',
+  q26: 'Warranty handoff',
+  q27: 'What we learned',
 };
 
 export default function NextWorkflowCard({
