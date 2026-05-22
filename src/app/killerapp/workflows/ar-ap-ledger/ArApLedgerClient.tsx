@@ -14,9 +14,10 @@
  *   existing /api/v1/invoices?action=payment endpoint.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 
 interface Invoice {
   id: string;
@@ -119,6 +120,24 @@ export default function ArApLedgerClient() {
   }
 
   useEffect(() => { void refresh(); }, []);
+
+  // REALTIME (2026-05-22): when anyone records a payment OR posts a new
+  // invoice, both ledger tabs need to reflect it without F5. We listen on
+  // both tables and debounce to a single refetch — payment splits often
+  // produce 2-3 rows in rapid succession (line-item allocations) and we
+  // don't want to round-trip /api/v1/invoices for each one.
+  const ledgerRefetchTimer = useRef<number | null>(null);
+  const debouncedRefresh = useCallback(() => {
+    if (ledgerRefetchTimer.current) window.clearTimeout(ledgerRefetchTimer.current);
+    ledgerRefetchTimer.current = window.setTimeout(() => {
+      void refresh();
+    }, 500);
+  }, []);
+  useRealtimeChannel({ table: 'invoices' }, debouncedRefresh);
+  useRealtimeChannel({ table: 'invoice_payments' }, debouncedRefresh);
+  useEffect(() => () => {
+    if (ledgerRefetchTimer.current) window.clearTimeout(ledgerRefetchTimer.current);
+  }, []);
 
   const tabInvoices = useMemo(
     () => invoices.filter((i) => (i.direction || 'AR') === tab),

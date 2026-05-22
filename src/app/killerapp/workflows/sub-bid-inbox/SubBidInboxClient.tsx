@@ -12,10 +12,11 @@
  * can't act on.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import LaneGate from '@/components/LaneGate';
+import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 
 type BidStatus = 'submitted' | 'reviewed' | 'accepted' | 'rejected' | 'withdrawn';
 
@@ -121,6 +122,13 @@ function SubBidInbox() {
   const [error, setError] = useState<string | null>(null);
   const [openBidId, setOpenBidId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // REALTIME (2026-05-22): track which bid IDs arrived via a live INSERT so
+  // we can flash a subtle highlight on the row for 3s. Map keyed by bid id
+  // so multiple incoming bids can pulse simultaneously without trampling.
+  const [pulseIds, setPulseIds] = useState<Set<string>>(new Set());
+  // REALTIME: debounce refetch — if a GC receives 5 INSERTs in rapid
+  // succession (rare but possible during a bid sprint), one refetch suffices.
+  const refetchTimerRef = useRef<number | null>(null);
 
   const loadBids = useCallback(async () => {
     setLoading(true);
@@ -162,6 +170,47 @@ function SubBidInbox() {
   useEffect(() => {
     void loadBids();
   }, [loadBids]);
+
+  // REALTIME (2026-05-22): when a sub PUSHes a new bid (or updates one),
+  // the GC inbox needs to reflect it without a manual refresh. We subscribe
+  // unfiltered — RLS already constrains rows to projects this GC can see
+  // (or, for any teammate flow, projects they're explicitly granted on the
+  // command_center_projects row). The 500ms debounce coalesces bursts so a
+  // busy bid window doesn't slam the network.
+  const debouncedRefetch = useCallback(() => {
+    if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = window.setTimeout(() => {
+      void loadBids();
+    }, 500);
+  }, [loadBids]);
+
+  useRealtimeChannel<SubBid>({ table: 'sub_bids' }, (payload) => {
+    // Only pulse on a NEW bid landing in the inbox — UPDATEs (status flips
+    // we initiated, etc.) don't need the highlight.
+    if (payload.eventType === 'INSERT') {
+      const incoming = payload.new as SubBid | undefined;
+      if (incoming?.id) {
+        setPulseIds((prev) => {
+          const next = new Set(prev);
+          next.add(incoming.id);
+          return next;
+        });
+        // Clear the pulse after 3s so the row settles back into the list.
+        window.setTimeout(() => {
+          setPulseIds((prev) => {
+            const next = new Set(prev);
+            next.delete(incoming.id);
+            return next;
+          });
+        }, 3000);
+      }
+    }
+    debouncedRefetch();
+  });
+
+  useEffect(() => () => {
+    if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
+  }, []);
 
   const groupedByProject = useMemo(() => {
     const map: Record<string, SubBid[]> = {};
@@ -241,7 +290,16 @@ function SubBidInbox() {
                     const total = Number(bid.total) || 0;
                     const status = STATUS_META[bid.status] || STATUS_META.submitted;
                     return (
-                      <div key={bid.id} style={{ borderTop: idx === 0 ? 'none' : `1px solid ${COLORS.rule}` }}>
+                      <div
+                        key={bid.id}
+                        style={{
+                          borderTop: idx === 0 ? 'none' : `1px solid ${COLORS.rule}`,
+                          // REALTIME pulse: subtle green wash for 3s when a
+                          // new bid lands. transition keeps it from snapping.
+                          background: pulseIds.has(bid.id) ? 'rgba(29,158,117,0.10)' : 'transparent',
+                          transition: 'background 600ms ease-out',
+                        }}
+                      >
                         <button
                           type="button"
                           onClick={() => setOpenBidId(open ? null : bid.id)}

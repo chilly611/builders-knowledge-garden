@@ -9,10 +9,11 @@
  * has signatures to chase. But the page label and copy is owner-centric.)
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import LaneGate from '@/components/LaneGate';
+import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 
 interface RequiredSigner {
   role: string;
@@ -85,6 +86,25 @@ export default function ApprovalsClient() {
 
   useEffect(() => {
     void load();
+  }, []);
+
+  // REALTIME (2026-05-22): the approvals inbox should flip pending → signed
+  // the instant any required signer puts ink on the document. Both tables
+  // matter — `signature_events` (individual signatures) AND `signed_documents`
+  // (the parent row, status moves to 'completed' when all signers are in).
+  // Debounced because a single CO can fire two events back-to-back (owner
+  // signs → status updates) and we'd rather coalesce.
+  const refetchTimerRef = useRef<number | null>(null);
+  const debouncedLoad = useCallback(() => {
+    if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = window.setTimeout(() => {
+      void load();
+    }, 500);
+  }, []);
+  useRealtimeChannel({ table: 'signature_events' }, debouncedLoad);
+  useRealtimeChannel({ table: 'signed_documents' }, debouncedLoad);
+  useEffect(() => () => {
+    if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
   }, []);
 
   async function rejectOne(id: string) {

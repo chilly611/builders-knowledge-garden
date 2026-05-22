@@ -40,6 +40,7 @@ import {
 import Link from 'next/link';
 import { useProject } from '@/lib/hooks/useProject';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 import { normalizeStoredLines } from './budget-storage';
 import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
 import { colors } from '@/design-system/tokens/colors';
@@ -2197,6 +2198,38 @@ export default function BudgetClient() {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
   }, [lines, projectId]);
+
+  // REALTIME (2026-05-22): teammates editing the same project in another tab
+  // (or vendor invoice payments rolling the spend column) should propagate
+  // into the HeroStrip without F5. Care taken to NOT echo our own autosave:
+  // we skip the refetch if savedAtRef was bumped <1500ms ago (the autosave
+  // round-trips through PATCH + the realtime fan-out arrives ~300-800ms
+  // later — 1500ms is the empirical "safe" gap). Debounced 500ms for the
+  // same autosave-burst reason as the cockpit.
+  const budgetRtTimer = useRef<number | null>(null);
+  const debouncedRehydrate = useCallback(() => {
+    if (!projectId) return;
+    if (budgetRtTimer.current) window.clearTimeout(budgetRtTimer.current);
+    budgetRtTimer.current = window.setTimeout(async () => {
+      // Echo-suppression: if we just saved, the row is already in our state.
+      if (Date.now() - savedAtRef.current < 1500) return;
+      const dbResult = await fetchProjectBudgets(projectId);
+      if (dbResult && dbResult.lines.length > 0) {
+        setLines(dbResult.lines);
+      }
+    }, 500);
+  }, [projectId]);
+  useRealtimeChannel(
+    {
+      table: 'project_budget_lines',
+      filter: projectId ? `project_id=eq.${projectId}` : undefined,
+      enabled: Boolean(projectId),
+    },
+    debouncedRehydrate,
+  );
+  useEffect(() => () => {
+    if (budgetRtTimer.current) window.clearTimeout(budgetRtTimer.current);
+  }, []);
 
   // Re-tick every 5s so "Xs ago" stays current. Pulls from the ref so we
   // never need to depend on a state-held timestamp.

@@ -27,6 +27,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from 'react';
@@ -34,6 +35,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
+import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 import AttachmentSection from '@/components/AttachmentSection';
 
 interface Rfi {
@@ -165,6 +167,31 @@ export default function RfisClient() {
   useEffect(() => {
     loadRfis();
   }, [loadRfis]);
+
+  // REALTIME (2026-05-22): RFI status transitions (open → responded →
+  // closed) and new RFIs from teammates should land here without F5. Scope
+  // to the active project so we don't get noise from other projects this
+  // user can read (demo allowlist users especially can see 3 projects).
+  // Debounced — answering an RFI fires both an UPDATE on project_rfis AND
+  // an attachment upload, and the latter doesn't need a refetch.
+  const rfiRefetchTimer = useRef<number | null>(null);
+  const debouncedLoadRfis = useCallback(() => {
+    if (rfiRefetchTimer.current) window.clearTimeout(rfiRefetchTimer.current);
+    rfiRefetchTimer.current = window.setTimeout(() => {
+      void loadRfis();
+    }, 500);
+  }, [loadRfis]);
+  useRealtimeChannel(
+    {
+      table: 'project_rfis',
+      filter: `project_id=eq.${projectId}`,
+      enabled: Boolean(projectId),
+    },
+    debouncedLoadRfis,
+  );
+  useEffect(() => () => {
+    if (rfiRefetchTimer.current) window.clearTimeout(rfiRefetchTimer.current);
+  }, []);
 
   const visibleRfis = useMemo(() => {
     if (statusFilter === 'all') return rfis;

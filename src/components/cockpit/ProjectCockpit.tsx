@@ -11,7 +11,7 @@
  * Hidden on `/killerapp` exact landing route.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import JourneyTimeline from './JourneyTimeline';
 import BudgetSnapshot from './BudgetSnapshot';
@@ -33,6 +33,8 @@ import { useProjectContext } from '@/contexts/ProjectContext';
 import { subscribeJourney } from '@/lib/journey-progress';
 import { subscribeSnapshots } from '@/lib/time-machine';
 import { useTimeMachineRewind, REWIND_EVENT, type RewindEventDetail } from '@/lib/use-time-machine-rewind';
+import { useRealtimeChannel } from '@/lib/use-realtime-channel';
+import RealtimeStatusDot from './RealtimeStatusDot';
 import RewindToast from './RewindToast';
 
 // COCKPIT-FIXES Pain 3 (2026-05-22): the previous map collapsed stages
@@ -164,6 +166,33 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
   }, [effectiveProjectId]);
 
   useEffect(() => { fetchBudget(); }, [fetchBudget]);
+
+  // REALTIME (2026-05-22): budget mutations come from many surfaces —
+  // estimating push, vendor invoice payment, change-order signature — and
+  // a refresh on the cockpit was previously only triggered by same-tab
+  // CustomEvent dispatch. With realtime, a teammate editing /killerapp/budget
+  // in another tab/session now propagates to the cockpit too. Debounced 500ms
+  // because /killerapp/budget autosaves on every keystroke (already debounced
+  // there, but a quick "type 100 numbers" pass still produces multiple rows).
+  const budgetRefetchTimer = useRef<number | null>(null);
+  const debouncedFetchBudget = useCallback(() => {
+    if (budgetRefetchTimer.current) window.clearTimeout(budgetRefetchTimer.current);
+    budgetRefetchTimer.current = window.setTimeout(() => {
+      void fetchBudget();
+    }, 500);
+  }, [fetchBudget]);
+  useRealtimeChannel(
+    {
+      table: 'project_budget_lines',
+      filter: effectiveProjectId ? `project_id=eq.${effectiveProjectId}` : undefined,
+      enabled: Boolean(effectiveProjectId),
+    },
+    debouncedFetchBudget,
+  );
+  useEffect(() => () => {
+    if (budgetRefetchTimer.current) window.clearTimeout(budgetRefetchTimer.current);
+  }, []);
+
   useEffect(() => {
     const onBudgetChange = () => fetchBudget();
     // 2026-05-18 (Wave 2): refetch budget when ANY workflow autosaves on the
@@ -358,8 +387,14 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
       <div style={{
         flex: '0 0 35%',
         display: 'flex', alignItems: 'center', padding: '12px 12px',
+        position: 'relative',
       }}>
         <BudgetSnapshot data={budgetData} activeStageId={activeStageId} />
+        {/* REALTIME (2026-05-22): a tiny health dot in the corner so users
+            (and demo viewers) can see the cockpit is wired to live data. */}
+        <div style={{ position: 'absolute', bottom: 4, right: 8 }}>
+          <RealtimeStatusDot showLabel />
+        </div>
       </div>
     </header>
     {/* COCKPIT-PERSONALIZATION (2026-05-22): MEP-calcs card mounts UNDER
