@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { getAuthUser, unauthorizedResponse } from '@/lib/auth-server';
 
 // Types
 interface PaymentIntent {
@@ -559,16 +560,28 @@ async function handlePatch(request: NextRequest): Promise<NextResponse<unknown>>
   }
 }
 
-// Main route handlers
+// Main route handlers (auth-gated 2026-05-23 per E2E-VERIFY P1)
 export async function GET(request: NextRequest): Promise<NextResponse<unknown>> {
+  const user = await getAuthUser(request);
+  if (!user) return unauthorizedResponse();
   return handleGet(request);
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<unknown>> {
+  // Stripe webhook path must NOT require user auth — Stripe signs the webhook itself.
+  // The webhook handler verifies stripe-signature header against STRIPE_WEBHOOK_SECRET.
+  const action = request.nextUrl.searchParams.get('action');
+  if (action === 'webhook') {
+    return handlePost(request);
+  }
+  const user = await getAuthUser(request);
+  if (!user) return unauthorizedResponse();
   return handlePost(request);
 }
 
 export async function PATCH(request: NextRequest): Promise<NextResponse<unknown>> {
+  const user = await getAuthUser(request);
+  if (!user) return unauthorizedResponse();
   return handlePatch(request);
 }
 

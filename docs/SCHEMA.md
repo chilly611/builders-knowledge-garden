@@ -35,24 +35,50 @@ once writes start landing for real users.
 Both BudgetClient autosave and EstimatingClient's "Push to budget" go
 through the same route.
 
-### DEPRECATED: `command_center_projects.project_budgets` (jsonb)
+### RETIRED: `command_center_projects.project_budgets` (jsonb)
 
 Ship 25 (2026-05-19) added this column as the source of truth, but the
-read path was never moved off the lines table. As of BUDGET-WRITE
-round-3 (2026-05-22) the column is **read-only legacy**:
+read path was never moved off the lines table. BUDGET-WRITE round-3
+(2026-05-22) demoted it to read-only legacy. JSONB-CLEANUP (2026-05-23)
+backfilled the residue and installed a write-blocking trigger.
 
-- The route at `/api/v1/projects` no longer feeds the budget UI; nothing
-  in `/killerapp/budget` or `/killerapp/workflows/estimating` should
-  PATCH it.
-- ~34 prod rows still carry pre-consolidation user edits. A backfill
-  job into `project_budget_lines` should land before the column is
-  dropped.
-- The column has a `COMMENT ON COLUMN` documenting the deprecation
-  (see `20260522c_budget_lines_unique_proj_div.sql`).
+**Status (2026-05-23): RETIRED — DROP scheduled for 2026-06-30.**
 
-**Do not** add new writers to `project_budgets`. If you find yourself
-reaching for it, the canonical store is `project_budget_lines` and the
-write path is `PATCH /api/v1/budget`.
+What the JSONB-CLEANUP pass found and did:
+
+- 34 rows had `project_budgets != '{}'::jsonb`. 33 of those held
+  `{"lines": []}` (empty arrays, nothing to backfill). 1 row
+  (`7cb274af-1a80-462b-bdfb-ad96e0ae06f6`) held a single stub line
+  with `amount=0`, `category=materials`, empty description.
+- The 1 real line was backfilled into `project_budget_lines` with
+  `csi_division = '99-orphan-materials-<line.id>'` so the partial
+  unique index `(project_id, csi_division)` treats it as a one-off.
+  `project_budget_lines` went from 49 → 50 rows.
+- The backfill query is idempotent (`ON CONFLICT (project_id,
+  csi_division) DO NOTHING` against `project_budget_lines_proj_div_idx`).
+  Preserved in `20260523_retire_legacy_project_budgets_jsonb.sql` as
+  comments for replay if needed.
+- A `BEFORE UPDATE OF project_budgets` trigger
+  (`block_legacy_project_budgets_write_trg`) now rejects any write that
+  puts a non-empty `lines[]` array into the column. The trigger allows
+  no-change updates and writes of `NULL` / `{}` / `{"lines": []}` so
+  unrelated UPDATEs on `command_center_projects` rows don't get caught
+  in the crossfire.
+
+**Do not** add new readers or writers to `project_budgets`. The trigger
+will reject any non-empty write at the database layer. The canonical
+store is `project_budget_lines`; the write path is
+`PATCH /api/v1/budget`.
+
+**Drop timing:** 2026-06-30 is the earliest the column should be
+dropped (5-week rollback window from 2026-05-23). The trigger and
+trigger function should be dropped in the same migration that drops
+the column. Coordinate with whoever runs the drop migration to also
+delete the dead `src/app/api/v1/budget/items/route.ts` route — it
+references a `project_budgets` *table* (different from this column)
+that never existed in prod, and a `saved_projects` table that also
+doesn't exist. Every call to that route 404s; it's been dead code
+since at least 2026-05-22.
 
 ## Other consolidation notes (TODO)
 
