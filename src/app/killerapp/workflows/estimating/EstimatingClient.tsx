@@ -313,13 +313,15 @@ export default function EstimatingClient({ workflow, stages }: Props) {
     }
   }, []);
 
-  // 2026-05-19 (Ship 28): AI estimate → /killerapp/budget handoff.
-  // Re-uses the already-parsed csiEstimate.lines (low/high per division)
-  // and appends them as 'estimated'-state lines into the budget store
-  // BudgetClient reads from (`bkg-budget-{projectId}` localStorage + the
-  // new `project_budgets` JSONB column from Ship 25). Demo flow:
-  // estimating runs → user clicks "Push to budget" → opens /budget
-  // pre-populated so they don't have to retype 10 division totals.
+  // 2026-05-19 (Ship 28, refreshed BUDGET-WRITE round-3 2026-05-22):
+  // AI estimate → /killerapp/budget handoff. Re-uses the already-parsed
+  // csiEstimate.lines (low/high per division) and appends them as
+  // 'estimated'-state lines into the budget store BudgetClient reads
+  // from (`bkg-budget-{projectId}` localStorage + project_budget_lines
+  // via /api/v1/budget — the legacy Ship 25 `project_budgets` JSONB
+  // column is now soft-deprecated). Demo flow: estimating runs → user
+  // clicks "Push to budget" → opens /budget pre-populated so they don't
+  // have to retype 10 division totals.
   const [pushReceipt, setPushReceipt] = useState<
     | { kind: 'idle' }
     | { kind: 'pushing' }
@@ -877,13 +879,43 @@ export default function EstimatingClient({ workflow, stages }: Props) {
                 try {
                   window.localStorage.setItem(lsKey, JSON.stringify({ lines: merged }));
                 } catch { /* quota / disabled — fall through to API */ }
-                // Fire-and-forget DB sync (Ship 25's project_budgets column).
+                // BUDGET-WRITE round-3 (2026-05-22): write to the canonical
+                // project_budget_lines table via /api/v1/budget (upserts by
+                // project_id + csi_division). Replaces the dead Ship 25
+                // JSONB path on command_center_projects.project_budgets.
+                //
+                // We use the stable estimate-line ID as csi_division so:
+                //  - re-pushing the same division UPDATEs in place (the
+                //    `est-{projectId}-{slug}` id collides cleanly)
+                //  - real seed-data divisions (numeric MasterFormat codes
+                //    like "03", "22") don't collide with AI-pushed ones
+                //
+                // Fire-and-forget; localStorage stays the offline fallback.
                 if (projectId) {
-                  void fetch('/api/v1/projects', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: projectId, project_budgets: { lines: merged } }),
-                  }).catch(() => { /* offline / no-auth — localStorage is the source of truth */ });
+                  void (async () => {
+                    try {
+                      const { data: sessionData } = await supabase.auth.getSession();
+                      const token = sessionData.session?.access_token;
+                      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+                      if (token) headers['Authorization'] = `Bearer ${token}`;
+                      await fetch('/api/v1/budget', {
+                        method: 'PATCH',
+                        headers,
+                        body: JSON.stringify({
+                          project_id: projectId,
+                          lines: newLines.map((l) => ({
+                            csi_division: l.id,
+                            description: l.description,
+                            budgeted: l.amount,
+                            committed: 0,
+                            actual_spent: 0,
+                          })),
+                        }),
+                      });
+                    } catch {
+                      /* offline / no-auth — localStorage is the source of truth */
+                    }
+                  })();
                 }
                 setPushReceipt({ kind: 'pushed', added: newLines.length, replaced });
               } catch (err) {

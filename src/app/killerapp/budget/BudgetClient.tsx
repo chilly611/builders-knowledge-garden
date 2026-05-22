@@ -69,6 +69,10 @@ interface BudgetLine {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  // BUDGET-WRITE round-3 (2026-05-22): natural upsert key for
+  // project_budget_lines. Populated from the API on read; falls back to
+  // `id` on write so locally-created lines still round-trip cleanly.
+  csi_division?: string;
 }
 
 interface CategoryDef {
@@ -338,6 +342,9 @@ interface BudgetApiItem {
   date?: string;
   created_at?: string;
   is_estimate?: boolean;
+  // BUDGET-WRITE round-3 (2026-05-22): the read route now echoes the
+  // source csi_division so we can use it as the upsert key on save.
+  csi_division?: string;
 }
 
 function mapApiItemToLine(item: BudgetApiItem): BudgetLine | null {
@@ -357,6 +364,7 @@ function mapApiItemToLine(item: BudgetApiItem): BudgetLine | null {
     vendor: item.vendor,
     createdAt: created,
     updatedAt: created,
+    csi_division: item.csi_division,
   };
 }
 
@@ -393,17 +401,62 @@ async function fetchProjectBudgets(
   }
 }
 
+/**
+ * Derive the (project_id, csi_division) upsert key for a BudgetLine. Real
+ * seed rows carry a numeric CSI MasterFormat division (e.g. "03"); rows
+ * the user creates locally fall back to their stable `id` (a uuid) which
+ * is unique within the project so it round-trips as its own division.
+ *
+ * The synthetic-id case (`<uuid>:estimate`) drops the suffix so the same
+ * BudgetLine that came in from a GET maps back to the same DB row on
+ * save — otherwise we'd duplicate every seed row on first edit.
+ */
+function csiKeyFor(line: BudgetLine): string {
+  if (line.csi_division && line.csi_division.length > 0) return line.csi_division;
+  const id = line.id || '';
+  const colonAt = id.indexOf(':');
+  return colonAt > 0 ? id.slice(0, colonAt) : id;
+}
+
+/**
+ * BUDGET-WRITE round-3 (2026-05-22): the JSONB write path
+ * (`/api/v1/projects` PATCH with `{ project_budgets: { lines } }`) wrote
+ * to a column we already deprecated — user edits never reached the
+ * canonical `project_budget_lines` store. This now talks to the unified
+ * `/api/v1/budget` PATCH endpoint, which upserts by
+ * (project_id, csi_division) and returns a fresh summary.
+ *
+ * NB: we send the BudgetLine.amount as `budgeted` (the column the read
+ * path totals) and keep `committed`/`actual_spent` at 0 because
+ * BudgetClient doesn't model those distinctions yet — the row's
+ * lifecycle state ('pending'/'estimated'/'locked-in'/'paid') stays
+ * client-side. A future "promote to actual" UX would move amount into
+ * actual_spent on the 'paid' transition; out of scope here.
+ */
 async function patchProjectBudgets(
   projectId: string,
   lines: BudgetLine[],
 ): Promise<boolean> {
   try {
-    const res = await authedFetchJSON('/api/v1/projects', {
+    const payload = {
+      project_id: projectId,
+      lines: lines.map((l) => ({
+        csi_division: csiKeyFor(l),
+        description: l.description,
+        // Always send the full amount as `budgeted` — that's the column
+        // the read-path summary totals across every line. We mirror the
+        // 4-state lifecycle into committed/actual_spent so dashboards
+        // that read those columns directly see meaningful values, while
+        // leaving `budgeted` as the stable baseline. Replace mode is OFF
+        // by default so a save can't wipe rows another tab just added.
+        budgeted: l.amount,
+        committed: l.state === 'locked-in' || l.state === 'paid' ? l.amount : 0,
+        actual_spent: l.state === 'paid' ? l.amount : 0,
+      })),
+    };
+    const res = await authedFetchJSON('/api/v1/budget', {
       method: 'PATCH',
-      body: JSON.stringify({
-        id: projectId,
-        project_budgets: { lines },
-      }),
+      body: JSON.stringify(payload),
     });
     return res.ok;
   } catch {
@@ -2066,10 +2119,11 @@ export default function BudgetClient() {
   const needsLocalStorageMigrationRef = useRef(false);
 
   // Hydrate when the projectId changes.
-  // Ship 25: prefer DB (project_budgets JSONB) over localStorage. If DB is
-  // empty for this project_id but localStorage has lines, hold them and flag
-  // for one-shot migration on first save. Anon / fetch failures fall through
-  // to localStorage so the offline demo path still works.
+  // BUDGET-WRITE round-3 (2026-05-22): prefer DB (project_budget_lines, via
+  // GET /api/v1/budget) over localStorage. If DB is empty for this
+  // project_id but localStorage has lines, hold them and flag for one-shot
+  // migration on first save. Anon / fetch failures fall through to
+  // localStorage so the offline demo path still works.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let cancelled = false;
@@ -2119,9 +2173,12 @@ export default function BudgetClient() {
   }, [projectId]);
 
   // Autosave (debounced 500ms).
-  // Ship 25: PATCH project_budgets on command_center_projects AND mirror to
-  // localStorage so the offline / anon path still works. The DB write is
-  // best-effort — failure leaves localStorage as the fallback.
+  // BUDGET-WRITE round-3 (2026-05-22): PATCH /api/v1/budget (upserts into
+  // project_budget_lines, the canonical store) AND mirror to localStorage
+  // so the offline / anon path still works. The Ship 25 JSONB path on
+  // command_center_projects.project_budgets was a dead end — the column
+  // is now soft-deprecated. The DB write is best-effort; failure leaves
+  // localStorage as the fallback.
   useEffect(() => {
     if (!hydratedRef.current) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);

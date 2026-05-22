@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getAuthUser, getServiceClient, unauthorizedResponse } from "@/lib/auth-server";
+import { normalizeBudgetLinesPayload } from "./normalize";
 
 /**
  * /api/v1/budget — read/write the per-project budget summary.
@@ -76,6 +77,10 @@ interface BudgetItem {
   is_estimate: boolean;
   date: string;
   created_at: string;
+  // BUDGET-WRITE round-3 (2026-05-22): expose the underlying csi_division
+  // so write-side clients (BudgetClient autosave, EstimatingClient push)
+  // can carry it through edit→save without losing the natural upsert key.
+  csi_division?: string;
 }
 
 interface ProjectBudget {
@@ -191,6 +196,7 @@ function num(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+
 /**
  * Project budget_lines → synthetic {items, summary} payload that matches the
  * shape the legacy BudgetWidget / GlobalBudgetWidget / budget-spine consume.
@@ -247,6 +253,7 @@ function buildSummaryFromLines(
         is_estimate: false,
         date: line.updated_at || line.created_at,
         created_at: line.created_at,
+        csi_division: line.csi_division,
       });
     }
     items.push({
@@ -260,6 +267,7 @@ function buildSummaryFromLines(
       is_estimate: true,
       date: line.created_at,
       created_at: line.created_at,
+      csi_division: line.csi_division,
     });
   }
 
@@ -472,23 +480,18 @@ export async function POST(request: NextRequest) {
 
     // If the caller passed `lines`, upsert them into project_budget_lines so
     // the API doubles as a bulk-seed entry point. Otherwise it's just an
-    // envelope ack.
+    // envelope ack. Idempotency: re-POSTing the same divisions UPDATEs in
+    // place (no duplicate-key error) thanks to project_budget_lines_proj_div_idx.
     if (Array.isArray(body.lines) && body.lines.length > 0) {
-      const rows = body.lines
-        .filter((l: any) => l && l.csi_division)
-        .map((l: any) => ({
-          project_id,
-          csi_division: String(l.csi_division),
-          description: l.description ?? null,
-          budgeted: num(l.budgeted ?? l.amount ?? 0),
-          committed: num(l.committed ?? 0),
-          actual_spent: num(l.actual_spent ?? 0),
-        }));
+      const rows = normalizeBudgetLinesPayload(project_id, body.lines);
       if (rows.length > 0) {
-        const { error: insertError } = await db
+        const { error: upsertError } = await db
           .from("project_budget_lines")
-          .insert(rows);
-        if (insertError) throw insertError;
+          .upsert(rows, {
+            onConflict: "project_id,csi_division",
+            ignoreDuplicates: false,
+          });
+        if (upsertError) throw upsertError;
       }
     }
 
@@ -521,7 +524,25 @@ export async function POST(request: NextRequest) {
  *      (no-op against project_budget_lines; we acknowledge it so callers
  *      that round-trip the envelope keep working.)
  *   2. { project_id, lines: [{ csi_division, description?, budgeted?,
- *      committed?, actual_spent? }] }  ← bulk upsert by csi_division
+ *      committed?, actual_spent?, stage_id? }], replace?: boolean }
+ *      ← bulk upsert by (project_id, csi_division).
+ *
+ *      Idempotency (BUDGET-WRITE round-3):
+ *        - Lines whose (project_id, csi_division) already exists → UPDATE.
+ *        - New (project_id, csi_division) pairs → INSERT.
+ *        - When `replace: true`, any DB rows for this project whose
+ *          csi_division is NOT in the incoming payload are DELETED.
+ *          Default behaviour leaves un-mentioned rows alone — so the
+ *          BudgetClient autosave (which only sends the rows it knows about)
+ *          can't accidentally wipe seed data or rows written by another tab.
+ *
+ *      Backed by the partial UNIQUE INDEX
+ *      `project_budget_lines_proj_div_idx (project_id, csi_division)
+ *       WHERE csi_division IS NOT NULL`, applied in
+ *      supabase/migrations/20260522c_budget_lines_unique_proj_div.sql.
+ *
+ *      Response includes a freshly-rebuilt `summary` block so the caller can
+ *      reconcile its in-memory totals without a follow-up GET.
  */
 export async function PATCH(request: NextRequest) {
   const user = await getAuthUser(request);
@@ -529,7 +550,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, project_id, lines, total_budget, alert_threshold, notes } = body;
+    const { id, project_id, lines, total_budget, alert_threshold, notes, replace } = body;
 
     const targetProjectId = project_id || id;
     if (!targetProjectId) {
@@ -548,36 +569,86 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    let upsertCount = 0;
+    let deleteCount = 0;
+
     if (Array.isArray(lines)) {
-      // Upsert by (project_id, csi_division). Update budgeted/committed/spent
-      // on conflict, keep other lines intact.
-      const rows = lines
-        .filter((l: any) => l && l.csi_division)
-        .map((l: any) => ({
-          project_id: targetProjectId,
-          csi_division: String(l.csi_division),
-          description: l.description ?? null,
-          budgeted: num(l.budgeted ?? l.amount ?? 0),
-          committed: num(l.committed ?? 0),
-          actual_spent: num(l.actual_spent ?? 0),
-        }));
+      // Normalize incoming rows. We drop any row whose csi_division is
+      // empty/missing — the partial UNIQUE index would otherwise let
+      // duplicates through and the read-path bucketing relies on a value.
+      const rows = normalizeBudgetLinesPayload(targetProjectId, lines);
+
+      // Optional destructive sync: when `replace === true`, delete any DB
+      // row for this project whose csi_division isn't in the payload. This
+      // is how a "full sync" client (EstimatingClient's push-to-budget, a
+      // dedicated bulk-edit flow) signals "this is the complete list".
+      if (replace === true) {
+        const keepDivisions = rows.map((r) => r.csi_division);
+        let delQuery = db
+          .from("project_budget_lines")
+          .delete({ count: "exact" })
+          .eq("project_id", targetProjectId);
+        if (keepDivisions.length > 0) {
+          // Supabase JS .not('csi_division', 'in', `(...)`) doesn't accept
+          // an array — pass a parenthesized CSV. Each value is wrapped in
+          // double quotes to handle non-numeric divisions safely.
+          const inList = `(${keepDivisions.map((d) => `"${String(d).replace(/"/g, '""')}"`).join(',')})`;
+          delQuery = delQuery.not("csi_division", "in", inList);
+        }
+        const { error: delError, count } = await delQuery;
+        if (delError) throw delError;
+        deleteCount = count ?? 0;
+      }
+
       if (rows.length > 0) {
-        // Two-step: delete existing rows for the divisions we're updating,
-        // then insert. Saves a unique-index requirement we don't have yet.
-        const divisions = rows.map((r) => r.csi_division);
-        await db
+        // Idempotent upsert backed by the (project_id, csi_division)
+        // unique index. ignoreDuplicates:false ensures conflicts UPDATE
+        // every mutable column rather than silently no-op.
+        const { error: upsertError, count } = await db
           .from("project_budget_lines")
-          .delete()
-          .eq("project_id", targetProjectId)
-          .in("csi_division", divisions);
-        const { error: insertError } = await db
-          .from("project_budget_lines")
-          .insert(rows);
-        if (insertError) throw insertError;
+          .upsert(rows, {
+            onConflict: "project_id,csi_division",
+            ignoreDuplicates: false,
+            count: "exact",
+          });
+        if (upsertError) throw upsertError;
+        upsertCount = count ?? rows.length;
       }
     }
 
-    // Echo back a synthetic envelope so legacy clients are happy.
+    // Re-read the full set so the caller gets an authoritative summary.
+    const { data: refreshed, error: refreshError } = await db
+      .from("project_budget_lines")
+      .select("*")
+      .eq("project_id", targetProjectId)
+      .order("csi_division", { ascending: true });
+    if (refreshError) throw refreshError;
+
+    const payload = refreshed && refreshed.length > 0
+      ? buildSummaryFromLines(targetProjectId, user.id, refreshed as BudgetLineRow[])
+      : {
+          budget: null,
+          items: [] as BudgetItem[],
+          summary: {
+            totalBudget: 0,
+            totalSpent: 0,
+            totalEstimated: 0,
+            remaining: 0,
+            burnRate: 0,
+            projectedTotal: 0,
+            overUnder: 0,
+            percentUsed: 0,
+            byPhase: {},
+            byCategory: {},
+            actualExpenses: 0,
+            clientPaymentsReceived: 0,
+            plAfterPayments: 0,
+            next7DaysScheduled: [] as ScheduledPayment[],
+          } satisfies BudgetSummary,
+        };
+
+    // Echo back a synthetic envelope so legacy clients are happy, plus the
+    // refreshed summary + mutation receipt so newer clients can reconcile.
     const synthetic: Partial<ProjectBudget> = {
       id: targetProjectId,
       project_id: targetProjectId,
@@ -587,7 +658,12 @@ export async function PATCH(request: NextRequest) {
       ...(notes !== undefined ? { notes } : {}),
       updated_at: new Date().toISOString(),
     };
-    return NextResponse.json(synthetic);
+    return NextResponse.json({
+      ...synthetic,
+      summary: payload.summary,
+      items: payload.items,
+      mutated: { upserted: upsertCount, deleted: deleteCount },
+    });
   } catch (error) {
     console.error("Error updating budget:", error);
     return NextResponse.json(
