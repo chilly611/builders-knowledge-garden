@@ -35,4 +35,12 @@ export interface CodeSourceResult {
   url?: string;
   historical?: boolean; // true if superseded
   supersededBy?: string; // id / section of current rule if historical
+  /**
+   * True only when the adapter actually retrieved the cited text from the
+   * source (or pulled it from a vetted local seed file). False when the
+   * adapter only constructed a deep-link to the publisher without fetching
+   * the rule — i.e. "citation-only". The SourceCountBadge counts ONLY
+   * `verified === true` results toward the badge.
+   */
+  verified?: boolean;
 }

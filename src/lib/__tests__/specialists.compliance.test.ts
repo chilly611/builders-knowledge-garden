@@ -27,6 +27,15 @@ vi.mock("../rag", () => ({
 vi.mock("../code-sources", () => ({
   queryAllSources: vi.fn(),
   hasMultipleSources: vi.fn(),
+  // Added 2026-05-22 (CLAIMS fix D): badge now counts only verified
+  // sources. Mock returns the distinct count of sources flagged
+  // verified: true so existing fixtures keep working without rewriting.
+  countVerifiedSources: vi.fn((results: any[]) => {
+    const set = new Set(
+      (results || []).filter((r: any) => r?.verified === true).map((r: any) => r.source)
+    );
+    return set.size;
+  }),
 }));
 
 const DEFAULT_COMPLIANCE_PROMPT = `---

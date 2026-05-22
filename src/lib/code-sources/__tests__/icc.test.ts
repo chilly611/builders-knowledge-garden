@@ -66,6 +66,21 @@ describe("queryIcc", () => {
     expect(result[0].url).toContain("2305");
   });
 
+  it("should mark citation-only results as verified: false", async () => {
+    // ICC adapter is currently citation-only (paywall). It must report
+    // verified: false so the badge does not count it as a verified source.
+    const query: CodeQuery = {
+      discipline: "electrical",
+      section: "210.52",
+      keywords: ["outlet"],
+    };
+
+    const result = await queryIcc(query);
+    expect(result).toHaveLength(1);
+    expect(result[0].verified).toBe(false);
+    expect(result[0].text.toLowerCase()).toContain("citation only");
+  });
+
   it("should handle timeout gracefully when abort controller triggers", async () => {
     // Current implementation uses URL construction, not fetch
     // This test verifies the timeout infrastructure exists
@@ -83,13 +98,18 @@ describe("queryIcc", () => {
     expect(result[0].url).toBeDefined();
   });
 
-  it("should map discipline to correct code ID", async () => {
+  it("should map discipline to correct ICC code body", async () => {
+    // Updated 2026-05-22: prior mapping had electrical → IEC (IEC is the
+    // European IEC, not adopted in the US) and fire → NFPA (NFPA is a
+    // separate publisher; the ICC fire body is IFC). The corrected
+    // mapping points to the ICC model code that actually governs each
+    // discipline for US / California construction.
     const disciplines = [
-      { disc: "electrical", expected: "IEC" },
+      { disc: "electrical", expected: "NEC" }, // NFPA 70 / CEC (Title 24 Pt 3)
       { disc: "structural", expected: "IBC" },
       { disc: "plumbing", expected: "IPC" },
       { disc: "mechanical", expected: "IMC" },
-      { disc: "fire", expected: "NFPA" },
+      { disc: "fire", expected: "IFC" }, // CFC (Title 24 Pt 9) in CA
     ];
 
     for (const { disc, expected } of disciplines) {

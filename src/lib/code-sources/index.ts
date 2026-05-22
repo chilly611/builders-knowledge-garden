@@ -41,3 +41,21 @@ export function hasMultipleSources(results: CodeSourceResult[]): boolean {
   const sources = new Set(results.map((r) => r.source));
   return sources.size >= 2;
 }
+
+/**
+ * Count distinct VERIFIED code sources in a result set.
+ *
+ * A source is verified iff the adapter actually retrieved the cited text
+ * (currently: BKG seed entities and local amendments). Citation-only
+ * adapters (ICC DigitalCodes, NFPA Link — both paywalled, no fetch yet)
+ * return `verified: false` and are NOT counted.
+ *
+ * This is the input the SourceCountBadge uses. Treat it as the structural
+ * truth backing the "N sources verified" trust signal.
+ */
+export function countVerifiedSources(results: CodeSourceResult[]): number {
+  const verifiedSources = new Set(
+    results.filter((r) => r.verified === true).map((r) => r.source)
+  );
+  return verifiedSources.size;
+}

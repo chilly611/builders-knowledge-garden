@@ -443,33 +443,68 @@ export default function AnalysisPane({
             Citations
           </div>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-            {sortedCitations.map((c) => (
-              <li
-                key={c.entity_id}
-                style={{
-                  padding: spacing[2],
-                  backgroundColor: colors.ink[50],
-                  borderRadius: radii.sm,
-                  fontSize: fontSizes.xs,
-                  color: colors.ink[700],
-                }}
-              >
-                <span style={{ fontFamily: fonts.mono, fontWeight: fontWeights.semibold, color: colors.ink[900] }}>
-                  [{c.entity_id}]
-                </span>
-                {c.section && <span> {c.section}</span>}
-                {c.jurisdiction && <span> · {c.jurisdiction}</span>}
-                {c.edition && <span> · {c.edition}</span>}
-                {c.updated_at && (
-                  <span style={{ color: colors.ink[500] }}> · updated {new Date(c.updated_at).toLocaleDateString()}</span>
-                )}
-                {c.relevance && (
-                  <div style={{ marginTop: spacing[1], color: colors.ink[700], fontSize: fontSizes.xs }}>
-                    {c.relevance}
-                  </div>
-                )}
-              </li>
-            ))}
+            {sortedCitations.map((c) => {
+              // Drill-through policy (CLAIMS fix F, 2026-05-22):
+              // `entity_id` is a synthetic `${source}/${section}` tag and
+              // there is no `/knowledge/entity/:id` route. For VERIFIED
+              // sources with an external URL we render the row as an
+              // external link. For citation-only sources we render plain
+              // text + an "unverified" badge so users don't expect a
+              // click-through to live rule text.
+              const isExternalLink = c.verified === true && !!c.url;
+              const isCitationOnly = c.verified === false;
+              return (
+                <li
+                  key={c.entity_id}
+                  style={{
+                    padding: spacing[2],
+                    backgroundColor: colors.ink[50],
+                    borderRadius: radii.sm,
+                    fontSize: fontSizes.xs,
+                    color: colors.ink[700],
+                  }}
+                >
+                  {isExternalLink ? (
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: fonts.mono,
+                        fontWeight: fontWeights.semibold,
+                        color: colors.ink[900],
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      [{c.entity_id}]
+                    </a>
+                  ) : (
+                    <span style={{ fontFamily: fonts.mono, fontWeight: fontWeights.semibold, color: colors.ink[900] }}>
+                      [{c.entity_id}]
+                    </span>
+                  )}
+                  {c.section && <span> {c.section}</span>}
+                  {c.jurisdiction && <span> · {c.jurisdiction}</span>}
+                  {c.edition && <span> · {c.edition}</span>}
+                  {c.updated_at && (
+                    <span style={{ color: colors.ink[500] }}> · updated {new Date(c.updated_at).toLocaleDateString()}</span>
+                  )}
+                  {isCitationOnly && (
+                    <span
+                      title="Citation only — rule text not yet retrieved from publisher (paywalled)."
+                      style={{ color: '#7A5C1A', marginLeft: spacing[2], fontWeight: fontWeights.semibold }}
+                    >
+                      · citation only
+                    </span>
+                  )}
+                  {c.relevance && (
+                    <div style={{ marginTop: spacing[1], color: colors.ink[700], fontSize: fontSizes.xs }}>
+                      {c.relevance}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

@@ -10,6 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   queryAllSources,
   hasMultipleSources,
+  countVerifiedSources,
   type CodeQuery,
   type CodeSourceResult,
 } from "./code-sources";
@@ -28,6 +29,12 @@ export interface SpecialistContext {
 }
 
 export interface SpecialistCitation {
+  /**
+   * Synthetic identifier of the form `${source}/${section}` — used as a
+   * React key and display tag, NOT a UUID into `knowledge_entities`. There
+   * is no `/knowledge/entity/:id` drill-through route; downstream UIs
+   * should treat this as opaque and link through `url` instead.
+   */
   entity_id: string;
   code_body?: string;
   section?: string;
@@ -35,6 +42,18 @@ export interface SpecialistCitation {
   edition?: string;
   updated_at?: string;
   relevance?: string;
+  /**
+   * External deep-link to the source rule (ICC DigitalCodes, NFPA Link, or
+   * a local amendment page). When present, the UI should route clicks
+   * here instead of an internal entity page. Always opens in a new tab.
+   */
+  url?: string;
+  /**
+   * True only when the underlying CodeSourceResult was verified (text
+   * actually retrieved). False for citation-only ICC/NFPA results — the
+   * UI should hide the "click for full text" affordance for these.
+   */
+  verified?: boolean;
 }
 
 export interface DisciplineHandoff {
@@ -148,14 +167,57 @@ function inferDisciplineFromText(
 }
 
 /**
+ * Heuristic: does this scope describe an R-3 single-family dwelling?
+ *
+ * IBC §101.2 / CBC §1.1.8 EXEMPT detached one- and two-family dwellings and
+ * townhouses not more than three stories above grade plane (occupancy R-3)
+ * from the IBC; those projects follow IRC / CRC instead. So even if the
+ * caller asked for "structural", routing to IBC Chapter 16–18 is wrong for
+ * a Marin farmhouse, a Sausalito ADU, or any SFR.
+ */
+function isResidentialR3(scopeDescription: string, context: SpecialistContext): boolean {
+  const lower = (scopeDescription + " " + JSON.stringify(context.extra || {})).toLowerCase();
+  const occupancy = (context.extra?.occupancy_class as string | undefined)?.toUpperCase();
+  if (occupancy === "R-3" || occupancy === "R3") return true;
+  // Textual cues for SFR / townhouse / ADU / duplex (all R-3 / IRC scope)
+  const r3Cues = [
+    "single-family",
+    "single family",
+    "sfr",
+    "sfd",
+    "farmhouse",
+    "townhouse",
+    "town house",
+    " adu ",
+    "accessory dwelling",
+    "duplex",
+    "two-family",
+    "two family",
+    "one- and two-family",
+    "detached dwelling",
+  ];
+  return r3Cues.some((c) => lower.includes(c));
+}
+
+/**
  * Build a CodeQuery from a scope description and context.
  * Infers discipline from question text; extracts section numbers and keywords.
  * Detects discipline mismatch (e.g., kitchen plug question in structural specialist).
+ *
+ * R-3 routing: if the scope describes a single-family dwelling and the
+ * discipline is "structural", we leave the discipline as "structural" (the
+ * CodeQuery contract only has 5 disciplines) but inject IRC/CRC keywords so
+ * downstream adapters surface the right body. We also tag `extra.occupancy`
+ * so the LLM prompt sees the exemption explicitly. See CLAIMS fix B
+ * (2026-05-22).
  */
 function buildCodeQuery(
   scopeDescription: string,
   context: SpecialistContext
-): CodeQuery & { disciplineMismatch?: { inferred: string; specialist: string } } {
+): CodeQuery & {
+  disciplineMismatch?: { inferred: string; specialist: string };
+  isResidentialR3?: boolean;
+} {
   // Extract section numbers (e.g., "210.52(C)(5)", "Article 210")
   const sectionMatch = scopeDescription.match(/(?:Article\s+)?(\d{3}(?:\.\d+)?(?:\([A-Z]\))?(?:\(\d+\))?)/);
   const section = sectionMatch ? sectionMatch[1] : undefined;
@@ -186,6 +248,12 @@ function buildCodeQuery(
     discipline = specialistDiscipline;
   }
 
+  // R-3 occupancy gate: if this is an SFR/ADU/duplex and the question is
+  // structural, IBC Chapters 16–23 do not apply — IRC/CRC do. We leave the
+  // CodeQuery discipline as "structural" (no IRC enum exists) but inject
+  // routing keywords so adapters and the LLM see the right body.
+  const isR3 = isResidentialR3(scopeDescription, context);
+
   // Extract keywords from scope description, including code section-like tokens
   const rawKeywords = scopeDescription
     .toLowerCase()
@@ -198,12 +266,22 @@ function buildCodeQuery(
 
   const keywords = Array.from(new Set(rawKeywords)); // deduplicate
 
+  // For R-3 structural questions, inject IRC/CRC routing keywords so the
+  // amendment matcher and the LLM see the right body. IBC §101.2 / CBC
+  // §1.1.8 exempt R-3 from IBC entirely.
+  if (isR3 && discipline === "structural") {
+    for (const k of ["irc", "crc", "r-3", "residential", "title-24-part-2.5"]) {
+      if (!keywords.includes(k)) keywords.push(k);
+    }
+  }
+
   return {
     discipline,
     section,
     keywords,
     jurisdiction: context.jurisdiction,
     disciplineMismatch,
+    isResidentialR3: isR3,
   };
 }
 
@@ -279,16 +357,31 @@ export async function callSpecialist(
     const codeQueryRaw = buildCodeQuery(context.scope_description, context);
     const codeQuery = { discipline: codeQueryRaw.discipline, section: codeQueryRaw.section, keywords: codeQueryRaw.keywords, jurisdiction: codeQueryRaw.jurisdiction } as CodeQuery;
 
+    // R-3 routing notice: prepended to the user message so the LLM knows
+    // the IBC exemption applies before it reasons. See CLAIMS fix B.
+    if (codeQueryRaw.isResidentialR3 && codeQueryRaw.discipline === "structural") {
+      userMessage =
+        "OCCUPANCY GATE: This scope describes an R-3 (one- or two-family dwelling / townhouse) building. IBC §101.2 / CBC §1.1.8 EXEMPT R-3 from the IBC. Route your structural analysis to the IRC (Chapters R301–R607) and the CRC (Title 24 Part 2.5), NOT IBC Chapters 16–23. If the project exceeds R-3 thresholds (≥4 stories, mixed-occupancy, complex framing requiring engineered design), say so explicitly and only then escalate to IBC/CBC.\n\n---\n\n" +
+        userMessage;
+    }
+
     const codeResults = await queryAllSources(codeQuery);
 
     if (codeResults.length > 0) {
       const multiSource = hasMultipleSources(codeResults);
       const hasPrimary = codeResults.some((r) => r.confidenceTier === "primary");
 
-      // Store confidence data for the LLM to use
+      // Store confidence data for the LLM to use.
+      // `sourceCount` is the count of distinct VERIFIED sources — i.e.
+      // adapters that actually retrieved the rule text (BKG seed, local
+      // amendments). Citation-only adapters (ICC, NFPA) carry
+      // `verified: false` and do NOT count toward the badge. See CLAIMS
+      // fix D (2026-05-22) — the "3 sources verified" badge was structurally
+      // false because every result counted regardless of whether we had
+      // actually read the rule.
       codeSourceConfidenceData = {
         multiSource,
-        sourceCount: new Set(codeResults.map((r) => r.source)).size,
+        sourceCount: countVerifiedSources(codeResults),
         hasPrimary,
       };
 
@@ -308,7 +401,11 @@ export async function callSpecialist(
       // Inject confidence gating instructions
       userMessage += `\n\nCODE SOURCE SUMMARY:\n- Multiple sources present: ${multiSource ? "YES (confidence: high)" : "NO (confidence: medium)"}\n- Primary tier results: ${hasPrimary ? "YES" : "NO"}\n- Total sources: ${codeSourceConfidenceData.sourceCount}`;
 
-      // Prepare citations for later extraction
+      // Prepare citations for later extraction. `entity_id` is a synthetic
+      // `${source}/${section}` tag — NOT a knowledge_entities UUID — so the
+      // UI must not build a `/knowledge/entity/:id` link from it. `url`
+      // carries the external deep-link instead (ICC DigitalCodes, NFPA Link,
+      // or the jurisdiction's amendment page).
       citations = codeResults.map((r) => ({
         entity_id: `${r.source}/${r.section}`,
         code_body: r.edition,
@@ -317,6 +414,8 @@ export async function callSpecialist(
         edition: r.edition,
         updated_at: r.retrievedAt,
         relevance: r.confidenceTier === "primary" ? "high" : "medium",
+        url: r.url,
+        verified: r.verified === true,
       }));
     } else {
       userMessage += `\n\nCRITICAL: queryAllSources returned no results for this query. You MUST return confidence: low and tell the user: "I don't have a cross-verified answer; stop and call your local building department." Include specific questions the user should ask their building department.`;

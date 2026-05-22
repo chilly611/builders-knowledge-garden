@@ -166,6 +166,8 @@ export async function queryBkgSeed(query: CodeQuery): Promise<CodeSourceResult[]
         url: undefined, // BKG seed doesn't have URLs yet
         historical: (entity.metadata?.historical as boolean) || false,
         supersededBy: (entity.metadata?.supersededBy as string) || undefined,
+        // BKG seed text was hand-curated into our DB — treat as verified.
+        verified: true,
       };
     });
   } catch (err) {

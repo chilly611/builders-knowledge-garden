@@ -192,6 +192,8 @@ export async function queryLocalAmendments(
         retrievedAt: new Date().toISOString(),
         url: file.sourceUrl,
         historical: false,
+        // Local amendment text ships in our repo and was hand-vetted — verified.
+        verified: true,
       };
 
       results.push({ result, strength });
