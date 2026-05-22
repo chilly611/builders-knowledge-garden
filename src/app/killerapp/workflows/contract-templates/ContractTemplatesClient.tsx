@@ -38,6 +38,7 @@ import type {
   TemplateBodies,
 } from '@/lib/contract-templates';
 import { fillTemplate } from '@/lib/contract-templates';
+import { sanitizeAiText } from '@/lib/sanitize-ai-text';
 import { downloadContractPdf } from '@/lib/pdf/contract-pdf';
 import { useProjectStateBlob } from '@/lib/hooks/useProjectWorkflowState';
 import ProjectContextBanner from '../ProjectContextBanner';
@@ -124,7 +125,16 @@ export default function ContractTemplatesClient({
         const mid = Math.round((low + high) / 2);
         seed('contractAmount', `$${mid.toLocaleString()}`);
       }
-      const summary = project.ai_summary ?? project.raw_input;
+      // Sarah-GC reported (2026-05-22) that the autofill Scope of Work
+      // included literal AI prose like "Alright, here's how I'd read it:"
+      // and trailing "Here's where I'd start:". That voice comes from the
+      // foreman-orientation prompt in /api/v1/projects/summarize — fine for
+      // the project shell, not fine on a signed contract. We sanitize at the
+      // boundary: AI text → contract field. raw_input is user-typed and
+      // does NOT go through the sanitizer.
+      const summary = project.ai_summary
+        ? sanitizeAiText(project.ai_summary, 'contract-prose')
+        : project.raw_input;
       if (summary) seed('scopeOfWork', summary);
       return changed ? { ...prev, fields: f } : prev;
     });
