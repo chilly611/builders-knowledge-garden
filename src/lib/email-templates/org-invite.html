@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <body style="font-family: -apple-system, system-ui, sans-serif; color: #1F2937; max-width: 540px; margin: 0 auto; padding: 24px;">
+    <p style="font-size: 16px; line-height: 1.5;">Hey {{invitee_first_name}},</p>
+
+    <p style="font-size: 15px; line-height: 1.55;">
+      <strong>{{inviter_name}}</strong> ({{inviter_email}}) just invited you to join
+      <strong>{{org_name}}</strong> on Builder's Knowledge Garden as a
+      <strong>{{role}}</strong>.
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.55;">
+      Builder's Knowledge Garden is a workspace for residential GC's — shared budgets,
+      a code-aware copilot, and the audit trail every job needs. Once you're in,
+      you'll see the same projects, vendors, and budget lines as the rest of the
+      team at {{org_name}}.
+    </p>
+
+    <p style="text-align: center; margin: 28px 0;">
+      <a href="{{accept_url}}" style="background: #1D9E75; color: white; padding: 12px 22px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+        Accept invitation &rarr;
+      </a>
+    </p>
+
+    <p style="font-size: 13px; line-height: 1.55; color: #555;">
+      This link is unique to you and expires on
+      <strong>{{expires_at_human}}</strong>. If you don't act before then,
+      ask {{inviter_name}} to send a fresh one.
+    </p>
+
+    <p style="font-size: 13px; line-height: 1.55; color: #555;">
+      Questions? Just reply &mdash; this email forwards to a human.
+    </p>
+
+    <p style="font-size: 14px; line-height: 1.55;">&mdash; The BKG team</p>
+
+    <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0 16px;" />
+
+    <p style="font-size: 11px; color: #888; line-height: 1.4;">
+      Not expecting this? You can safely ignore the email &mdash; we won't add you to
+      anything unless you click the button above. If you keep getting invites you
+      didn't ask for, reply and we'll investigate.
+    </p>
+  </body>
+</html>

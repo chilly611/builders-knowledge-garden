@@ -26,6 +26,14 @@ function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [next, setNext] = useState('/killerapp');
+  // ORG-INVITES (2026-05-24): when the user lands here via an
+  // /accept-invite/[token] redirect (they weren't signed in yet) the
+  // URL carries ?invite_email + ?invite_token. We pre-fill the email
+  // field, lock it (so they can't typo a mismatch), and after
+  // successful signup + sign-in we redirect to
+  // /accept-invite/<token> to claim the invite instead of running the
+  // normal /welcome onboarding flow.
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,6 +53,18 @@ function SignupPageContent() {
   useEffect(() => {
     const n = safeNext(searchParams.get('next'), '/killerapp');
     setNext(n);
+
+    // ORG-INVITES: pre-fill email + capture token. Tokens are 64 hex
+    // chars — we validate the shape here so a garbage URL param can't
+    // hijack the post-signup redirect into something arbitrary.
+    const rawEmail = searchParams.get('invite_email');
+    if (rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) {
+      setEmail(rawEmail);
+    }
+    const rawToken = searchParams.get('invite_token');
+    if (rawToken && /^[0-9a-f]{64}$/i.test(rawToken)) {
+      setInviteToken(rawToken);
+    }
   }, [searchParams]);
 
   const validate = (): string | null => {
@@ -115,6 +135,16 @@ function SignupPageContent() {
           // Instrumentation only.
         }
       })();
+
+      // ORG-INVITES (2026-05-24): if this signup originated from an
+      // /accept-invite/[token] redirect, skip the standard onboarding
+      // (the user is joining an existing org — we don't want to create
+      // a new one for them) and bounce straight to the accept page so
+      // it can claim the invite using the freshly-issued session.
+      if (inviteToken) {
+        router.push(`/accept-invite/${encodeURIComponent(inviteToken)}`);
+        return;
+      }
 
       // DIY-COLD (2026-05-22): write the bkg-lane cookie BEFORE the push
       // into /welcome so the next render carries it. signup-beta does
