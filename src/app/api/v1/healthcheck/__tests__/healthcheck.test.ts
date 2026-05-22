@@ -48,13 +48,55 @@ function makeFromChain() {
   return chain;
 }
 
+// Per-RPC mock responses. Keyed by RPC name, mutable per test so a
+// case can simulate an introspection RPC erroring or returning bad
+// data without touching the unrelated checks.
+const mockRpcResponses: Record<string, { data: unknown; error: null | { message: string } }> = {
+  healthcheck_cron_job_count: {
+    data: [{ job_count: 2, active_count: 2, jobnames: ['maintain-audit-log-partitions', 'drop-old-audit-log-partitions'] }],
+    error: null,
+  },
+  healthcheck_rls_policy_counts: {
+    // Default: all 17 critical tables protected. Keep this list in
+    // sync with RLS_CRITICAL_TABLES in ../route.ts.
+    data: [
+      'project_budget_lines', 'project_rfis', 'project_change_orders',
+      'project_punch_items', 'project_submittals', 'crm_contacts',
+      'crm_messages', 'sub_bids', 'signed_documents', 'signature_events',
+      'vendors', 'invoices', 'invoice_line_items', 'invoice_payments',
+      'organizations', 'org_members', 'project_members',
+    ].map((t) => ({ table_name: t, policy_count: 1, rls_enabled: true })),
+    error: null,
+  },
+  healthcheck_audit_log_partition_count: {
+    data: [{ total_partitions: 19, earliest: 'audit_log_y2025m11', latest: 'audit_log_y2027m05' }],
+    error: null,
+  },
+};
+
 vi.mock('@/lib/auth-server', () => ({
   getAuthUser: vi.fn(async (_req: unknown) => null),
   getServiceClient: vi.fn(() => ({
     from: vi.fn(() => makeFromChain()),
-    rpc: vi.fn(() => ({
-      single: vi.fn(async () => ({ data: { count: 2 }, error: null })),
-    })),
+    rpc: vi.fn((name: string, _args?: unknown) => {
+      // Return a thenable so `await client.rpc(...)` resolves to
+      // `{ data, error }` the same way supabase-js does. We don't
+      // need to support `.single()` chaining for these healthcheck
+      // RPCs (they all return TABLE results), but include a stub
+      // for safety in case a future check uses it.
+      const response = mockRpcResponses[name] ?? { data: null, error: null };
+      const thenable: any = {
+        then: (onFulfilled: (v: any) => void) => {
+          onFulfilled(response);
+          return Promise.resolve();
+        },
+        single: vi.fn(async () => ({
+          data: Array.isArray(response.data) ? response.data[0] : response.data,
+          error: response.error,
+        })),
+      };
+      return thenable;
+    }),
   })),
 }));
 

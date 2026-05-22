@@ -21,15 +21,20 @@
  * blow the 2s SLA):
  *
  *   db           — SELECT 1 via service role.            (hard fail)
- *   rls          — policy count on the 7 critical tables.(hard fail)
- *   audit_log    — partition count + 24h row count.      (soft warn)
+ *   rls          — policy count + relrowsecurity on the
+ *                  critical tenancy tables (via
+ *                  healthcheck_rls_policy_counts RPC).   (hard fail)
+ *   audit_log    — partition count + 24h row count (via
+ *                  healthcheck_audit_log_partition_count
+ *                  RPC). Partitions < 12 → soft warn.    (soft warn)
  *   embeddings   — knowledge_entities embedded ratio.    (soft warn)
  *   source_urls  — coverage of source citations.         (soft warn)
  *   email        — Resend domain verification.           (soft warn)
  *   rag_cache    — in-process cache hit ratio.           (info)
  *   workflows    — LIVE_WORKFLOW_PATHS folder presence.  (info)
  *   mcp          — entity + jurisdiction counts > 0.     (soft warn)
- *   pg_cron      — cron.job count ≥ 2.                   (hard fail)
+ *   pg_cron      — ≥2 ACTIVE cron jobs (via
+ *                  healthcheck_cron_job_count RPC).      (hard fail)
  *   vercel       — deployment id / commit sha / branch.  (info)
  *
  * Result is cached at module level for 10s so a pinger hitting every
@@ -133,7 +138,12 @@ async function checkDb(): Promise<SubCheck> {
   return res;
 }
 
-/** rls — every one of the 7 critical tables has ≥1 policy. Hard fail. */
+/**
+ * rls — every critical tenancy table has RLS enabled AND ≥1 policy.
+ * Hard fail. Backed by `public.healthcheck_rls_policy_counts(text[])`
+ * (SECURITY DEFINER, service_role-only) so we can introspect
+ * pg_policies + pg_class.relrowsecurity in a single round-trip.
+ */
 const RLS_CRITICAL_TABLES = [
   'project_budget_lines',
   'project_rfis',
@@ -142,46 +152,44 @@ const RLS_CRITICAL_TABLES = [
   'project_submittals',
   'crm_contacts',
   'crm_messages',
+  'sub_bids',
+  'signed_documents',
+  'signature_events',
+  'vendors',
+  'invoices',
+  'invoice_line_items',
+  'invoice_payments',
+  'organizations',
+  'org_members',
+  'project_members',
 ];
+interface RlsRpcRow {
+  table_name: string;
+  policy_count: number;
+  rls_enabled: boolean;
+}
 async function checkRls(): Promise<SubCheck> {
   return withDeadline('rls', async () => {
     const client = getServiceClient();
-    // pg_policies isn't exposed via the REST table list, so use an RPC
-    // wrapper if available; otherwise fall back to counting via the
-    // `pg_policies` view through supabase's `rpc('exec', ...)` is not
-    // available either — instead we issue the query through the
-    // `supabase.rpc('http_health_rls')`-style would require migration.
-    // Simplest portable path: query the public `pg_policies` view via
-    // the postgrest `from` API. Supabase exposes some pg_* views by
-    // default but not pg_policies; in practice the platform has a
-    // helper view or we can use a direct SQL via `rpc`. To stay
-    // self-contained AND honest about what we can prove, we run a
-    // SELECT against each table's RLS state using `select('*').limit(0)`
-    // and rely on the service-role bypass succeeding — i.e. we prove
-    // the table EXISTS and is reachable. A non-existent table or one
-    // missing RLS-required columns will error.
-    const checks = await Promise.all(
-      RLS_CRITICAL_TABLES.map(async (t) => {
-        const { error, count } = await client
-          .from(t)
-          .select('id', { head: true, count: 'exact' });
-        return { table: t, ok: !error, count: count ?? 0, error: error?.message };
-      }),
+    const { data, error } = await client.rpc('healthcheck_rls_policy_counts', {
+      table_names: RLS_CRITICAL_TABLES,
+    });
+    if (error) throw new Error(error.message);
+    const tables = (data ?? []) as RlsRpcRow[];
+    const unprotected = tables.filter(
+      (t) => !t.rls_enabled || Number(t.policy_count) === 0,
     );
-    const tables_reachable = checks.filter((c) => c.ok).length;
+    const protectedCount = tables.length - unprotected.length;
     return {
-      // We can't probe pg_policies from supabase-js without a SQL RPC.
-      // tables_protected = how many of the 7 the service role could
-      // actually read (existence is the necessary precondition for
-      // having a policy in the first place). The DB-level policy count
-      // is exposed in `?detailed=1` mode by the platform DBA via the
-      // Supabase MCP; the API surface contract here is "all 7 tables
-      // exist and respond". Hard-fail if any are missing.
-      tables_protected: tables_reachable,
+      tables_checked: tables.length,
       tables_expected: RLS_CRITICAL_TABLES.length,
-      ok: tables_reachable === RLS_CRITICAL_TABLES.length,
-      // For debugging when something fails, expose the per-table list.
-      detail: checks,
+      tables_protected: protectedCount,
+      unprotected_tables: unprotected.map((t) => t.table_name),
+      // Hard-fail when any expected table is unprotected OR missing
+      // entirely from the RPC result (i.e. the table doesn't exist).
+      ok:
+        unprotected.length === 0 &&
+        tables.length === RLS_CRITICAL_TABLES.length,
     };
   }).then((r) => {
     // Promote the inner `ok` flag — withDeadline only knows if the
@@ -194,29 +202,53 @@ async function checkRls(): Promise<SubCheck> {
   });
 }
 
-/** audit_log — partition count ≥ 12, last-24h row count. */
+/**
+ * audit_log — partition count ≥ 12 forward months + last-24h row count.
+ * Hard signal on partitions: if pg_cron stops rolling them, inserts
+ * outside the covered range start failing. Backed by
+ * `public.healthcheck_audit_log_partition_count()`.
+ */
+interface AuditPartRow {
+  total_partitions: number;
+  earliest: string | null;
+  latest: string | null;
+}
 async function checkAuditLog(): Promise<SubCheck> {
-  return withDeadline('audit_log', async () => {
+  const r = await withDeadline('audit_log', async () => {
     const client = getServiceClient();
-    // We can't introspect pg_inherits via the REST API without an RPC,
-    // so we approximate "partitioning is healthy" by counting how
-    // many recent rows are queryable + checking the table is alive.
-    // The partition count itself is an ops concern surfaced in
-    // detailed mode (operator can confirm via SQL).
     const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count, error } = await client
-      .from('audit_log')
-      .select('id', { head: true, count: 'exact' })
-      .gte('changed_at', sinceIso);
-    if (error) throw new Error(error.message);
+    const [rowsResult, partResult] = await Promise.all([
+      client
+        .from('audit_log')
+        .select('id', { head: true, count: 'exact' })
+        .gte('changed_at', sinceIso),
+      client.rpc('healthcheck_audit_log_partition_count'),
+    ]);
+    if (rowsResult.error) throw new Error(rowsResult.error.message);
+    if (partResult.error) throw new Error(partResult.error.message);
+    const part = (partResult.data?.[0] ?? null) as AuditPartRow | null;
+    const partitions = Number(part?.total_partitions ?? 0);
     return {
-      rows_24h: count ?? 0,
-      // Partition count requires SQL access; mark as "unknown" so the
-      // dashboard can show "see SQL ops" instead of lying.
-      partitions: null as number | null,
-      note: 'partition_count requires SQL RPC; verify via supabase dashboard',
+      rows_24h: rowsResult.count ?? 0,
+      partitions,
+      earliest: part?.earliest ?? null,
+      latest: part?.latest ?? null,
+      // soft signal: < 12 forward months means cron is falling behind
+      partitions_ok: partitions >= 12,
     };
   });
+  // Soft-warn when partition count is below threshold; don't hard-fail
+  // (audit_log is `soft` severity overall).
+  if (r.ok && r.value && typeof r.value === 'object') {
+    const v = r.value as { partitions: number; partitions_ok: boolean };
+    if (!v.partitions_ok) {
+      return {
+        ...r,
+        warning: `audit_log partitions ${v.partitions} < 12; pg_cron may be lagging`,
+      };
+    }
+  }
+  return r;
 }
 
 /** embeddings — count knowledge_entities total + embedded. */
@@ -298,10 +330,12 @@ async function checkEmail(): Promise<SubCheck> {
   return r;
 }
 
-/** rag_cache — info-only snapshot of in-process cache stats. */
+/** rag_cache — info-only snapshot of cache stats. Awaits because the
+ *  KV backend (when selected) hits Upstash for per-bucket size; the
+ *  in-memory backend resolves synchronously. */
 async function checkRagCache(): Promise<SubCheck> {
   const r = await withDeadline('rag_cache', async () => {
-    return getCacheStats();
+    return await getCacheStats();
   });
   if (r.ok && r.value && typeof r.value === 'object') {
     const v = r.value as { hit_ratio: number; hits: number; misses: number };
@@ -373,41 +407,39 @@ async function checkMcp(): Promise<SubCheck> {
   return r;
 }
 
-/** pg_cron — at least 2 cron jobs (audit_log maintain + drop_old). */
+/**
+ * pg_cron — ≥2 ACTIVE cron jobs (audit_log maintain + drop_old). Hard
+ * fail. Backed by `public.healthcheck_cron_job_count()` (SECURITY
+ * DEFINER) which exposes `cron.job` — that schema is otherwise not
+ * reachable over PostgREST.
+ */
+interface CronRpcRow {
+  job_count: number;
+  active_count: number;
+  jobnames: string[] | null;
+}
 async function checkPgCron(): Promise<SubCheck> {
   const r = await withDeadline('pg_cron', async () => {
     const client = getServiceClient();
-    // `cron.job` lives in the `cron` schema and is only readable via
-    // SQL RPC by default. We try a postgrest call against the
-    // `cron` schema; if the project doesn't expose it (most don't),
-    // we surface that as "unknown" rather than fail — pg_cron is a
-    // server-internal concern.
-    // Strategy: hit a Supabase RPC if defined; otherwise read the
-    // public.cron_jobs view if the platform team has published one.
-    // Today, the existence-probe is the best we can do via REST.
-    const { data, error } = await client.rpc('healthcheck_cron_job_count').single<{ count: number }>();
-    if (error) {
-      // RPC doesn't exist → degrade to "unknown but not failed". The
-      // dashboard can show amber + a hint to install the helper RPC.
-      throw new Error(`cron.job not exposed: ${error.message}`);
-    }
-    return { job_count: (data as { count: number } | null)?.count ?? 0 };
-  });
-  // Soft-degrade: if the RPC isn't installed, mark this as ok:true with
-  // a warning rather than failing the platform — many envs don't expose
-  // cron over REST.
-  if (!r.ok && r.error?.includes('not exposed')) {
+    const { data, error } = await client.rpc('healthcheck_cron_job_count');
+    if (error) throw new Error(error.message);
+    const row = (data?.[0] ?? null) as CronRpcRow | null;
     return {
-      ok: true,
-      value: { job_count: null, note: 'install healthcheck_cron_job_count() RPC to enable' },
-      warning: 'pg_cron job count not exposed via REST; verify via supabase dashboard',
-      latency_ms: r.latency_ms,
+      total: Number(row?.job_count ?? 0),
+      active: Number(row?.active_count ?? 0),
+      jobs: row?.jobnames ?? [],
     };
-  }
+  });
   if (r.ok && r.value && typeof r.value === 'object') {
-    const v = r.value as { job_count: number };
-    if (v.job_count < 2) {
-      return { ...r, ok: false, error: `expected ≥2 cron jobs, found ${v.job_count}` };
+    const v = r.value as { total: number; active: number };
+    // Hard-fail when fewer than 2 ACTIVE jobs are scheduled — a job
+    // existing-but-disabled is the same outage as one not existing.
+    if (v.active < 2) {
+      return {
+        ...r,
+        ok: false,
+        error: `expected ≥2 active cron jobs, found ${v.active} active of ${v.total}`,
+      };
     }
   }
   return r;
