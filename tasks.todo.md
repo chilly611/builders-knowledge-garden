@@ -1824,11 +1824,10 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 - [ ] **Decide audit retention:** synthesis says 7 years; repo pg_cron retention is ~18 months. Either migrate to 7 years (Supabase schema change + cost impact) or update all diligence language to match 18-month reality. Cannot leave both versions floating.
 - [ ] **Strip shipped-voice language from any VC-facing material** that derives from this synthesis. Specifically: native signature engine (NOT deployed, PDF-emails-externally only), PLG self-serve signup (NOT live, Clerk still mocked), deterministic MEP "completely eliminates hallucinations" (in-flight from round 3), "transition complete" framing (May 1 dogfood broke on real ADU estimate).
 
-### Mike B onboarding as calibration partner
+### Michael Bou onboarding (corrected 2026-05-23 — Michael is John Bou's brother, joined the team; NOT external VC)
 
-- [ ] **Schedule Mike B for a real product walkthrough** before any more synthesis-language gets to him. Founder dogfood loop on a real-feeling ADU job, observed live. If the loop doesn't hold, fix it before showing more.
-- [ ] **Record Mike B's role and recurring questions** as a new calibration thread. Future Mike-attended meetings get their own digest entries.
-- [ ] **For the next Mike session:** capture actual conversation (Zoom transcript / Otter.ai) or write the digest same-day from memory. Synthesized one-voice docs destroy the diligence signal — his questions and pushback are what we actually need.
+- [ ] **Get Michael through the founder dogfood loop on a real ADU job** as part of his onboarding. He saw the synthesis language in the May 22 meeting alongside John; now he needs to see the actual product loop hold end-to-end. Fresh-eye window closes fast — capture what strikes him as inflated, unclear, or broken before he absorbs the founder narrative.
+- [ ] **For future meetings with Michael** (and any external party): capture actual conversation (Zoom transcript / Otter.ai) or write the digest same-day from memory. Synthesized one-voice docs destroy the calibration signal — what the other party actually questioned, pushed back on, or got excited about is the value, and that's the first thing a synthesis flattens.
 
 ### Framing decisions
 
@@ -1838,7 +1837,7 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 
 ### Housekeeping
 
-- [ ] **Confirm "Charlie Dahlgren" is the founder's correct legal name** or note the AI synthesis introduced a name error. (Memory uses "Chilly" as the working name.)
+- [x] **Charlie Dahlgren** confirmed as Chilly's legal name (founder confirmation, 2026-05-23). Synthesis got this right.
 
 ### Lesson to file in tasks.lessons.md
 

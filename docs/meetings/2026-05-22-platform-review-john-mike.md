@@ -1,7 +1,7 @@
 ---
 meeting_id: 2026-05-22-platform-review-john-mike
 date: 2026-05-22
-attendees: [Chilly, John Bou, Mike B]
+attendees: [Chilly (Charlie Dahlgren), John Bou, Michael Bou]
 type: walkthrough  # source is a synthesized doc, NOT a verbatim transcript
 duration_min: unknown
 status: digested
@@ -13,11 +13,11 @@ touches:
   - audit logging retention
   - hybrid RAG
   - native signature engine
-  - VC diligence positioning
+  - internal diligence-style validation (NOT external VC)
 related_locks: []
-calibration_partner: true  # Mike B first appearance — VC diligence/validation role
-new_stakeholder: "Mike B (Venture Diligence & Validation)"
-source_warning: "Synthesized AI doc, not verbatim transcript. Aspirational language likely. Cross-checked below."
+calibration_partner: true  # Michael Bou first appearance — John's brother, joined the team
+new_stakeholder: "Michael Bou (John Bou's brother, joined the team; doing diligence-style validation as part of onboarding to the project)"
+source_warning: "Synthesized AI doc, not verbatim transcript. Aspirational language likely. The synthesis labeled Michael as 'Venture Diligence & Validation' which mis-frames his role — he's an internal teammate, not an external VC. Cross-checked below."
 ---
 
 # Platform Review — John Bou & Mike B
@@ -25,7 +25,7 @@ source_warning: "Synthesized AI doc, not verbatim transcript. Aspirational langu
 ## TL;DR
 
 - **The source is a synthesis, not a transcript.** The document itself states word-for-word audio extraction wasn't available; what was uploaded is an AI-synthesized "technical product notes" rendering of the meeting. Treat all "deployed/implemented/integrated" language as aspirational positioning unless cross-checked. The Reality Cross-Check section below catches five direct discrepancies.
-- **New stakeholder: Mike B.** First appearance, role marked as "Venture Diligence & Validation." This positions the May 22 conversation as VC-readiness rehearsal, not internal alignment. Mike B becomes a calibration partner for the diligence narrative going forward.
+- **New team member: Michael Bou — John Bou's brother — has joined the project.** The AI synthesis mis-framed him as "Venture Diligence & Validation" (suggesting external VC). He's actually an internal teammate, with the diligence-style framing reflecting how he engaged with the product in the meeting, not an external role. This significantly changes the urgency around "clean up the language before he sees more" — he already heard it, alongside John.
 - **The strategic intent is real and valid; the readiness claims overshoot.** Production-shift framing, CA HIC alignment, MEP determinism, PLG self-serve, 7-year audit retention, native signature engine, hybrid RAG — these are the right targets. Several are queued in `tasks.todo.md` as in-flight or deferred. None are honestly "deployed and ready for diligence" as written.
 
 ---
@@ -149,9 +149,27 @@ These are direct phrasings from the synthesis. The first three are pitch-ready (
 
 ## Calibration partner reactions
 
-The synthesis does not capture John's or Mike's actual reactions or pushback. The document reads as a one-voice narration of the platform. Whatever Mike actually questioned (or didn't) during the diligence-validation conversation is lost in this format. For future Mike sessions, capturing his specific questions/objections is the highest-value signal — that's what diligence preparation needs.
+The synthesis does not capture John's or Michael's actual reactions or pushback. The document reads as a one-voice narration of the platform. Whatever Michael actually questioned (or didn't) during the validation conversation is lost in this format. With Michael now on the team, his first-impression validation signal is gone — irretrievably from this meeting.
 
-Recommendation for the next Mike session: record the actual conversation (Zoom transcript or Otter.ai), or at minimum write the digest the same day from memory while specifics are fresh.
+Recommendation for future meetings with Michael as he gets up to speed: capture his specific questions and what struck him as inflated or unclear. He's the closest thing the team has to a fresh-eyed reviewer right now, and that fresh-eye window closes fast as he absorbs the founder narrative.
+
+---
+
+## Corrections (added 2026-05-23, after digest published)
+
+After the initial digest was committed, Chilly clarified two facts that the digest got wrong:
+
+1. **"Mike B" is Michael Bou — John Bou's brother — and is now working with the team.** The AI synthesis labeled him "Venture Diligence & Validation," which mis-framed him as an external VC diligence party. He's actually an internal teammate who happened to be engaging with the product in a diligence-style validation mode during the May 22 walkthrough.
+
+   **Implications:**
+   - The "schedule Michael for a real product walkthrough before more synthesis-language reaches him" urgency drops sharply. He was already in the May 22 meeting and heard the same synthesized language alongside John.
+   - However, the action item still has merit as onboarding: he should see the product hold end-to-end on a real-feeling job as part of joining the team's reality.
+   - "Mike B" mentions throughout this digest should be read as "Michael Bou."
+   - The synthesis's "Venture Diligence & Validation" label is a hallucinated framing of his actual role.
+
+2. **"Charlie Dahlgren" is Chilly's correct legal name.** Confirmed by the founder. The synthesis got this right. "Chilly" is the working nickname used across the project canon.
+
+These corrections do not change the five Reality Cross-Check discrepancies or the new lesson filed about synthesized meeting docs. The overclaims about deployed capabilities are independent of who was in the room.
 
 ---
 
