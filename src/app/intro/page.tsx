@@ -1497,16 +1497,19 @@ function Act4LiveBudget() {
 
 // — ACT 5: The vision ——————————————————————————————————————————————————
 function Act5Vision({ reduced }: { reduced: boolean }) {
-  // Five verticals around the umbrella. Each renders a real garden logo
-  // if uploaded to /public/logos/gardens/; otherwise falls back to a
-  // labeled colored dot (so the demo never breaks on a missing asset).
-  // Builder's is listed first — it's the vertical that's already shipping;
-  // the rest are "the rest of the umbrella" the investor's about to see.
-  // 2026-05-20 redesign: this is the LAST image investors see. Clean,
-  // prominent, no overlaps. Removed the 3 chrome orbit dots (they were
-  // cluttering on top of the verticals). Six verticals now arc across the
-  // TOP semicircle around a larger tree, leaving the bottom CLEAR for the
-  // typewriter text + CTAs. Bigger logos (96px vs 56px) so they read.
+  // 2026-05-23 (Chilly): Act 5 polish round.
+  //   • Center "umbrella tree" replaced with the looping `tool-tree.mp4`
+  //     animation, wrapped in a Link to /killerapp — it's the "portal to
+  //     the killer app." Static knowledge-gardens-tree.png stays as the
+  //     <video poster> so something shows while the mp4 loads (or if a
+  //     browser fails to play it).
+  //   • Vertical logos bumped 96px → 140px and orbit radius 240 → 290
+  //     for more presence. mixBlendMode: multiply dissolves the cream/
+  //     white image backgrounds into the parchment page.
+  //   • Vertical labels bumped 11px → 13px, color graphite → ink, so they
+  //     read more clearly under the now-larger images.
+  //   • Canvas grown 640×360 → 720×540 to fit the larger compositions.
+  //     Mobile scale tightened 0.55 → 0.5 to keep within 92vw on iPhones.
   const domains = [
     {
       label: "Builder's",
@@ -1558,7 +1561,7 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
     const t = domains.length === 1 ? 0.5 : i / (domains.length - 1);
     const angleDeg = startDeg + t * (endDeg - startDeg);
     const angleRad = (angleDeg * Math.PI) / 180;
-    const r = 240;
+    const r = 290;
     return {
       ...d,
       x: Math.cos(angleRad) * r,
@@ -1575,28 +1578,57 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       style={actWrap(COLORS.paper)}
       aria-label="Act 5: the vision"
     >
-      <div className="bkg-intro-act5-canvas" style={{ position: 'relative', width: 640, height: 360, maxWidth: '94vw', zIndex: 1 }}>
-        {/* The umbrella tree, bigger than Act 1's hammer was for Act 1. */}
+      <div className="bkg-intro-act5-canvas" style={{ position: 'relative', width: 720, height: 540, maxWidth: '94vw', zIndex: 1 }}>
+        {/* Center: looping tool-tree.mp4 wrapped in a Link to /killerapp.
+            This is the "portal to the killer app." Static tree.png stays
+            as the <video poster> so something is visible while the mp4
+            loads (or in browsers that can't play it). */}
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: reduced ? 0 : 1, ease: 'easeOut' }}
-          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}
+          style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 1 }}
         >
-          <GardenLogo
-            src="/logos/gardens/knowledge-gardens-tree.png"
-            alt="Knowledge Gardens — the umbrella"
-            size={280}
-            fallback={<KLogomark size={200} color={COLORS.ink} />}
-          />
+          <Link
+            href="/killerapp"
+            aria-label="Enter the killer app"
+            style={{
+              display: 'block',
+              cursor: 'pointer',
+              borderRadius: 16,
+              transition: 'transform 220ms ease',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.0)'; }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              poster="/logos/gardens/knowledge-gardens-tree.png"
+              style={{
+                width: 320, height: 320,
+                objectFit: 'contain',
+                mixBlendMode: 'multiply',
+                display: 'block',
+              }}
+            >
+              <source src="/intro-assets/tool-tree.mp4" type="video/mp4" />
+            </video>
+          </Link>
         </motion.div>
 
-        {/* Six verticals arc across the top — bottom stays clear for text. */}
+        {/* Six verticals arc across the top — bottom stays clear for text.
+            2026-05-23 (Chilly): bumped from 96px → 140px logos at radius
+            290 (was 240). mixBlendMode: multiply on each image removes
+            visible box backgrounds. Labels 11→13px in ink (not graphite). */}
         {positions.map((d, i) => {
           const dotFallback = (
             <span style={{
               display: 'inline-block',
-              width: 28, height: 28, borderRadius: 14,
+              width: 36, height: 36, borderRadius: 18,
               background: d.color, opacity: 0.95,
               outline: `2px dashed ${COLORS.rule}`,
               outlineOffset: 2,
@@ -1613,15 +1645,27 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
                 top: `calc(50% + ${d.y}px)`,
                 left: `calc(50% + ${d.x}px)`,
                 transform: 'translate(-50%, -50%)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
               }}
             >
               {d.src ? (
-                <GardenLogo src={d.src} alt={d.alt} size={96} fallback={dotFallback} />
+                <GardenLogo
+                  src={d.src}
+                  alt={d.alt}
+                  size={140}
+                  style={{ mixBlendMode: 'multiply' }}
+                  fallback={dotFallback}
+                />
               ) : (
                 dotFallback
               )}
-              <span style={{ fontSize: 11, fontWeight: 800, color: COLORS.graphite, letterSpacing: '0.1em' }}>
+              <span style={{
+                fontSize: 13,
+                fontWeight: 800,
+                color: COLORS.ink,
+                letterSpacing: '0.12em',
+                textShadow: '0 1px 0 rgba(250,246,235,0.85)',
+              }}>
                 {d.label.toUpperCase()}
               </span>
             </motion.div>
@@ -1657,15 +1701,16 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
         </Link>
       </div>
 
-      {/* Mobile: scale the whole Act 5 canvas down so the 240px-radius
-          orbit positions don't clip off the 92vw container. The negative
+      {/* Mobile: scale the whole Act 5 canvas down so the 290px-radius
+          orbit positions don't clip off the 92vw container. Canvas is
+          now 720×540 so we use scale 0.5 (was 0.55 at 640×360). Negative
           margin reclaims the visual gap the transform leaves behind. */}
       <style jsx global>{`
         @media (max-width: 768px) {
           .bkg-intro-act5-canvas {
-            transform: scale(0.55);
+            transform: scale(0.5);
             transform-origin: top center;
-            margin-bottom: -160px;
+            margin-bottom: -260px;
           }
         }
       `}</style>
