@@ -270,51 +270,73 @@ function ActIndicator({ act, paused, onJump }: { act: number; paused: boolean; o
 //   7.0-8.0s   hammer + tagline alone — the killer app holds the frame.
 // Reduced motion: skips the zoom-past entirely, leaves chromes at small
 // orbit positions with labels visible (the spec-equivalent still state).
-function Act1Umbrella({ reduced }: { reduced: boolean }) {
-  // Each chrome's full keyframe timeline. Per Framer Motion 12, when
-  // animating multiple keyframes simultaneously across x/y/scale/opacity,
-  // the cleanest API is to spread each prop independently with its own
-  // `transition` block. Single shared duration (7.2s), per-prop times to
-  // sequence the orbit-out (early), the hold (middle), and the zoom-past
-  // (late). Stagger zoom-past via per-chrome `delay` on the whole motion.
-  // Return type is intentionally `any` — Framer Motion 12's types can't
-  // narrow a union of "single-value animate" and "keyframe-array animate"
-  // without forcing the caller to disambiguate. Spread at the call site
-  // applies these as separate props on motion.div.
-  const chromeAnim = (orbitX: number, orbitY: number, staggerDelay: number): Record<string, unknown> => {
-    if (reduced) {
-      return {
-        initial: { opacity: 1, x: orbitX, y: orbitY, scale: 1 },
-        animate: { opacity: 1, x: orbitX, y: orbitY, scale: 1 },
-        transition: { duration: 0 },
-      };
-    }
-    const totalDelay = 0.4 + staggerDelay;
-    // Five-keyframe choreography over 7.2s:
-    //   K0 (t=0)      hidden behind hammer, scale 0.4
-    //   K1 (t=1.15s)  arrived at orbit, scale 1.0 (full read)
-    //   K2 (t=1.6s)   brief hold at orbit (so the label is readable)
-    //   K3 (t=4.5s)   scaled to 3.5×, drifting outward — now dominating frame
-    //   K4 (t=7.2s)   scale 8×, far past the frame, fully transparent
-    // `times` distributes those keyframes across the 7.2s duration. Easing
-    // is easeIn so motion accelerates into the zoom-past climax.
-    return {
-      initial: { opacity: 0, x: 0, y: 0, scale: 0.4 },
-      animate: {
-        opacity: [0, 1, 1, 1, 0],
-        x:       [0, orbitX, orbitX * 1.1, orbitX * 1.4, orbitX * 2.4],
-        y:       [0, orbitY, orbitY * 1.1, orbitY * 1.4, orbitY * 2.4],
-        scale:   [0.4, 1.0, 1.0, 3.5, 8.0],
-      },
-      transition: {
-        duration: 7.2,
-        delay: totalDelay,
-        times: [0, 0.16, 0.22, 0.62, 1],
-        ease: 'easeIn',
-      },
-    };
-  };
+// Single chrome's orbit-out → swell → zoom-past animation, driven by a
+// state machine instead of Framer's 5-keyframe `times` array (which
+// regressed silently — chromes stuck invisible in real browsers).
+// Three phases:
+//   'orbit'  ~1.2s smooth move from canvas center to orbit position at
+//                  scale 1.0, opacity 1 — readable size, holds briefly.
+//   'expand' ~2.5s scale grows 1.0 → 3.5, drifts slightly further out.
+//   'past'   ~2.2s scale 3.5 → 8.0 + further outward translate + fade to 0
+//                  ("zoom past the viewer").
+// Per-chrome stagger delay keeps the three from leaving on the same frame.
+function ChromeOrbit({
+  src, alt, orbitX, orbitY, staggerDelay, fallbackColor, reduced,
+}: {
+  src: string;
+  alt: string;
+  orbitX: number;
+  orbitY: number;
+  staggerDelay: number;
+  fallbackColor: string;
+  reduced: boolean;
+}) {
+  type Phase = 'hidden' | 'orbit' | 'expand' | 'past';
+  const [phase, setPhase] = useState<Phase>('hidden');
 
+  useEffect(() => {
+    if (reduced) { setPhase('orbit'); return; }
+    const baseDelay = staggerDelay * 1000;
+    const ts: number[] = [
+      window.setTimeout(() => setPhase('orbit'),  400  + baseDelay),
+      window.setTimeout(() => setPhase('expand'), 2800 + baseDelay),
+      window.setTimeout(() => setPhase('past'),   5500 + baseDelay),
+    ];
+    return () => { ts.forEach((t) => window.clearTimeout(t)); };
+  }, [reduced, staggerDelay]);
+
+  const target =
+    phase === 'orbit'  ? { x: orbitX,         y: orbitY,         scale: 1.0, opacity: 1 } :
+    phase === 'expand' ? { x: orbitX * 1.35,  y: orbitY * 1.35,  scale: 3.5, opacity: 1 } :
+    phase === 'past'   ? { x: orbitX * 2.4,   y: orbitY * 2.4,   scale: 8.0, opacity: 0 } :
+                         { x: 0,              y: 0,              scale: 0.4, opacity: 0 };
+
+  const duration =
+    phase === 'orbit'  ? 1.2 :
+    phase === 'expand' ? 2.5 :
+    phase === 'past'   ? 2.2 :
+                         0.0;
+
+  return (
+    <motion.div
+      initial={{ x: 0, y: 0, scale: 0.4, opacity: 0 }}
+      animate={target}
+      transition={{ duration: reduced ? 0 : duration, ease: phase === 'past' ? 'easeIn' : 'easeOut' }}
+      style={chromeOrbitContainer}
+    >
+      <div style={chromeOrbitInner}>
+        <GardenLogo
+          src={src}
+          alt={alt}
+          size={120}
+          fallback={<span style={chromeOrbitFallback(fallbackColor)} />}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+function Act1Umbrella({ reduced }: { reduced: boolean }) {
   return (
     <motion.section
       key="act1"
@@ -345,52 +367,17 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
           />
         </motion.div>
 
-        {/* Three chrome satellites with the new zoom-past animation.
-            Each chrome is a flex column (image stacked above label) that
-            scales as a unit — image and label grow together. The
-            colored-dot background from the prior version is gone; the
-            chrome PNGs themselves are the visual. zIndex 2 puts chromes
-            BELOW the hammer (zIndex 3) so when they're at peak scale
-            and may overlap, the hammer stays the focal anchor. */}
-        {/* Chrome LOGOS — animated (orbit-out + zoom-past). Labels are
-            NOT inside these motion.divs anymore (per Chilly 2026-05-22 PM:
-            labels were scaling huge with the logos and overlapping the
-            hammer); see separate labels block below. mixBlendMode:
-            'multiply' on the image dissolves the cream PNG backgrounds
-            into the parchment so the rectangular boxes disappear. */}
-        <motion.div {...chromeAnim(170, -160, 0)} style={chromeOrbitContainer}>
-          <div style={chromeOrbitInner}>
-            <GardenLogo
-              src="/logos/gardens/chrome-killer-app.png"
-              alt="Killer App"
-              size={84}
-              style={{ mixBlendMode: 'multiply' }}
-              fallback={<span style={chromeOrbitFallback(CHROME.red)} />}
-            />
-          </div>
-        </motion.div>
-        <motion.div {...chromeAnim(-170, -30, 0.18)} style={chromeOrbitContainer}>
-          <div style={chromeOrbitInner}>
-            <GardenLogo
-              src="/logos/gardens/chrome-dream-machine.png"
-              alt="Dream Machine"
-              size={84}
-              style={{ mixBlendMode: 'multiply' }}
-              fallback={<span style={chromeOrbitFallback(CHROME.warm)} />}
-            />
-          </div>
-        </motion.div>
-        <motion.div {...chromeAnim(150, 160, 0.36)} style={chromeOrbitContainer}>
-          <div style={chromeOrbitInner}>
-            <GardenLogo
-              src="/logos/gardens/chrome-knowledge-garden.png"
-              alt="Knowledge Garden"
-              size={84}
-              style={{ mixBlendMode: 'multiply' }}
-              fallback={<span style={chromeOrbitFallback(CHROME.green)} />}
-            />
-          </div>
-        </motion.div>
+        {/* Three chrome satellites — orbit out from behind the hammer,
+            swell up, then ZOOM PAST the viewer. 2026-05-23 PM rewrite:
+            previous version used a 5-keyframe Framer Motion `times` array
+            which (regression-tested via prod inspection) was leaving the
+            chromes stuck at opacity:0 scale:0.4 in real browsers — Framer
+            12's keyframe + times path is flaky. Replaced with a
+            ChromeOrbit component that uses a state-machine: each phase is
+            a simple single-target Framer animation, much more reliable. */}
+        <ChromeOrbit src="/logos/gardens/chrome-killer-app.png"      alt="Killer App"        orbitX={ 170} orbitY={-160} staggerDelay={0.00} fallbackColor={CHROME.red}   reduced={reduced} />
+        <ChromeOrbit src="/logos/gardens/chrome-dream-machine.png"   alt="Dream Machine"     orbitX={-170} orbitY={ -30} staggerDelay={0.18} fallbackColor={CHROME.warm}  reduced={reduced} />
+        <ChromeOrbit src="/logos/gardens/chrome-knowledge-garden.png" alt="Knowledge Garden" orbitX={ 150} orbitY={ 160} staggerDelay={0.36} fallbackColor={CHROME.green} reduced={reduced} />
 
         {/* Three labels at fixed canvas positions, diagonally opposite
             from each logo's orbit position so they're far from the logo
@@ -666,9 +653,15 @@ const JOURNEY_STAGES: Array<{ file: string; label: string }> = [
 ];
 
 // Horizontal marquee of all 12 journey stages, scrolling right → left
-// across Act 3's 13s duration. Lives at the bottom of Act 3 as a "this
-// is the full build" visual sub-text under the input/output cards.
+// as a seamless infinite loop. 2026-05-23 PM (Chilly): previous version
+// did one right-to-left pass over 13s, which left blank space at the
+// end of the act and was too fast to read. Now: duplicate the items
+// array so the track is 2× as wide; CSS @keyframes translateX from 0 to
+// -50% in a slow linear loop (50% lands the second copy exactly where
+// the first started → seamless). Speed tuned to ~50px/s so each image
+// gets several seconds of viewing time as it crosses.
 function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
+  const items = [...JOURNEY_STAGES, ...JOURNEY_STAGES];
   return (
     <div
       className="bkg-intro-act3-strip"
@@ -680,16 +673,13 @@ function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
         height: 130,
         overflow: 'hidden',
         pointerEvents: 'none',
-        // Faint top/bottom edge fades so the strip blends into the act
-        // instead of looking like a hard band.
+        // Edge fades so images dissolve into the parchment at the strip boundaries.
         maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
         WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
       }}
     >
-      <motion.div
-        initial={reduced ? { x: '0%' } : { x: '110vw' }}
-        animate={reduced ? { x: '0%' } : { x: '-110%' }}
-        transition={reduced ? { duration: 0 } : { duration: 13, ease: 'linear' }}
+      <div
+        className="bkg-intro-act3-marquee"
         style={{
           position: 'absolute',
           top: 0,
@@ -700,10 +690,13 @@ function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
           padding: '0 12px',
           width: 'max-content',
           height: '100%',
+          // CSS animation handles the loop. Duration tuned to ~40s for one
+          // full sweep — slow enough each image gets ~3s of visibility.
+          animation: reduced ? 'none' : 'bkg-intro-marquee 40s linear infinite',
         }}
       >
-        {JOURNEY_STAGES.map((s) => (
-          <div key={s.file} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {items.map((s, i) => (
+          <div key={`${s.file}-${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             <img
               src={`/journey/${encodeURIComponent(s.file)}`}
               alt={s.label}
@@ -727,8 +720,12 @@ function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
             </span>
           </div>
         ))}
-      </motion.div>
+      </div>
       <style jsx global>{`
+        @keyframes bkg-intro-marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
         @media (max-width: 768px) {
           .bkg-intro-act3-strip {
             bottom: 60px !important;
@@ -1126,34 +1123,38 @@ function CardContract() {
   );
 }
 function CardJourney() {
-  // 2026-05-20: swapped from a dark #15151A card to the same light register
-  // as the other 4 cards, then upgraded the journey pills from plain text to
-  // actual stage illustrations (builder-sizeup.png + builder-lockin.png).
-  // Plan-it-out stays as a dashed placeholder — illustration is TBD. Each
-  // image falls back to a colored pill if the asset isn't on disk.
-  const stage = (label: string, src: string | null, active: boolean) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 60 }}>
-      {src ? (
+  // 2026-05-23 PM (Chilly): no more blank slots — all 4 stages now have
+  // real illustrations. Journey order reads as a real build sequence:
+  // Size up → Plan it out → Lock it in (active) → Build. Each image gets
+  // mixBlendMode: multiply since the /journey/ source files still have
+  // cream backgrounds (the transparency PIL pass only processed
+  // chrome-* + Act-5-vertical PNGs). The active stage gets a chrome-warm
+  // accent ring + label color to read as "where we are right now."
+  const stage = (label: string, src: string, active: boolean) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 56 }}>
+      <div style={{
+        padding: 3,
+        border: active ? `2px solid ${CHROME.warm}` : `1px solid transparent`,
+        borderRadius: 6,
+        background: active ? 'rgba(216,90,48,0.06)' : 'transparent',
+      }}>
         <GardenLogo
           src={src}
           alt={label}
-          size={44}
+          size={42}
+          style={{ mixBlendMode: 'multiply' }}
           fallback={
             <span style={{
-              display: 'inline-block', width: 44, height: 44, borderRadius: 4,
+              display: 'inline-block', width: 42, height: 42, borderRadius: 4,
               background: active ? COLORS.ink : 'rgba(15,15,17,0.06)',
             }} />
           }
         />
-      ) : (
-        <span style={{
-          display: 'inline-block', width: 44, height: 44, borderRadius: 4,
-          border: `1px dashed ${COLORS.rule}`, background: 'transparent',
-        }} />
-      )}
+      </div>
       <span style={{
         fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
-        color: active ? COLORS.ink : COLORS.graphite,
+        color: active ? CHROME.warm : COLORS.graphite,
+        whiteSpace: 'nowrap',
       }}>
         {label}
       </span>
@@ -1162,12 +1163,14 @@ function CardJourney() {
   return (
     <div style={card(COLORS.ink)}>
       <div style={cardEyebrow}>JOURNEY</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-        {stage('Size up', '/logos/gardens/builder-sizeup.png', false)}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        {stage('Size up',    '/journey/sizeup-journey.png',  false)}
         <span style={journeyArrow}>→</span>
-        {stage('Lock it in', '/logos/gardens/builder-lockin.png', true)}
+        {stage('Plan it out', '/journey/plan-journey.png',   false)}
         <span style={journeyArrow}>→</span>
-        {stage('Plan it out', null, false)}
+        {stage('Lock it in', '/journey/lock-journey.png',    true)}
+        <span style={journeyArrow}>→</span>
+        {stage('Build',      '/journey/build-journey.png',   false)}
       </div>
     </div>
   );
@@ -1976,9 +1979,13 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
               preload="auto"
               poster="/logos/gardens/knowledge-gardens-tree.png"
               style={{
+                // 2026-05-23 PM: removed mixBlendMode multiply — was
+                // muting the video frames into the parchment background,
+                // making it look like nothing was playing. PNG poster +
+                // mp4 are both transparent-bg now (processed via PIL),
+                // so blend modes aren't needed.
                 width: 320, height: 320,
                 objectFit: 'contain',
-                mixBlendMode: 'multiply',
                 display: 'block',
               }}
             >
@@ -2020,7 +2027,6 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
                   src={d.src}
                   alt={d.alt}
                   size={140}
-                  style={{ mixBlendMode: 'multiply' }}
                   fallback={dotFallback}
                 />
               ) : (
