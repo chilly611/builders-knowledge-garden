@@ -34,6 +34,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
 import { sendEmail, escapeHtml } from '@/lib/email';
+import { captureServerEvent } from '@/lib/posthog';
 
 const DEMO_PROJECT_IDS = new Set<string>([
   '55730cd3-5225-493d-8b5c-49086d942565', // Marin farmhouse
@@ -341,6 +342,20 @@ export async function POST(request: NextRequest) {
     void notifyGcOfNewBid(sb, data, user).catch((err) => {
       console.warn('[sub-bids] notifyGcOfNewBid failed:', err);
     });
+
+    // OBSERVABILITY-WIRE: emit `sub_bid_submitted` to PostHog. The lane
+    // here is 'sub' (the caller's role on this bid context, not their
+    // global lane — they may be a GC on other projects).
+    try {
+      await captureServerEvent(user.id, 'sub_bid_submitted', {
+        lane: 'sub',
+        project_id: projectId,
+        trade_label: tradeLabel,
+        csi_division: csiDivision,
+      });
+    } catch {
+      // Swallow — analytics never blocks request.
+    }
 
     return NextResponse.json(data, { status: 201 });
   } catch (e) {

@@ -48,6 +48,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
 import { sendEmail, escapeHtml } from '@/lib/email';
+import { captureServerEvent } from '@/lib/posthog';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -478,6 +479,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<OnboardRe
     }]);
   } catch (e) {
     console.warn('[onboard-new-user] audit_log insert threw (non-fatal):', e);
+  }
+
+  // ----- 10. Product analytics (best-effort) -------------------------------
+  // OBSERVABILITY-WIRE: emits `signup_completed` to PostHog. user.id only;
+  // never the email (PII rule). Try/catch is defensive — captureServerEvent
+  // already swallows internally, but a belt-and-braces wrap costs nothing.
+  try {
+    await captureServerEvent(user.id, 'signup_completed', {
+      lane: 'gc', // default lane set in project_members above
+      org_id: orgId,
+      project_id: projectId,
+    });
+  } catch {
+    // Swallow — analytics must never block signup.
   }
 
   return NextResponse.json({

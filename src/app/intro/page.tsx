@@ -270,16 +270,22 @@ function ActIndicator({ act, paused, onJump }: { act: number; paused: boolean; o
 //   7.0-8.0s   hammer + tagline alone — the killer app holds the frame.
 // Reduced motion: skips the zoom-past entirely, leaves chromes at small
 // orbit positions with labels visible (the spec-equivalent still state).
-// Single chrome's orbit-out → swell → zoom-past animation, driven by a
-// state machine instead of Framer's 5-keyframe `times` array (which
-// regressed silently — chromes stuck invisible in real browsers).
-// Three phases:
-//   'orbit'  ~1.2s smooth move from canvas center to orbit position at
-//                  scale 1.0, opacity 1 — readable size, holds briefly.
-//   'expand' ~2.5s scale grows 1.0 → 3.5, drifts slightly further out.
-//   'past'   ~2.2s scale 3.5 → 8.0 + further outward translate + fade to 0
+// Single chrome's orbit-out → swell → zoom-past animation. Driven by a
+// state-machine (setTimeouts) instead of Framer's keyframe arrays.
+//
+// 2026-05-23 PM rewrite: ditched the zero-size-anchor + self-centering-inner
+// pattern that was rendering as invisible on prod (per Chilly's screenshot,
+// the chromes never showed up). Now uses plain CSS centering on a fixed-
+// size motion.div: top:50% left:50% with marginLeft/marginTop = -size/2
+// places the box's CENTER at the canvas center BEFORE Framer's transform
+// applies, so Framer's x/y/scale animate cleanly from there.
+//
+// Phases:
+//   'orbit'  ~1.2s move from canvas center → orbit position at scale 1.
+//   'expand' ~2.5s scale 1 → 3.5, drift slightly further outward.
+//   'past'   ~2.2s scale 3.5 → 8.0 + translate way out + fade to 0
 //                  ("zoom past the viewer").
-// Per-chrome stagger delay keeps the three from leaving on the same frame.
+const CHROME_SIZE = 120;
 function ChromeOrbit({
   src, alt, orbitX, orbitY, staggerDelay, fallbackColor, reduced,
 }: {
@@ -322,16 +328,24 @@ function ChromeOrbit({
       initial={{ x: 0, y: 0, scale: 0.4, opacity: 0 }}
       animate={target}
       transition={{ duration: reduced ? 0 : duration, ease: phase === 'past' ? 'easeIn' : 'easeOut' }}
-      style={chromeOrbitContainer}
+      style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: CHROME_SIZE,
+        height: CHROME_SIZE,
+        marginLeft: -CHROME_SIZE / 2,
+        marginTop: -CHROME_SIZE / 2,
+        pointerEvents: 'none',
+        zIndex: 2,
+      }}
     >
-      <div style={chromeOrbitInner}>
-        <GardenLogo
-          src={src}
-          alt={alt}
-          size={120}
-          fallback={<span style={chromeOrbitFallback(fallbackColor)} />}
-        />
-      </div>
+      <GardenLogo
+        src={src}
+        alt={alt}
+        size={CHROME_SIZE}
+        fallback={<span style={chromeOrbitFallback(fallbackColor)} />}
+      />
     </motion.div>
   );
 }
@@ -1911,12 +1925,10 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       src: '/logos/gardens/legal.png',
       alt: 'Legal Garden',
     },
-    {
-      label: 'Coming',
-      color: COLORS.faded,
-      src: null,
-      alt: 'More gardens coming',
-    },
+    // 2026-05-23 PM (Chilly): removed the "Coming" placeholder — its
+    // dotted-circle was bunching against the Legal logo at the right
+    // edge of the arc, making the labels overlap. Five real verticals
+    // spread across the same arc give better spacing and read cleaner.
   ];
 
   // Six verticals across the top 240° (from lower-left through top to
@@ -1949,10 +1961,14 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
       aria-label="Act 5: the vision"
     >
       <div className="bkg-intro-act5-canvas" style={{ position: 'relative', width: 720, height: 540, maxWidth: '94vw', zIndex: 1 }}>
-        {/* Center: looping tool-tree.mp4 wrapped in a Link to /killerapp.
-            This is the "portal to the killer app." Static tree.png stays
-            as the <video poster> so something is visible while the mp4
-            loads (or in browsers that can't play it). */}
+        {/* Center: static knowledge-gardens-tree.png (transparent bg)
+            wrapped in a Link to /killerapp — it's the "portal to the
+            killer app." 2026-05-23 PM (Chilly): the tool-tree.mp4
+            video version was showing as a black square in prod (poster
+            never rendering, autoplay silently failing in this context).
+            Reverted to the static image which we know works. The tree
+            itself was processed for transparent background so it
+            dissolves into the parchment cleanly. */}
         <motion.div
           initial={reduced ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -1971,26 +1987,12 @@ function Act5Vision({ reduced }: { reduced: boolean }) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.0)'; }}
           >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              poster="/logos/gardens/knowledge-gardens-tree.png"
-              style={{
-                // 2026-05-23 PM: removed mixBlendMode multiply — was
-                // muting the video frames into the parchment background,
-                // making it look like nothing was playing. PNG poster +
-                // mp4 are both transparent-bg now (processed via PIL),
-                // so blend modes aren't needed.
-                width: 320, height: 320,
-                objectFit: 'contain',
-                display: 'block',
-              }}
-            >
-              <source src="/intro-assets/tool-tree.mp4" type="video/mp4" />
-            </video>
+            <GardenLogo
+              src="/logos/gardens/knowledge-gardens-tree.png"
+              alt="Knowledge Gardens — enter the killer app"
+              size={320}
+              fallback={<KLogomark size={240} color={COLORS.ink} />}
+            />
           </Link>
         </motion.div>
 

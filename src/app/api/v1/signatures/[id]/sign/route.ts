@@ -29,6 +29,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
+import { captureServerEvent } from '@/lib/posthog';
 
 interface RequiredSigner {
   role: string;
@@ -180,6 +181,21 @@ export async function PATCH(
         })
         .eq('id', id)
         .eq('status', 'pending'); // guard against race with another finalizer
+    }
+
+    // OBSERVABILITY-WIRE: emit `change_order_signed` whenever a signer
+    // completes their leg, regardless of whether the doc is fully
+    // finalized. PostHog cohorts can filter on `finalized=true` if you
+    // only want to count full-execution events.
+    try {
+      await captureServerEvent(user.id, 'change_order_signed', {
+        project_id: doc.project_id,
+        document_type: doc.document_type,
+        method,
+        finalized: allSigned,
+      });
+    } catch {
+      // Swallow — analytics never blocks request.
     }
 
     return NextResponse.json({ ok: true, finalized: allSigned });

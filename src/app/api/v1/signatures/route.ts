@@ -39,6 +39,7 @@ import {
   DocumensoError,
 } from '@/lib/documenso';
 import { syncDocumensoStatus, isStale } from '@/lib/documenso-sync';
+import { captureServerEvent } from '@/lib/posthog';
 
 interface RequiredSigner {
   role: string;
@@ -278,6 +279,20 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // OBSERVABILITY-WIRE: signature request created. Provider distinguishes
+    // documenso vs. the in-app draw/type path. project_id helps cohort
+    // analyses; org_id is not on signed_documents directly so we omit it.
+    try {
+      await captureServerEvent(user.id, 'signature_sent', {
+        lane: 'gc',
+        project_id: projectId,
+        document_type: documentType,
+        provider: wantDocumenso && hasPdf ? 'documenso' : 'in_app',
+      });
+    } catch {
+      // Swallow — analytics never blocks request.
     }
 
     return NextResponse.json(
