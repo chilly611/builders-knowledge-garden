@@ -147,11 +147,24 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const searchParams = useSearchParams();
   const urlProjectId = searchParams.get('project');
 
-  // Compute initial projectId: URL wins, localStorage rescues, else null.
+  // Compute initial projectId: URL wins only.
+  //
+  // IMPORTANT: Do NOT read from localStorage in the lazy initializer.
+  // useState lazy initializers run on both server AND client. On the
+  // server, readActiveProjectFromStorage() correctly returns null (no
+  // window). But on the client during hydration, it would return the
+  // stored project ID — producing a server/client mismatch that causes
+  // React to see "server rendered null, client rendered full project
+  // shell" and throw a fatal hydration error. This is why /killerapp
+  // was crashing for logged-in users (who have stored project IDs in
+  // localStorage) while working for fresh logged-out users.
+  //
+  // Fix: start from URL param only (server-safe), then hydrate from
+  // localStorage in the useEffect below.
   const [fetchKey, setFetchKey] = useState(0);
   const [projectId, setProjectId] = useState<string | null>(() => {
     if (urlProjectId && isValidProjectId(urlProjectId)) return urlProjectId;
-    return readActiveProjectFromStorage();
+    return null;
   });
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [loading, setLoading] = useState<boolean>(!!projectId);
@@ -160,13 +173,23 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [projectRole, setProjectRole] = useState<ProjectRole | null>(null);
   const inFlight = useRef<{ id: string; key: number } | null>(null);
 
-  // First-paint persistence: if initial state came from URL, write
-  // to localStorage so cross-tab + rescue logic stays in sync. Runs
-  // exactly once after mount.
+  // Hydrate from localStorage on client mount. Must be a useEffect —
+  // NOT a lazy initializer — to avoid the server/client hydration
+  // mismatch described above. Also writes the URL-sourced ID back to
+  // localStorage so cross-tab sync stays in sync.
   useEffect(() => {
-    if (projectId && typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+    if (projectId) {
+      // URL already has a project — write it to localStorage for
+      // cross-tab sync but don't overwrite with a stale stored value.
       try { window.localStorage.setItem(ACTIVE_PROJECT_KEY, projectId); }
       catch { /* ignore */ }
+      return;
+    }
+    // No URL param — rescue from localStorage.
+    const stored = readActiveProjectFromStorage();
+    if (stored && isValidProjectId(stored)) {
+      setProjectId(stored);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
