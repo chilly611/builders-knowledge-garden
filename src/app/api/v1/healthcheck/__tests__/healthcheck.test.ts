@@ -134,6 +134,14 @@ vi.mock('@/lib/live-workflows', () => ({
   },
 }));
 
+// Stripe check: report unconfigured so the soft check just warns and
+// the harness doesn't need to spin up a Stripe SDK mock.
+vi.mock('@/lib/stripe', () => ({
+  isStripeConfigured: () => false,
+  getStripeMode: () => 'unconfigured',
+  getCustomerCountSnapshot: async () => null,
+}));
+
 // Now import the route under test.
 import { GET, _resetHealthcheckCacheForTests } from '../route';
 

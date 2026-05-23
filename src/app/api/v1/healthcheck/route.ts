@@ -49,6 +49,11 @@ import { getAuthUser, getServiceClient } from '@/lib/auth-server';
 import { checkDomainVerification, getFromDomain } from '@/lib/email';
 import { getCacheStats } from '@/lib/code-sources';
 import { LIVE_WORKFLOW_PATHS } from '@/lib/live-workflows';
+import {
+  isStripeConfigured,
+  getStripeMode,
+  getCustomerCountSnapshot,
+} from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -454,6 +459,95 @@ async function checkPgCron(): Promise<SubCheck> {
   return r;
 }
 
+/**
+ * stripe — soft check. Reports config presence and mode (test|live).
+ * Unconfigured → ok:true with a warning so the dashboard renders amber
+ * but uptime monitors don't page. When configured we also make a cheap
+ * `customers.list(limit:1)` call so we know the API key is actually
+ * valid against Stripe (a wrong key fails fast here instead of failing
+ * a real customer's checkout).
+ */
+async function checkStripe(): Promise<SubCheck> {
+  const r = await withDeadline('stripe', async () => {
+    const configured = isStripeConfigured();
+    const mode = getStripeMode();
+    if (!configured) {
+      return {
+        configured: false as const,
+        mode,
+        has_customers: false,
+        live_safety_ok: true,
+      };
+    }
+    const snap = await getCustomerCountSnapshot();
+    // Sanity flag: if mode is `live` but STRIPE_LIVE_MODE isn't true,
+    // our stripe lib refuses to construct a client → snap will be null.
+    const live_safety_ok = !(
+      mode === 'live' && process.env.STRIPE_LIVE_MODE !== 'true'
+    );
+    return {
+      configured: true as const,
+      mode,
+      has_customers: snap?.has_customers ?? false,
+      live_safety_ok,
+    };
+  });
+  if (r.ok && r.value && typeof r.value === 'object') {
+    const v = r.value as {
+      configured: boolean;
+      mode: string;
+      live_safety_ok: boolean;
+    };
+    if (!v.configured) {
+      return {
+        ...r,
+        warning: 'STRIPE_SECRET_KEY not set; billing endpoints will 503',
+      };
+    }
+    if (!v.live_safety_ok) {
+      return {
+        ...r,
+        warning:
+          'live Stripe key detected but STRIPE_LIVE_MODE!=true; client refused to initialize',
+      };
+    }
+    if (v.mode === 'test') {
+      return { ...r, warning: 'Stripe is in TEST mode' };
+    }
+  }
+  return r;
+}
+
+/**
+ * observability — info-only check that reports whether Sentry + PostHog
+ * are configured for this deploy. Never fails: missing keys are a
+ * configuration choice (e.g. local dev), not an outage. Operators
+ * reading /admin/healthcheck will see `configured:false` and know to
+ * set env vars when they want the dashboards lit. Added 2026-05-23
+ * (OBSERVABILITY-WIRE).
+ */
+async function checkObservability(): Promise<SubCheck> {
+  const start = Date.now();
+  const value = {
+    sentry: {
+      configured:
+        !!process.env.SENTRY_DSN || !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+      env: process.env.SENTRY_ENVIRONMENT || process.env.VERCEL_ENV || null,
+    },
+    posthog: {
+      configured: !!(
+        process.env.POSTHOG_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY
+      ),
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.posthog.com',
+    },
+  };
+  return {
+    ok: true, // info-only, never fails
+    value,
+    latency_ms: Date.now() - start,
+  };
+}
+
 /** vercel — read deploy metadata for ops traceability. Info only. */
 async function checkVercel(): Promise<SubCheck> {
   const start = Date.now();
@@ -483,9 +577,11 @@ const SEVERITY: Record<string, CheckSeverity> = {
   source_urls: 'soft',
   email: 'soft',
   mcp: 'soft',
+  stripe: 'soft',
   rag_cache: 'info',
   workflows: 'info',
   vercel: 'info',
+  observability: 'info',
 };
 
 // ---------------------------------------------------------------------------
@@ -506,6 +602,8 @@ async function runAllChecks(): Promise<HealthcheckResponse> {
     ['workflows', checkWorkflows()],
     ['mcp', checkMcp()],
     ['pg_cron', checkPgCron()],
+    ['stripe', checkStripe()],
+    ['observability', checkObservability()],
     ['vercel', checkVercel()],
   ];
 
