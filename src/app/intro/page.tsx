@@ -60,12 +60,13 @@ const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 //   Act 3 (index 2) rewritten 2026-05-22 AM (Chilly): multi-input modality
 //     panel (voice → sketch → blueprint → excel). 11s → 13s to fit the 4
 //     input events. Cards re-timed to land alongside each input.
-//   Act 4 (index 3) rewritten 2026-05-22 AM (Chilly): scripted cinematic
-//     budget animation (numbers type in, hero number scales, page
-//     auto-scrolls) instead of the live iframe — "nobody scrolls a
-//     cinematic for themselves." 14s. "Open full app in new tab" still
-//     present as escape hatch.
-const ACT_DURATIONS_MS = [8000, 10000, 13000, 14000, 12000];
+//   Act 4 (index 3) rewritten 2026-05-22 AM (single-page budget cinematic)
+//     and AGAIN 2026-05-23 PM (Chilly): now a 7-phase multi-screen
+//     workflow walkthrough — journey → sequencing → materials → equipment
+//     → time-machine → code → contract. Hero budget always visible at top,
+//     scales/pulses when each phase mutates it. 24s. "Open the real app"
+//     escape link kept.
+const ACT_DURATIONS_MS = [8000, 10000, 13000, 24000, 12000];
 const TOTAL_ACTS = 5;
 
 // — Garden Logo (with SVG fallback) ————————————————————————————————————
@@ -1172,99 +1173,527 @@ function CardJourney() {
   );
 }
 
-// — ACT 4: Cinematic budget ————————————————————————————————————————————
-// 2026-05-22 AM (Chilly): replaced the live /killerapp/budget iframe with
-// a fully-scripted cinematic budget mockup. The original iframe required
-// investor interaction (scroll, hover) to reveal the platform — but
-// "nobody scrolls a cinematic for themselves." This rewrite animates the
-// platform AS IF a hyper-speed power user were driving:
-//   0.0-1.0s   Header fades in (project + jurisdiction)
-//   1.0-2.5s   Hero total types in: $0 → $905,000
-//   2.8-7.0s   10 category cards cascade in, dollar amounts type per card
-//   7.0-9.5s   Page auto-scrolls down through the category list
-//   9.5-12.5s  Hero total scales 1.0 → 1.4 → 0.85 → 1.0 (emphasis pulse)
-//   12.5-14s   Contract amount banner highlights + holds
-// "Open full app in new tab" CTA still present (now linking out to the
-// real /killerapp/budget so investors who want to actually use the
-// product can escape into it).
-// Categories rebalanced 2026-05-22 to sum to exactly $905,000 (the
-// canonical Marin farmhouse midpoint per DEMO-MAY20-PLAN). Percentages
-// are roughly real-world residential GC: shell ~45%, systems ~12%,
-// finishes ~35%, soft ~8%.
-const BUDGET_CATEGORIES: Array<{ label: string; amount: number; group: 'shell' | 'systems' | 'finishes' | 'soft' }> = [
-  { label: 'Foundation',             amount: 110000, group: 'shell'    },
-  { label: 'Framing',                amount: 165000, group: 'shell'    },
-  { label: 'Title 24 envelope',      amount: 78000,  group: 'shell'    },
-  { label: 'MEP rough-in',           amount: 112000, group: 'systems'  },
-  { label: 'Roofing',                amount: 58000,  group: 'shell'    },
-  { label: 'Exterior finishes',      amount: 82000,  group: 'finishes' },
-  { label: 'Interior finishes',      amount: 125000, group: 'finishes' },
-  { label: 'Fixtures + appliances',  amount: 56000,  group: 'finishes' },
-  { label: 'Permits + soft costs',   amount: 42000,  group: 'soft'     },
-  { label: 'Contingency (8%)',       amount: 77000,  group: 'soft'     },
+// — ACT 4: Multi-screen killer-app cinematic ————————————————————————————
+// 2026-05-23 PM (Chilly): deep rewrite from the prior single-page budget
+// cinematic. Now cycles through 7 phases of different killerapp workflows
+// AT HYPER SPEED, with the hero budget value always visible at top and
+// SCALING/CHANGING in response to each workflow action. "Money is the
+// spine" — each phase makes that visible:
+//
+//   Phase 0  0.0-3.0s  /killerapp                       Journey + initial estimate    $0 → $750k
+//   Phase 1  3.0-6.0s  /killerapp/workflows/sequencing  Task list optimizing          $750k → $820k
+//   Phase 2  6.0-10.0s /killerapp/workflows/estimating  Materials grid populates      $820k → $890k
+//   Phase 3  10.0-13.5s /killerapp/workflows/equipment  Equipment cards add up        $890k → $930k
+//   Phase 4  13.5-17.0s /killerapp/time-machine          Rewind dial — budget scrubs   $930k → $820k → $930k
+//   Phase 5  17.0-20.0s /killerapp/workflows/code-compliance Code refinement          $930k → $905k
+//   Phase 6  20.0-24.0s /killerapp/workflows/contract-templates  Contract locks       $905k (pulse)
+//
+// The browser-chrome URL at the top updates per phase. The hero budget
+// counts smoothly between keyframes (no abrupt jumps) and scales briefly
+// when the delta exceeds a threshold. Phase content uses AnimatePresence
+// for clean cross-fades. "Open the real app" escape link at the bottom.
+
+// Budget value at each keyframe (in seconds, dollars). Interpolated
+// linearly between keyframes. Final settles at $905k (canonical Marin
+// farmhouse midpoint per DEMO-MAY20-PLAN).
+const ACT4_BUDGET_KF: Array<{ t: number; v: number }> = [
+  { t:  0.0, v:       0 },
+  { t:  1.5, v:  750000 },  // initial range midpoint
+  { t:  3.0, v:  750000 },  // hold during journey
+  { t:  4.5, v:  820000 },  // sequencing optimization +70k
+  { t:  6.0, v:  820000 },  // hold
+  { t:  8.5, v:  890000 },  // materials add +70k
+  { t: 10.0, v:  890000 },  // hold
+  { t: 12.0, v:  930000 },  // equipment +40k
+  { t: 13.5, v:  930000 },  // hold
+  { t: 14.5, v:  820000 },  // time-machine rewind — preview past state
+  { t: 16.5, v:  820000 },  // hold (showing the past)
+  { t: 17.2, v:  930000 },  // "Return to live" snap back
+  { t: 18.5, v:  905000 },  // code refinement -25k
+  { t: 24.0, v:  905000 },  // final hold
 ];
-const BUDGET_TOTAL = BUDGET_CATEGORIES.reduce((s, c) => s + c.amount, 0); // = $905,000
+
+type Act4Phase = 'journey' | 'sequencing' | 'materials' | 'equipment' | 'timemachine' | 'code' | 'contract';
+
+function act4PhaseAt(elapsed: number): Act4Phase {
+  if (elapsed <  3.0) return 'journey';
+  if (elapsed <  6.0) return 'sequencing';
+  if (elapsed < 10.0) return 'materials';
+  if (elapsed < 13.5) return 'equipment';
+  if (elapsed < 17.0) return 'timemachine';
+  if (elapsed < 20.0) return 'code';
+  return 'contract';
+}
+
+const ACT4_PHASE_URL: Record<Act4Phase, string> = {
+  journey:     '/killerapp?project=55730cd3...',
+  sequencing:  '/killerapp/workflows/sequencing',
+  materials:   '/killerapp/workflows/estimating',
+  equipment:   '/killerapp/workflows/equipment',
+  timemachine: '/killerapp/time-machine',
+  code:        '/killerapp/workflows/code-compliance',
+  contract:    '/killerapp/workflows/contract-templates',
+};
+
+const ACT4_PHASE_LABEL: Record<Act4Phase, string> = {
+  journey:     'Project · Marin farmhouse',
+  sequencing:  'Sequencing — optimize the build order',
+  materials:   'Estimating — materials takeoff',
+  equipment:   'Equipment & subs',
+  timemachine: 'Time Machine — rewind the budget',
+  code:        'Code compliance — Title 24 + WUI',
+  contract:    'Contracts — draft & lock the agreement',
+};
+
+// Linear interpolation between budget keyframes.
+function act4BudgetAt(elapsed: number): number {
+  if (elapsed <= ACT4_BUDGET_KF[0].t) return ACT4_BUDGET_KF[0].v;
+  for (let i = 0; i < ACT4_BUDGET_KF.length - 1; i++) {
+    const a = ACT4_BUDGET_KF[i];
+    const b = ACT4_BUDGET_KF[i + 1];
+    if (elapsed >= a.t && elapsed < b.t) {
+      const p = (elapsed - a.t) / (b.t - a.t);
+      return a.v + (b.v - a.v) * p;
+    }
+  }
+  return ACT4_BUDGET_KF[ACT4_BUDGET_KF.length - 1].v;
+}
+
+// Returns the |dBudget/dt| over a small window centered at `elapsed`.
+// Used to scale the hero up briefly when the budget changes rapidly.
+function act4BudgetVelocity(elapsed: number): number {
+  const dt = 0.2;
+  const a = act4BudgetAt(Math.max(0, elapsed - dt));
+  const b = act4BudgetAt(elapsed + dt);
+  return Math.abs(b - a) / (2 * dt);
+}
 
 function formatUsd(n: number, withDollar = true): string {
   const sign = withDollar ? '$' : '';
   return sign + Math.round(n).toLocaleString('en-US');
 }
 
-// Pure: returns the current count-up value at the given `elapsedSec`,
-// animating 0 → target between `startAt` and `startAt + durationSec`.
-// Ease-out-quart for a "fast at first, settles" feel. Pure so it can be
-// called inside .map() — React Hooks rules don't apply.
-function countUpValue(target: number, durationSec: number, startAt: number, elapsedSec: number): number {
-  if (elapsedSec < startAt) return 0;
-  if (elapsedSec >= startAt + durationSec) return target;
-  const p = (elapsedSec - startAt) / durationSec;
-  const eased = 1 - Math.pow(1 - p, 4);
-  return target * eased;
+// Each phase-view component receives the elapsed time WITHIN its phase
+// (not the overall act elapsed), making each one independently testable
+// and easier to animate. Lifted to module scope so they don't get
+// re-created on every Act4LiveBudget render.
+
+function Act4PhaseJourney() {
+  // Show 4 of the 12 journey illustrations in a row — the "build arc."
+  // Highlight "Begin" since this is the project-start phase.
+  const stages = [
+    { file: 'beginning-journey.jpg', label: 'Begin',     active: true  },
+    { file: 'sketch-journey.JPG',    label: 'Sketch',    active: false },
+    { file: 'plan-journey.png',      label: 'Plan',      active: false },
+    { file: 'sizeup-journey.png',    label: 'Size up',   active: false },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ fontSize: 13, color: COLORS.graphite, lineHeight: 1.5 }}>
+        Modern farmhouse · Marin County, CA · 1,800 sf · slab on grade · Q3 2026
+      </div>
+      <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {stages.map((s) => (
+          <div key={s.file} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{
+              padding: 6,
+              border: s.active ? `2px solid ${CHROME.warm}` : `1px solid ${COLORS.rule}`,
+              borderRadius: 12,
+              background: s.active ? 'rgba(216,90,48,0.06)' : 'transparent',
+              boxShadow: s.active ? `0 0 0 4px rgba(216,90,48,0.10)` : 'none',
+            }}>
+              <img
+                src={`/journey/${encodeURIComponent(s.file)}`}
+                alt={s.label}
+                style={{ width: 120, height: 100, objectFit: 'contain', mixBlendMode: 'multiply', display: 'block' }}
+              />
+            </div>
+            <span style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
+              color: s.active ? CHROME.warm : COLORS.graphite,
+              textTransform: 'uppercase',
+            }}>
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        fontSize: 12, color: COLORS.faded, textAlign: 'center', fontStyle: 'italic',
+      }}>
+        Initial estimate range: $750k – $1.06M (CRC R301, Title 24 baseline)
+      </div>
+    </div>
+  );
+}
+
+function Act4PhaseSequencing({ localT }: { localT: number }) {
+  // 5 tasks, each "checks itself in" as localT progresses. Final beat:
+  // "Sequencing optimized — +$70k recovered" hint slides in.
+  const tasks = [
+    { label: 'Foundation',      days:  3, cost: 110000, at: 0.0 },
+    { label: 'Framing',         days: 12, cost: 165000, at: 0.4 },
+    { label: 'MEP rough-in',    days:  8, cost: 112000, at: 0.8 },
+    { label: 'Drywall + paint', days:  6, cost:  54000, at: 1.2 },
+    { label: 'Finishes',        days: 21, cost: 199000, at: 1.6 },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {tasks.map((t) => {
+        const done = localT >= t.at;
+        return (
+          <motion.div
+            key={t.label}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: done ? 1 : 0.3, x: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '24px 1fr auto auto',
+              alignItems: 'center',
+              gap: 12,
+              padding: '10px 14px',
+              border: `1px solid ${COLORS.rule}`,
+              borderRadius: 8,
+              background: done ? '#fff' : 'rgba(15,15,17,0.02)',
+            }}
+          >
+            <span style={{
+              width: 20, height: 20, borderRadius: 4,
+              border: `2px solid ${done ? CHROME.green : COLORS.rule}`,
+              background: done ? CHROME.green : 'transparent',
+              display: 'grid', placeItems: 'center',
+              color: '#fff', fontSize: 13, fontWeight: 800,
+            }}>{done ? '✓' : ''}</span>
+            <span style={{ fontSize: 13, color: COLORS.ink, fontWeight: 600 }}>{t.label}</span>
+            <span style={{ fontSize: 11, color: COLORS.faded, fontFamily: 'ui-monospace, Menlo, monospace' }}>
+              {t.days}d
+            </span>
+            <span style={{ fontSize: 12, color: COLORS.graphite, fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600, minWidth: 80, textAlign: 'right' }}>
+              {formatUsd(t.cost)}
+            </span>
+          </motion.div>
+        );
+      })}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: localT >= 2.0 ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          marginTop: 6,
+          padding: '8px 12px',
+          background: 'rgba(29, 158, 117, 0.10)',
+          border: `1px solid rgba(29, 158, 117, 0.3)`,
+          borderLeft: `3px solid ${CHROME.green}`,
+          borderRadius: 6,
+          fontSize: 12, color: COLORS.ink, fontWeight: 600,
+        }}
+      >
+        Sequence locked. Critical path shaved 4 days — <span style={{ color: CHROME.green, fontWeight: 800 }}>+$70k</span> off the bottom.
+      </motion.div>
+    </div>
+  );
+}
+
+function Act4PhaseMaterials({ localT }: { localT: number }) {
+  const items = [
+    { label: '2×6 Douglas fir',      qty: '8,200 sf',     cost: 42300, at: 0.0 },
+    { label: 'Drywall (5/8")',       qty: '6,400 sf',     cost: 17920, at: 0.3 },
+    { label: 'Insulation R-30',      qty: '2,800 sf',     cost:  9800, at: 0.6 },
+    { label: 'Title 24 windows',     qty: '12 units',     cost: 48000, at: 0.9 },
+    { label: 'Roofing — Class A',    qty: '2,400 sf',     cost: 32400, at: 1.2 },
+    { label: 'Slab concrete',        qty: '38 cy',        cost: 22000, at: 1.5 },
+    { label: 'MEP fixtures',         qty: '1 lot',        cost: 56000, at: 1.8 },
+    { label: 'Hardwood (5" oak)',    qty: '1,200 sf',     cost: 14400, at: 2.1 },
+  ];
+  const visible = items.filter((i) => localT >= i.at);
+  const running = visible.reduce((s, i) => s + i.cost, 0);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 6,
+      }}>
+        {items.map((item) => {
+          const show = localT >= item.at;
+          return (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: show ? 1 : 0, scale: show ? 1 : 0.96 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '8px 12px',
+                border: `1px solid ${COLORS.rule}`,
+                borderLeft: `3px solid ${CHROME.warmB}`,
+                borderRadius: 6,
+                background: '#fff',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 11, color: COLORS.ink, fontWeight: 600 }}>{item.label}</span>
+                <span style={{ fontSize: 9, color: COLORS.faded, fontFamily: 'ui-monospace, Menlo, monospace' }}>{item.qty}</span>
+              </div>
+              <span style={{ fontSize: 11, color: COLORS.graphite, fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 700 }}>
+                {formatUsd(item.cost)}
+              </span>
+            </motion.div>
+          );
+        })}
+      </div>
+      <div style={{
+        marginTop: 6,
+        padding: '8px 12px',
+        background: 'rgba(196, 164, 74, 0.12)',
+        border: `1px solid rgba(196, 164, 74, 0.35)`,
+        borderLeft: `3px solid ${CHROME.warmB}`,
+        borderRadius: 6,
+        fontSize: 12, color: COLORS.ink, fontWeight: 600,
+        textAlign: 'right',
+      }}>
+        Materials subtotal: <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 800 }}>{formatUsd(running)}</span>
+      </div>
+    </div>
+  );
+}
+
+function Act4PhaseEquipment({ localT }: { localT: number }) {
+  const equip = [
+    { label: 'Excavator (CAT 320)', days: 3, cost: 9000,  at: 0.0 },
+    { label: 'Concrete pump',       days: 2, cost: 5800,  at: 0.4 },
+    { label: 'Tower crane',         days: 1, cost: 3600,  at: 0.8 },
+    { label: 'Lift / boom',         days: 5, cost: 4500,  at: 1.2 },
+    { label: 'Specialty subs lot',  days: 0, cost: 17100, at: 1.6 },
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {equip.map((e) => {
+        const show = localT >= e.at;
+        return (
+          <motion.div
+            key={e.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 8 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              padding: '10px 14px',
+              border: `1px solid ${COLORS.rule}`,
+              borderLeft: `3px solid ${CHROME.warm}`,
+              borderRadius: 8,
+              background: '#fff',
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink }}>{e.label}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: COLORS.faded, fontFamily: 'ui-monospace, Menlo, monospace' }}>
+                {e.days > 0 ? `${e.days} days` : 'lump sum'}
+              </span>
+              <span style={{ fontSize: 12, fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 700, color: COLORS.graphite }}>
+                {formatUsd(e.cost)}
+              </span>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Act4PhaseTimeMachine({ localT }: { localT: number }) {
+  // Dial scrubs counter-clockwise during 0-1.5s (rewind), then snaps
+  // back during 2.5-3.0s (return to live). Indicator angle reflects
+  // current scrub position; a label below names the state being viewed.
+  const PHASE_DURATION = 3.5;
+  // angle 0 = "live" (today), angle goes negative as we rewind
+  let angle = 0;
+  let stateLabel = 'Live · Today';
+  let stateVal = '$930,000';
+  if (localT < 1.5) {
+    // Rewind: 0 → -120°
+    angle = -120 * (localT / 1.5);
+    stateLabel = 'Rewinding…';
+    stateVal = '—';
+  } else if (localT < 2.5) {
+    // Hold at past state
+    angle = -120;
+    stateLabel = 'Yesterday · before sequencing';
+    stateVal = '$820,000';
+  } else if (localT < PHASE_DURATION) {
+    // Return to live: -120 → 0 over 0.5s
+    angle = -120 + 120 * ((localT - 2.5) / 1.0);
+    stateLabel = 'Returning to live…';
+    stateVal = '—';
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 32, justifyContent: 'center' }}>
+      {/* Dial */}
+      <div style={{ position: 'relative', width: 180, height: 180 }}>
+        <svg viewBox="-100 -100 200 200" width="180" height="180">
+          {/* Outer ring */}
+          <circle cx="0" cy="0" r="85" fill="none" stroke={COLORS.rule} strokeWidth="2" />
+          {/* Tick marks every 30 degrees */}
+          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => {
+            const a = (deg - 90) * Math.PI / 180;
+            const x1 = Math.cos(a) * 78, y1 = Math.sin(a) * 78;
+            const x2 = Math.cos(a) * 88, y2 = Math.sin(a) * 88;
+            return <line key={deg} x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLORS.graphite} strokeWidth="1.5" />;
+          })}
+          {/* "Today" marker at top */}
+          <text x="0" y="-92" textAnchor="middle" fontSize="9" fontWeight="800" fill={CHROME.red}>TODAY</text>
+          {/* Indicator hand */}
+          <motion.g
+            animate={{ rotate: angle }}
+            transition={{ duration: 0.1 }}
+            style={{ transformOrigin: 'center' }}
+          >
+            <line x1="0" y1="0" x2="0" y2="-72" stroke={CHROME.red} strokeWidth="3" strokeLinecap="round" />
+            <circle cx="0" cy="-72" r="4" fill={CHROME.red} />
+          </motion.g>
+          {/* Center pivot */}
+          <circle cx="0" cy="0" r="5" fill={COLORS.ink} />
+        </svg>
+      </div>
+      {/* State readout */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 200 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', color: COLORS.faded, textTransform: 'uppercase' }}>
+          Budget state
+        </span>
+        <span style={{ fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)", fontSize: 28, color: COLORS.ink, lineHeight: 1.1 }}>
+          {stateVal}
+        </span>
+        <span style={{ fontSize: 12, color: CHROME.warm, fontWeight: 600 }}>
+          {stateLabel}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Act4PhaseCode({ localT }: { localT: number }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          padding: '12px 16px',
+          border: `1px solid ${COLORS.rule}`,
+          borderLeft: `4px solid ${CHROME.warm}`,
+          borderRadius: 8,
+          background: '#fff',
+        }}
+      >
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: CHROME.warm, textTransform: 'uppercase' }}>
+          Code citation · multi-source verified
+        </div>
+        <div style={{ fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)", fontSize: 18, marginTop: 4, color: COLORS.ink }}>
+          CRC R327 · Wildland-Urban Interface
+        </div>
+        <div style={{ fontSize: 12, color: COLORS.graphite, marginTop: 4, lineHeight: 1.4 }}>
+          Class A roof · ember-resistant vents · ignition-resistant siding. Marin County overlay applies.
+        </div>
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: localT >= 0.8 ? 1 : 0, y: localT >= 0.8 ? 0 : 6 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          padding: '12px 16px',
+          border: `1px solid ${COLORS.rule}`,
+          borderLeft: `4px solid ${CHROME.green}`,
+          borderRadius: 8,
+          background: '#fff',
+        }}
+      >
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: CHROME.green, textTransform: 'uppercase' }}>
+          Title 24 §110.10 · solar mandate
+        </div>
+        <div style={{ fontSize: 12, color: COLORS.graphite, marginTop: 4, lineHeight: 1.4 }}>
+          Class A roof saves $40k vs spec (cheaper assembly). High-perf envelope adds $15k. <strong style={{ color: CHROME.green }}>Net refinement: −$25,000.</strong>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function Act4PhaseContract({ localT }: { localT: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      style={{
+        padding: '20px 24px',
+        background: 'rgba(232, 68, 58, 0.05)',
+        border: `1px solid rgba(232, 68, 58, 0.3)`,
+        borderLeft: `5px solid ${CHROME.red}`,
+        borderRadius: 12,
+      }}
+    >
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: CHROME.red, textTransform: 'uppercase' }}>
+        Client Agreement · auto-drafted
+      </div>
+      <div style={{
+        fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
+        fontSize: 22, color: COLORS.ink, marginTop: 6, lineHeight: 1.2,
+      }}>
+        Modern farmhouse · Marin County, CA
+      </div>
+      <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 12, color: COLORS.graphite, fontWeight: 600 }}>
+          Contract amount
+        </span>
+        <motion.span
+          initial={{ scale: 0.9 }}
+          animate={{ scale: localT >= 0.6 ? [1, 1.18, 1] : 1 }}
+          transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.8 }}
+          style={{
+            fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
+            fontSize: 'clamp(28px, 4vw, 40px)',
+            color: COLORS.ink,
+            letterSpacing: '-0.01em',
+            display: 'inline-block',
+            transformOrigin: 'center right',
+          }}
+        >
+          $905,000
+        </motion.span>
+      </div>
+      <div style={{ marginTop: 10, fontSize: 11, color: COLORS.faded, fontStyle: 'italic' }}>
+        Locked in · ready for client signature
+      </div>
+    </motion.div>
+  );
 }
 
 function Act4LiveBudget() {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const start = performance.now();
-    // 33ms ≈ 30fps. Smooth enough for the number-count and scroll, light
-    // enough on React re-renders (a 14s act × 30fps = ~420 renders).
+    // 33ms ≈ 30fps. Smooth enough for budget interpolation across the
+    // ~24s act × 30fps = ~720 renders. Reasonable React load.
     const id = window.setInterval(() => setElapsed((performance.now() - start) / 1000), 33);
     return () => window.clearInterval(id);
   }, []);
 
-  // Hero total counts up 1.0 → 2.5s (1.5s duration)
-  const heroVal = countUpValue(BUDGET_TOTAL, 1.5, 1.0, elapsed);
+  const phase = act4PhaseAt(elapsed);
+  const budget = act4BudgetAt(elapsed);
+  // Hero scale: pulse up when budget velocity is high (mid-transition).
+  // Velocity tops out around 70k/s during the fastest transitions →
+  // normalize to [0, 1] then map to [1, 1.18] scale.
+  const velocity = act4BudgetVelocity(elapsed);
+  const heroScale = 1 + Math.min(0.18, velocity / 400000);
 
-  // Hero scale animation (emphasis pulse) 9.5-12.5s
-  let heroScale = 1;
-  if (elapsed >= 9.5 && elapsed < 10.5) {
-    heroScale = 1 + 0.4 * (elapsed - 9.5);  // 1.0 → 1.4
-  } else if (elapsed >= 10.5 && elapsed < 11.5) {
-    heroScale = 1.4 - 0.55 * (elapsed - 10.5);  // 1.4 → 0.85
-  } else if (elapsed >= 11.5 && elapsed < 12.5) {
-    heroScale = 0.85 + 0.15 * (elapsed - 11.5);  // 0.85 → 1.0
-  } else if (elapsed >= 12.5) {
-    heroScale = 1;
-  }
-
-  // Each category card has its own appearance time + count-up timing.
-  // Cards cascade from 2.8s to 7.0s — 10 cards × 0.42s gap.
-  const cardSchedule = BUDGET_CATEGORIES.map((c, i) => ({
-    ...c,
-    appearAt: 2.8 + i * 0.42,
-  }));
-
-  // Auto-scroll y-offset: 7.0s → 9.5s shifts the category list up by 180px
-  // to reveal the lower cards near the top, then holds.
-  let scrollY = 0;
-  if (elapsed >= 7.0 && elapsed < 9.5) {
-    scrollY = -180 * ((elapsed - 7.0) / 2.5);
-  } else if (elapsed >= 9.5) {
-    scrollY = -180;
-  }
-
-  // Contract amount banner pulses 12.5s → 14s
-  const showContractPulse = elapsed >= 12.5;
+  // Phase-local elapsed for sub-views (resets each phase entry).
+  const phaseStartT: Record<Act4Phase, number> = {
+    journey: 0, sequencing: 3, materials: 6, equipment: 10,
+    timemachine: 13.5, code: 17, contract: 20,
+  };
+  const localT = elapsed - phaseStartT[phase];
 
   return (
     <motion.section
@@ -1278,22 +1707,21 @@ function Act4LiveBudget() {
         background: COLORS.paper,
         display: 'flex', flexDirection: 'column',
       }}
-      aria-label="Act 4: cinematic budget"
+      aria-label="Act 4: multi-screen killer-app cinematic"
     >
-      <div className="bkg-intro-act4-header" style={{ padding: '54px 40px 8px', textAlign: 'center' }}>
+      <div className="bkg-intro-act4-header" style={{ padding: '44px 40px 4px', textAlign: 'center' }}>
         <p style={eyebrow(COLORS.faded)}>THE PLATFORM, AT HYPER-SPEED</p>
         <h2 style={{ ...h2Style, marginTop: 4, fontSize: 'clamp(22px, 3vw, 30px)' }}>
-          Watch a $905k farmhouse come together in fourteen seconds.
+          Every action moves the money. The money moves the build.
         </h2>
       </div>
 
-      {/* The "screen" — a faux killer-app budget surface that animates. */}
       <div className="bkg-intro-act4-canvas" style={{
-        flex: 1, position: 'relative', padding: '16px 40px 8px', minHeight: 0,
+        flex: 1, position: 'relative', padding: '12px 40px 8px', minHeight: 0,
         display: 'flex', justifyContent: 'center',
       }}>
         <div style={{
-          width: 'min(820px, 100%)', height: '100%',
+          width: 'min(880px, 100%)', height: '100%',
           background: '#fff',
           border: `1px solid ${COLORS.rule}`,
           borderRadius: 14,
@@ -1301,7 +1729,7 @@ function Act4LiveBudget() {
           overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}>
-          {/* Browser-chrome strip */}
+          {/* Browser-chrome strip — URL updates per phase. */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '10px 14px',
@@ -1311,176 +1739,115 @@ function Act4LiveBudget() {
             <span style={{ width: 10, height: 10, borderRadius: 5, background: '#E8443A', opacity: 0.6 }} />
             <span style={{ width: 10, height: 10, borderRadius: 5, background: '#E8B53A', opacity: 0.6 }} />
             <span style={{ width: 10, height: 10, borderRadius: 5, background: '#3AE863', opacity: 0.6 }} />
-            <span style={{ marginLeft: 10, fontSize: 11, color: COLORS.faded, fontFamily: 'ui-monospace, Menlo, monospace' }}>
-              builders.theknowledgegardens.com/killerapp/budget
-            </span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={phase}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.25 }}
+                style={{
+                  marginLeft: 10, fontSize: 11, color: COLORS.faded,
+                  fontFamily: 'ui-monospace, Menlo, monospace',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}
+              >
+                builders.theknowledgegardens.com{ACT4_PHASE_URL[phase]}
+              </motion.span>
+            </AnimatePresence>
           </div>
 
-          {/* App content */}
-          <div style={{ flex: 1, padding: '20px 28px', overflow: 'hidden', position: 'relative' }}>
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: elapsed >= 0.1 ? 1 : 0, y: elapsed >= 0.1 ? 0 : -8 }}
-              transition={{ duration: 0.5 }}
-              style={{ marginBottom: 14 }}
-            >
+          {/* Persistent budget hero — visible across all phases, animates
+              as the budget value mutates. */}
+          <div style={{
+            padding: '14px 24px 8px',
+            borderBottom: `1px solid ${COLORS.rule}`,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: 'rgba(15,15,17,0.012)',
+          }}>
+            <div>
               <div style={{
-                fontSize: 12, fontWeight: 700, letterSpacing: '0.1em',
+                fontSize: 10, fontWeight: 800, letterSpacing: '0.14em',
                 color: COLORS.faded, textTransform: 'uppercase',
               }}>
-                Modern farmhouse in Marin
+                Live budget · Modern farmhouse · Marin
               </div>
-              <div style={{ fontSize: 13, color: COLORS.graphite, marginTop: 2 }}>
-                Marin County, CA · 1,800 sf · slab on grade · Q3 2026
-              </div>
-            </motion.div>
-
-            {/* Hero total */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={phase}
+                  initial={{ opacity: 0.5, y: -2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ fontSize: 11, color: CHROME.warm, fontWeight: 600, marginTop: 2 }}
+                >
+                  {ACT4_PHASE_LABEL[phase]}
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <motion.div
               animate={{ scale: heroScale }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
               style={{
-                textAlign: 'center', margin: '8px 0 20px',
-                transformOrigin: 'center center',
-              }}
-            >
-              <div style={{
-                fontSize: 11, fontWeight: 800, letterSpacing: '0.14em',
-                color: COLORS.faded, textTransform: 'uppercase', marginBottom: 4,
-              }}>
-                Midpoint estimate
-              </div>
-              <div style={{
                 fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
-                fontSize: 'clamp(36px, 6vw, 64px)',
+                fontSize: 'clamp(30px, 4.5vw, 48px)',
                 color: COLORS.ink,
-                lineHeight: 1,
                 letterSpacing: '-0.02em',
-              }}>
-                {formatUsd(heroVal)}
-              </div>
-            </motion.div>
-
-            {/* Category list — wrapped in a translate-Y motion.div for
-                the auto-scroll. */}
-            <motion.div
-              animate={{ y: scrollY }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 8,
+                lineHeight: 1,
+                transformOrigin: 'center right',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {cardSchedule.map((c) => {
-                const visible = elapsed >= c.appearAt;
-                const amountVal = countUpValue(c.amount, 0.6, c.appearAt + 0.05, elapsed);
-                return (
-                  <motion.div
-                    key={c.label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 10 }}
-                    transition={{ duration: 0.4, ease: 'easeOut' }}
-                    style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '10px 12px',
-                      border: `1px solid ${COLORS.rule}`,
-                      borderLeft: `3px solid ${
-                        c.group === 'shell'    ? CHROME.warmB :
-                        c.group === 'systems'  ? CHROME.warm :
-                        c.group === 'finishes' ? CHROME.green :
-                                                 COLORS.graphite
-                      }`,
-                      borderRadius: 8,
-                      background: '#fff',
-                    }}
-                  >
-                    <span style={{ fontSize: 12, color: COLORS.ink, fontWeight: 600 }}>
-                      {c.label}
-                    </span>
-                    <span style={{
-                      fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                      fontSize: 12, color: COLORS.graphite, fontWeight: 600,
-                    }}>
-                      {visible ? formatUsd(amountVal) : '—'}
-                    </span>
-                  </motion.div>
-                );
-              })}
+              {formatUsd(budget)}
             </motion.div>
+          </div>
 
-            {/* Contract amount banner — pulses at the end */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{
-                opacity: showContractPulse ? 1 : 0,
-                y: showContractPulse ? 0 : 16,
-                boxShadow: showContractPulse
-                  ? ['0 0 0 0 rgba(232,68,58,0)', '0 0 0 8px rgba(232,68,58,0.18)', '0 0 0 0 rgba(232,68,58,0)']
-                  : '0 0 0 0 rgba(232,68,58,0)',
-              }}
-              transition={{ duration: 0.6, ease: 'easeOut', boxShadow: { duration: 1.2, repeat: Infinity } }}
-              style={{
-                marginTop: 14,
-                padding: '12px 16px',
-                background: 'rgba(232, 68, 58, 0.06)',
-                border: `1px solid rgba(232, 68, 58, 0.3)`,
-                borderLeft: `4px solid ${CHROME.red}`,
-                borderRadius: 10,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                position: 'absolute', bottom: 20, left: 28, right: 28,
-              }}
-            >
-              <div>
-                <div style={{
-                  fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
-                  color: CHROME.red, textTransform: 'uppercase',
-                }}>
-                  Contract amount · auto-populated
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-archivo-black, 'Archivo Black', sans-serif)",
-                  fontSize: 22, color: COLORS.ink, marginTop: 2,
-                }}>
-                  $905,000
-                </div>
-              </div>
-              <div style={{
-                fontSize: 11, color: COLORS.graphite,
-                textAlign: 'right', lineHeight: 1.3,
-              }}>
-                Modern farmhouse · Marin<br/>
-                Client Agreement drafted
-              </div>
-            </motion.div>
+          {/* Phase content — cross-fades between the 7 sub-views. */}
+          <div style={{ flex: 1, padding: '18px 24px', overflow: 'hidden', position: 'relative' }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={phase}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -14 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                style={{ height: '100%' }}
+              >
+                {phase === 'journey'     && <Act4PhaseJourney />}
+                {phase === 'sequencing'  && <Act4PhaseSequencing  localT={localT} />}
+                {phase === 'materials'   && <Act4PhaseMaterials   localT={localT} />}
+                {phase === 'equipment'   && <Act4PhaseEquipment   localT={localT} />}
+                {phase === 'timemachine' && <Act4PhaseTimeMachine localT={localT} />}
+                {phase === 'code'        && <Act4PhaseCode        localT={localT} />}
+                {phase === 'contract'    && <Act4PhaseContract    localT={localT} />}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      {/* Bottom CTA: still let investors escape into the real product */}
+      {/* Bottom CTA: investor escape hatch into the real product */}
       <div className="bkg-intro-act4-cta" style={{
-        padding: '12px 40px 80px',
+        padding: '10px 40px 80px',
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
         flexWrap: 'wrap',
         position: 'relative',
         zIndex: 5,
       }}>
-        <Link href={`/killerapp/budget?project=${DEMO_PROJECT_ID}`} style={ctaGhost} target="_blank">
-          Open the real budget in a new tab
+        <Link href={`/killerapp?project=${DEMO_PROJECT_ID}`} style={ctaGhost} target="_blank">
+          Open the real platform in a new tab
         </Link>
       </div>
 
       <style jsx global>{`
         @media (max-width: 768px) {
           .bkg-intro-act4-header {
-            padding: 28px 18px 6px !important;
+            padding: 24px 18px 4px !important;
           }
           .bkg-intro-act4-canvas {
-            padding: 8px 12px 8px !important;
+            padding: 8px 12px 6px !important;
           }
           .bkg-intro-act4-cta {
-            padding: 8px 16px 88px !important;
+            padding: 6px 16px 88px !important;
             flex-direction: column !important;
             gap: 10px !important;
           }
