@@ -33,12 +33,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
+import {
+  createSignatureRequest,
+  isDocumensoConfigured,
+  DocumensoError,
+} from '@/lib/documenso';
+import { syncDocumensoStatus, isStale } from '@/lib/documenso-sync';
 
 interface RequiredSigner {
   role: string;
   email?: string;
   user_id?: string;
   name?: string;
+}
+
+/**
+ * Fetch PDF bytes from either a URL or a base64 string. Returns null
+ * if neither input is usable.
+ */
+async function resolvePdfBytes(opts: {
+  pdfUrl?: string;
+  pdfBase64?: string;
+}): Promise<Buffer | null> {
+  if (opts.pdfBase64) {
+    try {
+      // Tolerate data: URLs as well as raw base64.
+      const raw = opts.pdfBase64.includes(',')
+        ? opts.pdfBase64.split(',', 2)[1]
+        : opts.pdfBase64;
+      return Buffer.from(raw, 'base64');
+    } catch {
+      return null;
+    }
+  }
+  if (opts.pdfUrl) {
+    try {
+      const res = await fetch(opts.pdfUrl);
+      if (!res.ok) return null;
+      const ab = await res.arrayBuffer();
+      return Buffer.from(ab);
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export async function GET(request: NextRequest) {
@@ -75,6 +113,21 @@ export async function GET(request: NextRequest) {
       });
     });
 
+    // Fire-and-forget lazy sync for any Documenso-backed row whose
+    // status hasn't been refreshed in >5 minutes. This is what keeps
+    // the inbox honest until the webhook is wired in Documenso's UI.
+    // We deliberately don't await — the response goes out immediately.
+    if (isDocumensoConfigured()) {
+      for (const row of pending) {
+        if (!row.documenso_document_id) continue;
+        if (!isStale(row.documenso_last_synced_at)) continue;
+        // Intentionally not awaited.
+        syncDocumensoStatus(row.id).catch(() => {
+          // Swallow — sync is best-effort.
+        });
+      }
+    }
+
     return NextResponse.json({ signatures: pending });
   } catch (e) {
     return NextResponse.json(
@@ -96,6 +149,7 @@ export async function POST(request: NextRequest) {
       documentId,
       title,
       pdfUrl,
+      pdfBase64,
       requiredSigners,
     } = body as {
       projectId?: string;
@@ -103,6 +157,7 @@ export async function POST(request: NextRequest) {
       documentId?: string;
       title?: string;
       pdfUrl?: string;
+      pdfBase64?: string;
       requiredSigners?: RequiredSigner[];
     };
 
@@ -129,6 +184,81 @@ export async function POST(request: NextRequest) {
     const documentHash = createHash('sha256').update(hashInput).digest('hex');
 
     const sb = getServiceClient();
+
+    // ----- Documenso provider branch ---------------------------------
+    // When SIGNATURE_PROVIDER=documenso is set, the env var is the only
+    // switch — the orchestrator already enabled it in prod. We still
+    // require an actual PDF source (URL or base64) to delegate. If the
+    // caller didn't supply one we fall through to the in-app flow so a
+    // bare "create me a placeholder" call still works during the
+    // typed/drawn fallback path.
+    const provider = (process.env.SIGNATURE_PROVIDER || '').toLowerCase();
+    const wantDocumenso = provider === 'documenso' && isDocumensoConfigured();
+    const hasPdf = Boolean(pdfUrl || pdfBase64);
+
+    let documensoFields: {
+      documenso_document_id?: number;
+      documenso_signing_urls?: Record<string, string>;
+      documenso_last_status?: string;
+      documenso_last_synced_at?: string;
+    } = {};
+    let signingUrls: Record<string, string> | undefined;
+
+    if (wantDocumenso && hasPdf) {
+      // Validate recipients have name + email before paying the
+      // Documenso round-trip.
+      const badRecipient = requiredSigners.find(
+        (s) => !s.email || !/.+@.+\..+/.test(s.email)
+      );
+      if (badRecipient) {
+        return NextResponse.json(
+          { error: 'Documenso requires every required signer to have a valid email' },
+          { status: 400 }
+        );
+      }
+
+      const pdfBytes = await resolvePdfBytes({ pdfUrl, pdfBase64 });
+      if (!pdfBytes) {
+        return NextResponse.json(
+          { error: 'Could not load PDF bytes from pdfUrl/pdfBase64' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        const created = await createSignatureRequest({
+          title: title || `${documentType} signature request`,
+          pdfBytes,
+          recipients: requiredSigners.map((s) => ({
+            name: s.name || s.email || 'Signer',
+            email: s.email!,
+            role: 'SIGNER',
+          })),
+        });
+        signingUrls = Object.fromEntries(
+          created.recipients.map((r) => [r.email.toLowerCase(), r.signingUrl])
+        );
+        documensoFields = {
+          documenso_document_id: created.documentId,
+          documenso_signing_urls: signingUrls,
+          documenso_last_status: 'PENDING',
+          documenso_last_synced_at: new Date().toISOString(),
+        };
+      } catch (e) {
+        const msg =
+          e instanceof DocumensoError
+            ? `Documenso error (${e.status}): ${e.message}`
+            : e instanceof Error
+              ? e.message
+              : 'Unknown Documenso failure';
+        // Documenso down → surface a 502 so the caller can decide whether
+        // to retry or fall back. We do NOT silently write an in-app row
+        // here because that would mask the provider failure.
+        return NextResponse.json({ error: msg }, { status: 502 });
+      }
+    }
+    // -----------------------------------------------------------------
+
     const { data, error } = await sb
       .from('signed_documents')
       .insert({
@@ -141,6 +271,7 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         required_signers: requiredSigners,
         created_by: user.id,
+        ...documensoFields,
       })
       .select()
       .single();
@@ -149,7 +280,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ signature: data }, { status: 201 });
+    return NextResponse.json(
+      { signature: data, ...(signingUrls ? { signingUrls } : {}) },
+      { status: 201 }
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'Internal server error' },

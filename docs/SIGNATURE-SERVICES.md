@@ -168,3 +168,79 @@ the raw signature image.
   agreements (same pattern, different `document_type`).
 - Email delivery on `signed_documents` insert via the existing
   `src/lib/email.ts` Resend wrapper.
+
+## Documenso wiring (May 2026)
+
+Documenso Cloud is the production signature provider behind the flag
+`SIGNATURE_PROVIDER=documenso`. When that env var is set AND the
+caller hands `/api/v1/signatures` a `pdfUrl` or `pdfBase64`, the
+endpoint creates a real Documenso envelope, places one SIGNATURE
+field per recipient, and tells Documenso to email the signers.
+Otherwise the existing in-app typed/drawn flow continues to work
+unchanged.
+
+### Env vars (prod, in Vercel)
+- `DOCUMENSO_API_KEY=api_qxg33yaoattv9492` — raw API key from
+  https://app.documenso.com/settings/tokens.
+- `DOCUMENSO_WEBHOOK_SECRET=Grace2026!` — shared secret for the
+  webhook receiver at `POST /api/v1/signatures/documenso-webhook`.
+- `SIGNATURE_PROVIDER=documenso` — turns the route's Documenso
+  branch on.
+- `DOCUMENSO_API_BASE_URL` (optional) — defaults to
+  `https://app.documenso.com/api/v1`; override for self-hosted dev.
+
+### Auth header gotcha (important)
+Documenso's v1 API expects the **raw API key** in `Authorization`,
+NOT a `Bearer …` prefix. Every other REST API in the codebase uses
+Bearer; this one does not. See `src/lib/documenso.ts`'s `getApiKey()`
+caller sites.
+
+### Three-step envelope creation
+1. `POST /documents` → returns `{ documentId, uploadUrl, recipients }`.
+2. `PUT uploadUrl` (S3 pre-signed PUT, region `eu-central-1`) with
+   `Content-Type: application/pdf`. No auth header on this leg.
+3. `POST /documents/{id}/fields` for each recipient (at least one
+   SIGNATURE field is mandatory — `POST /send` 400s otherwise).
+4. `POST /documents/{id}/send` with `{ sendEmail: true }`.
+
+`createSignatureRequest()` in `src/lib/documenso.ts` runs the whole
+sequence.
+
+### Webhook setup TODO
+The Documenso UI flow for creating webhooks was finicky on the night
+of 2026-05-24 — multi-step modal kept losing state. The receiver
+route exists and validates the secret two ways (Bearer header OR
+HMAC-SHA256 of the body in `X-Documenso-Signature`). Future task:
+wire it via the Documenso API (the documented endpoint is
+`POST /api/v1/webhooks`) and pin it to `document.signed`,
+`document.completed`, and `document.rejected` events. Until that's
+done, the GET handler on `/api/v1/signatures` lazy-syncs any row
+with a stale `documenso_last_synced_at` (>5 min) by polling
+`GET /documents/{id}`.
+
+### Links
+- Docs: https://docs.documenso.com/
+- Live verified contract (2026-05-24 smoke test): see
+  `git log -- src/lib/documenso.ts` for trace.
+
+### Risk callouts (Documenso-specific)
+- **Webhook signature format** — Documenso publishes two formats
+  (Bearer secret vs. HMAC); our handler accepts both. If they
+  ever consolidate, drop the unused branch.
+- **S3 region quirks** — the pre-signed URL points at
+  `s3.eu-central-1.amazonaws.com`. Edge runtimes in regions with
+  strict egress filtering may need `nodejs` runtime, not edge, for
+  the upload leg. The route is already nodejs-default.
+- **Recipient email validation** — we hard-fail the POST with a 400
+  if any required signer has no email or an invalid one. The
+  in-app flow tolerates empty emails (matches by user_id); the
+  Documenso flow cannot.
+- **What happens when Documenso is down** — the POST returns 502
+  with the upstream status code in the message. We deliberately
+  do NOT silently fall back to the in-app row because that would
+  mask the provider failure from the caller. If the caller wants
+  graceful degradation it should retry without `pdfUrl`/`pdfBase64`
+  to get the typed/drawn row instead.
+- **Race between webhook and lazy-sync** — both code paths gate the
+  `status` update with `eq('status', 'pending')` so the loser is a
+  no-op UPDATE. Audit log gets one row per attempt; that's fine.
