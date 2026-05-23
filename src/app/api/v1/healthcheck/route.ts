@@ -84,7 +84,12 @@ export interface HealthcheckResponse {
 // ---------------------------------------------------------------------------
 
 const CACHE_TTL_MS = 10 * 1000;
-const PER_CHECK_DEADLINE_MS = 1500;
+// 2026-05-23: bumped 1500 -> 3000 because cold-start on Vercel pods adds
+// ~500-800ms to Supabase client init + first RPC. Warm path is 200-600ms
+// per check (well under). The HARD_DEADLINE_MS below is bumped to 3500
+// to cover this. The cache (10s) means cold paths only fire once per
+// deployment per pod per ~10s window — rare in practice.
+const PER_CHECK_DEADLINE_MS = 3000;
 
 interface CacheEntry {
   at: number;
@@ -579,11 +584,12 @@ export async function GET(request: NextRequest) {
   }
 
   // Belt-and-suspenders: even if every sub-check hangs, this hard
-  // deadline guarantees we return within 2s. The internal per-check
-  // deadlines are 1.5s + parallel, so this should never trip — but
+  // deadline guarantees we return within 3.5s. The internal per-check
+  // deadlines are 3s + parallel, so this should never trip — but
   // if it does we return a degraded payload so uptime monitors get
   // SOME answer rather than a 504.
-  const HARD_DEADLINE_MS = 1900;
+  // 2026-05-23: bumped 1900 -> 3500 to absorb Vercel cold-start.
+  const HARD_DEADLINE_MS = 3500;
   let payload: HealthcheckResponse;
   try {
     payload = await Promise.race<Promise<HealthcheckResponse> | Promise<HealthcheckResponse>>([
@@ -594,7 +600,7 @@ export async function GET(request: NextRequest) {
             resolve({
               ok: false,
               ts: new Date().toISOString(),
-              summary: 'healthcheck exceeded 1900ms hard deadline',
+              summary: 'healthcheck exceeded 3500ms hard deadline',
               checks: {},
             }),
           HARD_DEADLINE_MS,
