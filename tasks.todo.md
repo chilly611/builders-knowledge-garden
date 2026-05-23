@@ -1784,3 +1784,28 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 - Healthcheck RPCs are SECURITY DEFINER + service-role-only by design.
 - Idempotent state transitions gate on the FROM-state in WHERE, not just in code.
 - Pluggable backends with default fallback eliminate config-required deploys.
+
+
+---
+
+## From meeting digest: 2026-03-26-bkg-walkthrough-john (added 2026-05-23)
+
+> Source: `docs/meetings/2026-03-26-bkg-walkthrough-john.md`
+> Raw transcript: `docs/meetings/raw/2026-03-26-bkg-walkthrough-john.md`
+
+### Framing decisions
+
+- [ ] **Decide: canonize "Four Core Pillars" framing?** Knowledge Layer / AI COO / Voice-First / Continuous Optimization Loop. If yes, fold into manifesto, About page, pitch deck. (Source: 2026-03-26 walkthrough)
+- [ ] **Decide: canonize "Three-Zone Information Architecture" as the security gating label?** Zone 1 Public / Zone 2 Authenticated Shared / Zone 3 Private Business Workspace. Verify semantics match the existing public/auth/encrypted gates in `BKG-COMPLETE-PROJECT-BRIEF.html` before adoption. (Source: 2026-03-26 walkthrough)
+- [ ] **Confirm "Surprise Me" as the Dream Machine discovery module name.** Already on the existing open calibration list; March 26 transcript names it explicitly. (Source: 2026-03-26 walkthrough)
+
+### Stat verification (block external use until done)
+
+- [ ] **Source-verify: 90% widespread worker shortage.** Currently cited in pitch language without sourced citation.
+- [ ] **Source-verify: 40% of current workforce retiring by 2031.** Currently cited in pitch language without sourced citation.
+- [ ] **Source-verify: 8-day coordination delays per field dependency block.** Currently cited in "Before/After" MTP matrix; cannot be used externally until benchmarked or sourced.
+
+### Protocol additions
+
+- [ ] **Establish monthly platform stats snapshot cadence.** Capture entity count, edge count, production route count, jurisdiction count, code section count on the first of each month. First baseline already exists in the 2026-03-26 digest.
+- [ ] **Future meeting transcripts: capture dialogue vs. narration explicitly** so calibration-partner reactions (John, contractor partner) can be extracted cleanly into digests.

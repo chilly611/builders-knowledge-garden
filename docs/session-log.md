@@ -2023,3 +2023,52 @@ Also restored a cleaned `docs/in-flight.md` — collapsed to a single "no active
 
 **Verification:** every commit GREEN on Vercel within ~90s of push. 4 migrations applied via `apply_migration` to `vlezoyalutexenbnzzui` (all succeeded first try). `knowledge_entities.source_urls` coverage 41.6% → 100% (2256/2256 rows have non-empty source_urls). All 19 `audit_log` leaf partitions verified `relrowsecurity = true` + `relforcerowsecurity = true`; `has_table_privilege('anon', 'audit_log_yYYYY_mMM', 'SELECT')` returns `false` for every leaf. `command_center_projects.project_budgets` column no longer exists in `information_schema.columns`. 3 healthcheck RPCs callable as `service_role`, denied as `anon`/`authenticated`. `pending_invites` table + pg_cron `expire_pending_invites` confirmed in `cron.job`. Smoke test: pending_invites row inserted → SQL-manual accept → org_members row appeared → invite status flipped to 'accepted'. `/api/v1/healthcheck` returns hard-fail signals for any cron schedule that's stopped firing, any RLS policy with a `USING (true)` shape, any partition with missing RLS. End-to-end smoke: round-5 onboarding wizard + round-6 invite-accept + auto-claim on signup all green in sequence. JSONB-DROP-V2 commit (`fix(budget)`) verified by `grep -r '/api/v1/budget/items' src/` returning zero matches and `grep -r 'project_budgets' supabase/migrations/` showing the DROP COLUMN statement as the most recent reference.
 
+
+
+## 2026-05-23 — Chat Session: Meeting Transcript Protocol + March 26 Walkthrough Ingest
+
+**Agent:** Chat (claude-opus-4-7)
+**Type:** Process/infrastructure (no code shipped this session)
+**Outcome:** Established the canonical protocol for ingesting meeting transcripts, recorded walkthroughs, and external conversations into the repo as structured digests. Processed the first transcript (March 26, 2026 BKG walkthrough with John) end-to-end as the protocol's pilot run.
+
+### What was built
+
+- `docs/meetings/README.md` (new) — the protocol itself. Defines file layout (`docs/meetings/{slug}.md` for digests, `docs/meetings/raw/{slug}.md` for unedited transcripts, `docs/meetings/themes.md` for cross-meeting synthesis when patterns emerge). Specifies the seven-section digest template with YAML frontmatter, the per-transcript workflow, what the protocol is NOT (not a meeting-notes app, doesn't replace `tasks.todo.md` or founder-locks), and when to skip a digest entirely.
+- `docs/meetings/2026-03-26-bkg-walkthrough-john.md` (new) — first digest. Structured extraction from the March 26 walkthrough Chilly had with John. Captures two new framings worth canonizing ("Four Core Pillars," "Three-Zone Information Architecture"), six notable founder-voice quotes preserved for manifesto/brand work, a March 26 stats baseline (500+ entities, 315+ edges, 22 routes) against which May growth is measurable, and explicit `connections` links to existing canon (eight lanes, six-phase lifecycle, light-mode mandate, knowledge-as-moat).
+- `docs/meetings/raw/2026-03-26-bkg-walkthrough-john.md` (new) — unedited source transcript, permanent record.
+- `tasks.todo.md` (appended) — eight new action items added at end: three framing decisions (canonize Four Pillars / Three-Zone / Surprise Me), three stat-verification blockers (90% worker shortage, 40% retiring by 2031, 8-day coordination delay), two protocol additions (monthly stats snapshots, future transcripts capture dialogue explicitly).
+
+### Key decisions
+
+- **Meeting transcripts get their own protocol, separate from `session-log.md`.** Sessions are about what Chat/Cowork built; meetings are about what was said in external conversations or articulations. Different artifact, different lifecycle, both feed `tasks.todo.md`.
+- **Raw transcripts are permanent and untouched.** Digests are the revisable layer. This prevents "fixing" a transcript to match later understanding and losing the time-stamped truth of what was actually said when.
+- **Stats in old transcripts are not corrected.** A March 26 transcript saying "500+ entities" stays "500+ entities" forever — it's the baseline, not stale data. This treats every digest as a time-stamped snapshot, not "current truth."
+- **The quotes section is non-negotiable.** Direct founder language preserved per meeting. Twelve months from now, the manifesto and pitch deck get written from accumulated founder voice instead of copywriter prose.
+- **Cross-meeting synthesis (`themes.md`) is pattern-triggered, not calendar-triggered.** Written when something appears in three or more digests, not on a schedule.
+
+### Two framings now formally in front of Chilly for decision
+
+1. **"Four Core Pillars"** — Knowledge Layer / AI COO / Voice-First / Continuous Optimization Loop. Crisper than the current canon's framing. Candidate for manifesto + pitch deck adoption.
+2. **"Three-Zone Information Architecture"** — Zone 1 Public / Zone 2 Authenticated Shared / Zone 3 Private Business Workspace. A brand-able label for the security gating already documented (less formally) in `BKG-COMPLETE-PROJECT-BRIEF.html`.
+
+Both queued in `tasks.todo.md`.
+
+### Files committed this session
+
+- `docs/meetings/README.md` (new)
+- `docs/meetings/2026-03-26-bkg-walkthrough-john.md` (new)
+- `docs/meetings/raw/2026-03-26-bkg-walkthrough-john.md` (new)
+- `tasks.todo.md` (appended — 14 new lines)
+- `docs/session-log.md` (this entry)
+
+### What's open after this session
+
+- Chilly to confirm the digest format before the second transcript is processed (the next paste should follow the same pipeline without re-explanation).
+- Open question flagged for future transcripts: are they narration (March 26 format) or two-sided dialogue? Digest template handles both, but raw should preserve speakers if dialogue.
+- Eight new items live in `tasks.todo.md` from this digest. Three are framing decisions for Chilly. Three are stat-verification blockers (no external use of cited industry stats until sourced).
+
+### Verification
+
+- `docs/meetings/` directory created and populated (`ls -la docs/meetings/` confirms README.md, the digest, and raw/ subdirectory).
+- `tasks.todo.md` line count grew from existing baseline to 1,811 lines; tail matches the appended block exactly.
+- No existing files modified except the two append targets (`tasks.todo.md`, `docs/session-log.md`).
