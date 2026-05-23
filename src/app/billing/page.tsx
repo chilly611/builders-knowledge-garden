@@ -24,14 +24,19 @@ const TIER_LABEL: Record<string, string> = {
   free: 'Free',
   explorer: 'Free',
   pro: 'Pro — $49/mo',
-  team: 'Team — $149/mo',
-  enterprise: 'Enterprise',
+  team: 'Team — $199/mo',
+  enterprise: 'Enterprise — $499/mo',
 };
 
+// 2026-05-23: prices reflect actual products in Stripe sandbox
+// (prod_UGbZRkCHq81Tca / prod_UGbbXH0eDldM3M / prod_UGbexzn30upB0v).
+// Server-side, the actual price IDs come from STRIPE_PRICE_* env vars,
+// so these labels are display-only and must stay in sync if Stripe
+// pricing changes. Update both places together.
 const UPGRADE_TIERS: Array<{ slug: 'pro' | 'team' | 'enterprise'; label: string; price: string }> = [
   { slug: 'pro', label: 'Pro', price: '$49 / month' },
-  { slug: 'team', label: 'Team', price: '$149 / month (up to 10 users)' },
-  { slug: 'enterprise', label: 'Enterprise', price: 'Contact sales' },
+  { slug: 'team', label: 'Team', price: '$199 / month (up to 10 users)' },
+  { slug: 'enterprise', label: 'Enterprise', price: '$499 / month' },
 ];
 
 export default function BillingPage() {
