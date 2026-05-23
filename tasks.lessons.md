@@ -1579,3 +1579,32 @@ Total: 2 successful pushes (Ship 35, Ship 36c) + 3 rollbacks + 1 bisect-step (Sh
 **Date:** 2026-05-24 (Cowork round-6, KvBackend cache abstraction)
 **What happened:** Round 5 hand-rolled the 25-line LRU+TTL cache (lesson there: don't npm-install what you can hand-roll). Round 6 needed to make the cache multi-region — the per-Vercel-instance LRU works for ~100 RPS on a single instance, but as soon as Vercel scales the route to N instances, each instance has a cold cache and the upstream code-source providers get hit N× more. Default plan: require Upstash Redis as a deploy-time config; `npm i @upstash/redis`, add `UPSTASH_REDIS_URL` + `UPSTASH_REDIS_TOKEN` to `.env.production`, blow up if not set. Problem: that breaks every dev environment, every preview deploy, every local-dev that doesn't have Upstash. And it punishes the day-1 dev who doesn't have Upstash provisioned yet. Real fix: a `KvBackend` interface with two implementations — `UpstashKvBackend` (uses Upstash if `UPSTASH_REDIS_URL` is set) and `InMemoryKvBackend` (the existing 25-line LRU; the fallback). Factory function picks at module-load: `getKv(): KvBackend = process.env.UPSTASH_REDIS_URL ? new UpstashKvBackend(...) : new InMemoryKvBackend()`. Same code path either way; the cache just transparently becomes shared once env vars exist. Day-1 dev: works on the in-memory LRU. Day-30 prod with Upstash provisioned: works on shared Redis. Zero code change between those two states — only env-var addition.
 **Rule:** any feature that benefits from infrastructure (Redis, S3, queue, log aggregator, CDN, message bus) should be optional-enable via env vars with a graceful in-process fallback, never migration-required or hard-coded. Pattern: define an interface with the minimal surface (`get/set/del/expire`), implement N backends (external + in-process), select at module-load on env-var presence, default to the in-process implementation. The in-process implementation can be intentionally degraded (smaller capacity, per-instance scope) — that's the "good enough for dev, scale-up later" state. Apply to: caches, queues (in-process EventEmitter vs. SQS), object storage (local filesystem vs. S3), log sinks (console vs. Datadog), embedding stores (in-memory cosine vs. pgvector), feature flags (env-var vs. LaunchDarkly). The win: same code runs in every environment; infrastructure becomes a runtime decision, not a code branch.
+
+
+---
+
+## Lesson — Synthesized meeting docs use "shipped voice" for in-progress work (learned 2026-05-23)
+
+### The pattern
+
+When a meeting recording (Zoom, voice memo, video) gets passed through an AI tool that "extracts technical notes" or "synthesizes the conversation" without producing a verbatim transcript, the output tends to describe in-progress capabilities in shipped voice. Deferred features become "deployed." Roadmap targets become "implemented." Architectural intentions become accomplished facts. The 2026-05-22 platform-review synthesis contained at least five direct overclaims of this kind:
+
+1. Native signature engine described as "deployed" — repo says deferred, contracts emailed as PDFs for external signing.
+2. PLG self-serve signup described as "implemented" — repo says Clerk still on mock, bundled with the Stripe push.
+3. 7-year audit retention described as live — repo's pg_cron retention is on the order of 18 months.
+4. MEP determinism described as "completely eliminating hallucinations" — repo lists MEP panel + load calc API among round-3 in-flight wishlist items.
+5. "Transition complete / ready for VC diligence" — three weeks earlier the founder dogfood loop broke on a real ADU estimate; NOW items still open.
+
+The synthesis is not lying intentionally. It's pattern-matching meeting language ("we're going to ship X," "X is what makes this work") into descriptive sentences about X. The shipped voice is an artifact of the summarization, not of the meeting.
+
+### The rule
+
+Before reusing any language from a synthesized meeting doc in any external material — especially investor decks, diligence responses, or website copy — cross-check every claim of capability against the repo. The protocol's Reality Cross-Check section in `docs/meetings/README.md` is the standard.
+
+### The corollary
+
+For meetings where the audience is a real diligence party (a Mike B, a design partner, a paying customer), record the actual conversation. Capture verbatim or write the digest same-day from memory. Synthesized one-voice docs destroy the calibration signal — what the other party actually questioned, pushed back on, or got excited about is exactly what diligence preparation needs, and that's the first thing a synthesis flattens.
+
+### The meta-signal
+
+The dogfood-loop lesson from 2026-05-01 — "smoke-test green is not product works" — applies up the stack. AI-synthesized meeting documents are smoke-tests for pitch language. They confirm the words sound right. They do not confirm the words match reality. Same gate: a real-user end-to-end walk is the only thing that does.

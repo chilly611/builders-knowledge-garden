@@ -2072,3 +2072,47 @@ Both queued in `tasks.todo.md`.
 - `docs/meetings/` directory created and populated (`ls -la docs/meetings/` confirms README.md, the digest, and raw/ subdirectory).
 - `tasks.todo.md` line count grew from existing baseline to 1,811 lines; tail matches the appended block exactly.
 - No existing files modified except the two append targets (`tasks.todo.md`, `docs/session-log.md`).
+
+
+## 2026-05-23 — Chat Session: Second Meeting Transcript Ingest (May 22 platform review with John & Mike B)
+
+**Agent:** Chat (claude-opus-4-7)
+**Type:** Process / digest (no code shipped; digest + tasks + lesson appends)
+**Outcome:** Ingested the May 22 platform review synthesis. Surfaced five direct discrepancies between the synthesis's "shipped voice" claims and current repo state. New stakeholder Mike B logged as a calibration partner for VC diligence. New lesson filed.
+
+### What was built
+
+- `docs/meetings/2026-05-22-platform-review-john-mike.md` (new) — second digest. Includes a Reality Cross-Check section as the load-bearing element. Documents five overclaims from the synthesis (native signature engine, PLG self-serve, 7-year audit retention, deterministic MEP "eliminates hallucinations," "transition complete / ready for diligence") and tags each against the corresponding repo evidence.
+- `docs/meetings/raw/2026-05-22-platform-review-john-mike.md` (new) — raw synthesis. Preserved as-is, with a top-of-file warning that it is an AI synthesis, not a verbatim transcript.
+- `tasks.todo.md` (appended) — eight new items: two reality-reconciliation blockers (audit retention, strip shipped-voice from VC materials), three Mike B calibration items, three framing decisions, one housekeeping confirmation (Charlie Dahlgren name), one lesson-to-file.
+- `tasks.lessons.md` (appended) — new lesson: "Synthesized meeting docs use shipped voice for in-progress work." Five-bullet list of the specific overclaims. Cross-check rule. Diligence corollary. Meta-signal connecting to the May 1 "smoke-test green is not product works" lesson.
+
+### Key decisions / signals
+
+- **The synthesis cannot be used as-is in any external material.** Every "deployed/implemented/integrated" claim was either deferred, in-flight, or wrong in scale (7yr vs. ~18mo retention). Diligence-facing language has to be rebuilt from repo truth, not from this doc.
+- **Mike B is a new calibration thread.** First appearance on the record. "Venture Diligence & Validation" role implies he will see the product, not slides. Action item filed: schedule a real product walkthrough on a real-feeling ADU job before any more synthesis-language reaches him.
+- **The meeting protocol earned its keep on the second use.** First digest (March 26) was a clean snapshot ingest. Second digest (May 22) caught five misleading claims that would have damaged diligence if pasted verbatim into VC materials. Reality Cross-Check is now the load-bearing section of the digest template.
+- **Founder dogfood discipline applies up the stack.** AI-synthesized meeting summaries are pitch-language smoke tests. They confirm the words sound right; they don't confirm the words match reality. Same gate as the product: real-user walk is the only verification.
+
+### Files committed this session
+
+- `docs/meetings/2026-05-22-platform-review-john-mike.md` (new)
+- `docs/meetings/raw/2026-05-22-platform-review-john-mike.md` (new)
+- `tasks.todo.md` (appended — 34 new lines)
+- `tasks.lessons.md` (appended — one new lesson section)
+- `docs/session-log.md` (this entry)
+
+### What's open after this session
+
+- Audit retention decision (7yr migration vs. 18mo language update) blocks the diligence narrative.
+- Real product walkthrough with Mike B is the next scheduled-with-him action; do not slide-deck him.
+- Three framing adoptions queued for founder ("30-Second Hooks" adopt, "Deterministic Telemetry Mapping" reject, "System of record" pending dogfood loop hold).
+- Confirm or correct "Charlie Dahlgren" name from the synthesis.
+- Verbatim-record-or-write-same-day discipline established for future Mike sessions.
+
+### Verification
+
+- `docs/meetings/` directory now contains two digests + two raws + the protocol README. `ls -la docs/meetings/` shows the structure intact.
+- `tasks.todo.md` line count grew from 1,811 (after the first digest) to 1,845 (after this one). Append-only, no rewrites.
+- `tasks.lessons.md` size grew by one section. Append-only.
+- No existing files modified except the append targets.

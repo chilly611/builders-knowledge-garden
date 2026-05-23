@@ -1809,3 +1809,37 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 
 - [ ] **Establish monthly platform stats snapshot cadence.** Capture entity count, edge count, production route count, jurisdiction count, code section count on the first of each month. First baseline already exists in the 2026-03-26 digest.
 - [ ] **Future meeting transcripts: capture dialogue vs. narration explicitly** so calibration-partner reactions (John, contractor partner) can be extracted cleanly into digests.
+
+
+---
+
+## From meeting digest: 2026-05-22-platform-review-john-mike (added 2026-05-23)
+
+> Source: `docs/meetings/2026-05-22-platform-review-john-mike.md`
+> Raw transcript: `docs/meetings/raw/2026-05-22-platform-review-john-mike.md`
+> ⚠️ Source is an AI synthesis, not a verbatim transcript. Five "shipped voice" overclaims flagged in the digest — see Reality Cross-Check section before reusing any language.
+
+### Reality reconciliation (block external use)
+
+- [ ] **Decide audit retention:** synthesis says 7 years; repo pg_cron retention is ~18 months. Either migrate to 7 years (Supabase schema change + cost impact) or update all diligence language to match 18-month reality. Cannot leave both versions floating.
+- [ ] **Strip shipped-voice language from any VC-facing material** that derives from this synthesis. Specifically: native signature engine (NOT deployed, PDF-emails-externally only), PLG self-serve signup (NOT live, Clerk still mocked), deterministic MEP "completely eliminates hallucinations" (in-flight from round 3), "transition complete" framing (May 1 dogfood broke on real ADU estimate).
+
+### Mike B onboarding as calibration partner
+
+- [ ] **Schedule Mike B for a real product walkthrough** before any more synthesis-language gets to him. Founder dogfood loop on a real-feeling ADU job, observed live. If the loop doesn't hold, fix it before showing more.
+- [ ] **Record Mike B's role and recurring questions** as a new calibration thread. Future Mike-attended meetings get their own digest entries.
+- [ ] **For the next Mike session:** capture actual conversation (Zoom transcript / Otter.ai) or write the digest same-day from memory. Synthesized one-voice docs destroy the diligence signal — his questions and pushback are what we actually need.
+
+### Framing decisions
+
+- [ ] **Adopt "30-Second Hooks"** as the canonical term for the platform's opening-moments UX (the wedge where Code Compliance and §7159 contract capability surface before any onboarding friction). Aligns with the May paywall trigger strategy.
+- [ ] **Reject "Deterministic Telemetry Mapping"** as a label — sounds like AI marketing prose. Keep the architectural choice (deterministic math models for MEP). Find a plainer label.
+- [ ] **Decide on "System of record" vs. "demo sandbox"** as a public binary contrast for the platform's positioning. Currently aspirational; valid the day the dogfood loop holds end-to-end.
+
+### Housekeeping
+
+- [ ] **Confirm "Charlie Dahlgren" is the founder's correct legal name** or note the AI synthesis introduced a name error. (Memory uses "Chilly" as the working name.)
+
+### Lesson to file in tasks.lessons.md
+
+- [ ] **New lesson: "Synthesized meeting docs use shipped voice for in-progress work."** AI-generated meeting summaries describe deferred and in-flight capabilities as if deployed. Five direct overclaims in the May 22 synthesis. Cross-check every "deployed/implemented/integrated" claim against the repo before any external use, especially diligence materials.
