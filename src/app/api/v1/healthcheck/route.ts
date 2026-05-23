@@ -84,31 +84,16 @@ export interface HealthcheckResponse {
 // ---------------------------------------------------------------------------
 
 const CACHE_TTL_MS = 10 * 1000;
-// 2026-05-23: bumped 1500 -> 3000 -> 5000 across two iterations.
-// Empirically cold pods need 2.5-4s for first Supabase call (TLS handshake +
-// connection pool setup + supabase-js client init). Warm path is 200-600ms
-// per check. The HARD_DEADLINE_MS is bumped to 6000 to cover this. Cache
-// (10s) means cold paths fire ~once per pod per 10s window.
-const PER_CHECK_DEADLINE_MS = 5000;
-
-// Module-level warmup: fire a single cheap Supabase query at module load
-// so the connection pool is established BEFORE any actual sub-check runs.
-// Each sub-check awaits this promise before doing its real query. The
-// FIRST sub-check to call therefore pays only the residual latency, not
-// the full cold-init cost. All subsequent checks share the warm pool.
-let warmupPromise: Promise<void> | null = null;
-function getWarmup(): Promise<void> {
-  if (warmupPromise) return warmupPromise;
-  warmupPromise = (async () => {
-    try {
-      const client = getServiceClient();
-      await client.from('knowledge_entities').select('id', { head: true, count: 'exact' }).limit(1);
-    } catch {
-      // Don't block sub-checks — they'll fail on their own with proper errors
-    }
-  })();
-  return warmupPromise;
-}
+// 2026-05-23: bumped 1500 -> 3000 -> 5000 -> 10000 across iterations.
+// Healthcheck doesn't need to be snappy on cold start. Warm path stays
+// sub-second via 10s module cache. Cold path can take up to ~10s; uptime
+// monitors and admin dashboards tolerate that fine.
+//
+// Earlier attempt at module-level warmup ('select head + count' on
+// knowledge_entities) was itself slow (counting 2256 rows can take
+// 1-3s on its own) and didn't reliably warm the pool before checks ran
+// in parallel. Removed; generous per-check deadlines + cache do the job.
+const PER_CHECK_DEADLINE_MS = 10000;
 
 interface CacheEntry {
   at: number;
@@ -125,11 +110,6 @@ async function withDeadline<T>(
   fn: () => Promise<T>,
   deadlineMs = PER_CHECK_DEADLINE_MS,
 ): Promise<{ ok: boolean; value?: T; error?: string; latency_ms: number }> {
-  // 2026-05-23: pre-pay Supabase cold-start (~2-3s) OUTSIDE the per-check
-  // deadline so the inner work races against a warm pool. After the first
-  // sub-check in a cold pod awaits this, every subsequent check returns
-  // the already-resolved promise instantly.
-  await getWarmup();
   const start = Date.now();
   try {
     const result = await Promise.race<Promise<T> | Promise<never>>([
@@ -608,12 +588,12 @@ export async function GET(request: NextRequest) {
   }
 
   // Belt-and-suspenders: even if every sub-check hangs, this hard
-  // deadline guarantees we return within 6s. The internal per-check
-  // deadlines are 5s + parallel + warmup-prepaid, so this should
-  // never trip — but if it does we return a degraded payload so
-  // uptime monitors get SOME answer rather than a 504.
-  // 2026-05-23: bumped 1900 -> 3500 -> 6000 across iterations.
-  const HARD_DEADLINE_MS = 6000;
+  // deadline guarantees we return within 13s. The internal per-check
+  // deadlines are 10s + parallel, so this should never trip — but if
+  // it does we return a degraded payload so uptime monitors get SOME
+  // answer rather than a 504.
+  // 2026-05-23: bumped 1900 -> 3500 -> 6000 -> 13000 across iterations.
+  const HARD_DEADLINE_MS = 13000;
   let payload: HealthcheckResponse;
   try {
     payload = await Promise.race<Promise<HealthcheckResponse> | Promise<HealthcheckResponse>>([
@@ -624,7 +604,7 @@ export async function GET(request: NextRequest) {
             resolve({
               ok: false,
               ts: new Date().toISOString(),
-              summary: 'healthcheck exceeded 6000ms hard deadline',
+              summary: 'healthcheck exceeded 13000ms hard deadline',
               checks: {},
             }),
           HARD_DEADLINE_MS,
