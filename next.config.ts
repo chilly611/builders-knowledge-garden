@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   /**
@@ -52,4 +53,29 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry wrapper — OBSERVABILITY-WIRE (2026-05-23).
+ *
+ * `withSentryConfig` becomes a soft no-op when SENTRY_AUTH_TOKEN /
+ * SENTRY_ORG / SENTRY_PROJECT are missing (source-map upload skipped,
+ * but the bundle plugin still injects the SDK).
+ *
+ * `silent:true` keeps the absence of those env vars from spamming
+ * stdout in local dev. The runtime behavior of `Sentry.init(...)` is
+ * still gated by DSN inside sentry.*.config.ts, so removing the auth
+ * token doesn't disable error capture — only the symbolication uplift.
+ *
+ * @sentry/nextjs v8+ uses a single-options-object signature.
+ */
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  // Hides source maps from public access (recommended).
+  hideSourceMaps: true,
+  disableLogger: true,
+  // Tunnel browser SDK requests through our own origin so ad-blockers
+  // don't drop them. Opt-in: the route doesn't exist by default; flip
+  // this if you create /monitoring later.
+  // tunnelRoute: '/monitoring',
+});
