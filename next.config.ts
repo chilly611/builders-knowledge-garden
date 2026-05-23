@@ -71,8 +71,14 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  // Hides source maps from public access (recommended).
-  hideSourceMaps: true,
+  // 2026-05-23: Sentry @sentry/nextjs v10 renamed hideSourceMaps -> sourcemaps.disable.
+  // Browser source maps stay client-readable for debugging; the server-side
+  // sourcemaps that contain Stripe/Supabase code paths are uploaded to Sentry
+  // and then deleted from the deployment artifacts. This is the v10 default.
+  sourcemaps: {
+    disable: false,  // upload to Sentry when SENTRY_AUTH_TOKEN is set
+    deleteSourcemapsAfterUpload: true,
+  },
   disableLogger: true,
   // Tunnel browser SDK requests through our own origin so ad-blockers
   // don't drop them. Opt-in: the route doesn't exist by default; flip
