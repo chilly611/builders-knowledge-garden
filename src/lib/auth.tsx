@@ -194,7 +194,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await response.json();
           setUser(prevUser => {
             if (!prevUser) return prevUser;
-            return { ...prevUser, tier: (data.tier as Tier) || "explorer" };
+            // The Stripe API normalises legacy "explorer" subscriptions to
+            // "free", but "free" is NOT a key in the TIERS map — only
+            // "explorer" | "pro" | "team" | "enterprise" | "platform" are.
+            // Map unknown / external tier strings back to a safe Tier so
+            // TIERS[user.tier] is never undefined and tier.mode never throws.
+            const TIER_MAP: Record<string, Tier> = {
+              free: "explorer",
+              explorer: "explorer",
+              pro: "pro",
+              team: "team",
+              enterprise: "enterprise",
+              platform: "platform",
+            };
+            const safeTier: Tier = TIER_MAP[data.tier] ?? "explorer";
+            return { ...prevUser, tier: safeTier };
           });
         }
       } catch (error) {
