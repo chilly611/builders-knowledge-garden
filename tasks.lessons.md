@@ -1608,3 +1608,52 @@ For meetings where the audience is a real diligence party (a Mike B, a design pa
 ### The meta-signal
 
 The dogfood-loop lesson from 2026-05-01 — "smoke-test green is not product works" — applies up the stack. AI-synthesized meeting documents are smoke-tests for pitch language. They confirm the words sound right. They do not confirm the words match reality. Same gate: a real-user end-to-end walk is the only thing that does.
+
+
+---
+
+## Lesson: `useState` lazy initializers must be server-safe — never read `localStorage` inside one (2026-05-23)
+
+**Trigger:** `/killerapp` crashed with a black error screen for every logged-in user (HTTP 200, all JS chunks loaded) while working fine for logged-out users. Root cause traced to `ProjectContext.tsx`.
+
+### What happened
+
+`useState` lazy initializers (`useState(() => someExpression)`) execute on **both the server and the client**. On the server, `localStorage` is undefined, so `readActiveProjectFromStorage()` correctly returned `null`. On the client during hydration, it returned the stored project UUID that had been written on a previous visit. React compared the server-rendered output (null → `KillerappProjectShell` returns `null`) against the client-hydrated output (stored UUID → `KillerappProjectShell` renders the full project shell JSX) and threw a fatal structural mismatch error. This crash only affected logged-in users because they were the ones with stored project IDs; fresh logged-out users had nothing in `localStorage`, so both sides returned `null` and agreed.
+
+### The fix
+
+```tsx
+// BAD — reads localStorage in lazy initializer (runs on server too):
+const [projectId, setProjectId] = useState<string | null>(() => {
+  return readActiveProjectFromStorage(); // null on server, UUID on client = CRASH
+});
+
+// GOOD — init server-safe, hydrate from localStorage in useEffect:
+const [projectId, setProjectId] = useState<string | null>(() => {
+  if (urlProjectId && isValidProjectId(urlProjectId)) return urlProjectId; // URL param is SSR-safe
+  return null; // always null on first render, both server and client
+});
+
+useEffect(() => {
+  if (projectId) return; // URL already provided a project
+  const stored = readActiveProjectFromStorage();
+  if (stored && isValidProjectId(stored)) setProjectId(stored);
+}, []); // runs only on client, after mount — never during SSR
+```
+
+### The rule
+
+Any value that differs between the server render and the client first-render is a hydration hazard. The three main sources:
+1. `localStorage` / `sessionStorage` — doesn't exist on server
+2. `window` properties (`window.matchMedia`, `window.innerWidth`) — doesn't exist on server
+3. Time (`Date.now()`, `Math.random()`) — value changes between server and client renders
+
+For all three: init to a static server-safe value in `useState`; read the real value in a `useEffect`.
+
+### The structural-mismatch amplifier
+
+A hydration mismatch is only **fatal** when it's structural (one side renders `null`, the other renders a component tree). Value mismatches (a number is different, a string is different) produce a warning but React recovers. The crash here was fatal because `KillerappProjectShell` returned `null` when `projectId === null`, so the structural diff was: server → no DOM, client → full DOM subtree. Always check for `if (!x) return null` patterns in components that read from context backed by localStorage.
+
+### Secondary issue (carry-forward)
+
+`JourneyTimeline.tsx` uses `useState(() => window.matchMedia('(max-width: 640px)').matches)`. Same pattern — but non-structural (boolean value mismatch, not null vs. tree), so it produces a warning, not a crash. Fix with the same `useEffect` pattern when touching that component next.

@@ -1841,4 +1841,17 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 
 ### Lesson to file in tasks.lessons.md
 
-- [ ] **New lesson: "Synthesized meeting docs use shipped voice for in-progress work."** AI-generated meeting summaries describe deferred and in-flight capabilities as if deployed. Five direct overclaims in the May 22 synthesis. Cross-check every "deployed/implemented/integrated" claim against the repo before any external use, especially diligence materials.
+- [x] **New lesson: "Synthesized meeting docs use shipped voice for in-progress work."** AI-generated meeting summaries describe deferred and in-flight capabilities as if deployed. Five direct overclaims in the May 22 synthesis. Cross-check every "deployed/implemented/integrated" claim against the repo before any external use, especially diligence materials. — Filed in `tasks.lessons.md` (2026-05-23).
+
+## 2026-05-23 — Post-crash-fix open items
+
+### Shipped this session
+
+- [x] **`/killerapp` fatal crash for logged-in users** — hydration mismatch from `useState` lazy initializer reading `localStorage`. Fixed in `src/contexts/ProjectContext.tsx` (commit `1d8164e`). Deployed to prod via Vercel auto-deploy.
+- [x] **AI Take location consistency** — `ProjectContextBanner` silently regenerates stale `ai_summary` when it doesn't mention the current jurisdiction city. No user-visible flag; stale text swaps on resolution.
+
+### Still open (low priority / carry-forward)
+
+- [ ] **Secondary hydration warning — `JourneyTimeline.tsx`**: `useState(() => window.matchMedia('(max-width: 640px)').matches)` runs on both server and client. Non-structural (not a crash), but produces a hydration value-mismatch on mobile. Fix: move `matchMedia` call into a `useEffect`, init to `false` server-safe. File: `src/components/JourneyTimeline.tsx`.
+- [ ] **Pre-existing test failures**: `estimating/happy-path.test.tsx` step IDs stale after "Describe the job" removal; `CommandPalette.test.tsx` uses Jest globals but project uses Vitest; missing `@testing-library/react`. Not regression from this session.
+- [ ] **Local dev environment**: `npx vercel env pull .env.local` still needed for full local testing with Supabase + Clerk + Anthropic keys.

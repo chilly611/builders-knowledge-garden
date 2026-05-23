@@ -2116,3 +2116,20 @@ Both queued in `tasks.todo.md`.
 - `tasks.todo.md` line count grew from 1,811 (after the first digest) to 1,845 (after this one). Append-only, no rewrites.
 - `tasks.lessons.md` size grew by one section. Append-only.
 - No existing files modified except the append targets.
+
+
+## 2026-05-23 — Cowork Session: /killerapp Crash Fix + AI Take Location Consistency
+
+**Agent:** Cowork (claude-sonnet-4-5)
+**What was built:**
+- **Root-cause fix for `/killerapp` fatal crash for logged-in users** (`src/contexts/ProjectContext.tsx`, commit `1d8164e`). Removed `readActiveProjectFromStorage()` from the `useState` lazy initializer — it was returning null on the server but a stored project UUID on the client during hydration, causing React to see "server rendered null shell, client rendered full project shell" and throw a fatal hydration error. Replaced with a `useEffect` that reads localStorage only after client mount.
+- **AI Take location consistency** (`ProjectContextBanner.tsx`, `src/app/api/v1/projects/summarize/route.ts`): when the stored `ai_summary` doesn't mention the current `jurisdiction` city, the banner silently fires `POST /api/v1/projects/summarize` to regenerate it in the background. Stale text is shown while the request is in-flight; fresh summary swaps in with no visible loading state.
+
+**Key decisions:**
+- `useState` lazy initializers run on both server AND client. Any access to `localStorage` / `window` inside one causes a structural hydration mismatch when the server renders one component tree and the client hydrates with a different one. Pattern: init to `null` in the lazy initializer; hydrate from localStorage in a `useEffect`.
+- Silent regeneration (no user-visible indicator) was the right call for AI Take staleness — showing a flag was considered but rejected because it adds friction for a problem the system can self-correct.
+- `git pull --rebase` required before push: 4 observability/Sentry/PostHog commits from Chilly had landed on main (`55f8861`, `c422e04`, `18a364f`, `58a1b54`). Rebased cleanly.
+
+**Issues/bugs found:**
+- Secondary hydration warning (lower priority, not a crash): `JourneyTimeline.tsx` has `useState(() => window.matchMedia('(max-width: 640px)').matches)` which can produce a hydration value-mismatch warning on mobile. Non-structural, so not a crash, but should be fixed with the same `useEffect` pattern.
+- Pre-existing test failures unrelated to this session: `estimating/happy-path.test.tsx` step IDs stale; `CommandPalette.test.tsx` uses Jest globals but project is Vitest; missing `@testing-library/react` dependency.
