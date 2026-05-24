@@ -74,12 +74,34 @@ export function hasMultipleSources(results: CodeSourceResult[]): boolean {
  * (ICC DigitalCodes, NFPA Link — paywalled, no live contract yet)
  * return `verified: false` and are NOT counted.
  *
+ * ATTEST-WIRE (2026-05-24): a `manual-attestation` pseudo-source is added
+ * to the verified set whenever ANY result in the bag carries
+ * `manually_verified: true` (set by rag.ts when the underlying
+ * knowledge_entities row has `manually_verified_at IS NOT NULL`). This is
+ * how a row goes from "1 source verified" (bkg-seed only) to "2 sources
+ * verified" once a reviewer has cross-checked it against UpCodes.
+ *
+ * The attestation is NOT a fake adapter result — it's a legitimate signal
+ * that a human with a licensed-publisher seat has confirmed the stored
+ * text matches the source of truth.
+ *
  * This is the input the SourceCountBadge uses. Treat it as the structural
  * truth backing the "N sources verified" trust signal.
  */
 export function countVerifiedSources(results: CodeSourceResult[]): number {
-  const verifiedSources = new Set(
+  const verifiedSources = new Set<string>(
     results.filter((r) => r.verified === true).map((r) => r.source)
   );
+  if (results.some((r) => r.manually_verified === true)) {
+    verifiedSources.add("manual-attestation");
+  }
   return verifiedSources.size;
+}
+
+/**
+ * True iff any result in the bag is backed by a manual attestation.
+ * Used by SourceCountBadge to show "manually reviewed" hint text.
+ */
+export function isManuallyAttested(results: CodeSourceResult[]): boolean {
+  return results.some((r) => r.manually_verified === true);
 }

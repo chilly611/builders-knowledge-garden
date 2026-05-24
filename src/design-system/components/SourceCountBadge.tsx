@@ -39,9 +39,20 @@ interface SourceCountBadgeProps {
    * 3+ => fully cross-verified (high-trust).
    */
   sources: number | undefined;
+  /**
+   * ATTEST-WIRE (2026-05-24): when true, the count already includes the
+   * `manual-attestation` pseudo-source — i.e. an owner with a licensed
+   * publisher seat has cross-checked the underlying knowledge_entities row.
+   * Drives an extra "manually reviewed" hint on the badge tooltip; does
+   * NOT change the count or the tier color (badge math is unchanged).
+   */
+  manuallyAttested?: boolean;
 }
 
-export default function SourceCountBadge({ sources }: SourceCountBadgeProps) {
+export default function SourceCountBadge({
+  sources,
+  manuallyAttested,
+}: SourceCountBadgeProps) {
   // Non-compliance specialists don't have a source count — render nothing.
   if (sources === undefined) return null;
 
@@ -77,12 +88,21 @@ export default function SourceCountBadge({ sources }: SourceCountBadgeProps) {
     title = 'No verified code source has been retrieved for this query. Speak to your local building department before acting.';
   }
 
+  // ATTEST-WIRE: append a hint when manual attestation is one of the
+  // sources. The label keeps the numbers honest; the tooltip carries the
+  // "human reviewer signed off" provenance.
+  if (manuallyAttested && sources >= 1) {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    title = `${title} Includes a manual review by the org owner against an external licensed source (reviewed ${today}).`;
+  }
+
   return (
     <div
       title={title}
       aria-label={`Multi-source verification: ${label}`}
       data-testid="source-count-badge"
       data-source-count={sources}
+      data-manually-attested={manuallyAttested ? 'true' : 'false'}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

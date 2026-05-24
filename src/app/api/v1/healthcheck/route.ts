@@ -548,6 +548,59 @@ async function checkObservability(): Promise<SubCheck> {
   };
 }
 
+/**
+ * manual_attestation (ATTEST-WIRE, 2026-05-24) — info-only progress
+ * report on the human-in-loop verification queue. Returns total
+ * published rows, count attested, percent attested, and the age of the
+ * oldest unattested row. Never fails; the queue being empty is just
+ * "nothing to do" not "broken".
+ */
+async function checkManualAttestation(): Promise<SubCheck> {
+  const r = await withDeadline('manual_attestation', async () => {
+    const client = getServiceClient();
+    const [total, attested, oldest] = await Promise.all([
+      client
+        .from('knowledge_entities')
+        .select('id', { head: true, count: 'exact' })
+        .eq('status', 'published'),
+      client
+        .from('knowledge_entities')
+        .select('id', { head: true, count: 'exact' })
+        .eq('status', 'published')
+        .not('manually_verified_at', 'is', null),
+      client
+        .from('knowledge_entities')
+        .select('id, created_at')
+        .eq('status', 'published')
+        .is('manually_verified_at', null)
+        .order('created_at', { ascending: true })
+        .limit(1),
+    ]);
+    if (total.error) throw new Error(total.error.message);
+    if (attested.error) throw new Error(attested.error.message);
+    if (oldest.error) throw new Error(oldest.error.message);
+    const t = total.count ?? 0;
+    const a = attested.count ?? 0;
+    const oldestRow = (oldest.data ?? [])[0] as
+      | { created_at?: string }
+      | undefined;
+    const oldestAgeDays = oldestRow?.created_at
+      ? Math.round(
+          (Date.now() - new Date(oldestRow.created_at).getTime()) /
+            86_400_000,
+        )
+      : null;
+    return {
+      total_published: t,
+      manually_attested: a,
+      remaining: Math.max(0, t - a),
+      attested_pct: t > 0 ? Math.round((a / t) * 1000) / 10 : 0,
+      oldest_unattested_age_days: oldestAgeDays,
+    };
+  });
+  return r;
+}
+
 /** vercel — read deploy metadata for ops traceability. Info only. */
 async function checkVercel(): Promise<SubCheck> {
   const start = Date.now();
@@ -582,6 +635,7 @@ const SEVERITY: Record<string, CheckSeverity> = {
   workflows: 'info',
   vercel: 'info',
   observability: 'info',
+  manual_attestation: 'info',
 };
 
 // ---------------------------------------------------------------------------
@@ -604,6 +658,7 @@ async function runAllChecks(): Promise<HealthcheckResponse> {
     ['pg_cron', checkPgCron()],
     ['stripe', checkStripe()],
     ['observability', checkObservability()],
+    ['manual_attestation', checkManualAttestation()],
     ['vercel', checkVercel()],
   ];
 

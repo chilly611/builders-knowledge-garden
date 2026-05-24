@@ -64,4 +64,14 @@ export interface CodeSourceResult {
    * `verified === true` results toward the badge.
    */
   verified?: boolean;
+  /**
+   * ATTEST-WIRE (2026-05-24): set on RAG (and any other) results whose
+   * underlying knowledge_entities row has a non-NULL `manually_verified_at`.
+   * Drives the `manual-attestation` pseudo-source in countVerifiedSources()
+   * — so a row that already counts as bkg-seed (1 verified source) bumps
+   * to 2 sources verified once Chilly has reviewed it against UpCodes.
+   * Distinct from `verified` (which only proves the adapter fetched
+   * something); `manually_verified` is the human attestation overlay.
+   */
+  manually_verified?: boolean;
 }

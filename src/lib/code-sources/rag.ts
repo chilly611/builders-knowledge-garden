@@ -140,6 +140,14 @@ interface RawRow {
   source_urls?: string[] | null;
   jurisdiction_ids?: string[] | null;
   metadata?: Record<string, unknown> | null;
+  /**
+   * ATTEST-WIRE: populated from `manually_verified_at IS NOT NULL` in the
+   * SELECT. True when a reviewer has cross-checked this row against an
+   * external licensed source. Flows through to CodeSourceResult.manually_verified
+   * which countVerifiedSources() reads to add the `manual-attestation`
+   * pseudo-source.
+   */
+  manually_verified?: boolean | null;
 }
 
 /**
@@ -285,6 +293,9 @@ function rowToResult(
     url,
     historical: !!row.metadata?.historical,
     verified: isVerified,
+    // ATTEST-WIRE: the SELECT computes this as `manually_verified_at IS NOT NULL`.
+    // RPC paths (hybrid / vector) may not yet project the column → undefined ↦ false.
+    manually_verified: row.manually_verified === true,
   };
 }
 
@@ -298,9 +309,16 @@ async function queryKnowledgeEntities(
   q: string,
   query: CodeQuery
 ): Promise<RawRow[]> {
+  // ATTEST-WIRE: include manually_verified_at so the result mapper can set
+  // manually_verified on the CodeSourceResult. PostgREST doesn't support
+  // computed `IS NOT NULL` expressions in select, so we pull the timestamp
+  // and coerce in TS (rowToResult).
+  const RAG_SELECT =
+    "id, slug, title, summary, body, search_text, entity_type, source_urls, jurisdiction_ids, metadata, manually_verified_at";
+
   let qb = supabase
     .from("knowledge_entities")
-    .select("id, slug, title, summary, body, search_text, entity_type, source_urls, jurisdiction_ids, metadata")
+    .select(RAG_SELECT)
     .in("entity_type", CODE_ENTITY_TYPES)
     .eq("status", "published")
     .limit(RAG_LIMIT);
@@ -310,6 +328,11 @@ async function queryKnowledgeEntities(
   }
 
   const { data, error } = await qb;
+  const mapRows = (rows: Array<Record<string, unknown>> | null): RawRow[] =>
+    (rows ?? []).map((r) => ({
+      ...(r as unknown as RawRow),
+      manually_verified: r.manually_verified_at != null,
+    }));
   if (error || !data) {
     // FTS may return nothing; fall back to ilike OR on the same column
     const words = q.split(/\s+/).filter((w) => w.length > 2).slice(0, 4);
@@ -317,14 +340,14 @@ async function queryKnowledgeEntities(
     const orFilter = words.map((w) => `search_text.ilike.%${w}%`).join(",");
     const fb = await supabase
       .from("knowledge_entities")
-      .select("id, slug, title, summary, body, search_text, entity_type, source_urls, jurisdiction_ids, metadata")
+      .select(RAG_SELECT)
       .in("entity_type", CODE_ENTITY_TYPES)
       .eq("status", "published")
       .or(orFilter)
       .limit(RAG_LIMIT);
-    return (fb.data as RawRow[] | null) ?? [];
+    return mapRows(fb.data as Array<Record<string, unknown>> | null);
   }
-  return data as RawRow[];
+  return mapRows(data as Array<Record<string, unknown>>);
 }
 
 /**
@@ -360,6 +383,9 @@ async function queryBuildingCodesTable(
       source_urls: (d.source_urls as string[]) ?? (d.url ? [d.url as string] : null),
       jurisdiction_ids: (d.jurisdiction_ids as string[]) ?? null,
       metadata: (d.metadata as Record<string, unknown>) ?? null,
+      // building_codes table may not exist yet; if it does, mirror the
+      // knowledge_entities attestation column naming.
+      manually_verified: d.manually_verified_at != null,
     }));
   } catch {
     return null;
