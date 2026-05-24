@@ -11,8 +11,9 @@ import {
   queryAllSources,
   hasMultipleSources,
   countVerifiedSources,
+  isManuallyAttested,
+  isAutoVerified,
   type CodeQuery,
-  type CodeSourceResult,
 } from "./code-sources";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,6 +91,17 @@ export interface SpecialistResult {
    * specialists.
    */
   sourceCount?: number;
+  /**
+   * ATTEST-WIRE: any of the underlying rows carry manual_attestation. Drives
+   * the green-tick tooltip on the badge.
+   */
+  manuallyAttested?: boolean;
+  /**
+   * AUTO-VERIFY (2026-05-25): any of the underlying rows passed the Claude
+   * cross-check pre-pass AND none are manually attested. Drives the
+   * yellow-tick ai-checked label on the badge. Strictly weaker than manual.
+   */
+  autoVerified?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -347,6 +359,8 @@ export async function callSpecialist(
     multiSource: boolean;
     sourceCount: number;
     hasPrimary: boolean;
+    manuallyAttested: boolean;
+    autoVerified: boolean;
   } | null = null;
 
   // For compliance specialists, use queryAllSources instead of retrieveEntities
@@ -383,6 +397,8 @@ export async function callSpecialist(
         multiSource,
         sourceCount: countVerifiedSources(codeResults),
         hasPrimary,
+        manuallyAttested: isManuallyAttested(codeResults),
+        autoVerified: isAutoVerified(codeResults),
       };
 
       // Format code sources as structured context for the model
@@ -419,7 +435,13 @@ export async function callSpecialist(
       }));
     } else {
       userMessage += `\n\nCRITICAL: queryAllSources returned no results for this query. You MUST return confidence: low and tell the user: "I don't have a cross-verified answer; stop and call your local building department." Include specific questions the user should ask their building department.`;
-      codeSourceConfidenceData = { multiSource: false, sourceCount: 0, hasPrimary: false };
+      codeSourceConfidenceData = {
+        multiSource: false,
+        sourceCount: 0,
+        hasPrimary: false,
+        manuallyAttested: false,
+        autoVerified: false,
+      };
     }
   }
   // W10.A1 (2026-05-01): legacy `retrieveEntities` path removed for non-compliance
@@ -550,6 +572,8 @@ export async function callSpecialist(
       // up to the UI so AnalysisPane can render a trust badge. Undefined
       // for non-compliance specialists (codeSourceConfidenceData stays null).
       sourceCount: codeSourceConfidenceData?.sourceCount,
+      manuallyAttested: codeSourceConfidenceData?.manuallyAttested,
+      autoVerified: codeSourceConfidenceData?.autoVerified,
     };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);

@@ -148,6 +148,13 @@ interface RawRow {
    * pseudo-source.
    */
   manually_verified?: boolean | null;
+  /**
+   * AUTO-VERIFY (2026-05-25): true when the Claude cross-check pre-pass
+   * cleared this row (auto_verified_at IS NOT NULL AND auto_verification_flagged = false).
+   * Flagged rows (a discrepancy was found) do NOT set this — they stay in
+   * the unverified bucket. Flows through to CodeSourceResult.auto_verified.
+   */
+  auto_verified?: boolean | null;
 }
 
 /**
@@ -296,6 +303,10 @@ function rowToResult(
     // ATTEST-WIRE: the SELECT computes this as `manually_verified_at IS NOT NULL`.
     // RPC paths (hybrid / vector) may not yet project the column → undefined ↦ false.
     manually_verified: row.manually_verified === true,
+    // AUTO-VERIFY: the SELECT computes this as
+    //   `auto_verified_at IS NOT NULL AND auto_verification_flagged = false`
+    // — flagged rows do NOT count here, they're still in the human queue.
+    auto_verified: row.auto_verified === true,
   };
 }
 
@@ -313,8 +324,10 @@ async function queryKnowledgeEntities(
   // manually_verified on the CodeSourceResult. PostgREST doesn't support
   // computed `IS NOT NULL` expressions in select, so we pull the timestamp
   // and coerce in TS (rowToResult).
+  // AUTO-VERIFY: pull auto_verified_at + flag so the mapper can compute
+  // auto_verified = (auto_verified_at IS NOT NULL AND flagged = false).
   const RAG_SELECT =
-    "id, slug, title, summary, body, search_text, entity_type, source_urls, jurisdiction_ids, metadata, manually_verified_at";
+    "id, slug, title, summary, body, search_text, entity_type, source_urls, jurisdiction_ids, metadata, manually_verified_at, auto_verified_at, auto_verification_flagged";
 
   let qb = supabase
     .from("knowledge_entities")
@@ -332,6 +345,11 @@ async function queryKnowledgeEntities(
     (rows ?? []).map((r) => ({
       ...(r as unknown as RawRow),
       manually_verified: r.manually_verified_at != null,
+      // AUTO-VERIFY: only count as auto-verified when the AI ran AND the
+      // verdict was clean (flagged === false). Flagged rows stay in the
+      // unverified bucket from the badge's perspective.
+      auto_verified:
+        r.auto_verified_at != null && r.auto_verification_flagged === false,
     }));
   if (error || !data) {
     // FTS may return nothing; fall back to ilike OR on the same column
@@ -386,6 +404,8 @@ async function queryBuildingCodesTable(
       // building_codes table may not exist yet; if it does, mirror the
       // knowledge_entities attestation column naming.
       manually_verified: d.manually_verified_at != null,
+      auto_verified:
+        d.auto_verified_at != null && d.auto_verification_flagged === false,
     }));
   } catch {
     return null;

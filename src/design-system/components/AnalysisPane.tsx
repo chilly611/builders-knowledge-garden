@@ -345,7 +345,11 @@ export default function AnalysisPane({
           gap: spacing[2],
         }}
       >
-        <SourceCountBadge sources={result.sourceCount} />
+        <SourceCountBadge
+          sources={result.sourceCount}
+          manuallyAttested={(result as { manuallyAttested?: boolean }).manuallyAttested}
+          autoVerified={(result as { autoVerified?: boolean }).autoVerified}
+        />
         <div
           style={{
             display: 'inline-flex',

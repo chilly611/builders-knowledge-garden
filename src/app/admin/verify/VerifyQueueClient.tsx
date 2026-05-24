@@ -1,24 +1,37 @@
 'use client';
 
 /**
- * VerifyQueueClient (ATTEST-WIRE, 2026-05-24)
- * ============================================
- * Reviewer-facing queue. Fetches a page of 25 unverified, published
- * knowledge_entities and renders one card per row. The reviewer clicks
- * "Open in UpCodes" → reads the canonical text in the licensed source
- * → returns to this page → clicks Verify ✓ to stamp the attestation.
+ * VerifyQueueClient (ATTEST-WIRE + AUTO-VERIFY, 2026-05-25)
+ * =========================================================
+ * Reviewer-facing queue. Three tabs:
  *
- * Filters (client-side narrowing of the same query):
- *   - entity_type dropdown
- *   - jurisdiction dropdown (US-CA, US-FED, etc.)
- *   - search box (matches slug or title)
+ *   1) Flagged for review — rows the AI cross-check ran on AND found a
+ *      discrepancy OR was low-confidence (auto_verification_flagged=true).
+ *      Each card surfaces the model's discrepancies + rationale inline so
+ *      the reviewer can decide fast: green-tick (Verify ✓) or red-tick
+ *      (clear the auto stamp and re-investigate). DEFAULT TAB.
  *
- * Progress widget: live count of "X of N verified" + ETA assuming ~30s/row.
+ *   2) Auto-verified — rows the AI cleared (auto_verified_at IS NOT NULL
+ *      AND flagged=false). Spot-check 5-10% of these to confirm the
+ *      cross-checker is calibrated. Verify ✓ here is a human up-grade
+ *      from yellow tick to green tick.
+ *
+ *   3) All unverified — every published row without a human attestation,
+ *      regardless of auto status. The pre-AUTO-VERIFY workflow lives here.
+ *
+ * Keyboard shortcuts (when no input is focused):
+ *   V  — Verify (stamp manual attestation on the focused row)
+ *   R  — Reject auto (DELETE /auto-verify so it cycles into next batch)
+ *   S  — Skip (parks until tomorrow, localStorage only)
+ *   U  — open UpCodes search in new tab
+ *   C  — open UpCodes Copilot + copy prompt to clipboard
+ *   J / ↓ / →  — focus next row
+ *   K / ↑ / ←  — focus previous row
  *
  * "Skip" parks the row in localStorage so it doesn't show again today —
  * purely client-side, no DB write, so a fresh browser sees the full queue.
  *
- * LaneGate guards the UI; the API enforces the server-side allowlist
+ * Email-allowlist guards the UI; the API enforces the server-side allowlist
  * regardless of whether the UI is rendered.
  */
 
@@ -76,6 +89,15 @@ const KNOWN_JURISDICTIONS: Array<{ value: string; label: string }> = [
   { value: 'us-ny', label: 'New York' },
 ];
 
+interface AutoVerificationNotes {
+  discrepancies?: string[];
+  rationale?: string;
+  model_response?: string;
+  checkable?: boolean;
+  prompt_version?: string;
+  ran_at?: string;
+}
+
 interface KnowledgeRow {
   id: string;
   slug: string | null;
@@ -86,7 +108,15 @@ interface KnowledgeRow {
   source_urls: string[] | null;
   metadata: Record<string, unknown> | null;
   manually_verified_at: string | null;
+  // AUTO-VERIFY columns (may be null if pre-pass hasn't run yet)
+  auto_verified_at: string | null;
+  auto_verified_by: string | null;
+  auto_verification_confidence: number | null;
+  auto_verification_notes: AutoVerificationNotes | null;
+  auto_verification_flagged: boolean;
 }
+
+type Tab = 'flagged' | 'auto_clean' | 'all_unverified';
 
 interface SkipMap {
   [id: string]: number; // timestamp ms when skipped
@@ -299,6 +329,9 @@ function VerifyQueuePanel() {
   const [rows, setRows] = useState<KnowledgeRow[]>([]);
   const [totalUnverified, setTotalUnverified] = useState<number | null>(null);
   const [totalVerified, setTotalVerified] = useState<number | null>(null);
+  const [totalFlagged, setTotalFlagged] = useState<number | null>(null);
+  const [totalAutoClean, setTotalAutoClean] = useState<number | null>(null);
+  const [tab, setTab] = useState<Tab>('flagged');
   const [page, setPage] = useState(0);
   const [entityType, setEntityType] = useState('');
   const [jurisdiction, setJurisdiction] = useState('');
@@ -309,6 +342,7 @@ function VerifyQueuePanel() {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [skipped, setSkipped] = useState<SkipMap>({});
+  const [focusIdx, setFocusIdx] = useState(0);
 
   useEffect(() => {
     setSkipped(loadSkips());
@@ -320,26 +354,40 @@ function VerifyQueuePanel() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const SELECT_COLS =
+    'id, slug, entity_type, title, summary, jurisdiction_ids, source_urls, metadata, manually_verified_at, auto_verified_at, auto_verified_by, auto_verification_confidence, auto_verification_notes, auto_verification_flagged';
+
   const fetchPage = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       let qb = supabase
         .from('knowledge_entities')
-        .select(
-          'id, slug, entity_type, title, summary, jurisdiction_ids, source_urls, metadata, manually_verified_at',
-          { count: 'exact' }
-        )
-        .is('manually_verified_at', null)
+        .select(SELECT_COLS, { count: 'exact' })
+        .is('manually_verified_at', null) // never show already-attested rows
         .eq('status', 'published')
-        .order('updated_at', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+      // Per-tab predicate. Flagged sorts by confidence ASC (lowest first
+      // — the ones most likely to be wrong). The other tabs use updated_at
+      // DESC so recent changes float to the top.
+      if (tab === 'flagged') {
+        qb = qb.eq('auto_verification_flagged', true).order(
+          'auto_verification_confidence',
+          { ascending: true, nullsFirst: false }
+        );
+      } else if (tab === 'auto_clean') {
+        qb = qb
+          .not('auto_verified_at', 'is', null)
+          .eq('auto_verification_flagged', false)
+          .order('auto_verification_confidence', { ascending: false, nullsFirst: false });
+      } else {
+        qb = qb.order('updated_at', { ascending: false });
+      }
 
       if (entityType) qb = qb.eq('entity_type', entityType);
       if (jurisdiction) qb = qb.contains('jurisdiction_ids', [jurisdiction]);
       if (debouncedSearch) {
-        // Slug ilike OR title->>en ilike. PostgREST `or` lets us OR two
-        // filters in one round-trip.
         const term = debouncedSearch.replace(/[%,]/g, '');
         qb = qb.or(`slug.ilike.%${term}%,search_text.ilike.%${term}%`);
       }
@@ -350,22 +398,50 @@ function VerifyQueuePanel() {
         return;
       }
       setRows((data ?? []) as KnowledgeRow[]);
-      setTotalUnverified(count ?? null);
+      setFocusIdx(0);
 
-      // Fetch verified count in a separate cheap HEAD request — only on
-      // first page load, then refresh after each attest.
-      const { count: vcount } = await supabase
-        .from('knowledge_entities')
-        .select('id', { count: 'exact', head: true })
-        .not('manually_verified_at', 'is', null)
-        .eq('status', 'published');
-      setTotalVerified(vcount ?? null);
+      // Set the per-tab count.
+      if (tab === 'flagged') setTotalFlagged(count ?? null);
+      else if (tab === 'auto_clean') setTotalAutoClean(count ?? null);
+      else setTotalUnverified(count ?? null);
+
+      // Cheap HEAD counts for the OTHER tabs + the verified-overall counter
+      // so the tab labels stay accurate. Done in parallel.
+      const [vRes, fRes, aRes, uRes] = await Promise.all([
+        supabase
+          .from('knowledge_entities')
+          .select('id', { count: 'exact', head: true })
+          .not('manually_verified_at', 'is', null)
+          .eq('status', 'published'),
+        supabase
+          .from('knowledge_entities')
+          .select('id', { count: 'exact', head: true })
+          .is('manually_verified_at', null)
+          .eq('status', 'published')
+          .eq('auto_verification_flagged', true),
+        supabase
+          .from('knowledge_entities')
+          .select('id', { count: 'exact', head: true })
+          .is('manually_verified_at', null)
+          .eq('status', 'published')
+          .not('auto_verified_at', 'is', null)
+          .eq('auto_verification_flagged', false),
+        supabase
+          .from('knowledge_entities')
+          .select('id', { count: 'exact', head: true })
+          .is('manually_verified_at', null)
+          .eq('status', 'published'),
+      ]);
+      setTotalVerified(vRes.count ?? null);
+      setTotalFlagged(fRes.count ?? null);
+      setTotalAutoClean(aRes.count ?? null);
+      setTotalUnverified(uRes.count ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [page, entityType, jurisdiction, debouncedSearch]);
+  }, [page, entityType, jurisdiction, debouncedSearch, tab]);
 
   useEffect(() => {
     void fetchPage();
@@ -374,6 +450,15 @@ function VerifyQueuePanel() {
   const visibleRows = useMemo(() => {
     return rows.filter((r) => !skipped[r.id]);
   }, [rows, skipped]);
+
+  // Clamp focusIdx as the visible set shrinks.
+  useEffect(() => {
+    if (focusIdx >= visibleRows.length && visibleRows.length > 0) {
+      setFocusIdx(visibleRows.length - 1);
+    } else if (visibleRows.length === 0) {
+      setFocusIdx(0);
+    }
+  }, [visibleRows.length, focusIdx]);
 
   const attest = useCallback(
     async (row: KnowledgeRow) => {
@@ -428,6 +513,45 @@ function VerifyQueuePanel() {
     });
   }, []);
 
+  // AUTO-VERIFY: clear the auto stamp on a row so the next batch run will
+  // re-evaluate it. Used when the reviewer thinks the AI got the rationale
+  // wrong (e.g. the AI said "flagged: missing edition" but the row is
+  // explicitly current-edition).
+  const rejectAuto = useCallback(async (row: KnowledgeRow) => {
+    setBusyIds((s) => new Set(s).add(row.id));
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) {
+        setError('Not signed in.');
+        return;
+      }
+      const res = await fetch(
+        `/api/v1/knowledge-entities/${row.id}/auto-verify`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setError((json as { error?: string })?.error || `Reject auto failed (${res.status})`);
+        return;
+      }
+      // Remove from the current view — if it gets re-stamped later it'll
+      // appear in the appropriate tab.
+      setRows((prev) => prev.filter((r) => r.id !== row.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error');
+    } finally {
+      setBusyIds((s) => {
+        const next = new Set(s);
+        next.delete(row.id);
+        return next;
+      });
+    }
+  }, []);
+
   const toggleExpand = useCallback((id: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -436,6 +560,69 @@ function VerifyQueuePanel() {
       return next;
     });
   }, []);
+
+  // ────────────────────────────────────────────────────────────
+  // Keyboard shortcuts
+  // ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Ignore when an input/select/textarea is focused.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const focused = visibleRows[focusIdx];
+      const key = e.key.toLowerCase();
+      if (key === 'j' || key === 'arrowdown' || key === 'arrowright') {
+        e.preventDefault();
+        setFocusIdx((i) => Math.min(visibleRows.length - 1, i + 1));
+        return;
+      }
+      if (key === 'k' || key === 'arrowup' || key === 'arrowleft') {
+        e.preventDefault();
+        setFocusIdx((i) => Math.max(0, i - 1));
+        return;
+      }
+      if (!focused) return;
+      if (key === 'v') {
+        e.preventDefault();
+        void attest(focused);
+        return;
+      }
+      if (key === 'r') {
+        e.preventDefault();
+        void rejectAuto(focused);
+        return;
+      }
+      if (key === 's') {
+        e.preventDefault();
+        skip(focused);
+        return;
+      }
+      if (key === 'u') {
+        e.preventDefault();
+        window.open(upCodesSearchUrl(focused), '_blank', 'noopener,noreferrer');
+        return;
+      }
+      if (key === 'c') {
+        e.preventDefault();
+        const prompt = copilotPromptForRow(focused);
+        void navigator.clipboard?.writeText(prompt).catch(() => {});
+        window.open('https://up.codes/copilot', '_blank', 'noopener,noreferrer');
+        return;
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visibleRows, focusIdx, attest, rejectAuto, skip]);
+
+  // Auto-scroll focused row into view.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const el = document.querySelector(`[data-row-idx="${focusIdx}"]`) as HTMLElement | null;
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [focusIdx]);
 
   const totalRows = (totalUnverified ?? 0) + (totalVerified ?? 0);
   const verifiedPct =
@@ -489,7 +676,73 @@ function VerifyQueuePanel() {
               {' '}~{SECONDS_PER_ROW}s/row
             </span>
           </div>
+
+          {/* Keyboard shortcut hint */}
+          <p
+            style={{
+              marginTop: 10,
+              marginBottom: 0,
+              color: COLORS.faded,
+              fontSize: 12,
+              fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+            }}
+          >
+            Keys: <strong>V</strong> verify · <strong>R</strong> reject auto ·
+            {' '}<strong>S</strong> skip · <strong>U</strong> UpCodes search ·
+            {' '}<strong>C</strong> Copilot · <strong>J/K</strong> next/prev
+          </p>
         </header>
+
+        {/* Tab bar (Flagged / Auto-verified / All unverified) */}
+        <div
+          style={{
+            ...card,
+            display: 'flex',
+            gap: 6,
+            flexWrap: 'wrap',
+            padding: 6,
+          }}
+        >
+          {([
+            { id: 'flagged', label: 'Flagged for review', count: totalFlagged, tone: COLORS.red },
+            { id: 'auto_clean', label: 'Auto-verified (spot-check)', count: totalAutoClean, tone: COLORS.amber },
+            { id: 'all_unverified', label: 'All unverified', count: totalUnverified, tone: COLORS.graphite },
+          ] as Array<{ id: Tab; label: string; count: number | null; tone: string }>).map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  setTab(t.id);
+                  setPage(0);
+                }}
+                style={{
+                  ...buttonBase,
+                  background: active ? COLORS.ink : '#FFFFFF',
+                  color: active ? '#FFFFFF' : COLORS.ink,
+                  borderColor: active ? COLORS.ink : COLORS.rule,
+                }}
+                aria-pressed={active}
+              >
+                <span>{t.label}</span>
+                <span
+                  style={{
+                    marginLeft: 6,
+                    padding: '2px 8px',
+                    borderRadius: 999,
+                    background: active ? '#FFFFFF1F' : `${t.tone}1A`,
+                    color: active ? '#FFFFFF' : t.tone,
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}
+                >
+                  {t.count ?? '—'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {/* Filter bar */}
         <div
@@ -578,13 +831,28 @@ function VerifyQueuePanel() {
           </div>
         )}
 
-        {visibleRows.map((row) => {
+        {visibleRows.map((row, idx) => {
           const title = unwrap(row.title) || row.slug || row.id;
           const summary = unwrap(row.summary);
           const isOpen = expanded.has(row.id);
           const busy = busyIds.has(row.id);
+          const isFocused = idx === focusIdx;
+          const notes = row.auto_verification_notes;
+          const discrepancies = notes?.discrepancies ?? [];
+          const rationale = notes?.rationale ?? '';
+          const conf = row.auto_verification_confidence;
           return (
-            <article key={row.id} style={card} data-testid="verify-row">
+            <article
+              key={row.id}
+              data-row-idx={idx}
+              onClick={() => setFocusIdx(idx)}
+              style={{
+                ...card,
+                borderColor: isFocused ? COLORS.ink : COLORS.rule,
+                boxShadow: isFocused ? `0 0 0 2px ${COLORS.ink}33` : 'none',
+              }}
+              data-testid="verify-row"
+            >
               <div
                 style={{
                   display: 'flex',
@@ -598,6 +866,12 @@ function VerifyQueuePanel() {
                 {(row.jurisdiction_ids || []).map((j) => (
                   <Badge key={j} tone="teal">{j}</Badge>
                 ))}
+                {row.auto_verified_at && !row.auto_verification_flagged && (
+                  <Badge tone="amber-strong">AI-checked · {conf != null ? `${Math.round(conf * 100)}%` : '—'}</Badge>
+                )}
+                {row.auto_verification_flagged && (
+                  <Badge tone="red">AI flagged · {conf != null ? `${Math.round(conf * 100)}%` : '—'}</Badge>
+                )}
                 <span
                   style={{
                     color: COLORS.faded,
@@ -640,6 +914,41 @@ function VerifyQueuePanel() {
                   </button>
                 </div>
               )}
+              {/* AUTO-VERIFY: show discrepancies + rationale for flagged rows,
+                  or rationale-only for clean auto-verified rows. */}
+              {row.auto_verified_at && (rationale || discrepancies.length > 0) && (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: '10px 12px',
+                    background: row.auto_verification_flagged ? '#FEEAE8' : '#FFF8E5',
+                    borderLeft: `3px solid ${row.auto_verification_flagged ? COLORS.red : COLORS.amber}`,
+                    borderRadius: 6,
+                    fontSize: 13,
+                    color: COLORS.graphite,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                    {row.auto_verification_flagged ? 'AI flagged this row' : 'AI cleared this row'}
+                    {conf != null && (
+                      <span style={{ fontWeight: 400, color: COLORS.faded, marginLeft: 6 }}>
+                        · confidence {Math.round(conf * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  {discrepancies.length > 0 && (
+                    <ul style={{ margin: '4px 0 6px 18px', padding: 0 }}>
+                      {discrepancies.map((d, i) => (
+                        <li key={i}>{d}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {rationale && (
+                    <p style={{ margin: 0, lineHeight: 1.5 }}>{rationale}</p>
+                  )}
+                </div>
+              )}
+
               {(row.source_urls || []).length > 0 && (
                 <ul
                   style={{
@@ -706,6 +1015,17 @@ function VerifyQueuePanel() {
                 >
                   {busy ? 'Verifying…' : 'Verify ✓'}
                 </button>
+                {row.auto_verified_at && (
+                  <button
+                    type="button"
+                    style={buttonDanger}
+                    onClick={() => void rejectAuto(row)}
+                    disabled={busy}
+                    title="Clear the AI stamp so the next batch re-evaluates this row."
+                  >
+                    Reject auto
+                  </button>
+                )}
                 <button
                   type="button"
                   style={buttonDanger}
@@ -762,10 +1082,20 @@ function Badge({
   tone = 'amber',
 }: {
   children: React.ReactNode;
-  tone?: 'amber' | 'teal';
+  tone?: 'amber' | 'amber-strong' | 'teal' | 'red';
 }) {
-  const bg = tone === 'teal' ? `${COLORS.teal}1A` : `${COLORS.amber}26`;
-  const color = tone === 'teal' ? COLORS.teal : '#7A5C1A';
+  let bg = `${COLORS.amber}26`;
+  let color = '#7A5C1A';
+  if (tone === 'teal') {
+    bg = `${COLORS.teal}1A`;
+    color = COLORS.teal;
+  } else if (tone === 'red') {
+    bg = `${COLORS.red}1A`;
+    color = COLORS.red;
+  } else if (tone === 'amber-strong') {
+    bg = `${COLORS.amber}40`;
+    color = '#5A4310';
+  }
   return (
     <span
       style={{

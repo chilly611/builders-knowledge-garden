@@ -47,11 +47,22 @@ interface SourceCountBadgeProps {
    * NOT change the count or the tier color (badge math is unchanged).
    */
   manuallyAttested?: boolean;
+  /**
+   * AUTO-VERIFY (2026-05-25): when true, the count includes the
+   * `claude-cross-check` pseudo-source — an AI pre-pass cleared the
+   * underlying row with high confidence and no flagged discrepancies.
+   * Strictly weaker than manuallyAttested. When BOTH are true, manual
+   * wins and we render the green tooltip (auto becomes redundant).
+   * Renders a YELLOW tick (distinct from manual's green) so the user
+   * can tell at a glance whether a human or a model signed off.
+   */
+  autoVerified?: boolean;
 }
 
 export default function SourceCountBadge({
   sources,
   manuallyAttested,
+  autoVerified,
 }: SourceCountBadgeProps) {
   // Non-compliance specialists don't have a source count — render nothing.
   if (sources === undefined) return null;
@@ -96,6 +107,18 @@ export default function SourceCountBadge({
     title = `${title} Includes a manual review by the org owner against an external licensed source (reviewed ${today}).`;
   }
 
+  // AUTO-VERIFY: distinct yellow tick + tooltip. Strictly weaker than
+  // manual — only applies when there is NO manual attestation on the
+  // result bag (caller passes autoVerified=true only in that case via
+  // isAutoVerified()).
+  const showAutoTick = !!autoVerified && !manuallyAttested && sources >= 1;
+  if (showAutoTick) {
+    title = `${title} AI cross-check (Claude) reviewed this row and flagged no factual discrepancies. Not equivalent to a human licensed-source review — yellow tick instead of green.`;
+    // Use a yellow-pencil color for the icon to distinguish from the
+    // green/amber/red tiers without disturbing the underlying tier band.
+    icon = '✓'; // same shape, different color via wrapper span below
+  }
+
   return (
     <div
       title={title}
@@ -103,6 +126,7 @@ export default function SourceCountBadge({
       data-testid="source-count-badge"
       data-source-count={sources}
       data-manually-attested={manuallyAttested ? 'true' : 'false'}
+      data-auto-verified={showAutoTick ? 'true' : 'false'}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -120,8 +144,32 @@ export default function SourceCountBadge({
         lineHeight: 1.4,
       }}
     >
-      <span aria-hidden style={{ fontSize: '0.9em' }}>{icon}</span>
+      <span
+        aria-hidden
+        style={{
+          fontSize: '0.9em',
+          // Yellow tick when only AI-verified (no human review yet).
+          color: showAutoTick ? '#B08A1F' : undefined,
+        }}
+      >
+        {icon}
+      </span>
       <span>{label}</span>
+      {showAutoTick && (
+        <span
+          aria-label="AI cross-checked, not human-reviewed"
+          style={{
+            fontSize: '0.7em',
+            opacity: 0.75,
+            color: '#B08A1F',
+            marginLeft: spacing[1],
+            textTransform: 'none',
+            letterSpacing: 0,
+          }}
+        >
+          ai-checked
+        </span>
+      )}
     </div>
   );
 }

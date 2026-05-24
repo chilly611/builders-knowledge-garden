@@ -74,4 +74,19 @@ export interface CodeSourceResult {
    * something); `manually_verified` is the human attestation overlay.
    */
   manually_verified?: boolean;
+  /**
+   * AUTO-VERIFY (2026-05-25): set on RAG results whose underlying
+   * knowledge_entities row was cleared by the Claude cross-check pre-pass
+   * (`auto_verified_at IS NOT NULL AND auto_verification_flagged = false`).
+   * Drives the `claude-cross-check` pseudo-source in countVerifiedSources().
+   *
+   * Rules for the badge:
+   *   - manual attestation always supersedes auto (green tick wins over yellow)
+   *   - auto_verified counts as +1 verified source ONLY when manual_verified
+   *     is NOT also set on the SAME row (otherwise we'd double-count)
+   *   - rows where the AI flagged a discrepancy MUST NOT have this true —
+   *     those carry auto_verification_flagged=true and are still in the
+   *     human queue
+   */
+  auto_verified?: boolean;
 }

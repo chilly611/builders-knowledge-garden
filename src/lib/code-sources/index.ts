@@ -95,6 +95,21 @@ export function countVerifiedSources(results: CodeSourceResult[]): number {
   if (results.some((r) => r.manually_verified === true)) {
     verifiedSources.add("manual-attestation");
   }
+  // AUTO-VERIFY (2026-05-25): the AI cross-check pre-pass adds a SEPARATE
+  // pseudo-source ONLY when no result in the bag is already manually
+  // attested. Rationale:
+  //   - manual attestation is strictly stronger than auto — once a human
+  //     reviewed it we don't need the AI's vote, and double-counting would
+  //     inflate the badge.
+  //   - when only auto is available, +1 source is real signal: a model with
+  //     no stake in the outcome saw the same content and didn't flag it.
+  const hasManual = results.some((r) => r.manually_verified === true);
+  if (
+    !hasManual &&
+    results.some((r) => r.auto_verified === true)
+  ) {
+    verifiedSources.add("claude-cross-check");
+  }
   return verifiedSources.size;
 }
 
@@ -104,4 +119,16 @@ export function countVerifiedSources(results: CodeSourceResult[]): number {
  */
 export function isManuallyAttested(results: CodeSourceResult[]): boolean {
   return results.some((r) => r.manually_verified === true);
+}
+
+/**
+ * AUTO-VERIFY (2026-05-25): true iff any result was cleared by the
+ * Claude cross-check pre-pass AND no result was manually attested. Used
+ * by SourceCountBadge to render a YELLOW tick + "AI-cross-checked" tooltip,
+ * distinct from the green tick used for manual attestation.
+ */
+export function isAutoVerified(results: CodeSourceResult[]): boolean {
+  const hasManual = results.some((r) => r.manually_verified === true);
+  if (hasManual) return false; // manual supersedes
+  return results.some((r) => r.auto_verified === true);
 }
