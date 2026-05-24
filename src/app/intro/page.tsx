@@ -69,6 +69,26 @@ const DEMO_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 const ACT_DURATIONS_MS = [8000, 10000, 13000, 24000, 12000];
 const TOTAL_ACTS = 5;
 
+// Hook: reactive boolean for "are we under the mobile breakpoint right
+// now." Used by Act 1 (chrome orbit positions + label positions need to
+// be smaller on small viewports so they don't fly off-screen) and Act 3
+// (auto-scroll only kicks in on phones where content overflows).
+function useIsMobile(maxWidthPx = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidthPx}px)`);
+    setIsMobile(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
+  }, [maxWidthPx]);
+  return isMobile;
+}
+
 // — Garden Logo (with SVG fallback) ————————————————————————————————————
 // Loads a brand image from /public/logos/gardens/<file>; if the file is
 // missing (404) or fails to decode, transparently falls back to the
@@ -270,21 +290,31 @@ function ActIndicator({ act, paused, onJump }: { act: number; paused: boolean; o
 //   7.0-8.0s   hammer + tagline alone — the killer app holds the frame.
 // Reduced motion: skips the zoom-past entirely, leaves chromes at small
 // orbit positions with labels visible (the spec-equivalent still state).
-// Single chrome's orbit-out → swell → zoom-past animation. Driven by a
-// state-machine (setTimeouts) instead of Framer's keyframe arrays.
+// Single chrome's orbit-out → converge-toward-center → hold → zoom-past
+// animation. State-machine driven; mobile-aware so the chromes stay in
+// frame on small viewports.
 //
-// 2026-05-23 PM rewrite: ditched the zero-size-anchor + self-centering-inner
-// pattern that was rendering as invisible on prod (per Chilly's screenshot,
-// the chromes never showed up). Now uses plain CSS centering on a fixed-
-// size motion.div: top:50% left:50% with marginLeft/marginTop = -size/2
-// places the box's CENTER at the canvas center BEFORE Framer's transform
-// applies, so Framer's x/y/scale animate cleanly from there.
+// 2026-05-23 PM rewrite (Chilly mobile pass): old version moved chromes
+// OUTWARD as they grew, which threw them off the phone viewport before
+// they reached peak readability. New choreography (per Chilly):
 //
-// Phases:
-//   'orbit'  ~1.2s move from canvas center → orbit position at scale 1.
-//   'expand' ~2.5s scale 1 → 3.5, drift slightly further outward.
-//   'past'   ~2.2s scale 3.5 → 8.0 + translate way out + fade to 0
-//                  ("zoom past the viewer").
+//   'hidden'   t=0-0.4s    scale 0.4, opacity 0, at canvas center.
+//   'orbit'    t=0.4-1.6s  move out to orbit pos at scale 1 — readable
+//                           small, briefly visible.
+//   'incoming' t=1.6-2.6s  grow + HEAD TOWARD CENTER. Chromes appear to
+//                           barrel toward the viewer rather than exit
+//                           the frame.
+//   (hold)     t=2.6-5.5s  ~3s of dwell at the incoming target — peak
+//                           readable size, on/near center. No new phase,
+//                           Framer just sits at the target until the
+//                           next state change.
+//   'past'     t=5.5-7.0s  zoom past the viewer: scale balloons to ~9×,
+//                           translate back through center (away from
+//                           orbit direction) so it feels like the chrome
+//                           passes through the camera, opacity fades.
+//
+// Mobile (≤768px): orbit + incoming positions scale to ~55% of desktop
+// so the chrome's visual extent stays inside the phone viewport at peak.
 const CHROME_SIZE = 120;
 function ChromeOrbit({
   src, alt, orbitX, orbitY, staggerDelay, fallbackColor, reduced,
@@ -297,31 +327,40 @@ function ChromeOrbit({
   fallbackColor: string;
   reduced: boolean;
 }) {
-  type Phase = 'hidden' | 'orbit' | 'expand' | 'past';
+  type Phase = 'hidden' | 'orbit' | 'incoming' | 'past';
   const [phase, setPhase] = useState<Phase>('hidden');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (reduced) { setPhase('orbit'); return; }
     const baseDelay = staggerDelay * 1000;
     const ts: number[] = [
-      window.setTimeout(() => setPhase('orbit'),  400  + baseDelay),
-      window.setTimeout(() => setPhase('expand'), 2800 + baseDelay),
-      window.setTimeout(() => setPhase('past'),   5500 + baseDelay),
+      window.setTimeout(() => setPhase('orbit'),    400  + baseDelay),
+      window.setTimeout(() => setPhase('incoming'), 1600 + baseDelay),
+      window.setTimeout(() => setPhase('past'),     5500 + baseDelay),
     ];
     return () => { ts.forEach((t) => window.clearTimeout(t)); };
   }, [reduced, staggerDelay]);
 
+  // Mobile-aware geometry. On phone (375px viewport ≈ 345px canvas at
+  // 92vw), full desktop orbit (170, -160) overshoots the viewport edge.
+  // 55% scaling keeps chromes inside the frame at all phases.
+  const orbitMul    = isMobile ? 0.55 : 1.00;
+  const incomingMul = isMobile ? 0.20 : 0.30;  // how close to center at peak
+  const incomingScale = isMobile ? 2.4  : 3.5;
+  const pastScale     = isMobile ? 7.0  : 9.0;
+
   const target =
-    phase === 'orbit'  ? { x: orbitX,         y: orbitY,         scale: 1.0, opacity: 1 } :
-    phase === 'expand' ? { x: orbitX * 1.35,  y: orbitY * 1.35,  scale: 3.5, opacity: 1 } :
-    phase === 'past'   ? { x: orbitX * 2.4,   y: orbitY * 2.4,   scale: 8.0, opacity: 0 } :
-                         { x: 0,              y: 0,              scale: 0.4, opacity: 0 };
+    phase === 'orbit'    ? { x: orbitX * orbitMul,    y: orbitY * orbitMul,    scale: 1.0,             opacity: 1 } :
+    phase === 'incoming' ? { x: orbitX * incomingMul, y: orbitY * incomingMul, scale: incomingScale,   opacity: 1 } :
+    phase === 'past'     ? { x: -orbitX * 0.15,       y: -orbitY * 0.15,       scale: pastScale,       opacity: 0 } :
+                           { x: 0,                    y: 0,                    scale: 0.4,             opacity: 0 };
 
   const duration =
-    phase === 'orbit'  ? 1.2 :
-    phase === 'expand' ? 2.5 :
-    phase === 'past'   ? 2.2 :
-                         0.0;
+    phase === 'orbit'    ? 1.2 :
+    phase === 'incoming' ? 1.0 :
+    phase === 'past'     ? 1.5 :
+                           0.0;
 
   return (
     <motion.div
@@ -456,7 +495,13 @@ function Act1Umbrella({ reduced }: { reduced: boolean }) {
 // coordinates, fades in/out without scaling. Lives outside the chrome
 // motion.divs so the dramatic zoom-past can't drag the labels into
 // illegibly-large overlapping text.
+//
+// 2026-05-23 PM (Chilly mobile pass): label positions scale to ~55% on
+// mobile so they stay inside the 345px-wide phone canvas. Font also
+// scales 14px → 11px on mobile.
 function Act1ChromeLabel({ x, y, text, reduced }: { x: number; y: number; text: string; reduced: boolean }) {
+  const isMobile = useIsMobile();
+  const posMul = isMobile ? 0.55 : 1.0;
   return (
     <motion.div
       initial={reduced ? { opacity: 1 } : { opacity: 0 }}
@@ -469,10 +514,10 @@ function Act1ChromeLabel({ x, y, text, reduced }: { x: number; y: number; text: 
       }}
       style={{
         position: 'absolute',
-        top: `calc(50% + ${y}px)`,
-        left: `calc(50% + ${x}px)`,
+        top: `calc(50% + ${y * posMul}px)`,
+        left: `calc(50% + ${x * posMul}px)`,
         transform: 'translate(-50%, -50%)',
-        fontSize: 14,
+        fontSize: isMobile ? 11 : 14,
         fontWeight: 800,
         letterSpacing: '0.12em',
         color: COLORS.ink,
@@ -770,6 +815,7 @@ function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
 // Total Act 3 stretched 11s → 13s to fit the 4 input events without
 // rushing.
 function Act3Aikido({ reduced }: { reduced: boolean }) {
+  const isMobile = useIsMobile();
   const fullTranscript =
     "I want to build a custom modern farmhouse in Marin. 1,800 square feet. 3 bed 2 bath. Slab on grade. Late summer 2026.";
 
@@ -820,6 +866,23 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
     return () => window.clearInterval(id);
   }, [reduced]);
 
+  // Auto-scroll the Act 3 content over the 13s duration with a ramping
+  // S-curve ease (slow start → faster middle → slow end). 2026-05-23 PM
+  // (Chilly mobile pass): on phone the inputs + cards stacked into a
+  // single column overflow the viewport and content animates in below
+  // the fold. The scroll reveals content as it lands, then settles. On
+  // desktop the scroll is gentler (only ~120px) — adds a cinematic
+  // camera-pan feel without disorienting.
+  const ACT3_DURATION_SEC = 13;
+  const scrollProgress = (() => {
+    if (reduced) return 1;
+    const p = Math.max(0, Math.min(1, elapsed / ACT3_DURATION_SEC));
+    // S-curve ease (in-out quad)
+    return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+  })();
+  const totalScrollPx = isMobile ? 480 : 120;
+  const scrollY = -scrollProgress * totalScrollPx;
+
   return (
     <motion.section
       key="act3"
@@ -827,9 +890,30 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: reduced ? 0 : 0.6 }}
-      style={actWrap(COLORS.paper, { gap: 24 })}
+      style={actWrap(COLORS.paper, {
+        gap: 24,
+        // Mobile: align content top so we can scroll DOWN from there;
+        // desktop keeps the vertical-center default. Padding-top is
+        // tighter on mobile to give content more visible room.
+        justifyContent: isMobile ? 'flex-start' : 'center',
+        paddingTop: isMobile ? 50 : 80,
+      })}
       aria-label="Act 3: voice in, project out"
     >
+      {/* Scroll wrapper — translateY over time to reveal stacked content
+          on mobile. Desktop gets a gentler pan for cinematic feel. */}
+      <motion.div
+        animate={{ y: scrollY }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 24,
+          width: '100%',
+          willChange: 'transform',
+        }}
+      >
       <div style={{ textAlign: 'center' }}>
         <h2 style={{
           ...h2Style,
@@ -908,10 +992,12 @@ function Act3Aikido({ reduced }: { reduced: boolean }) {
           </AnimatePresence>
         </div>
       </div>
+      </motion.div>
 
       {/* Journey marquee — scrolls all 12 stages across the bottom over
           Act 3's full 13s duration. Positioned absolute inside the act
-          section so it doesn't disturb the centered content above. */}
+          section so it doesn't disturb the centered content above (and
+          isn't affected by the content-scroll wrapper). */}
       <Act3JourneyStrip reduced={reduced} />
 
       <style jsx global>{`
