@@ -134,34 +134,37 @@ function saveSkips(map: SkipMap) {
 }
 
 /**
- * Build a best-effort UpCodes search URL for a row. UpCodes uses
- * publication slugs (`/viewer/<code>/<section>`); we don't always know
- * the exact viewer path so we fall back to their search:
- *
- *   https://up.codes/s/<term>
- *
- * The reviewer adjusts in-app if the deep link missed. We optimize for
- * "land on something close enough that you don't have to type the
- * section number from scratch".
+ * Build a UpCodes SEARCH URL for a row. Earlier we used /s/<term> but
+ * that path expects exact publication slugs and 404s on free text
+ * like "ASHRAE 90.1 — Energy Standard for...". Switching to /search?q=…
+ * which is the reliable text-search endpoint.
  */
-function upCodesUrl(row: KnowledgeRow): string {
+function upCodesSearchUrl(row: KnowledgeRow): string {
   const title = unwrap(row.title);
   const slug = row.slug || '';
-  // Prefer section-number tokens out of the slug ("nec-210-52-c-5" →
-  // search "210.52(C)(5)"). Falls back to the human title.
   const sectionMatch = slug.match(/^([a-z]+)-(\d[\d-]*[a-z\d-]*)$/i);
   let term: string;
   if (sectionMatch) {
     const code = sectionMatch[1];
-    // Reverse the dash-collapse: "210-52-c-5" → "210.52(C)(5)" is
-    // ambiguous so we just dot-join the numeric runs and let UpCodes
-    // search handle the rest.
     const section = sectionMatch[2].replace(/-/g, '.');
     term = `${code.toUpperCase()} ${section}`;
   } else {
     term = title || slug;
   }
-  return `https://up.codes/s/${encodeURIComponent(term)}`;
+  return `https://up.codes/search?q=${encodeURIComponent(term)}`;
+}
+
+/**
+ * Build a Copilot prompt for a row. The reviewer copies this and
+ * pastes into UpCodes Copilot. We open Copilot in a new tab and
+ * write this prompt to the clipboard at the same time so it's
+ * a one-keystroke paste.
+ */
+function copilotPromptForRow(row: KnowledgeRow): string {
+  const title = unwrap(row.title);
+  const slug = row.slug || '';
+  const target = title || slug;
+  return `Summarize ${target} in 3 bullet points and flag any common gotchas. Cite the relevant California / San Francisco code adoption.`;
 }
 
 // ------------------------------------------------------------
@@ -668,13 +671,29 @@ function VerifyQueuePanel() {
               )}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <a
-                  href={upCodesUrl(row)}
+                  href={upCodesSearchUrl(row)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={buttonBase}
                 >
-                  Open in UpCodes ↗
+                  Search in UpCodes 🔍
                 </a>
+                <button
+                  type="button"
+                  style={buttonBase}
+                  onClick={async () => {
+                    const prompt = copilotPromptForRow(row);
+                    try {
+                      await navigator.clipboard.writeText(prompt);
+                    } catch {
+                      /* clipboard blocked — user pastes from below */
+                    }
+                    window.open('https://up.codes/copilot', '_blank', 'noopener,noreferrer');
+                  }}
+                  title={`Opens UpCodes Copilot in a new tab. Prompt copied to clipboard: "${copilotPromptForRow(row)}"`}
+                >
+                  Ask Copilot ✨
+                </button>
                 <button
                   type="button"
                   style={{
