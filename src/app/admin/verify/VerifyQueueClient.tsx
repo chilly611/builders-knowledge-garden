@@ -24,7 +24,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import LaneGate from '@/components/LaneGate';
+
+// Admin allowlist — mirrors the server-side check in
+// /api/v1/knowledge-entities/[id]/attest/route.ts. Note: LaneGate(['owner'])
+// doesn't work here because /admin/verify has no project context, so the
+// per-project role resolution falls through. Email-based check matches
+// the server-side ground-truth.
+const ADMIN_EMAILS = new Set([
+  'chillyd@gmail.com',
+  'charlie@theknowledgegardens.com',
+  'bou@theknowledgegardens.com',
+]);
 
 const COLORS = {
   paper: '#FAF8F2',
@@ -253,15 +263,29 @@ function NotForYourRole() {
 }
 
 export default function VerifyQueueClient() {
-  return (
-    <LaneGate
-      allow={['owner']}
-      fallback={<NotForYourRole />}
-      loadingFallback={<main style={pageWrap} />}
-    >
-      <VerifyQueuePanel />
-    </LaneGate>
-  );
+  const [authState, setAuthState] = useState<'loading' | 'allowed' | 'denied'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const email = data?.user?.email?.toLowerCase() ?? '';
+        const role = (data?.user?.app_metadata as Record<string, unknown> | undefined)?.role;
+        const allowed = ADMIN_EMAILS.has(email) || role === 'admin';
+        if (!cancelled) setAuthState(allowed ? 'allowed' : 'denied');
+      } catch {
+        if (!cancelled) setAuthState('denied');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (authState === 'loading') return <main style={pageWrap} />;
+  if (authState === 'denied') return <NotForYourRole />;
+  return <VerifyQueuePanel />;
 }
 
 // ------------------------------------------------------------
