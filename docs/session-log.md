@@ -2220,3 +2220,136 @@ fd1d1b1  intro: chrome state machine + transparent PNGs + marquee loop + Act 4 p
 
 Cowork bundled `18a364f` (preserving Chilly's intro edits — Act 1 simple-centering rewrite, Act 5 static portal, Coming removed) + `58a1b54` (Sentry v10 API rename, unblocking a failed build my push caused).
 
+
+## 2026-05-24 — ATTEST-WIRE: human-in-loop verification for knowledge_entities
+
+### Trigger
+
+Chilly subscribed to **UpCodes Pro ($68/mo)** with the explicit purpose of cross-checking the BKG knowledge layer against a licensed canonical source. We needed a way to (a) record those cross-checks durably, (b) count them honestly toward the "N sources verified" trust badge without forging a fake adapter result, and (c) leave an audit trail that survives a customer dispute.
+
+### Architecture
+
+Added a `manually_verified_at` / `_by` / `_source` trio to `public.knowledge_entities` and a `manual-attestation` pseudo-source to `countVerifiedSources()`. The pseudo-source is added to the verified set only when at least one result in the bag carries `manually_verified === true` (set by `rag.ts` when the underlying row has `manually_verified_at IS NOT NULL`). This gives the legitimate path from "1 source verified" (bkg-seed only) → "2 sources verified" once Chilly has reviewed the row against UpCodes — without writing a fake `CodeSourceResult` into the bag.
+
+Migration: `supabase/migrations/20260524_knowledge_entities_manual_attestation.sql`. Partial indexes on the verify queue and on attested rows. Re-uses the existing `audit_trigger_fn` from `20260522b_ship_round3_schema.sql` so every attest/revoke lands in `audit_log` with full before/after JSONB diff and `changed_by = auth.uid()`.
+
+### API surface
+
+`POST /api/v1/knowledge-entities/[id]/attest` + `DELETE` for revoke. Owner-allowlist (`chillyd@gmail.com`, `charlie@theknowledgegardens.com`, `bou@theknowledgegardens.com`) + `app_metadata.role === 'admin'` fallback for future ops staff without a code change. CRITICAL: uses the user's JWT (NOT service-role) so `auth.uid()` populates `audit_log.changed_by`. Service-role would bypass RLS AND nuke audit attribution, defeating the entire legal-defense premise of the audit trail. Test coverage in `__tests__/attest.test.ts` (POST + DELETE + 401/403 cases).
+
+### UI
+
+`/admin/verify` queue (`VerifyQueueClient.tsx`): up to 25 unverified published rows per page, filters by entity_type / jurisdiction / search, per-row actions: **Search in UpCodes 🔍** + **Ask Copilot ✨** (writes a tailored prompt to clipboard and opens up.codes/copilot) + **Verify ✓** + **Skip** (localStorage TTL 24h). Progress widget shows "X of N verified" + ETA assuming ~30s/row.
+
+### Two real bugs caught and fixed during this session
+
+1. **LaneGate(['owner']) was permanently denying** (`1cb9666`). LaneGate resolves role from the current project context, but `/admin/verify` has no project context — so the gate fell through to "deny" for everyone. Fix: replaced with the same email allowlist the server-side route uses. Now client + server are consistent. Lesson filed: when gating a global-role surface in client UIs, mirror the server-side allowlist rather than using a project-scoped gate.
+
+2. **"Open in UpCodes" was 404'ing** (`c50beba`). First version used `up.codes/s/<title>` but `/s/` requires exact publication slugs and 404s on free text like "ASHRAE 90.1 — Energy Standard for Buildings Except Low-Rise Residential". Fix: switched to `up.codes/search?q=<term>` (text-search endpoint, never 404s) + added an **Ask Copilot ✨** button that opens up.codes/copilot in a new tab and writes a per-row prompt to the clipboard. Pro tier ($68/mo) unlocks Copilot, which is what the deep-link targets.
+
+### Documentation
+
+`docs/UPCODES-VERIFICATION.md` — workflow doc: reviewer opens row in UpCodes, compares canonical text against what BKG stored, clicks Verify ✓ → stamps trio + audit_log entry. Math: ~2,256 unverified rows × ~30s/row ≈ 19h of work, ~100/week part-time → full corpus in ~23 weeks. This 23-week number became the trigger for the 2026-05-25 AUTO-VERIFY work.
+
+### Commits
+
+```
+5fd7fd1  feat(attest): human-in-loop verification + manual attestation pseudo-source
+1cb9666  fix(admin/verify): use email allowlist instead of LaneGate (no project context)
+c50beba  fix(admin/verify): replace broken /s/ URL with search + Ask Copilot
+```
+
+### Issues open / carry-forward
+
+- **Documenso webhook autofill bug** — UpCodes UI's Triggers field kept losing selection. User provided webhook secret manually (`Grace2026!`); lazy-sync handles status without the webhook. Eventually want the webhook registered for instant status updates, but parked.
+- **Manual verification not started yet** — 0 of 2,256 rows manually attested at end of this session. AUTO-VERIFY session the next day surfaced a deeper question about whether to grind the queue or pivot positioning.
+
+
+## 2026-05-25 — AUTO-VERIFY (Option C): AI pre-pass with yellow-tick provenance
+
+### Trigger
+
+Chilly asked: "This seems like a tremendous amount of work — can we automate this for the time being?" The 23-week manual-grind math from the ATTEST-WIRE session was the spark. We agreed: don't lie about provenance (no auto-stamping into `manually_verified_*`), but DO pre-screen with AI to surface the highest-value human-review work first.
+
+Chose **Option C: AI pre-pass + fast human spot-check**. Two-tier system: Claude Haiku cross-checks each row against its training knowledge of NEC/IBC/CBC/ASHRAE/OSHA/Title 24; high-confidence + zero-discrepancy verdicts get a separate yellow-tick stamp; everything else flows to a flagged queue with the AI's discrepancies + rationale pre-populated for the human.
+
+### Architecture — parallel columns, never overload manually_verified_*
+
+Added `auto_verified_at` / `auto_verified_by` (text — machine actor, e.g. `claude-haiku-4-5-20251001`, deliberately NOT a uuid because no human is pretending to have reviewed) / `auto_verified_source` / `auto_verification_confidence` (numeric(3,2) with CHECK 0..1) / `auto_verification_notes` (jsonb with discrepancies + rationale + model_response + prompt_hash) / `auto_verification_flagged` (bool). Two new partial indexes: `idx_knowledge_entities_auto_flagged` (the human queue) + `idx_knowledge_entities_auto_clean` (the spot-check queue).
+
+Migration: `supabase/migrations/20260525_knowledge_entities_auto_verification.sql`. Re-uses the same `audit_trigger_fn` from ATTEST-WIRE so every auto-stamp is captured.
+
+`countVerifiedSources()` adds a `claude-cross-check` pseudo-source to the verified set ONLY when no `manually_verified` result is present on the same row. Manual attestation strictly supersedes auto — never double-counted. `SourceCountBadge` renders a **yellow tick + "ai-checked" label** when only auto-verified, the existing green tick + "manually reviewed" hint when manually attested. Thread through `CodeSourceResult.auto_verified` populated in `rag.ts` from the projected columns.
+
+Thresholds (`lib/auto-verify/cross-check.ts`): `CLEAN_THRESHOLD = 0.85`, `STAMP_THRESHOLD = 0.5`. Versioned prompt (`auto-verify/v1@2026-05-25`), hashed into notes so an auditor can re-derive what was asked.
+
+### API + batch worker
+
+- `POST /api/v1/knowledge-entities/auto-verify-batch` — chunked cursor-based worker (default limit 25, max 50). Owner-allowlist + service-role bypass for cron/driver. Returns processed/clean/flagged/skipped/errors/last_id/done/remaining_estimate.
+- `POST /api/v1/knowledge-entities/[id]/auto-verify` (+ DELETE) — single-row re-run + clear for debugging or re-evaluation after a content edit.
+- `scripts/auto-verify-driver.mjs` — local driver that polls the Vercel batch endpoint until done.
+- `scripts/auto-verify-local.mjs` — local Node runner that uses service-role + Anthropic SDK directly, bypassing the Vercel function deadline. Supports `--shard N/M` for parallel keyspace partitioning via uuid range comparisons.
+
+### UI overhaul: 3 tabs + keyboard shortcuts
+
+`/admin/verify` got a full refresh: tabs for **Flagged for review** (default, sorted lowest-confidence first — the rows most likely to be wrong float to the top), **Auto-verified spot-check** (sample 5-10% to validate AI calibration), and **All unverified** (the pre-AUTO-VERIFY workflow). Per-row inline diff card displays the AI's discrepancies + rationale on flagged rows so the reviewer can decide in 5 seconds rather than 30.
+
+Keyboard shortcuts (when no input is focused): **V** verify · **R** reject auto (DELETE /auto-verify, recycles into next batch) · **S** skip · **U** UpCodes search · **C** Copilot · **J/K** (or arrow keys) next/prev row. Focused row gets a highlighted border and auto-scrolls into view. Two yards of operational ergonomics per click saved becomes meaningful at 2,000 rows.
+
+### The bug that ate ~$2 of Haiku tokens
+
+First batch run looked healthy for ~700 rows then collapsed from ~50 rows/round to ~1/round. A babysitter sub-agent ran 24 rounds, correctly detected the stall via "2 consecutive rounds with delta < 5 stamped," and reported. Root cause: low-confidence verdicts (`confidence < 0.5`) returned `skipped` without writing anything to the row. The queue filter is `WHERE auto_verified_at IS NULL`, so every "skipped" row stayed in the queue and got re-checked on every subsequent chunk — burning Haiku tokens to land the same skip decision over and over. Worked fine for confident rows (where the AI quickly stamped clean or flagged); cycled forever for low-confidence rows.
+
+Fix (`f2ce2a0`): ALWAYS stamp `auto_verified_at` after the AI runs. Low-confidence verdicts get `auto_verification_flagged = true` + an extra `low_confidence: true` marker in the notes JSONB. The queue filter now means "AI never looked at this" rather than "AI ran but had low confidence." Verified: 10-row test stamped 10, queue advanced.
+
+After the fix, a second sub-agent drained 1,527 remaining rows in 12 rounds (~16 minutes wall-clock).
+
+### Final batch result
+
+- **2,256 / 2,256 rows AI-checked** (queue fully drained)
+- **258 yellow-clean** (avg confidence **0.91**, well above the 0.85 threshold)
+- **1,998 flagged** for human review
+- **0 still unchecked**
+- **0 manually-green** (next phase — pending the A/B/C/D strategic decision below)
+- Anthropic Haiku spend: estimated $3-8
+
+### Spot-check of yellow-clean output (sample, confidence ≥ 0.90)
+
+The auto-cleared rows were exactly the canonical references we hoped to see — `nec-article-220-load-calc` (NEC 2023 Branch-Circuit / Feeder / Service Load Calculations), `osha-1910-132` (PPE assessment + provision), `osha-1910-147` (lockout/tagout), `ibc-ch4-special-detailed-requirements` (IBC 2021 Chapter 4), `nfpa-70-electrical-code`. Each had a 4-5 sentence rationale citing canonical structure (Articles, Chapters, code-year cycles, official publisher URLs). The model gave well-reasoned verdicts, not "looks fine" rubber stamps.
+
+### The uncomfortable strategic finding
+
+**89% of published KB rows don't pass an AI cross-check.** The vast majority of the 1,998 flagged rows aren't flagged because the AI found a factual error — they're flagged because the summary is too vague to verify (e.g., `sustainability-deconstruction-planning` with summary "Sustainability practice for deconstruction planning." and source `carbonleadershipforum.org`). The AI legitimately says: "this has no checkable factual claim, the URL isn't a canonical code authority, mark not-clean." That's the content layer being structurally thin, not the AI being overly strict.
+
+Surfaced four strategic options for v1 launch / fundraising. CTO recommendation: **A + B sequenced.**
+
+- **A — Pivot positioning** (recommended). Stop claiming to BE the code authority. Become the workflow / compass layer that points AT UpCodes/ICC/AHJs. Demote `/knowledge` to admin-only. Code lookups happen via UpCodes Pro deep-links (Search + Copilot buttons already built). Clean fundraising story, no liability tail.
+- **B — Cull the KB.** Drop 1,998 flagged rows to `status='draft'`. Keep 258 yellow-clean rows live. Honest "258 verified code references" marketing claim. Backstop after A.
+- **C — Hire 2-3 part-time AEC pros.** ~$10-15K curation labor over 2-3 weeks. Most defensible long-term, slowest, real cash burn before revenue.
+- **D — Don't ship the KB at all in v1.** Pull `/knowledge` entirely. Lead with workflows (RFI, punch list, change orders, budget, AI specialists, Stripe billing). Fastest path to a clean demoable product.
+
+User is taking the A/B/C/D decision into a UX rehaul + parallel-agent restructure conversation; everything downstream of that depends on the positioning call.
+
+### Key decisions
+
+- **Never write AI signals into the human-trust column.** Parallel `auto_verified_*` columns. Parallel `claude-cross-check` pseudo-source. Manual strictly supersedes auto, never double-counted. The 5 minutes of schema work is the entire "yes we labeled it accurately" legal defense the first time a customer audits the row.
+- **Stamp every row the AI runs on, regardless of verdict.** A nullable timestamp column is the right shape; a "rerun me" status code is not. Confidence / flag info goes in SEPARATE columns so the absence of an attempt is structurally distinct from a low-confidence attempt.
+- **Throughput-trajectory monitoring catches algorithmic stalls before they burn the budget.** Two cheap signals: per-round delta in the "done" count + per-round elapsed time. Wire as bail-out conditions in any long-running batch driver. The 24-round stall in this session would have continued for 30+ more rounds and eaten $20+ in tokens without the trajectory check.
+- **PostgREST `like` doesn't auto-cast uuid → text** — fails silently with 0 rows returned. Use uuid range comparisons (`gte ${prefix}0000000-0000-0000-0000-000000000000` + `lt ${nextPrefix}…`) for sharding the keyspace across parallel workers.
+- **Workspace bash sandboxes are ephemeral per call.** `nohup ... &` doesn't survive between tool invocations because each call gets its own Linux namespace. For long-running work, either chunk into 40s-bounded calls with cursor resumption (works but tedious) or dispatch a subagent with its own tool budget to babysit the loop.
+
+### Commits
+
+```
+1f2f812  feat(auto-verify): AI pre-pass + 3-tab /admin/verify + keyboard shortcuts
+f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
+```
+
+### Issues open / carry-forward
+
+- [ ] **A/B/C/D decision** — the founder call on positioning. Everything downstream depends on this.
+- [ ] **UX rehaul + parallel-agent restructure** — Chilly mentioned wanting to use multiple machines + parallel agents for a comprehensive UX redesign. Wait for A/B/C/D first; the right number of screens depends on the positioning.
+- [ ] **Manual attestation queue grind (~258 yellow → green promotions + spot-check)** — if Option A wins, this becomes lower priority (the KB stops being the marketing front line). If Option C wins, it's the launch-blocker.
+- [ ] **Documenso webhook autofill bug** — still parked, lazy-sync handles status.
+- [ ] **Pre-existing P2**: `/api/v1/architect-request` 500 on POST due to body-shape mismatch (`name` vs `contact_name`, `email` vs `contact_email`).
+

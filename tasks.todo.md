@@ -1887,3 +1887,79 @@ Full session log: `docs/session-log.md` (3-day stretch; ~9 commits from this sur
 - New lesson: **"`width:0;height:0` motion.div anchor pattern can render invisible."** Use plain `top:50% left:50%` + `marginLeft/marginTop = -size/2`. Filed in `tasks.lessons.md` (2026-05-23).
 - New lesson: **"Claude Preview's hidden iframe pauses rAF — useless for animation verification."** Push to prod and check on a real visible browser instead. Filed in `tasks.lessons.md` (2026-05-23).
 - New lesson: **"Vercel CDN can serve stale PNG bytes after a fresh deploy."** Check `etag` vs local md5 before assuming the deploy failed; empty force-redeploy commit refreshes the CDN cache. Filed in `tasks.lessons.md` (2026-05-23).
+
+
+## 2026-05-24 — ATTEST-WIRE: human-in-loop verification for knowledge_entities
+
+Full session log: `docs/session-log.md` (2026-05-24 entry). Triggered by Chilly subscribing to **UpCodes Pro ($68/mo)** — wanted the BKG knowledge layer to honestly count UpCodes-cross-checked rows toward the "N sources verified" badge without forging a fake adapter result.
+
+### Shipped (all live on prod)
+
+- [x] **DB migration `20260524_knowledge_entities_manual_attestation.sql`** — added `manually_verified_at` / `_by` / `_source` trio + partial indexes (`idx_knowledge_entities_unverified`, `idx_knowledge_entities_verified_by`) + attached existing `audit_trigger_fn` so every attest/revoke lands in `audit_log` with full before/after JSONB diff.
+- [x] **`POST /api/v1/knowledge-entities/[id]/attest`** + **`DELETE`** — owner-allowlist (`chillyd@gmail.com` / `charlie@theknowledgegardens.com` / `bou@theknowledgegardens.com`) + `app_metadata.role === 'admin'` fallback. Uses user JWT (NOT service-role) so `auth.uid()` populates the audit log.
+- [x] **`countVerifiedSources()`** — adds a `manual-attestation` pseudo-source to the verified set when any result in the bag has `manually_verified === true`. Honest path from "1 source verified" (bkg-seed only) → "2 sources verified" once a reviewer cross-checks against UpCodes.
+- [x] **`SourceCountBadge`** — `manuallyAttested?: boolean` prop; appends "Includes a manual review by the org owner against an external licensed source" hint to tooltip when set. Tier color unchanged (math stays honest).
+- [x] **`/admin/verify` queue UI** — fetches up to 25 unverified published rows per page. Filters: entity_type, jurisdiction, search. Per-row: title + summary + jurisdiction badges + source URLs + Search-in-UpCodes 🔍 + Ask Copilot ✨ (writes prompt to clipboard) + Verify ✓ + Skip (localStorage TTL 24h). Progress widget shows "X of N verified" + ETA at ~30s/row.
+- [x] **`docs/UPCODES-VERIFICATION.md`** — workflow doc: reviewer opens row in UpCodes Essentials/Pro, compares canonical text against what BKG stored, clicks Verify ✓ → stamps + audit trail.
+- [x] **Fix: LaneGate(['owner']) → email allowlist** (`1cb9666`) — LaneGate needs a project context to resolve role, but `/admin/verify` has no project context, so the gate was permanently denying. Replaced with the same email allowlist the server-side route uses, so client + server are consistent.
+- [x] **Fix: UpCodes `/s/<text>` → `/search?q=...` + Ask Copilot deep-link** (`c50beba`) — `/s/` requires exact publication slugs and 404s on free text like "ASHRAE 90.1 — ...". Switched to the text-search endpoint (never 404s) + added a "Ask Copilot ✨" button that opens up.codes/copilot in a new tab and copies a tailored prompt to clipboard.
+- [x] **Test coverage** — `src/app/api/v1/knowledge-entities/[id]/attest/__tests__/attest.test.ts` (POST + DELETE + auth/forbidden cases).
+
+### Filed lessons (in `tasks.lessons.md`, 2026-05-24 section)
+
+- LaneGate without a project context defaults to "deny" — mirror server-side allowlists in client UIs that gate by global role, not project role.
+- UpCodes consumer SaaS has no API at any tier ($39/$59/$68). The `/search?q=…` HTML endpoint is the only reliable deep-link target until they expose v2 API access. Pro tier ($68/mo) unlocks Copilot, which is what we deep-link into via the Ask Copilot button.
+- Manual attestation MUST use the user's JWT (not service-role) so `audit_log.changed_by` is non-null. Service-role bypasses RLS AND nukes audit attribution — the audit trail is the legal defense.
+
+### Carry-forward
+
+- [ ] **Documenso webhook autofill bug** — UpCodes UI's Triggers field kept losing selection when registering the webhook. User provided webhook secret manually (`Grace2026!`); lazy-sync handles status without the webhook. Eventually want the webhook registered for instant status updates, but parked.
+
+
+## 2026-05-25 — AUTO-VERIFY (Option C): AI pre-pass + yellow-tick provenance
+
+Full session log: `docs/session-log.md` (2026-05-25 entry). Driven by the **23-week manual-grind math** (2,256 rows × 30s/row × 100 rows/week part-time). User asked: "Can we automate this for the time being?" — picked **Option C: AI pre-pass + fast human spot-check** with explicit yellow-vs-green provenance separation.
+
+### Shipped (all live on prod)
+
+- [x] **DB migration `20260525_knowledge_entities_auto_verification.sql`** — added `auto_verified_at` / `auto_verified_by` (text, machine actor) / `auto_verified_source` / `auto_verification_confidence` (numeric 0-1) / `auto_verification_notes` (jsonb) / `auto_verification_flagged` (bool). CHECK constraint on confidence range. Two new partial indexes: `idx_knowledge_entities_auto_flagged` (needs-human queue) + `idx_knowledge_entities_auto_clean` (spot-check queue).
+- [x] **`src/lib/auto-verify/{cross-check.ts, persist.ts}`** — Claude Haiku 4.5 cross-checks each row's title/summary/metadata against its training knowledge of NEC/IBC/CBC/ASHRAE/OSHA/Title 24. Returns `{ confidence, discrepancies, checkable, clean, flagged, rationale, model_response, prompt_hash, ran_at }`. Thresholds: `CLEAN_THRESHOLD = 0.85`, `STAMP_THRESHOLD = 0.5`. Versioned prompt (`auto-verify/v1@2026-05-25`), hashed into notes for audit re-derivation.
+- [x] **`POST /api/v1/knowledge-entities/auto-verify-batch`** — chunked worker (cursor + limit ≤ 50). Owner-allowlist + service-role bypass for cron/driver. Returns `{ processed, stamped_clean, stamped_flagged, skipped, errors, last_id, done, remaining_estimate }`.
+- [x] **`POST/DELETE /api/v1/knowledge-entities/[id]/auto-verify`** — single-row re-run + auto-stamp clear.
+- [x] **`scripts/auto-verify-driver.mjs`** + **`scripts/auto-verify-local.mjs`** — local Node runners; driver polls the Vercel batch endpoint, local runner uses service-role + Anthropic SDK directly (skips Vercel function deadline). Local runner supports `--shard N/M` for parallel keyspace partitioning using uuid range comparisons.
+- [x] **Badge + countVerifiedSources thread** — `auto_verified` on `CodeSourceResult`; `isAutoVerified()` helper; `claude-cross-check` pseudo-source ONLY when no manual attestation present on same row (manual strictly supersedes auto, never double-counts). `SourceCountBadge` renders **yellow tick + "ai-checked" label** when auto-only, green tick when manually attested.
+- [x] **`/admin/verify` 3-tab overhaul** — tabs: **Flagged for review** (default, sorted lowest-confidence first) / **Auto-verified spot-check** / **All unverified**. Per-row diff card showing discrepancies + rationale. Keyboard shortcuts: **V**erify · **R**eject auto · **S**kip · **U**pCodes search · **C**opilot · **J/K** next/prev. Auto-scroll focused row into view.
+- [x] **Full corpus batch run** — 2,256/2,256 rows stamped. **258 yellow-clean** (avg confidence 0.91, well above 0.85 threshold) / **1,998 flagged** for human review. Wall-clock: ~16 min after bug fix. Anthropic Haiku spend: ~$3-8.
+- [x] **Bug fix `f2ce2a0`** — skipped low-confidence rows kept `auto_verified_at` NULL → re-cycled forever. Fix: ALWAYS stamp; low-confidence verdicts get `flagged=true` + `low_confidence: true` marker in notes JSONB. Queue actually drains.
+
+### Filed lessons (in `tasks.lessons.md`, top section)
+
+- **Skip-without-stamp causes infinite re-checks** — any queue-draining batch worker filtering by "predicate X NOT set" MUST set X for every row processed, even for "I can't tell" verdicts.
+- **Throughput-trajectory monitoring catches algorithmic stalls** — bail-out: 2 consecutive rounds with delta < 5 items processed.
+- **PostgREST `like` doesn't auto-cast uuid → text** — fails silently. Use uuid range comparisons (`gte ${prefix}0000000-0000-0000-0000-000000000000`) for sharding.
+- **Yellow tick (AI) vs green tick (human) must remain visually + structurally distinct.** Parallel columns, parallel pseudo-sources, manual strictly supersedes auto.
+
+### Strategic decision point (carry-forward, NEEDS FOUNDER CALL)
+
+The auto-verify pre-pass surfaced an uncomfortable truth: **89% of published KB rows don't pass an AI cross-check.** Most are flagged not because the AI found errors but because summaries are too vague to verify (e.g. "Sustainability practice for deconstruction planning. Source: carbonleadershipforum.org" — no checkable claim). The KB is largely aspirational stubs, not contractor-grade canonical references.
+
+Four options on the table for v1 launch / fundraising:
+
+- [ ] **Option A — Pivot positioning** (recommended). BKG isn't a code library; it's the contractor's compass. Demote `/knowledge` to admin-only. Code lookups happen via UpCodes Pro deep-links (Search + Copilot buttons already built). Sales pitch: "We don't replace your code book. We tell you which page to open and what to do next." Killable in 1-2 days of UI work. Highest fundability — clean story, no liability tail.
+- [ ] **Option B — Cull the KB.** Drop the 1,998 flagged rows to `status='draft'`. Keep 258 yellow-clean rows live. Marketing claims "258 verified code references" honestly. Backstop after Option A.
+- [ ] **Option C — Hire 2-3 part-time AEC pros.** ~$10-15K of curation labor over 2-3 weeks to give all 2,256 rows both AI + human review. Most defensible long-term, slowest, real cash burn before revenue.
+- [ ] **Option D — Don't ship the KB at all in v1.** Pull `/knowledge` entirely. Lead with workflows (RFI, punch list, change orders, budget, AI specialists, Stripe billing). Fastest to a clean demoable product.
+
+CTO recommendation: **A + B sequenced** (week 1 ship A, week 2-3 ship B as backstop). Fundraise on the workflow story, not the content story. Workflow is where Procore is weak and where AI actually helps.
+
+Carry-forward open: **UX rehaul + parallel-agent restructure** (5-7 hard screens that nail one job each > 50 screens that try to do everything). Downstream of the A/B/C/D decision.
+
+### Commits from this surface
+
+```
+5fd7fd1  feat(attest): human-in-loop verification + manual attestation pseudo-source  (2026-05-24)
+1cb9666  fix(admin/verify): use email allowlist instead of LaneGate (no project context)  (2026-05-24)
+c50beba  fix(admin/verify): replace broken /s/ URL with search + Ask Copilot  (2026-05-24)
+1f2f812  feat(auto-verify): AI pre-pass + 3-tab /admin/verify + keyboard shortcuts  (2026-05-24)
+f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing  (2026-05-25)
+```
