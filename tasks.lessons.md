@@ -1,6 +1,33 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-12
+## Updated: 2026-05-25
+
+---
+
+## AUTO-VERIFY batch (Option C, 2026-05-25)
+
+### Stamp every row the AI runs on — "skip" without a stamp causes infinite re-checks
+**Date:** 2026-05-25
+**What happened:** Built the auto-verify cross-check worker so that low-confidence verdicts (confidence < 0.5) returned `skipped` without writing anything to the row. The queue filter is `WHERE auto_verified_at IS NULL`, so every "skipped" row stayed in the queue and got re-processed on the next chunk — burning Anthropic Haiku tokens to land the same skip decision over and over. Throughput appeared healthy for ~700 rows (where confident verdicts were easy), then collapsed from ~50/round → ~1/round as the cursor entered low-confidence territory and started cycling. A babysitter subagent ran 24 fruitless rounds before reporting the stall.
+**Fix:** Always stamp `auto_verified_at = now()` after the AI runs, regardless of confidence. Low-confidence rows get `auto_verification_flagged = true` and an extra `low_confidence: true` marker in the notes JSONB. The queue filter (`auto_verified_at IS NULL`) now means "AI never looked at this," not "AI ran but had low confidence."
+**Rule:** Any queue-draining batch worker that filters by "predicate X NOT set" MUST set predicate X for every row it processes, even when the verdict is "I can't tell." A nullable timestamp column is the right shape; a "rerun me" status code is not. Confidence / flag information goes in a SEPARATE column so the absence of an attempt is structurally distinct from a low-confidence attempt.
+
+### Throughput-trajectory monitoring catches algorithmic stalls before they burn the budget
+**Date:** 2026-05-25
+**What happened:** The babysitter subagent monitored stamped count after every round and bailed out when it saw "2 consecutive rounds with delta < 5 stamped." That heuristic correctly diagnosed the skip-cycle bug above before it ran another 30 rounds and ate $20+ of Haiku tokens. Without the trajectory check, the bug would have kept silently re-running forever.
+**Rule:** Long-running batch workers MUST have a stall detector. Two cheap signals work well: (1) per-round delta in the "done" count — if it drops to ~0 for 2 rounds, stop. (2) per-round elapsed time — if a round takes 5× the median, stop. Wire these as bail-out conditions in driver scripts and in subagent prompts. Cost: trivial. Savings when something is broken: huge.
+
+### PostgREST `like` doesn't match against uuid columns — use uuid range comparisons
+**Date:** 2026-05-25
+**What happened:** First attempt at sharding the auto-verify queue across parallel workers used PostgREST `or` with `id.like.0%,id.like.1%,…` to filter by the first hex character of each UUID. The query returned 0 rows because PostgREST doesn't auto-cast uuid → text for the `like` operator — it fails silently and returns an empty set.
+**Fix:** Switched to uuid range comparisons: `gte ${prefix}0000000-0000-0000-0000-000000000000` + `lt ${nextPrefix}…`. UUIDs sort lexicographically as strings in Postgres so this gives clean disjoint ranges per shard.
+**Rule:** When filtering uuid columns by prefix in PostgREST, use range comparisons (`gte` / `lt`) with full-length UUID boundaries. Reserve `like` for text columns. If you must shard a uuid keyspace, the well-formed first-N-hex range trick (`{X}0000000-0000-0000-0000-000000000000` for the lower bound) is the cheapest way.
+
+### Yellow tick for AI verification, green tick for human — never conflate them
+**Date:** 2026-05-25
+**What happened:** Tempted to stamp Claude cross-check results into the `manually_verified_*` columns to "speed up" the badge math. Resisted — that would have made the "manually reviewed" claim structurally false the moment a paying contractor questioned a code interpretation in court.
+**Fix:** Added a parallel `auto_verified_*` trio on knowledge_entities. `countVerifiedSources` adds a `claude-cross-check` pseudo-source ONLY when no manual attestation is present on the same row (manual strictly supersedes auto). SourceCountBadge renders a yellow tick + "ai-checked" label when only auto-verified, green tick when manually attested. Tooltips name the source. Audit log captures both.
+**Rule:** When AI augments a human-trust signal, NEVER write into the human-trust column. Add a parallel column. Render a visually distinct treatment. Stack the priority so human always wins. The 5 minutes of schema work is worth the entire "yes we labeled it accurately, the model checked it and the model said so" defense the first time a customer audits the row.
 
 ---
 
