@@ -1855,3 +1855,35 @@ Verifiers: NUMBERS / CONTRACTS / SEQUENCING+INSTRUCTIONS.
 - [ ] **Secondary hydration warning — `JourneyTimeline.tsx`**: `useState(() => window.matchMedia('(max-width: 640px)').matches)` runs on both server and client. Non-structural (not a crash), but produces a hydration value-mismatch on mobile. Fix: move `matchMedia` call into a `useEffect`, init to `false` server-safe. File: `src/components/JourneyTimeline.tsx`.
 - [ ] **Pre-existing test failures**: `estimating/happy-path.test.tsx` step IDs stale after "Describe the job" removal; `CommandPalette.test.tsx` uses Jest globals but project uses Vitest; missing `@testing-library/react`. Not regression from this session.
 - [ ] **Local dev environment**: `npx vercel env pull .env.local` still needed for full local testing with Supabase + Clerk + Anthropic keys.
+
+
+## 2026-05-21 → 2026-05-23 — /intro polish session (Chat on Paulina's Mac)
+
+Full session log: `docs/session-log.md` (3-day stretch; ~9 commits from this surface).
+
+### Shipped (all live on prod)
+
+- [x] **Paulina's MacBook Air onboarded** — fresh clone, npm ci, dev server warm-standby at :4001. Stale Documents copy (252 behind) preserved as `app-stale/` for reference.
+- [x] **Act 1** — hammer 420 → 260px, three chrome PNGs with state-machine zoom choreography (orbit → converge-toward-center → 3s hold at peak → zoom past viewer), labels at fixed canvas positions (no scaling with logos), `useIsMobile` viewport-aware geometry for phones, transparent-bg PNGs.
+- [x] **Act 2** — vignette 3+4 copy rewritten ("plain speak creates legit contracts" / "sequence, schedule & budget with voice, whiteboard, sketches or excel files — whatever works"); 8s → 10s so vignette 4 gets 4s of read-time; responsive title fontSize.
+- [x] **Act 3** — multi-input cascade (voice → sketch → blueprint → excel); right-column sliding window of 2 cards; seamless infinite CSS-marquee with 12 journey illustrations at the bottom; CardJourney expanded to 4 stages with real art; mobile auto-scroll with in-out-quad S-curve over 13s.
+- [x] **Act 4 deep rewrite** — replaced single-page budget with 7-phase multi-screen workflow walkthrough at hyper-speed. URL bar updates per phase. Persistent hero budget at top scales/pulses on every transition (journey → sequencing → materials → equipment → time-machine → code → contract). 14s → 24s.
+- [x] **Act 5** — static knowledge-gardens-tree.png as Link portal to /killerapp (after a failed video-portal experiment). 5 verticals (Builder's / Health / Toxicology / Orchid / Legal) at 140px on radius 290 with transparent backgrounds. Coming placeholder removed.
+- [x] **Asset transparency pipeline** — `transparentize.py` (PIL + numpy, corner-sample + Euclidean distance + soft falloff). Processed 9 PNGs. Originals preserved at `public/logos/gardens/_originals/`.
+- [x] **12 journey illustrations** committed to `public/journey/` for full team access via GitHub.
+
+### Still open / carry-forward
+
+- [ ] **`public/intro-assets/tool-tree.mp4` (9.2MB)** — no longer referenced after the Act 5 static revert. Either `git rm` and reclaim the bytes, or repurpose elsewhere (intro v3?). Easy delete: `git rm public/intro-assets/tool-tree.mp4 && rmdir public/intro-assets/`.
+- [ ] **Supabase upload of journey assets** — Chilly's ask: get the 12 `public/journey/*.png|jpg` into Supabase storage so the whole team can pull them via data layer, not just the repo. Not done in this session. Likely needs an `apply_migration` for the bucket + upload via Supabase MCP.
+- [ ] **`transparentize.py` → `scripts/` (or `tools/`)** — currently lives in `/tmp/`. Worth promoting to a repo-tracked utility if we expect more asset-prep passes.
+- [ ] **Lossless image optimization** — `public/journey/` is ~11MB and the 9 transparency-processed PNGs added ~3MB. Worth running `oxipng -o4` or `pngquant --quality=85-95 --speed=1` over `public/logos/gardens/*.png` + `public/journey/*` post-demo. Could shave 5-8MB.
+- [ ] **File a Framer Motion 12 keyframe-array bug upstream** — five-keyframe `animate` arrays with `times` distribution across multiple props (x, y, scale, opacity) silently failed to animate. Minimal repro is doable. Filed in `tasks.lessons.md` (2026-05-23).
+- [ ] **Cinematic re-time pass** — total on-rails is now ~62s (Act 1 8s + Act 2 10s + Act 3 13s + Act 4 24s + Act 5 12s − some transitions). May feel long for investor demo; worth a re-time after seeing it land cold with a fresh viewer.
+
+### Filed lessons
+
+- New lesson: **"Framer Motion 12 keyframe arrays with `times` are unreliable for multi-prop animations."** State-machine pattern (setTimeouts + single-target animations) is more robust. Filed in `tasks.lessons.md` (2026-05-23).
+- New lesson: **"`width:0;height:0` motion.div anchor pattern can render invisible."** Use plain `top:50% left:50%` + `marginLeft/marginTop = -size/2`. Filed in `tasks.lessons.md` (2026-05-23).
+- New lesson: **"Claude Preview's hidden iframe pauses rAF — useless for animation verification."** Push to prod and check on a real visible browser instead. Filed in `tasks.lessons.md` (2026-05-23).
+- New lesson: **"Vercel CDN can serve stale PNG bytes after a fresh deploy."** Check `etag` vs local md5 before assuming the deploy failed; empty force-redeploy commit refreshes the CDN cache. Filed in `tasks.lessons.md` (2026-05-23).

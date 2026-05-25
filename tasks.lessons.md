@@ -1657,3 +1657,237 @@ A hydration mismatch is only **fatal** when it's structural (one side renders `n
 ### Secondary issue (carry-forward)
 
 `JourneyTimeline.tsx` uses `useState(() => window.matchMedia('(max-width: 640px)').matches)`. Same pattern — but non-structural (boolean value mismatch, not null vs. tree), so it produces a warning, not a crash. Fix with the same `useEffect` pattern when touching that component next.
+
+
+---
+
+## Lesson: Framer Motion 12 keyframe arrays with `times` distribution are unreliable for multi-prop animations (2026-05-23)
+
+**Trigger:** Act 1's three chrome PNGs were supposed to animate over 7.2s with a five-keyframe sequence (orbit out → hold → expand → zoom past), using arrays for `x`, `y`, `scale`, `opacity` and a `times: [0, 0.16, 0.22, 0.62, 1]` to distribute the keyframes. The animation silently failed on prod — chromes stuck at the initial state (`opacity:0; scale:0.4`) for the entire act. Confirmed via SSR HTML inspection (initial state ✓) + JS bundle grep (the 5-value arrays were present in the bundle, so the code was deployed — Framer just wasn't running the animation).
+
+### What works
+
+Single-target animations work fine in FM 12. The hammer in Act 1 uses:
+```tsx
+<motion.div
+  initial={{ scale: 0.92, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  transition={{ duration: 1.1, ease: 'easeOut' }}
+/>
+```
+Hammer animates correctly across all browsers. So the problem isn't Framer entirely — it's specifically the keyframe-array + `times` path.
+
+### What didn't work
+
+```tsx
+// All three of these "should" work per FM 12 docs. None did:
+animate={{
+  opacity: [0, 1, 1, 1, 0],
+  x:       [0, orbitX, orbitX * 1.1, orbitX * 1.4, orbitX * 2.4],
+  y:       [0, orbitY, orbitY * 1.1, orbitY * 1.4, orbitY * 2.4],
+  scale:   [0.4, 1.0, 1.0, 3.5, 8.0],
+}}
+transition={{
+  duration: 7.2,
+  delay: totalDelay,
+  times: [0, 0.16, 0.22, 0.62, 1],
+  ease: 'easeIn',
+}}
+```
+
+Tried variants:
+- Spread `transition` per-property: `transition={{ opacity: {...}, x: {...}, ... }}` — same result.
+- Drop `times`, let FM distribute evenly: same result.
+- Cast return type to `Record<string, unknown>` to bypass TS narrowing: same result.
+
+### The fix: state-machine pattern
+
+```tsx
+type Phase = 'hidden' | 'orbit' | 'incoming' | 'past';
+const [phase, setPhase] = useState<Phase>('hidden');
+
+useEffect(() => {
+  const ts = [
+    window.setTimeout(() => setPhase('orbit'),    400),
+    window.setTimeout(() => setPhase('incoming'), 1600),
+    window.setTimeout(() => setPhase('past'),     5500),
+  ];
+  return () => ts.forEach(window.clearTimeout);
+}, []);
+
+const target =
+  phase === 'orbit'    ? { x: orbitX,         y: orbitY,        scale: 1.0, opacity: 1 } :
+  phase === 'incoming' ? { x: orbitX * 0.2,   y: orbitY * 0.2,  scale: 2.4, opacity: 1 } :
+  phase === 'past'     ? { x: -orbitX * 0.15, y: -orbitY * 0.15, scale: 7.0, opacity: 0 } :
+                         { x: 0,              y: 0,             scale: 0.4, opacity: 0 };
+
+const duration =
+  phase === 'orbit'    ? 1.2 :
+  phase === 'incoming' ? 1.0 :
+  phase === 'past'     ? 1.5 :
+                         0.0;
+
+return (
+  <motion.div
+    initial={{ x: 0, y: 0, scale: 0.4, opacity: 0 }}
+    animate={target}
+    transition={{ duration, ease: 'easeOut' }}
+  >...</motion.div>
+);
+```
+
+Each phase is a single-target Framer animation — reliable. The "hold at peak" phase between `incoming` and `past` is just the dwell time between the `incoming` setTimeout firing and the `past` one firing (Framer holds at the `incoming` target until the next state change).
+
+### The rule
+
+When you need multi-stage choreography on a single element, **don't reach for Framer's keyframe arrays + `times`**. Use a useState + setTimeout state machine where each state corresponds to a target and a duration. Single-target animations are the well-trodden FM path; keyframe arrays appear to have a regression in v12.
+
+### Carry-forward
+
+Worth a minimal-repro + upstream bug report when the demo dust settles. Possibly already known.
+
+
+---
+
+## Lesson: `width: 0; height: 0` motion.div anchor pattern can render invisible (2026-05-23)
+
+**Trigger:** Tried a "zero-size anchor + self-centering inner div" pattern to position chromes relative to canvas center while allowing Framer's transform to animate without conflicting with CSS-set centering. The geometry math was correct on paper. The actual render on prod was invisible — chromes never appeared on Chilly's screen even when state machine confirmed phase advancement.
+
+### The pattern that didn't work
+
+```tsx
+// Outer: zero-size anchor at parent center
+<motion.div
+  initial={{ x: 0, y: 0, scale: 0.4, opacity: 0 }}
+  animate={target}
+  style={{
+    position: 'absolute',
+    top: '50%', left: '50%',
+    width: 0, height: 0,         // ← zero-size
+    transformOrigin: 'center center',
+  }}
+>
+  <div style={{
+    position: 'absolute',
+    top: 0, left: 0,
+    transform: 'translate(-50%, -50%)',  // self-center on anchor
+  }}>
+    <img src={...} />
+  </div>
+</motion.div>
+```
+
+In theory: the outer is a 0x0 anchor at canvas center; Framer's transform animates THAT anchor (translate + scale + opacity); the inner div positions its content centered on the anchor via its own `translate(-50%, -50%)`. Framer doesn't touch the inner's transform.
+
+In practice: the chrome image never showed up. Possibly the inner div's percent-based translate doesn't resolve correctly inside a zero-size parent's transform context; possibly Chromium handles 0×0 transform-origin oddly; possibly some interaction with the `transform: scale(0.4)` on a zero-size element creates a containing-block issue. Didn't fully diagnose — switched approaches instead.
+
+### The fix that did work
+
+```tsx
+const SIZE = 120;
+<motion.div
+  initial={{ x: 0, y: 0, scale: 0.4, opacity: 0 }}
+  animate={target}
+  style={{
+    position: 'absolute',
+    top: '50%', left: '50%',
+    width: SIZE, height: SIZE,
+    marginLeft: -SIZE / 2,        // pre-center on parent center
+    marginTop:  -SIZE / 2,
+  }}
+>
+  <img src={...} width={SIZE} height={SIZE} />
+</motion.div>
+```
+
+The fixed-size motion.div is pre-centered on the parent's center via `top:50% left:50%` + negative margins equal to half its size. Framer's transform applies on top of that, so x/y translate from "center of parent" cleanly. No nested divs, no transform-context tricks.
+
+### The rule
+
+When you need a motion.div to be positioned relative to parent center AND animated via Framer's x/y, **use a fixed-size box with marginLeft/marginTop = -size/2 instead of a zero-size anchor + self-centering inner div**. The static CSS centering composes correctly with Framer's transform; the zero-size pattern has edge cases that aren't worth debugging.
+
+If the size must be dynamic, compute the margin from a ref-measured box, or use percent margins on a static-size wrapper.
+
+
+---
+
+## Lesson: Claude Preview's hidden iframe pauses requestAnimationFrame — useless for animation verification (2026-05-23)
+
+**Trigger:** Spent ~2 hours during the Act 1 chrome work trying to debug why Framer Motion animations weren't firing in the Claude Preview sandbox. Logs showed the page compiled and loaded; SSR HTML showed the correct initial state; no JS errors. Animations just never ran. Eventually queried:
+
+```js
+window.matchMedia('(prefers-reduced-motion: reduce)').matches  // false
+document.visibilityState  // "hidden"
+document.hidden           // true
+
+// requestAnimationFrame fires-per-second check:
+let frames = 0;
+const start = performance.now();
+const tick = () => { frames++; if (performance.now() - start < 1000) requestAnimationFrame(tick); };
+requestAnimationFrame(tick);
+// After 1.2s: frames === 0
+```
+
+**The Claude Preview iframe runs with `document.hidden = true`** because the browser tab isn't actively visible to a human. Chromium pauses `requestAnimationFrame` callbacks in hidden tabs as a performance optimization. **Framer Motion uses rAF for ALL animations.** So animations literally cannot fire in this environment.
+
+### What still works in the preview
+
+- DOM inspection / `getComputedStyle` (synchronous, doesn't depend on rAF)
+- setTimeout / setInterval-driven state changes (don't use rAF)
+- Network logs / console errors / SSR HTML inspection
+- Component mounting and React effects
+- Static styling and layout
+
+### What doesn't work
+
+- Anything driven by `requestAnimationFrame` — Framer Motion, react-spring, GSAP, hand-rolled rAF loops
+- CSS animations actually advancing (browser may pause those too, less consistently)
+- Video playback (autoplay policies + hidden tab = no play)
+
+### The rule
+
+If you're verifying animation timing or "does the chrome appear", **push to prod and check on a real visible browser**. Don't trust "stuck at initial state in the preview" as a bug signal — it's the environment, not the code.
+
+The preview is still useful for: page-load smoke tests, SSR markup verification, network requests, click interactions, layout assertions. Just not animations.
+
+
+---
+
+## Lesson: Vercel CDN can serve stale PNG bytes after a successful deploy (2026-05-23)
+
+**Trigger:** Pushed commit `fd1d1b1` containing 9 transparency-processed PNGs (chromes + Act-5 verticals). JS bundle deployed correctly (verified new code references in prod chunks). But the 9 PNG assets on the CDN still served the original (pre-transparency) bytes — same `last-modified` as the deploy, but stale `etag` and `content-length`. Confirmed by:
+
+```bash
+LOCAL=$(md5 -q public/logos/gardens/chrome-killer-app.png)        # NEW bytes
+PROD=$(curl -sI https://.../chrome-killer-app.png | grep etag)    # OLD md5
+# They didn't match. All 9 PNGs were stale.
+```
+
+### What was happening
+
+Deploy `dpl_7fp...` shipped — the JS bundle had the new code, intro HTML referenced the new deploy ID. But Vercel's CDN edge nodes were serving cached bytes for the public asset paths, even with `cache-control: public, max-age=0, must-revalidate`. The `?dpl=dpl_7fp...` query parameter didn't bypass the cache either — `x-vercel-cache: HIT` persisted with old content.
+
+Hypothesis: Vercel's build-cache reused the original optimized PNG outputs for the unchanged paths, never re-uploading the new bytes to the edge. The path stayed the same; only the file content changed. Vercel may have treated this as "no asset change" and skipped re-deployment of those specific files.
+
+### The fix
+
+Empty commit + push to force a fresh build:
+
+```bash
+git commit --allow-empty -m "chore: force redeploy to refresh CDN cache"
+git push origin main
+```
+
+After the empty redeploy, all 9 PNG md5s matched local within ~3 minutes.
+
+### The rule
+
+When assets seem stale despite a successful deploy:
+1. Don't assume the deploy failed. Check the deploy ID in the prod HTML response — if it's new, the deploy IS live.
+2. **Check `etag` against local file md5** (`md5 -q path/to/file`). Etags are typically MD5 in Vercel's CDN. If they match, the asset is current; if not, it's stale.
+3. If stale, an empty commit forces a fresh build that re-uploads all assets. Usually resolves within a few minutes.
+4. Persistent caching issues warrant filing a Vercel support ticket — this isn't supposed to happen with `must-revalidate`.
+
+### Related
+
+Vercel's image optimization at `/_next/image?url=...` is a SEPARATE caching layer with its own invalidation rules. The lesson above is about the raw `/public/*` asset paths. If you're hitting `/_next/image`, additional considerations apply (the `dpl=...` query in optimized image URLs typically does invalidate them).

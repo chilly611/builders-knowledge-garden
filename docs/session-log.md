@@ -2133,3 +2133,90 @@ Both queued in `tasks.todo.md`.
 **Issues/bugs found:**
 - Secondary hydration warning (lower priority, not a crash): `JourneyTimeline.tsx` has `useState(() => window.matchMedia('(max-width: 640px)').matches)` which can produce a hydration value-mismatch warning on mobile. Non-structural, so not a crash, but should be fixed with the same `useEffect` pattern.
 - Pre-existing test failures unrelated to this session: `estimating/happy-path.test.tsx` step IDs stale; `CommandPalette.test.tsx` uses Jest globals but project is Vitest; missing `@testing-library/react` dependency.
+
+
+## 2026-05-21 → 2026-05-23 — Chat Session: /intro multi-round polish (Paulina's Mac onboard + all 5 acts rewritten)
+
+**Agent:** Chat (Claude Sonnet 4.5)
+**Surface:** Claude Code on Paulina's MacBook Air (Chilly's secondary machine; primary MacBook Pro was running Cowork in parallel)
+**Span:** 3 calendar days, ~9 commits from this surface + 2 Cowork-bundled commits preserving working-tree edits.
+
+### What was built
+
+**Onboarding (2026-05-21):** Fresh `git clone` after diagnosing the existing local clone was 252 commits behind with stale uncommitted edits, the thumbdrive copy was 7 commits behind with pack-index corruption (exFAT artifact), and the loose files in Downloads weren't a full repo. PAT extracted from the stale config; `npm ci` + dev server on port 4001 as warm-standby.
+
+**Act 1 — Umbrella (5 iterations):**
+- Mobile tagline visibility fix (media-query padding) — `af57ed2`.
+- Chrome zoom-past v1 with Framer 12 keyframe arrays — `f5b4ecc` (regressed silently; chromes invisible on prod).
+- Labels split out of chrome motion.divs into fixed canvas positions — `eb29bad`.
+- State-machine ChromeOrbit (setTimeouts driving phase transitions, single-target Framer animations per phase) — `fd1d1b1`.
+- Zero-size-anchor pattern → plain top:50% left:50% + marginLeft/marginTop = -size/2 — `18a364f` (Cowork-bundled).
+- Converge-toward-center choreography + `useIsMobile` viewport-aware geometry — `8a82654`. Chromes now: orbit out small (1.2s) → head toward center while growing (1s) → HOLD at near-center peak readability for ~3s → zoom past viewer through center (1.5s) + fade. Mobile: orbit positions × 0.55, peak scale 2.4× instead of 3.5× to fit phone viewport.
+
+**Act 2 — The Problem:**
+- Vignette 3 copy: "Contract in Word" → "plain speak creates legit contracts" (was reading as MS Word to non-tech contractors).
+- Vignette 4 copy: "Schedule on whiteboard" → "sequence, schedule & budget with voice, whiteboard, sketches or excel files — whatever works for you works!"
+- Vignette 4 timing: Act 2 8s → 10s so the long title gets 4s of read-time.
+- Title fontSize responsive to title length so the long vignette 4 line wraps cleanly.
+- All in `af57ed2`.
+
+**Act 3 — #aikidotheAI (multi-input + journey strip):**
+- Right-column sliding window of 2 visible cards (older drifts up + fades as new ones populate) — `af57ed2`.
+- Left panel rewritten from single voice transcript → four-input cascade: voice → sketch → blueprint → excel. Each upload has inline SVG art + filename + animated checkmark. Act 3 11s → 13s — `af57ed2`.
+- Journey marquee at the bottom of Act 3: 12 conceptual stage illustrations. Initially one-pass (`eb29bad`); rewritten as a seamless infinite CSS @keyframes loop with duplicated items + `translateX 0 → -50%` for no-blanks (`fd1d1b1`).
+- CardJourney card on the right grew from 3 stages with one blank slot → 4 with real art: Size up → Plan it out → Lock it in (active, warm accent ring) → Build. `fd1d1b1`.
+- Mobile auto-scroll: title + grid wrapped in motion.div that translateY's over the 13s duration with an in-out-quad S-curve. Mobile 480px scroll, desktop 120px. Mobile `actWrap` switches to `flex-start` + tighter padding so content starts at the top. `8a82654`.
+
+**Act 4 — Cinematic budget (2 generations):**
+- v1 (`af57ed2`): replaced the live `/killerapp/budget` iframe with a fully-scripted budget mockup — hero count-up $0 → $905k, 10 categories cascade, page auto-scrolls, hero scale-pulses, contract banner pulses at end. 14s. Categories rebalanced to sum to exactly $905,000 (canonical Marin midpoint).
+- v2 deep rewrite (`fb24823`): 7-phase multi-screen workflow walkthrough at hyper-speed. URL bar updates per phase. Hero budget always visible at top, scales/pulses on every transition. 24s.
+  - Phase 0 (0-3s) Journey + initial estimate $0 → $750k
+  - Phase 1 (3-6s) Sequencing — tasks check off, "+$70k off the bottom" → $820k
+  - Phase 2 (6-10s) Materials — 8-item grid populates with running subtotal → $890k
+  - Phase 3 (10-13.5s) Equipment & subs — 5 cards → $930k
+  - Phase 4 (13.5-17s) Time Machine — SVG dial scrubs counter-clockwise 120°, hero scrubs to $820k, returns to live → $930k
+  - Phase 5 (17-20s) Code compliance — CRC R327 + Title 24 §110.10 cards, "−$25k refinement" → $905k
+  - Phase 6 (20-24s) Contract — locks $905k with infinite scale-pulse
+
+**Act 5 — The Vision (3 iterations):**
+- Bigger transparent verticals 96 → 140px, orbit radius 240 → 290, canvas 640×360 → 720×540 — `4189e84`.
+- Video portal v1 (`4189e84`): looping `tool-tree.mp4` wrapped in Link to /killerapp. **Didn't work** — mix-blend-mode muted the video into parchment; appeared as a black square on prod.
+- Static portal + Coming removed (`18a364f` Cowork-bundled): reverted to static knowledge-gardens-tree.png (transparent-bg) as the Link portal. Removed "Coming" placeholder from domains[] (was bunching against Legal at the right edge of the arc, causing label overlap).
+
+**Asset pipeline:**
+- `/tmp/transparentize.py` (numpy + Pillow): corner-samples PNG bg color, computes Euclidean distance per pixel, alpha=0 for matches with soft 25–60px falloff for anti-aliased subject edges. Processed 9 PNGs (3 chromes + builders-hammer + tree + 4 verticals). Originals preserved at `public/logos/gardens/_originals/` (untracked). PNGs grew ~3MB total (alpha channel + falloff).
+- 12 journey illustrations copied from `photos research/` to `public/journey/` (~11MB). Available on GitHub for the whole team.
+- `public/intro-assets/tool-tree.mp4` (9.2MB) — present but no longer referenced after Act 5 revert. Either delete or repurpose; carry-forward.
+
+### Key decisions
+
+- **Framer Motion 12 keyframe arrays with `times` distribution are unreliable in real browsers.** Five-keyframe animations on multiple props (x, y, scale, opacity) with `times: [0, 0.16, ...]` failed silently — initial state held, animation never fired. Confirmed via SSR HTML inspection + JS bundle grep. Switched to a state-machine pattern: setTimeouts drive phase state, each phase is a simple single-target Framer animation. Much more reliable. Will likely apply to any future "multi-stage choreography" need across the app.
+- **`width: 0; height: 0` motion.div anchor pattern is risky.** Used for self-centering with a child div: the geometry math is correct (anchor at parent center, inner div uses `translate(-50%, -50%)` of its own size), but in practice the chromes rendered as invisible on prod. Switched to plain `top:50% left:50% + marginLeft/marginTop = -size/2` — the box's center is pre-positioned on parent center via static CSS BEFORE Framer's transform applies, so x/y/scale animate cleanly from there.
+- **`mix-blend-mode: multiply` on `<video>` is dangerous.** Fine for static PNGs that have cream backgrounds matching parchment, but on video frames with dark content the blend can render as "muted" or look like nothing's playing. Removed from the video element entirely; PNGs now have actual transparent backgrounds (via PIL), so blend modes mostly aren't needed.
+- **Claude Preview's iframe environment ≠ prod for animation verification.** `document.visibilityState === 'hidden'` in the sandbox means Chromium pauses `requestAnimationFrame`, which Framer Motion uses for all animations. Burned ~2 hours debugging what I thought was a Framer bug before realizing it was an environment limitation. For visual confirmation, just push and verify on a real visible browser.
+- **Vercel CDN can serve stale PNG bytes even after a successful deploy.** After commit `fd1d1b1` shipped the transparency-processed PNGs, the CDN edge served the original bytes for ~5 minutes. Detected via md5 mismatch between local file and prod etag. Empty commit `6b4bd9f` forced a fresh build; new bytes propagated within ~3 minutes. When assets seem stale despite a "live" deploy, check `etag` vs local md5 before assuming the deploy failed.
+- **Cross-surface coordination via working-tree preservation held up across 3 days.** Cowork detected my uncommitted intro edits on Paulina's Mac twice and packaged them into commits (`335077b` "preserve intro/page edits", `18a364f` same). The 2026-05-20 lesson about not silently overwriting other surfaces' work survived contact with real iteration speed.
+
+### Issues open / carry-forward
+
+- **`public/intro-assets/tool-tree.mp4` (9.2MB)** no longer referenced. Either delete or repurpose elsewhere (intro v3?).
+- **Supabase upload of journey assets** — Chilly mentioned this should happen so the whole team can access them via the data layer, not just the repo. Not done in this session.
+- **`transparentize.py`** not in repo (lives in `/tmp/`). Worth adding to `scripts/` if we want it reusable for future asset prep.
+- **Lossless image optimization pass** — `public/journey/` (~11MB) + transparency-processed PNGs (~3MB delta) is ~14MB of new media on every deploy. Worth a post-demo `oxipng` / `pngquant` pass.
+- **Framer Motion 12 keyframe-array bug** worth filing upstream once the demo dust settles — minimal-repro is a 5-keyframe animation with `times` array on multiple props.
+
+### Commits from this surface
+
+```
+af57ed2  intro: hyper-speed pacing + auto-advance + Chilly's copy edits
+f5b4ecc  intro: Act 1 dramatic chrome zoom-past + delete duplicate PNG  [keyframe regression — superseded]
+eb29bad  intro: Act 1 label/blend fix + Act 3 journey marquee + 12 journey assets
+4189e84  intro: Act 5 video portal + bigger transparent verticals  [video reverted — superseded]
+fb24823  intro: Act 4 deep rewrite — 7-phase multi-screen killer-app cinematic
+fd1d1b1  intro: chrome state machine + transparent PNGs + marquee loop + Act 4 polish
+6b4bd9f  chore: force redeploy to refresh CDN cache on intro PNG assets  [empty]
+8a82654  intro: Act 1 converge-toward-center + Act 3 mobile auto-scroll
+```
+
+Cowork bundled `18a364f` (preserving Chilly's intro edits — Act 1 simple-centering rewrite, Act 5 static portal, Coming removed) + `58a1b54` (Sentry v10 API rename, unblocking a failed build my push caused).
+
