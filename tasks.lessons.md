@@ -1,6 +1,40 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-25
+## Updated: 2026-05-26
+
+---
+
+## V3 Killer App Rehaul (Cowork V3, 2026-05-26)
+
+### Sequential branch-per-WS is safer than parallel subagents when the repo is a subfolder mount
+**Date:** 2026-05-26
+**What happened:** Brief V3 wanted WS2-WS6 to run as 5 parallel subagents. The repo lives at `/sessions/<id>/mnt/bkg/` — a fuse-mounted subfolder of the session CWD. Per the 2026-04-21 lesson, `isolation: "worktree"` on subagents fails when the repo is a subfolder. Without worktree isolation, 5 subagents simultaneously editing different branches on a single shared working tree would stomp each other (only one branch's files can be checked out at a time). Sequentially executing the 5 WS builds — checkout WS branch, write files, commit, push, next — produced 5 clean atomic commits in roughly the same wall-clock time a parallel run would have taken (most of the wall-clock was file-writing, not git ops).
+**Rule:** When the working tree is shared (subfolder mount, no worktree support), prefer sequential WS execution over parallel subagents. The "parallel" parts of the brief — disjoint file paths, independent PRs — still hold. The execution model just becomes sequential rather than concurrent. Wall-clock cost is typically negligible because tool calls dominate.
+
+### Switching branches in the cowork sandbox restores file-tool-view to the branch state — agents don't need to re-clone
+**Date:** 2026-05-26
+**What happened:** Each WS sub-branch was created from the parent rehaul branch. After `git checkout` to a fresh branch, the file tools (Read) showed the branch's state — including the WS0 stub for whichever surface the branch was about to build. This is correct git behavior but worth noting: the system reminder "this file was modified" fires every time you switch branches because the on-disk file content changed (even though no human/linter touched it). Just acknowledge and proceed.
+**Rule:** Don't be alarmed by "file was modified" system reminders that fire on branch switches. Verify the current branch is the one you expect, and Read the file before Write to confirm content. The reminder is a sanity check, not a sign of corruption.
+
+### `.git/index.lock` under fuse bindfs needs `mcp__cowork__allow_cowork_file_delete` not `rm`
+**Date:** 2026-05-26
+**What happened:** `.git/index.lock` repeatedly accumulated after git operations under the fuse-mounted bkg/.git directory. `rm -f .git/index.lock` returns "Operation not permitted" because the fuse mount denies unprivileged unlink. `mv` to /tmp fails the same way (mv is copy+unlink). The working fix is the `mcp__cowork__allow_cowork_file_delete` tool — once enabled for the bkg folder, `rm` works.
+**Rule:** Whenever git reports "another git process seems to be running" inside a cowork sandbox folder, call `mcp__cowork__allow_cowork_file_delete` on `.git/index.lock` and then `rm` it. Don't try `mv` first — it'll waste a turn. This pattern applies to any `.lock` file in a cowork-mounted folder.
+
+### Pre-flight push must verify auth path before assuming `git push` will work
+**Date:** 2026-05-26
+**What happened:** Brief claimed "GitHub: PAT in ~/Developer/bkg/.git/config (already configured). Push will work." It wasn't — the host machine has credentials via macOS Keychain, which the bash sandbox can't read. First `git push` failed with "could not read Username for 'https://github.com'". Had to ask the founder for a PAT via AskUserQuestion mid-pre-flight.
+**Rule:** Before quoting any "push will work" claim in a brief, the agent should attempt `git push --dry-run` (or `git ls-remote origin` to test auth) during pre-flight. If auth fails, ask immediately via AskUserQuestion rather than later when the failure shows up mid-WS. Also: any brief that says "PAT is in .git/config" should be sanity-checked with `grep github_pat .git/config` because the keychain credential helper writes auth to the OS keychain, NOT to .git/config.
+
+### Build agent prompts that inline source-of-truth contracts as TypeScript, not prose
+**Date:** 2026-05-26
+**What happened:** WS0 succeeded on the first commit because the Stance Card was defined as a TypeScript interface in StanceCard.types.ts BEFORE any WS2-WS6 surface was built. Each surface imports the type directly. This is the W3.5 lesson ("parallel farm agents invent type shapes") applied preventively: the contract was canonical TypeScript, not English. Zero invented properties across 5 surfaces.
+**Rule:** Always ship the type/schema files first when building a multi-workstream system. Every downstream WS imports from the type file rather than re-deriving the shape from prose. The cost of an extra commit at the start is far less than the cost of integrator passes fixing invented properties at the end.
+
+### Federation Contract is enforceable from a single TS module — palette drift dies
+**Date:** 2026-05-26
+**What surfaced:** `src/lib/brand-tokens.ts` exports `BRAND_COLORS` and `BRAND_FONTS` as `as const` typed objects. Every new surface (WS2-WS6) imports from this module and uses `BRAND_COLORS.parchment`, `BRAND_FONTS.display`, etc. — no inline hex anywhere in the new surfaces. This makes the Federation Contract enforceable at a single point: change one constant in brand-tokens.ts and every Killer App surface follows. Compare with the legacy globals.css approach where CSS variables had to be hunted through 40+ inline-style references.
+**Rule:** For any "every surface follows X" requirement (palette, font, spacing, language conventions), prefer a single TypeScript module of `as const` exports over CSS variables. CSS vars are still needed for non-React surfaces, but the React surfaces should pull from the TS source-of-truth. Lint or grep for inline hex/font literals in PRs.
 
 ---
 
