@@ -1963,3 +1963,111 @@ c50beba  fix(admin/verify): replace broken /s/ URL with search + Ask Copilot  (2
 1f2f812  feat(auto-verify): AI pre-pass + 3-tab /admin/verify + keyboard shortcuts  (2026-05-24)
 f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing  (2026-05-25)
 ```
+
+
+## Knowledge Gardens OS v3 — Decisions Locked (2026-05-25)
+
+### Lead with this in every doc, every brief, every external artifact
+
+> **The RSI Heartbeat is the moat.** One self-improving knowledge graph per garden, ingesting source data on a domain cadence, re-verifying every entity, surfacing freshness on every claim, learning from use. The platform doesn't hold knowledge — it improves itself in public. Every other platform in our space holds static data and ages. We get more right every week.
+
+### The locked decisions
+
+- ✅ One product, one architecture, 55+ gardens (long-tail partner-led, template-driven)
+- ✅ All-in on Pattern Language: 7 constitutional primitives + 4 platform primitives + 9 dimensional renderings = 20 pieces
+- ✅ All 14 dimensions of user state addressed via the Stance Card
+- ✅ RSI Heartbeat front-and-center in all docs and project instructions
+
+---
+
+## Active sprint — BKG Killer App UX rehaul
+
+**Owner:** Chilly + parallel agents in Cowork
+**Tool:** Claude Design (pending enablement verification) or Cowork-with-parallel-agents fallback
+**Scope:** Red Killer App surface only — credentialing renewals · project pipeline · compliance alerts · GreenFlash CRM reward loop
+**Out of scope (preserve as-is):** 6 Dream Machine interfaces · cinematic intro · MCP endpoint at `/api/v1/mcp`
+
+### Sprint tasks
+
+- [ ] **Day 1:** John verifies Claude Design availability + enablement; decision on tool stack confirmed at session start
+- [ ] **Day 1:** Apply the v3 strategy doc as the Cowork session brief; every parallel agent reads it before any code
+- [ ] **Day 2–3:** Audit current Killer App surfaces against the 20-piece Pattern Language — list every primitive and rendering currently in use vs missing
+- [ ] **Day 4–7:** Rebuild credentialing dashboard with Infinite Descent + TrustStrip + Tempo Adapt + Pro Toggle visible
+- [ ] **Day 8–10:** Rebuild project pipeline with Cross-Surface Bridge to Dream Machine + Lifecycle Memory across stages
+- [ ] **Day 11–12:** Rebuild compliance alerts with Tempo Adapt (leisurely → emergency gradient) + Trust Posture Adapt
+- [ ] **Day 13:** Preserve GreenFlash particle effects + Web Audio chimes through the rebuild
+- [ ] **Day 14:** Founder dogfood pass — walk it as a GC, then as a homeowner, then as an agent. Log every friction point.
+- [ ] **End of sprint:** Schedule Mike walkthrough (live product, not deck)
+
+### Pattern Language application rule (non-negotiable)
+
+Before any rebuilt surface ships, walk this checklist:
+- [ ] Surface composes from the 20 Pattern Language pieces explicitly (list them)
+- [ ] All 4 umbrella lanes (Administrator, Professional, Public, Machine) have a Floor 0 question + Floor 0 answer
+- [ ] TrustStrip renders on every primary claim
+- [ ] Three-Source Rule enforced on every authoritative claim
+- [ ] Federation Contract met (header/footer · type · cross-link · JSON-LD · llms.txt · MCP)
+- [ ] Stance Card read by every primitive before rendering
+- [ ] Constitution's 10 goals all pass
+
+---
+
+## Pattern Language spec backlog (parallel work, lower priority)
+
+The 20 pieces need formal specs. Sequence:
+
+### 4 platform primitives — spec first, they're already in production
+- [ ] `docs/patterns/trust-strip.md` — source count + freshness + contested-claim indicator
+- [ ] `docs/patterns/three-source-rule.md` — authoritative claim verification
+- [ ] `docs/patterns/federation-contract.md` — the non-negotiable cross-garden contract
+- [ ] `docs/patterns/machine-legible-everything.md` — llms.txt + JSON-LD + MCP discipline
+
+### 7 constitutional primitives — specs from existing constitution
+- [ ] `docs/patterns/invitation-card.md`
+- [ ] `docs/patterns/emotional-arc.md`
+- [ ] `docs/patterns/whisper.md`
+- [ ] `docs/patterns/time-machine.md`
+- [ ] `docs/patterns/ask-anything.md`
+- [ ] `docs/patterns/pro-toggle.md`
+- [ ] `docs/patterns/progressive-reveal.md`
+
+### 9 dimensional renderings — new specs
+- [ ] `docs/patterns/infinite-descent.md`
+- [ ] `docs/patterns/modality-mirror.md`
+- [ ] `docs/patterns/tempo-adapt.md`
+- [ ] `docs/patterns/cultural-render.md`
+- [ ] `docs/patterns/accessibility-adapt.md`
+- [ ] `docs/patterns/cross-surface-bridge.md`
+- [ ] `docs/patterns/lifecycle-memory.md`
+- [ ] `docs/patterns/trust-posture-adapt.md`
+
+### Stance Card spec
+- [ ] `docs/patterns/stance-card.md` — the 14-axis user-state data shape every primitive reads
+
+---
+
+## Post-BKG-rehaul priorities (queued)
+
+- [ ] Mirror Pattern Language application to HKG Killer App (the cash engine for healthcare)
+- [ ] Apply Infinite Descent + TrustStrip + Three-Source Rule to OKG Orchid Identification to validate cross-domain portability
+- [ ] Begin Pattern Language partner-launch template productization (gated until HKG + BKG MRR)
+- [ ] Reconcile this doc's 55-garden count against `06_FRONTIER_MAP.md` canonical (3 reserved slots to settle)
+
+---
+
+## Constitutional revisions (proposed)
+
+- [ ] Add the 4 platform primitives (TrustStrip, Three-Source Rule, Federation Contract, Machine-Legible Everything) to `design-constitution.md` as constitutional primitives, not extensions
+- [ ] Add "refuse emotional inference for upsell, ever" as a brand-defining commitment
+- [ ] Acknowledge Phase 0 (Pre-Dream curiosity) and Phase 8 (Post-Reflect legacy/warranty) lifecycle phases
+- [ ] Add the 14-dimensional user-state model and the Stance Card as a constitutional appendix
+- [ ] Add the RSI Heartbeat moat statement as the constitution's preamble
+
+---
+
+## Cross-cutting hygiene
+
+- [ ] Move stale `~/bkg-work/` root files (March 28–April 17 dates) into `~/bkg-work/archive/`
+- [ ] Delete `~/bkg-work/app-broken-2026-05-25/` after one week of issue-free operation on the fresh clone (target: 2026-06-01)
+- [ ] Mirror `design-constitution.md` from the BKG repo into the Knowledge Gardens umbrella project files
+- [ ] Update all project instructions (BKG, OKG, TKG, HKG, MKG, umbrella) to lead with the RSI Heartbeat moat paragraph

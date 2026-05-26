@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Knowledge Gardens Operating System — Strategy v3</title>
+<meta name="description" content="One architecture · 55 gardens · 4 lanes · 3 surfaces · 1 self-improving graph. The Knowledge Gardens platform operating system, locked May 2026.">
+
+<!-- OG / Twitter -->
+<meta property="og:title" content="The Knowledge Gardens Operating System">
+<meta property="og:description" content="One architecture · 55 gardens · 4 lanes · 3 surfaces · 1 self-improving graph. The platform improves itself in public.">
+<meta property="og:type" content="article">
+
+<!-- Brand fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============ BRAND TOKENS ============ */
+  :root {
+    --parchment: #F5F0E8;
+    --parchment-deep: #EFE8DC;
+    --parchment-warm: #F8F3EB;
+    --copper: #B87333;
+    --copper-soft: rgba(184, 115, 51, 0.18);
+    --copper-line: rgba(184, 115, 51, 0.35);
+    --steel: #71797E;
+    --steel-soft: rgba(113, 121, 126, 0.40);
+    --forest-ink: #0F2419;
+    --forest-deep: #1A3A2E;
+
+    /* Surface accents */
+    --gold-primary: #C9A84C;
+    --gold-warm: #D8A858;
+    --gold-tint: rgba(216, 168, 88, 0.10);
+
+    --green-primary: #1A5C5C;
+    --green-deep: #1A3A2E;
+    --green-tint: rgba(26, 92, 92, 0.08);
+
+    --red-primary: #8B2A1F;
+    --red-deep: #A03A4C;
+    --red-tint: rgba(139, 42, 31, 0.08);
+
+    /* Type scale */
+    --display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --mono: 'Space Mono', 'Courier New', monospace;
+  }
+
+  /* ============ RESET + BASE ============ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--display);
+    background: var(--parchment);
+    color: var(--forest-ink);
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Subtle parchment texture using gradient overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(184, 115, 51, 0.025), transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(113, 121, 126, 0.025), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ============ UMBRELLA HEADER ============ */
+  .umbrella-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--parchment);
+    border-bottom: 1px solid var(--copper-line);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(245, 240, 232, 0.92);
+  }
+  .umbrella-header .brand {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--forest-ink);
+    letter-spacing: 0.3px;
+  }
+  .umbrella-header .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+  }
+
+  /* ============ SECTION NAVIGATOR (right side) ============ */
+  .section-nav {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .section-nav a {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--steel-soft);
+    transition: all 0.4s ease;
+    position: relative;
+  }
+  .section-nav a.active {
+    background: var(--copper);
+    transform: scale(1.6);
+  }
+  .section-nav a::before {
+    content: attr(data-label);
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--forest-ink);
+    background: var(--parchment);
+    padding: 4px 10px;
+    border: 1px solid var(--copper-line);
+    border-radius: 2px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .section-nav a:hover::before { opacity: 1; }
+  @media (max-width: 900px) {
+    .section-nav { display: none; }
+  }
+
+  /* ============ SECTION COMMON ============ */
+  section {
+    position: relative;
+    padding: 120px 32px;
+    min-height: 80vh;
+    z-index: 1;
+  }
+  section > .container {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-label::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--copper);
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(38px, 5vw, 64px);
+    line-height: 1.05;
+    color: var(--forest-ink);
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
+  }
+
+  .section-subtitle {
+    font-family: var(--display);
+    font-size: clamp(18px, 2vw, 22px);
+    line-height: 1.4;
+    color: var(--forest-deep);
+    max-width: 800px;
+    margin-bottom: 64px;
+  }
+
+  /* Dimension-line corner ticks at section corners */
+  .corner-tick {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+  .corner-tick svg { width: 100%; height: 100%; }
+  .corner-tick.tl { top: 32px; left: 32px; }
+  .corner-tick.tr { top: 32px; right: 32px; transform: rotate(90deg); }
+  .corner-tick.bl { bottom: 32px; left: 32px; transform: rotate(270deg); }
+  .corner-tick.br { bottom: 32px; right: 32px; transform: rotate(180deg); }
+
+  /* ============ HERO ============ */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding-top: 80px;
+  }
+  .hero .container { max-width: 1100px; }
+  .hero h1 {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(56px, 8vw, 110px);
+    line-height: 0.95;
+    color: var(--forest-ink);
+    letter-spacing: -1.5px;
+    margin-bottom: 40px;
+  }
+  .hero .tagline {
+    font-family: var(--display);
+    font-size: clamp(20px, 2.2vw, 26px);
+    line-height: 1.4;
+    color: var(--forest-deep);
+    max-width: 820px;
+    margin-bottom: 60px;
+    font-weight: 400;
+  }
+  .hero .meta-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 36px;
+    padding-top: 32px;
+    border-top: 1px solid var(--copper-line);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--steel);
+  }
+  .hero .meta-strip strong { color: var(--forest-ink); font-weight: 700; }
+
+  .scroll-cue {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--steel);
+    animation: scrollNudge 2.5s ease-in-out infinite;
+  }
+  .scroll-cue::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: var(--copper-line);
+    margin: 14px auto 0;
+  }
+  @keyframes scrollNudge {
+    0%, 100% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ============ MOAT / RSI HEARTBEAT ============ */
+  .moat {
+    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-deep) 50%, var(--parchment) 100%);
+  }
+  .moat-statement {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.4;
+    color: var(--forest-ink);
+    max-width: 1000px;
+    margin: 0 0 60px 0;
+    padding-left: 32px;
+    border-left: 3px solid var(--copper);
+  }
+  .moat-statement strong {
+    font-weight: 600;
+    font-style: normal;
+    color: var(--copper);
+  }
+
+  /* Heartbeat visualization */
+  .heartbeat-viz {
+    margin: 60px 0;
+    padding: 40px 32px;
+    background: var(--parchment-warm);
+    border: 1px solid var(--copper-line);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  .heartbeat-viz .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 24px;
+  }
+  .heartbeat-svg {
+    width: 100%;
+    height: 80px;
+    display: block;
+  }
+  .heartbeat-pulse {
+    stroke: var(--copper);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 2400;
+    stroke-dashoffset: 2400;
+  }
+  .heartbeat-viz.in-view .heartbeat-pulse {
+    animation: drawPulse 3s ease-out forwards, pulseLoop 4s ease-in-out 3s infinite;
+  }
+  @keyframes drawPulse {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes pulseLoop {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+  }
+
+  .cadence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .cadence-card {
+    padding: 24px;
+    background: var(--parchment);
+    border: 1px solid var(--copper-line);
+    border-radius: 3px;
+  }
+  .cadence-card .garden-code {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--copper);
+    font-weight: 700;
+  }
+  .cadence-card .garden-name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 20px;
+    margin: 6px 0 14px;
+    color: var(--forest-ink);
+  }
+  .cadence-card .cadence {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--forest-deep);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .cadence-card .cadence strong { color: var(--copper); }
+
+  /* ============ ARCHITECTURE (embeds the SVG) ============ */
+  .architecture {
+    background: var(--parchment-deep);
+    padding: 100px 0;
+  }
+  .architecture > .container { padding: 0 32px; }
+  .architecture .svg-frame {
+    margin: 60px -16px 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--copper-line);
+    background: var(--parchment);
+    box-shadow: 0 8px 32px rgba(15, 36, 25, 0.08);
+  }
+  .architecture .svg-frame svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  @media (max-width: 900px) {
+    .architecture .svg-frame {
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .architecture .svg-frame svg {
+      min-width: 900px;
+    }
+  }
+  .architecture-caption {
+    margin-top: 40px;
+    text-align: center;
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--steel);
+  }
+
+  /* ============ PATTERN GRID (4 × 3 × 1) ============ */
+  .pattern .container { max-width: 1200px; }
+  .pattern-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 3fr;
+    gap: 64px;
+    margin-top: 60px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .pattern-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .lanes-column h3,
+  .surfaces-column h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 20px;
+  }
+
+  .lane-list { list-style: none; }
+  .lane-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--copper-line);
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+  }
+  .lane-item:last-child { border-bottom: none; }
+  .lane-number {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--copper);
+    min-width: 22px;
+  }
+  .lane-name {
+    font-family: var(--display);
+    font-size: 22px;
+    font-style: italic;
+    color: var(--forest-ink);
+  }
+  .lane-desc {
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--steel);
+    margin-top: 2px;
+    flex: 1;
+  }
+  @media (max-width: 700px) {
+    .lane-item { flex-wrap: wrap; }
+  }
+
+  .surface-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .surface-cards { grid-template-columns: 1fr; }
+  }
+  .surface-card {
+    padding: 32px 24px;
+    border: 1px solid var(--copper-line);
+    border-radius: 4px;
+    background: var(--parchment);
+    position: relative;
+    overflow: hidden;
+    min-height: 320px;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  .surface-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(15, 36, 25, 0.06);
+  }
+  .surface-card.gold { background: linear-gradient(180deg, var(--gold-tint), var(--parchment)); border-color: var(--gold-primary); }
+  .surface-card.green { background: linear-gradient(180deg, var(--green-tint), var(--parchment)); border-color: var(--green-primary); }
+  .surface-card.red { background: linear-gradient(180deg, var(--red-tint), var(--parchment)); border-color: var(--red-primary); }
+
+  .surface-card .surface-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 12px;
+  }
+  .surface-card .surface-name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 28px;
+    color: var(--forest-ink);
+    margin-bottom: 6px;
+  }
+  .surface-card .surface-vibe {
+    font-family: var(--display);
+    font-size: 13px;
+    color: var(--steel);
+    font-style: italic;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--copper-line);
+  }
+  .surface-card .surface-lane {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .surface-card .surface-lane-name {
+    font-family: var(--display);
+    font-size: 18px;
+    color: var(--forest-ink);
+    margin-bottom: 16px;
+  }
+  .surface-card .surface-cardinal {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--copper-line);
+  }
+  .surface-card .surface-cardinal-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .surface-card .surface-cardinal-name {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--forest-ink);
+  }
+
+  /* ============ PATTERN LANGUAGE GRID (20 pieces) ============ */
+  .pattern-language { background: var(--parchment); }
+  .pl-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 60px;
+  }
+  @media (max-width: 900px) {
+    .pl-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 500px) {
+    .pl-grid { grid-template-columns: 1fr; }
+  }
+
+  .pl-piece {
+    padding: 22px 20px;
+    background: var(--parchment-warm);
+    border: 1px solid var(--copper-line);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .pl-piece:hover {
+    background: var(--parchment);
+    border-color: var(--copper);
+    transform: translateY(-2px);
+  }
+  .pl-piece .pl-cat {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 8px;
+  }
+  .pl-piece .pl-name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--forest-ink);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .pl-piece .pl-desc {
+    font-family: var(--display);
+    font-size: 13px;
+    color: var(--forest-deep);
+    line-height: 1.45;
+  }
+
+  /* Category tints */
+  .pl-piece[data-cat="constitutional"] .pl-cat { color: var(--green-primary); }
+  .pl-piece[data-cat="platform"] .pl-cat { color: var(--copper); }
+  .pl-piece[data-cat="rendering"] .pl-cat { color: var(--red-primary); }
+
+  .pl-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--copper-line);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--steel);
+  }
+  .pl-legend .swatch { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: middle; }
+  .pl-legend .swatch.constitutional { background: var(--green-primary); }
+  .pl-legend .swatch.platform { background: var(--copper); }
+  .pl-legend .swatch.rendering { background: var(--red-primary); }
+
+  /* ============ STANCE CARD / 14 DIMENSIONS ============ */
+  .stance { background: var(--parchment-deep); }
+  .stance-intro {
+    max-width: 900px;
+    margin-bottom: 60px;
+  }
+  .stance-card-viz {
+    background: var(--parchment);
+    border: 1px solid var(--copper-line);
+    border-radius: 4px;
+    padding: 40px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--forest-ink);
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .stance-card-viz::before {
+    content: 'StanceCard.ts';
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--parchment);
+    padding: 0 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+  }
+  .stance-card-viz .axis { color: var(--copper); }
+  .stance-card-viz .type { color: var(--green-primary); font-style: italic; }
+  .stance-card-viz .punct { color: var(--steel); }
+  .stance-card-viz .comment { color: var(--steel); font-style: italic; }
+
+  .dimensions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--copper-line);
+    border: 1px solid var(--copper-line);
+  }
+  .dim {
+    background: var(--parchment);
+    padding: 20px;
+    text-align: left;
+  }
+  .dim .dim-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--copper);
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+  .dim .dim-name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 17px;
+    color: var(--forest-ink);
+    line-height: 1.2;
+  }
+  .dim .dim-range {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--steel);
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+  }
+
+  /* ============ FRONTIER (55 gardens) ============ */
+  .frontier .container { max-width: 1280px; }
+  .frontier-roster {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    margin: 60px 0 40px;
+  }
+  .layer-card {
+    padding: 32px 28px;
+    border: 1px solid var(--copper-line);
+    border-radius: 4px;
+    background: var(--parchment-warm);
+    position: relative;
+  }
+  .layer-card .layer-num {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 72px;
+    line-height: 1;
+    color: var(--copper);
+    margin-bottom: 8px;
+  }
+  .layer-card .layer-name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--forest-ink);
+    margin-bottom: 14px;
+  }
+  .layer-card .layer-desc {
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--forest-deep);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .layer-card .layer-codes {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--steel);
+    text-transform: uppercase;
+  }
+
+  .frontier-cta {
+    text-align: center;
+    margin-top: 32px;
+    padding: 32px;
+    border-top: 1px dashed var(--copper-line);
+    border-bottom: 1px dashed var(--copper-line);
+  }
+  .frontier-cta a {
+    display: inline-block;
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--copper);
+    text-decoration: none;
+    border-bottom: 1px solid var(--copper);
+    padding-bottom: 4px;
+    transition: color 0.3s ease;
+  }
+  .frontier-cta a:hover {
+    color: var(--forest-ink);
+  }
+  .frontier-cta .meta {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+    margin-top: 12px;
+  }
+
+  /* ============ CURRENT FOCUS / BKG ============ */
+  .focus { background: var(--parchment); }
+  .focus-block {
+    margin-top: 60px;
+    padding: 48px 40px;
+    background: linear-gradient(135deg, var(--red-tint), var(--parchment));
+    border: 1px solid var(--red-primary);
+    border-radius: 4px;
+    position: relative;
+  }
+  .focus-block .focus-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red-primary);
+    margin-bottom: 14px;
+  }
+  .focus-block h3 {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(28px, 3vw, 38px);
+    color: var(--forest-ink);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+  .focus-block .focus-body {
+    font-family: var(--display);
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--forest-deep);
+    max-width: 900px;
+    margin-bottom: 28px;
+  }
+  .focus-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 1px solid var(--red-primary);
+  }
+  .focus-detail .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .focus-detail .value {
+    font-family: var(--display);
+    font-size: 15px;
+    color: var(--forest-ink);
+    line-height: 1.5;
+  }
+
+  /* ============ WISDOM ============ */
+  .wisdom { background: var(--parchment-deep); }
+  .wisdom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 32px;
+    margin-top: 60px;
+  }
+  .teacher {
+    padding: 0 0 24px;
+    border-bottom: 1px solid var(--copper-line);
+  }
+  .teacher .name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--forest-ink);
+    margin-bottom: 6px;
+  }
+  .teacher .work {
+    font-family: var(--display);
+    font-size: 13px;
+    color: var(--steel);
+    font-style: italic;
+    margin-bottom: 14px;
+  }
+  .teacher .principle {
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--forest-deep);
+    line-height: 1.5;
+  }
+
+  /* ============ INVITATION FOOTER ============ */
+  .invitation {
+    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-deep) 100%);
+    padding: 120px 32px 80px;
+  }
+  .invitation .container { max-width: 1000px; text-align: center; }
+  .invitation .title {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(36px, 5vw, 56px);
+    color: var(--forest-ink);
+    margin-bottom: 32px;
+    line-height: 1.1;
+  }
+  .invitation .body {
+    font-family: var(--display);
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--forest-deep);
+    max-width: 720px;
+    margin: 0 auto 48px;
+  }
+
+  /* ============ FEDERATION FOOTER ============ */
+  .federation {
+    padding: 48px 32px 32px;
+    border-top: 1px solid var(--copper-line);
+    background: var(--parchment);
+  }
+  .federation .container { max-width: 1280px; margin: 0 auto; }
+  .federation-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed var(--copper-line);
+  }
+  .federation-strip .brand-mark {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--forest-ink);
+  }
+  .federation-strip .verified {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--steel);
+    text-transform: uppercase;
+  }
+  .federation-strip .verified strong { color: var(--copper); }
+
+  .federation-contract {
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.8;
+    letter-spacing: 0.5px;
+    color: var(--steel);
+    text-align: center;
+  }
+  .federation-contract span { color: var(--forest-ink); margin: 0 6px; }
+
+  /* ============ FADE IN ON SCROLL ============ */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  }
+  .fade-up.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stagger for grids */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .stagger.in-view > * { opacity: 1; transform: translateY(0); }
+  .stagger.in-view > *:nth-child(1) { transition-delay: 0.0s; }
+  .stagger.in-view > *:nth-child(2) { transition-delay: 0.08s; }
+  .stagger.in-view > *:nth-child(3) { transition-delay: 0.16s; }
+  .stagger.in-view > *:nth-child(4) { transition-delay: 0.24s; }
+  .stagger.in-view > *:nth-child(5) { transition-delay: 0.32s; }
+  .stagger.in-view > *:nth-child(6) { transition-delay: 0.40s; }
+  .stagger.in-view > *:nth-child(7) { transition-delay: 0.48s; }
+  .stagger.in-view > *:nth-child(8) { transition-delay: 0.56s; }
+  .stagger.in-view > *:nth-child(n+9) { transition-delay: 0.64s; }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .fade-up, .stagger > * { opacity: 1; transform: none; }
+  }
+
+  /* Counter animation */
+  .counter {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(80px, 10vw, 140px);
+    line-height: 1;
+    color: var(--copper);
+  }
+
+  /* ============ PATTERN LANGUAGE DEEP DIVE ============ */
+  .pl-explainer {
+    margin: 80px auto 60px;
+    max-width: 1000px;
+    padding: 40px 36px;
+    background: var(--parchment-warm);
+    border: 1px solid var(--copper-line);
+    border-left: 3px solid var(--copper);
+    border-radius: 3px;
+  }
+  .pl-explainer h3 {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 28px;
+    color: var(--forest-ink);
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+  .pl-explainer p {
+    font-family: var(--display);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--forest-deep);
+    margin-bottom: 14px;
+  }
+  .pl-explainer p:last-child { margin-bottom: 0; }
+  .pl-explainer strong { color: var(--copper); font-weight: 600; }
+  .pl-explainer em { font-style: italic; color: var(--forest-ink); }
+
+  .pl-category-header {
+    margin: 100px 0 40px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--copper-line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .pl-category-header .cat-num {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 60px;
+    line-height: 1;
+    color: var(--copper);
+  }
+  .pl-category-header .cat-title {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 32px;
+    color: var(--forest-ink);
+    margin-left: 24px;
+    flex: 1;
+  }
+  .pl-category-header .cat-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--steel);
+  }
+
+  .pl-piece-detail {
+    margin: 0 0 56px;
+    padding: 36px 32px;
+    background: var(--parchment);
+    border: 1px solid var(--copper-line);
+    border-radius: 4px;
+    position: relative;
+  }
+  .pl-piece-detail[data-cat="constitutional"] { border-left: 3px solid var(--green-primary); }
+  .pl-piece-detail[data-cat="platform"] { border-left: 3px solid var(--copper); }
+  .pl-piece-detail[data-cat="rendering"] { border-left: 3px solid var(--red-primary); }
+
+  .pl-piece-detail-header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed var(--copper-line);
+    flex-wrap: wrap;
+  }
+  .pl-piece-detail-header .num {
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--copper);
+    font-weight: 700;
+  }
+  .pl-piece-detail-header .name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 32px;
+    color: var(--forest-ink);
+    line-height: 1;
+    flex: 1;
+  }
+  .pl-piece-detail-header .cat-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--steel);
+    padding: 4px 10px;
+    border: 1px solid var(--copper-line);
+    border-radius: 2px;
+  }
+
+  .pl-piece-detail-plain {
+    font-family: var(--display);
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--forest-deep);
+    margin-bottom: 28px;
+    padding: 18px 22px;
+    background: var(--parchment-warm);
+    border-radius: 3px;
+  }
+  .pl-piece-detail-plain::before {
+    content: 'IN PLAIN ENGLISH';
+    display: block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    color: var(--steel);
+    margin-bottom: 8px;
+  }
+
+  .pl-examples-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 800px) {
+    .pl-examples-row { grid-template-columns: 1fr; }
+  }
+  .pl-example {
+    background: var(--parchment-warm);
+    border: 1px solid var(--copper-line);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .pl-example svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--parchment);
+  }
+  .pl-example .pl-example-surface {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--copper);
+    padding: 10px 14px 4px;
+  }
+  .pl-example .pl-example-text {
+    font-family: var(--display);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--forest-ink);
+    padding: 0 14px 14px;
+    flex: 1;
+  }
+
+  .pl-axes-row {
+    margin: 24px 0 12px;
+    padding: 16px 0 12px;
+    border-top: 1px dashed var(--copper-line);
+  }
+  .pl-axes-row-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 10px;
+  }
+  .pl-axes-dots {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .pl-axes-dots .axis-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(113, 121, 126, 0.18);
+    border: 1px solid var(--copper-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--steel);
+    cursor: help;
+    position: relative;
+    transition: transform 0.2s ease;
+  }
+  .pl-axes-dots .axis-dot:hover {
+    transform: scale(1.15);
+  }
+  .pl-axes-dots .axis-dot.active {
+    background: var(--copper);
+    border-color: var(--copper);
+    color: var(--parchment);
+  }
+  .pl-axes-dots .axis-dot.primary {
+    background: var(--copper);
+    border-color: var(--forest-ink);
+    color: var(--parchment);
+    box-shadow: 0 0 0 2px var(--parchment), 0 0 0 3px var(--copper);
+  }
+  .pl-axes-dots .axis-dot::after {
+    content: attr(data-name);
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--forest-ink);
+    background: var(--parchment);
+    padding: 4px 8px;
+    border: 1px solid var(--copper-line);
+    border-radius: 2px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+  .pl-axes-dots .axis-dot:hover::after { opacity: 1; }
+
+  .pl-axes-names {
+    font-family: var(--display);
+    font-size: 13px;
+    color: var(--forest-deep);
+    line-height: 1.5;
+  }
+  .pl-axes-names .axis-primary {
+    color: var(--copper);
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  .pl-piece-detail-why {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--copper-line);
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--forest-ink);
+  }
+  .pl-piece-detail-why::before {
+    content: 'WHY IT MATTERS · ';
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    color: var(--copper);
+  }
+
+  /* Composition example at end */
+  .composition {
+    margin: 100px 0 0;
+    padding: 48px 36px;
+    background: linear-gradient(135deg, var(--parchment-warm), var(--parchment));
+    border: 1px solid var(--copper);
+    border-radius: 4px;
+  }
+  .composition h3 {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 32px;
+    color: var(--forest-ink);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .composition .comp-sub {
+    font-family: var(--display);
+    font-size: 16px;
+    color: var(--forest-deep);
+    margin-bottom: 32px;
+  }
+  .composition-flow {
+    margin: 32px 0;
+    padding: 28px;
+    background: var(--parchment);
+    border: 1px solid var(--copper-line);
+    border-radius: 3px;
+  }
+  .composition-flow svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .composition-pieces-used {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .composition-piece-tag {
+    padding: 10px 14px;
+    background: var(--parchment);
+    border: 1px solid var(--copper-line);
+    border-radius: 3px;
+    font-family: var(--display);
+    font-size: 14px;
+  }
+  .composition-piece-tag .piece-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--copper);
+    letter-spacing: 1.5px;
+    margin-right: 8px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ============ UMBRELLA HEADER ============ -->
+<header class="umbrella-header">
+  <div class="brand">The Knowledge Gardens</div>
+  <div class="meta">Platform Architecture · v3 · 2026-05-25</div>
+</header>
+
+<!-- ============ SECTION NAVIGATOR ============ -->
+<nav class="section-nav" aria-label="Section navigation">
+  <a href="#hero" data-label="Hero" data-target="hero"></a>
+  <a href="#moat" data-label="The Moat" data-target="moat"></a>
+  <a href="#architecture" data-label="Architecture" data-target="architecture"></a>
+  <a href="#pattern" data-label="4 × 3 × 1" data-target="pattern"></a>
+  <a href="#pattern-language" data-label="Pattern Language" data-target="pattern-language"></a>
+  <a href="#stance" data-label="Stance Card" data-target="stance"></a>
+  <a href="#frontier" data-label="55 Gardens" data-target="frontier"></a>
+  <a href="#focus" data-label="Current Focus" data-target="focus"></a>
+  <a href="#wisdom" data-label="Wisdom" data-target="wisdom"></a>
+  <a href="#invitation" data-label="Invitation" data-target="invitation"></a>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <span class="corner-tick tl"><svg viewBox="0 0 20 20"><path d="M 0,20 L 0,0 L 20,0" fill="none" stroke="#B87333" stroke-width="1.5"/></svg></span>
+  <span class="corner-tick tr"><svg viewBox="0 0 20 20"><path d="M 0,20 L 0,0 L 20,0" fill="none" stroke="#B87333" stroke-width="1.5"/></svg></span>
+
+  <div class="container">
+    <div class="section-label fade-up">Strategy v3 · decisions locked</div>
+    <h1 class="fade-up">The Knowledge Gardens<br>Operating System</h1>
+    <p class="tagline fade-up">One architecture. Fifty-five gardens. Four lanes. Three surfaces.<br>One self-improving knowledge graph that gets more right every week.</p>
+    <div class="meta-strip fade-up">
+      <div><strong>Locked</strong> &nbsp;·&nbsp; May 25, 2026</div>
+      <div><strong>Author</strong> &nbsp;·&nbsp; Chilly Dahlgren</div>
+      <div><strong>Sources</strong> &nbsp;·&nbsp; FRONTIER_MAP v2 · design constitution · v3 strategy memo</div>
+    </div>
+  </div>
+
+  <div class="scroll-cue">Scroll</div>
+</section>
+
+<!-- ============ THE MOAT / RSI HEARTBEAT ============ -->
+<section class="moat" id="moat">
+  <div class="container">
+    <div class="section-label fade-up">The Moat</div>
+    <h2 class="section-title fade-up">The platform improves itself in public.</h2>
+    <p class="section-subtitle fade-up">Every other platform in our space holds static data and ages. We get more right every week. That is the moat in the AI era.</p>
+
+    <blockquote class="moat-statement fade-up">
+      The <strong>RSI Heartbeat</strong> is the platform. One self-improving knowledge graph per garden, ingesting source data on a domain cadence, re-verifying every entity, surfacing freshness on every claim, learning from use. The platform doesn't hold knowledge — it improves itself.
+    </blockquote>
+
+    <div class="heartbeat-viz fade-up" id="heartbeatViz">
+      <div class="label">— Live signal — per-garden cadence —</div>
+      <svg class="heartbeat-svg" viewBox="0 0 1200 80" preserveAspectRatio="xMidYMid meet">
+        <path class="heartbeat-pulse"
+              d="M 0,40 L 80,40 L 100,40 L 115,20 L 130,60 L 145,30 L 160,45 L 175,40 L 280,40 L 295,15 L 310,65 L 325,25 L 340,50 L 355,40 L 480,40 L 495,18 L 510,62 L 525,28 L 540,48 L 555,40 L 680,40 L 695,22 L 710,58 L 725,30 L 740,46 L 755,40 L 880,40 L 895,20 L 910,60 L 925,28 L 940,48 L 955,40 L 1080,40 L 1095,22 L 1110,58 L 1125,28 L 1140,48 L 1155,40 L 1200,40"/>
+      </svg>
+    </div>
+
+    <div class="cadence-grid stagger fade-up">
+      <div class="cadence-card">
+        <div class="garden-code">HKG</div>
+        <div class="garden-name">Healthcare Garden</div>
+        <div class="cadence">Cadence · <strong>monthly</strong></div>
+      </div>
+      <div class="cadence-card">
+        <div class="garden-code">PKG</div>
+        <div class="garden-name">Parenting Garden</div>
+        <div class="cadence">Cadence · <strong>weekly</strong></div>
+      </div>
+      <div class="cadence-card">
+        <div class="garden-code">BKG</div>
+        <div class="garden-name">Builder's Garden</div>
+        <div class="cadence">Cadence · <strong>continuous</strong> from contractor activity</div>
+      </div>
+      <div class="cadence-card">
+        <div class="garden-code">OKG</div>
+        <div class="garden-name">Orchid Garden</div>
+        <div class="cadence">Cadence · <strong>quarterly</strong> from Ecuagenera + AOS</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ARCHITECTURE (embeds the SVG) ============ -->
+<section class="architecture" id="architecture">
+  <span class="corner-tick tl"><svg viewBox="0 0 20 20"><path d="M 0,20 L 0,0 L 20,0" fill="none" stroke="#B87333" stroke-width="1.5"/></svg></span>
+  <span class="corner-tick br"><svg viewBox="0 0 20 20"><path d="M 0,20 L 0,0 L 20,0" fill="none" stroke="#B87333" stroke-width="1.5"/></svg></span>
+
+  <div class="container">
+    <div class="section-label fade-up">The Architecture</div>
+    <h2 class="section-title fade-up">One picture. The whole platform.</h2>
+    <p class="section-subtitle fade-up">Every garden inherits this skeleton. The skin changes per domain — codes versus species versus compounds versus case law — but the lanes, the surfaces, the heartbeat, and the federation contract do not.</p>
+
+    <div class="svg-frame fade-up">
+      <!-- KGOS ARCHITECTURE SVG (inline) -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 980" font-family="Georgia, 'Cormorant Garamond', serif">
+        <defs>
+          <linearGradient id="goldSurfaceX" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#D8A858" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#C9A84C" stop-opacity="0.05"/>
+          </linearGradient>
+          <linearGradient id="greenSurfaceX" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1A5C5C" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#1A3A2E" stop-opacity="0.05"/>
+          </linearGradient>
+          <linearGradient id="redSurfaceX" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#8B2A1F" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#A03A4C" stop-opacity="0.05"/>
+          </linearGradient>
+          <path id="pulseX" d="M 0,0 L 12,0 L 18,-22 L 26,28 L 34,-8 L 42,0 L 70,0" fill="none" stroke="#B87333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <g id="cornerTickX"><path d="M 0,16 L 0,0 L 16,0" fill="none" stroke="#B87333" stroke-width="1.5"/></g>
+        </defs>
+        <rect width="1400" height="980" fill="#F5F0E8"/>
+        <use href="#cornerTickX" x="24" y="24"/>
+        <use href="#cornerTickX" x="1376" y="24" transform="rotate(90 1376 24)"/>
+        <use href="#cornerTickX" x="1376" y="956" transform="rotate(180 1376 956)"/>
+        <use href="#cornerTickX" x="24" y="956" transform="rotate(270 24 956)"/>
+        <g transform="translate(700, 70)">
+          <text text-anchor="middle" font-size="11" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="4" y="-12">PLATFORM ARCHITECTURE · V3 · 2026-05-25</text>
+          <text text-anchor="middle" font-size="36" fill="#0F2419" font-style="italic" font-weight="400" y="22">The Knowledge Gardens Operating System</text>
+          <text text-anchor="middle" font-size="13" fill="#0F2419" letter-spacing="1" y="50">One architecture · 55 gardens · 4 lanes · 3 surfaces · 1 self-improving graph</text>
+        </g>
+        <g transform="translate(60, 145)">
+          <line x1="0" y1="0" x2="1280" y2="0" stroke="#B87333" stroke-width="0.5" stroke-dasharray="2 3"/>
+          <line x1="0" y1="-5" x2="0" y2="5" stroke="#B87333" stroke-width="1"/>
+          <line x1="1280" y1="-5" x2="1280" y2="5" stroke="#B87333" stroke-width="1"/>
+        </g>
+        <g transform="translate(110, 200)">
+          <rect width="360" height="540" rx="6" fill="url(#goldSurfaceX)" stroke="#C9A84C" stroke-width="1"/>
+          <text x="180" y="40" text-anchor="middle" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">SURFACE 01 · GOLD</text>
+          <text x="180" y="76" text-anchor="middle" font-size="26" fill="#0F2419" font-style="italic">Dream Machine</text>
+          <text x="180" y="100" text-anchor="middle" font-size="11" fill="#71797E" font-style="italic">aspirational · concierge · warm</text>
+          <line x1="40" y1="120" x2="320" y2="120" stroke="#C9A84C" stroke-width="0.7"/>
+          <text x="180" y="148" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">PRIMARY LANE</text>
+          <text x="180" y="172" text-anchor="middle" font-size="18" fill="#0F2419">PUBLIC</text>
+          <text x="180" y="194" text-anchor="middle" font-size="11" fill="#71797E">Patient · Homeowner · Hobbyist · Parent · Consumer</text>
+          <text x="180" y="232" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">SELLS</text>
+          <text x="180" y="252" text-anchor="middle" font-size="12" fill="#0F2419">Free gravity-well tools</text>
+          <text x="180" y="270" text-anchor="middle" font-size="12" fill="#0F2419">Premium consumer subscriptions</text>
+          <text x="180" y="308" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">EXAMPLE WORKFLOWS</text>
+          <text x="180" y="332" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"What might this look like?"</text>
+          <text x="180" y="352" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Identify this orchid"</text>
+          <text x="180" y="372" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Is this medication safe with that one?"</text>
+          <text x="180" y="418" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CARDINAL FEATURE</text>
+          <text x="180" y="442" text-anchor="middle" font-size="13" fill="#0F2419" font-weight="600">Emotional Arc</text>
+          <text x="180" y="462" text-anchor="middle" font-size="10" fill="#71797E">curious → confident → committed</text>
+          <line x1="40" y1="488" x2="320" y2="488" stroke="#C9A84C" stroke-width="0.5" stroke-dasharray="1 3"/>
+          <text x="180" y="512" text-anchor="middle" font-size="10" fill="#71797E" font-style="italic">"the front door of every garden"</text>
+        </g>
+        <g transform="translate(520, 200)">
+          <rect width="360" height="540" rx="6" fill="url(#greenSurfaceX)" stroke="#1A5C5C" stroke-width="1"/>
+          <text x="180" y="40" text-anchor="middle" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">SURFACE 02 · GREEN</text>
+          <text x="180" y="76" text-anchor="middle" font-size="26" fill="#0F2419" font-style="italic">Knowledge Garden</text>
+          <text x="180" y="100" text-anchor="middle" font-size="11" fill="#71797E" font-style="italic">scientific · verified · citation-rich</text>
+          <line x1="40" y1="120" x2="320" y2="120" stroke="#1A5C5C" stroke-width="0.7"/>
+          <text x="180" y="148" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">PRIMARY LANE</text>
+          <text x="180" y="172" text-anchor="middle" font-size="18" fill="#0F2419">PROFESSIONAL</text>
+          <text x="180" y="194" text-anchor="middle" font-size="11" fill="#71797E">Doctor · Contractor · Grower · Lawyer · Advisor</text>
+          <text x="180" y="232" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">SELLS</text>
+          <text x="180" y="252" text-anchor="middle" font-size="12" fill="#0F2419">Subscriptions + marketplace</text>
+          <text x="180" y="270" text-anchor="middle" font-size="12" fill="#0F2419">CME · career tools</text>
+          <text x="180" y="308" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">EXAMPLE WORKFLOWS</text>
+          <text x="180" y="332" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Will this assembly pass inspection?"</text>
+          <text x="180" y="352" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Drug interaction check"</text>
+          <text x="180" y="372" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Species provenance for sale"</text>
+          <text x="180" y="418" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CARDINAL FEATURE</text>
+          <text x="180" y="442" text-anchor="middle" font-size="13" fill="#0F2419" font-weight="600">TrustStrip · Three-Source Rule</text>
+          <text x="180" y="462" text-anchor="middle" font-size="10" fill="#71797E">≥ 3 sources · freshness stamp · contested-claim flag</text>
+          <line x1="40" y1="488" x2="320" y2="488" stroke="#1A5C5C" stroke-width="0.5" stroke-dasharray="1 3"/>
+          <text x="180" y="512" text-anchor="middle" font-size="10" fill="#71797E" font-style="italic">"the encyclopedia that earned its citations"</text>
+        </g>
+        <g transform="translate(930, 200)">
+          <rect width="360" height="540" rx="6" fill="url(#redSurfaceX)" stroke="#8B2A1F" stroke-width="1"/>
+          <text x="180" y="40" text-anchor="middle" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">SURFACE 03 · RED</text>
+          <text x="180" y="76" text-anchor="middle" font-size="26" fill="#0F2419" font-style="italic">Killer App</text>
+          <text x="180" y="100" text-anchor="middle" font-size="11" fill="#71797E" font-style="italic">operational · urgent · status-aware</text>
+          <line x1="40" y1="120" x2="320" y2="120" stroke="#8B2A1F" stroke-width="0.7"/>
+          <text x="180" y="148" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">PRIMARY LANE</text>
+          <text x="180" y="172" text-anchor="middle" font-size="18" fill="#0F2419">ADMINISTRATOR</text>
+          <text x="180" y="194" text-anchor="middle" font-size="11" fill="#71797E">Hospital admin · GC · Nursery operator · Ops</text>
+          <text x="180" y="232" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">SELLS</text>
+          <text x="180" y="252" text-anchor="middle" font-size="12" fill="#0F2419">Mandatory compliance · credentialing</text>
+          <text x="180" y="270" text-anchor="middle" font-size="12" fill="#0F2419">Operations SaaS · the cash engine</text>
+          <text x="180" y="308" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">EXAMPLE WORKFLOWS</text>
+          <text x="180" y="332" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Credentials expiring this week?"</text>
+          <text x="180" y="352" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Submit AIA pay app"</text>
+          <text x="180" y="372" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Daily field log + sign-off"</text>
+          <text x="180" y="418" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CARDINAL FEATURE</text>
+          <text x="180" y="442" text-anchor="middle" font-size="13" fill="#0F2419" font-weight="600">Tempo Adapt</text>
+          <text x="180" y="462" text-anchor="middle" font-size="10" fill="#71797E">primitive breathes per pressure: leisurely → emergency</text>
+          <line x1="40" y1="488" x2="320" y2="488" stroke="#8B2A1F" stroke-width="0.5" stroke-dasharray="1 3"/>
+          <text x="180" y="512" text-anchor="middle" font-size="10" fill="#71797E" font-style="italic">"where money flows, where lives change"</text>
+        </g>
+        <g transform="translate(110, 168)">
+          <line x1="0" y1="0" x2="1180" y2="0" stroke="#71797E" stroke-width="0.5" stroke-dasharray="3 4"/>
+          <rect x="490" y="-14" width="200" height="28" rx="3" fill="#F5F0E8" stroke="#71797E" stroke-width="0.7"/>
+          <text x="590" y="5" text-anchor="middle" font-size="11" fill="#0F2419" font-family="'Courier New', monospace" letter-spacing="2">LANE 04 · MACHINE</text>
+          <text x="590" y="18" text-anchor="middle" font-size="9" fill="#71797E" font-style="italic">cross-surface · API · MCP · JSON-LD</text>
+        </g>
+        <g transform="translate(110, 770)">
+          <rect width="1180" height="120" rx="6" fill="#FFFFFF" stroke="#B87333" stroke-width="1.5"/>
+          <g transform="translate(50, 60)" opacity="0.7">
+            <line x1="0" y1="0" x2="1080" y2="0" stroke="#B87333" stroke-width="1" stroke-dasharray="2 3"/>
+            <use href="#pulseX" x="80"/>
+            <use href="#pulseX" x="280"/>
+            <use href="#pulseX" x="480"/>
+            <use href="#pulseX" x="680"/>
+            <use href="#pulseX" x="880"/>
+          </g>
+          <text x="50" y="32" font-size="11" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">THE MOAT</text>
+          <text x="50" y="55" font-size="22" fill="#0F2419" font-style="italic">RSI Heartbeat</text>
+          <text x="50" y="100" font-size="11" fill="#0F2419">One self-improving knowledge graph per garden.</text>
+          <text x="50" y="115" font-size="11" fill="#71797E" font-style="italic">Ingests source data on a domain cadence · re-verifies entities · surfaces freshness · learns from use.</text>
+          <text x="1130" y="32" text-anchor="end" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CADENCE EXAMPLES</text>
+          <text x="1130" y="55" text-anchor="end" font-size="11" fill="#0F2419">HKG · monthly</text>
+          <text x="1130" y="73" text-anchor="end" font-size="11" fill="#0F2419">PKG · weekly</text>
+          <text x="1130" y="91" text-anchor="end" font-size="11" fill="#0F2419">BKG · continuous from contractor activity</text>
+          <text x="1130" y="115" text-anchor="end" font-size="9" fill="#71797E" font-style="italic">"the platform improves itself in public"</text>
+        </g>
+        <g transform="translate(60, 920)">
+          <line x1="0" y1="0" x2="1280" y2="0" stroke="#B87333" stroke-width="0.5" stroke-dasharray="2 3"/>
+          <text x="0" y="22" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">55 GARDENS</text>
+          <text x="115" y="22" font-size="10" fill="#0F2419">3 deployed · 2 building · 10 industry-scoped · 40 frontier (gated until HKG + BKG MRR)</text>
+          <text x="0" y="42" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">FEDERATION</text>
+          <text x="115" y="42" font-size="10" fill="#0F2419">parchment · Cormorant · Space Mono · cross-link · JSON-LD · llms.txt · MCP endpoint · break federation = break platform</text>
+          <text x="1280" y="22" text-anchor="end" font-size="9" fill="#71797E" font-style="italic">source: FRONTIER_MAP_PORTABLE.md v2 · 2026-05-25</text>
+        </g>
+        <g transform="translate(595, 803)" opacity="0.5">
+          <circle cx="0" cy="0" r="14" fill="none" stroke="#B87333" stroke-width="0.7"/>
+          <line x1="0" y1="-14" x2="0" y2="14" stroke="#B87333" stroke-width="0.7"/>
+          <line x1="-14" y1="0" x2="14" y2="0" stroke="#B87333" stroke-width="0.7"/>
+          <text x="0" y="-18" text-anchor="middle" font-size="7" fill="#71797E" font-family="'Courier New', monospace">N</text>
+        </g>
+      </svg>
+    </div>
+
+    <p class="architecture-caption fade-up">Four umbrella lanes. Three surfaces. One self-improving graph beneath them all.</p>
+  </div>
+</section>
+
+<!-- ============ THE PATTERN (4 × 3 × 1) ============ -->
+<section class="pattern" id="pattern">
+  <div class="container">
+    <div class="section-label fade-up">The Pattern</div>
+    <h2 class="section-title fade-up">Four lanes ✕ three surfaces ✕ one graph.</h2>
+    <p class="section-subtitle fade-up">Every garden in the platform composes from this skeleton. Sub-lanes nest inside the four umbrella lanes per domain — BKG has eight sub-lanes, HKG has five, OKG has six — but the four umbrella lanes are universal.</p>
+
+    <div class="pattern-grid">
+      <div class="lanes-column fade-up">
+        <h3>The Four Lanes</h3>
+        <ul class="lane-list">
+          <li class="lane-item">
+            <span class="lane-number">01</span>
+            <div>
+              <div class="lane-name">Administrator</div>
+              <div class="lane-desc">Hospital admin · GC · Nursery operator · Ops — the buyer of operations SaaS</div>
+            </div>
+          </li>
+          <li class="lane-item">
+            <span class="lane-number">02</span>
+            <div>
+              <div class="lane-name">Professional</div>
+              <div class="lane-desc">Doctor · Contractor · Grower · Lawyer · Advisor — the practitioner</div>
+            </div>
+          </li>
+          <li class="lane-item">
+            <span class="lane-number">03</span>
+            <div>
+              <div class="lane-name">Public</div>
+              <div class="lane-desc">Patient · Homeowner · Hobbyist · Parent · Consumer — the curious newcomer</div>
+            </div>
+          </li>
+          <li class="lane-item">
+            <span class="lane-number">04</span>
+            <div>
+              <div class="lane-name">Machine</div>
+              <div class="lane-desc">AI agents · EHR vendors · integrators — first-class citizens, never afterthought</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="surfaces-column fade-up">
+        <h3>The Three Surfaces</h3>
+        <div class="surface-cards stagger">
+          <div class="surface-card gold">
+            <div class="surface-tag">Surface 01 · Gold</div>
+            <div class="surface-name">Dream Machine</div>
+            <div class="surface-vibe">aspirational · concierge · warm</div>
+            <div class="surface-lane">Primary Lane</div>
+            <div class="surface-lane-name">Public</div>
+            <div class="surface-cardinal">
+              <div class="surface-cardinal-label">Cardinal Feature</div>
+              <div class="surface-cardinal-name">Emotional Arc</div>
+            </div>
+          </div>
+          <div class="surface-card green">
+            <div class="surface-tag">Surface 02 · Green</div>
+            <div class="surface-name">Knowledge Garden</div>
+            <div class="surface-vibe">scientific · verified · citation-rich</div>
+            <div class="surface-lane">Primary Lane</div>
+            <div class="surface-lane-name">Professional</div>
+            <div class="surface-cardinal">
+              <div class="surface-cardinal-label">Cardinal Feature</div>
+              <div class="surface-cardinal-name">TrustStrip · Three-Source Rule</div>
+            </div>
+          </div>
+          <div class="surface-card red">
+            <div class="surface-tag">Surface 03 · Red</div>
+            <div class="surface-name">Killer App</div>
+            <div class="surface-vibe">operational · urgent · status-aware</div>
+            <div class="surface-lane">Primary Lane</div>
+            <div class="surface-lane-name">Administrator</div>
+            <div class="surface-cardinal">
+              <div class="surface-cardinal-label">Cardinal Feature</div>
+              <div class="surface-cardinal-name">Tempo Adapt</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PATTERN LANGUAGE (20 pieces) ============ -->
+<section class="pattern-language" id="pattern-language">
+  <div class="container">
+    <div class="section-label fade-up">The Pattern Language</div>
+    <h2 class="section-title fade-up">Twenty pieces. Composes anywhere.</h2>
+    <p class="section-subtitle fade-up">Christopher Alexander cataloged 253 patterns across scales. The Knowledge Gardens language is much smaller — sixteen sixteen-ths the size — sized for a small team to specify, build, and inherit across every garden. Hover any piece to see what it does.</p>
+
+    <div class="pl-grid stagger">
+
+      <!-- 7 Constitutional Primitives -->
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 01</div>
+        <div class="pl-name">Invitation Card</div>
+        <div class="pl-desc">One plain question, one primary action, optional pro subtitle, optional whisper.</div>
+      </div>
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 02</div>
+        <div class="pl-name">Emotional Arc</div>
+        <div class="pl-desc">Sequenced flow matched to the user's emotional state.</div>
+      </div>
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 03</div>
+        <div class="pl-name">Whisper</div>
+        <div class="pl-desc">One-time, one-sentence self-introduction near an element on first encounter.</div>
+      </div>
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 04</div>
+        <div class="pl-name">Time Machine</div>
+        <div class="pl-desc">Platform undo · stateful breadcrumbs · drafts tray · skip-and-return.</div>
+      </div>
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 05</div>
+        <div class="pl-name">Ask Anything</div>
+        <div class="pl-desc">Always-available plain-language help, contextual to the current screen.</div>
+      </div>
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 06</div>
+        <div class="pl-name">Pro Toggle</div>
+        <div class="pl-desc">Single visible switch flipping labels and order from human mode to pro mode.</div>
+      </div>
+      <div class="pl-piece" data-cat="constitutional">
+        <div class="pl-cat">Constitutional · 07</div>
+        <div class="pl-name">Progressive Reveal</div>
+        <div class="pl-desc">Advanced controls materialize only after basic use is demonstrated.</div>
+      </div>
+
+      <!-- 4 Platform Primitives -->
+      <div class="pl-piece" data-cat="platform">
+        <div class="pl-cat">Platform · 08</div>
+        <div class="pl-name">TrustStrip</div>
+        <div class="pl-desc">Every primary claim renders with source count, freshness stamp, contested-claim indicator.</div>
+      </div>
+      <div class="pl-piece" data-cat="platform">
+        <div class="pl-cat">Platform · 09</div>
+        <div class="pl-name">Three-Source Rule</div>
+        <div class="pl-desc">Every authoritative claim cites ≥ 3 sources. No exceptions.</div>
+      </div>
+      <div class="pl-piece" data-cat="platform">
+        <div class="pl-cat">Platform · 10</div>
+        <div class="pl-name">Federation Contract</div>
+        <div class="pl-desc">Umbrella header · type discipline · cross-link · JSON-LD · llms.txt · MCP endpoint.</div>
+      </div>
+      <div class="pl-piece" data-cat="platform">
+        <div class="pl-cat">Platform · 11</div>
+        <div class="pl-name">Machine-Legible Everything</div>
+        <div class="pl-desc">llms.txt + JSON-LD on every entity. MCP endpoint per garden. The agent is a first-class user.</div>
+      </div>
+
+      <!-- 9 Dimensional Renderings -->
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 12</div>
+        <div class="pl-name">Infinite Descent</div>
+        <div class="pl-desc">Variable-floor engagement depth per workflow. Floor 0 plain question, descending to agent payload.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 13</div>
+        <div class="pl-name">Modality Mirror</div>
+        <div class="pl-desc">Visual, voice, gestural, agent-API renderings of every workflow.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 14</div>
+        <div class="pl-name">Tempo Adapt</div>
+        <div class="pl-desc">Primitives breathe differently under different pressure — leisurely to emergency.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 15</div>
+        <div class="pl-name">Cultural Render</div>
+        <div class="pl-desc">Language, units, jurisdiction, conventions as first-class data — not settings.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 16</div>
+        <div class="pl-name">Accessibility Adapt</div>
+        <div class="pl-desc">Color, motor, cognitive, neurodivergent profiles operationalized — not posture.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 17</div>
+        <div class="pl-name">Cross-Surface Bridge</div>
+        <div class="pl-desc">Context flows Dream → Garden → Killer App without retyping.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 18</div>
+        <div class="pl-name">Lifecycle Memory</div>
+        <div class="pl-desc">Same project, same user, multi-year. Surface context across stages.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 19</div>
+        <div class="pl-name">Trust Posture Adapt</div>
+        <div class="pl-desc">Platform defensiveness scales inversely with user trust. First-time visitor gets reassurance; long-term user gets shortcuts.</div>
+      </div>
+      <div class="pl-piece" data-cat="rendering">
+        <div class="pl-cat">Rendering · 20</div>
+        <div class="pl-name">Stance Card</div>
+        <div class="pl-desc">The operational mechanism. 14-axis snapshot of where the user sits in state space. Every primitive reads it.</div>
+      </div>
+    </div>
+
+    <div class="pl-legend fade-up">
+      <span><span class="swatch constitutional"></span>Constitutional (7) — locked April 16</span>
+      <span><span class="swatch platform"></span>Platform (4) — federation contract</span>
+      <span><span class="swatch rendering"></span>Rendering (9) — new for 2026</span>
+    </div>
+
+    <!-- ============ EXPLAINER ============ -->
+    <div class="pl-explainer fade-up">
+      <h3>How to read this section</h3>
+      <p>A <strong>piece</strong> is a reusable design pattern — like "always show a save button" but more specific. Build a workflow with the right pieces and it works for every kind of user, on every kind of device, in every kind of moment.</p>
+      <p>An <strong>axis</strong> is a way users differ from each other. There are fourteen. A homeowner and a master plumber differ on the <em>skill</em> axis. A worker logging from a muddy job site and a financier reviewing on a laptop differ on the <em>device</em>, <em>modality</em>, and <em>tempo</em> axes. The <strong>Stance Card</strong> is the live snapshot of where each user sits on all fourteen.</p>
+      <p>Each piece below shows: a plain-English explanation, three real examples from the Builder's Garden, which axes the piece touches (14 dots — lit = relevant; double-ring = primary), and why it matters.</p>
+    </div>
+
+    <!-- CATEGORY 1 -->
+    <div class="pl-category-header fade-up">
+      <span class="cat-num">01</span>
+      <span class="cat-title">The Constitutional Primitives — locked April 16</span>
+      <span class="cat-count">7 pieces</span>
+    </div>
+
+    <!-- 01 Invitation Card -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">01</span><span class="name">Invitation Card</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">A page leads with one clear question and one clear next step. No menus, no options, no fork in the road. One welcoming door in.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="0" y="0" width="200" height="14" fill="#EFE8DC"/><text x="8" y="10" font-size="5" font-family="monospace" fill="#71797E">BKG · /intro</text><text x="100" y="44" text-anchor="middle" font-size="11" font-style="italic" font-family="Georgia" fill="#0F2419">What do you want to build?</text><rect x="20" y="56" width="160" height="22" rx="3" fill="#F5F0E8" stroke="#B87333" stroke-width="0.6"/><text x="28" y="71" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">speak or type...</text><circle cx="170" cy="67" r="6" fill="#B87333" opacity="0.85"/><text x="100" y="100" text-anchor="middle" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">ONE QUESTION · ONE INPUT</text></svg>
+          <div class="pl-example-surface">/intro hero</div>
+          <div class="pl-example-text">A homeowner arrives and sees one question, one mic-or-type input, nothing else.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="0" y="0" width="200" height="14" fill="#EFE8DC"/><text x="8" y="10" font-size="5" font-family="monospace" fill="#71797E">BKG · /killerapp/onboarding</text><text x="100" y="32" text-anchor="middle" font-size="9" font-style="italic" font-family="Georgia" fill="#0F2419">Renew which credential first?</text><rect x="18" y="42" width="164" height="18" rx="2" fill="#F5F0E8" stroke="#8B2A1F" stroke-width="0.7"/><text x="26" y="54" font-size="7" font-family="Georgia" fill="#0F2419">CA C-10 Electrical · 14 days</text><rect x="18" y="64" width="164" height="18" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="26" y="76" font-size="7" font-family="Georgia" fill="#0F2419">OSHA-10 · 32 days</text><rect x="18" y="86" width="164" height="18" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="26" y="98" font-size="7" font-family="Georgia" fill="#0F2419">First-Aid · 47 days</text></svg>
+          <div class="pl-example-surface">contractor onboarding</div>
+          <div class="pl-example-text">A new GC signs in and sees only the three soonest-expiring credentials, sorted by urgency.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="0" y="0" width="200" height="14" fill="#EFE8DC"/><text x="8" y="10" font-size="5" font-family="monospace" fill="#71797E">BKG · dream machine · oracle</text><text x="100" y="40" text-anchor="middle" font-size="10" font-style="italic" font-family="Georgia" fill="#0F2419">Describe your dream space</text><rect x="20" y="50" width="160" height="34" rx="3" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.7"/><text x="100" y="72" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">"a sunlit kitchen, warm woods, Marin..."</text><text x="100" y="100" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">or upload a photo →</text></svg>
+          <div class="pl-example-surface">Dream Machine · Oracle</div>
+          <div class="pl-example-text">A first-time homeowner sees one input, one alternative path. No style picker grid to choose from.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot primary" data-name="04 Lane">4</span><span class="axis-dot active" data-name="05 Skill">5</span><span class="axis-dot active" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot active" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot primary" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Lane</span> and <span class="axis-primary">Trust posture</span>. Also touches Surface, Skill, Modality, Tempo.</div>
+      </div>
+      <div class="pl-piece-detail-why">A user who knows what to do next is a user who keeps going. The number-one cause of bounce is "I don't know where to start."</div>
+    </div>
+
+    <!-- 02 Emotional Arc -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">02</span><span class="name">Emotional Arc</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">The flow through a task is sequenced to match how the user feels at each step — curious at first, building confidence in the middle, committed by the end.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">curious</text><text x="14" y="36" font-size="6" font-family="Georgia" fill="#71797E">"How big should it be?"</text><text x="14" y="62" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">confident</text><text x="14" y="76" font-size="6" font-family="Georgia" fill="#71797E">1,800 sqft ÷ 600 = 3 tons</text><text x="14" y="102" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">committed</text><text x="14" y="116" font-size="6" font-family="Georgia" fill="#71797E">here's your bid sheet →</text><circle cx="160" cy="28" r="3" fill="#C9A84C"/><circle cx="170" cy="68" r="3" fill="#1A5C5C"/><circle cx="160" cy="108" r="3" fill="#8B2A1F"/></svg>
+          <div class="pl-example-surface">Equipment Schedule walkthrough</div>
+          <div class="pl-example-text">A homeowner moves from worry to confidence to commitment over three Floor levels — same page, three emotional gears.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="100" y="22" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">"4 credentials expiring soon."</text><rect x="20" y="32" width="160" height="16" rx="2" fill="#8B2A1F" opacity="0.10"/><text x="100" y="58" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">"Here's exactly what to do."</text><rect x="20" y="68" width="160" height="16" rx="2" fill="#1A5C5C" opacity="0.10"/><text x="100" y="96" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">+2,400 GreenFlash ✨</text><rect x="20" y="102" width="160" height="14" rx="2" fill="#C9A84C" opacity="0.18"/></svg>
+          <div class="pl-example-surface">renewal flow</div>
+          <div class="pl-example-text">A contractor moves from worry (red) to control (green) to celebration (gold) across the renewal pipeline.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><path d="M 10,80 Q 50,80 80,60 Q 110,40 140,40 Q 170,40 195,30" fill="none" stroke="#B87333" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="80" r="4" fill="#71797E"/><text x="10" y="100" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">overwhelmed</text><circle cx="100" cy="50" r="4" fill="#B87333"/><text x="100" y="70" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#B87333">you can do this</text><circle cx="190" cy="30" r="4" fill="#1A5C5C"/><text x="180" y="48" text-anchor="end" font-size="6" font-family="Georgia" font-style="italic" fill="#1A5C5C">let's start</text><text x="100" y="115" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="1">90 SECONDS</text></svg>
+          <div class="pl-example-surface">/intro cinematic</div>
+          <div class="pl-example-text">The 90-second cinematic intro is an emotional arc encoded as scroll position — mood as timeline.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot active" data-name="03 Stage">3</span><span class="axis-dot" data-name="04 Lane">4</span><span class="axis-dot" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot active" data-name="08 Tempo">8</span><span class="axis-dot primary" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot active" data-name="13 Horizon">13</span><span class="axis-dot active" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Emotional state</span>. Also touches Surface, Stage, Tempo, Time horizon, Trust posture.</div>
+      </div>
+      <div class="pl-piece-detail-why">People remember how something felt, not what it said. A platform that respects emotional state earns repeat visits.</div>
+    </div>
+
+    <!-- 03 Whisper -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">03</span><span class="name">Whisper</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">The first time a user meets a feature, a single sentence quietly explains what it is. After that, the whisper disappears forever — the feature speaks for itself.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="20" y="36" width="160" height="22" rx="3" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.6"/><text x="28" y="51" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">a sunlit kitchen...</text><circle cx="170" cy="47" r="6" fill="#B87333" opacity="0.85"/><path d="M 30,72 L 170,72" stroke="#B87333" stroke-width="0.4" stroke-dasharray="1 2"/><text x="30" y="84" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">Speak or type — both work the same way here.</text><text x="180" y="84" text-anchor="end" font-size="5" font-family="monospace" fill="#B87333">FIRST TIME ONLY</text></svg>
+          <div class="pl-example-surface">Dream Machine · Oracle</div>
+          <div class="pl-example-text">First time you see the input, one quiet line tells you it accepts voice. Second visit, it's gone.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="14" font-family="Georgia" font-style="italic" fill="#0F2419">$914K</text><text x="80" y="22" font-size="11" font-family="Georgia" fill="#B87333">$16.2K drawn</text><text x="14" y="38" font-size="7" font-family="Georgia" fill="#71797E">$897.8K remaining · 2%</text><rect x="14" y="48" width="170" height="2" fill="#B87333" opacity="0.2"/><rect x="14" y="48" width="4" height="2" fill="#B87333"/><path d="M 14,70 L 184,70" stroke="#B87333" stroke-width="0.4" stroke-dasharray="1 2"/><text x="14" y="84" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">These numbers update from your last AIA pay app</text><text x="14" y="94" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">— change one, the others shift.</text></svg>
+          <div class="pl-example-surface">budget cockpit</div>
+          <div class="pl-example-text">First view of the budget cockpit shows one line explaining how the numbers connect. Then the whisper retires.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><circle cx="100" cy="44" r="18" fill="none" stroke="#B87333" stroke-width="1"/><path d="M 100,32 L 100,44 L 108,52" fill="none" stroke="#B87333" stroke-width="1.5" stroke-linecap="round"/><path d="M 70,80 L 130,80" stroke="#B87333" stroke-width="0.4" stroke-dasharray="1 2"/><text x="100" y="92" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">Undo anything.</text><text x="100" y="102" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">We keep a draft of everything you change.</text></svg>
+          <div class="pl-example-surface">Time Machine icon</div>
+          <div class="pl-example-text">First time a user hovers the rewind icon, one sentence. Forever after, the icon is enough.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot" data-name="04 Lane">4</span><span class="axis-dot active" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot primary" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Trust posture</span> (the first-time signal). Also touches Surface and Skill.</div>
+      </div>
+      <div class="pl-piece-detail-why">A user shouldn't have to read a manual to understand a button. But after they've used it once, they shouldn't have to re-read the manual either.</div>
+    </div>
+
+    <!-- 04 Time Machine -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">04</span><span class="name">Time Machine</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">Anywhere in the Builder's Garden, you can step back in time to see what changed, recover what you abandoned, or undo what you regret. Fear of breaking something is the number-one reason users hesitate.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><line x1="20" y1="60" x2="180" y2="60" stroke="#B87333" stroke-width="0.5" stroke-dasharray="2 3"/><circle cx="40" cy="60" r="4" fill="#B87333"/><text x="40" y="78" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">created</text><circle cx="80" cy="60" r="4" fill="#B87333"/><text x="80" y="78" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">sqft</text><circle cx="120" cy="60" r="4" fill="#B87333"/><text x="120" y="78" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">jurisdiction</text><circle cx="160" cy="60" r="4" fill="#B87333" stroke="#0F2419" stroke-width="1.5"/><text x="160" y="78" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">result</text><text x="100" y="106" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="1">← REWIND TO ANY POINT</text></svg>
+          <div class="pl-example-surface">Estimating session</div>
+          <div class="pl-example-text">The Estimating flow keeps a stateful breadcrumb of every decision. Rewind to any point and continue from there.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="20" y="20" width="160" height="38" rx="2" fill="#F5F0E8" stroke="#8B2A1F" stroke-width="0.6" opacity="0.7"/><text x="28" y="34" font-size="7" font-family="Georgia" fill="#0F2419">Signed off · Lot 14 framing</text><text x="28" y="46" font-size="6" font-family="Georgia" fill="#8B2A1F" font-style="italic">⚠ wrong project</text><text x="100" y="76" text-anchor="middle" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">↶ UNDO LAST ACTION</text><rect x="20" y="86" width="160" height="22" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.6"/><text x="28" y="100" font-size="7" font-family="Georgia" fill="#0F2419">Returned to draft · no penalty</text></svg>
+          <div class="pl-example-surface">Daily Field Log</div>
+          <div class="pl-example-text">A foreman signs off the wrong field log. One tap returns it to draft. No audit flag, no escalation.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">Welcome back — your drafts</text><rect x="14" y="32" width="80" height="34" rx="2" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.6"/><text x="54" y="48" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">"Tuscan kitchen"</text><text x="54" y="60" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">3 days ago</text><rect x="106" y="32" width="80" height="34" rx="2" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.6"/><text x="146" y="48" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">"prairie addition"</text><text x="146" y="60" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">1 week ago</text><text x="100" y="92" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">All your sketches and prompts are preserved.</text></svg>
+          <div class="pl-example-surface">Dream Machine returning user</div>
+          <div class="pl-example-text">A homeowner abandons Dream halfway through. Coming back weeks later, every draft waits in the drafts tray.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot active" data-name="03 Stage">3</span><span class="axis-dot" data-name="04 Lane">4</span><span class="axis-dot" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot active" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot primary" data-name="13 Horizon">13</span><span class="axis-dot primary" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Time horizon</span> and <span class="axis-primary">Trust posture</span>. Also touches Surface, Stage, Emotional state.</div>
+      </div>
+      <div class="pl-piece-detail-why">Fear of breaking something keeps people from clicking. The Time Machine removes the fear; the platform becomes safe to explore.</div>
+    </div>
+
+    <!-- 05 Ask Anything -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">05</span><span class="name">Ask Anything</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">A search-and-ask box that's always one tap away and that knows what page you're on. You never have to leave the screen to ask "what does this word mean?"</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="8" font-family="Georgia" font-style="italic" fill="#0F2419">3 tons HVAC</text><text x="14" y="36" font-size="6" font-family="Georgia" fill="#71797E">requires Manual J for permit</text><rect x="14" y="50" width="170" height="20" rx="10" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.7"/><text x="22" y="63" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">what's a Manual J?</text><circle cx="172" cy="60" r="6" fill="#1A5C5C"/><text x="14" y="86" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">→ ACCA load calc, room by room</text><text x="14" y="98" font-size="6" font-family="Georgia" fill="#71797E">3 sources · ACCA · ASHRAE · CBC</text></svg>
+          <div class="pl-example-surface">Equipment Schedule</div>
+          <div class="pl-example-text">Ask "what's a Manual J?" on the Equipment Schedule page. Answer appears inline with sources, without leaving.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">Pay App #6 · $84,200</text><rect x="14" y="32" width="170" height="20" rx="10" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.7"/><text x="22" y="45" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">what's a retainage release?</text><text x="14" y="68" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">→ The 10% your client held back.</text><text x="14" y="84" font-size="6" font-family="Georgia" fill="#71797E">Your contract: $42,100 currently held.</text><text x="14" y="98" font-size="5" font-family="monospace" fill="#B87333" letter-spacing="1">PRE-FILLED FROM YOUR CONTRACT</text></svg>
+          <div class="pl-example-surface">AIA Pay Application</div>
+          <div class="pl-example-text">On the Pay App, "what's a retainage release?" answers with the contractor's own contract numbers filled in.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="170" height="20" rx="10" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.7"/><text x="22" y="27" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">what's prairie style?</text><text x="14" y="48" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">→ Wright. Horizontal lines, low rooflines.</text><rect x="14" y="62" width="170" height="20" rx="10" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.7"/><text x="22" y="75" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">how much would that cost?</text><text x="14" y="96" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">→ For Marin, $480–$620/sqft.</text></svg>
+          <div class="pl-example-surface">Dream Machine</div>
+          <div class="pl-example-text">Ask Anything pivots between aesthetic questions and budget questions fluidly. Same box, different intents.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot active" data-name="03 Stage">3</span><span class="axis-dot" data-name="04 Lane">4</span><span class="axis-dot primary" data-name="05 Skill">5</span><span class="axis-dot active" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Skill</span>. Also touches Surface, Stage, Modality.</div>
+      </div>
+      <div class="pl-piece-detail-why">Most user friction is "I don't know what this word means." Ask Anything kills that friction wherever it appears.</div>
+    </div>
+
+    <!-- 06 Pro Toggle -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">06</span><span class="name">Pro Toggle</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">A single visible switch at the top of every page. Flip it: labels change from plain language to pro vocabulary, ordering changes from human-default to operational. The underlying data doesn't change.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">HUMAN MODE</text><text x="14" y="38" font-size="9" font-family="Georgia" font-style="italic" fill="#0F2419">HVAC size: 3 tons</text><text x="14" y="52" font-size="7" font-family="Georgia" fill="#71797E">(typical for your space)</text><line x1="14" y1="64" x2="186" y2="64" stroke="#B87333" stroke-width="0.4" stroke-dasharray="2 2"/><text x="14" y="78" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">PRO MODE</text><text x="14" y="94" font-size="9" font-family="Georgia" font-style="italic" fill="#0F2419">Tonnage: 3.00</text><text x="14" y="108" font-size="6" font-family="monospace" fill="#71797E">UPC 422.1 · ACCA Manual J fallback</text></svg>
+          <div class="pl-example-surface">Equipment Schedule</div>
+          <div class="pl-example-text">Same number, two labels. Homeowner sees the first; MEP sub sees the second.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">HUMAN</text><rect x="14" y="26" width="52" height="22" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="40" y="40" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">framing</text><rect x="72" y="26" width="52" height="22" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="98" y="40" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">roof</text><rect x="130" y="26" width="52" height="22" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="156" y="40" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">interior</text><line x1="14" y1="58" x2="186" y2="58" stroke="#B87333" stroke-width="0.4" stroke-dasharray="2 2"/><text x="14" y="72" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">PRO</text><rect x="14" y="84" width="80" height="4" fill="#1A5C5C"/><rect x="60" y="92" width="80" height="4" fill="#B87333"/><rect x="100" y="100" width="86" height="4" fill="#8B2A1F"/><text x="14" y="116" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="0.5">CRITICAL PATH · WEEKS 8–22</text></svg>
+          <div class="pl-example-surface">project pipeline</div>
+          <div class="pl-example-text">Human mode: three friendly cards. Pro mode: Gantt-style critical-path timeline. Same project.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">HUMAN</text><text x="14" y="38" font-size="8" font-family="Georgia" font-style="italic" fill="#0F2419">"We framed the west wall today."</text><line x1="14" y1="58" x2="186" y2="58" stroke="#B87333" stroke-width="0.4" stroke-dasharray="2 2"/><text x="14" y="72" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">PRO</text><text x="14" y="86" font-size="6" font-family="monospace" fill="#0F2419">Activity: rough framing</text><text x="14" y="98" font-size="6" font-family="monospace" fill="#0F2419">Elev: W · 80% complete</text><text x="14" y="110" font-size="6" font-family="monospace" fill="#0F2419">Sched var: +1d</text></svg>
+          <div class="pl-example-surface">Daily Field Log</div>
+          <div class="pl-example-text">Plain-spoken in human mode. Structured CSI codes in pro mode. The pro doesn't sacrifice clarity to gain precision.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot active" data-name="04 Lane">4</span><span class="axis-dot primary" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot active" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Skill</span> (continuous signal). Also touches Lane and Cultural frame.</div>
+      </div>
+      <div class="pl-piece-detail-why">A 9-year-old and a 30-year master plumber can both use the same screen without either feeling patronized.</div>
+    </div>
+
+    <!-- 07 Progressive Reveal -->
+    <div class="pl-piece-detail fade-up" data-cat="constitutional">
+      <div class="pl-piece-detail-header"><span class="num">07</span><span class="name">Progressive Reveal</span><span class="cat-badge">Constitutional</span></div>
+      <div class="pl-piece-detail-plain">Advanced controls only appear after the user has used the basic controls a few times. Power features earn their way onto the screen — they don't ambush newcomers.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">FIRST LOG</text><rect x="14" y="28" width="170" height="20" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="42" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">what got done today?</text><line x1="14" y1="60" x2="186" y2="60" stroke="#B87333" stroke-width="0.4" stroke-dasharray="2 2"/><text x="14" y="74" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">AFTER 3 LOGS</text><rect x="14" y="82" width="170" height="16" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="93" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">+ weather · crew · materials</text></svg>
+          <div class="pl-example-surface">Daily Field Log</div>
+          <div class="pl-example-text">First log: one question. After three logs, weather and crew and materials sections appear.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">FIRST VISIT</text><rect x="14" y="28" width="170" height="22" rx="2" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.5"/><text x="22" y="43" font-size="7" font-family="Georgia" font-style="italic" fill="#71797E">describe your space...</text><line x1="14" y1="62" x2="186" y2="62" stroke="#B87333" stroke-width="0.4" stroke-dasharray="2 2"/><text x="14" y="76" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">AFTER FIRST RENDER</text><rect x="14" y="84" width="50" height="14" rx="2" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.4"/><text x="39" y="94" text-anchor="middle" font-size="5" font-family="Georgia" fill="#71797E">style</text><rect x="70" y="84" width="50" height="14" rx="2" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.4"/><text x="95" y="94" text-anchor="middle" font-size="5" font-family="Georgia" fill="#71797E">palette</text><rect x="126" y="84" width="58" height="14" rx="2" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.4"/><text x="155" y="94" text-anchor="middle" font-size="5" font-family="Georgia" fill="#71797E">scale</text></svg>
+          <div class="pl-example-surface">Dream Machine Oracle</div>
+          <div class="pl-example-text">First visit: just describe. After first successful render: style mixer, palette extractor, scale slider appear.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">FIRST PAY APP</text><text x="14" y="36" font-size="8" font-family="Georgia" font-style="italic" fill="#0F2419">amount this period: $___</text><line x1="14" y1="56" x2="186" y2="56" stroke="#B87333" stroke-width="0.4" stroke-dasharray="2 2"/><text x="14" y="70" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="1">AFTER 3 PAY APPS</text><text x="14" y="86" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">+ retainage holdback adjustment</text><text x="14" y="100" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">+ schedule of values variance</text><text x="14" y="114" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">+ stored materials breakout</text></svg>
+          <div class="pl-example-surface">AIA Pay Application</div>
+          <div class="pl-example-text">First pay app: just the amount. By the third, three power controls appear at the top — earned.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot" data-name="04 Lane">4</span><span class="axis-dot primary" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot primary" data-name="13 Horizon">13</span><span class="axis-dot active" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Skill</span> and <span class="axis-primary">Time horizon</span> (within-project tenure).</div>
+      </div>
+      <div class="pl-piece-detail-why">New users get a clean room. Power users get a workshop. The room becomes the workshop as the user proves they want one.</div>
+    </div>
+
+    <!-- CATEGORY 2 -->
+    <div class="pl-category-header fade-up">
+      <span class="cat-num">02</span>
+      <span class="cat-title">The Platform Primitives — federation contract</span>
+      <span class="cat-count">4 pieces</span>
+    </div>
+
+    <!-- 08 TrustStrip -->
+    <div class="pl-piece-detail fade-up" data-cat="platform">
+      <div class="pl-piece-detail-header"><span class="num">08</span><span class="name">TrustStrip</span><span class="cat-badge">Platform</span></div>
+      <div class="pl-piece-detail-plain">Every important fact on a page wears a small badge showing where it came from, when it was last verified, and whether anyone disagrees. Provenance is visible without being noisy.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="28" font-size="11" font-family="Georgia" font-style="italic" fill="#0F2419">3.00 tons HVAC</text><text x="14" y="42" font-size="6" font-family="Georgia" fill="#71797E">1,800 sqft / 600 sqft per ton</text><rect x="14" y="56" width="170" height="20" rx="3" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.6"/><circle cx="22" cy="66" r="2.5" fill="#1A5C5C"/><text x="30" y="68" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">3 SOURCES</text><text x="84" y="68" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">UPDATED 2D AGO</text><text x="156" y="68" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">UPC 422.1</text><text x="14" y="92" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">→ ASHRAE 90.1 · CBC 1004.5 · UPC 422.1</text></svg>
+          <div class="pl-example-surface">Equipment Schedule</div>
+          <div class="pl-example-text">The HVAC sizing claim wears a small green strip: 3 sources, freshness, primary citation.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="22" font-size="9" font-family="Georgia" font-style="italic" fill="#0F2419">Permit required</text><text x="14" y="36" font-size="6" font-family="Georgia" fill="#71797E">Marin County · structural alteration</text><rect x="14" y="48" width="170" height="20" rx="3" fill="#F5F0E8" stroke="#B87333" stroke-width="0.6"/><circle cx="22" cy="58" r="2.5" fill="#1A5C5C"/><text x="30" y="60" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">3 VERIFIED</text><circle cx="82" cy="58" r="2.5" fill="#B87333"/><text x="90" y="60" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">1 CONTESTED</text><text x="144" y="60" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">SEE NOTES</text><text x="14" y="84" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">⚠ Marin's permit threshold differs from CA baseline.</text><text x="14" y="98" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">The local rule prevails. Both shown.</text></svg>
+          <div class="pl-example-surface">Code Compliance Lookup</div>
+          <div class="pl-example-text">Three verified, one contested. The user sees the disagreement instead of a fake-confident answer.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="60" height="46" rx="2" fill="#EFE8DC" stroke="#B87333" stroke-width="0.4"/><text x="44" y="38" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#71797E">Type X</text><text x="44" y="48" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#71797E">Gypsum 5/8"</text><text x="82" y="28" font-size="8" font-family="Georgia" font-style="italic" fill="#0F2419">UL X-class fire-rated</text><text x="82" y="40" font-size="6" font-family="Georgia" fill="#71797E">1-hour assembly</text><rect x="82" y="50" width="104" height="18" rx="3" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="86" y="61" font-size="5" font-family="monospace" fill="#0F2419" letter-spacing="0.5">3 SOURCES · 14D AGO · OSHA-CITED</text><text x="14" y="88" font-size="6" font-family="Georgia" font-style="italic" fill="#71797E">Suppliers stocking this assembly nearby:</text><text x="14" y="102" font-size="6" font-family="Georgia" fill="#0F2419">Pacific Drywall · Marin Lumber · USG Direct</text></svg>
+          <div class="pl-example-surface">supplier marketplace</div>
+          <div class="pl-example-text">A material spec on a supplier listing also wears a TrustStrip. Sources, freshness, safety-cited concerns surface.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot active" data-name="01 Domain">1</span><span class="axis-dot" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot active" data-name="04 Lane">4</span><span class="axis-dot active" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot active" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot primary" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Trust posture</span>. Also touches Domain, Lane, Skill, Cultural frame (jurisdiction).</div>
+      </div>
+      <div class="pl-piece-detail-why">Without provenance, AI-generated knowledge is rumor. With provenance, it's evidence. The TrustStrip is how the platform earns the right to be trusted.</div>
+    </div>
+
+    <!-- 09 Three-Source Rule -->
+    <div class="pl-piece-detail fade-up" data-cat="platform">
+      <div class="pl-piece-detail-header"><span class="num">09</span><span class="name">Three-Source Rule</span><span class="cat-badge">Platform</span></div>
+      <div class="pl-piece-detail-plain">Nothing in the Builder's Garden renders as a fact unless three independent sources agree. If the sources disagree, the user sees all sides — not a single confident wrong answer.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><circle cx="50" cy="44" r="14" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.8"/><text x="50" y="42" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#0F2419">UPC</text><text x="50" y="50" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#0F2419">422.1</text><circle cx="100" cy="36" r="14" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.8"/><text x="100" y="34" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#0F2419">ACCA</text><text x="100" y="42" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#0F2419">Manual J</text><circle cx="150" cy="44" r="14" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.8"/><text x="150" y="42" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#0F2419">ASHRAE</text><text x="150" y="50" text-anchor="middle" font-size="5" font-family="Georgia" font-style="italic" fill="#0F2419">90.1</text><path d="M 60,52 L 142,52" stroke="#1A5C5C" stroke-width="0.6" stroke-dasharray="2 2"/><text x="100" y="86" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">→ 600 sqft/ton SFR rule of thumb</text><text x="100" y="102" text-anchor="middle" font-size="5" font-family="monospace" fill="#1A5C5C" letter-spacing="1">3 SOURCES CONVERGE · RENDERS</text></svg>
+          <div class="pl-example-surface">HVAC sizing rule</div>
+          <div class="pl-example-text">UPC, ACCA, and ASHRAE all agree on the rule of thumb. Three sources converge → the claim renders.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="100" y="22" text-anchor="middle" font-size="8" font-family="Georgia" font-style="italic" fill="#0F2419">Permit fee · structural alteration</text><text x="100" y="36" text-anchor="middle" font-size="9" font-family="Georgia" font-style="italic" fill="#B87333">$1,420 — $1,640</text><rect x="14" y="50" width="55" height="36" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="41" y="64" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">ASHRAE</text><text x="41" y="78" text-anchor="middle" font-size="7" font-family="Georgia" fill="#0F2419">$1,420</text><rect x="72" y="50" width="55" height="36" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="99" y="64" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">MARIN BLDG</text><text x="99" y="78" text-anchor="middle" font-size="7" font-family="Georgia" fill="#0F2419">$1,500</text><rect x="130" y="50" width="55" height="36" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="157" y="64" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">PERMIT LOGS</text><text x="157" y="78" text-anchor="middle" font-size="7" font-family="Georgia" fill="#0F2419">$1,640</text><text x="100" y="106" text-anchor="middle" font-size="5" font-family="monospace" fill="#1A5C5C" letter-spacing="1">RANGE SHOWN · 3 SOURCES</text></svg>
+          <div class="pl-example-surface">Marin permit fee</div>
+          <div class="pl-example-text">Three sources agree on a range, not a single number. The platform shows the range, not a fake-precise figure.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="100" y="22" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">Manual J for 1,800 sqft</text><text x="100" y="36" text-anchor="middle" font-size="9" font-family="Georgia" font-style="italic" fill="#8B2A1F">2.8–3.2 tons</text><rect x="14" y="50" width="172" height="44" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.6"/><text x="22" y="64" font-size="6" font-family="monospace" fill="#B87333" letter-spacing="0.5">⚠ ESTIMATED, NOT VERIFIED</text><text x="22" y="76" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">Only 2 sources for your microclimate.</text><text x="22" y="88" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">Real Manual J requires site survey.</text><text x="100" y="110" text-anchor="middle" font-size="5" font-family="monospace" fill="#B87333" letter-spacing="1">3 SOURCES NOT MET · CAVEAT SHOWN</text></svg>
+          <div class="pl-example-surface">when sources are insufficient</div>
+          <div class="pl-example-text">When fewer than three sources corroborate, the platform doesn't hide it. The user sees the caveat and the path to real verification.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot primary" data-name="01 Domain">1</span><span class="axis-dot" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot" data-name="04 Lane">4</span><span class="axis-dot" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot active" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot primary" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Domain</span> and <span class="axis-primary">Trust posture</span>. Also touches Cultural frame (jurisdiction-specific sources).</div>
+      </div>
+      <div class="pl-piece-detail-why">"I asked the AI" is not a source. Three independent sources are. This is what separates a knowledge graph from a chatbot.</div>
+    </div>
+
+    <!-- 10 Federation Contract -->
+    <div class="pl-piece-detail fade-up" data-cat="platform">
+      <div class="pl-piece-detail-header"><span class="num">10</span><span class="name">Federation Contract</span><span class="cat-badge">Platform</span></div>
+      <div class="pl-piece-detail-plain">Every page on every garden follows the same shape — same header, same fonts, same JSON-LD, same cross-link discipline. Users moving between gardens never feel lost.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="82" height="18" rx="1" fill="#EFE8DC" stroke="#B87333" stroke-width="0.4"/><text x="55" y="26" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">Knowledge Gardens</text><rect x="14" y="36" width="82" height="60" rx="1" fill="#F5F0E8" stroke="#B87333" stroke-width="0.3"/><text x="55" y="68" text-anchor="middle" font-size="9" font-family="Georgia" font-style="italic" fill="#0F2419">BKG</text><text x="55" y="80" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">Builder's</text><rect x="104" y="14" width="82" height="18" rx="1" fill="#EFE8DC" stroke="#B87333" stroke-width="0.4"/><text x="145" y="26" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">Knowledge Gardens</text><rect x="104" y="36" width="82" height="60" rx="1" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.3"/><text x="145" y="68" text-anchor="middle" font-size="9" font-family="Georgia" font-style="italic" fill="#0F2419">OKG</text><text x="145" y="80" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">Orchid</text><text x="100" y="112" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="1">SAME HEADER · SAME TYPE · SAME RHYTHM</text></svg>
+          <div class="pl-example-surface">cross-garden navigation</div>
+          <div class="pl-example-text">A user jumps from BKG to OKG and the header, type, and rhythm are identical. Different content; same building.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="20" width="172" height="22" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="34" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">Sara Ortega · C-10 Electrical · CA</text><text x="14" y="56" font-size="6" font-family="Georgia" fill="#71797E">Certifications (auto-linked from EdKG when live):</text><rect x="14" y="62" width="55" height="14" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.4"/><text x="41" y="72" text-anchor="middle" font-size="5" font-family="monospace" fill="#0F2419">OSHA-10</text><rect x="74" y="62" width="55" height="14" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.4"/><text x="101" y="72" text-anchor="middle" font-size="5" font-family="monospace" fill="#0F2419">EVITP</text><rect x="134" y="62" width="55" height="14" rx="2" fill="#F5F0E8" stroke="#71797E" stroke-width="0.4" stroke-dasharray="2 2"/><text x="161" y="72" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">+ EdKG</text><text x="14" y="96" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="1">→ CROSS-LINK READY · NO RETYPING</text></svg>
+          <div class="pl-example-surface">contractor profile</div>
+          <div class="pl-example-text">A specialty contractor's profile pre-anchors cross-links to a future EdKG. The federation contract is the wire.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">/api/v1/mcp</text><rect x="14" y="28" width="172" height="70" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="42" font-size="6" font-family="monospace" fill="#0F2419">{"@type":"EquipmentSchedule",</text><text x="22" y="54" font-size="6" font-family="monospace" fill="#0F2419"> "hvacTonnage":3.0,</text><text x="22" y="66" font-size="6" font-family="monospace" fill="#0F2419"> "sources":["UPC 422.1",</text><text x="22" y="78" font-size="6" font-family="monospace" fill="#0F2419"> "ASHRAE 90.1","ACCA J"],</text><text x="22" y="90" font-size="6" font-family="monospace" fill="#0F2419"> "updated":"2026-05-23"}</text><text x="14" y="112" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="1">SAME JSON-LD SHAPE EVERY GARDEN</text></svg>
+          <div class="pl-example-surface">MCP endpoint</div>
+          <div class="pl-example-text">An agent calls BKG's MCP endpoint and gets JSON-LD in the same shape as OKG, TKG, HKG. Federation for machines.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot active" data-name="01 Domain">1</span><span class="axis-dot primary" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot primary" data-name="04 Lane">4</span><span class="axis-dot" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot active" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Surface</span> (cross-garden continuity) and <span class="axis-primary">Lane</span> (Machine especially). Also touches Domain.</div>
+      </div>
+      <div class="pl-piece-detail-why">Cross-garden navigation is the platform's superpower. The federation contract is what makes a 55-garden constellation feel like one native experience.</div>
+    </div>
+
+    <!-- 11 Machine-Legible Everything -->
+    <div class="pl-piece-detail fade-up" data-cat="platform">
+      <div class="pl-piece-detail-header"><span class="num">11</span><span class="name">Machine-Legible Everything</span><span class="cat-badge">Platform</span></div>
+      <div class="pl-piece-detail-plain">Every page, every entity, every claim has a version a robot can read. The agent is not an afterthought — it's a first-class user, with the same access humans get.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="14" y="20" font-size="6" font-family="monospace" fill="#71797E" letter-spacing="1">AGENT REQUEST</text><rect x="14" y="26" width="172" height="20" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="40" font-size="6" font-family="monospace" fill="#0F2419">GET /api/v1/mcp/equipment-schedule</text><text x="100" y="62" text-anchor="middle" font-size="6" font-family="monospace" fill="#B87333">↓</text><rect x="14" y="70" width="172" height="40" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="22" y="84" font-size="6" font-family="monospace" fill="#0F2419">{ tonnage: 3.0, fixtures: {...},</text><text x="22" y="96" font-size="6" font-family="monospace" fill="#0F2419"> sources: [...], updated: ... }</text><text x="22" y="108" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="0.5">SAME DATA THE HUMAN SAW</text></svg>
+          <div class="pl-example-surface">MCP endpoint</div>
+          <div class="pl-example-text">An agent pulls the entire Equipment Schedule as structured JSON. Same data the human page renders; no scraping.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="68" height="92" rx="2" fill="#F5F0E8" stroke="#71797E" stroke-width="0.4"/><text x="48" y="30" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">Procore</text><text x="48" y="44" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">replacement</text><text x="48" y="64" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">consumes</text><text x="48" y="78" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">BKG Pay App</text><path d="M 86,60 L 118,60" stroke="#B87333" stroke-width="0.8"/><path d="M 110,55 L 118,60 L 110,65" fill="#B87333"/><rect x="120" y="14" width="68" height="92" rx="2" fill="#F5F0E8" stroke="#B87333" stroke-width="0.4"/><text x="154" y="34" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">JSON-LD</text><text x="154" y="48" text-anchor="middle" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">Transaction</text><text x="154" y="68" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">amount</text><text x="154" y="78" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">retainage</text><text x="154" y="88" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E">approvals</text></svg>
+          <div class="pl-example-surface">third-party integration</div>
+          <div class="pl-example-text">A Procore-replacement system reads BKG's AIA Pay App via JSON-LD and ingests it as a structured transaction.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><text x="100" y="22" text-anchor="middle" font-size="7" font-family="Georgia" font-style="italic" fill="#0F2419">"Renew my pool permit"</text><text x="100" y="36" text-anchor="middle" font-size="5" font-family="monospace" fill="#71797E" letter-spacing="1">HOMEOWNER → AGENT</text><path d="M 100,40 L 100,52" stroke="#B87333" stroke-width="0.6"/><path d="M 95,48 L 100,55 L 105,48" fill="#B87333"/><rect x="34" y="58" width="132" height="32" rx="2" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="100" y="70" text-anchor="middle" font-size="6" font-family="monospace" fill="#0F2419">agent reads permit JSON</text><text x="100" y="80" text-anchor="middle" font-size="6" font-family="monospace" fill="#0F2419">submits via Marin .gov API</text><text x="100" y="106" text-anchor="middle" font-size="5" font-family="monospace" fill="#1A5C5C" letter-spacing="1">PERMIT RENEWED · NO HUMAN STEPS</text></svg>
+          <div class="pl-example-surface">agent on user's behalf</div>
+          <div class="pl-example-text">An agent acting for a homeowner reads the structured permit data, submits the renewal via API, and reports back.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot active" data-name="02 Surface">2</span><span class="axis-dot" data-name="03 Stage">3</span><span class="axis-dot primary" data-name="04 Lane">4</span><span class="axis-dot" data-name="05 Skill">5</span><span class="axis-dot primary" data-name="06 Modality">6</span><span class="axis-dot active" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Lane</span> (Machine) and <span class="axis-primary">Modality</span> (agent-API). Also touches Surface and Device class.</div>
+      </div>
+      <div class="pl-piece-detail-why">AI agents are becoming users. Plan for them — or lose the user who delegated their work to one.</div>
+    </div>
+
+    <!-- CATEGORY 3 -->
+    <div class="pl-category-header fade-up">
+      <span class="cat-num">03</span>
+      <span class="cat-title">The Dimensional Renderings — new for 2026</span>
+      <span class="cat-count">9 pieces</span>
+    </div>
+
+    <!-- 12 Infinite Descent -->
+    <div class="pl-piece-detail fade-up" data-cat="rendering">
+      <div class="pl-piece-detail-header"><span class="num">12</span><span class="name">Infinite Descent</span><span class="cat-badge">Rendering</span></div>
+      <div class="pl-piece-detail-plain">Every workflow has floors. Floor 0 is a plain question. Each successive floor goes deeper into the math, the code, the procurement, the agent payload. Every user finds their floor without being gated.</div>
+      <div class="pl-examples-row">
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.5"/><text x="22" y="24" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F0 · How big HVAC?</text><rect x="14" y="32" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.5"/><text x="22" y="42" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F2 · the math</text><rect x="14" y="50" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#B87333" stroke-width="0.6"/><text x="22" y="60" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F3 · the catch</text><rect x="14" y="68" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="22" y="78" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F4 · the action</text><rect x="14" y="86" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="22" y="96" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F5 · the code</text><rect x="14" y="104" width="172" height="12" rx="1" fill="#F5F0E8" stroke="#71797E" stroke-width="0.4"/><text x="22" y="113" font-size="5" font-family="monospace" fill="#0F2419">F6 · JSON payload</text></svg>
+          <div class="pl-example-surface">Equipment Schedule</div>
+          <div class="pl-example-text">Six floors. A homeowner stops at F2. A GC stops at F4. An MEP sub stops at F5. An agent reads F6. Same page.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.5"/><text x="22" y="24" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F0 · What do I bill?</text><rect x="14" y="34" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="44" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F1 · this period's total</text><rect x="14" y="54" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="64" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F3 · variance vs estimate</text><rect x="14" y="74" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="22" y="84" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F5 · retainage rules per state</text><rect x="14" y="94" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#71797E" stroke-width="0.4"/><text x="22" y="104" font-size="5" font-family="monospace" fill="#0F2419">F6 · agent draft submission</text></svg>
+          <div class="pl-example-surface">AIA Pay Application</div>
+          <div class="pl-example-text">A GC stops at F3 to confirm variance. The bank reviewer stops at F5. The agent submits at F6.</div>
+        </div>
+        <div class="pl-example">
+          <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="120" fill="#F8F3EB"/><rect x="14" y="14" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#C9A84C" stroke-width="0.5"/><text x="22" y="24" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F0 · What permits?</text><rect x="14" y="34" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#B87333" stroke-width="0.5"/><text x="22" y="44" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F2 · filing checklist</text><rect x="14" y="54" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="22" y="64" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F4 · pre-filled forms (PDF)</text><rect x="14" y="74" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#1A5C5C" stroke-width="0.5"/><text x="22" y="84" font-size="6" font-family="Georgia" font-style="italic" fill="#0F2419">F5 · jurisdiction code matrix</text><rect x="14" y="94" width="172" height="14" rx="1" fill="#F5F0E8" stroke="#71797E" stroke-width="0.4"/><text x="22" y="104" font-size="5" font-family="monospace" fill="#0F2419">F6 · API submission to .gov</text></svg>
+          <div class="pl-example-surface">Permit search</div>
+          <div class="pl-example-text">A homeowner: "I need permits." The platform descends through checklist, pre-filled forms, code, API submission.</div>
+        </div>
+      </div>
+      <div class="pl-axes-row"><div class="pl-axes-row-label">Axes touched</div>
+        <div class="pl-axes-dots">
+          <span class="axis-dot" data-name="01 Domain">1</span><span class="axis-dot" data-name="02 Surface">2</span><span class="axis-dot active" data-name="03 Stage">3</span><span class="axis-dot active" data-name="04 Lane">4</span><span class="axis-dot primary" data-name="05 Skill">5</span><span class="axis-dot" data-name="06 Modality">6</span><span class="axis-dot" data-name="07 Device">7</span><span class="axis-dot" data-name="08 Tempo">8</span><span class="axis-dot" data-name="09 Emotion">9</span><span class="axis-dot" data-name="10 Cultural">10</span><span class="axis-dot" data-name="11 Access">11</span><span class="axis-dot" data-name="12 Economic">12</span><span class="axis-dot" data-name="13 Horizon">13</span><span class="axis-dot" data-name="14 Trust">14</span>
+        </div>
+        <div class="pl-axes-names">Primary: <span class="axis-primary">Skill</span> (depth-scaling). Also touches Stage and Lane.</div>
+      </div>
+      <div class="pl-piece-detail-why">A homeowner stops at Floor 2. A GC stops at Floor 4. Same page. Both happy. No one is gated. No one is patronized.</div>
+    </div>
+
+
+    <!-- Closing note for partial deep-dive -->
+    <div class="pl-explainer fade-up" style="margin-top: 60px; border-left-color: var(--steel); background: var(--parchment-warm);">
+      <h3 style="color: var(--steel);">Pieces 13 — 20 forthcoming</h3>
+      <p>The remaining eight pieces — <em>Modality Mirror, Tempo Adapt, Cultural Render, Accessibility Adapt, Cross-Surface Bridge, Lifecycle Memory, Trust Posture Adapt,</em> and the <em>Stance Card</em> — are summarized in the grid above. Their full deep-dives, in the same format (plain English + three BKG examples + 14-axis indicator + why it matters), are queued for the next session in Cowork with parallel agents.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STANCE CARD / 14 DIMENSIONS ============ -->
+<section class="stance" id="stance">
+  <div class="container">
+    <div class="section-label fade-up">The Stance Card</div>
+    <h2 class="section-title fade-up">Fourteen axes. One structured truth.</h2>
+    <p class="section-subtitle fade-up">Every primitive reads the Stance Card before rendering. Every agent reads it to act on the user's behalf. This is what <em>"all four lanes always"</em> means in code.</p>
+
+    <div class="stance-card-viz fade-up">
+<span class="comment">// the operational mechanism every primitive reads</span><br>
+<span class="type">StanceCard</span> <span class="punct">{</span><br>
+&nbsp;&nbsp;<span class="axis">domain</span><span class="punct">:</span> <span class="type">"construction" | "orchids" | "toxicology" | …</span><br>
+&nbsp;&nbsp;<span class="axis">surface</span><span class="punct">:</span> <span class="type">"garden" | "dream" | "killer-app"</span><br>
+&nbsp;&nbsp;<span class="axis">stage</span><span class="punct">:</span> <span class="type">domain-specific lifecycle stage</span><br>
+&nbsp;&nbsp;<span class="axis">lane</span><span class="punct">:</span> <span class="type">"administrator" | "professional" | "public" | "machine"</span><br>
+&nbsp;&nbsp;<span class="axis">skill_signal</span><span class="punct">:</span> <span class="type">0.0–1.0 continuous</span><br>
+&nbsp;&nbsp;<span class="axis">modality</span><span class="punct">:</span> <span class="type">"visual" | "voice" | "gesture" | "agent-api"</span><br>
+&nbsp;&nbsp;<span class="axis">device_class</span><span class="punct">:</span> <span class="type">"phone" | "tablet" | "desktop" | "xr" | "voice" | "agent"</span><br>
+&nbsp;&nbsp;<span class="axis">tempo</span><span class="punct">:</span> <span class="type">"leisurely" | "focused" | "urgent" | "emergency"</span><br>
+&nbsp;&nbsp;<span class="axis">emotional_signal</span><span class="punct">:</span> <span class="type">inferred sentiment, optional override</span><br>
+&nbsp;&nbsp;<span class="axis">locale</span><span class="punct">:</span> <span class="type">{ language, jurisdiction, units, currency, conventions }</span><br>
+&nbsp;&nbsp;<span class="axis">accessibility</span><span class="punct">:</span> <span class="type">{ vision, hearing, motor, cognitive, neurodivergent }</span><br>
+&nbsp;&nbsp;<span class="axis">economic_signal</span><span class="punct">:</span> <span class="type">optional, only when relevant</span><br>
+&nbsp;&nbsp;<span class="axis">time_horizon</span><span class="punct">:</span> <span class="type">"now" | "today" | "this-week" | "this-project" | "lifetime"</span><br>
+&nbsp;&nbsp;<span class="axis">trust_posture</span><span class="punct">:</span> <span class="type">0.0–1.0, inferred from tenure + behavior</span><br>
+<span class="punct">}</span>
+    </div>
+
+    <div class="dimensions-grid stagger fade-up">
+      <div class="dim"><div class="dim-num">01</div><div class="dim-name">Knowledge domain</div><div class="dim-range">construction · botany · toxicology · law · health · …</div></div>
+      <div class="dim"><div class="dim-num">02</div><div class="dim-name">Surface</div><div class="dim-range">garden · dream · killer-app</div></div>
+      <div class="dim"><div class="dim-num">03</div><div class="dim-name">Lifecycle stage</div><div class="dim-range">domain-specific stages</div></div>
+      <div class="dim"><div class="dim-num">04</div><div class="dim-name">User lane</div><div class="dim-range">admin · pro · public · machine</div></div>
+      <div class="dim"><div class="dim-num">05</div><div class="dim-name">Skill level</div><div class="dim-range">zero-knowledge → master</div></div>
+      <div class="dim"><div class="dim-num">06</div><div class="dim-name">Modality</div><div class="dim-range">visual · voice · gesture · agent</div></div>
+      <div class="dim"><div class="dim-num">07</div><div class="dim-name">Device class</div><div class="dim-range">phone · desktop · xr · agent endpoint</div></div>
+      <div class="dim"><div class="dim-num">08</div><div class="dim-name">Time pressure</div><div class="dim-range">leisurely → emergency</div></div>
+      <div class="dim"><div class="dim-num">09</div><div class="dim-name">Emotional state</div><div class="dim-range">curious · anxious · confident · mournful</div></div>
+      <div class="dim"><div class="dim-num">10</div><div class="dim-name">Cultural frame</div><div class="dim-range">language · jurisdiction · units</div></div>
+      <div class="dim"><div class="dim-num">11</div><div class="dim-name">Accessibility</div><div class="dim-range">vision · hearing · motor · cognitive</div></div>
+      <div class="dim"><div class="dim-num">12</div><div class="dim-name">Economic position</div><div class="dim-range">$0 DIY → institutional</div></div>
+      <div class="dim"><div class="dim-num">13</div><div class="dim-name">Time horizon</div><div class="dim-range">this minute → my life</div></div>
+      <div class="dim"><div class="dim-num">14</div><div class="dim-name">Trust posture</div><div class="dim-range">first-time skeptic → long-term advocate</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FRONTIER / 55 GARDENS ============ -->
+<section class="frontier" id="frontier">
+  <div class="container">
+    <div class="section-label fade-up">The Frontier</div>
+    <h2 class="section-title fade-up">Fifty-five gardens. One template.</h2>
+    <p class="section-subtitle fade-up">Three deployed. Two building. Ten industry-scoped post-seed. Forty research-grade frontier gardens parked behind a strict gate — frontier gardens do not get built until HKG and BKG generate MRR. Every garden inherits the same skeleton; the skin changes per domain.</p>
+
+    <div class="counter fade-up" data-target="55">0</div>
+    <div class="section-label fade-up" style="margin-top: -10px;">Gardens in the roster</div>
+
+    <div class="frontier-roster stagger">
+      <div class="layer-card">
+        <div class="layer-num">3</div>
+        <div class="layer-name">Deployed</div>
+        <div class="layer-desc">Proof the pattern deploys. Live in production with real users, real data, real revenue paths.</div>
+        <div class="layer-codes">OKG · BKG · TKG</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">2</div>
+        <div class="layer-name">Building</div>
+        <div class="layer-desc">The cash engine and its consumer gravity well. MLP in progress, data layers wiring.</div>
+        <div class="layer-codes">HKG · MKG (Marker)</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">10</div>
+        <div class="layer-name">Industry-Scoped</div>
+        <div class="layer-desc">Post-seed build queue. Combined Year-5 ARR target: $460M+. Briefs written, anchor sources identified.</div>
+        <div class="layer-codes">LKG · EdKG · FKG · AgKG · EKG · REKG · PKG-pharma · IKG · GKG · NMK</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">40</div>
+        <div class="layer-name">Frontier</div>
+        <div class="layer-desc">Research-grade. Gated until HKG + BKG MRR. Five tiers: build-now · year 2 · years 3–5 · civilization-scale · consciousness frontier.</div>
+        <div class="layer-codes">EXT · SND · MIG · MND · FOS · COL · MYC · … (33 more)</div>
+      </div>
+    </div>
+
+    <div class="frontier-cta fade-up">
+      <a href="http://frontiermap.theknowledgegardens.com" target="_blank" rel="noopener">Explore the canonical Frontier Map →</a>
+      <span class="meta">FRONTIER_MAP_PORTABLE.md v2 · 2026-05-25 · the source of truth</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CURRENT FOCUS / BKG ============ -->
+<section class="focus" id="focus">
+  <div class="container">
+    <div class="section-label fade-up">Current Focus</div>
+    <h2 class="section-title fade-up">The Builder's Killer App rehaul.</h2>
+    <p class="section-subtitle fade-up">The Pattern Language gets its first comprehensive application on the surface that pays for everything else — the Administrator lane on the Red Killer App.</p>
+
+    <div class="focus-block fade-up">
+      <div class="focus-tag">Active Build · May 2026</div>
+      <h3>Twenty-piece Pattern Language, applied surface-by-surface.</h3>
+      <p class="focus-body">
+        Every rebuilt surface composes from the twenty pieces. Every workflow answers the four umbrella lanes' Floor 0 questions before code. Every primary claim wears a TrustStrip. Every authoritative claim cites three sources. The GreenFlash CRM reward loop — particle effects and Web Audio chimes — survives the rebuild intact.
+      </p>
+
+      <div class="focus-details">
+        <div class="focus-detail">
+          <div class="label">Scope</div>
+          <div class="value">Red Killer App only. Credentialing renewals · project pipeline · compliance alerts · GreenFlash CRM</div>
+        </div>
+        <div class="focus-detail">
+          <div class="label">Out of scope</div>
+          <div class="value">6 Dream Machine interfaces · cinematic intro · MCP endpoint — preserved as-is</div>
+        </div>
+        <div class="focus-detail">
+          <div class="label">Tool</div>
+          <div class="value">Claude Design (pending enablement) or Cowork with parallel agents on the existing Next.js codebase</div>
+        </div>
+        <div class="focus-detail">
+          <div class="label">Hard gate</div>
+          <div class="value">Every spec answers four umbrella lanes' Floor 0 questions before any code is written</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WISDOM OF THE AGES ============ -->
+<section class="wisdom" id="wisdom">
+  <div class="container">
+    <div class="section-label fade-up">Wisdom of the Ages</div>
+    <h2 class="section-title fade-up">Eight teachers underwrite this work.</h2>
+    <p class="section-subtitle fade-up">Each names a load-bearing principle. Together they form the intellectual scaffolding of the Pattern Language.</p>
+
+    <div class="wisdom-grid stagger">
+      <div class="teacher">
+        <div class="name">Christopher Alexander</div>
+        <div class="work">A Pattern Language</div>
+        <div class="principle">Patterns of user action cannot be separated from the lane, surface, and stage where they occur. The central metaphor.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Edward Tufte</div>
+        <div class="work">Small multiples</div>
+        <div class="principle">Same shape, different content, side-by-side. The eye learns the shape and then sees variation. The smallest effective difference.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Donald Norman</div>
+        <div class="work">The Design of Everyday Things</div>
+        <div class="principle">Every element announces its function to every body, in every culture, in every modality.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Bret Victor</div>
+        <div class="work">Direct manipulation</div>
+        <div class="principle">Stop drawing dead fish. Build tiny live instruments at every floor of every workflow.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Frank Lloyd Wright</div>
+        <div class="work">Compression and release</div>
+        <div class="principle">The platform breathes the user through compression and release at the architecture-of-experience scale.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Mister Rogers</div>
+        <div class="work">Look for the helpers</div>
+        <div class="principle">The platform surfaces helpers. It never replaces them. This is brand-defining.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Toyota Production System</div>
+        <div class="work">Jidoka and Poka-yoke</div>
+        <div class="principle">Automate with a human touch. Design errors out of the system. The "eight Floor 0 questions" rule is poka-yoke for spec drift.</div>
+      </div>
+      <div class="teacher">
+        <div class="name">Steve Jobs and Jony Ive</div>
+        <div class="work">The embodied constraint</div>
+        <div class="principle">Design relentlessly to the single most primal user constraint. For us, that constraint is the arrival stance in state space.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INVITATION ============ -->
+<section class="invitation" id="invitation">
+  <div class="container">
+    <div class="title fade-up">The ground truth AI needs to survive.</div>
+    <p class="body fade-up">
+      The investor line. The internal line is <em>"the pattern that builds products."</em> Both are true. The platform is one architecture, fifty-five gardens, four lanes, three surfaces, and one self-improving knowledge graph that gets more right every week. Frontier gardens stay parked until the cash engines (HKG, BKG) generate MRR. The current focus is the BKG Killer App rehaul, the first comprehensive application of the twenty-piece Pattern Language.
+    </p>
+    <p class="body fade-up" style="font-style: italic;">
+      Read on. Reach out. Build with us.
+    </p>
+  </div>
+</section>
+
+<!-- ============ FEDERATION FOOTER ============ -->
+<footer class="federation">
+  <div class="container">
+    <div class="federation-strip">
+      <div class="brand-mark">The Knowledge Gardens</div>
+      <div class="verified">Strategy v3 · <strong>verified against 3 sources</strong> · 2026-05-25</div>
+    </div>
+    <div class="federation-contract">
+      Parchment <span>·</span> Cormorant Garamond <span>·</span> Space Mono <span>·</span> Cross-link <span>·</span> JSON-LD <span>·</span> llms.txt <span>·</span> MCP endpoint <span>·</span> <em>break the federation, break the platform</em>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ JSON-LD (federation contract) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "The Knowledge Gardens Operating System — Strategy v3",
+  "description": "Platform architecture for the Knowledge Gardens umbrella: one architecture, 55 gardens, 4 lanes, 3 surfaces, 1 self-improving knowledge graph.",
+  "datePublished": "2026-05-25",
+  "author": {
+    "@type": "Person",
+    "name": "Chilly Dahlgren"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "The Knowledge Gardens",
+    "url": "https://theknowledgegardens.com"
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Frontier Map",
+    "url": "http://frontiermap.theknowledgegardens.com"
+  },
+  "citation": [
+    "FRONTIER_MAP_PORTABLE.md v2 (2026-05-25)",
+    "design-constitution.md (locked 2026-04-16)",
+    "lane-stance-strategy-v3.md (2026-05-25)"
+  ]
+}
+</script>
+
+<!-- ============ SCROLL ANIMATIONS + INTERACTIVITY ============ -->
+<script>
+  // Fade-in on scroll
+  const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        // unobserve once revealed
+        fadeObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -80px 0px' });
+
+  document.querySelectorAll('.fade-up, .stagger').forEach(el => fadeObserver.observe(el));
+
+  // Heartbeat trigger
+  const heartbeatObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.heartbeat-viz').forEach(el => heartbeatObserver.observe(el));
+
+  // Counter animation
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !entry.target.dataset.counted) {
+        entry.target.dataset.counted = 'true';
+        const target = parseInt(entry.target.dataset.target, 10);
+        let current = 0;
+        const duration = 1600;
+        const startTime = performance.now();
+        const tick = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          // ease-out cubic
+          const eased = 1 - Math.pow(1 - progress, 3);
+          current = Math.floor(eased * target);
+          entry.target.textContent = current;
+          if (progress < 1) requestAnimationFrame(tick);
+          else entry.target.textContent = target;
+        };
+        requestAnimationFrame(tick);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+
+  // Section nav highlighting
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.section-nav a');
+  const navObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.dataset.target === id);
+        });
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => navObserver.observe(s));
+</script>
+
+</body>
+</html>

@@ -1918,3 +1918,72 @@ When assets seem stale despite a successful deploy:
 ### Related
 
 Vercel's image optimization at `/_next/image?url=...` is a SEPARATE caching layer with its own invalidation rules. The lesson above is about the raw `/public/*` asset paths. If you're hitting `/_next/image`, additional considerations apply (the `dpl=...` query in optimized image URLs typically does invalidate them).
+
+
+## Lesson — Name the moat first, name it everywhere (learned 2026-05-25)
+
+**The mistake:** Drafted three versions of a Knowledge Gardens OS strategy memo without naming the RSI Heartbeat as the platform's moat in the lead position. The strategic content was there — the self-improving knowledge graph, the per-garden ingestion cadence, the entity re-verification — but it was buried in execution detail and architecture diagrams. Founder caught it: "Important to note everywhere, especially with this first builders garden and killerapp that we are creating systems, Recursive self improvement, and heartbeat style updating and making better consistently. This is where our moats live in this AI era."
+
+**The rule:** Every external-facing doc, every project instruction, every onboarding brief, every investor narrative leads with the RSI Heartbeat paragraph. The exact wording:
+
+> The RSI Heartbeat is the platform. One self-improving knowledge graph per garden, ingesting source data on a domain cadence, re-verifying every entity, surfacing freshness on every claim, learning from use. The platform doesn't hold knowledge — it improves itself in public. Every other platform in our space holds static data and ages. We get more right every week. That is the moat in the AI era.
+
+**The corollary:** The moat statement is not just brand language — it sets the engineering and product priority. Every feature decision is filtered through "does this feed the RSI Heartbeat or does it pull from the static reservoir?" Features that feed the heartbeat get built first.
+
+---
+
+## Lesson — When a canonical map exists, reconcile to it; do not redraw it (learned 2026-05-25)
+
+**The mistake:** Wrote a 45-vertical frontier map from first principles when a canonical 55-garden roster (`FRONTIER_MAP_PORTABLE.md` v2) already existed in the umbrella project. Got the lane count wrong (8 instead of 4 umbrella + 8 BKG sub-lanes), the surface count wrong (4 instead of 3), and missed four already-canonical platform primitives (TrustStrip, Three-Source Rule, Federation Contract, Machine-Legible Everything) that are baked into the federation contract.
+
+**The rule:** Before drafting any platform-level architecture or roster document, search project knowledge for canonical equivalents. If one exists, reconcile against it. The frontier map, the branding doc, the masterdoc, and the strategic playbook are the canonical sources for umbrella-level decisions. Working files reconcile to these; these do not reconcile to working files.
+
+**The corollary:** When in doubt about whether a canonical source exists, ask the founder. The cost of asking ("is there an existing X?") is far lower than the cost of reconciling a redrawn version. Also: tell the receiving AI in every session-startup prompt to check for canonical maps before drafting from first principles.
+
+---
+
+## Lesson — The 4-lane × 3-surface × 1-graph pattern is the universal skeleton (learned 2026-05-25)
+
+**The realization:** Every garden in the 55-garden frontier inherits the same architectural skeleton — 4 umbrella lanes (Administrator, Professional, Public, Machine) × 3 surfaces (Gold Dream Machine, Green Knowledge Garden, Red Killer App) × 1 self-improving knowledge graph fed by the RSI Heartbeat. The skin changes per domain (knowledge schema, lifecycle stages, workflow atoms, accent palette, sub-lane definitions). The skeleton does not.
+
+**The rule:** When designing any new surface in any garden, first locate it on the 4 × 3 grid. Which umbrella lane is it primarily serving? Which surface is it on? Then design from the surface's cardinal feature (Emotional Arc for Gold, TrustStrip + Three-Source Rule for Green, Tempo Adapt for Red) outward. Do not design from the workflow's apparent need; design from the surface's cardinal feature.
+
+**The corollary:** A new garden launches by inheriting the skeleton wholesale and skinning it for the domain. The 40 frontier gardens are template-driven precisely because the skeleton transfers. Estimate per-garden launch time: 2–4 weeks once the pattern is productized.
+
+---
+
+## Lesson — Patterns derived from one workflow don't scale to a platform (learned 2026-05-25, earlier this session)
+
+**The mistake:** The first draft of this strategy ("Infinite Descent v1") was derived from the Equipment Schedule page alone. Six floors of engagement on one workflow. Founder caught it: "too narrow a slice of users and that one piece of the workflow, while emblematic, isn't going to guide us enough."
+
+**The rule:** Before naming a platform-level pattern, sample at least 5–6 workflows across surfaces (Knowledge Garden, Dream, Killer App), lanes (Public, Professional, Administrator, Machine), modalities (visual, voice, gestural, agent), and ideally at least two knowledge domains (construction + one of orchid/toxicology/health). If the pattern only fits the originating workflow, it isn't a platform pattern — it's a workflow feature.
+
+**The corollary:** Single examples surface patterns. The probe set confirms them. The Equipment Schedule revealed the lane-coverage gap; the six-probe set (Orchid ID, Dream, Code Compliance, Field Log, AIA Pay App, Equipment Schedule v2) is how we'd confirm the pattern actually generalizes.
+
+---
+
+## Lesson — Every workflow spec answers four umbrella lanes' Floor 0 questions (learned 2026-05-25)
+
+**The mistake:** The Equipment Schedule page (Plan → MEP) shipped as a single-lane MEP-engineer tool because the spec was generated from a single-persona agent interview. The agent answered "what would an MEP engineer want?" honestly, and we shipped exactly that — a useful page for one lane on a platform that promises all four umbrella lanes.
+
+**The rule (updated to match the 4-lane umbrella):** Every workflow spec, before any code, answers four questions: "For each of the four umbrella lanes (Administrator, Professional, Public, Machine), what is the user's Floor 0 question, and what is the Floor 0 answer?" If the spec can't answer all four, the spec isn't ready. Per-garden sub-lanes can be answered in a second pass; the four umbrella lanes are the floor.
+
+**The corollary:** Single-persona interviews are fine for surfacing detail at higher Infinite Descent floors. They are not fine for setting the Floor 0 framing. Floor 0 must be set by walking all four umbrella lanes.
+
+---
+
+## Lesson — Loose root-level files in the working folder are not the SOT (learned 2026-05-25)
+
+**The confusion:** `~/bkg-work/` (the working folder on the MacBook) contains many loose markdown files at the root level dated March 28 to April 17, all stale and never in the repo. Founder briefly thought the SOT was broken when in fact the real SOT inside `~/bkg-work/app/` was current.
+
+**The rule:** The SOT lives in the git clone at `~/bkg-work/app/`. The loose files at `~/bkg-work/` root are archives at best, noise at worst. Move them to `~/bkg-work/archive/` when convenient.
+
+---
+
+## Lesson — Local git corruption is faster to re-clone than to repair (learned 2026-05-25)
+
+**The situation:** Local clone had missing trees, broken links, dangling commits, stuck worktree lock from a crashed `/tmp/bkg-main` session. `git fsck --full` listed errors. `git pull` failed with `pack has 1 unresolved delta`. `git gc` couldn't run because of the worktree lock.
+
+**The rule:** When `git fsck` reports missing objects AND `git pull` fails repeatedly, do not waste cycles on in-place repair. Sequence: back up uncommitted changes → mv broken clone aside → fresh clone → restore uncommitted files → verify. Total time ~5 minutes; in-place repair attempts in this session consumed 30+ before we gave up.
+
+**The corollary:** Stuck worktrees in `/tmp/` are common — macOS wipes `/tmp/` on reboot, git retains the lock metadata, leaving an orphan that blocks `git gc`. If `git worktree list` shows a `/tmp/` entry as locked, discard with `git worktree remove --force /tmp/<name>` followed by `git worktree prune`.

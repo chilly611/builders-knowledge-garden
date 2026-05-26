@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 980" font-family="Georgia, 'Cormorant Garamond', serif">
+  <defs>
+    <!-- Brand palette -->
+    <linearGradient id="goldSurface" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#D8A858" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#C9A84C" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="greenSurface" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1A5C5C" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#1A3A2E" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="redSurface" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8B2A1F" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#A03A4C" stop-opacity="0.05"/>
+    </linearGradient>
+    <radialGradient id="heartCenter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B87333" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#B87333" stop-opacity="0.00"/>
+    </radialGradient>
+
+    <!-- Heartbeat pulse pattern -->
+    <path id="pulse" d="M 0,0 L 12,0 L 18,-22 L 26,28 L 34,-8 L 42,0 L 70,0"
+          fill="none" stroke="#B87333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Corner ticks -->
+    <g id="cornerTick">
+      <path d="M 0,16 L 0,0 L 16,0" fill="none" stroke="#B87333" stroke-width="1.5"/>
+    </g>
+  </defs>
+
+  <!-- Parchment background -->
+  <rect width="1400" height="980" fill="#F5F0E8"/>
+
+  <!-- Corner ticks -->
+  <use href="#cornerTick" x="24" y="24" transform="rotate(0 24 24)"/>
+  <use href="#cornerTick" x="1376" y="24" transform="rotate(90 1376 24)"/>
+  <use href="#cornerTick" x="1376" y="956" transform="rotate(180 1376 956)"/>
+  <use href="#cornerTick" x="24" y="956" transform="rotate(270 24 956)"/>
+
+  <!-- Title block -->
+  <g transform="translate(700, 70)">
+    <text text-anchor="middle" font-size="11" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="4" y="-12">PLATFORM ARCHITECTURE · V3 · 2026-05-25</text>
+    <text text-anchor="middle" font-size="36" fill="#0F2419" font-style="italic" font-weight="400" y="22">The Knowledge Gardens Operating System</text>
+    <text text-anchor="middle" font-size="13" fill="#0F2419" letter-spacing="1" y="50">One architecture · 55 gardens · 4 lanes · 3 surfaces · 1 self-improving graph</text>
+  </g>
+
+  <!-- Top dimension line -->
+  <g transform="translate(60, 145)">
+    <line x1="0" y1="0" x2="1280" y2="0" stroke="#B87333" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <line x1="0" y1="-5" x2="0" y2="5" stroke="#B87333" stroke-width="1"/>
+    <line x1="1280" y1="-5" x2="1280" y2="5" stroke="#B87333" stroke-width="1"/>
+  </g>
+
+  <!-- ============ THREE SURFACES (the three columns) ============ -->
+  <!-- Gold / Dream Machine -->
+  <g transform="translate(110, 200)">
+    <rect width="360" height="540" rx="6" fill="url(#goldSurface)" stroke="#C9A84C" stroke-width="1"/>
+
+    <!-- Surface header -->
+    <text x="180" y="40" text-anchor="middle" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">SURFACE 01 · GOLD</text>
+    <text x="180" y="76" text-anchor="middle" font-size="26" fill="#0F2419" font-style="italic">Dream Machine</text>
+    <text x="180" y="100" text-anchor="middle" font-size="11" fill="#71797E" font-style="italic">aspirational · concierge · warm</text>
+
+    <line x1="40" y1="120" x2="320" y2="120" stroke="#C9A84C" stroke-width="0.7"/>
+
+    <!-- Primary lane served -->
+    <text x="180" y="148" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">PRIMARY LANE</text>
+    <text x="180" y="172" text-anchor="middle" font-size="18" fill="#0F2419">PUBLIC</text>
+    <text x="180" y="194" text-anchor="middle" font-size="11" fill="#71797E">Patient · Homeowner · Hobbyist · Parent · Consumer</text>
+
+    <!-- What it sells -->
+    <text x="180" y="232" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">SELLS</text>
+    <text x="180" y="252" text-anchor="middle" font-size="12" fill="#0F2419">Free gravity-well tools</text>
+    <text x="180" y="270" text-anchor="middle" font-size="12" fill="#0F2419">Premium consumer subscriptions</text>
+
+    <!-- Example workflows -->
+    <text x="180" y="308" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">EXAMPLE WORKFLOWS</text>
+    <text x="180" y="332" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"What might this look like?"</text>
+    <text x="180" y="352" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Identify this orchid"</text>
+    <text x="180" y="372" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Is this medication safe with that one?"</text>
+
+    <!-- Cardinal feature -->
+    <text x="180" y="418" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CARDINAL FEATURE</text>
+    <text x="180" y="442" text-anchor="middle" font-size="13" fill="#0F2419" font-weight="600">Emotional Arc</text>
+    <text x="180" y="462" text-anchor="middle" font-size="10" fill="#71797E">curious → confident → committed</text>
+
+    <line x1="40" y1="488" x2="320" y2="488" stroke="#C9A84C" stroke-width="0.5" stroke-dasharray="1 3"/>
+    <text x="180" y="512" text-anchor="middle" font-size="10" fill="#71797E" font-style="italic">"the front door of every garden"</text>
+  </g>
+
+  <!-- Green / Knowledge Garden -->
+  <g transform="translate(520, 200)">
+    <rect width="360" height="540" rx="6" fill="url(#greenSurface)" stroke="#1A5C5C" stroke-width="1"/>
+
+    <text x="180" y="40" text-anchor="middle" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">SURFACE 02 · GREEN</text>
+    <text x="180" y="76" text-anchor="middle" font-size="26" fill="#0F2419" font-style="italic">Knowledge Garden</text>
+    <text x="180" y="100" text-anchor="middle" font-size="11" fill="#71797E" font-style="italic">scientific · verified · citation-rich</text>
+
+    <line x1="40" y1="120" x2="320" y2="120" stroke="#1A5C5C" stroke-width="0.7"/>
+
+    <text x="180" y="148" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">PRIMARY LANE</text>
+    <text x="180" y="172" text-anchor="middle" font-size="18" fill="#0F2419">PROFESSIONAL</text>
+    <text x="180" y="194" text-anchor="middle" font-size="11" fill="#71797E">Doctor · Contractor · Grower · Lawyer · Advisor</text>
+
+    <text x="180" y="232" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">SELLS</text>
+    <text x="180" y="252" text-anchor="middle" font-size="12" fill="#0F2419">Subscriptions + marketplace</text>
+    <text x="180" y="270" text-anchor="middle" font-size="12" fill="#0F2419">CME · career tools</text>
+
+    <text x="180" y="308" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">EXAMPLE WORKFLOWS</text>
+    <text x="180" y="332" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Will this assembly pass inspection?"</text>
+    <text x="180" y="352" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Drug interaction check"</text>
+    <text x="180" y="372" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Species provenance for sale"</text>
+
+    <text x="180" y="418" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CARDINAL FEATURE</text>
+    <text x="180" y="442" text-anchor="middle" font-size="13" fill="#0F2419" font-weight="600">TrustStrip · Three-Source Rule</text>
+    <text x="180" y="462" text-anchor="middle" font-size="10" fill="#71797E">≥ 3 sources · freshness stamp · contested-claim flag</text>
+
+    <line x1="40" y1="488" x2="320" y2="488" stroke="#1A5C5C" stroke-width="0.5" stroke-dasharray="1 3"/>
+    <text x="180" y="512" text-anchor="middle" font-size="10" fill="#71797E" font-style="italic">"the encyclopedia that earned its citations"</text>
+  </g>
+
+  <!-- Red / Killer App -->
+  <g transform="translate(930, 200)">
+    <rect width="360" height="540" rx="6" fill="url(#redSurface)" stroke="#8B2A1F" stroke-width="1"/>
+
+    <text x="180" y="40" text-anchor="middle" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">SURFACE 03 · RED</text>
+    <text x="180" y="76" text-anchor="middle" font-size="26" fill="#0F2419" font-style="italic">Killer App</text>
+    <text x="180" y="100" text-anchor="middle" font-size="11" fill="#71797E" font-style="italic">operational · urgent · status-aware</text>
+
+    <line x1="40" y1="120" x2="320" y2="120" stroke="#8B2A1F" stroke-width="0.7"/>
+
+    <text x="180" y="148" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">PRIMARY LANE</text>
+    <text x="180" y="172" text-anchor="middle" font-size="18" fill="#0F2419">ADMINISTRATOR</text>
+    <text x="180" y="194" text-anchor="middle" font-size="11" fill="#71797E">Hospital admin · GC · Nursery operator · Ops</text>
+
+    <text x="180" y="232" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">SELLS</text>
+    <text x="180" y="252" text-anchor="middle" font-size="12" fill="#0F2419">Mandatory compliance · credentialing</text>
+    <text x="180" y="270" text-anchor="middle" font-size="12" fill="#0F2419">Operations SaaS · the cash engine</text>
+
+    <text x="180" y="308" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">EXAMPLE WORKFLOWS</text>
+    <text x="180" y="332" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Credentials expiring this week?"</text>
+    <text x="180" y="352" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Submit AIA pay app"</text>
+    <text x="180" y="372" text-anchor="middle" font-size="11" fill="#0F2419" font-style="italic">"Daily field log + sign-off"</text>
+
+    <text x="180" y="418" text-anchor="middle" font-size="9" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CARDINAL FEATURE</text>
+    <text x="180" y="442" text-anchor="middle" font-size="13" fill="#0F2419" font-weight="600">Tempo Adapt</text>
+    <text x="180" y="462" text-anchor="middle" font-size="10" fill="#71797E">primitive breathes per pressure: leisurely → emergency</text>
+
+    <line x1="40" y1="488" x2="320" y2="488" stroke="#8B2A1F" stroke-width="0.5" stroke-dasharray="1 3"/>
+    <text x="180" y="512" text-anchor="middle" font-size="10" fill="#71797E" font-style="italic">"where money flows, where lives change"</text>
+  </g>
+
+  <!-- ============ THE 4TH LANE (Machine) - banner across the top of the three columns ============ -->
+  <g transform="translate(110, 168)">
+    <line x1="0" y1="0" x2="1180" y2="0" stroke="#71797E" stroke-width="0.5" stroke-dasharray="3 4"/>
+    <rect x="490" y="-14" width="200" height="28" rx="3" fill="#F5F0E8" stroke="#71797E" stroke-width="0.7"/>
+    <text x="590" y="5" text-anchor="middle" font-size="11" fill="#0F2419" font-family="'Courier New', monospace" letter-spacing="2">LANE 04 · MACHINE</text>
+    <text x="590" y="18" text-anchor="middle" font-size="9" fill="#71797E" font-style="italic">cross-surface · API · MCP · JSON-LD</text>
+  </g>
+
+  <!-- ============ RSI HEARTBEAT — the spine running underneath all three surfaces ============ -->
+  <g transform="translate(110, 770)">
+    <rect width="1180" height="120" rx="6" fill="#FFFFFF" stroke="#B87333" stroke-width="1.5"/>
+
+    <!-- Pulse line running across -->
+    <g transform="translate(50, 60)" opacity="0.7">
+      <line x1="0" y1="0" x2="1080" y2="0" stroke="#B87333" stroke-width="1" stroke-dasharray="2 3"/>
+      <use href="#pulse" x="80"/>
+      <use href="#pulse" x="280"/>
+      <use href="#pulse" x="480"/>
+      <use href="#pulse" x="680"/>
+      <use href="#pulse" x="880"/>
+    </g>
+
+    <text x="50" y="32" font-size="11" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="3">THE MOAT</text>
+    <text x="50" y="55" font-size="22" fill="#0F2419" font-style="italic">RSI Heartbeat</text>
+
+    <text x="50" y="100" font-size="11" fill="#0F2419">One self-improving knowledge graph per garden.</text>
+    <text x="50" y="115" font-size="11" fill="#71797E" font-style="italic">Ingests source data on a domain cadence · re-verifies entities · surfaces freshness · learns from use.</text>
+
+    <text x="1130" y="32" text-anchor="end" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">CADENCE EXAMPLES</text>
+    <text x="1130" y="55" text-anchor="end" font-size="11" fill="#0F2419">HKG · monthly</text>
+    <text x="1130" y="73" text-anchor="end" font-size="11" fill="#0F2419">PKG · weekly</text>
+    <text x="1130" y="91" text-anchor="end" font-size="11" fill="#0F2419">BKG · continuous from contractor activity</text>
+    <text x="1130" y="115" text-anchor="end" font-size="9" fill="#71797E" font-style="italic">"the platform improves itself in public"</text>
+  </g>
+
+  <!-- ============ Bottom footer — 55-garden count + federation contract ============ -->
+  <g transform="translate(60, 920)">
+    <line x1="0" y1="0" x2="1280" y2="0" stroke="#B87333" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="0" y="22" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">55 GARDENS</text>
+    <text x="115" y="22" font-size="10" fill="#0F2419">3 deployed · 2 building · 10 industry-scoped · 40 frontier (gated until HKG + BKG MRR)</text>
+
+    <text x="0" y="42" font-size="10" fill="#71797E" font-family="'Courier New', monospace" letter-spacing="2">FEDERATION</text>
+    <text x="115" y="42" font-size="10" fill="#0F2419">parchment · Cormorant · Space Mono · cross-link · JSON-LD · llms.txt · MCP endpoint · break federation = break platform</text>
+
+    <text x="1280" y="22" text-anchor="end" font-size="9" fill="#71797E" font-style="italic">source: FRONTIER_MAP_PORTABLE.md v2 · 2026-05-25</text>
+  </g>
+
+  <!-- Subtle ornament: small compass in lower-left of the heart panel -->
+  <g transform="translate(595, 803)" opacity="0.5">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#B87333" stroke-width="0.7"/>
+    <line x1="0" y1="-14" x2="0" y2="14" stroke="#B87333" stroke-width="0.7"/>
+    <line x1="-14" y1="0" x2="14" y2="0" stroke="#B87333" stroke-width="0.7"/>
+    <text x="0" y="-18" text-anchor="middle" font-size="7" fill="#71797E" font-family="'Courier New', monospace">N</text>
+  </g>
+
+</svg>

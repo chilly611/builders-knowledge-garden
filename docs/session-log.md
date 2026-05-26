@@ -2353,3 +2353,77 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - [ ] **Documenso webhook autofill bug** — still parked, lazy-sync handles status.
 - [ ] **Pre-existing P2**: `/api/v1/architect-request` 500 on POST due to body-shape mismatch (`name` vs `contact_name`, `email` vs `contact_email`).
 
+
+
+## 2026-05-25 — Chat — Knowledge Gardens OS Strategy v3 (decisions locked)
+
+**Agent:** Chat (Claude Opus 4.7)
+**Type:** Strategic (no app code shipped — strategy lock, frontier map reconciliation, architecture diagram, v3 docs)
+
+### The moat — codified here, to lead every doc going forward
+
+**The RSI Heartbeat is the platform.** One self-improving knowledge graph per garden, ingesting source data on a domain cadence, re-verifying every entity, surfacing freshness on every claim, learning from use. The platform doesn't hold knowledge — it improves itself in public. Every other platform in our space holds static data and ages. We get more right every week. **That is the moat in the AI era.** Every doc, every project instruction, every onboarding brief from this point leads with this paragraph.
+
+### What happened in this session (v1 → v2 → v3)
+
+- **v1** drafted a workflow-level pattern (Infinite Descent) from the Equipment Schedule dogfood diagnosis. Founder pushback: too narrow.
+- **v2** widened to a 14-dimensional user-state model + 16-piece Pattern Language + Stance Card mechanism + 45-vertical frontier draft. Founder uploaded the canonical `FRONTIER_MAP_PORTABLE.md` v2 (55 gardens, 4 umbrella lanes, 3 surfaces). Founder answered all three foundational questions.
+- **v3 (this lock)** reconciled v2 against the canonical frontier map and codified all decisions.
+
+### The three founder decisions, locked
+
+1. **One product, one architecture, 55+ gardens.** Internal infrastructure shared. Verticals launch on the template, partner-led where appropriate. The platform exists to make any vertical economically launchable.
+2. **All-in on the Pattern Language extension.** 20 pieces: 7 constitutional primitives + 4 platform primitives (TrustStrip, Three-Source Rule, Federation Contract, Machine-Legible Everything) + 9 dimensional renderings.
+3. **All 14 dimensions of user state addressed.** Stance Card is the operational mechanism. Every primitive reads it before rendering.
+
+### Frontier map reconciliation
+
+| What v2 had wrong | What the canonical map says |
+|---|---|
+| 45 verticals from first principles | **55 gardens canonical** (3 deployed + 2 building + 10 industry-scoped + 40 frontier across 5 tiers) |
+| 8 lanes at umbrella level | **4 umbrella lanes** (Administrator, Professional, Public, Machine); 8 lanes are BKG sub-lanes |
+| 4 surfaces (Garden, Dream, Design, Killer App) | **3 surfaces** (Gold Dream Machine, Green Knowledge Garden, Red Killer App); Design is sub-mode within Green |
+| 16-piece Pattern Language | **20-piece Pattern Language** — added 4 platform primitives (TrustStrip, Three-Source Rule, Federation Contract, Machine-Legible Everything) baked into the federation contract |
+
+### Architecture diagram produced
+
+`/mnt/user-data/outputs/kgos-architecture.svg` — brand-compliant landscape SVG, 1400×980, showing the 3 surfaces + 4 lanes + RSI Heartbeat spine + 55-garden count + federation contract footer. Use as the showpiece visual for John, Mike, investors, recruits.
+
+### Files produced this session
+
+**BKG repo updates:**
+- `docs/strategy/lane-stance-strategy-v3.md` (replaces v1/v2) — team-facing v3 memo with diagram embed
+- `docs/strategy/kgos-architecture.svg` — architecture diagram
+- `docs/session-log.md` (this entry, appended)
+- `tasks.todo.md` (appended — v3 priorities replacing v1/v2)
+- `tasks.lessons.md` (appended — RSI heartbeat moat-naming lesson)
+
+**Umbrella project updates:**
+- `knowledge-gardens-os-v2.md` (replaces v1) — reconciled platform spine doc, RSI heartbeat first, 4 lanes / 3 surfaces / 55 gardens, 20-piece Pattern Language
+- `kgos-architecture.svg` — same diagram, mirrored to umbrella
+
+### Execution priority — what happens next
+
+**Active build (this month):** BKG Killer App UX rehaul.
+- **Tool:** Claude Design (Anthropic's new design tool — flagged for enablement verification by John at session start; if not available, fall back to Cowork with parallel agents on the existing Next.js codebase).
+- **Execution model:** Cowork with parallel agents.
+- **Scope:** Red Killer App surface only — credentialing renewals, project pipeline, compliance alerts, GreenFlash CRM reward loop. The 6 Dream Machine interfaces and cinematic intro stay as-is during this sprint.
+- **Pattern Language application:** every rebuilt surface composes from the 20-piece language; every workflow answers the four umbrella lanes' Floor 0 questions before any code.
+- **Brand discipline:** `02_BRANDING_AIKIDO_ADDENDUM.md` is the voice playbook. The Killer App is the only sanctioned exception to the parchment rule within BKG. GreenFlash particle effects + Web Audio chimes preserved.
+
+**After BKG Killer App rehaul ships:**
+- Mirror Pattern Language application to HKG Killer App (the cash engine).
+- Apply Infinite Descent + TrustStrip + Three-Source Rule to one OKG workflow (Orchid Identification) to prove cross-domain portability.
+- Begin Pattern Language template productization (the partner-launch toolkit for the 40 frontier gardens, gated until HKG + BKG MRR).
+
+### Operational notes from earlier in this session
+
+- SOT audit + repo health recovery: fresh re-clone of `~/bkg-work/app/` after multi-error git corruption (missing trees, stuck worktree lock from `/tmp/bkg-main`). Old clone retained as `~/bkg-work/app-broken-2026-05-25` for one week.
+- PAT exposure: embedded in `app/.git/config` and pasted into Chat during audit. Pre-revenue, low-traffic, low real risk. Rotation deferred to founder discretion.
+- Loose root files at `~/bkg-work/` (March 28 to April 17 dates) are stale, never in repo. Should move to `~/bkg-work/archive/`.
+
+### Posture for the team
+
+- **John:** engages with the v3 memo text and the architecture diagram. Marks anything to cut or rename.
+- **Mike:** pre-read only. The real review is the live BKG Killer App walkthrough once the rehaul ships in Cowork.
+- **Both:** confirm "RSI Heartbeat as the moat" lands as the lead message of every external-facing artifact from this point — investor decks, press, recruiting, customer onboarding.
