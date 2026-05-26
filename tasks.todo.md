@@ -1,6 +1,39 @@
 # Builder's Knowledge Garden — Master Task List
 
 
+## ═══ V3 KILLER APP REHAUL (2026-05-26, in flight) ═══
+
+Parent branch: `feature/v3-killerapp-rehaul` (NOT merged to main yet).
+
+**Shipped (WS0 merged into parent; WS2-WS6 each on their own sub-branch awaiting PR review):**
+- [x] WS0 — 16 Pattern Language primitives + StanceCard schema + brand tokens + 4 route stubs (`feature/v3-killerapp-rehaul-ws0`, merged into parent)
+- [x] WS2 — `/killerapp/credentialing` Pattern Language composition (`feature/v3-killerapp-rehaul-ws2`)
+- [x] WS3 — `/killerapp/projects-v3` Pattern Language composition (`feature/v3-killerapp-rehaul-ws3`)
+- [x] WS4 — `/killerapp/compliance` + `/killerapp/alerts` Pattern Language composition (`feature/v3-killerapp-rehaul-ws4`)
+- [x] WS5 — `/killerapp/rewards` Pattern Language composition + GreenFlashProvider preserved (`feature/v3-killerapp-rehaul-ws5`)
+- [x] WS6 — `/killerapp/ask` route + `POST /api/v1/ask` API stub (`feature/v3-killerapp-rehaul-ws6`)
+
+**Founder review queue (iPhone-friendly):**
+- [ ] Review WS2 preview, approve/comment PR: https://github.com/chilly611/builders-knowledge-garden/compare/feature/v3-killerapp-rehaul...feature/v3-killerapp-rehaul-ws2
+- [ ] Review WS3 preview, approve/comment PR: https://github.com/chilly611/builders-knowledge-garden/compare/feature/v3-killerapp-rehaul...feature/v3-killerapp-rehaul-ws3
+- [ ] Review WS4 preview, approve/comment PR: https://github.com/chilly611/builders-knowledge-garden/compare/feature/v3-killerapp-rehaul...feature/v3-killerapp-rehaul-ws4
+- [ ] Review WS5 preview, approve/comment PR: https://github.com/chilly611/builders-knowledge-garden/compare/feature/v3-killerapp-rehaul...feature/v3-killerapp-rehaul-ws5
+- [ ] Review WS6 preview, approve/comment PR: https://github.com/chilly611/builders-knowledge-garden/compare/feature/v3-killerapp-rehaul...feature/v3-killerapp-rehaul-ws6
+- [ ] Rotate the GitHub PAT pasted at session start
+- [ ] Decide WS3 rename: `/killerapp/projects-v3` → `/killerapp/projects` (with redirect of legacy to v3)
+- [ ] Decide WS6 layout-level mount: hoist `<AskAnything variant="floating" />` into `src/app/killerapp/layout.tsx` (defer until after dogfood pass)
+
+**Follow-up sprints (queued):**
+- [ ] Wire `/api/v1/credentialing` to Supabase (replace WS2 mock data)
+- [ ] Wire `/api/v1/projects` to existing project schema (WS3)
+- [ ] Wire `/api/v1/compliance/feed` + MCP server at `/api/v1/mcp/compliance` (WS4)
+- [ ] Wire `/api/v1/ask` to the real Three-Source-gated retrieval pipeline (WS6)
+- [ ] Add JSON-LD + llms.txt + MCP endpoint per garden (Federation Contract pieces 10 + 11)
+- [ ] Apply the same Pattern Language pass to HKG Killer App after BKG dogfood ships
+- [ ] Apply InfiniteDescent + TrustStrip + Three-Source Rule to Orchid Identification (OKG) to prove cross-domain portability
+
+---
+
 ## ═══ W9 — INTEGRATED NAVIGATOR + STRATEGY INPUTS (2026-04-22, make-or-break 2-day push) ═══
 
 Founder directive: ship a stacked, interactive, ever-present **journey map + time machine + budget timeline** on every `/killerapp` route AND produce strategy inputs (competitive brief, killer-app name shortlist, Compass Navigator redesign spec) to inform the next wave. Lock: names-only (no URL rename yet), hybrid mood-image approach (start on current tokens, swap when images land).
