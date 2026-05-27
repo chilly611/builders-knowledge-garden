@@ -1,21 +1,15 @@
 'use client';
 
 /**
- * Size Up — lifecycle stage 1, refit inside the persistent StageShell chrome.
- * ==========================================================================
+ * Size Up — lifecycle stage 1, inside the persistent StageShell chrome.
+ * ====================================================================
  * "What are you building, where, and how big?"
  *
- * StageShell renders the journey row + BudgetRibbon + Pro toggle; this page is
- * the stage body. It composes the same primitives as Plan/Build (StageShell,
- * useStageChrome, FirstEncounterWhisper, AutoFillButton, the marin-4000
- * fixture) so the four stages feel like one product.
- *
- * Constitution: plain language first w/ Pro labels (Goal 1/2), one primary
- * action per view (Goal 3), ambient whispers (Goal 4), voice on every text
- * field (Goal 9), one input at a time, no scroll (Goal 6). The ballpark is
- * produced by the Size Up specialist (server action) and lands as editable
- * text the contractor confirms — never auto-applied. The confirmed number
- * drives the BudgetRibbon live via the chrome's setBudget.
+ * PATCH 1 (2026-05-27, post live-review): every stage ends with an insight
+ * card sitting directly above a sticky one-primary-action bar; the primary's
+ * verb is the stage's forward act ("Lock the scope"); on tap the completion
+ * ring fills + a check overlays, then the journey advances to Lock. Whispers
+ * render as in-flow banners (never floating overlays), one at a time.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,7 +18,7 @@ import { supabase } from '@/lib/supabase';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
-import { FirstEncounterWhisper, AutoFillButton } from '@/components/stage-kit';
+import { AutoFillButton } from '@/components/stage-kit';
 import {
   MARIN_PROJECT,
   MARIN_PROJECT_ID,
@@ -40,11 +34,12 @@ const C = {
   navy: colors.navy,
   brass: colors.brass,
   robin: colors.robin,
+  green: '#2E7D32',
   graphite: colors.graphite,
   rule: colors.fadedRule,
   redline: colors.redline,
   paper: colors.paper.white,
-  accent: '#C9913F', // stage-1 ochre (matches StageShell accent bar)
+  accent: '#C9913F', // stage-1 ochre
 };
 const FONT = fonts.body;
 const ACTIVE_PROJECT_KEY = 'bkg-active-project';
@@ -61,7 +56,6 @@ function readActiveProjectId(): string | null {
     return null;
   }
 }
-
 async function authedFetch(input: string, init: RequestInit = {}) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -70,7 +64,6 @@ async function authedFetch(input: string, init: RequestInit = {}) {
   if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json');
   return fetch(input, { ...init, headers });
 }
-
 const SQFT_RE = /([\d,]+)\s*(?:sf|sqft|sq\s?ft|square\s?(?:feet|foot|ft))/i;
 function parseSqft(text: string): string | null {
   const m = text.match(SQFT_RE);
@@ -85,6 +78,57 @@ function inferBuildingType(s: string): BuildingType | null {
 }
 function money(n: number): string {
   return `$${Math.round(n).toLocaleString()}`;
+}
+
+// ─── in-flow whisper banner (never occludes; one-time per id) ─────────────────
+
+function WhisperBanner({ id, text }: { id: string; text: string }) {
+  const key = `bkg:whisper:size-up:${id}`;
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    try {
+      if (!window.localStorage.getItem(key)) raf = requestAnimationFrame(() => setShow(true));
+    } catch {
+      /* ignore */
+    }
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [key]);
+  if (!show) return null;
+  const dismiss = () => {
+    try {
+      window.localStorage.setItem(key, '1');
+    } catch {
+      /* ignore */
+    }
+    setShow(false);
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: 'rgba(127,207,203,0.14)', border: `1px solid ${C.robin}`, color: C.navy, fontSize: 12.5, marginBottom: 12 }}>
+      <span aria-hidden>💡</span>
+      <span style={{ flex: 1 }}>{text}</span>
+      <button type="button" onClick={dismiss} aria-label="Dismiss tip" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.navy, fontSize: 16, lineHeight: 1 }}>×</button>
+    </div>
+  );
+}
+
+// ─── completion ring overlay ──────────────────────────────────────────────────
+
+function CompletionOverlay({ fill, title, detail, onContinue, continueLabel }: { fill: boolean; title: string; detail: string; onContinue: () => void; continueLabel: string }) {
+  return (
+    <div role="dialog" aria-label={title} style={{ position: 'absolute', inset: 0, zIndex: 900, background: 'rgba(253,248,240,0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+      <svg width="150" height="150" viewBox="0 0 160 160" aria-hidden>
+        <circle cx="80" cy="80" r="70" fill="none" stroke={C.rule} strokeWidth="10" />
+        <circle cx="80" cy="80" r="70" fill="none" stroke={C.green} strokeWidth="10" strokeLinecap="round" transform="rotate(-90 80 80)" strokeDasharray={2 * Math.PI * 70} strokeDashoffset={fill ? 0 : 2 * Math.PI * 70} style={{ transition: 'stroke-dashoffset 900ms ease' }} />
+        <path d="M52 82 L72 102 L110 60" fill="none" stroke={C.green} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={120} strokeDashoffset={fill ? 0 : 120} style={{ transition: 'stroke-dashoffset 600ms ease 700ms' }} />
+      </svg>
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.navy, fontFamily: fonts.display }}>{title}</div>
+      <p style={{ fontSize: 13.5, color: C.graphite, maxWidth: 420, textAlign: 'center', margin: 0 }}>{detail}</p>
+      <button type="button" onClick={onContinue} style={btn('primary')}>{continueLabel}</button>
+    </div>
+  );
 }
 
 // ─── voice mic ──────────────────────────────────────────────────────────────
@@ -120,26 +164,7 @@ function MicButton({ onText, label }: { onText: (t: string) => void; label: stri
     }
   };
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={!supported}
-      aria-label={`Speak ${label}`}
-      title={supported ? `Speak ${label}` : 'Voice input not supported in this browser'}
-      style={{
-        flex: '0 0 auto',
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        border: `1px solid ${listening ? C.redline : C.rule}`,
-        background: listening ? 'rgba(161,71,58,0.10)' : C.paper,
-        color: listening ? C.redline : C.graphite,
-        cursor: supported ? 'pointer' : 'not-allowed',
-        opacity: supported ? 1 : 0.45,
-        fontSize: 18,
-        lineHeight: 1,
-      }}
-    >
+    <button type="button" onClick={toggle} disabled={!supported} aria-label={`Speak ${label}`} title={supported ? `Speak ${label}` : 'Voice input not supported in this browser'} style={{ flex: '0 0 auto', width: 44, height: 44, borderRadius: 12, border: `1px solid ${listening ? C.redline : C.rule}`, background: listening ? 'rgba(161,71,58,0.10)' : C.paper, color: listening ? C.redline : C.graphite, cursor: supported ? 'pointer' : 'not-allowed', opacity: supported ? 1 : 0.45, fontSize: 18, lineHeight: 1 }}>
       <span aria-hidden>{listening ? '🔴' : '🎤'}</span>
     </button>
   );
@@ -200,7 +225,7 @@ function SketchPad({ initial, onClose, onSave }: { initial: string | null; onClo
       <div style={{ background: C.paper, borderRadius: 16, padding: 16, width: 'min(560px, 96vw)', boxShadow: '0 20px 60px rgba(0,0,0,0.35)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <strong style={{ color: C.navy }}>Sketch your idea</strong>
-          <button type="button" onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 22, cursor: 'pointer', color: C.graphite }} aria-label="Close sketch">x</button>
+          <button type="button" onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 22, cursor: 'pointer', color: C.graphite }} aria-label="Close sketch">×</button>
         </div>
         <canvas ref={canvasRef} width={520} height={320} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up} style={{ width: '100%', height: 'auto', touchAction: 'none', borderRadius: 10, border: `1px solid ${C.rule}`, display: 'block', cursor: 'crosshair' }} />
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -218,7 +243,6 @@ function btn(kind: 'primary' | 'ghost' | 'soft'): React.CSSProperties {
   if (kind === 'soft') return { ...base, background: 'rgba(182,135,58,0.12)', color: C.brass, borderColor: C.brass };
   return { ...base, background: C.paper, color: C.graphite, borderColor: C.rule };
 }
-
 const inputStyle: React.CSSProperties = { flex: 1, minWidth: 0, height: 48, padding: '0 14px', borderRadius: 12, border: `1px solid ${C.rule}`, fontSize: 16, fontFamily: FONT, color: C.graphite, background: '#fff', boxSizing: 'border-box' };
 
 function ConfidencePill({ level }: { level: 'low' | 'medium' | 'high' }) {
@@ -234,15 +258,13 @@ function MapPanel({ address }: { address: string }) {
   const [satellite, setSatellite] = useState(false);
   const src = 'https://www.openstreetmap.org/export/embed.html?bbox=-122.55,37.70,-122.35,37.90&layer=mapnik';
   return (
-    <div style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.rule}`, position: 'relative', height: 130 }}>
+    <div style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.rule}`, position: 'relative', height: 120 }}>
       <iframe title="Site map" src={src} loading="lazy" style={{ width: '100%', height: '100%', border: 0, filter: satellite ? 'saturate(1.4) hue-rotate(8deg) brightness(0.92)' : 'none' }} />
       <div style={{ position: 'absolute', left: 10, bottom: 10, background: 'rgba(27,59,94,0.9)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 8, maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>pin: {address}</div>
       <button type="button" onClick={() => setSatellite((s) => !s)} style={{ position: 'absolute', right: 10, top: 10, height: 28, padding: '0 10px', borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.92)', color: C.navy, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{satellite ? 'Map' : 'Satellite'}</button>
     </div>
   );
 }
-
-// ─── static config ────────────────────────────────────────────────────────────
 
 const TRADE_OPTIONS = ['Framing', 'Electrical', 'Plumbing', 'HVAC', 'Concrete', 'Roofing', 'Drywall', 'Finish carpentry', 'Tile', 'Painting'];
 const TYPE_TILES: Array<{ id: BuildingType; human: string; pro: string; glyph: string }> = [
@@ -261,7 +283,7 @@ interface Prefill {
   scopeText: string;
 }
 
-// ─── outer: resolves project context, mounts the shell ─────────────────────────
+// ─── outer ────────────────────────────────────────────────────────────────────
 
 export default function SizeUpPage() {
   const [ctx, setCtx] = useState<{ projectId: string | null; name: string; meta: string; initialBudget: number; prefill: Prefill }>(() => ({
@@ -269,30 +291,16 @@ export default function SizeUpPage() {
     name: MARIN_PROJECT.name,
     meta: `${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`,
     initialBudget: MARIN_BUDGET_BASE_TOTAL,
-    prefill: {
-      buildingType: 'residential',
-      address: MARIN_PROJECT.jurisdiction,
-      jurisdiction: MARIN_PROJECT.jurisdiction,
-      sqft: 4000,
-      scopeText: MARIN_PROJECT.project_type,
-    },
+    prefill: { buildingType: 'residential', address: MARIN_PROJECT.jurisdiction, jurisdiction: MARIN_PROJECT.jurisdiction, sqft: 4000, scopeText: MARIN_PROJECT.project_type },
   }));
 
   useEffect(() => {
-    // Point the demo at the Marin farmhouse so all four stages line up, and
-    // seed the budget spine the BudgetRibbon reads.
     ensureMarinActive();
     seedMarinBudget();
-
-    // All setState lives inside the async closure (never the synchronous
-    // effect body) so the demo's project resolution can't trigger a render
-    // cascade; the fixture defaults already render on first paint.
     let cancelled = false;
     (async () => {
       const id = readActiveProjectId() ?? MARIN_PROJECT_ID;
       if (!cancelled) setCtx((c) => ({ ...c, projectId: id }));
-      // Best-effort: if the live DB row is readable (signed-in demo), let real
-      // values override the fixture so a real edit shows through.
       try {
         const res = await authedFetch(`/api/v1/projects?id=${encodeURIComponent(id)}`);
         if (!res.ok) return;
@@ -328,7 +336,7 @@ export default function SizeUpPage() {
   );
 }
 
-// ─── body: the one-input-at-a-time wizard ──────────────────────────────────────
+// ─── body ───────────────────────────────────────────────────────────────────
 
 function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill: Prefill }) {
   const router = useRouter();
@@ -350,8 +358,12 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SizeUpResult | null>(null);
   const [budgetEdit, setBudgetEdit] = useState('');
-  const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
+
+  // completion → advance
+  const [completing, setCompleting] = useState(false);
+  const [ringFill, setRingFill] = useState(false);
+  const advancedRef = useRef(false);
 
   const jurisdiction = prefill.jurisdiction;
   const scopeText = prefill.scopeText;
@@ -376,19 +388,10 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
     if (!buildingType) return;
     setRunning(true);
     try {
-      const r = await runSizeUpEstimate({
-        projectId: projectId ?? undefined,
-        buildingType,
-        address: address || jurisdiction,
-        jurisdiction,
-        squareFootage: sqft,
-        trades,
-        scopeText,
-        costPerSqftOverride: perSqftOverride ? Number(perSqftOverride) : undefined,
-      });
+      const r = await runSizeUpEstimate({ projectId: projectId ?? undefined, buildingType, address: address || jurisdiction, jurisdiction, squareFootage: sqft, trades, scopeText, costPerSqftOverride: perSqftOverride ? Number(perSqftOverride) : undefined });
       setResult(r);
       setBudgetEdit(String(r.mid));
-      setBudget({ total: r.mid }); // BudgetRibbon updates live
+      setBudget({ total: r.mid });
     } catch {
       setSaveNote('Could not run the estimate. Check your inputs and try again.');
     } finally {
@@ -396,57 +399,64 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
     }
   }, [buildingType, projectId, address, jurisdiction, sqft, trades, scopeText, perSqftOverride, setBudget]);
 
-  const saveAndContinue = async () => {
+  const advance = useCallback(() => {
+    if (advancedRef.current) return;
+    advancedRef.current = true;
+    router.push(projectId ? `/killerapp/stages/lock?project=${encodeURIComponent(projectId)}` : '/killerapp/stages/lock');
+  }, [router, projectId]);
+
+  // Primary action: "Lock the scope" — persist, fill the ring, advance to Lock.
+  const lockTheScope = async () => {
     if (!result) return;
     const budget = Number(budgetEdit) || result.mid;
-    setSaving(true);
-    setSaveNote(null);
     setBudget({ total: budget });
-
+    // fire-and-forget persistence; the completion moment shouldn't wait on the network
     if (projectId) {
+      void (async () => {
+        try {
+          await authedFetch('/api/v1/projects', { method: 'PATCH', body: JSON.stringify({ id: projectId, project_type: buildingType, location: address || null, jurisdiction: result.jurisdiction.name, sqft: String(sqft), budget_amount: budget, budget_status: 'on-track' }) });
+          await emitSizeUpWrite({ projectId, buildingType: buildingType!, sqft, budgetAmount: budget, jurisdiction: result.jurisdiction.name });
+        } catch {
+          /* best-effort */
+        }
+        try {
+          await recordMaterialCost({ description: `Size Up ballpark — ${buildingType} (${sqft.toLocaleString()} sqft)`, amount: budget, lifecycleStageId: 1, isEstimate: true, projectId });
+        } catch {
+          /* ignore */
+        }
+        try {
+          emitJourneyEvent({ type: 'started', workflowId: 'q1', projectId });
+          emitJourneyEvent({ type: 'completed', workflowId: 'q1', projectId });
+        } catch {
+          /* ignore */
+        }
+      })();
       try {
-        await authedFetch('/api/v1/projects', {
-          method: 'PATCH',
-          body: JSON.stringify({ id: projectId, project_type: buildingType, location: address || null, jurisdiction: result.jurisdiction.name, sqft: String(sqft), budget_amount: budget, budget_status: 'on-track' }),
-        });
-        await emitSizeUpWrite({ projectId, buildingType: buildingType!, sqft, budgetAmount: budget, jurisdiction: result.jurisdiction.name });
-      } catch {
-        /* best-effort */
-      }
-      try {
-        await recordMaterialCost({ description: `Size Up ballpark — ${buildingType} (${sqft.toLocaleString()} sqft)`, amount: budget, lifecycleStageId: 1, isEstimate: true, projectId });
-      } catch {
-        /* ignore */
-      }
-      try {
-        emitJourneyEvent({ type: 'started', workflowId: 'q1', projectId });
-        emitJourneyEvent({ type: 'completed', workflowId: 'q1', projectId });
+        const handoff = { buildingType, address: address || jurisdiction, sqft, trades, jurisdiction: result.jurisdiction.name, low: result.low, mid: result.mid, high: result.high, budget, sketch, scopeText, projectName: MARIN_PROJECT.name };
+        window.localStorage.setItem(`bkg:sizeup:${projectId}`, JSON.stringify(handoff));
       } catch {
         /* ignore */
       }
     }
-
-    try {
-      const handoff = { buildingType, address: address || jurisdiction, sqft, trades, jurisdiction: result.jurisdiction.name, low: result.low, mid: result.mid, high: result.high, budget, sketch, scopeText, projectName: MARIN_PROJECT.name };
-      if (projectId) window.localStorage.setItem(`bkg:sizeup:${projectId}`, JSON.stringify(handoff));
-    } catch {
-      /* ignore */
-    }
-
-    setSaving(false);
-    router.push(projectId ? `/killerapp/stages/lock?project=${encodeURIComponent(projectId)}` : '/killerapp/stages/lock');
+    setCompleting(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setRingFill(true)));
+    window.setTimeout(advance, 1800); // auto-advance after the ring fills
   };
 
   const goNext = () => setStepIdx((i) => Math.min(STEPS.length - 1, i + 1));
   const goBack = () => setStepIdx((i) => Math.max(0, i - 1));
 
+  // sticky action-bar config per step
+  const stepBlocksNext = (step === 'type' && !buildingType) || (step === 'size' && sqft <= 0);
+  const insight = result
+    ? `${money(Number(budgetEdit) || result.mid)} ballpark · ${money(result.perSqftUsed)}/sqft × ${sqft.toLocaleString()} sqft · ${result.confidence} confidence · ${result.jurisdiction.name}`
+    : null;
+
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '12px clamp(12px, 4vw, 40px)', overflow: 'hidden' }}>
-      {/* body header: sketch + progress (Pro toggle + journey live in the shell) */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <button type="button" onClick={() => setSketchOpen(true)} style={{ ...btn('soft'), height: 34, padding: '0 12px', fontSize: 13 }} title="Open the sketch pad">
-          {sketch ? '✓ Sketch saved' : 'Sketch it'}
-        </button>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '12px clamp(12px, 4vw, 40px) 0', position: 'relative', overflow: 'hidden' }}>
+      {/* body header: sketch + progress */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flex: '0 0 auto' }}>
+        <button type="button" onClick={() => setSketchOpen(true)} style={{ ...btn('soft'), height: 34, padding: '0 12px', fontSize: 13 }} title="Open the sketch pad">{sketch ? '✓ Sketch saved' : 'Sketch it'}</button>
         <div style={{ display: 'flex', gap: 6, flex: 1, maxWidth: 320 }}>
           {STEPS.map((s, i) => (
             <span key={s} style={{ height: 4, flex: 1, borderRadius: 999, background: i <= stepIdx ? C.accent : C.rule, opacity: i <= stepIdx ? 1 : 0.5 }} />
@@ -458,18 +468,14 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
         <div style={{ width: '100%', maxWidth: 720, margin: '0 auto' }}>
           {step === 'type' && (
             <section>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <h1 style={h1Style}>{L('What are you building?', 'Occupancy / use type')}</h1>
-                <FirstEncounterWhisper id="size-up-type" text="Tap a tile. You can always change it later." />
-              </div>
-              <div style={{ marginTop: 10 }}>
-                <AutoFillButton onFill={autofillType} label="Auto-fill" />
-              </div>
+              <WhisperBanner id="type" text="Tap a tile. You can always change it later." />
+              <h1 style={h1Style}>{L('What are you building?', 'Occupancy / use type')}</h1>
+              <div style={{ marginTop: 10 }}><AutoFillButton onFill={autofillType} label="Auto-fill" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginTop: 14 }}>
                 {TYPE_TILES.map((t) => {
                   const active = buildingType === t.id;
                   return (
-                    <button key={t.id} type="button" onClick={() => setBuildingType(t.id)} style={{ textAlign: 'left', padding: 16, borderRadius: 16, border: `2px solid ${active ? C.accent : C.rule}`, background: active ? 'rgba(201,145,63,0.08)' : C.paper, cursor: 'pointer', minHeight: 96 }}>
+                    <button key={t.id} type="button" onClick={() => setBuildingType(t.id)} style={{ textAlign: 'left', padding: 16, borderRadius: 16, border: `2px solid ${active ? C.accent : C.rule}`, background: active ? 'rgba(201,145,63,0.08)' : C.paper, cursor: 'pointer', minHeight: 92 }}>
                       <div style={{ fontSize: 12, color: C.brass, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4 }}>{t.glyph}</div>
                       <div style={{ fontSize: 18, fontWeight: 800, color: C.navy, marginTop: 6 }}>{proMode ? t.pro : t.human}</div>
                       <div style={{ fontSize: 12.5, color: C.graphite, opacity: 0.7, marginTop: 4 }}>{proMode ? t.human : t.pro}</div>
@@ -482,10 +488,8 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
 
           {step === 'place' && (
             <section>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <h1 style={h1Style}>{L('Where is it?', 'Site / parcel')}</h1>
-                <FirstEncounterWhisper id="size-up-place" text="Type or speak the address — we read the jurisdiction from it." />
-              </div>
+              <WhisperBanner id="place" text="Type or speak the address — we read the jurisdiction from it." />
+              <h1 style={h1Style}>{L('Where is it?', 'Site / parcel')}</h1>
               <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={proMode ? 'Street address or APN' : 'Address or where the job is'} style={inputStyle} />
                 <MicButton onText={(t) => setAddress(t)} label="the address" />
@@ -493,19 +497,15 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
               </div>
               <MapPanel address={address || jurisdiction || 'San Francisco, CA'} />
               {address && (
-                <p style={{ fontSize: 12.5, color: C.navy, marginTop: 8 }}>
-                  Jurisdiction read: <strong>{jurisdiction || (/(san francisco|soma|\bsf\b)/i.test(address) ? 'San Francisco, CA' : address)}</strong>
-                </p>
+                <p style={{ fontSize: 12.5, color: C.navy, marginTop: 8 }}>Jurisdiction read: <strong>{jurisdiction || (/(san francisco|soma|\bsf\b)/i.test(address) ? 'San Francisco, CA' : address)}</strong></p>
               )}
             </section>
           )}
 
           {step === 'size' && (
             <section>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <h1 style={h1Style}>{L('How big is it?', 'Gross floor area (GSF)')}</h1>
-                <FirstEncounterWhisper id="size-up-size" text="Drag the slider, type it, or speak it." />
-              </div>
+              <WhisperBanner id="size" text="Drag the slider, type it, or speak it." />
+              <h1 style={h1Style}>{L('How big is it?', 'Gross floor area (GSF)')}</h1>
               <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}>
                 <input inputMode="numeric" value={sqftText} onChange={(e) => { const v = e.target.value.replace(/[^\d]/g, ''); setSqftText(v); setSqft(Number(v) || 0); }} placeholder={proMode ? 'GSF' : 'Square feet'} style={{ ...inputStyle, maxWidth: 180 }} />
                 <span style={{ fontWeight: 700, color: C.navy }}>{proMode ? 'GSF' : 'sq ft'}</span>
@@ -513,20 +513,14 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                 <AutoFillButton onFill={autofillSqft} label="Auto-fill" />
               </div>
               <input type="range" min={0} max={10000} step={50} value={Math.min(sqft, 10000)} onChange={(e) => { const n = Number(e.target.value); setSqft(n); setSqftText(String(n)); }} style={{ width: '100%', marginTop: 18, accentColor: C.accent }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: C.graphite, opacity: 0.6 }}>
-                <span>0</span>
-                <span>5,000</span>
-                <span>10,000+</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: C.graphite, opacity: 0.6 }}><span>0</span><span>5,000</span><span>10,000+</span></div>
             </section>
           )}
 
           {step === 'trades' && (
             <section>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <h1 style={h1Style}>{L('Any specialty trades?', 'CSI trade scope')}</h1>
-                <FirstEncounterWhisper id="size-up-trades" text="Only if you are a sub. Skip if not — the button moves on." />
-              </div>
+              <WhisperBanner id="trades" text="Only if you are a sub. Skip if not — the button moves on." />
+              <h1 style={h1Style}>{L('Any specialty trades?', 'CSI trade scope')}</h1>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
                 {TRADE_OPTIONS.map((t) => {
                   const on = trades.includes(t);
@@ -549,11 +543,9 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                 </div>
               )}
               {!result ? (
-                <div style={{ marginTop: 12, position: 'relative' }}>
-                  <FirstEncounterWhisper id="size-up-review" text="One tap runs the estimate specialist; the number comes back editable." />
-                  <p style={{ fontSize: 14, color: C.graphite, opacity: 0.8, marginTop: 14 }}>
-                    {buildingType ? <>A <strong>{buildingType}</strong> build of <strong>{sqft.toLocaleString()} sqft</strong>{address ? <> at <strong>{address}</strong></> : null}.</> : 'Pick a building type and size first.'}
-                  </p>
+                <div style={{ marginTop: 12 }}>
+                  <WhisperBanner id="review" text="One tap runs the estimate specialist; the number comes back editable." />
+                  <p style={{ fontSize: 14, color: C.graphite, opacity: 0.8, marginTop: 4 }}>{buildingType ? <>A <strong>{buildingType}</strong> build of <strong>{sqft.toLocaleString()} sqft</strong>{address ? <> at <strong>{address}</strong></> : null}.</> : 'Pick a building type and size first.'}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
                     <button type="button" disabled={!canRun || running} onClick={runSpecialist} style={{ ...btn('primary'), opacity: !canRun || running ? 0.5 : 1 }}>{running ? 'Running estimate…' : 'Get my ballpark'}</button>
                     <AutoFillButton onFill={runSpecialist} label="Auto-fill from specialist" title="Run the Size Up specialist and fill the number" />
@@ -573,19 +565,6 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                       <ConfidencePill level={result.confidence} />
                       <span title={result.jurisdiction.note} style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999, color: result.jurisdiction.codeCoverage === 'full' ? '#0E2A47' : C.graphite, background: result.jurisdiction.codeCoverage === 'full' ? C.robin : 'rgba(201,195,179,0.4)' }}>{result.jurisdiction.name} · {result.jurisdiction.codeCoverage === 'full' ? 'code-aware' : 'preliminary'}</span>
                     </div>
-                    <details style={{ marginTop: 10 }}>
-                      <summary style={{ cursor: 'pointer', fontSize: 12.5, color: C.navy, fontWeight: 700 }}>Show the breakdown</summary>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8, fontSize: 12.5 }}>
-                        <tbody>
-                          {result.lines.map((ln) => (
-                            <tr key={ln.label} style={{ borderTop: `1px solid ${C.rule}` }}>
-                              <td style={{ padding: '5px 0', color: C.graphite }}>{ln.label}</td>
-                              <td style={{ padding: '5px 0', textAlign: 'right', color: C.navy, fontWeight: 700 }}>{money(ln.amount)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </details>
                   </div>
                 </div>
               )}
@@ -595,16 +574,28 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
         </div>
       </main>
 
-      <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingTop: 10, borderTop: `1px solid ${C.rule}` }}>
-        <button type="button" onClick={goBack} disabled={stepIdx === 0} style={{ ...btn('ghost'), opacity: stepIdx === 0 ? 0.4 : 1 }}>Back</button>
+      {/* insight card (above the action bar) */}
+      {insight && (
+        <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', margin: '0 0 8px', borderRadius: 12, background: 'rgba(182,135,58,0.10)', border: `1px solid ${C.brass}55`, color: C.navy, fontSize: 12.5, fontWeight: 600 }}>
+          <span aria-hidden>✨</span>
+          <span style={{ flex: 1 }}>{insight}</span>
+        </div>
+      )}
+
+      {/* sticky single-primary action bar */}
+      <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderTop: `1px solid ${C.rule}`, flex: '0 0 auto', background: colors.paper.cream }}>
+        <button type="button" onClick={goBack} disabled={stepIdx === 0} style={{ ...btn('ghost'), height: 44, opacity: stepIdx === 0 ? 0.4 : 1 }}>Back</button>
         {step !== 'review' ? (
-          <button type="button" onClick={goNext} disabled={(step === 'type' && !buildingType) || (step === 'size' && sqft <= 0)} style={{ ...btn('primary'), opacity: (step === 'type' && !buildingType) || (step === 'size' && sqft <= 0) ? 0.5 : 1 }}>{step === 'trades' ? (trades.length ? 'Next' : 'Skip — none') : 'Next'}</button>
+          <button type="button" onClick={goNext} disabled={stepBlocksNext} style={{ ...btn('primary'), opacity: stepBlocksNext ? 0.5 : 1 }}>{step === 'trades' ? (trades.length ? 'Next' : 'Skip — none') : 'Next'}</button>
         ) : (
-          <button type="button" onClick={saveAndContinue} disabled={!result || saving} style={{ ...btn('primary'), opacity: !result || saving ? 0.5 : 1 }}>{saving ? 'Saving…' : 'Save & continue to Lock'}</button>
+          <button type="button" onClick={lockTheScope} disabled={!result || completing} style={{ ...btn('primary'), background: C.accent, borderColor: C.accent, opacity: !result || completing ? 0.5 : 1 }}>{completing ? 'Locking…' : 'Lock the scope →'}</button>
         )}
       </footer>
 
       {sketchOpen && <SketchPad initial={sketch} onClose={() => setSketchOpen(false)} onSave={setSketch} />}
+      {completing && (
+        <CompletionOverlay fill={ringFill} title="Scope sized" detail={`${money(Number(budgetEdit) || result?.mid || 0)} ballpark locked. Next: lock the scope with your client.`} onContinue={advance} continueLabel="Continue to Lock →" />
+      )}
     </div>
   );
 }

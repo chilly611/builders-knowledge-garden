@@ -1,14 +1,15 @@
 'use client';
 
 /**
- * Lock — lifecycle stage 2, refit inside the persistent StageShell chrome.
- * =======================================================================
+ * Lock — lifecycle stage 2, inside the persistent StageShell chrome.
+ * =================================================================
  * "Lock in the scope so the rest of the journey can run."
  *
- * Three Invitation Cards (constitution primitive; plain language to the
- * contractor, names internal): pick materials, lock the budget, sign the
- * client agreement. On lock the journey ring fills green and a check overlays.
- * Composes the same chrome + fixture as Plan/Build so all four stages match.
+ * Three Invitation Cards (materials / budget / client agreement). PATCH 1:
+ * one sticky primary action — "Send the agreement" — which sends the client
+ * agreement (Documenso, with a safe fallback), locks the scope, fills the
+ * completion ring + check, and advances the journey to Plan. An insight card
+ * sits directly above the action bar. Whispers are in-flow banners.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -17,7 +18,6 @@ import { supabase } from '@/lib/supabase';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
-import { FirstEncounterWhisper } from '@/components/stage-kit';
 import { MARIN_PROJECT, MARIN_PROJECT_ID, MARIN_BUDGET_BASE_TOTAL, ensureMarinActive, seedMarinBudget } from '@/lib/demo/marin-4000';
 import { colors, fonts } from '@/design-system/tokens';
 import { runLockReview, requestClientAgreement, emitLockWrite } from '@/lib/specialists/lock';
@@ -31,7 +31,7 @@ const C = {
   rule: colors.fadedRule,
   redline: colors.redline,
   green: '#2E7D32',
-  accent: '#3E3A6E', // stage-2 indigo (matches StageShell accent bar)
+  accent: '#3E3A6E', // stage-2 indigo
   paper: colors.paper.white,
 };
 const FONT = fonts.body;
@@ -49,8 +49,6 @@ const MATERIAL_CHIPS = [
   'Heat pump HVAC',
   'Tankless water heater',
 ];
-
-// ─── utilities ──────────────────────────────────────────────────────────────
 
 function readActiveProjectId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -80,6 +78,38 @@ function btn(kind: 'primary' | 'ghost' | 'soft'): React.CSSProperties {
   return { ...base, background: C.paper, color: C.graphite, borderColor: C.rule };
 }
 const inputStyle: React.CSSProperties = { flex: 1, minWidth: 0, height: 44, padding: '0 12px', borderRadius: 10, border: `1px solid ${C.rule}`, fontSize: 15, fontFamily: FONT, color: C.graphite, background: '#fff', boxSizing: 'border-box' };
+
+function WhisperBanner({ id, text }: { id: string; text: string }) {
+  const key = `bkg:whisper:lock:${id}`;
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    try {
+      if (!window.localStorage.getItem(key)) raf = requestAnimationFrame(() => setShow(true));
+    } catch {
+      /* ignore */
+    }
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [key]);
+  if (!show) return null;
+  const dismiss = () => {
+    try {
+      window.localStorage.setItem(key, '1');
+    } catch {
+      /* ignore */
+    }
+    setShow(false);
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: 'rgba(127,207,203,0.14)', border: `1px solid ${C.robin}`, color: C.navy, fontSize: 12.5, marginBottom: 10 }}>
+      <span aria-hidden>💡</span>
+      <span style={{ flex: 1 }}>{text}</span>
+      <button type="button" onClick={dismiss} aria-label="Dismiss tip" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.navy, fontSize: 16, lineHeight: 1 }}>×</button>
+    </div>
+  );
+}
 
 function MicButton({ onText, label }: { onText: (t: string) => void; label: string }) {
   const [listening, setListening] = useState(false);
@@ -144,9 +174,6 @@ export default function LockPage() {
   useEffect(() => {
     ensureMarinActive();
     seedMarinBudget();
-
-    // setState only inside the async closure (never the synchronous effect
-    // body) to satisfy the no-cascade rule; fixture defaults paint first.
     let cancelled = false;
     (async () => {
       const id = readActiveProjectId() ?? MARIN_PROJECT_ID;
@@ -158,25 +185,14 @@ export default function LockPage() {
         /* ignore */
       }
       if (!cancelled) {
-        setCtx((c) => ({
-          ...c,
-          projectId: id,
-          handoff,
-          initialBudget: handoff?.budget ?? handoff?.mid ?? c.initialBudget,
-          scopeText: handoff?.scopeText ?? c.scopeText,
-        }));
+        setCtx((c) => ({ ...c, projectId: id, handoff, initialBudget: handoff?.budget ?? handoff?.mid ?? c.initialBudget, scopeText: handoff?.scopeText ?? c.scopeText }));
       }
       try {
         const res = await authedFetch(`/api/v1/projects?id=${encodeURIComponent(id)}`);
         if (!res.ok) return;
         const j = (await res.json()) as Record<string, unknown>;
         if (cancelled || !j || !j.id) return;
-        setCtx((c) => ({
-          ...c,
-          name: (j.name as string) || c.name,
-          clientName: (j.client_name as string) || c.clientName,
-          scopeText: (j.notes as string) || (j.ai_summary as string) || c.scopeText,
-        }));
+        setCtx((c) => ({ ...c, name: (j.name as string) || c.name, clientName: (j.client_name as string) || c.clientName, scopeText: (j.notes as string) || (j.ai_summary as string) || c.scopeText }));
       } catch {
         /* offline / unauth */
       }
@@ -209,12 +225,12 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
   const [signerName, setSignerName] = useState(clientName !== MARIN_PROJECT.client_name ? clientName : '');
   const [signerEmail, setSignerEmail] = useState('');
   const [agreement, setAgreement] = useState<AgreementResult | null>(null);
-  const [sending, setSending] = useState(false);
 
   const [review, setReview] = useState<LockReviewResult | null>(null);
   const [locking, setLocking] = useState(false);
   const [locked, setLocked] = useState(false);
   const [ringFill, setRingFill] = useState(false);
+  const advancedRef = useRef(false);
 
   const L = (human: string, pro: string) => (proMode ? pro : human);
 
@@ -238,71 +254,94 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
     };
   }, [lockInput]);
 
-  const sendAgreement = useCallback(async () => {
-    if (!signerName.trim() || !signerEmail.trim()) return;
-    setSending(true);
-    try {
-      const r = await requestClientAgreement({ projectId: projectId ?? undefined, projectName, clientName: clientName || signerName, signerName, signerEmail, scopeText, lockedBudget: budget, materials });
-      setAgreement(r);
-    } catch {
-      setAgreement({ status: 'error', configured: false, message: 'Could not prepare the agreement. Try again.' });
-    } finally {
-      setSending(false);
-    }
-  }, [signerName, signerEmail, projectId, projectName, clientName, scopeText, budget, materials]);
+  const materialsDone = materials.length > 0;
+  const agreementCardDone = agreement?.status === 'sent' || agreement?.status === 'prepared' || (!!signerName.trim() && !!signerEmail.trim());
+  const doneCount = [materialsDone, budgetConfirmed, agreementCardDone].filter(Boolean).length;
+  const ready = materialsDone && budgetConfirmed; // hard gate to lock the scope
 
-  const ready = !!review?.ready;
-  const doneCount = review?.cards.filter((c) => c.done).length ?? 0;
+  const advanceToPlan = useCallback(() => {
+    if (advancedRef.current) return;
+    advancedRef.current = true;
+    router.push(projectId ? `/killerapp/stages/plan?project=${encodeURIComponent(projectId)}` : '/killerapp');
+  }, [router, projectId]);
 
-  const lockScope = async () => {
-    if (!ready) return;
+  // Single primary: "Send the agreement" — sends (best-effort), locks scope,
+  // fills the ring + check, advances to Plan.
+  const sendAndLock = async () => {
+    if (!ready || locking) return;
     setLocking(true);
+
+    let sent: AgreementResult | null = agreement;
+    if (!sent && signerName.trim() && signerEmail.trim()) {
+      try {
+        sent = await requestClientAgreement({ projectId: projectId ?? undefined, projectName, clientName: clientName || signerName, signerName, signerEmail, scopeText, lockedBudget: budget, materials });
+        setAgreement(sent);
+      } catch {
+        /* ignore — lock still proceeds */
+      }
+    }
+
     setBudget({ total: budget });
     if (projectId) {
+      void (async () => {
+        try {
+          await authedFetch('/api/v1/projects', { method: 'PATCH', body: JSON.stringify({ id: projectId, phase: 'DESIGN', progress: 100, budget_amount: budget, notes: scopeText || undefined }) });
+        } catch {
+          /* best-effort */
+        }
+        try {
+          await recordMaterialCost({ description: `Locked scope — ${materials.length} material picks`, amount: budget, lifecycleStageId: 2, isEstimate: true, projectId });
+        } catch {
+          /* ignore */
+        }
+        try {
+          await emitLockWrite({ projectId, lockedBudget: budget, materials: materials.length, agreementStatus: sent?.status ?? 'none' });
+        } catch {
+          /* ignore */
+        }
+        try {
+          emitJourneyEvent({ type: 'started', workflowId: 'q4', projectId });
+          emitJourneyEvent({ type: 'completed', workflowId: 'q4', projectId });
+        } catch {
+          /* ignore */
+        }
+      })();
       try {
-        await authedFetch('/api/v1/projects', { method: 'PATCH', body: JSON.stringify({ id: projectId, phase: 'DESIGN', progress: 100, budget_amount: budget, notes: scopeText || undefined }) });
-      } catch {
-        /* best-effort */
-      }
-      try {
-        await recordMaterialCost({ description: `Locked scope — ${materials.length} material picks`, amount: budget, lifecycleStageId: 2, isEstimate: true, projectId });
-      } catch {
-        /* ignore */
-      }
-      try {
-        await emitLockWrite({ projectId, lockedBudget: budget, materials: materials.length, agreementStatus: agreement?.status ?? 'none' });
-      } catch {
-        /* ignore */
-      }
-      try {
-        emitJourneyEvent({ type: 'started', workflowId: 'q4', projectId });
-        emitJourneyEvent({ type: 'completed', workflowId: 'q4', projectId });
-      } catch {
-        /* ignore */
-      }
-      try {
-        window.localStorage.setItem(`bkg:lock:${projectId}`, JSON.stringify({ materials, budget, agreement: agreement?.status ?? 'none', lockedAt: Date.now() }));
+        window.localStorage.setItem(`bkg:lock:${projectId}`, JSON.stringify({ materials, budget, agreement: sent?.status ?? 'none', lockedAt: Date.now() }));
       } catch {
         /* ignore */
       }
     }
+
     setLocking(false);
     setLocked(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setRingFill(true)));
+    window.setTimeout(advanceToPlan, 1900);
   };
 
+  const agreementLine = agreement
+    ? agreement.status === 'sent'
+      ? `agreement sent to ${signerName}`
+      : agreement.status === 'prepared'
+        ? 'agreement drafted'
+        : 'agreement needs a retry'
+    : signerName.trim() && signerEmail.trim()
+      ? 'agreement ready to send'
+      : 'agreement optional';
+  const insight = `${doneCount}/3 ready · ${money(budget)} budget · ${materials.length} material${materials.length === 1 ? '' : 's'} · ${agreementLine}`;
+
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '12px clamp(12px, 4vw, 40px)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'relative', display: 'inline-block', flex: '0 0 auto' }}>
-        <h1 style={{ fontSize: 'clamp(18px, 3.4vw, 26px)', fontWeight: 800, color: C.navy, margin: '2px 0 0', fontFamily: fonts.display }}>{L('Lock in the scope', 'Lock scope baseline')}</h1>
-        <FirstEncounterWhisper id="lock-intro" text="Three quick confirmations and the rest of the build can run. Nothing here is permanent." />
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '12px clamp(12px, 4vw, 40px) 0', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: '0 0 auto' }}>
+        <WhisperBanner id="intro" text="Three quick confirmations and the rest of the build can run. Nothing here is permanent." />
+        <h1 style={{ fontSize: 'clamp(18px, 3.4vw, 26px)', fontWeight: 800, color: C.navy, margin: 0, fontFamily: fonts.display }}>{L('Lock in the scope', 'Lock scope baseline')}</h1>
       </div>
 
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14, minHeight: 0, overflow: 'auto', justifyContent: 'center' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12, minHeight: 0, overflow: 'auto', justifyContent: 'center' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, alignItems: 'start' }}>
           {/* card 1 — materials */}
-          <Card done={materials.length > 0} index={1}>
-            <CardTitle done={materials.length > 0}>{L('Pick the materials you know you want', 'Material selections')}</CardTitle>
+          <Card done={materialsDone} index={1}>
+            <CardTitle done={materialsDone}>{L('Pick the materials you know you want', 'Material selections')}</CardTitle>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
               {MATERIAL_CHIPS.map((m) => {
                 const on = materials.includes(m);
@@ -311,7 +350,7 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
                 );
               })}
             </div>
-            <CardFoot>{materials.length > 0 ? `${materials.length} selected` : 'Tap a few from your knowledge garden'}</CardFoot>
+            <CardFoot>{materialsDone ? `${materials.length} selected` : 'Tap a few from your knowledge garden'}</CardFoot>
           </Card>
 
           {/* card 2 — budget */}
@@ -326,11 +365,11 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
             <CardFoot>{budget > 0 ? `From your Size Up ballpark: ${money(budget)}` : 'Carry over the Size Up estimate'}</CardFoot>
           </Card>
 
-          {/* card 3 — agreement */}
-          <Card done={agreement?.status === 'sent' || agreement?.status === 'prepared'} index={3}>
-            <CardTitle done={agreement?.status === 'sent' || agreement?.status === 'prepared'}>{L('Sign the client agreement', 'Client agreement (e-sign)')}</CardTitle>
+          {/* card 3 — agreement (signer details; the sticky bar sends it) */}
+          <Card done={agreementCardDone} index={3}>
+            <CardTitle done={agreementCardDone}>{L('Sign the client agreement', 'Client agreement (e-sign)')}</CardTitle>
             {!agreementOpen && !agreement && (
-              <button type="button" onClick={() => setAgreementOpen(true)} style={{ ...btn('soft'), height: 38, marginTop: 10, fontSize: 13 }}>Set up the agreement</button>
+              <button type="button" onClick={() => setAgreementOpen(true)} style={{ ...btn('soft'), height: 38, marginTop: 10, fontSize: 13 }}>Add who signs</button>
             )}
             {agreementOpen && !agreement && (
               <div style={{ marginTop: 8 }}>
@@ -339,18 +378,15 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
                   <MicButton onText={(t) => setSignerName(t)} label="the client name" />
                 </div>
                 <input value={signerEmail} onChange={(e) => setSignerEmail(e.target.value)} placeholder="Client email" inputMode="email" style={{ ...inputStyle, height: 40 }} />
-                <button type="button" onClick={sendAgreement} disabled={sending || !signerName.trim() || !signerEmail.trim()} style={{ ...btn('primary'), height: 38, marginTop: 8, fontSize: 13, opacity: sending || !signerName.trim() || !signerEmail.trim() ? 0.5 : 1 }}>{sending ? 'Preparing…' : 'Send for signature'}</button>
               </div>
             )}
             {agreement && (
               <div style={{ marginTop: 8, fontSize: 12.5, color: agreement.status === 'error' ? C.redline : C.green }}>
                 <strong>{agreement.status === 'sent' ? 'Sent' : agreement.status === 'prepared' ? 'Drafted' : 'Issue'}:</strong> {agreement.message}
-                {agreement.signingUrl && (
-                  <div style={{ marginTop: 4 }}><a href={agreement.signingUrl} target="_blank" rel="noreferrer" style={{ color: C.navy, fontWeight: 700 }}>Open signing link</a></div>
-                )}
+                {agreement.signingUrl && (<div style={{ marginTop: 4 }}><a href={agreement.signingUrl} target="_blank" rel="noreferrer" style={{ color: C.navy, fontWeight: 700 }}>Open signing link</a></div>)}
               </div>
             )}
-            <CardFoot>{review?.cards.find((c) => c.id === 'agreement')?.detail ?? 'Optional to lock — encouraged before build'}</CardFoot>
+            <CardFoot>{agreementCardDone ? (agreement ? 'Handled at lock' : `Ready: ${signerName}`) : 'Optional — the button below sends it on lock'}</CardFoot>
           </Card>
         </div>
 
@@ -359,24 +395,28 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
         )}
       </main>
 
-      <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingTop: 10, borderTop: `1px solid ${C.rule}`, flex: '0 0 auto' }}>
-        <button type="button" onClick={() => router.push(projectId ? `/killerapp/stages/size-up?project=${encodeURIComponent(projectId)}` : '/killerapp/stages/size-up')} style={btn('ghost')}>Back to Size Up</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 12.5, color: C.graphite, opacity: 0.7 }}>{doneCount}/3 ready</span>
-          <button type="button" onClick={lockScope} disabled={!ready || locking} style={{ ...btn('primary'), background: ready ? C.accent : C.navy, borderColor: ready ? C.accent : C.navy, opacity: !ready || locking ? 0.5 : 1 }}>{locking ? 'Locking…' : L('Lock the scope', 'Lock baseline')}</button>
-        </div>
+      {/* insight card (above the action bar) */}
+      <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', margin: '8px 0', borderRadius: 12, background: 'rgba(62,58,110,0.08)', border: `1px solid ${C.accent}44`, color: C.navy, fontSize: 12.5, fontWeight: 600 }}>
+        <span aria-hidden>✨</span>
+        <span style={{ flex: 1 }}>{insight}</span>
+      </div>
+
+      {/* sticky single-primary action bar */}
+      <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderTop: `1px solid ${C.rule}`, flex: '0 0 auto', background: colors.paper.cream }}>
+        <button type="button" onClick={() => router.push(projectId ? `/killerapp/stages/size-up?project=${encodeURIComponent(projectId)}` : '/killerapp/stages/size-up')} style={{ ...btn('ghost'), height: 44 }}>Back</button>
+        <button type="button" onClick={sendAndLock} disabled={!ready || locking} title={ready ? 'Send the agreement and lock the scope' : 'Confirm materials and the budget first'} style={{ ...btn('primary'), background: ready ? C.accent : C.navy, borderColor: ready ? C.accent : C.navy, opacity: !ready || locking ? 0.5 : 1 }}>{locking ? 'Sending…' : 'Send the agreement →'}</button>
       </footer>
 
       {locked && (
-        <div role="dialog" aria-label="Scope locked" style={{ position: 'absolute', inset: 0, zIndex: 900, background: 'rgba(253,248,240,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+        <div role="dialog" aria-label="Scope locked" style={{ position: 'absolute', inset: 0, zIndex: 900, background: 'rgba(253,248,240,0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
           <svg width="150" height="150" viewBox="0 0 160 160" aria-hidden>
             <circle cx="80" cy="80" r="70" fill="none" stroke={C.rule} strokeWidth="10" />
             <circle cx="80" cy="80" r="70" fill="none" stroke={C.green} strokeWidth="10" strokeLinecap="round" transform="rotate(-90 80 80)" strokeDasharray={2 * Math.PI * 70} strokeDashoffset={ringFill ? 0 : 2 * Math.PI * 70} style={{ transition: 'stroke-dashoffset 900ms ease' }} />
             <path d="M52 82 L72 102 L110 60" fill="none" stroke={C.green} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={120} strokeDashoffset={ringFill ? 0 : 120} style={{ transition: 'stroke-dashoffset 600ms ease 700ms' }} />
           </svg>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.navy, fontFamily: fonts.display }}>Scope locked</div>
-          <p style={{ fontSize: 13.5, color: C.graphite, maxWidth: 420, textAlign: 'center', margin: 0 }}>{money(budget)} · {materials.length} materials{agreement ? ` · agreement ${agreement.status}` : ''}. The rest of the journey can run.</p>
-          <button type="button" onClick={() => router.push(projectId ? `/killerapp/stages/plan?project=${encodeURIComponent(projectId)}` : '/killerapp')} style={btn('primary')}>Continue to Plan</button>
+          <p style={{ fontSize: 13.5, color: C.graphite, maxWidth: 420, textAlign: 'center', margin: 0 }}>{money(budget)} · {materials.length} materials{agreement ? ` · agreement ${agreement.status}` : ''}. Heading to Plan…</p>
+          <button type="button" onClick={advanceToPlan} style={btn('primary')}>Continue to Plan →</button>
         </div>
       )}
     </div>
