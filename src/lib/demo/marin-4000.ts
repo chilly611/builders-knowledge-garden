@@ -46,8 +46,8 @@ export const MARIN_PROJECT: MarinProjectRecord = {
   code_jurisdiction: 'San Francisco, CA',
   sqft: '4,000',
   project_type: 'Custom farmhouse — 2 story, 4,000 sqft',
-  estimated_cost_low: 1_850_000,
-  estimated_cost_high: 2_150_000,
+  estimated_cost_low: 1_550_000,
+  estimated_cost_high: 1_780_000,
 };
 
 // ─── AI Attention Items (AI COO surface on /projects/[id]) ──────────────────
@@ -58,7 +58,7 @@ export const MARIN_PROJECT: MarinProjectRecord = {
 // exists (the useKacProject(id) hook noted in page.tsx), the page falls back
 // to these — matching the KillerAppChrome's own Marin fixture fallback so the
 // chrome's numbers and the attention items describe the SAME project.
-// Numbers track the chrome: $1.99M total, $426K headroom, foundation just
+// Numbers track the chrome: $1.65M total, $347K headroom, foundation just
 // wrapped (May 14), framing milestone Jul 7. Client: The Harwell Family.
 
 export interface MarinAttentionItem {
@@ -91,19 +91,19 @@ export const MARIN_ATTENTION_ITEMS: MarinAttentionItem[] = [
     id: 'marin-att-finishes-allowances',
     title: 'Lock Finish Allowances With the Harwells',
     urgency: 'yellow',
-    body: 'Interior finishes ($268K) are pending and unselected — the single largest line and the usual source of overruns. With $426K of headroom (21% of the $1.99M budget), confirm flooring/cabinet/counter allowances with the Harwell family before selections drift and eat the contingency.',
+    body: 'Interior finishes ($268K) are pending and unselected — the single largest line and the usual source of overruns. With $347K of headroom (21% of the $1.65M budget), confirm flooring/cabinet/counter allowances with the Harwell family before selections drift and eat the contingency.',
   },
   {
     id: 'marin-att-draw-foundation',
     title: 'Prep the Foundation-Milestone Draw',
     urgency: 'yellow',
-    body: 'Foundation is complete and ~$138K is billed against the $1.99M contract. Assemble the foundation-milestone draw package now so it is ready the day the inspection passes — lenders typically need 5-7 business days plus a site inspection, and a lag stalls framing cash flow.',
+    body: 'Foundation is complete and ~$138K is billed against the $1.65M contract. Assemble the foundation-milestone draw package now so it is ready the day the inspection passes — lenders typically need 5-7 business days plus a site inspection, and a lag stalls framing cash flow.',
   },
   {
     id: 'marin-att-on-budget',
-    title: 'On Budget Through Foundation — $1.99M Holding',
+    title: 'On Budget Through Foundation — $1.65M Holding',
     urgency: 'green',
-    body: 'The Marin Farmhouse is tracking on budget at 7% spent, inside the $1.85M-$2.15M estimate, with foundation landing at the locked-in $165K. A clean signal entering the framing phase — hold the line on change orders to protect the $426K headroom.',
+    body: 'The Marin Farmhouse is tracking on budget at 19% spent, inside the $1.55M-$1.78M estimate, with foundation landing at the locked-in $165K. A clean signal entering the framing phase — hold the line on change orders to protect the $347K headroom.',
   },
 ];
 
@@ -123,25 +123,29 @@ function line(
 }
 
 export const MARIN_BUDGET_LINES: BudgetLine[] = [
-  line('marin-permits', 'permits', 'Marin County building permits + school fees', 42_000, 'paid', 'Marin County DPW'),
-  line('marin-arch', 'admin', 'Architecture & structural engineering', 96_000, 'paid', 'Field Studio Architects'),
-  line('marin-gc', 'labor', 'GC general conditions & supervision', 185_000, 'locked-in'),
+  line('marin-permits', 'permits', 'Marin County building permits + school fees', 38_000, 'paid', 'Marin County DPW'),
+  line('marin-arch', 'admin', 'Architecture & structural engineering', 78_000, 'paid', 'Field Studio Architects'),
+  line('marin-gc', 'labor', 'GC general conditions & supervision', 140_000, 'locked-in'),
   line('marin-foundation', 'subcontractors', 'Foundation & concrete', 165_000, 'locked-in', 'Tamalpais Concrete'),
-  line('marin-framing-labor', 'subcontractors', 'Framing — rough carpentry', 240_000, 'locked-in', 'Ridgeline Framing'),
+  line('marin-framing-labor', 'subcontractors', 'Framing — rough carpentry', 175_000, 'locked-in', 'Ridgeline Framing'),
   line('marin-framing-mat', 'materials', 'Framing lumber & sheathing', 128_000, 'estimated'),
-  line('marin-roofing', 'subcontractors', 'Roofing & weatherproofing', 96_000, 'estimated', 'Bay Roofing Co.'),
-  line('marin-electrical', 'subcontractors', 'Electrical — rough + finish', 142_000, 'estimated'),
-  line('marin-plumbing', 'subcontractors', 'Plumbing — rough + finish', 138_000, 'estimated'),
-  line('marin-hvac', 'subcontractors', 'HVAC & ductwork', 88_000, 'estimated'),
+  line('marin-roofing', 'subcontractors', 'Roofing & weatherproofing', 72_000, 'estimated', 'Bay Roofing Co.'),
+  line('marin-electrical', 'subcontractors', 'Electrical — rough + finish', 104_000, 'estimated'),
+  line('marin-plumbing', 'subcontractors', 'Plumbing — rough + finish', 100_000, 'estimated'),
+  line('marin-hvac', 'subcontractors', 'HVAC & ductwork', 64_000, 'estimated'),
   line('marin-windows', 'materials', 'Windows & exterior doors', 115_000, 'estimated', 'Marvin'),
-  line('marin-drywall', 'subcontractors', 'Insulation & drywall', 92_000, 'estimated'),
+  line('marin-drywall', 'subcontractors', 'Insulation & drywall', 66_000, 'estimated'),
   line('marin-finishes', 'materials', 'Interior finishes — flooring, cabinets, counters', 268_000, 'pending'),
-  line('marin-siding', 'subcontractors', 'Exterior siding & stucco', 84_000, 'pending'),
-  line('marin-equipment', 'equipment', 'Crane & equipment rental', 36_000, 'estimated'),
-  line('marin-landscape', 'subcontractors', 'Landscape & hardscape', 74_000, 'pending'),
+  line('marin-siding', 'subcontractors', 'Exterior siding & stucco', 60_000, 'pending'),
+  line('marin-equipment', 'equipment', 'Crane & equipment rental', 28_000, 'estimated'),
+  line('marin-landscape', 'subcontractors', 'Landscape & hardscape', 49_000, 'pending'),
 ];
 
-/** Base hard-cost total (sum of all budget lines), excluding schedule overhead. */
+/** Canonical Marin project-record budget — matches the DB row the demo runs on. */
+export const MARIN_BUDGET_TOTAL = 1_650_000;
+export const MARIN_BUDGET_SPENT = 312_000;
+
+/** Base hard-cost total (sum of all budget lines). Tracks MARIN_BUDGET_TOTAL. */
 export const MARIN_BUDGET_BASE_TOTAL = MARIN_BUDGET_LINES.reduce((s, l) => s + l.amount, 0);
 
 // ─── Sequencing (Plan stage drag-drop) ──────────────────────────────────────

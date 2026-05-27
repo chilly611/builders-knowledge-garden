@@ -3,13 +3,15 @@
 /**
  * Plan stage — "Plan it out" (lifecycle stage 3).
  *
- * Functional: drag-drop job sequencing (framer-motion Reorder) that updates
- * the BudgetRibbon's timeline + general-conditions overhead live on every
- * move; plain-speak SF code lookup; an AI sequencing sanity-check.
- * WordPress'd (clearly alpha): scheduling calendar + whiteboard.
+ * Functional: drag-drop job sequencing (framer-motion Reorder) that moves the
+ * BudgetRibbon's live TIMELINE and the insight card's overhead figure on every
+ * reorder (the contract total holds steady at $1.65M); plain-speak SF code
+ * lookup; an AI sequencing sanity-check. WordPress'd (clearly alpha):
+ * scheduling calendar + whiteboard, tucked in a collapsible "Coming soon"
+ * section so they never crowd the working tools.
  *
- * Everything renders inside the persistent StageShell chrome (JourneyRow +
- * BudgetRibbon + ProToggle).
+ * Renders inside the persistent StageShell chrome (JourneyRow + BudgetRibbon +
+ * ProToggle + a sticky primary-action bar).
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -20,7 +22,8 @@ import { runSequencingCheck } from '@/lib/specialists/plan';
 import {
   MARIN_PROJECT,
   MARIN_PROJECT_ID,
-  MARIN_BUDGET_BASE_TOTAL,
+  MARIN_BUDGET_TOTAL,
+  MARIN_BUDGET_SPENT,
   MARIN_PLAN_PHASES,
   WEEKLY_OVERHEAD,
   computeSchedule,
@@ -39,7 +42,7 @@ function fmtMoney(n: number): string {
 // ── Static previews for the WordPress'd stubs ──────────────────────────────
 
 function CalendarPreview() {
-  const days = Array.from({ length: 35 }, (_, i) => i - 2); // offset so it starts mid-week
+  const days = Array.from({ length: 35 }, (_, i) => i - 2);
   return (
     <div style={{ width: '100%', maxWidth: 320 }}>
       <div style={{ textAlign: 'center', fontFamily: fonts.display, fontWeight: 700, color: colors.navy, marginBottom: 6 }}>
@@ -135,6 +138,24 @@ function PhaseRow({ phase, concurrent }: { phase: PlanPhase; concurrent: boolean
   );
 }
 
+const sectionCard: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+  padding: 14,
+  borderRadius: 12,
+  background: colors.paper.white,
+  border: `1px solid ${colors.paper.border}`,
+};
+
+const sectionHeading: React.CSSProperties = {
+  margin: '0 0 8px',
+  fontFamily: fonts.display,
+  fontSize: 16,
+  fontWeight: 700,
+  color: colors.navy,
+};
+
 function PlanStageBody() {
   const { setBudget, proMode } = useStageChrome();
   const [phases, setPhases] = useState<PlanPhase[]>(MARIN_PLAN_PHASES);
@@ -143,15 +164,11 @@ function PlanStageBody() {
 
   const schedule = useMemo(() => computeSchedule(phases), [phases]);
 
-  // Push the live total + timeline into the chrome on every reorder.
+  // Contract total holds steady; the sequencing drag moves the live TIMELINE.
   useEffect(() => {
-    setBudget({
-      total: MARIN_BUDGET_BASE_TOTAL + schedule.overheadCost,
-      timelineWeeks: schedule.totalWeeks,
-    });
+    setBudget({ total: MARIN_BUDGET_TOTAL, timelineWeeks: schedule.totalWeeks });
   }, [schedule, setBudget]);
 
-  // Which rows are part of an adjacent same-group concurrent run?
   const concurrentIds = useMemo(() => {
     const ids = new Set<string>();
     for (let i = 0; i < phases.length; i++) {
@@ -184,109 +201,102 @@ function PlanStageBody() {
 
   return (
     <div
+      className="plan-root"
       style={{
         flex: 1,
         minHeight: 0,
         width: '100%',
         overflowY: 'auto',
         padding: 'clamp(12px, 2vw, 20px)',
-        display: 'grid',
-        gap: 16,
-        gridTemplateColumns: 'minmax(300px, 5fr) minmax(320px, 6fr)',
-        alignContent: 'start',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
       }}
-      className="plan-grid"
     >
-      {/* LEFT — Sequencing (functional hero) */}
-      <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
-        <FirstEncounterWhisper id="plan-sequencing" text="Drag any phase to reorder. The budget & timeline update live as work overlaps." />
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-          <h2 style={{ margin: 0, fontFamily: fonts.display, fontSize: 17, fontWeight: 700, color: colors.navy }}>
-            Job sequencing
-          </h2>
-          <span style={{ fontSize: 11.5, color: colors.graphite }}>drag to reorder</span>
-        </div>
+      <FirstEncounterWhisper id="plan-sequencing" text="Drag any phase to reorder — the timeline & overhead update live as work overlaps." />
 
-        <Reorder.Group axis="y" values={phases} onReorder={setPhases} style={{ margin: 0, padding: 0 }}>
-          {phases.map((p) => (
-            <PhaseRow key={p.id} phase={p} concurrent={concurrentIds.has(p.id)} />
-          ))}
-        </Reorder.Group>
-
-        {/* Live budget-impact callout */}
-        <div
-          style={{
-            marginTop: 'auto',
-            padding: '10px 12px',
-            borderRadius: 10,
-            background: `${STAGE_ACCENT}12`,
-            border: `1.5px solid ${STAGE_ACCENT}`,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12.5, color: colors.navy }}>
-            <span><b>{schedule.totalWeeks} wk</b> timeline</span>
-            <span>GC overhead <b>{fmtMoney(schedule.overheadCost)}</b></span>
+      {/* Working tools: phases | code (two columns on desktop, stacked on mobile) */}
+      <div className="plan-cols" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 5fr) minmax(320px, 6fr)', gap: 14, alignItems: 'start' }}>
+        <section style={sectionCard}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+            <h2 style={sectionHeading}>Job sequencing</h2>
+            <span style={{ fontSize: 11.5, color: colors.graphite }}>drag to reorder</span>
           </div>
-          <div style={{ marginTop: 4, fontSize: 11.5, color: colors.graphite }}>
-            {schedule.weeksSavedByParallel > 0 ? (
-              <>Running trades concurrently saves <b style={{ color: '#0E7C66' }}>{schedule.weeksSavedByParallel} wk</b> (≈{fmtMoney(schedule.weeksSavedByParallel * WEEKLY_OVERHEAD)} in overhead).</>
-            ) : (
-              <>Cluster the MEP rough-ins together to run them concurrently and cut overhead.</>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={aiCheck}
-            style={{
-              marginTop: 8, padding: '5px 10px', borderRadius: 999, border: `1.5px solid ${colors.robin}`,
-              background: `${colors.robin}26`, color: colors.navy, fontFamily: fonts.body, fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
-            }}
-          >
-            <span aria-hidden>✨</span> {aiBusy ? 'Checking…' : 'AI sequencing check'}
-          </button>
-          {aiNote && (
-            <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.4, color: colors.graphite, whiteSpace: 'pre-wrap', maxHeight: 96, overflowY: 'auto' }}>
-              {aiNote}
-            </div>
-          )}
-        </div>
-      </section>
+          <Reorder.Group axis="y" values={phases} onReorder={setPhases} style={{ margin: 0, padding: 0 }}>
+            {phases.map((p) => (
+              <PhaseRow key={p.id} phase={p} concurrent={concurrentIds.has(p.id)} />
+            ))}
+          </Reorder.Group>
+        </section>
 
-      {/* RIGHT — Code lookup (functional) + two stubs */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
-        <section
-          style={{
-            display: 'flex', flexDirection: 'column', minHeight: 0, flex: '1 1 auto',
-            padding: 14, borderRadius: 12, background: colors.paper.white, border: `1px solid ${colors.paper.border}`,
-          }}
-        >
-          <h2 style={{ margin: '0 0 8px', fontFamily: fonts.display, fontSize: 17, fontWeight: 700, color: colors.navy }}>
-            Plain-speak code lookup
-          </h2>
+        <section style={{ ...sectionCard, minHeight: 280 }}>
+          <h2 style={sectionHeading}>Plain-speak code lookup</h2>
           <div style={{ flex: 1, minHeight: 160 }}>
             <CodeLookup phase="plan" proMode={proMode} projectType={MARIN_PROJECT.project_type} />
           </div>
         </section>
+      </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, minHeight: 170 }} className="plan-stubs">
-          <AlphaStub
-            title="Scheduling calendar"
-            description="A full calendar view of the sequence — drag phases onto dates, see crew load per week."
-            icon="📅"
-            preview={<CalendarPreview />}
-          />
-          <AlphaStub
-            title="Planning whiteboard"
-            description="A shared canvas to sketch the site plan and pin notes with the crew."
-            icon="🧮"
-            preview={<WhiteboardPreview />}
-          />
+      {/* Coming soon — WordPress'd, collapsible, never crowds the tools */}
+      <details className="alpha-section" open>
+        <summary
+          style={{
+            cursor: 'pointer', listStyle: 'none', fontFamily: fonts.body, fontSize: 12,
+            fontWeight: 700, color: colors.brass, textTransform: 'uppercase', letterSpacing: 0.5,
+            padding: '4px 0',
+          }}
+        >
+          ▸ Coming soon
+        </summary>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, minHeight: 180, marginTop: 8 }} className="plan-stubs">
+          <AlphaStub title="Scheduling calendar" description="A full calendar view of the sequence — drag phases onto dates, see crew load per week." icon="📅" preview={<CalendarPreview />} />
+          <AlphaStub title="Planning whiteboard" description="A shared canvas to sketch the site plan and pin notes with the crew." icon="🧮" preview={<WhiteboardPreview />} />
         </div>
+      </details>
+
+      {/* Insight card — sits directly above the sticky action bar */}
+      <div
+        style={{
+          marginTop: 'auto',
+          padding: '12px 14px',
+          borderRadius: 12,
+          background: `${STAGE_ACCENT}12`,
+          borderLeft: `4px solid ${STAGE_ACCENT}`,
+          border: `1px solid ${STAGE_ACCENT}55`,
+        }}
+      >
+        <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
+          {schedule.totalWeeks} wk timeline
+          {schedule.weeksSavedByParallel > 0 && (
+            <> · running trades concurrently saves <span style={{ color: '#0E7C66' }}>{schedule.weeksSavedByParallel} wk</span></>
+          )}
+        </div>
+        <div style={{ marginTop: 3, fontSize: 12.5, color: colors.graphite }}>
+          {schedule.weeksSavedByParallel > 0
+            ? <>≈ {fmtMoney(schedule.weeksSavedByParallel * WEEKLY_OVERHEAD)} in general-conditions overhead saved · $1.65M budget holding steady</>
+            : <>Cluster the MEP rough-ins together to run them concurrently and cut overhead · $1.65M budget holding steady</>}
+        </div>
+        <button
+          type="button"
+          onClick={aiCheck}
+          style={{
+            marginTop: 8, padding: '5px 10px', borderRadius: 999, border: `1.5px solid ${colors.robin}`,
+            background: `${colors.robin}26`, color: colors.navy, fontFamily: fonts.body, fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          <span aria-hidden>✨</span> {aiBusy ? 'Checking…' : 'AI sequencing check'}
+        </button>
+        {aiNote && (
+          <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.4, color: colors.graphite, whiteSpace: 'pre-wrap', maxHeight: 88, overflowY: 'auto' }}>
+            {aiNote}
+          </div>
+        )}
       </div>
 
       <style>{`
+        .alpha-section > summary::-webkit-details-marker { display: none; }
         @media (max-width: 860px) {
-          .plan-grid { grid-template-columns: 1fr; }
+          .plan-cols { grid-template-columns: 1fr; }
         }
         @media (max-width: 480px) {
           .plan-stubs { grid-template-columns: 1fr; }
@@ -297,13 +307,10 @@ function PlanStageBody() {
 }
 
 export default function PlanStagePage() {
-  // Seed the Marin demo so the chrome + budget read the same numbers.
   useEffect(() => {
     ensureMarinActive();
     seedMarinBudget();
   }, []);
-
-  const initialSchedule = computeSchedule(MARIN_PLAN_PHASES);
 
   return (
     <StageShell
@@ -312,7 +319,9 @@ export default function PlanStagePage() {
       projectId={MARIN_PROJECT_ID}
       projectName={MARIN_PROJECT.name}
       projectMeta={`${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`}
-      initialBudget={MARIN_BUDGET_BASE_TOTAL + initialSchedule.overheadCost}
+      initialBudget={MARIN_BUDGET_TOTAL}
+      budgetSpent={MARIN_BUDGET_SPENT}
+      primaryAction={{}}
     >
       <PlanStageBody />
     </StageShell>

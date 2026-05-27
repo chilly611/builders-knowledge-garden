@@ -20,6 +20,7 @@ import { StageChromeProvider } from './stage-chrome-context';
 import JourneyRow from './JourneyRow';
 import BudgetRibbon from './BudgetRibbon';
 import ProToggle from './ProToggle';
+import StageActionBar from './StageActionBar';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, fonts } from '@/design-system/tokens';
 
@@ -30,6 +31,15 @@ export interface StageShellProps {
   projectName?: string;
   projectMeta?: string;
   initialBudget?: number;
+  /** Spent-to-date from the project record — renders "spent / total" in the ribbon. */
+  budgetSpent?: number;
+  /**
+   * Opt-in sticky primary-action bar at the bottom of the stage. When set,
+   * StageShell renders one button (default verb for the stage, overridable)
+   * that marks the stage complete + advances the journey. Omit it and no bar
+   * renders (so stages with their own internal CTA aren't double-actioned).
+   */
+  primaryAction?: { label?: string; onActivate?: () => void };
   children: ReactNode;
 }
 
@@ -40,6 +50,8 @@ export default function StageShell({
   projectName,
   projectMeta,
   initialBudget,
+  budgetSpent,
+  primaryAction,
   children,
 }: StageShellProps) {
   const accent = STAGE_ACCENTS[stageId].hex;
@@ -110,7 +122,7 @@ export default function StageShell({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
-              <BudgetRibbon projectId={projectId} initialBudget={initialBudget} />
+              <BudgetRibbon projectId={projectId} initialBudget={initialBudget} spent={budgetSpent} />
               <ProToggle />
             </div>
           </div>
@@ -121,6 +133,15 @@ export default function StageShell({
         <main style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
           {children}
         </main>
+
+        {primaryAction && (
+          <StageActionBar
+            stageId={stageId}
+            projectId={projectId}
+            label={primaryAction.label}
+            onActivate={primaryAction.onActivate}
+          />
+        )}
       </div>
     </StageChromeProvider>
   );

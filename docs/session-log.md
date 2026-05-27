@@ -2711,3 +2711,20 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - Whispers are now in-flow dismissible banners (one at a time), never floating overlays that occlude content.
 - Dogfooded the full **Size Up → Lock → Plan** walk at 380px in a real browser: both stages advance and the next route loads. Build clean. (Items 2 journey-row labels, 3 budget-chip consistency, and most of 4 three-column are chrome/Plan-owned — flagged to the layout owner.)
 - Landed amid heavy concurrent churn: origin advanced +3 (design-system rollout 61dd920 + Marin attention fix 51924bf) and a stale 42-min `.git/index.lock` had to be cleared (no live git process; only Spotlight held a read handle). Stashed teammate untracked rollout files to rebase cleanly, then pushed (33d6184). A `git stash` entry remains holding those untracked copies (now also committed via origin) plus a local `.claude/launch.json` — safe to `git stash drop`.
+
+---
+
+## 2026-05-27 — Claude Code (Agent B): PATCH 1 — stage stuck-point fixes from the live review
+**Agent:** Claude Code (claude-opus-4-7, 1M) — done in an isolated `git worktree` off origin/main so the shared working tree's untracked WIP was never disturbed.
+**What changed (all in the shared `stage-shell` chrome + Plan/Build, so all four stages benefit):**
+- **Sticky primary-action bar** (`stage-shell/StageActionBar.tsx`): one stage-appropriate verb pinned to the bottom of every stage (Plan = "Approve the plan, start building", Build = "Wrap up build, move to adapt"). On activate it marks the stage complete (localStorage) and advances to the next stage's route (graceful when the next stage doesn't exist yet). Opt-in via `StageShell.primaryAction` so Size Up/Lock (their own internal CTAs) aren't double-actioned.
+- **JourneyRow** now shows always-visible labels (no icon-only), ≥44px tap targets, a **red-chrome (#E8443A) glow on the current stage**, a pulsing current→next connector, and **✓ on completed stages** (read from the shared stage-complete store).
+- **Budget consistency**: aligned the canonical Marin fixture to the project-record values **$1.65M total / $312K spent** (was an invented $1.99M); rescaled the 16 budget lines to sum exactly $1,650,000; updated the AI-attention-item prose + estimate range to match. BudgetRibbon now reads **"$312K / $1.65M"** (stable) with the **timeline** as the live value (sequencing drag moves timeline + the insight card's overhead figure, not the headline).
+- **Killed the dual-ribbon mismatch**: gated the layout-level `KillerAppChrome` + `ProjectCockpit` OFF `/killerapp/stages/*` in `layout.tsx`, so a stage shows only its own StageShell chrome (no "$16K/$914K vs $2.34M" two-totals-on-one-screen).
+- **Whispers no longer occlude**: `FirstEncounterWhisper` is now an in-flow banner (was a floating overlay); removed `ProToggle`'s floating tooltip so it's one whisper at a time, nothing floating over content.
+- **Mobile**: stage bodies are a single vertical scroll under 860px; the WordPress'd cards moved into a collapsible **"Coming soon"** `<details>` section so they never crowd the working tools.
+- **Standardized insight cards** above the action bar: Plan = "{N} wk timeline · running trades concurrently saves {X} wk · ≈$Y overhead saved · $1.65M holding"; Build = "62% complete · framing inspection passed · $312K of $1.65M spent · …".
+
+**Verification:** `npm run build` clean in the worktree (EXIT 0, all 4 `/killerapp/stages/*` routes compiled). Size Up/Lock unaffected (they use the unchanged parts of the StageShell + stage-kit contracts; `MARIN_BUDGET_BASE_TOTAL` now equals $1.65M so they read consistently). Live 380px dogfood to follow on the deploy.
+
+**Coordination:** Changed `layout.tsx` (one gate) and the shared Marin fixture's budget numbers — flagged for Agent A / the projects/[id] author (the attention items now read $1.65M, matching the founder's patch). Two stage-chrome systems (`killerapp-chrome` V3 + `stage-shell`) still want a one-canonical reconciliation. **The DB Marin row's `sqft`/`budget` should be updated to 4,000 / $1.65M / $312K to match the fixture + demo script.**

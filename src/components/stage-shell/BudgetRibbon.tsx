@@ -1,12 +1,17 @@
 'use client';
 
 /**
- * BudgetRibbon — always-visible live budget + timeline.
+ * BudgetRibbon — always-visible budget + live timeline.
  *
- * Reads the page-authoritative total from StageChromeContext (the Plan stage
- * pushes a new total on every sequencing drag). Falls back to the BudgetClient
- * localStorage spine for the active project so the ribbon is never empty —
- * e.g. on the Build stage, which doesn't drive the number itself.
+ * Headline reads "<spent> / <total>" from the canonical project record
+ * (stable — never two different totals on one screen). The TIMELINE is the
+ * live value: the Plan stage pushes a new week count on every sequencing
+ * drag, and that number pulses. The dollar impact of a drag is surfaced in
+ * the stage insight card, not the headline (the contract total doesn't swing
+ * with your schedule — your overhead does).
+ *
+ * Falls back to the BudgetClient localStorage spine for the total so the
+ * ribbon is never empty on stages that don't push a budget.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -43,11 +48,14 @@ function readBaseTotal(projectId: string | null): number | null {
 export default function BudgetRibbon({
   projectId,
   initialBudget,
+  spent,
 }: {
   projectId: string | null;
   initialBudget?: number;
+  /** Spent-to-date from the project record. When set, headline is "spent / total". */
+  spent?: number;
 }) {
-  const { budgetTotal, timelineWeeks, budgetTick, lastBudgetChange } = useStageChrome();
+  const { budgetTotal, timelineWeeks, budgetTick } = useStageChrome();
   const [baseTotal, setBaseTotal] = useState<number | null>(initialBudget ?? null);
   const [flash, setFlash] = useState(false);
   const firstTick = useRef(true);
@@ -57,7 +65,7 @@ export default function BudgetRibbon({
     if (t != null) setBaseTotal(t);
   }, [projectId]);
 
-  // Pulse on every budget change after the first paint.
+  // Pulse the TIMELINE on every live update after the first paint.
   useEffect(() => {
     if (firstTick.current) {
       firstTick.current = false;
@@ -69,21 +77,13 @@ export default function BudgetRibbon({
   }, [budgetTick]);
 
   const total = budgetTotal ?? baseTotal ?? initialBudget ?? null;
-  // 2026-05-28: herbarium merge — was '#14B8A6' (bright teal), now sage
-  // (positive budget movement). Orange/brass paths already migrated by
-  // the colors.ts alias step.
-  const changeColor =
-    lastBudgetChange < 0
-      ? colors.status.success
-      : lastBudgetChange > 0
-        ? colors.orange
-        : colors.brass;
+  const accent = colors.robin;
 
   return (
     <div
       role="status"
       aria-live="polite"
-      title={total != null ? formatExact(total) : 'Budget pending'}
+      title={total != null ? `Budget ${formatExact(total)}${spent != null ? ` · ${formatExact(spent)} spent` : ''}` : 'Budget pending'}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -91,9 +91,7 @@ export default function BudgetRibbon({
         padding: '6px 14px',
         borderRadius: 999,
         background: colors.paper.cream,
-        border: `1.5px solid ${flash ? changeColor : colors.paper.border}`,
-        boxShadow: flash ? `0 0 0 3px ${changeColor}22` : 'none',
-        transition: 'border-color 200ms ease, box-shadow 200ms ease',
+        border: `1.5px solid ${colors.paper.border}`,
         fontFamily: fonts.body,
         whiteSpace: 'nowrap',
       }}
@@ -102,27 +100,48 @@ export default function BudgetRibbon({
         <span style={{ fontSize: 9.5, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.brass, fontWeight: 700 }}>
           Budget
         </span>
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 16,
-            fontWeight: 700,
-            color: flash ? changeColor : colors.navy,
-            transition: 'color 200ms ease',
-          }}
-        >
-          {total != null ? formatBig(total) : '—'}
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: colors.navy }}>
+          {total != null ? (
+            spent != null ? (
+              <>
+                {formatBig(spent)} <span style={{ color: colors.brass, fontWeight: 500 }}>/ {formatBig(total)}</span>
+              </>
+            ) : (
+              formatBig(total)
+            )
+          ) : (
+            '—'
+          )}
         </span>
       </span>
 
       {timelineWeeks != null && (
         <>
           <span aria-hidden style={{ width: 1, height: 22, background: colors.paper.border }} />
-          <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+          <span
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              lineHeight: 1.1,
+              padding: '2px 6px',
+              margin: '-2px -2px',
+              borderRadius: 7,
+              background: flash ? `${accent}26` : 'transparent',
+              transition: 'background 200ms ease',
+            }}
+          >
             <span style={{ fontSize: 9.5, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.brass, fontWeight: 700 }}>
               Timeline
             </span>
-            <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: colors.navy }}>
+            <span
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 16,
+                fontWeight: 700,
+                color: flash ? colors.robin : colors.navy,
+                transition: 'color 200ms ease',
+              }}
+            >
               {timelineWeeks} wk
             </span>
           </span>

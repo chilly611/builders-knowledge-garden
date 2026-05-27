@@ -48,6 +48,12 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const hideShell = searchParams?.get('hideShell') === '1';
   const stageId = stageFromPathname(pathname);
+  // The /killerapp/stages/* routes carry their own full stage chrome
+  // (StageShell = JourneyRow + BudgetRibbon + ProToggle). Suppress the
+  // layout-level KillerAppChrome there so the page never shows two budget
+  // ribbons / two journey rows with different numbers (founder demo fix,
+  // 2026-05-27).
+  const isStageRoute = pathname.startsWith('/killerapp/stages/');
 
   // W9.D.3: Auto-seed demo project on first visit (investor demo). Skip inside
   // the /intro iframe — see hideShell note above.
@@ -107,10 +113,12 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
             JourneyTimeRow call useSearchParams under the hood. Falls back to
             the Marin Farmhouse seed when no real project is wired through
             ProjectContext yet. */}
-        <Suspense fallback={null}>
-          <KillerAppChrome />
-        </Suspense>
-        <ProjectCockpit />
+        {!isStageRoute && (
+          <Suspense fallback={null}>
+            <KillerAppChrome />
+          </Suspense>
+        )}
+        {!isStageRoute && <ProjectCockpit />}
         <div style={{ paddingTop: 48 }}>
           {children}
           {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}

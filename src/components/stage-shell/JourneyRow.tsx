@@ -3,24 +3,27 @@
 /**
  * JourneyRow — the persistent 7-stage lifecycle strip.
  *
- * Size up → Lock it in → Plan it out → Build → Adapt → Collect → Reflect.
- * The current stage is filled with its accent; completed stages read done;
- * upcoming stages are muted. Plan + Build deep-link to their stage pages
- * (the two wired in this restructure); the rest route to the picker.
+ * Each stage is a node: a circular marker (emoji, or ✓ once the stage is
+ * marked complete) with a plain-text label beneath it — labels always show,
+ * never icons-only. The CURRENT stage gets a red-chrome glow; the connector
+ * from current → next pulses to suggest forward motion. Whole node is a
+ * ≥44px tap target. Completed state is read from the shared stage-complete
+ * store (set by the StageActionBar).
  */
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
-import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
+import { type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, fonts } from '@/design-system/tokens';
+import { readCompletedStages, STAGE_COMPLETE_EVENT, STAGE_SLUG } from './StageActionBar';
 
-const STAGE_ROUTE: Partial<Record<StageId, string>> = {
-  3: '/killerapp/stages/plan',
-  4: '/killerapp/stages/build',
-};
+const RED_CHROME = '#E8443A';
+const EXISTING = new Set<StageId>([1, 2, 3, 4]); // routes that exist today
+const DONE_GREEN = colors.status?.success ?? '#4F7A4A';
 
 function hrefFor(stageId: StageId, projectId: string | null): string {
-  const base = STAGE_ROUTE[stageId] ?? '/killerapp';
+  const base = EXISTING.has(stageId) ? `/killerapp/stages/${STAGE_SLUG[stageId]}` : '/killerapp';
   return projectId ? `${base}?project=${encodeURIComponent(projectId)}` : base;
 }
 
@@ -31,37 +34,47 @@ export default function JourneyRow({
   currentStage: StageId;
   projectId: string | null;
 }) {
+  const [completed, setCompleted] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    setCompleted(readCompletedStages(projectId));
+    const onComplete = () => setCompleted(readCompletedStages(projectId));
+    window.addEventListener(STAGE_COMPLETE_EVENT, onComplete);
+    return () => window.removeEventListener(STAGE_COMPLETE_EVENT, onComplete);
+  }, [projectId]);
+
   return (
     <nav
       aria-label="Project journey"
       style={{
         display: 'flex',
-        alignItems: 'center',
-        gap: 2,
+        alignItems: 'flex-start',
+        gap: 0,
         width: '100%',
         overflowX: 'auto',
         scrollbarWidth: 'none',
-        padding: '2px 0',
+        paddingBottom: 2,
       }}
     >
       {LIFECYCLE_STAGES.map((stage, idx) => {
         const id = stage.id as StageId;
-        const accent = STAGE_ACCENTS[id].hex;
         const isCurrent = id === currentStage;
-        const isDone = id < currentStage;
-        const wired = id in STAGE_ROUTE;
+        const isComplete = completed.has(id) || id < currentStage;
+        const isNextAfterCurrent = id === currentStage + 1;
 
         return (
           <div key={id} style={{ display: 'flex', alignItems: 'center', flex: '0 0 auto' }}>
             {idx > 0 && (
               <span
                 aria-hidden
+                className={isNextAfterCurrent ? 'journey-connector-pulse' : undefined}
                 style={{
-                  width: 10,
+                  width: 16,
                   height: 2,
                   borderRadius: 2,
-                  background: isDone || isCurrent ? accent : colors.fadedRule,
-                  opacity: isDone || isCurrent ? 0.6 : 0.4,
+                  marginTop: 13,
+                  background: isComplete || isCurrent ? RED_CHROME : colors.fadedRule,
+                  opacity: isComplete || isCurrent ? 0.7 : 0.4,
                 }}
               />
             )}
@@ -71,38 +84,60 @@ export default function JourneyRow({
               aria-current={isCurrent ? 'step' : undefined}
               style={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                gap: 6,
+                gap: 3,
                 textDecoration: 'none',
-                padding: '5px 10px',
-                borderRadius: 999,
-                fontFamily: fonts.body,
-                fontSize: 12.5,
-                fontWeight: isCurrent ? 700 : 500,
-                lineHeight: 1,
-                whiteSpace: 'nowrap',
-                color: isCurrent ? '#fff' : isDone ? colors.navy : colors.graphite,
-                background: isCurrent ? accent : isDone ? `${accent}1A` : 'transparent',
-                border: `1.5px solid ${isCurrent ? accent : isDone ? `${accent}55` : 'transparent'}`,
-                opacity: !isCurrent && !isDone && !wired ? 0.55 : 1,
+                minWidth: 56,
+                minHeight: 44,
+                padding: '2px 4px',
+                borderRadius: 10,
+                background: isCurrent ? `${RED_CHROME}20` : 'transparent',
+                border: `1px solid ${isCurrent ? RED_CHROME : 'transparent'}`,
                 cursor: 'pointer',
-                transition: 'background 160ms ease, color 160ms ease',
+                transition: 'background 160ms ease',
               }}
             >
-              <span aria-hidden style={{ fontSize: 14 }}>
-                {isDone ? '✓' : stage.emoji}
+              <span
+                aria-hidden
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isComplete ? 14 : 13,
+                  fontWeight: 800,
+                  color: isComplete ? '#fff' : isCurrent ? RED_CHROME : colors.graphite,
+                  background: isComplete ? DONE_GREEN : isCurrent ? '#fff' : colors.paper.cream,
+                  border: `1.5px solid ${isComplete ? DONE_GREEN : isCurrent ? RED_CHROME : colors.paper.border}`,
+                }}
+              >
+                {isComplete ? '✓' : stage.emoji}
               </span>
-              <span className="journey-stage-label">{stage.name}</span>
+              <span
+                style={{
+                  fontFamily: fonts.body,
+                  fontSize: 10,
+                  fontWeight: isCurrent ? 800 : 500,
+                  lineHeight: 1.1,
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  color: isCurrent ? RED_CHROME : isComplete ? colors.navy : colors.graphite,
+                }}
+              >
+                {stage.name}
+              </span>
             </Link>
           </div>
         );
       })}
 
       <style>{`
-        @media (max-width: 760px) {
-          .journey-stage-label { display: none; }
-        }
         nav[aria-label="Project journey"]::-webkit-scrollbar { display: none; }
+        @keyframes journeyPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        .journey-connector-pulse { animation: journeyPulse 1.4s ease-in-out infinite; }
       `}</style>
     </nav>
   );
