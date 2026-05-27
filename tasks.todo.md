@@ -1,6 +1,23 @@
 # Builder's Knowledge Garden — Master Task List
 
 
+## ═══ SIZE UP + LOCK STAGES — refit into the persistent chrome (2026-05-27, Thursday demo) ═══
+
+Refit the Size Up + Lock lifecycle stages (stages 1 & 2) to be FULLY FUNCTIONAL inside the persistent stage chrome, for Thursday's contractor demo. Four files only: the two `stages/*` pages + two `specialists/*` server modules.
+
+- [x] `src/lib/specialists/size-up.ts` — deterministic ballpark ($/sqft × sqft × locale), SF-aware jurisdiction, confidence; logs `specialist_runs`, emits events.
+- [x] `src/lib/specialists/lock.ts` — 3-card readiness review + agreement summary; `requestClientAgreement` wires Documenso (jsPDF) w/ safe "prepared" fallback when unconfigured.
+- [x] `src/app/killerapp/stages/size-up/page.tsx` — one-input-at-a-time wizard, voice on every field, ✨ auto-fill (runs specialist → editable), **sketch pad returns**, Pro labels, whispers; drives BudgetRibbon live.
+- [x] `src/app/killerapp/stages/lock/page.tsx` — three Invitation Cards, one primary action, green completion-ring overlay on lock.
+- [x] Refit both into `@/components/stage-shell` `StageShell` + `useStageChrome` (consistent with Plan/Build); pull the shared `marin-4000.ts` 4,000 sqft fixture; reuse stage-kit `FirstEncounterWhisper` + `AutoFillButton`.
+- [x] Acceptance: `npm run build` clean; render inside StageShell w/ Marin 4,000 sqft; sketch works; auto-fill triggers specialist; Pro toggle flips labels; voice wired; 380px + 1280px no-overflow.
+- [x] docs/session-log.md appended; tasks.todo.md updated; committed + pushed to main.
+
+**Carry-forward / coordination:**
+- [ ] **Seed sqft:** the live Marin DB row is `sqft = "2800"` but the fixture (and demo script) is **4,000**. Update the `command_center_projects` row to 4,000 to match, or keep fixture-first.
+- [ ] **Reconcile the two stage chromes** — Size Up/Lock + Plan/Build all use `@/components/stage-shell`; the layout also mounts the V3 `@/components/killerapp-chrome` (`KillerAppChrome`) + the legacy `KillerAppNav` strip. Three chromes stack on `/killerapp/stages/*`; suppress the legacy + pick one canonical chrome (layout owner).
+- [ ] **Documenso** — set `DOCUMENSO_API_KEY` in the demo env so the Lock agreement card sends a real e-sign instead of the "prepared" fallback.
+
 ## ═══ KILLER APP CHROME — Thursday Contractor Demo (2026-05-27) ═══
 
 Goal: persistent BudgetRibbon + JourneyTimeRow on every Killer App page, plus

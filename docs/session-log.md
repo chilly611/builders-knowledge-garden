@@ -2586,3 +2586,34 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - **Not verifiable headless:** the actual drag gesture (mechanism verified by code + initial live values) and the Web Speech mic capture + signed-in DB persistence (endpoint + pattern verified) need a real signed-in browser — i.e., demo conditions.
 - **Origin diverged into a V3 Killer App rehaul (+15 commits) while this work was in flight**, including Agent A's commit `41b73f6` that created its OWN `src/components/killerapp-chrome/` (KillerAppChrome + JourneyTimeRow + a different BudgetRibbon + TimeMachine + Kac* types). To avoid clobbering it, **Agent B's chrome was relocated to `src/components/stage-shell/`** (per founder decision) and rebased on top. **TWO stage-chrome systems now coexist on main — they need reconciliation** (decide one canonical chrome, or compose stage-shell on top of KillerAppChrome). The Plan/Build stage routes are net-new (no route collision); origin had no `stages/*` routes.
 - Heads-up: the `origin` remote URL has a GitHub PAT embedded in `.git/config` — consider moving it to a credential helper.
+
+## 2026-05-27 — Claude Code Session: Size Up + Lock stages, refit into the persistent stage chrome
+
+**Agent:** Claude Code (Opus 4.7, 1M context)
+
+**What was built:**
+- `src/lib/specialists/size-up.ts` — deterministic Size Up specialist (`'use server'`): ballpark = $/sqft × sqft × locale modifier, SF-aware jurisdiction resolver (full code coverage for SF, "preliminary" elsewhere), confidence score. Logs every run to `specialist_runs` (RSI Loop 2) and emits events via `events.ts`. Deterministic on purpose — a demo can't depend on the LLM being reachable, and the formula is the founder's spec.
+- `src/lib/specialists/lock.ts` — Lock specialist (`'use server'`): readiness review across the three cards + plain-language agreement summary; `requestClientAgreement` wires the existing Documenso client (one-page jsPDF agreement → e-sign) and degrades to a safe "prepared" state when `DOCUMENSO_API_KEY` is unset (the demo case). Logs + emits.
+- `src/app/killerapp/stages/size-up/page.tsx` — Size Up: one-input-at-a-time wizard (building-type tiles → address + key-free OSM map → sqft slider/numeric → trade chips → review). Voice on every text field (Web Speech API), ✨ auto-fill that runs the specialist and lands editable text, the **sketch pad returns** (canvas draw + save), Pro labels + first-encounter whispers. The confirmed ballpark drives the BudgetRibbon live.
+- `src/app/killerapp/stages/lock/page.tsx` — Lock: three Invitation Cards (materials chips, confirm budget, sign client agreement), one primary action, completion overlay (green ring fills + ✓) on lock.
+
+**Key decisions:**
+- The StageShell chrome + `marin-4000.ts` fixture did **not** exist at session start, so the stages were first built self-contained (verified, build-clean). Per founder choice, **refit both into `@/components/stage-shell` `StageShell` + `useStageChrome`** so they match Plan/Build, and pull the shared **4,000 sqft Marin fixture** so the demo data flows in deterministically (no auth dependency). Reused stage-kit `FirstEncounterWhisper` + `AutoFillButton`.
+- Specialists are `'use server'` modules so only the four task-scoped files were touched.
+- Persistence is best-effort: PATCH `/api/v1/projects` for headline fields, budget-spine `recordMaterialCost` to update the ribbon, `emitJourneyEvent` to light the journey ring — all degrade silently when unauthenticated.
+
+**Verification (acceptance):**
+1. ✅ `npm run build` clean (EXIT 0, "Compiled successfully", all four `stages/*` routes).
+2. ✅ Both stages render inside StageShell (journey row + $1.99M BudgetRibbon + Plain-speak/Pro toggle).
+3. ✅ Marin Farmhouse **4,000 sqft** flows in via the shared fixture (DB row overrides when signed in).
+4. ✅ Sketch button opens a canvas pad; draw + Save persists ("Sketch saved").
+5. ✅ Auto-fill triggers the Size Up specialist → editable $ result (range, $/sqft × sqft × locale, confidence, jurisdiction). Verified $375 × 4,000 × 1.0 = $1,500,000 with no locale; SF/Marin apply ×1.35 / ×1.25.
+6. ✅ Pro toggle flips labels ("What are you building?" → "Occupancy / use type") across the chrome→body boundary.
+7. ✅ Voice: Web Speech supported + mic wired/enabled on every text field (a live mic needs a real signed-in browser).
+8. ✅ No horizontal overflow at 380px or 1280px.
+
+**Issues / coordination flags:**
+- **DB vs fixture sqft mismatch:** the live `command_center_projects` Marin row has `sqft = "2800"` (its `raw_input` says "1,800 sf"); the shared `marin-4000.ts` fixture says **4,000**. The stages prefer the fixture (matches the brief + Plan/Build) and override from the DB row when signed in. Recommend updating the seed row to 4,000 to match the demo script.
+- **Three chromes now stack on `/killerapp/stages/*`:** the layout-level `KillerAppChrome` (V3) + the legacy `KillerAppNav`/JourneyMapHeader strip + StageShell. Same redundancy Agent B flagged — layout-level suppression on `/stages/*` is owned by whoever owns `layout.tsx`.
+- **An interactive rebase was mid-conflict on this tree during the session** (landing Agent B's Plan/Build commit onto the V3 base, relocating StageShell → `@/components/stage-shell`). Left untouched; resumed only after it completed cleanly.
+- Documenso isn't configured locally (no `DOCUMENSO_API_KEY`); the agreement card shows the safe "prepared" path. Set the key for live e-sign in the demo env.
