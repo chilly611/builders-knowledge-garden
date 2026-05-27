@@ -2480,8 +2480,6 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - [ ] **Documenso webhook autofill bug** — still parked, lazy-sync handles status.
 - [ ] **Pre-existing P2**: `/api/v1/architect-request` 500 on POST due to body-shape mismatch (`name` vs `contact_name`, `email` vs `contact_email`).
 
-
-
 ## 2026-05-25 — Chat — Knowledge Gardens OS Strategy v3 (decisions locked)
 
 **Agent:** Chat (Claude Opus 4.7)
@@ -2554,3 +2552,37 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - **John:** engages with the v3 memo text and the architecture diagram. Marks anything to cut or rename.
 - **Mike:** pre-read only. The real review is the live BKG Killer App walkthrough once the rehaul ships in Cowork.
 - **Both:** confirm "RSI Heartbeat as the moat" lands as the lead message of every external-facing artifact from this point — investor decks, press, recruiting, customer onboarding.
+
+---
+
+## 2026-05-27 — Claude Code Session (Agent B): Plan + Build stages in the new persistent chrome
+**Agent:** Claude Code (claude-opus-4-7, 1M) — parallel "Agent B" lane of the UX-rehaul restructure
+**What was built (all NEW files — no edits to existing chrome/layout):**
+- `src/components/stage-shell/` — the stage-level persistent chrome: `StageShell` (wraps a stage body, sized to `100dvh − 48px` for no-scroll), `JourneyRow` (7-stage lifecycle strip, current stage highlighted, Plan/Build deep-linked), `BudgetRibbon` (always-visible live budget total + timeline, pulses on change, falls back to the BudgetClient localStorage spine), `ProToggle` (top-right Plain-speak⇄Pro with first-encounter whisper), `stage-chrome-context` (lets a stage page push live budget/timeline up to the ribbon). *(Relocated from `killerapp-chrome/` after rebasing onto the V3 rehaul, which landed Agent A's own `killerapp-chrome/` — see coordination flags.)*
+- `src/components/stage-kit/` — shared feature parts: `CodeLookup` (plain-speak SF code lookup via the compliance specialist + curated SF fallback, Pro-mode citations), `VoiceFieldReport` (Web Speech → AI-structured daily-log entry → `daily_log_state` DB PATCH + localStorage mirror), `AlphaStub` (the honest "alpha — coming soon" WordPress'd placeholder), `FirstEncounterWhisper`, `AutoFillButton` (✨), `code-data` (10 curated SF/CA residential code topics).
+- `src/lib/demo/marin-4000.ts` — self-contained Marin 4,000 sqft fixture (project record, 16 budget lines = $1.99M base keyed to the allowlisted demo UUID `55730cd3…`, 10 sequencing phases, `computeSchedule()` for the live timeline/overhead math, `seedMarinBudget()` / `ensureMarinActive()`).
+- `src/lib/specialists/plan.ts` + `build.ts` — thin client wrappers over the shared specialist runner (`runCodeLookup`, `runSequencingCheck`, `structureFieldReport`).
+- `src/app/killerapp/stages/plan/page.tsx` — **Plan it out** (stage 3): drag-drop job sequencing (framer-motion `Reorder`, Uber-address style) that updates the BudgetRibbon's timeline + GC overhead live on every move; plain-speak SF code lookup; AI sequencing check. WordPress'd: scheduling calendar + whiteboard (static previews + alpha badge).
+- `src/app/killerapp/stages/build/page.tsx` — **Build** (stage 4): voice field reporting → DB daily log; build-phase code lookup; photo upload (`AttachmentSection`). WordPress'd: drone / robot / IoT (static previews + alpha badge).
+
+**Verification (acceptance):**
+1. ✅ `npm run build` clean (EXIT 0, "Compiled successfully", both `/killerapp/stages/{plan,build}` compiled; only 3 pre-existing unrelated warnings).
+2. ✅ Both stages render in chrome with Marin data — header "Marin Farmhouse · 4,000 sqft · Marin County, CA", BudgetRibbon "$2.32M / 35 wk" ($1.99M base + $332.5K overhead).
+3. ✅ Sequencing drag-drop wired to live budget/timeline (computeSchedule → setBudget → ribbon); live callout "35 wk · GC overhead $332,500 · saves 5 wk ≈ $47,500".
+4. ✅ Code lookup returns a real plain-language San Francisco answer (verified the live `compliance-structural` specialist call: 200, claude-sonnet-4, 4 citations).
+5. ✅ Voice field report → `daily_log_state` PATCH (auth-gated endpoint confirmed 401 signed-out; component keeps a localStorage mirror; persists to DB when signed in — same column the shipped daily-log workflow uses).
+6. ✅ All 5 stubs labeled "alpha — coming soon".
+7. ✅ No horizontal overflow at 380px or 1280px (verified both stages).
+
+**Key decisions:**
+- Founder picked (via question): **build self-contained chrome** under `killerapp-chrome/` + **create a Marin 4000sqft seed**. The brief referenced a chrome / `stages/` / `specialists/` dir / `DEMO-DECISIONS-10PM.md` that did not exist in the repo — the §2 functional-vs-WordPress assignment was restated in the brief itself, so no doc was needed.
+- **Live budget impact = GC general-conditions overhead as a function of schedule duration.** Reordering phases so same-trade work (MEP rough-ins) runs concurrently shortens the timeline and drops overhead — a tangible, lovable drag payoff.
+- **Honest alpha labeling** on every stub; the alpha caveat is the protection.
+- All work is **additive** — zero edits to `src/app/killerapp/layout.tsx` or any existing component (Agent A owns the layout-level chrome).
+
+**Issues / coordination flags (for Agent A + founder):**
+- **Old global chrome coexists above the new StageShell.** The layout still mounts `KillerAppNav` + the old `JourneyMapHeader` (shows "No budget yet") + `ProjectCockpit`. On `/killerapp/stages/*` these stack above my JourneyRow/BudgetRibbon and are redundant (and the old "No budget yet" widget reads a different budget source than my live $2.32M). Recommend Agent A suppress the old global chrome on `/stages/*` routes (à la the existing `hideShell`/picker gating) so only the new persistent chrome shows.
+- **Shared dev server contention.** The preview dev server/browser was shared with Agent A's live session, which repeatedly navigated it to size-up/lock mid-check — full screenshots were hijacked, so verification used DOM/API probes (authoritative). The "two `<main>`" seen mid-verification was a red herring: one is React's hidden streaming buffer (`<div hidden>`), only one is visible. Production build is clean.
+- **Not verifiable headless:** the actual drag gesture (mechanism verified by code + initial live values) and the Web Speech mic capture + signed-in DB persistence (endpoint + pattern verified) need a real signed-in browser — i.e., demo conditions.
+- **Origin diverged into a V3 Killer App rehaul (+15 commits) while this work was in flight**, including Agent A's commit `41b73f6` that created its OWN `src/components/killerapp-chrome/` (KillerAppChrome + JourneyTimeRow + a different BudgetRibbon + TimeMachine + Kac* types). To avoid clobbering it, **Agent B's chrome was relocated to `src/components/stage-shell/`** (per founder decision) and rebased on top. **TWO stage-chrome systems now coexist on main — they need reconciliation** (decide one canonical chrome, or compose stage-shell on top of KillerAppChrome). The Plan/Build stage routes are net-new (no route collision); origin had no `stages/*` routes.
+- Heads-up: the `origin` remote URL has a GitHub PAT embedded in `.git/config` — consider moving it to a credential helper.

@@ -69,6 +69,26 @@ Parent branch: `feature/v3-killerapp-rehaul` (NOT merged to main yet).
 
 ---
 
+## ═══ UX REHAUL — PLAN + BUILD STAGES IN PERSISTENT CHROME (2026-05-27, Agent B / Thursday demo) ═══
+
+Parallel "Agent B" lane: refit the **Plan** and **Build** lifecycle stages into a new persistent stage chrome (StageShell = JourneyRow + BudgetRibbon + ProToggle), functional where ready, honestly stubbed ("alpha — coming soon") where not. Marin 4,000 sqft demo data. All NEW files; additive (no edits to existing layout/chrome — Agent A owns layout-level chrome).
+
+- [x] `src/components/stage-shell/` — StageShell, JourneyRow, BudgetRibbon (live), ProToggle, stage-chrome-context. *(Relocated from `killerapp-chrome/` after the V3 rehaul landed Agent A's own `killerapp-chrome/`.)*
+- [x] `src/lib/demo/marin-4000.ts` — Marin 4,000 sqft fixture ($1.99M base budget, 10 sequencing phases, schedule/overhead math).
+- [x] `src/components/stage-kit/` — CodeLookup (SF), VoiceFieldReport (→ daily_log DB), AlphaStub, FirstEncounterWhisper, AutoFillButton, code-data.
+- [x] `src/lib/specialists/plan.ts` + `build.ts` — thin runner wrappers (code lookup, sequencing check, field-report structuring).
+- [x] `src/app/killerapp/stages/plan/page.tsx` — drag-drop sequencing → live budget/timeline; SF code lookup; calendar + whiteboard alpha stubs.
+- [x] `src/app/killerapp/stages/build/page.tsx` — voice field report → DB; build-phase code lookup; photo upload; drone/robot/IoT alpha stubs.
+- [x] Acceptance: `npm run build` clean; both stages render in chrome w/ Marin data; drag updates budget live; SF code lookup returns plain-language (LLM, 4 citations); voice→daily_log PATCH wired; stubs labeled alpha; 380px + 1280px no-overflow.
+- [x] docs/session-log.md appended; docs/in-flight.md lock added; pushed to main.
+
+**Carry-forward / coordination (Agent A + founder):**
+- [ ] **Reconcile the two stage-chrome systems.** The V3 rehaul landed Agent A's `src/components/killerapp-chrome/` (KillerAppChrome + JourneyTimeRow + TimeMachine + Kac* types); Agent B's chrome lives at `src/components/stage-shell/`. Decide one canonical chrome (or compose stage-shell's StageShell on top of KillerAppChrome) so Plan/Build match Size Up/Lock. **Owner: founder + Agent A.**
+- [ ] **Suppress the OLD global chrome on `/killerapp/stages/*`.** Layout still mounts `KillerAppNav` + old `JourneyMapHeader` ("No budget yet") + `ProjectCockpit`, which stack redundantly above the new StageShell chrome. Gate them off `/stages/*` (like the existing `hideShell`/picker gating) so only the new persistent chrome shows. **Owner: Agent A (layout.tsx).**
+- [ ] **Wire remaining stages** (Adapt / Collect / Reflect) into JourneyRow once their pages exist (currently route to the picker). Size Up + Lock already built by Agent A (standalone chrome — consider migrating them onto StageShell for consistency).
+- [ ] **Pro mode label-swap depth** — ProToggle state is shared via context; CodeLookup uses it (citations). Extend Pro labels across more stage copy.
+- [ ] **Live DB persistence demo** — voice field report persists to `daily_log_state` only when signed in; confirm with a signed-in trial account before the demo.
+
 ## ═══ W9 — INTEGRATED NAVIGATOR + STRATEGY INPUTS (2026-04-22, make-or-break 2-day push) ═══
 
 Founder directive: ship a stacked, interactive, ever-present **journey map + time machine + budget timeline** on every `/killerapp` route AND produce strategy inputs (competitive brief, killer-app name shortlist, Compass Navigator redesign spec) to inform the next wave. Lock: names-only (no URL rename yet), hybrid mood-image approach (start on current tokens, swap when images land).
