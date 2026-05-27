@@ -1,6 +1,50 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-27
+## Updated: 2026-05-28
+
+---
+
+## Design System Rollout — Phase 2 (2026-05-27 evening)
+
+### When two agents work in parallel on overlapping scope, treat the merge as a planning problem, not an integration problem
+**Date:** 2026-05-27
+**What happened:** Founder ran me (Cowork build of Killer App chrome) in parallel with a Claude Code session that was *briefed as* a small blocker-fix on `/projects/[id]`. Code actually shipped 4,236 LOC of a *parallel* chrome system (`src/components/stage-shell/`) plus four functional stage pages plus a separate Marin fixture. Their commit message politely says "Agent A owns the layout-level chrome" — meaning they knew about my work and intentionally built alongside. The net result on `/killerapp/stages/*`: two chromes stacking visually. The brief I was handed for the rollout assumed only my chrome would exist; the merge table named only my file paths.
+**Rule:** When two agents are dispatched in parallel against overlapping surfaces, the receiving agent (me) cannot proceed silently on a brief that pre-dated the other agent's commits. Stop, audit what landed, surface the collision via AskUserQuestion with concrete options (mine wins / theirs wins / both coexist with rule / inspect first). The 30-second pause beats 60 minutes of compounding wrong work. Same rule the user's preferences encode as "If something goes sideways, STOP and re-plan immediately — don't keep pushing."
+
+### Path-aware chrome (skip rendering on specific routes) is the cheapest way to resolve a layout-vs-page chrome collision
+**Date:** 2026-05-27
+**What happened:** My `KillerAppChrome` is mounted in `src/app/killerapp/layout.tsx` (renders on every `/killerapp/*` route). Code's `StageShell` is mounted in each individual stage page (`/killerapp/stages/{size-up,lock,plan,build}/page.tsx`) and uses `height: calc(100dvh - 48px)` + `overflow: hidden` to own the full viewport. Without intervention, both rendered, and the stage page showed two chromes stacked. Rebuilding either system would have been a multi-hour refactor. The fix was 3 lines: add `usePathname()` to my `KillerAppChrome`, regex-match `/killerapp/stages/*`, return `null` early. Code's StageShell now owns those four routes exclusively; mine owns everything else; both share the herbarium palette via the same `tokens.css`.
+**Rule:** When two chrome systems collide on different routes, prefer path-aware rendering over a forced consolidation. The chrome with the more specific scope (Code's, per-stage) wins on its surface; the chrome with the broader scope (mine, layout-level) yields on those surfaces but stays mounted everywhere else. Reconciliation into a single primitive can happen later, in a non-time-pressured sprint. Tonight just stop the bleed.
+
+### Aliasing TS color constants requires editing the TS source — CSS-var aliases don't reach JS imports
+**Date:** 2026-05-27
+**What happened:** The herbarium rollout brief said "edit globals.css to alias the seven codebase tokens to herbarium vars" — which works perfectly for any component reading `var(--navy)` from CSS. But Code's StageShell imports `colors` from `@/design-system/tokens/colors.ts` as a TypeScript object literal (`colors.paper.cream`, `colors.navy`, etc.). A CSS-var alias in `globals.css` does NOT theme a TS constant value. If I'd only done the CSS step, the layout-level chrome would have shifted to herbarium and the stage-page chrome would have stayed bright-instrument — a visible split.
+**Rule:** When aliasing palette tokens, always grep for both shapes of consumer: `var(--token-name)` (CSS) and `colors.tokenName` (TS). If both exist, alias both surfaces. Don't ship a half-shifted palette where some components are herbarium and others aren't.
+
+### CSS `var()` syntax does not support the `${color}10` append-alpha trick
+**Date:** 2026-05-27
+**What happened:** My original `KAC_COLORS` were hex literals like `'#E8443A'`. To render a soft active-state background I used `` `${KAC_COLORS.redChrome}10` `` (appending `10` to make a hex-with-alpha — `#E8443A10`). When I shifted `KAC_COLORS.redChrome` to `'var(--specimen-rust)'`, that pattern silently became `var(--specimen-rust)10` — invalid CSS. The active stage background broke (browser ignored the rule). Caught it via a grep for the pattern after the merge.
+**Rule:** After switching any color constant from hex literal to `var()` reference, grep for append-alpha patterns: `\${COLORS\.[a-zA-Z]+}[0-9A-Fa-f]`. Replace each match with `color-mix(in oklab, ${COLORS.foo} N%, transparent)`. `color-mix` already lives in the canonical tokens.css (`--shadow-focus` uses it), so browser support is a non-issue.
+
+### Saving an uploaded doc to the working tree but NOT committing keeps it out of the cross-session conflict zone
+**Date:** 2026-05-27
+**What happened:** Founder pasted `design-decisions-2026-05-27-LOCKED.md` mid-session, while a Claude Code session was running in parallel against the same repo. If I'd committed the doc immediately, my commit would have either preceded Code's (creating divergence I'd have to merge later) or required a coordinated push window. Instead I wrote the file to `docs/` and left it uncommitted in the working tree. When Code's commits landed, `git stash` + `git pull --rebase` + `git stash pop` brought the doc back unchanged. Then it shipped with the next session's commit naturally.
+**Rule:** When multiple sessions share a repo and a small text artifact (doc, decisions log, sketch) arrives in one session that the other might also edit, write it locally but do NOT commit. Stash to unblock pulls. The artifact joins the next coherent commit instead of fighting for its own.
+
+### Two-Marin-fixtures means write an adapter, not pick a winner
+**Date:** 2026-05-27
+**What happened:** My session shipped `src/lib/seed-data/marin-farmhouse.ts` ($1.65M Marin, 9/3 draws). Code's session shipped `src/lib/demo/marin-4000.ts` ($1.99M base + sequencing overhead, 10 phases, 16 budget lines in BudgetLine[] shape). Founder picked Code's as canonical. The temptation was to rewrite my `KillerAppChrome` to consume Code's shape directly. That would have meant inlining adapter logic across 9 chrome components — fragile and noisy. Better: write a single `marin-adapter.ts` that imports Code's fixture and re-shapes it to my `KacProject`. Chrome components didn't change at all. Deletion of my old seed file was a one-liner.
+**Rule:** When two data sources collide and the consumer expects a different shape than the canonical source, write an adapter. The adapter is ONE file, easy to read, and gets a clear deprecation comment for the day the chrome rewires to consume the canonical shape directly. Don't refactor the consumers; refactor the boundary.
+
+### Repo-local skill install works; global `~/.claude/skills/` install requires host access we don't have
+**Date:** 2026-05-27
+**What happened:** Design system SKILL.md install brief said "both locations: `bkg/.claude/skills/` AND `~/.claude/skills/`." The repo-local path works fine (it's inside the mounted bkg folder). The global path is the host machine's home directory — `~` in this sandbox is `/home/jolly-focused-hopper`, not the founder's `/Users/chilly/`. Even the file tools can't reach `/Users/chilly/.claude/skills/` because that folder wasn't approved/mounted.
+**Rule:** Before promising a "both targets" install, check whether the target path is inside an approved mount. For sandbox cowork sessions, `~/.claude/` on the host is reachable only via `mcp__cowork__request_cowork_directory`. If that's not possible mid-session, install repo-local and document the global install as a manual founder action (with the exact `cp` command they need to run).
+
+### When the chrome's color constants become `var()` refs, the source-of-truth shift to the design system is the win — not the merge per se
+**Date:** 2026-05-27
+**What happened:** Killer App chrome shipped originally with hardcoded hex in `KAC_COLORS`. The herbarium merge changed each value from a hex string to a `var(--token)` reference. The visual shift (bright instrument → muted herbarium) is what's perceptible, but the structural shift (chrome no longer owns its palette; tokens.css does) is what's load-bearing for the design system. Future palette changes are one-file edits to `tokens.css`; the chrome auto-picks them up. Documented this in the chrome's `types.ts` header so the next agent doesn't try to re-introduce hex literals "for performance."
+**Rule:** When a brief frames a change as a "palette merge," look past the colors. The win is usually that downstream consumers stop owning the palette and start consuming it. Document THAT in the file headers and in the constitution so the next agent knows: this is where the source of truth lives, period.
 
 ---
 

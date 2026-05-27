@@ -69,7 +69,12 @@ export default function StageNode({
       style={{
         flex: 1,
         minWidth: 0,
-        background: active ? `${KAC_COLORS.redChrome}10` : 'transparent',
+        // Active stage gets a faint rust wash. With KAC_COLORS now resolving
+        // to `var(--specimen-rust)`, the old `${color}10` append-alpha trick
+        // doesn't work. Use color-mix instead — already in use by tokens.css.
+        background: active
+          ? `color-mix(in oklab, ${KAC_COLORS.redChrome} 8%, transparent)`
+          : 'transparent',
         border: 'none',
         borderRadius: 10,
         padding: '6px 6px 8px',

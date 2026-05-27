@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Archivo_Black } from "next/font/google";
+import { Archivo, Archivo_Black, EB_Garamond, Pinyon_Script, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
+// 2026-05-27: Knowledge Gardens design tokens FIRST, before globals.css.
+// tokens.css is the canonical source — herbarium palette + type stack.
+// globals.css now only contains the alias :root block + legacy overrides.
+import "../styles/tokens.css";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import GlobalChromeGate from "@/components/GlobalChromeGate";
@@ -16,6 +20,28 @@ const archivoBlack = Archivo_Black({
   variable: "--font-archivo-black",
   subsets: ["latin"],
   weight: "400",
+});
+
+// 2026-05-27: Editorial + script + mono per the design system. tokens.css
+// declares these CSS variables; next/font/google overrides them at the
+// html element with proper Next-optimized font assets (preload, FOUT, etc.).
+const ebGaramond = EB_Garamond({
+  variable: "--font-editorial",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const pinyonScript = Pinyon_Script({
+  variable: "--font-script",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -75,7 +101,10 @@ export default async function RootLayout({
   const isDiy = lane === 'diy';
 
   return (
-    <html lang="en" className={`${archivo.variable} ${archivoBlack.variable}`}>
+    <html
+      lang="en"
+      className={`${archivo.variable} ${archivoBlack.variable} ${ebGaramond.variable} ${pinyonScript.variable} ${jetBrainsMono.variable}`}
+    >
       <head>
         {/* DIY-overlay hide rule — server-rendered so it applies before
             DiyCockpitOverlay hydrates. Was previously emitted by the

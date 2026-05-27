@@ -1,0 +1,36 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Specimen card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+</head>
+<body>
+<style>
+  .spec{background:var(--bg-raised);border:1px solid var(--paper-edge);border-radius:var(--radius-xs);padding:18px 20px 16px;box-shadow:var(--shadow-page-2);position:relative;max-width:580px}
+  .spec .head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--paper-edge);padding-bottom:10px;margin-bottom:12px}
+  .spec .tag{font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--specimen-rust);border:1px solid var(--specimen-rust);padding:2px 6px;border-radius:var(--radius-xs)}
+  .spec h3{font-family:var(--font-display);font-size:22px;color:var(--ink-graphite);letter-spacing:-0.01em;margin:0 0 4px;line-height:1.1}
+  .spec .meta{font-family:var(--font-ui);font-size:13px;color:var(--ink-faded)}
+  .spec .quote{font-family:var(--font-editorial);font-style:italic;font-size:15px;color:var(--ink-script);margin:10px 0 12px;line-height:1.35}
+  .spec .callout{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--ink-faded);letter-spacing:0.05em}
+  .spec .leader{flex:1;height:1px;border-top:1px dashed var(--paper-edge)}
+  .spec .dot{width:6px;height:6px;border-radius:50%;background:var(--specimen-teal);box-shadow:0 0 0 2px var(--paper-cream),0 0 0 3px var(--specimen-teal)}
+  .spec .caption{font-family:var(--font-script);font-size:24px;color:var(--ink-script);text-align:center;margin-top:6px;line-height:1}
+</style>
+<div class="spec">
+  <div class="head">
+    <span class="eng" style="font-size:10px">PLATE NO. 0014 · BUILD · 2026‑05‑18</span>
+    <span class="tag">FLAGGED</span>
+  </div>
+  <h3>Hairline crack at joint 4B</h3>
+  <div class="meta">Flagged 09:14 by Field — Yard 03 · North column tie‑in</div>
+  <div class="quote">"Returned within tolerance at 14:02 after re‑tension. Recommending recheck at the next pour cycle."</div>
+  <div class="callout">
+    <span>JOINT 4B</span><div class="leader"></div><div class="dot"></div><span>14B</span>
+  </div>
+  <div class="caption">Viver</div>
+</div>
+</body></html>

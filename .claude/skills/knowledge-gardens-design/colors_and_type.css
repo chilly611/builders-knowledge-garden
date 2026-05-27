@@ -1,0 +1,284 @@
+/* ────────────────────────────────────────────────────────────────────────
+   KNOWLEDGE GARDENS — DESIGN TOKENS
+   Victorian botanical herbarium × Renaissance engineering schematic ×
+   modern operating system.
+
+   Use these tokens for every surface. The brand DNA lives in the
+   `/assets/plates/` folder — colors here are extracted from those
+   four hero plates and must always look correct beside them.
+
+   Codebase token mapping (legacy):
+     --navy        →  use --specimen-teal-deep / --ink-graphite
+     --trace       →  use --paper-cream
+     --brass       →  use --specimen-brass
+     --robin       →  use --specimen-teal (lighter)
+     --orange      →  use --specimen-rust
+     --redline     →  use --specimen-rust
+   ──────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italianno&family=Pinyon+Script&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ── PAPER & INK ──────────────────────────────────────────────────── */
+  --paper-cream:        #F2E9D2;  /* primary surface — aged herbarium leaf */
+  --paper-vellum:       #E8DDB8;  /* secondary surface — slightly more aged */
+  --paper-edge:         #C9B98A;  /* torn/foxed edge, hairlines, dividers  */
+  --paper-fold:         #D8C9A0;  /* mid value — used for inset panels      */
+  --paper-shadow:       #B5A270;  /* deep page shadow — under torn edges    */
+
+  --ink-sepia:          #5A3B1F;  /* primary text — antique brown ink       */
+  --ink-graphite:       #2A2620;  /* high-contrast text                     */
+  --ink-script:         #6B4A2A;  /* handwritten/italic annotations         */
+  --ink-faded:          #8C6A45;  /* tertiary text — foxed annotations      */
+  --obsidian:           #0A0A0A;  /* dark-mode base only                    */
+
+  /* ── SPECIMEN PALETTE — the four hero plates ──────────────────────── */
+  --specimen-teal:      #3C7A8A;  /* hammer head, left gauge — PRIMARY      */
+  --specimen-teal-deep: #234C5A;  /* pressed/active                          */
+  --specimen-teal-pale: #A6C4CC;  /* light fills, tints                       */
+
+  --specimen-rust:      #A53A2D;  /* alert / red gauge — DANGER             */
+  --specimen-rust-deep: #6E2419;
+  --specimen-rust-pale: #E6B7AE;
+
+  --specimen-brass:     #B08D5C;  /* bezels, callouts — SECONDARY            */
+  --specimen-brass-aged:#7C6235;  /* etched borders, deep brass              */
+  --specimen-brass-pale:#E2CFA6;  /* highlights, light brass wash             */
+
+  --specimen-sage:      #5E7A56;  /* growth, knowledge garden — SUCCESS     */
+  --specimen-sage-deep: #3E5638;  /* hover/depth                             */
+  --specimen-sage-pale: #B5C4A8;  /* light foliage wash                       */
+
+  --specimen-amber:     #C68A3D;  /* highlights — WARNING                    */
+  --specimen-amber-deep:#8C5E22;
+
+  /* Neon teal — a single deliberate flash. Use sparingly: scanline
+     animations, verification dots, the moment a gauge crosses into the
+     green. Never as a fill, never larger than ~12px, and never beside
+     another saturated color. Lives apart from the specimen palette. */
+  --flash-teal:         #00FFE0;
+  --flash-teal-deep:    #00C9B0;
+
+  /* ── SEMANTIC ─────────────────────────────────────────────────────── */
+  --bg:                 var(--paper-cream);
+  --bg-recessed:        var(--paper-vellum);
+  --bg-raised:          #FAF3DE;          /* slight lift above cream */
+  --fg:                 var(--ink-sepia);
+  --fg-strong:          var(--ink-graphite);
+  --fg-muted:           var(--ink-faded);
+  --fg-on-dark:         var(--paper-cream);
+
+  --border:             var(--paper-edge);
+  --border-strong:      var(--specimen-brass-aged);
+  --border-hairline:    rgba(90, 59, 31, 0.18);
+
+  --accent:             var(--specimen-teal);
+  --accent-hover:       var(--specimen-teal-deep);
+  --accent-soft:        var(--specimen-teal-pale);
+
+  --success:            var(--specimen-sage);
+  --warning:            var(--specimen-amber);
+  --danger:             var(--specimen-rust);
+  --info:               var(--specimen-teal);
+
+  /* Surface accents — Killer App / Dream Machine / Knowledge Garden */
+  --surface-killer:     var(--specimen-teal);
+  --surface-killer-2:   var(--specimen-rust);
+  --surface-dream:      var(--specimen-brass);
+  --surface-dream-2:    var(--specimen-amber);
+  --surface-garden:     var(--specimen-sage);
+  --surface-umbrella:   var(--ink-sepia);
+
+  /* ── ELEVATION ────────────────────────────────────────────────────── */
+  /* Pages sit on a wall, not in a UI. Shadows are short and warm —
+     never a wide soft blur. Always paired with a 1px sepia hairline. */
+  --shadow-page-1:      0 1px 0 var(--paper-edge);
+  --shadow-page-2:      0 1px 0 var(--paper-edge), 0 2px 4px rgba(90,59,31,0.08);
+  --shadow-page-3:      0 1px 0 var(--paper-edge), 0 6px 14px rgba(90,59,31,0.10);
+  --shadow-plate:       0 1px 0 var(--paper-edge), 0 10px 28px rgba(90,59,31,0.14), 0 2px 6px rgba(90,59,31,0.08);
+  --shadow-inset:       inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(90,59,31,0.08);
+  --shadow-focus:       0 0 0 3px color-mix(in oklab, var(--specimen-teal) 35%, transparent);
+
+  /* ── RADII ────────────────────────────────────────────────────────── */
+  /* Paper isn't very round. Keep radii tight; reserve large radii for
+     true pills and instrument bezels. */
+  --radius-hairline:    1px;
+  --radius-xs:          2px;
+  --radius-sm:          3px;
+  --radius-md:          4px;
+  --radius-lg:          6px;
+  --radius-xl:          10px;
+  --radius-pill:        999px;
+  --radius-disk:        50%;   /* gauges, wax seals */
+
+  /* ── SPACING (4px base, hand-counted) ─────────────────────────────── */
+  --space-0:            0;
+  --space-1:            4px;
+  --space-2:            8px;
+  --space-3:            12px;
+  --space-4:            16px;
+  --space-5:            20px;
+  --space-6:            24px;
+  --space-8:            32px;
+  --space-10:           40px;
+  --space-12:           48px;
+  --space-16:           64px;
+  --space-20:           80px;
+  --space-24:           96px;
+
+  /* ── FONT FAMILIES ────────────────────────────────────────────────── */
+  --font-display:       'Archivo Black', 'Archivo', 'Helvetica Neue', sans-serif;
+  --font-ui:            'Archivo', 'Helvetica Neue', system-ui, sans-serif;
+  --font-editorial:     'EB Garamond', 'Cormorant Garamond', Georgia, serif;
+  --font-script:        'Italianno', 'Pinyon Script', cursive;
+  --font-mono:          'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ── TYPE SCALE (modular, 1.25 ratio) ─────────────────────────────── */
+  --text-xs:            12px;
+  --text-sm:            14px;
+  --text-base:          16px;
+  --text-lg:            20px;
+  --text-xl:            25px;
+  --text-2xl:           31px;
+  --text-3xl:           39px;
+  --text-4xl:           49px;
+  --text-5xl:           61px;
+
+  --leading-tight:      1.1;
+  --leading-snug:       1.25;
+  --leading-normal:     1.5;
+  --leading-relaxed:    1.6;
+  --leading-loose:      1.8;
+
+  --tracking-tight:     -0.02em;  /* display headlines */
+  --tracking-normal:    0;
+  --tracking-wide:      0.08em;
+  --tracking-loose:     0.18em;   /* engineering labels (uppercase) */
+  --tracking-mono:      0.12em;
+
+  /* ── TEXTURE ──────────────────────────────────────────────────────── */
+  /* Faint dashed engineering grid — behind hero compositions only */
+  --grid-line:          rgba(124, 98, 53, 0.10);  /* brass-aged @ 10% */
+  --grid-line-strong:   rgba(124, 98, 53, 0.22);
+
+  /* Paper noise — applied as background-image on full-bleed surfaces */
+  --paper-noise:        url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.23  0 0 0 0 0.12  0 0 0 0.08 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+
+  /* ── TIMING ───────────────────────────────────────────────────────── */
+  --ease-out-paper:     cubic-bezier(0.2, 0.8, 0.2, 1);     /* primary */
+  --ease-in-out-paper:  cubic-bezier(0.45, 0.1, 0.35, 0.95);
+  --dur-quick:          140ms;
+  --dur-base:           220ms;
+  --dur-slow:           360ms;
+  --dur-hero:           900ms;   /* big reveals only */
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   SEMANTIC TAG STYLES — drop colors_and_type.css into a page and the
+   raw HTML reads right out of the box.
+   ─────────────────────────────────────────────────────────────────── */
+html, body {
+  background: var(--paper-cream);
+  color: var(--ink-sepia);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--ink-graphite);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  margin: 0 0 var(--space-4);
+  font-weight: 400; /* Archivo Black has its weight baked in */
+}
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--ink-graphite);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  margin: 0 0 var(--space-2);
+}
+
+p {
+  font-family: var(--font-ui);
+  color: var(--ink-sepia);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-4);
+  text-wrap: pretty;
+}
+
+/* Editorial / specimen-plate caption voice */
+.editorial, blockquote {
+  font-family: var(--font-editorial);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--ink-script);
+  font-style: italic;
+}
+
+/* Plate caption — script font, used sparingly */
+.plate-caption {
+  font-family: var(--font-script);
+  color: var(--ink-script);
+  font-size: var(--text-2xl);
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* Engineering label — JetBrains Mono, uppercase, loose tracking */
+.eng-label, .label-eng {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-loose);
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  font-weight: 600;
+}
+
+/* Schematic dimension readout */
+.eng-data {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-graphite);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--specimen-teal-deep);
+  text-decoration-color: var(--specimen-teal-pale);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color var(--dur-quick) var(--ease-out-paper);
+}
+a:hover { color: var(--specimen-rust); }
+
+code, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  background: var(--paper-vellum);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+  color: var(--ink-graphite);
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: var(--paper-edge);
+  margin: var(--space-6) 0;
+}
+hr.dashed { background: transparent; border-top: 1px dashed var(--paper-edge); }
+
+::selection { background: var(--specimen-amber); color: var(--ink-graphite); }

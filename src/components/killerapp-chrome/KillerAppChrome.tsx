@@ -19,11 +19,11 @@
  * existing KillerAppNav, etc.) — chrome stays composable.
  */
 
-import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { KAC_COLORS } from './types';
 import type { KacProject } from './types';
-import { MARIN_FARMHOUSE } from '@/lib/seed-data/marin-farmhouse';
+import { marinKacProject } from './marin-adapter';
 import BudgetRibbon, { type BudgetRibbonBlock } from './BudgetRibbon';
 import JourneyTimeRow from './JourneyTimeRow';
 
@@ -45,7 +45,25 @@ export default function KillerAppChrome({
   budgetDrilldownRoute = '/killerapp/budget',
 }: KillerAppChromeProps) {
   const router = useRouter();
-  const data: KacProject = project ?? MARIN_FARMHOUSE;
+  const pathname = usePathname() ?? '';
+
+  // Two-chrome-coexistence rule (2026-05-27): the four lifecycle stage
+  // pages at /killerapp/stages/{size-up,lock,plan,build} render their
+  // own self-contained chrome (StageShell at src/components/stage-shell/)
+  // which owns the full viewport below the global KillerAppNav. If we
+  // also render here, the page stacks two chromes. So skip on those
+  // routes. KillerAppChrome still renders on /killerapp landing, every
+  // workflow route, and /projects/[id].
+  const onStageRoute = useMemo(
+    () => /^\/killerapp\/stages(\/|$)/.test(pathname),
+    [pathname]
+  );
+
+  // Marin fixture comes from Code's canonical src/lib/demo/marin-4000.ts
+  // via marin-adapter. Re-derived per render, but cheap (16 lines + 10
+  // phases). Memoize so referential equality holds for downstream memos.
+  const fallback = useMemo(() => marinKacProject(), []);
+  const data: KacProject = project ?? fallback;
 
   const handleDrilldown = useCallback(
     (block: BudgetRibbonBlock) => {
@@ -77,6 +95,7 @@ export default function KillerAppChrome({
   );
 
   if (hidden) return null;
+  if (onStageRoute) return null;
 
   return (
     <div

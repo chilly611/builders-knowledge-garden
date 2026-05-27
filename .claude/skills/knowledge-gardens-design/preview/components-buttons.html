@@ -1,0 +1,37 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+</head>
+<body>
+<style>
+  .btn{font-family:var(--font-ui);font-size:14px;font-weight:600;padding:10px 18px;border-radius:var(--radius-xs);border:1.5px solid var(--ink-graphite);background:var(--ink-graphite);color:var(--paper-cream);cursor:pointer;letter-spacing:0.01em;line-height:1.1;transition:transform 80ms var(--ease-out-paper),background-color 180ms var(--ease-out-paper)}
+  .btn.secondary{background:transparent;color:var(--ink-graphite)}
+  .btn.accent{background:var(--specimen-teal);border-color:var(--specimen-teal);color:#fff}
+  .btn.danger{background:var(--specimen-rust);border-color:var(--specimen-rust);color:#fff}
+  .btn.text{background:transparent;border-color:transparent;color:var(--specimen-teal-deep);padding-left:6px;padding-right:6px}
+  .btn.text:hover{color:var(--specimen-rust)}
+  .btn.eng{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.12em;padding:8px 14px}
+  .row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .row2 .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faded);width:78px}
+</style>
+<div class="row2"><span class="l">Primary</span>
+  <button class="btn">Open log</button>
+  <button class="btn accent">Run inspection</button>
+  <button class="btn danger">Flag joint 4B</button>
+</div>
+<div class="row2"><span class="l">Secondary</span>
+  <button class="btn secondary">Cancel</button>
+  <button class="btn secondary" style="border-color:var(--specimen-teal);color:var(--specimen-teal-deep)">View phase</button>
+  <button class="btn text">Skip for now</button>
+</div>
+<div class="row2"><span class="l">Schematic</span>
+  <button class="btn eng">PHASE · 03</button>
+  <button class="btn eng secondary" style="border-color:var(--specimen-brass-aged);color:var(--specimen-brass-aged)">+ ADD SPECIMEN</button>
+  <button class="btn eng" style="background:var(--specimen-brass);border-color:var(--specimen-brass-aged);color:#fff">SIGN OFF</button>
+</div>
+</body></html>

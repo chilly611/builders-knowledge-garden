@@ -69,8 +69,15 @@ export default function BudgetRibbon({
   }, [budgetTick]);
 
   const total = budgetTotal ?? baseTotal ?? initialBudget ?? null;
+  // 2026-05-28: herbarium merge — was '#14B8A6' (bright teal), now sage
+  // (positive budget movement). Orange/brass paths already migrated by
+  // the colors.ts alias step.
   const changeColor =
-    lastBudgetChange < 0 ? '#14B8A6' : lastBudgetChange > 0 ? colors.orange : colors.brass;
+    lastBudgetChange < 0
+      ? colors.status.success
+      : lastBudgetChange > 0
+        ? colors.orange
+        : colors.brass;
 
   return (
     <div

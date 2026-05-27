@@ -1,0 +1,330 @@
+/* BKG UI Kit styles — Killer App surface */
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.bkg-app {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+  background: var(--paper-cream);
+  position: relative;
+}
+
+/* Paper noise + faint engineering grid behind the whole shell */
+.bkg-app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,98,53,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,98,53,0.045) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bkg-app > * { position: relative; z-index: 1; }
+
+/* ─── Sidebar ────────────────────────────────────────── */
+.bkg-sidebar {
+  background: var(--paper-vellum);
+  border-right: 1px solid var(--paper-edge);
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: inset -1px 0 0 rgba(90,59,31,0.06);
+}
+.bkg-sidebar-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--paper-edge);
+}
+.bkg-sidebar-brand-title {
+  font-family: var(--font-display); font-size: 18px;
+  letter-spacing: -0.02em; line-height: 1; color: var(--ink-graphite);
+}
+.bkg-sidebar-brand-sub {
+  font-family: var(--font-editorial); font-style: italic;
+  font-size: 14px; color: var(--ink-faded); margin-top: 2px;
+}
+
+.bkg-sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+.bkg-sidebar-item {
+  display: flex; align-items: stretch; gap: 10px;
+  padding: 10px 12px; border: 1px solid transparent;
+  background: transparent; cursor: pointer;
+  text-align: left; border-radius: var(--radius-xs);
+  font-family: var(--font-ui); transition: all 140ms var(--ease-out-paper);
+}
+.bkg-sidebar-item:hover { background: rgba(60,122,138,0.06); border-color: var(--paper-edge); }
+.bkg-sidebar-item.is-active { background: var(--paper-cream); border-color: var(--specimen-brass-aged); }
+.bkg-sidebar-item-marker {
+  width: 3px; flex-shrink: 0; border-radius: 1px; background: transparent;
+}
+.bkg-sidebar-item.is-active .bkg-sidebar-item-marker { background: var(--specimen-teal); }
+.bkg-sidebar-item-label {
+  font-size: 14px; font-weight: 600; color: var(--ink-graphite);
+  letter-spacing: -0.005em;
+}
+.bkg-sidebar-item-sub {
+  font-family: var(--font-editorial); font-style: italic;
+  font-size: 12px; color: var(--ink-faded); margin-top: 1px;
+}
+
+.bkg-sidebar-foot { margin-top: auto; padding-top: 14px; border-top: 1px dashed var(--paper-edge); }
+.bkg-sidebar-project { font-family: var(--font-display); font-size: 14px; color: var(--ink-graphite); margin-top: 4px; }
+
+/* ─── Top bar ────────────────────────────────────────── */
+.bkg-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 28px;
+  background: var(--paper-cream);
+  border-bottom: 1px solid var(--paper-edge);
+}
+.bkg-topbar .bkg-topbar-search { flex: 1; max-width: 560px; }
+.bkg-topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
+/* ─── Composer ─────────────────────────────────────── */
+.bkg-composer {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 6px 8px;
+  box-shadow: var(--shadow-inset);
+  transition: border-color 140ms var(--ease-out-paper);
+}
+.bkg-composer:focus-within { border-color: var(--specimen-teal); box-shadow: var(--shadow-focus); }
+.bkg-composer-leader { color: var(--ink-faded); padding-left: 4px; display: flex; }
+.bkg-composer-input {
+  flex: 1; border: 0; outline: 0; background: transparent;
+  font-family: var(--font-ui); font-size: 14px; color: var(--ink-graphite);
+  padding: 6px 4px;
+}
+.bkg-composer-input::placeholder { color: var(--ink-faded); font-style: italic; }
+.bkg-composer-submit {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  background: var(--ink-graphite); color: var(--paper-cream);
+  border: 0; border-radius: var(--radius-xs);
+  padding: 7px 14px; cursor: pointer;
+}
+.bkg-composer-submit:hover { background: var(--specimen-teal-deep); }
+
+/* ─── Journey strip ────────────────────────────────── */
+.bkg-journey {
+  display: flex; align-items: center; gap: 4px;
+  padding: 12px 28px; background: var(--paper-cream);
+  border-bottom: 1px dashed var(--paper-edge);
+}
+.bkg-journey-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: transparent; border: 1px solid transparent;
+  font-family: var(--font-ui);
+  border-radius: var(--radius-xs); cursor: pointer;
+  transition: all 140ms var(--ease-out-paper);
+}
+.bkg-journey-pill:hover { border-color: var(--paper-edge); background: rgba(60,122,138,0.04); }
+.bkg-journey-pill.is-done .bkg-journey-num { color: var(--specimen-sage-deep); }
+.bkg-journey-pill.is-current {
+  background: var(--bg-raised); border-color: var(--specimen-brass-aged);
+  box-shadow: var(--shadow-page-1);
+}
+.bkg-journey-pill.is-current .bkg-journey-num { color: var(--specimen-rust); }
+.bkg-journey-num {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.14em; color: var(--ink-faded); font-weight: 600;
+}
+.bkg-journey-label {
+  font-size: 13px; color: var(--ink-graphite); font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.bkg-journey-rule {
+  flex: 0 0 18px; height: 1px; border-top: 1px dashed var(--paper-edge);
+}
+
+/* ─── Surface Header ──────────────────────────────── */
+.bkg-surface-header {
+  display: grid; grid-template-columns: 140px 1fr;
+  align-items: center;
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs);
+  margin: 24px 28px 0;
+  overflow: hidden; box-shadow: var(--shadow-page-2);
+}
+.bkg-surface-header-art {
+  height: 140px; background: var(--paper-cream);
+  border-right: 1px solid var(--paper-edge);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.bkg-surface-header-art::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(135deg, color-mix(in oklab, var(--surface-accent) 18%, transparent), transparent);
+}
+.bkg-surface-header-art img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; opacity: 0.92; }
+.bkg-surface-header-text { padding: 18px 24px; }
+.bkg-surface-header-title {
+  font-family: var(--font-display); font-size: 36px;
+  letter-spacing: -0.025em; line-height: 1.02;
+  color: var(--ink-graphite); margin: 4px 0 4px;
+}
+.bkg-surface-header-sub {
+  font-family: var(--font-editorial); font-style: italic;
+  font-size: 16px; color: var(--ink-script);
+}
+
+/* ─── Main ────────────────────────────────────────── */
+.bkg-main { padding: 0 0 80px; min-height: 100vh; }
+.bkg-section { padding: 24px 28px; }
+.bkg-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.bkg-section-head h2 {
+  font-family: var(--font-display); font-size: 22px;
+  letter-spacing: -0.015em; color: var(--ink-graphite); margin: 0;
+}
+.bkg-section-head .eng-label { color: var(--ink-faded); }
+
+/* KPI gauges row */
+.bkg-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.bkg-gauge {
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 16px 16px 14px;
+  box-shadow: var(--shadow-page-2); text-align: center;
+}
+.bkg-gauge svg { max-width: 200px; }
+.bkg-gauge-display {
+  font-family: var(--font-display); font-size: 30px;
+  letter-spacing: -0.02em; color: var(--ink-graphite);
+  margin-top: -8px;
+}
+
+/* Workflow cards row */
+.bkg-workflows { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.bkg-workflow {
+  display: flex; align-items: stretch; gap: 14px;
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 16px 18px;
+  cursor: pointer; text-align: left; font-family: var(--font-ui);
+  transition: all 180ms var(--ease-out-paper);
+  box-shadow: var(--shadow-page-1); position: relative;
+}
+.bkg-workflow:hover {
+  border-color: var(--workflow-accent);
+  box-shadow: var(--shadow-page-2);
+  transform: translateY(-1px);
+}
+.bkg-workflow-marker {
+  width: 3px; flex-shrink: 0; background: var(--workflow-accent);
+  border-radius: 1px;
+}
+.bkg-workflow-body { flex: 1; }
+.bkg-workflow-title {
+  font-family: var(--font-display); font-size: 18px;
+  letter-spacing: -0.01em; color: var(--ink-graphite);
+  margin: 4px 0 4px;
+}
+.bkg-workflow-blurb {
+  font-family: var(--font-editorial); font-style: italic;
+  font-size: 14px; color: var(--ink-script); line-height: 1.35;
+}
+.bkg-workflow-cta {
+  align-self: center; display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--workflow-accent);
+}
+.bkg-workflow-arrow { transition: transform 180ms var(--ease-out-paper); }
+.bkg-workflow:hover .bkg-workflow-arrow { transform: translateX(3px); }
+
+/* Specimen card */
+.bkg-specimens { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.bkg-specimen {
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 18px 20px 16px;
+  box-shadow: var(--shadow-page-2); position: relative;
+}
+.bkg-specimen.is-clickable { cursor: pointer; transition: all 180ms var(--ease-out-paper); }
+.bkg-specimen.is-clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-page-3); }
+.bkg-specimen-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--paper-edge); padding-bottom: 8px; margin-bottom: 10px;
+}
+.bkg-specimen-tag {
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid currentColor;
+  border-radius: var(--radius-xs);
+}
+.bkg-specimen-tag.tone-rust { color: var(--specimen-rust); }
+.bkg-specimen-tag.tone-sage { color: var(--specimen-sage-deep); }
+.bkg-specimen-tag.tone-amber { color: var(--specimen-amber-deep); }
+.bkg-specimen-tag.tone-teal { color: var(--specimen-teal-deep); }
+.bkg-specimen-title {
+  font-family: var(--font-display); font-size: 20px;
+  letter-spacing: -0.01em; color: var(--ink-graphite);
+  margin: 2px 0 4px; line-height: 1.1;
+}
+.bkg-specimen-meta { font-family: var(--font-ui); font-size: 13px; color: var(--ink-faded); margin-bottom: 8px; }
+.bkg-specimen-quote {
+  font-family: var(--font-editorial); font-style: italic;
+  font-size: 14px; color: var(--ink-script); line-height: 1.35;
+  margin: 0 0 6px;
+}
+.bkg-specimen-caption { text-align: center; font-size: 22px; margin-top: 6px; }
+
+/* Budget lattice */
+.bkg-lattice {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+  background: var(--paper-edge);
+  border: 1px solid var(--paper-edge); border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+.bkg-lattice-cell {
+  background: var(--bg-raised); padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative;
+}
+.bkg-lattice-cell.is-flag::after {
+  content: ""; position: absolute; left: 4px; top: 4px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--specimen-rust); box-shadow: 0 0 0 2px var(--paper-cream);
+}
+.bkg-lattice-amount {
+  font-family: var(--font-mono); font-size: 14px;
+  color: var(--ink-graphite); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.bkg-lattice-meta {
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-faded);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Compass FAB */
+.bkg-compass {
+  position: fixed; right: 24px; bottom: 24px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #F2E9D2, #E2CFA6 50%, #C9B98A);
+  border: 2px solid var(--paper-edge);
+  box-shadow: 0 4px 18px rgba(42,38,32,0.18), inset 0 -3px 6px rgba(90,59,31,0.18);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 220ms var(--ease-out-paper), border-color 220ms var(--ease-out-paper);
+  z-index: 20;
+}
+.bkg-compass:hover { transform: rotate(45deg) scale(1.08); border-color: var(--specimen-brass-aged); }
+
+/* Footer rule */
+.bkg-foot-rule {
+  height: 1px; background: var(--paper-edge); margin: 32px 28px 0;
+}
+.bkg-foot {
+  padding: 18px 28px; display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-faded);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+
+@media (max-width: 1000px) {
+  .bkg-app { grid-template-columns: 1fr; }
+  .bkg-sidebar { display: none; }
+  .bkg-kpis, .bkg-workflows, .bkg-specimens { grid-template-columns: 1fr; }
+  .bkg-lattice { grid-template-columns: repeat(3, 1fr); }
+}

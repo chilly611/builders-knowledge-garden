@@ -1,8 +1,20 @@
 # The Knowledge Gardens Design Constitution
 
-**Version:** 1.0
-**Locked:** April 16, 2026
+**Version:** 1.1
+**Locked:** April 16, 2026 — amended 2026-05-28 (design system rollout)
 **Status:** Inviolable — every surface, primitive, and future Knowledge Gardens domain must pass all ten goals.
+
+---
+
+## Implementation Source of Truth
+
+**Tokens live in `src/styles/tokens.css`.** That file is the canonical source — colors, type stack, spacing, radii, shadows, motion. It is generated from the Knowledge Gardens Design System v0.1 export at `/Users/chilly/Developer/Knowledge Gardens Design System/`. When the design system author re-exports, this repo's `tokens.css` updates from that source.
+
+`src/app/globals.css` no longer holds raw palette hex — the seven legacy BKG canonical tokens (`--navy / --brass / --robin / --orange / --redline / --trace / --graphite`) now alias to the herbarium tokens (`--specimen-teal-deep / --specimen-brass / --specimen-teal / --specimen-amber / --specimen-rust / --paper-edge / --ink-graphite`). Components that read `var(--navy)` etc. pick up the herbarium shift with zero code changes. Pre-rollout palette preserved at `src/components/_archive/2026-05-28-design-system/`.
+
+The TypeScript constant `colors` exported from `src/design-system/tokens/colors.ts` is also herbarium — its values were hand-mapped to the hex equivalents so consumers (notably `src/components/stage-shell/*`) get the same palette without code changes.
+
+The legacy `src/lib/brand-tokens.ts` (parchment/copper Federation Contract) remains in place for backwards compatibility with the ~15 surfaces that import it. Next-sprint follow-up: migrate those surfaces, then archive.
 
 ---
 
@@ -218,30 +230,86 @@ These feed a new RSI loop — **Loop #8, Design Constitution Fitness** — that 
 
 ---
 
-## Canonical Palette (W8 lock)
+## Canonical Palette (W8 lock — 2026-05-28 herbarium amendment)
 
-The visual identity rests on a tightly constrained, moodboard-driven palette locked in Week 8 (April 16–22, 2026). Every surface must use these colors and no others (with the exception of phase-specific chromatic accents and status indicators, which live in `colors.phase` and `colors.status`).
+The W8-locked names (Navy / Brass / Robin / Orange / Trace / Graphite / Faded Rule / Redline) are **preserved as semantic anchors**, but each now resolves to a herbarium-palette value drawn from the design system's hero plates. Use the W8 names in code — `var(--navy)`, `colors.brass` — and the herbarium shift propagates automatically.
 
 **Heritage ground (always there, structural):**
-- **Navy** `#1B3B5E` — Blueprint blue, hero/ink, primary dark color for type and UI linework
-- **Navy Deep** `#0E2A47` — Darker variant for splash/wordmark-against-navy heritage moments
-- **Trace (paper)** `#F4F0E6` — Light background, sheet color, engraved-paper ground
-- **Graphite** `#2E2E30` — Foreground ink, type, UI linework
-- **Faded Rule** `#C9C3B3` — Heritage grids, hairlines, structural scaffolding
+- **Navy** `var(--navy)` → `var(--specimen-teal-deep)` (`#234C5A`) — Hero/ink, primary dark color for type and UI linework
+- **Navy Deep** `var(--navy-deep)` → `var(--specimen-teal-deep)` (`#234C5A`) — Same target; no separate "deeper" in herbarium
+- **Trace (paper)** `var(--trace)` → `var(--paper-edge)` (`#C9B98A`) — Hairlines, structural scaffolding
+- **Graphite** `var(--graphite)` → `var(--ink-graphite)` (`#2A2620`) — Foreground ink, type, UI linework
+- **Faded Rule** `var(--faded-rule)` → `var(--paper-edge)` (`#C9B98A`) — Heritage grids, hairlines
 
 **Everyday warm accent:**
-- **Brass** `#B6873A` — CTAs, emblem highlights, focus rings, hover states, cost/money metaphor
+- **Brass** `var(--brass)` → `var(--specimen-brass)` (`#B08D5C`) — CTAs, emblem highlights, focus rings, cost/money metaphor
 
 **Markup / alert:**
-- **Redline** `#A1473A` — Error, edit, revision-cloud callouts (sparingly, never everyday)
+- **Redline** `var(--redline)` → `var(--specimen-rust)` (`#A53A2D`) — Error, edit, revision-cloud callouts. Now matches the canonical "danger" semantic in the design system.
 
 **Peak pair (earned appearances only — never everyday chrome):**
-- **Robin's Egg** `#7FCFCB` — Verification, confirmation, "you are here," navigable-state indicator, compass-path pulses. **Reserved for moment punctuation and verification states only.** Never appears next to brass in the same component. Never animates into view—it's a quiet confirmation signal, not a celebration.
-- **Deep Orange** `#D9642E` — Project close-out, ritual crown, "something meaningful just happened" signal. Peak-moment CTAs, heat/action metaphor.
+- **Robin's Egg** `var(--robin)` → `var(--specimen-teal)` (`#3C7A8A`) — Verification, confirmation, "you are here," compass-path pulses. **Reserved for moment punctuation and verification states only.**
+- **Deep Orange** `var(--orange)` → `var(--specimen-amber)` (`#C68A3D`) — Project close-out, ritual crown, peak-moment CTAs. The orange→amber shift was accepted in the 2026-05-27 lock; the warmth stays, the saturation softens to herbarium-appropriate gold.
 
-**Binding rule:** Robin's Egg and Deep Orange are a **pair**, and they never sit next to brass in the same component. Brass does everyday warm; orange does ceremonial warm. Robin's Egg is the only cool color in the system — so when it appears, it means something.
+**Binding rule:** Robin's Egg and Deep Orange are a **pair**, and they never sit next to brass in the same component. Brass does everyday warm; amber/orange does ceremonial warm. Robin's Egg is the only cool peak color — so when it appears, it means something.
 
-**Implementation:** All canonical colors are exported from `src/design-system/tokens/colors.ts` as top-level exports (`navy`, `robin`, `brass`, etc.) and as CSS variables in `src/app/globals.css` (`--navy`, `--robin`, `--brass`, etc.). Legacy token names (`ink`, `paper`, `cyan`, `amber`) remain for backwards compatibility but are deprecated.
+**Implementation:** Tokens defined in `src/styles/tokens.css`. Aliases in `src/app/globals.css`. TypeScript constants in `src/design-system/tokens/colors.ts` mirror the same values for consumers that need JS access (e.g. `src/components/stage-shell/*`).
+
+---
+
+## Surfaces
+
+BKG ships as four named surfaces under one umbrella, each with a signature accent pair so a builder can tell at a glance which surface they're in:
+
+| Surface | What it does | Plate (in design system) | Signature accent |
+|---|---|---|---|
+| **Killer App** | What gets done today — instrumentation, dashboards, measurement | `assets/plates/chrome-killer-app.png` | `var(--specimen-teal)` + `var(--specimen-rust)` |
+| **Dream Machine** | What gets imagined — generative, exploratory, what-if | `assets/plates/chrome-dream-machine.png` | `var(--specimen-brass)` + `var(--specimen-amber)` |
+| **Knowledge Garden** | What gets remembered — knowledge base, lineage, lessons | `assets/plates/chrome-knowledge-garden.png` | `var(--specimen-sage)` |
+| **Umbrella** | Cross-surface nav, account, settings | Composite of the three | `var(--ink-sepia)` on `var(--paper-cream)` |
+
+A surface's chrome (header, accents, gauges) must lean on its signature accent pair. Body type and structural ink remain `--ink-graphite` / `--ink-sepia` across every surface.
+
+---
+
+## Brands
+
+**Knowledge Gardens** is the umbrella. It owns two public brands and one operator entity:
+
+- **Builder's Knowledge Garden (BKG)** — "The AI COO for construction." Live at `builders.theknowledgegardens.com`.
+- **Knowledge Gardens — Orchids** — "A living library of orchid intelligence. 400 species, 69 genera." Live at `orchids.theknowledgegardens.com`. Uses a lighter "field-guide" treatment: Cormorant Garamond serif + Space Mono + deep teal `#1A5C5C` + copper `#B87333` on cream `#F5F0E8`.
+- **XRWorkers** — the technology operator behind Knowledge Gardens.
+
+Wordmark casing: dot-separated for sub-brands — `Builder's Knowledge Garden · Killer App`. Set in Archivo Black, sentence case.
+
+---
+
+## Vocabulary lock
+
+- Use **MLP** (Minimal Lovable Product). **Never** "MVP." If anyone writes MVP in a doc, deck, or PR, fix it.
+- Use **MTP** (Massively Transformational Purpose) in investor / vision copy.
+- Em-dashes are welcomed and frequent. Exclamation points are banned from UI.
+- Sentence case for every headline and button. Engineering labels are UPPERCASE with loose mono tracking.
+
+---
+
+## Antipatterns — explicitly do not generate
+
+Mirrored from the design system README §9:
+
+- Bento grids of glowing rounded squares
+- Glassmorphism, frosted blurs, neon accents
+- Generic gradient-mesh backgrounds (purple→pink, teal→indigo)
+- Pure white `#FFFFFF` anywhere. Cream `#F2E9D2` is the default.
+- Pure black `#000000`. Use `#2A2620` (`--ink-graphite`).
+- Sans-serif-only typography stacks
+- Material / Carbon / shadcn-default chrome with no customization
+- 3D illustration sets (Notion-style, Spline-style)
+- Heroicons / Lucide as the *primary* iconography (utility fallback only)
+- Cards with a colored left-border accent and rounded corners ("AI tropes")
+- Emoji decoration anywhere in UI chrome
+
+If any output looks like generic Tailwind UI with a cream tint, the DNA has not been absorbed. Start over with `assets/plates/builders-hammer.png` pinned to the screen.
 
 ---
 

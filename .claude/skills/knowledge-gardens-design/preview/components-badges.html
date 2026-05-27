@@ -1,0 +1,37 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Badges</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+</head>
+<body>
+<style>
+  .badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;padding:3px 8px;border:1px solid currentColor;border-radius:var(--radius-xs);font-weight:600}
+  .badge .d{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-ui);font-size:12px;font-weight:500;padding:4px 10px;border-radius:var(--radius-pill);background:var(--bg-raised);border:1px solid var(--paper-edge);color:var(--ink-graphite)}
+  .pill.success{background:var(--specimen-sage-pale);border-color:var(--specimen-sage);color:var(--specimen-sage-deep)}
+  .pill.warn{background:#F0DDB5;border-color:var(--specimen-amber);color:var(--specimen-amber-deep)}
+  .pill.danger{background:var(--specimen-rust-pale);border-color:var(--specimen-rust);color:var(--specimen-rust-deep)}
+  .pill.info{background:var(--specimen-teal-pale);border-color:var(--specimen-teal);color:var(--specimen-teal-deep)}
+  .row3{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+  .row3 .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faded);width:96px}
+</style>
+<div class="row3"><span class="l">Eng. Badges</span>
+  <span class="badge" style="color:var(--specimen-teal-deep)"><span class="d"></span>PHASE · BUILD</span>
+  <span class="badge" style="color:var(--specimen-rust)"><span class="d"></span>FLAGGED</span>
+  <span class="badge" style="color:var(--specimen-brass-aged)"><span class="d"></span>SIGN-OFF · 3/5</span>
+  <span class="badge" style="color:var(--specimen-sage-deep)"><span class="d"></span>VERIFIED</span>
+</div>
+<div class="row3"><span class="l">Pills</span>
+  <span class="pill success">● On track</span>
+  <span class="pill warn">● +4d variance</span>
+  <span class="pill danger">● Hairline crack</span>
+  <span class="pill info">● Specimen pending</span>
+</div>
+<div class="row3"><span class="l">XP / Streak</span>
+  <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:0.1em;padding:4px 10px;border-radius:var(--radius-xs);background:linear-gradient(135deg,#C68A3D,#E2CFA6);color:var(--ink-graphite);display:inline-flex;gap:5px;align-items:center">+125 XP · 7‑DAY STREAK</span>
+</div>
+</body></html>

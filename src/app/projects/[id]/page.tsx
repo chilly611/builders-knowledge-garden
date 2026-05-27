@@ -193,47 +193,13 @@ function OverviewTab({ project, milestones, aiItems }: { project: Project; miles
           duplicate noise. Original block preserved in
           src/components/_archive/2026-05-27/ for reference. */}
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg)]">
-          <p className="text-sm font-medium text-gray-600">Budget</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--fg)]">${(project.budget_amount / 1000).toFixed(0)}K</p>
-          <p className="mt-1 text-xs text-gray-500">On Track</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg)]">
-          <p className="text-sm font-medium text-gray-600">Timeline</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--fg)]">{daysRemaining}d</p>
-          <p className="mt-1 text-xs text-gray-500">Remaining</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg)]">
-          <p className="text-sm font-medium text-gray-600">Risk Level</p>
-          <p className="mt-2 text-2xl font-bold text-orange-500">45%</p>
-          <p className="mt-1 text-xs text-gray-500">Medium</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg)]">
-          <p className="text-sm font-medium text-gray-600">Confidence</p>
-          <p className="mt-2 text-2xl font-bold text-green-600">{confidenceScore}%</p>
-          <p className="mt-1 text-xs text-gray-500">High</p>
-        </div>
-      </div>
-
-      {/* Milestones Timeline */}
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-6">
-        <h3 className="text-lg font-semibold text-[var(--fg)] mb-4">Milestone Timeline</h3>
-        <div className="space-y-3">
-          {milestones.map((milestone) => (
-            <div key={milestone.id} className="flex items-center gap-3">
-              {milestone.status === 'completed' && <CheckCircle size={20} className="text-green-600" />}
-              {milestone.status === 'in_progress' && <Clock size={20} className="text-blue-600 animate-spin" />}
-              {milestone.status === 'not_started' && <div className="w-5 h-5 rounded-full border-2 border-gray-300" />}
-              <div className="flex-1">
-                <p className="text-sm font-medium text-[var(--fg)]">{milestone.name}</p>
-                <p className="text-xs text-gray-500">{new Date(milestone.date).toLocaleDateString()}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 2026-05-27: CUT per decisions doc — four legacy metric cards
+          (Budget $NaNK, Timeline, Risk, Confidence) and the Milestone
+          Timeline section. KillerAppChrome (mounted above) surfaces
+          budget + journey + dates; these duplicated and stale-fixture'd
+          the same data ($NaNK came from dividing undefined by 1000).
+          AI Attention Items kept — it's an active, AI-driven surface
+          that complements the chrome rather than duplicating it. */}
 
       {/* AI Attention Items */}
       {aiItems.length > 0 && (
@@ -770,50 +736,11 @@ export default function ProjectDetailPage() {
           </AnimatePresence>
         </div>
 
-        {/* Sidebar Stats */}
-        <div className="hidden lg:block w-64 space-y-4">
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-4 sticky top-24">
-            <h3 className="text-sm font-semibold text-gray-600 mb-4">Project Health</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <p className="text-sm font-medium text-[var(--fg)]">Days to Completion</p>
-                  <p className="text-sm font-bold text-[var(--accent)]">187</p>
-                </div>
-                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                  <div className="h-full w-3/4 bg-[var(--accent)]" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <p className="text-sm font-medium text-[var(--fg)]">Budget Health</p>
-                  <p className="text-sm font-bold text-green-600">On Track</p>
-                </div>
-                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                  <div className="h-full w-4/5 bg-green-600" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <p className="text-sm font-medium text-[var(--fg)]">Risk Score</p>
-                  <p className="text-sm font-bold text-orange-500">45%</p>
-                </div>
-                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                  <div className="h-full w-5/12 bg-orange-500" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <p className="text-sm font-medium text-[var(--fg)]">Completion</p>
-                  <p className="text-sm font-bold text-blue-600">{project.progress}%</p>
-                </div>
-                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                  <div className="h-full bg-blue-600" style={{ width: `${project.progress}%` }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* 2026-05-27: CUT per decisions doc — "Project Health" sidebar
+            (Days to Completion / Budget Health / Risk / Completion). All
+            four metrics live in the KillerAppChrome's BudgetRibbon +
+            JourneyTimeRow now. With this sidebar gone, the tabbed content
+            also gets back the ~280px of horizontal real estate it lost. */}
       </div>
     </div>
   );

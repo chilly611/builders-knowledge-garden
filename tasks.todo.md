@@ -1,6 +1,49 @@
 # Builder's Knowledge Garden — Master Task List
 
 
+## ═══ DESIGN SYSTEM ROLLOUT — Herbarium merge + Killer App skin (2026-05-27 Phase 2) ═══
+
+Goal: install Knowledge Gardens design system as canonical tokens, merge Killer
+App chrome to herbarium palette, resolve collisions with Code session output,
+fix `$NaNK` + CUT list. Shipped tonight, direct to `main`.
+
+**Shipped:**
+- [x] Pull main, verify Code's output (parallel chrome at `src/components/stage-shell/` + 4 stage pages + new Marin fixture — NOT the blocker-fix expected)
+- [x] Asked founder for 3 resolution calls (chrome ownership, missed work, Marin canonicalization)
+- [x] Make `KillerAppChrome` path-aware: skip on `/killerapp/stages/*` (no double chrome)
+- [x] Migrate Marin: `src/components/killerapp-chrome/marin-adapter.ts` reads from Code's canonical `src/lib/demo/marin-4000.ts`; deleted `src/lib/seed-data/marin-farmhouse.ts`
+- [x] Fix `$NaNK` on `/projects/[id]` and execute the full CUT list (four legacy metric cards, Project Health sidebar, Milestone Timeline; kept AI Attention + tabs)
+- [x] Install SKILL.md repo-local at `.claude/skills/knowledge-gardens-design/` (with assets/, preview/, ui_kits/, fonts/)
+- [x] Drop `src/styles/tokens.css` (verbatim copy of `colors_and_type.css`, no `--instrument-*` block)
+- [x] Wire `tokens.css` as FIRST css import in `src/app/layout.tsx`
+- [x] Alias 7 BKG canonical tokens in `src/app/globals.css` to herbarium vars; archive original block at `_archive/2026-05-28-design-system/globals-pre-herbarium.css`
+- [x] Rewrite `src/design-system/tokens/colors.ts` to herbarium hex (so Code's `stage-shell/*` consumers get the theme); archive original
+- [x] Re-skin `KAC_COLORS` in killerapp-chrome to `var(--token)` refs (single edit propagates to all 8 chrome components)
+- [x] Fix `StageNode` append-alpha trick (replaced with `color-mix`)
+- [x] Replace stray `#14B8A6` in `stage-shell/BudgetRibbon.tsx` with `colors.status.success` (herbarium sage)
+- [x] Wire `EB_Garamond` + `Pinyon_Script` + `JetBrains_Mono` via `next/font/google` in `layout.tsx`
+- [x] Update `docs/design-constitution.md` with Source-of-Truth pointer, var-ref palette section, Surfaces section, Brands section, Vocabulary lock, Antipatterns
+- [x] Create `docs/ui-kit.md` indexing all 10 components in the BKG UI kit with status + next-sprint migration order
+- [x] Append `docs/session-log.md`
+- [x] Update this file
+- [x] Append patterns to `tasks.lessons.md`
+- [ ] `git add -A && git commit && git push origin main`
+- [ ] Verify Vercel preview deploys clean within 3 minutes of push, open the canonical Marin UUID `/projects/55730cd3-5225-493d-8b5c-49086d942565` and confirm herbarium chrome renders
+
+**Design System — Follow-ups (next sprint, not blocking Thursday):**
+- [ ] **Global SKILL install.** Founder needs to copy `bkg/.claude/skills/knowledge-gardens-design/` to `~/.claude/skills/knowledge-gardens-design/` on their Mac so the skill is cross-repo (BKG + Orchids + XRWorkers). Cowork sandbox can't reach host home.
+- [ ] **License fonts** for offline / PDF / PPTX export: EB Garamond, Pinyon Script (or Italianno fallback), JetBrains Mono. Until licensed, all PDF/PPTX export work is blocked or must use system-font fallbacks. Owner: Chilly.
+- [ ] **Orchids repo token migration** — Cowork session against `chilly611/knowledge-gardens-orchids`
+- [ ] **Dream Machine surface chrome** — build per design system spec (signature accents: brass + amber)
+- [ ] **Knowledge Garden surface chrome** — build per design system spec (signature accent: sage)
+- [ ] **Hardcoded-hex audit** — `grep -rE '#[0-9A-Fa-f]{6}' src/components/` across the rest of the repo
+- [ ] **Reconcile two BudgetRibbons + two JourneyRows.** Once kit primitives (Gauge / BudgetLattice / JourneyStrip / SurfaceHeader) are built, retire the duplicates.
+- [ ] **Migrate `src/lib/brand-tokens.ts` consumers (~15 surfaces) to herbarium tokens, then archive `brand-tokens.ts`.**
+- [ ] **Build kit primitives in TypeScript:** WorkflowCard (high priority), SpecimenCard, Gauge, SurfaceHeader, BudgetLattice. See `docs/ui-kit.md` for priority order.
+- [ ] **Custom icon font** — retire lucide fallback per design system §7
+- [ ] **/projects/[id] tabbed content polish** — convert remaining `var(--bg)` / `var(--fg)` to herbarium-explicit palette in a separate pass
+
+
 ## ═══ SIZE UP + LOCK STAGES — refit into the persistent chrome (2026-05-27, Thursday demo) ═══
 
 Refit the Size Up + Lock lifecycle stages (stages 1 & 2) to be FULLY FUNCTIONAL inside the persistent stage chrome, for Thursday's contractor demo. Four files only: the two `stages/*` pages + two `specialists/*` server modules.

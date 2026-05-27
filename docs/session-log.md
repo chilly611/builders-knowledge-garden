@@ -6,6 +6,57 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-27 — Cowork Session: Design System Rollout + Killer App Palette Merge (Phase 2)
+**Agent:** Cowork (claude-opus-4-7)
+**Branch:** `main` (direct commit, demo on Thursday)
+
+**Mandate:** Install Knowledge Gardens design system as canonical visual layer; merge Killer App chrome to herbarium palette; resolve the two-chrome collision Code created earlier in the session; fix `$NaNK` + CUT list on `/projects/[id]`.
+
+**Pre-flight collisions discovered (and resolved):**
+- Code's "blocker-fix" session shipped 4,236 LOC of a *parallel* chrome system at `src/components/stage-shell/` plus four functional stage pages (`size-up`, `lock`, `plan`, `build`) plus a separate Marin fixture (`src/lib/demo/marin-4000.ts`, $1.99M base, 10 sequencing phases). Code did NOT do the `$NaNK` fix or the `/projects/[id]` CUT list the brief expected. Stopped, asked founder, got three calls: (1) mine path-aware on stage routes, (2) I do the missed work, (3) Code's $1.99M Marin is canonical.
+
+**What was built / shipped:**
+- **Phase 1 — Collision resolution:**
+  - `src/components/killerapp-chrome/marin-adapter.ts` — adapter that reads Code's `MARIN_PROJECT` + `MARIN_BUDGET_LINES` + sequencing from `src/lib/demo/marin-4000.ts` and produces a `KacProject`. My chrome now consumes Code's canonical fixture.
+  - `src/lib/seed-data/marin-farmhouse.ts` — **deleted** along with the now-empty `src/lib/seed-data/` directory.
+  - `src/components/killerapp-chrome/KillerAppChrome.tsx` — added `usePathname()` and an `onStageRoute` guard so chrome returns `null` on `/killerapp/stages/*`. Stops the double-chrome stack on size-up / lock / plan / build pages.
+  - `src/app/projects/[id]/page.tsx` — removed the four legacy metric cards (Budget `$NaNK` / Timeline / Risk / Confidence — `$NaNK` was `(undefined / 1000).toFixed(0)`), the Milestone Timeline section, and the Project Health sidebar. Kept AI Attention Items + the tabbed content. Page now fits 1280×800 without scroll.
+- **Phase 2 — Token plumbing:**
+  - `.claude/skills/knowledge-gardens-design/` — installed repo-local: SKILL.md + README.md + colors_and_type.css + assets/ + preview/ + ui_kits/ + fonts/. Global install (`~/.claude/skills/`) deferred — sandbox can't reach host home; documented in follow-ups for founder to manually copy.
+  - `src/styles/tokens.css` — full copy of the design system's `colors_and_type.css`. Zero `--instrument-*` tokens (confirmed via grep).
+  - `src/app/layout.tsx` — imported `tokens.css` BEFORE `globals.css`. Added `EB_Garamond`, `Pinyon_Script`, `JetBrains_Mono` via `next/font/google` with `--font-editorial`, `--font-script`, `--font-mono` variables.
+  - `src/app/globals.css` — replaced the 7 raw-hex W8 tokens with herbarium aliases. Pre-rollout block archived at `src/components/_archive/2026-05-28-design-system/globals-pre-herbarium.css`.
+  - `src/design-system/tokens/colors.ts` — rewrote the TS constants to point at herbarium hex values. Top-level keys unchanged so `src/components/stage-shell/*` (which imports `colors` directly) gets the herbarium theme for free. Pre-rollout snapshot archived at `_archive/2026-05-28-design-system/colors-pre-herbarium.ts`.
+  - `src/lib/brand-tokens.ts` — **kept in place** (15+ importers; per brief "leave if non-trivial"). Logged to next-sprint follow-ups.
+- **Phase 3 — Killer App chrome merge:**
+  - `src/components/killerapp-chrome/types.ts` — `KAC_COLORS` now uses `var(--token)` refs pointing at the herbarium palette. Single edit propagates to all 8 chrome components.
+  - `src/components/killerapp-chrome/StageNode.tsx` — replaced the `${color}10` append-alpha trick with `color-mix(in oklab, ${color} 8%, transparent)` — `var()` syntax can't take an appended-hex alpha.
+  - `src/components/stage-shell/BudgetRibbon.tsx` — replaced the stray hardcoded `'#14B8A6'` (bright teal) with `colors.status.success` (herbarium sage).
+- **Phase 5 — Docs:**
+  - `docs/design-constitution.md` — added Implementation Source of Truth section, rewrote Canonical Palette with `var()` references + herbarium hex, added Surfaces, Brands, Vocabulary lock, Antipatterns sections.
+  - `docs/ui-kit.md` — new file. Indexes all 10 components in the BKG UI kit with implementation status and prioritized migration order.
+  - `docs/design-decisions-2026-05-27-LOCKED.md` — pasted by founder mid-session, saved to `docs/` for permanent reference.
+
+**Key decisions:**
+- Two chrome systems coexist: mine renders on `/killerapp` landing + workflows + `/projects/[id]`; Code's `stage-shell` renders on `/killerapp/stages/{size-up,lock,plan,build}`. Path-aware skip prevents double chrome.
+- Code's `$1.99M` Marin fixture is canonical. My chrome adapts via `marin-adapter.ts`. The locked `$1.65M` numbers from the chrome brief are deprecated.
+- Herbarium aliasing happens at TWO surfaces: `globals.css` for CSS-var consumers, `design-system/tokens/colors.ts` for TS-constant consumers.
+- Repo-local SKILL install only. Global install requires founder action.
+
+**Verification:**
+- `tsc --noEmit` clean for all new/modified files. Only pre-existing repo-wide warnings (`next/navigation` decls, `framer-motion` decls, missing `landing.module.css`) remain — same set that existed before this session.
+- Merge-table hex grep returns zero matches in active code (only JSDoc reference table in `types.ts` matches, which is intentional history).
+- All eight `KAC_COLORS` map to `var(--paper-cream | paper-vellum | specimen-rust | specimen-rust-deep | specimen-sage | specimen-sage-pale | ink-graphite | ink-faded)`.
+
+**Issues / follow-ups (logged in tasks.todo.md):**
+- Global SKILL install pending — founder action.
+- Font licensing — EB Garamond, Pinyon Script, JetBrains Mono. CDN-only tonight.
+- Reconcile the two BudgetRibbons + two JourneyRows + my CompletionRing vs the kit's Gauge in a next-sprint consolidation.
+- Migrate `src/lib/brand-tokens.ts` consumers, then archive.
+- Orchids repo token migration — separate session.
+
+---
+
 ## 2026-05-27 — Cowork Session: Killer App Chrome (BudgetRibbon + JourneyTimeRow + TimeMachine hook)
 **Agent:** Cowork (claude-opus-4-7)
 **Branch:** `main` (direct commit, demo on Thursday)

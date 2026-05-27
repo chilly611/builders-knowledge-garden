@@ -60,20 +60,28 @@
   --bp-font-mono: 'Courier Prime', 'Courier New', 'SF Mono', monospace;
   --bp-font-sans: 'Space Grotesk', var(--font-archivo), sans-serif;
 
-  /* Builder's Knowledge Garden Design Tokens (v2 palette, W8 locked) */
-  /* Canonical palette — heritage ground */
-  --navy: #1B3B5E;
-  --navy-deep: #0E2A47;
-  --trace: #F4F0E6;
-  --graphite: #2E2E30;
-  --faded-rule: #C9C3B3;
-  /* Canonical palette — everyday warm */
-  --brass: #B6873A;
-  /* Canonical palette — markup alert */
-  --redline: #A1473A;
-  /* Canonical palette — peak pair (moment punctuation, verification only) */
-  --robin: #7FCFCB;
-  --orange: #D9642E;
+  /* Builder's Knowledge Garden Design Tokens — 2026-05-27 HERBARIUM ALIASES.
+   *
+   * The 7 BKG canonical tokens (W8-locked names) now alias to the herbarium
+   * palette defined in src/styles/tokens.css (the canonical source). Every
+   * existing component using var(--navy) etc. picks up the herbarium shift
+   * with zero code changes elsewhere.
+   *
+   * Pre-herbarium raw hex preserved at
+   *   src/components/_archive/2026-05-28-design-system/globals-pre-herbarium.css
+   * for the historical record.
+   *
+   * To shift a different surface to the herbarium palette, prefer adding
+   * new aliases here rather than editing the canonical tokens.css. */
+  --navy:       var(--specimen-teal-deep);
+  --navy-deep:  var(--specimen-teal-deep);
+  --trace:      var(--paper-edge);
+  --graphite:   var(--ink-graphite);
+  --faded-rule: var(--paper-edge);
+  --brass:      var(--specimen-brass);
+  --redline:    var(--specimen-rust);
+  --robin:      var(--specimen-teal);
+  --orange:     var(--specimen-amber);
 
   /* DEPRECATED — use --navy / --robin / --brass / --orange / --trace / --graphite / --faded-rule / --redline instead */
   /* These legacy --bp-* vars will be removed in a future release */

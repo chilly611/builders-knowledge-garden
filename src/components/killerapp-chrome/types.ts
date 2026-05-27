@@ -5,32 +5,40 @@
  *   Row 1 — BudgetRibbon (SpendBlock | IncomeStackedTracks | HeadroomGauge)
  *   Row 2 — JourneyTimeRow (TimelineMarkers above 7 StageNodes)
  *
- * Visual language locked 2026-05-27:
- *   Background cream     #FDF8F0
- *   Cards warm-white     #FAFAF8
- *   Red chrome           #E8443A
- *   Spend red            #B83A30
- *   Income green actual  #1D9E75
- *   Income green proj.   #5BAE7F
- *   Text ink             #1A1A1A
- *   Text warm gray       #6B6358
+ * Visual language — 2026-05-28 HERBARIUM MERGE.
+ * The bright "instrument" palette retired entirely; values point at the
+ * herbarium tokens defined in src/styles/tokens.css. Per the design system
+ * merge table in docs/design-decisions-2026-05-27-LOCKED.md:
+ *
+ *   bgCream        →  --paper-cream         #F2E9D2  (was #FDF8F0)
+ *   card           →  --paper-vellum        #E8DDB8  (was #FAFAF8)
+ *   redChrome      →  --specimen-rust       #A53A2D  (was #E8443A)
+ *   spendRed       →  --specimen-rust-deep  #6E2419  (was #B83A30)
+ *   incomeGreen    →  --specimen-sage       #5E7A56  (was #1D9E75)
+ *   incomeGreenProj→  --specimen-sage-pale  #B5C4A8  (was #5BAE7F)
+ *   textInk        →  --ink-graphite        #2A2620  (was #1A1A1A)
+ *   textWarmGray   →  --ink-faded           #8C6A45  (was #6B6358)
  *
  * No scrolling on the chrome itself. Light backgrounds only.
+ *
+ * Using `var(--token-name)` references keeps the chrome a thin client of
+ * the design system — future palette shifts only need a tokens.css edit.
  */
 
 export const KAC_COLORS = {
-  bgCream: '#FDF8F0',
-  card: '#FAFAF8',
-  redChrome: '#E8443A',
-  spendRed: '#B83A30',
-  incomeGreen: '#1D9E75',
-  incomeGreenProjected: '#5BAE7F',
-  textInk: '#1A1A1A',
-  textWarmGray: '#6B6358',
-  // Derived utility tones
-  divider: 'rgba(26, 26, 26, 0.08)',
-  cardBorder: 'rgba(26, 26, 26, 0.06)',
-  shadow: 'rgba(26, 26, 26, 0.04)',
+  bgCream: 'var(--paper-cream)',
+  card: 'var(--paper-vellum)',
+  redChrome: 'var(--specimen-rust)',
+  spendRed: 'var(--specimen-rust-deep)',
+  incomeGreen: 'var(--specimen-sage)',
+  incomeGreenProjected: 'var(--specimen-sage-pale)',
+  textInk: 'var(--ink-graphite)',
+  textWarmGray: 'var(--ink-faded)',
+  // Derived utility tones — sepia ink at low opacity for hairlines + shadows.
+  // Matches the design system's --border-hairline / paper-edge shadow recipe.
+  divider: 'rgba(90, 59, 31, 0.18)',
+  cardBorder: 'rgba(90, 59, 31, 0.10)',
+  shadow: 'rgba(90, 59, 31, 0.08)',
 } as const;
 
 export const KAC_FONTS = {
