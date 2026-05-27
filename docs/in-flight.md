@@ -13,6 +13,8 @@ Each agent: keep the active-locks list short — only files actively being edite
 
 ## Recently released (last 24h)
 
+| Claude Code | `src/app/projects/[id]/page.tsx`, `src/lib/demo/marin-4000.ts` | 2026-05-27 (demo eve) | RELEASED | Fixed AI-Attention-Items data mismatch: added `MARIN_ATTENTION_ITEMS` to the Marin fixture and seeded the page's `aiItems` from it, dropping the `GET /api/v1/projects/analyze` call that returned the GLOBAL (unscoped) `command_center_attention` rows leaking another project (Oceanview/Malibu/$1.2M). Now consistent with the chrome's $1.99M Marin numbers. **Could NOT build locally** — this checkout's `node_modules` is wedged (framer-motion unresolvable after a churned `npm install`; lock out of sync so `npm ci` refuses). Verified via Vercel + live render instead. Needs `rm -rf node_modules && npm install` to build locally again. |
+
 | Agent B (Claude Code) | `src/components/stage-shell/*`, `src/app/killerapp/stages/{plan,build}/*`, `src/lib/specialists/{plan,build}.ts`, `src/lib/demo/marin-4000.ts`, `src/components/stage-kit/*` (ALL NEW) | 2026-05-27 | RELEASED | Plan + Build stages refit into the persistent StageShell chrome (JourneyRow + BudgetRibbon + ProToggle). Marin 4,000 sqft demo data. `npm run build` clean. Additive only — no edits to `layout.tsx`. **NOTE: chrome relocated from `killerapp-chrome/` → `stage-shell/` after rebasing onto the V3 rehaul (Agent A's `killerapp-chrome/` now owns that path). Two stage-chrome systems coexist — needs reconciliation.** Also: please gate the OLD global chrome off `/killerapp/stages/*`. |
 
 | Agent | File | Released (PT) | Commit | What changed |

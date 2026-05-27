@@ -50,6 +50,63 @@ export const MARIN_PROJECT: MarinProjectRecord = {
   estimated_cost_high: 2_150_000,
 };
 
+// ─── AI Attention Items (AI COO surface on /projects/[id]) ──────────────────
+// Curated, deterministic items for the Marin demo. The /projects/[id] page's
+// "AI Attention Items" otherwise reads the GLOBAL command_center_attention
+// table (GET /api/v1/projects/analyze ignores the project id), which leaks a
+// different project's stale rows onto the page. Until per-project hydration
+// exists (the useKacProject(id) hook noted in page.tsx), the page falls back
+// to these — matching the KillerAppChrome's own Marin fixture fallback so the
+// chrome's numbers and the attention items describe the SAME project.
+// Numbers track the chrome: $1.99M total, $426K headroom, foundation just
+// wrapped (May 14), framing milestone Jul 7. Client: The Harwell Family.
+
+export interface MarinAttentionItem {
+  id: string;
+  title: string;
+  body: string;
+  urgency: 'red' | 'yellow' | 'green';
+}
+
+export const MARIN_ATTENTION_ITEMS: MarinAttentionItem[] = [
+  {
+    id: 'marin-att-framing-lumber',
+    title: 'Order Framing Lumber Now — Jul 7 Framing Milestone at Risk',
+    urgency: 'red',
+    body: "The $128K framing lumber & sheathing package is still only estimated, not ordered. North Bay yards are quoting 4-6 week lead times on the engineered members for a 2-story span — order this week or the Jul 7 framing start (and Ridgeline's crew slot) slips, burning ~$9.5K/week in general conditions.",
+  },
+  {
+    id: 'marin-att-foundation-inspection',
+    title: 'Schedule Marin County Foundation Inspection Before Framing',
+    urgency: 'red',
+    body: 'Foundation & concrete wrapped on the May 14 milestone, but framing cannot legally start until Marin County DPW signs off the foundation/setback inspection. Book it now — county inspection backlogs run 5-8 business days and a miss stalls Ridgeline Framing at the gate.',
+  },
+  {
+    id: 'marin-att-windows-leadtime',
+    title: 'Release the Marvin Window Order — 8-12 Week Lead',
+    urgency: 'yellow',
+    body: 'The $115K Marvin window & exterior-door package is still estimated. Coastal-spec units for a custom farmhouse run 8-12 weeks; if not released now they become the bottleneck at dry-in and push the weather-tight date into the fall rains.',
+  },
+  {
+    id: 'marin-att-finishes-allowances',
+    title: 'Lock Finish Allowances With the Harwells',
+    urgency: 'yellow',
+    body: 'Interior finishes ($268K) are pending and unselected — the single largest line and the usual source of overruns. With $426K of headroom (21% of the $1.99M budget), confirm flooring/cabinet/counter allowances with the Harwell family before selections drift and eat the contingency.',
+  },
+  {
+    id: 'marin-att-draw-foundation',
+    title: 'Prep the Foundation-Milestone Draw',
+    urgency: 'yellow',
+    body: 'Foundation is complete and ~$138K is billed against the $1.99M contract. Assemble the foundation-milestone draw package now so it is ready the day the inspection passes — lenders typically need 5-7 business days plus a site inspection, and a lag stalls framing cash flow.',
+  },
+  {
+    id: 'marin-att-on-budget',
+    title: 'On Budget Through Foundation — $1.99M Holding',
+    urgency: 'green',
+    body: 'The Marin Farmhouse is tracking on budget at 7% spent, inside the $1.85M-$2.15M estimate, with foundation landing at the locked-in $165K. A clean signal entering the framing phase — hold the line on change orders to protect the $426K headroom.',
+  },
+];
+
 // ─── Budget (BudgetClient spine shape) ──────────────────────────────────────
 
 const NOW = '2026-05-20T17:00:00.000Z';

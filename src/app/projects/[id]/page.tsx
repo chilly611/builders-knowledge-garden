@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { KillerAppChrome } from '@/components/killerapp-chrome';
+import { MARIN_ATTENTION_ITEMS } from '@/lib/demo/marin-4000';
 
 /* ─── Types ─── */
 type TabId = 'overview' | 'codes' | 'schedule' | 'materials' | 'team' | 'permits' | 'estimate';
@@ -504,7 +505,7 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [aiItems, setAiItems] = useState<AIAttentionItem[]>([]);
+  const [aiItems, setAiItems] = useState<AIAttentionItem[]>(MARIN_ATTENTION_ITEMS);
   const [budgetLines, setBudgetLines] = useState<any[]>([]);
   const [scheduleData, setScheduleData] = useState<any>(null);
   const [complianceData, setComplianceData] = useState<any>(null);
@@ -523,15 +524,14 @@ export default function ProjectDetailPage() {
         setScheduleData(schedule || null);
         setComplianceData(compliance || null);
 
-        // Fetch AI analysis (non-blocking)
-        fetch(`/api/v1/projects/analyze?id=${id}`)
-          .then(async (res) => {
-            if (res.ok) {
-              const analysisData = await res.json();
-              setAiItems(analysisData.items || []);
-            }
-          })
-          .catch(() => {});
+        // 2026-05-27: AI Attention Items come from the Marin demo fixture
+        // (seeded into aiItems state above), NOT from GET /api/v1/projects/analyze.
+        // That endpoint ignores the project id and returns the GLOBAL unresolved
+        // command_center_attention rows, which leaked a different project's stale
+        // items (Oceanview/Malibu/$1.2M) onto this Marin page — mismatching the
+        // chrome's $1.99M Marin numbers. Until per-project hydration lands (the
+        // useKacProject(id) hook noted at the chrome below), the curated Marin
+        // items keep the AI COO surface consistent with the rest of the page.
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
