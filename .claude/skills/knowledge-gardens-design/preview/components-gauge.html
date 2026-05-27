@@ -1,0 +1,89 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Instrument gauge</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+</head>
+<body style="padding:16px 24px">
+<div style="display:flex;gap:24px;align-items:center;justify-content:flex-start">
+  <div>
+    <svg viewBox="0 0 170 170" width="170" height="170">
+    <defs>
+      <radialGradient id="brass" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#E2CFA6"/>
+        <stop offset="55%" stop-color="#B08D5C"/>
+        <stop offset="100%" stop-color="#7C6235"/>
+      </radialGradient>
+      <radialGradient id="face" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#3C7A8A" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#3C7A8A" stop-opacity="0.55"/>
+      </radialGradient>
+    </defs>
+    <circle cx="85" cy="85" r="78" fill="url(#brass)" stroke="#7C6235" stroke-width="1.5"/>
+    <circle cx="85" cy="85" r="66" fill="#F2E9D2" stroke="#7C6235" stroke-width="0.5"/>
+    <circle cx="85" cy="85" r="62" fill="url(#face)"/>
+    <line x1="46.43274341880764" y1="39.03733341286132" x2="51.57504429629995" y2="45.165688957813146" stroke="#2A2620" stroke-width="1.4" stroke-linecap="round" opacity="0.9"/><line x1="70.48468626401993" y1="26.78225642344021" x2="71.45237384641861" y2="30.6634393285442" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="97.47470144906556" y1="26.311143955971666" x2="96.64305468579452" y2="30.22373435890689" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="121.93968851953949" y1="37.71935478359668" x2="119.47704261823687" y2="40.871397798023565" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="138.92764277795" y1="58.697731192655354" x2="135.33246659275335" y2="60.45121577981166" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="145" y1="85" x2="137" y2="85" stroke="#2A2620" stroke-width="1.4" stroke-linecap="round" opacity="0.9"/><line x1="138.92764277795" y1="111.30226880734465" x2="135.33246659275335" y2="109.54878422018834" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="121.93968851953949" y1="132.28064521640331" x2="119.47704261823687" y2="129.12860220197643" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="97.47470144906556" y1="143.68885604402834" x2="96.64305468579452" y2="139.77626564109312" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="70.48468626401993" y1="143.2177435765598" x2="71.45237384641861" y2="139.3365606714558" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="46.43274341880764" y1="130.96266658713867" x2="51.57504429629995" y2="124.83431104218685" stroke="#2A2620" stroke-width="1.4" stroke-linecap="round" opacity="0.9"/>
+    <text x="85" y="125" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.6" fill="#2A2620">SCHEDULE VARIANCE</text>
+    <g transform="translate(85 85) rotate(42)">
+      <line x1="0" y1="6" x2="0" y2="-50" stroke="#2A2620" stroke-width="2" stroke-linecap="round"/>
+      <line x1="0" y1="6" x2="0" y2="-50" stroke="#F2E9D2" stroke-width="0.5"/>
+    </g>
+    <circle cx="85" cy="85" r="6" fill="#7C6235" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="85" cy="85" r="2.5" fill="#2A2620"/>
+    <!-- screws -->
+    <circle cx="22" cy="22" r="3" fill="#7C6235"/><line x1="20" y1="20" x2="24" y2="24" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="148" cy="22" r="3" fill="#7C6235"/><line x1="146" y1="20" x2="150" y2="24" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="22" cy="148" r="3" fill="#7C6235"/><line x1="20" y1="150" x2="24" y2="146" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="148" cy="148" r="3" fill="#7C6235"/><line x1="146" y1="150" x2="150" y2="146" stroke="#2A2620" stroke-width="0.6"/>
+  </svg>
+    <div style="text-align:center">
+      <div style="font-family:var(--font-display);font-size:24px;color:var(--ink-graphite);margin-top:-4px">+4 days</div>
+      <div class="eng" style="margin-top:2px">SCHEDULE · BUILD</div>
+    </div>
+  </div>
+  <div>
+    <svg viewBox="0 0 170 170" width="170" height="170">
+    <defs>
+      <radialGradient id="brass" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#E2CFA6"/>
+        <stop offset="55%" stop-color="#B08D5C"/>
+        <stop offset="100%" stop-color="#7C6235"/>
+      </radialGradient>
+      <radialGradient id="face" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#A53A2D" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#A53A2D" stop-opacity="0.55"/>
+      </radialGradient>
+    </defs>
+    <circle cx="85" cy="85" r="78" fill="url(#brass)" stroke="#7C6235" stroke-width="1.5"/>
+    <circle cx="85" cy="85" r="66" fill="#F2E9D2" stroke="#7C6235" stroke-width="0.5"/>
+    <circle cx="85" cy="85" r="62" fill="url(#face)"/>
+    <line x1="46.43274341880764" y1="39.03733341286132" x2="51.57504429629995" y2="45.165688957813146" stroke="#2A2620" stroke-width="1.4" stroke-linecap="round" opacity="0.9"/><line x1="70.48468626401993" y1="26.78225642344021" x2="71.45237384641861" y2="30.6634393285442" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="97.47470144906556" y1="26.311143955971666" x2="96.64305468579452" y2="30.22373435890689" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="121.93968851953949" y1="37.71935478359668" x2="119.47704261823687" y2="40.871397798023565" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="138.92764277795" y1="58.697731192655354" x2="135.33246659275335" y2="60.45121577981166" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="145" y1="85" x2="137" y2="85" stroke="#2A2620" stroke-width="1.4" stroke-linecap="round" opacity="0.9"/><line x1="138.92764277795" y1="111.30226880734465" x2="135.33246659275335" y2="109.54878422018834" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="121.93968851953949" y1="132.28064521640331" x2="119.47704261823687" y2="129.12860220197643" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="97.47470144906556" y1="143.68885604402834" x2="96.64305468579452" y2="139.77626564109312" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="70.48468626401993" y1="143.2177435765598" x2="71.45237384641861" y2="139.3365606714558" stroke="#5A3B1F" stroke-width="0.8" stroke-linecap="round" opacity="0.55"/><line x1="46.43274341880764" y1="130.96266658713867" x2="51.57504429629995" y2="124.83431104218685" stroke="#2A2620" stroke-width="1.4" stroke-linecap="round" opacity="0.9"/>
+    <text x="85" y="125" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.6" fill="#2A2620">BUDGET BURN</text>
+    <g transform="translate(85 85) rotate(90)">
+      <line x1="0" y1="6" x2="0" y2="-50" stroke="#2A2620" stroke-width="2" stroke-linecap="round"/>
+      <line x1="0" y1="6" x2="0" y2="-50" stroke="#F2E9D2" stroke-width="0.5"/>
+    </g>
+    <circle cx="85" cy="85" r="6" fill="#7C6235" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="85" cy="85" r="2.5" fill="#2A2620"/>
+    <!-- screws -->
+    <circle cx="22" cy="22" r="3" fill="#7C6235"/><line x1="20" y1="20" x2="24" y2="24" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="148" cy="22" r="3" fill="#7C6235"/><line x1="146" y1="20" x2="150" y2="24" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="22" cy="148" r="3" fill="#7C6235"/><line x1="20" y1="150" x2="24" y2="146" stroke="#2A2620" stroke-width="0.6"/>
+    <circle cx="148" cy="148" r="3" fill="#7C6235"/><line x1="146" y1="150" x2="150" y2="146" stroke="#2A2620" stroke-width="0.6"/>
+  </svg>
+    <div style="text-align:center">
+      <div style="font-family:var(--font-display);font-size:24px;color:var(--ink-graphite);margin-top:-4px">82%</div>
+      <div class="eng" style="margin-top:2px">BUDGET · 248K</div>
+    </div>
+  </div>
+  <div style="max-width:240px;margin-left:auto">
+    <div class="eng" style="margin-bottom:6px">USAGE</div>
+    <p style="font-family:var(--font-editorial);font-style:italic;font-size:14px;color:var(--ink-script);margin:0;line-height:1.35">
+      For any KPI tile that benefits from being read at a glance — schedule, budget, quality. Brass bezel, teal or rust needle.
+    </p>
+  </div>
+</div>
+</body></html>

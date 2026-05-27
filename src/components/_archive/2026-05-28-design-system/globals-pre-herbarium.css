@@ -1,0 +1,33 @@
+/*
+ * globals.css :root block — pre-herbarium snapshot.
+ * ==================================================
+ *
+ * Source: src/app/globals.css :root, captured 2026-05-27 before the
+ * Knowledge Gardens design system rollout aliased the 7 BKG canonical
+ * tokens to herbarium values.
+ *
+ * Reason archived: per docs/design-decisions-2026-05-27-LOCKED.md the
+ * canonical palette is now the herbarium tokens in src/styles/tokens.css.
+ * globals.css :root no longer holds raw hex; it now aliases to those
+ * tokens. This file is the historical record so anyone digging into the
+ * pre-rollout look-and-feel can find the original numbers.
+ *
+ * DO NOT IMPORT THIS FILE. It exists purely as documentation.
+ */
+
+:root {
+  /* Builder's Knowledge Garden Design Tokens (v2 palette, W8 locked) */
+  /* Canonical palette — heritage ground */
+  --navy: #1B3B5E;
+  --navy-deep: #0E2A47;
+  --trace: #F4F0E6;
+  --graphite: #2E2E30;
+  --faded-rule: #C9C3B3;
+  /* Canonical palette — everyday warm */
+  --brass: #B6873A;
+  /* Canonical palette — markup alert */
+  --redline: #A1473A;
+  /* Canonical palette — peak pair (moment punctuation, verification only) */
+  --robin: #7FCFCB;
+  --orange: #D9642E;
+}

@@ -1,0 +1,1 @@
+[auto-verify] model=claude-haiku-4-5-20251001 concurrency=5 dry_run=false limit=all

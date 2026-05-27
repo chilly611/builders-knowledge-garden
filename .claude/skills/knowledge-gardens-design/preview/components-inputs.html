@@ -1,0 +1,43 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inputs</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+</head>
+<body>
+<style>
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+  .field label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-faded);font-weight:600}
+  .input{font-family:var(--font-ui);font-size:14px;background:var(--bg-raised);border:1px solid var(--paper-edge);border-radius:var(--radius-xs);padding:9px 12px;color:var(--ink-graphite);width:100%;box-shadow:var(--shadow-inset);outline:none;transition:border-color 140ms,box-shadow 140ms}
+  .input:focus{border-color:var(--specimen-teal);box-shadow:var(--shadow-focus)}
+  .input::placeholder{color:var(--ink-faded);font-style:italic}
+  .danger-text{font-family:var(--font-editorial);font-style:italic;font-size:12px;color:var(--specimen-rust);margin-top:3px}
+  .help{font-family:var(--font-editorial);font-style:italic;font-size:12px;color:var(--ink-faded);margin-top:3px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+</style>
+<div class="grid">
+  <div class="field">
+    <label>Project name</label>
+    <input class="input" value="Twin Peaks Residence" />
+    <div class="help">Will appear in the field log header.</div>
+  </div>
+  <div class="field">
+    <label>Joint reference</label>
+    <input class="input" placeholder="e.g. 4B, north column" />
+  </div>
+  <div class="field">
+    <label>Field observation</label>
+    <input class="input" value="Hairline crack" style="border-color:var(--specimen-rust)" />
+    <div class="danger-text">— specimen needs photo before sign‑off</div>
+  </div>
+  <div class="field">
+    <label>Phase</label>
+    <select class="input" style="appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-faded) 50%),linear-gradient(135deg,var(--ink-faded) 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 12px) 50%;background-size:4px 4px;background-repeat:no-repeat;padding-right:28px">
+      <option>Build</option><option>Plan</option><option>Deliver</option>
+    </select>
+  </div>
+</div>
+</body></html>

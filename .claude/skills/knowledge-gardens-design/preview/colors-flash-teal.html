@@ -1,0 +1,61 @@
+<!-- @dsCard group="Colors" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flash teal</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+</head>
+<body style="padding:22px 26px">
+  <div class="eng" style="margin-bottom:12px">FLASH TEAL · A SINGLE DELIBERATE NEON · USE SPARINGLY</div>
+
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:center">
+
+    <!-- The swatch itself -->
+    <div>
+      <div class="swatch" style="background:#00FFE0;height:96px;border:1px solid var(--paper-edge);box-shadow:var(--shadow-page-2)">
+        <div class="swatch-meta"><span>flash-teal</span><span class="hex">#00FFE0</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <div class="swatch" style="background:#00C9B0;height:46px;border:1px solid var(--paper-edge)">
+          <div class="swatch-meta"><span>deep</span><span class="hex">#00C9B0</span></div>
+        </div>
+        <div class="swatch" style="background:rgba(0,255,224,0.18);height:46px;border:1px solid var(--paper-edge)">
+          <div class="swatch-meta"><span>wash</span><span class="hex">RGBA · 18%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage examples -->
+    <div>
+      <!-- a scan line on a paper field -->
+      <div style="position:relative;height:64px;background:var(--bg-raised);border:1px solid var(--paper-edge);border-radius:var(--radius-xs);overflow:hidden">
+        <div style="position:absolute;left:0;right:0;top:50%;height:2px;background:linear-gradient(90deg,transparent,#00FFE0,transparent);transform:translateY(-50%);box-shadow:0 0 12px rgba(0,255,224,0.55)"></div>
+        <div class="eng" style="position:absolute;left:8px;bottom:5px">SCANLINE · VERIFYING</div>
+      </div>
+
+      <!-- a verification dot -->
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;background:var(--bg-raised);border:1px solid var(--paper-edge);border-radius:var(--radius-xs);padding:10px 12px">
+        <span style="width:9px;height:9px;border-radius:50%;background:#00FFE0;box-shadow:0 0 0 2px var(--paper-cream),0 0 6px #00FFE0"></span>
+        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-graphite)">Joint 4B · within tolerance</span>
+      </div>
+
+      <!-- a gauge tick -->
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;background:var(--bg-raised);border:1px solid var(--paper-edge);border-radius:var(--radius-xs);padding:10px 12px">
+        <svg width="46" height="20" viewBox="0 0 46 20">
+          <rect x="1" y="8" width="44" height="4" fill="var(--paper-vellum)" stroke="var(--paper-edge)" stroke-width="0.6"/>
+          <rect x="1" y="8" width="34" height="4" fill="#00FFE0"/>
+          <line x1="35" y1="4" x2="35" y2="16" stroke="var(--ink-graphite)" stroke-width="1.2"/>
+        </svg>
+        <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-graphite)">Build · 74%</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:14px;font-family:var(--font-editorial);font-style:italic;font-size:13px;color:var(--ink-faded);line-height:1.45;max-width:640px">
+    The one deliberate flash in an otherwise quiet palette. Reserved for <strong style="color:var(--ink-graphite);font-style:normal;font-weight:600">scanlines, verification dots, gauge ticks crossing into the green</strong> — the moment something snaps to <span style="color:#00C9B0;font-style:normal;font-weight:600">verified</span>. Never as a fill, never larger than ~12 px, never beside another saturated color. Sits outside the specimen palette as <span class="eng" style="font-size:10px">--FLASH-TEAL</span>.
+  </div>
+</body>
+</html>

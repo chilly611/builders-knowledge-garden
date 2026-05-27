@@ -1,0 +1,84 @@
+<!-- @dsCard group="Type" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plate caption — script</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="./_base.css">
+<style>
+  .script-spec {
+    background: var(--bg-raised);
+    border: 1px solid var(--paper-edge);
+    border-radius: var(--radius-xs);
+    padding: 18px 22px 14px;
+    box-shadow: var(--shadow-page-1);
+    position: relative;
+  }
+  .script-spec .word {
+    line-height: 0.95;
+    color: var(--ink-graphite);   /* darker than the old --ink-script for legibility */
+    letter-spacing: 0.01em;
+    text-align: center;
+  }
+  .script-spec .reads {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px dashed var(--paper-edge);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-graphite);
+    justify-content: center;
+  }
+  .script-spec .reads .arrow { color: var(--ink-faded); }
+  .script-spec .family-tag {
+    position: absolute; top: 8px; right: 10px;
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ink-faded);
+  }
+</style>
+</head>
+<body style="padding:22px 24px">
+  <div class="eng" style="margin-bottom:14px">SCRIPT CAPTION · ALWAYS PAIR WITH A MONO TRANSLITERATION</div>
+
+  <!-- Side-by-side: Italianno (legible) vs Pinyon (ornate) -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+    <div class="script-spec">
+      <div class="family-tag">Italianno · default</div>
+      <div class="word" style="font-family:'Italianno','Pinyon Script',cursive;font-size:88px">Viver</div>
+      <div class="reads"><span>READS</span><span class="arrow">→</span><span>VIVER · TO LIVE</span></div>
+    </div>
+
+    <div class="script-spec">
+      <div class="family-tag">Pinyon · ornate</div>
+      <div class="word" style="font-family:'Pinyon Script',cursive;font-size:88px">Viver</div>
+      <div class="reads"><span>READS</span><span class="arrow">→</span><span>VIVER · TO LIVE</span></div>
+    </div>
+
+  </div>
+
+  <!-- A small library of common captions, set in the default (Italianno) -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 18px">
+    <div>
+      <div style="font-family:'Italianno',cursive;font-size:48px;line-height:0.95;color:var(--ink-graphite)">Hortus</div>
+      <div class="eng" style="font-size:9px;margin-top:2px">"HORTUS" — GARDEN</div>
+    </div>
+    <div>
+      <div style="font-family:'Italianno',cursive;font-size:48px;line-height:0.95;color:var(--ink-graphite)">Aedificium</div>
+      <div class="eng" style="font-size:9px;margin-top:2px">"AEDIFICIUM" — BUILDING</div>
+    </div>
+    <div>
+      <div style="font-family:'Italianno',cursive;font-size:48px;line-height:0.95;color:var(--ink-graphite)">Specimen no. 04</div>
+      <div class="eng" style="font-size:9px;margin-top:2px">"SPECIMEN NO. 04"</div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;font-family:var(--font-editorial);font-style:italic;font-size:13px;color:var(--ink-faded);line-height:1.45;max-width:640px">
+    Switched the default from Pinyon Script to <strong style="color:var(--ink-graphite);font-style:normal;font-weight:600">Italianno</strong> — same antique-flourish energy, much higher legibility. Pinyon stays available for the few moments that really want it (a logo lock-up, a single hero word). Both still need to be set <strong style="color:var(--ink-graphite);font-style:normal;font-weight:600">large</strong> (40 px and up), <strong style="color:var(--ink-graphite);font-style:normal;font-weight:600">short</strong> (one or two words), and always with a transliteration below.
+  </div>
+</body>
+</html>
