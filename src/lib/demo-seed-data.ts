@@ -147,16 +147,19 @@ export interface DemoProject {
 export const DEMO_PROJECTS: DemoProject[] = [
   {
     id: 'proj-chen-farmhouse',
-    title: 'Modern Farmhouse - Chen Residence',
-    description: 'Complete residential renovation with open concept kitchen, master suite addition, and outdoor living space.',
+    title: 'Modern Farmhouse — Chen Residence',
+    // 2026-05-27: canonical Marin demo. 4,000 sqft, 4BR/3BA, $1.65M. Numbers
+    // mirror src/lib/seed-data/marin-farmhouse.ts which the KillerAppChrome
+    // reads — keep both in sync if these change.
+    description: '4,000 sq ft new build with open-plan kitchen, primary suite wing, and detached studio above the garage.',
     lane: 'dreamer',
-    phase: 'dream',
+    phase: 'build',
     owner: 'Sarah Chen',
-    location: 'Austin, TX',
-    budget: 285000,
-    timeline: '6 months (Q3-Q4 2026)',
+    location: 'Marin County, CA',
+    budget: 1650000,
+    timeline: 'Mar 18 → Dec 4, 2026 (substantial completion)',
     participants: ['Sarah Chen', 'Marcus Rivera'],
-    progress: 15,
+    progress: 42,
     createdDate: '2026-01-10',
   },
   {

@@ -6,6 +6,57 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-27 — Cowork Session: Killer App Chrome (BudgetRibbon + JourneyTimeRow + TimeMachine hook)
+**Agent:** Cowork (claude-opus-4-7)
+**Branch:** `main` (direct commit, demo on Thursday)
+
+**Mandate:** Ship the persistent two-row chrome at the top of every Killer App page — BudgetRibbon over a JourneyTimeRow of seven clickable lifecycle StageNodes with draggable TimelineMarkers above. Plus the Time Machine hook at the data layer (no UI tonight).
+
+**What was built:**
+- `src/components/killerapp-chrome/` (11 files, 1,366 LOC):
+  - `KillerAppChrome.tsx` — top-level wrapper, falls back to Marin Farmhouse seed when no project is passed.
+  - `BudgetRibbon.tsx` — Row 1 composing the three sub-blocks.
+  - `SpendBlock.tsx` — left third, spend-red bar + committed underlay.
+  - `IncomeStackedTracks.tsx` — middle third, closed draws solid green + projected hatched.
+  - `HeadroomGauge.tsx` — right third, headroom dollars with health-color tint (>25% green, 10–25% chrome red, <10% spend red).
+  - `JourneyTimeRow.tsx` — Row 2, 7 StageNodes + TimelineMarkers + start/end date strip.
+  - `StageNode.tsx` — CompletionRing + label + due date, clickable → routes to `?stage=<slug>`.
+  - `TimelineMarkers.tsx` — draggable date chips, native HTML5 dragstart/dragover/drop. Persistence is a callback because the schedule API is generate-only.
+  - `CompletionRing.tsx` — SVG percent ring primitive (extracted from the ProjectConfidence pattern).
+  - `types.ts` — KAC_COLORS / KAC_FONTS / KAC_STAGES + KacProject/KacBudget/KacSchedule shape.
+  - `index.ts` — barrel.
+- `src/lib/time-machine/useTimeMachine.ts` — unified hook wrapping `src/lib/time-machine.ts` (snapshots) + `useTimeMachineRewind`. Adds undo/redo derived from the snapshot stack, drafts tray (localStorage `bkg:time-machine:drafts:<projectId>`), breadcrumb stack (`bkg:time-machine:crumbs:<projectId>`). No UI surfaced tonight per spec.
+- `src/lib/seed-data/marin-farmhouse.ts` — canonical Marin demo: 4,000 sqft, 4BR/3BA, $1.65M total, $312.4K spent + $186.2K committed + $1.151M remaining, 9 projected / 3 closed draws, Mar 18 → Dec 4 2026.
+- `src/components/_archive/2026-05-27/` — read-only copies of the six pre-existing components the chrome supersedes (KillerAppNav, JourneyMapHeader, GlobalJourneyMapHeader, BudgetWidget, GlobalBudgetWidget, GanttTimeline).
+
+**Mounts:**
+- `src/app/killerapp/layout.tsx` — `<KillerAppChrome />` inside a Suspense boundary, between `<AuthAndProjectIndicator />` and `<ProjectCockpit />`.
+- `src/app/projects/[id]/page.tsx` — `<KillerAppChrome />` at the top of the page wrapper, above the existing project header strip.
+
+**Kill-list executed:**
+- "The operating system for your build." tagline on `/killerapp` page replaced with "Pick a workflow." (the new chrome is the opening statement now).
+- Project Header card on `/projects/[id]/page.tsx` Overview tab removed — its four pieces (name, location, phase pill, progress bar) are now in the chrome.
+- Marin demo project in `src/lib/demo-seed-data.ts` updated to the spec ($1.65M Marin CA, not the legacy $285k Austin TX).
+
+**Key decisions:**
+- Reused the canonical `LIFECYCLE_STAGES` array via a parallel `KAC_STAGES` mapping with slugs — didn't fork the source of truth.
+- Used the user's locked killer-app palette (cream/warm-white/red-chrome/spend-red/income-green) as the chrome's contained design tokens. Did NOT touch `src/lib/brand-tokens.ts` (parchment/copper) or `src/design-system/tokens/stage-accents.ts` — those govern other surfaces.
+- Time Machine hook wraps existing primitives instead of forking. Two storage files (snapshots vs drafts vs crumbs) but one mental model.
+- Drag-reorder fires `onMarkersReorder(orderedIds)` callback and dispatches `bkg:chrome:markers-reordered` window event. No PATCH endpoint exists at `/api/v1/projects/schedule` (that route is generate-only). Optimistic local update is the honest demo behavior.
+- Chrome falls back to the Marin seed when no `project` prop is passed, so every demo route renders cleanly without needing project data in `ProjectContext` yet. A future PR can add `useKacProject(id)` to hydrate from the real API.
+
+**Verification:**
+- `tsc --noEmit` shows zero NEW errors in the chrome / time-machine / seed files. The same pre-existing `next/navigation` and supabase-types warnings appear across every file in the repo that imports those modules — they don't block `next build`.
+- Static design checks pass: no dark backgrounds, no `dark:` classes, no fixed widths > 380px, 12 spec-palette references in `types.ts`, `overflow:hidden` on the wrapper to enforce no-scroll discipline.
+- Live render at 380/1280 px depends on the Vercel deploy — not verifiable in this session.
+
+**Issues / follow-ups:**
+- Schedule reorder needs a PATCH endpoint before drag actually persists. Today it logs + dispatches a window event.
+- `/projects/[id]/page.tsx` still uses CSS vars (`var(--bg)`, `var(--fg)`, etc.) that some themes render dark; the chrome itself is explicitly cream, but the surrounding page can still go dark if a parent theme is active.
+- "Drop-file hero block" listed in the kill-list wasn't actually present on `/projects/[id]/page.tsx` — flagged for verification on a different route.
+
+---
+
 ## 2026-05-26 — Cowork Session V3: Killer App Rehaul (WS0 + WS2-WS6 shipped)
 **Agent:** Cowork (claude-opus-4-7)
 **Branch parent:** `feature/v3-killerapp-rehaul` (NOT merged to main — founder approval gates the rename + main merge)

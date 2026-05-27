@@ -1,6 +1,45 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-26
+## Updated: 2026-05-27
+
+---
+
+## Killer App Chrome — Thursday Demo Sprint (2026-05-27)
+
+### Verify session-prompt paths against the actual repo BEFORE writing any code
+**Date:** 2026-05-27
+**What happened:** The session brief referenced `~/Desktop/The Builder Garden/app/src/components/...` paths repeatedly. That location does not exist. The real repo is `/Users/chilly/Developer/bkg/` with `src/` at the root (no `app/` wrapper). Worse: the brief named `CompletionRing` as an "existing component, do not rebuild" — `find` showed it never existed. Caught these by running an `ls` + `find` audit before touching files, and explicitly stopped to confirm with the founder rather than guessing.
+**Rule:** Before writing any code from a session brief that names paths and files, run a single audit shell that touches every path/file/symbol the brief references. If anything is wrong, stop and ask once with all the discrepancies in a single AskUserQuestion call. The cost of one round-trip is a tiny fraction of the cost of building against a hallucinated tree.
+
+### Don't fork shared tokens or canonical data — compose alongside
+**Date:** 2026-05-27
+**What happened:** The chrome brief specified its own locked palette (cream / warm-white / chrome-red / spend-red / income-green) that doesn't match `src/lib/brand-tokens.ts` (parchment / copper) OR `docs/design-constitution.md` (navy / trace / brass). Tempting to either (a) update brand-tokens (would affect every surface) or (b) ignore the brief and use brand-tokens. Right move: define `KAC_COLORS` inside the chrome's own `types.ts` as a contained design vocabulary. Same pattern for the 7 lifecycle stages — kept `LIFECYCLE_STAGES` (canonical) untouched and added `KAC_STAGES` (with slugs) as a sibling in the chrome's namespace.
+**Rule:** When a feature brief locks a design vocabulary that doesn't match the project-wide tokens, encapsulate the new vocabulary inside the feature directory. Don't try to harmonize with global tokens until a constitutional revision says to. The chrome's `KAC_COLORS` and `KAC_STAGES` are intentionally scoped — they let the feature ship without renegotiating the rest of the platform.
+
+### Wrap existing infrastructure into one hook rather than building parallel systems
+**Date:** 2026-05-27
+**What happened:** Brief asked for `src/lib/time-machine/useTimeMachine.ts` with undo / drafts / breadcrumbs. The repo already has `src/lib/time-machine.ts` (snapshot CRUD) and `src/lib/use-time-machine-rewind.ts` (rewind hook). Building a parallel `useTimeMachine.ts` that re-implements snapshots would have created two competing storage schemas. Right move: `useTimeMachine` IMPORTS from the existing files and only ADDS the missing pieces (undo/redo derived from the snapshot stack, drafts tray, breadcrumb stack), each on its own storage key.
+**Rule:** Before building a new hook with the same conceptual name as something existing, read the existing implementation. If it covers part of the surface, wrap it. New hook adds only what's missing; the existing primitives stay as the lowest layer. Storage keys get a clear prefix so the two layers don't collide. This is also why `src/lib/time-machine.ts` (file) coexists with `src/lib/time-machine/` (directory) without breaking imports — Node resolves `'@/lib/time-machine'` to the file and `'@/lib/time-machine/useTimeMachine'` to the directory file.
+
+### TypeScript `URLSearchParams` is fussy about Next's `ReadonlyURLSearchParams.entries()`
+**Date:** 2026-05-27
+**What happened:** Wrote `new URLSearchParams(Array.from(searchParams.entries()))` in StageNode and tsc rejected it: `Argument of type '(string | string[])[]' is not assignable to parameter of type 'string | string[][] | Record<string, string> | URLSearchParams | undefined'`. Next's `ReadonlyURLSearchParams` types the iterator weirdly. Fix: `new URLSearchParams(searchParams?.toString() ?? '')`.
+**Rule:** When cloning Next's `useSearchParams()` into a new URLSearchParams, always go through `.toString()`. It's one less round of TypeScript negotiation and the string-form serializer is the canonical contract anyway.
+
+### Native HTML5 drag is fine when you scope it to a single horizontal axis and pure reorder
+**Date:** 2026-05-27
+**What happened:** Brief said no new libs, but also wanted draggable timeline markers. Considered `@dnd-kit/core` (proper keyboard + touch a11y) but the founder picked native HTML5 drag-and-drop. Native works for the Thursday demo because: the markers are positioned absolutely along one axis, the drop targets are the OTHER markers (not free 2D positions), and the user is a contractor on a laptop, not a phone. Worked first try with `dragstart/dragover/drop/dragend` + a single `dragId` state.
+**Rule:** Native HTML5 drag is acceptable when (a) you don't need touch a11y, (b) the drop targets are other elements not free coordinates, and (c) the user isn't doing reorderable multi-row work. If any of those flips, escalate to @dnd-kit. For the chrome demo, native is the right call. Document the trade-off in the component header so the next agent doesn't burn a turn wondering why we didn't use a library.
+
+### "Persist via existing API" needs a `grep` audit before you build the UI
+**Date:** 2026-05-27
+**What happened:** Brief said TimelineMarkers drag should "persist via the existing schedule API." A quick `find src/app/api -path '*schedule*'` showed `src/app/api/v1/projects/schedule/route.ts`, which is `POST`-to-generate (Claude-built schedule), NOT a PATCH/PUT for editing individual markers. Almost wired the drag to it blind. Honest fix: scaffold the drag with an `onReorder` callback + window event + console log, and add a clear TODO in the component header + session log + follow-ups list.
+**Rule:** Before wiring a "persist via existing API" instruction, grep the api route file and read its handler. If it's not the verb you need (PATCH/PUT for edits, not POST for generation), do NOT silently retrofit. Either ask, or scaffold a callback and document the gap. The Thursday demo doesn't need real persistence — it needs the drag to feel responsive locally and not crash.
+
+### Don't trust the brief's claim "feature X already exists in component Y"
+**Date:** 2026-05-27
+**What happened:** Brief listed 5 components to "reuse, don't rebuild": CompletionRing, BudgetModule, GanttChart, ProjectConfidence, CompassNav. `find` showed CompletionRing didn't exist; BudgetModule existed in TWO locations (`src/components/` AND `src/components/pm/`) with different APIs; GanttChart existed only at `src/components/pm/GanttChart.tsx` (not at root); ProjectConfidence had the percent-ring SVG inline as part of a 464-LOC dashboard, not as an exportable primitive. Spent ~10 minutes auditing all 10 candidates via an Explore subagent and got a structured report — way better than discovering each one mid-build.
+**Rule:** When a brief lists components to reuse, run an existence + grep audit (where it's imported, what it exports) as the FIRST thing. Delegate the heavy reading to an Explore subagent with a strict word cap on the report — keeps the main context clean and forces the audit to be structured.
 
 ---
 

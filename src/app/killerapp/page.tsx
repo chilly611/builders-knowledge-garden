@@ -299,12 +299,19 @@ export default async function KillerAppPage({
           </div>
 
           <div className={styles.heroTextStack}>
+            {/* 2026-05-27: Killed the "operating system for your build" tagline
+                per chrome build spec. The persistent KillerAppChrome (mounted
+                in killerapp/layout.tsx) is the new opening statement —
+                budget + journey at a glance. The hero now leads with the
+                workflow picker subhead directly. Original copy preserved in
+                git history (this commit's parent) and in
+                src/components/_archive/2026-05-27/ context notes. */}
             <h1 className={styles.heroHeading}>
-              The operating system for your build.
+              Pick a workflow.
             </h1>
 
             <p className={styles.heroSubhead}>
-              Every tool you need. Wired together. Smarter every job.
+              Start anywhere in the 7-stage lifecycle. Every tool wired together.
             </p>
           </div>
         </div>

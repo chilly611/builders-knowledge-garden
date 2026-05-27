@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
+import { KillerAppChrome } from '@/components/killerapp-chrome';
 import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 import { Suspense } from 'react';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
@@ -99,6 +100,15 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
             useSearchParams which Next 16 requires under Suspense. */}
         <Suspense fallback={null}>
           <AuthAndProjectIndicator />
+        </Suspense>
+        {/* 2026-05-27: KillerAppChrome — persistent BudgetRibbon + JourneyTimeRow.
+            Mounted after AuthAndProjectIndicator so it sits below the auth pill
+            and above any page content. Suspense-wrapped because StageNode +
+            JourneyTimeRow call useSearchParams under the hood. Falls back to
+            the Marin Farmhouse seed when no real project is wired through
+            ProjectContext yet. */}
+        <Suspense fallback={null}>
+          <KillerAppChrome />
         </Suspense>
         <ProjectCockpit />
         <div style={{ paddingTop: 48 }}>

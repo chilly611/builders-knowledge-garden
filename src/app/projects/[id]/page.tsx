@@ -22,6 +22,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { KillerAppChrome } from '@/components/killerapp-chrome';
 
 /* ─── Types ─── */
 type TabId = 'overview' | 'codes' | 'schedule' | 'materials' | 'team' | 'permits' | 'estimate';
@@ -186,28 +187,11 @@ function OverviewTab({ project, milestones, aiItems }: { project: Project; miles
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 p-6">
-      {/* Project Header */}
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-[var(--fg)]">{project.name}</h2>
-            <p className="mt-1 text-sm text-gray-600">{project.location}</p>
-          </div>
-          <div
-            className="rounded-full px-4 py-2 text-white font-semibold text-sm"
-            style={{ backgroundColor: PHASE_COLORS[project.phase] }}
-          >
-            {project.phase}
-          </div>
-        </div>
-        <div className="mt-6 h-3 w-full rounded-full bg-gray-200 overflow-hidden">
-          <div
-            className="h-full bg-[var(--accent)]"
-            style={{ width: `${completionPercent}%`, transition: 'width 0.3s ease' }}
-          />
-        </div>
-        <p className="mt-2 text-sm text-gray-600">{completionPercent}% Complete</p>
-      </div>
+      {/* 2026-05-27: Removed the Project Header card (project name + location
+          + phase pill + progress bar). All four bits are now surfaced by the
+          KillerAppChrome mounted above the page header, so this card became
+          duplicate noise. Original block preserved in
+          src/components/_archive/2026-05-27/ for reference. */}
 
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -607,6 +591,15 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
+      {/* 2026-05-27: KillerAppChrome at the top — persistent BudgetRibbon +
+          JourneyTimeRow. Mounted above the existing page header so the chrome
+          always greets the user first. Project data isn't yet shaped as
+          KacProject (would need budget breakdown + stage completion fields
+          we don't fetch here), so the chrome falls back to the Marin Farmhouse
+          seed for now. Future PR: build a useKacProject(id) hook that hydrates
+          the chrome from the project API. */}
+      <KillerAppChrome />
+
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)] px-6 py-4">
         <div className="flex items-center justify-between mb-4">

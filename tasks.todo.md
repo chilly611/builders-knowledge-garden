@@ -1,6 +1,41 @@
 # Builder's Knowledge Garden — Master Task List
 
 
+## ═══ KILLER APP CHROME — Thursday Contractor Demo (2026-05-27) ═══
+
+Goal: persistent BudgetRibbon + JourneyTimeRow on every Killer App page, plus
+Time Machine hook at the data layer. Shipped tonight, direct to `main` so
+Vercel auto-deploys for the Thursday demo.
+
+**Shipped:**
+- [x] Read context: design-constitution, stage-accents, lifecycle-stages, existing time-machine + rewind hook
+- [x] Audit 10 overlapping components (KillerAppNav, JourneyMapHeader, GlobalJourneyMapHeader, BudgetWidget, GlobalBudgetWidget, BudgetModule×2, GanttTimeline, GanttChart, ProjectConfidence, CompassNav) — delegated to an Explore subagent so main context stayed clean
+- [x] Archive 6 originals to `src/components/_archive/2026-05-27/`
+- [x] Build `src/components/killerapp-chrome/` (11 files, 1,366 LOC): KillerAppChrome wrapper, BudgetRibbon, SpendBlock, IncomeStackedTracks, HeadroomGauge, JourneyTimeRow, StageNode, TimelineMarkers, CompletionRing, types.ts, index.ts
+- [x] Build `src/lib/time-machine/useTimeMachine.ts` (336 LOC) — wraps existing snapshot + rewind primitives, adds undo/redo/drafts/breadcrumbs API. No UI surfaced yet.
+- [x] Build `src/lib/seed-data/marin-farmhouse.ts` — canonical Marin demo: 4,000 sqft, $1.65M, draws schedule per spec
+- [x] Update `src/lib/demo-seed-data.ts` proj-chen-farmhouse to Marin / $1.65M / 4,000 sqft (was Austin / $285k)
+- [x] Mount KillerAppChrome in `src/app/killerapp/layout.tsx` (Suspense-wrapped, between AuthAndProjectIndicator and ProjectCockpit)
+- [x] Mount KillerAppChrome at top of `src/app/projects/[id]/page.tsx`
+- [x] Cut "The operating system for your build" tagline on `/killerapp` page → replaced with "Pick a workflow."
+- [x] Cut duplicate Project Header card from `/projects/[id]/page.tsx` Overview tab
+- [x] Verify zero new TypeScript errors in new files (pre-existing repo-wide `next/navigation` warnings unchanged)
+- [x] Static visual checks: no dark backgrounds, no fixed widths > 380px, locked palette in use, overflow:hidden on wrapper
+- [x] Append entry to `docs/session-log.md`
+- [x] Update this file
+- [x] Update `tasks.lessons.md` with the patterns learned this session
+- [ ] git add -A && git commit -m "Killer App chrome: BudgetRibbon + JourneyTimeRow + TimeMachine hook" && git push origin main
+- [ ] Verify Vercel deploys clean — open https://builders.theknowledgegardens.com/projects/proj-chen-farmhouse and confirm chrome renders
+
+**Follow-ups (not blocking Thursday):**
+- [ ] Build `useKacProject(id)` hook that hydrates KacProject from `/api/v1/projects?id=` so chrome renders real data, not just Marin fallback
+- [ ] Add a PATCH endpoint at `/api/v1/projects/[id]/schedule/markers` so TimelineMarkers drag actually persists. Today the drag fires a callback + window event but does not save server-side. The Marin seed is stable so the demo still reads correctly.
+- [ ] `/projects/[id]/page.tsx` still uses CSS vars (`var(--bg)`, `var(--fg)`) — confirm light theme is active for the demo or convert to explicit chrome palette
+- [ ] Surface the Time Machine drafts tray + breadcrumb stack in the UI (data layer is ready; spec deferred this to a later session)
+- [ ] Audit the "drop-file hero" item — wasn't on `/projects/[id]` — find which route the spec meant
+- [ ] Delete the archived originals in `src/components/_archive/2026-05-27/` once Mike confirms nothing imports them (KillerAppNav at minimum is still used by `src/app/killerapp/layout.tsx`)
+
+
 ## ═══ V3 KILLER APP REHAUL (2026-05-26, in flight) ═══
 
 Parent branch: `feature/v3-killerapp-rehaul` (NOT merged to main yet).
