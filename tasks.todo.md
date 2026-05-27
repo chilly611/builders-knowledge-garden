@@ -55,6 +55,7 @@ Refit the Size Up + Lock lifecycle stages (stages 1 & 2) to be FULLY FUNCTIONAL 
 - [x] Refit both into `@/components/stage-shell` `StageShell` + `useStageChrome` (consistent with Plan/Build); pull the shared `marin-4000.ts` 4,000 sqft fixture; reuse stage-kit `FirstEncounterWhisper` + `AutoFillButton`.
 - [x] Acceptance: `npm run build` clean; render inside StageShell w/ Marin 4,000 sqft; sketch works; auto-fill triggers specialist; Pro toggle flips labels; voice wired; 380px + 1280px no-overflow.
 - [x] docs/session-log.md appended; tasks.todo.md updated; committed + pushed to main.
+- [x] **PATCH 1 (post live-review):** sticky single primary action per stage (Size Up "Lock the scope" → Lock; Lock "Send the agreement" → Plan) with completion ring + check + auto-advance; insight card above the action bar; in-flow whisper banners (no occlusion). Dogfooded Size Up → Lock → Plan at 380px. Build clean; pushed (33d6184). Items 2/3/4 (journey labels, budget-chip consistency, three-column) are chrome/Plan-owned — flagged below.
 
 **Carry-forward / coordination:**
 - [ ] **Seed sqft:** the live Marin DB row is `sqft = "2800"` but the fixture (and demo script) is **4,000**. Update the `command_center_projects` row to 4,000 to match, or keep fixture-first.

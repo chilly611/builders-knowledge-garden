@@ -2704,3 +2704,10 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - **Three chromes now stack on `/killerapp/stages/*`:** the layout-level `KillerAppChrome` (V3) + the legacy `KillerAppNav`/JourneyMapHeader strip + StageShell. Same redundancy Agent B flagged — layout-level suppression on `/stages/*` is owned by whoever owns `layout.tsx`.
 - **An interactive rebase was mid-conflict on this tree during the session** (landing Agent B's Plan/Build commit onto the V3 base, relocating StageShell → `@/components/stage-shell`). Left untouched; resumed only after it completed cleanly.
 - Documenso isn't configured locally (no `DOCUMENSO_API_KEY`); the agreement card shows the safe "prepared" path. Set the key for live e-sign in the demo env.
+
+**PATCH 1 (same session, post live-review):** applied the stuck-point fixes to Size Up + Lock —
+- One sticky single primary action per stage with the forward verb (Size Up "Lock the scope" → Lock; Lock "Send the agreement" → Plan). On tap the completion ring fills, a check overlays, and the journey auto-advances to the next stage.
+- A standardized insight card sits directly above the action bar (Size Up: ballpark / $-per-sqft / confidence; Lock: "N/3 ready · budget · materials · agreement status").
+- Whispers are now in-flow dismissible banners (one at a time), never floating overlays that occlude content.
+- Dogfooded the full **Size Up → Lock → Plan** walk at 380px in a real browser: both stages advance and the next route loads. Build clean. (Items 2 journey-row labels, 3 budget-chip consistency, and most of 4 three-column are chrome/Plan-owned — flagged to the layout owner.)
+- Landed amid heavy concurrent churn: origin advanced +3 (design-system rollout 61dd920 + Marin attention fix 51924bf) and a stale 42-min `.git/index.lock` had to be cleared (no live git process; only Spotlight held a read handle). Stashed teammate untracked rollout files to rebase cleanly, then pushed (33d6184). A `git stash` entry remains holding those untracked copies (now also committed via origin) plus a local `.claude/launch.json` — safe to `git stash drop`.
