@@ -9,8 +9,11 @@ Each agent: keep the active-locks list short — only files actively being edite
 | Agent | File | Started (PT) | Status | Notes |
 |---|---|---|---|---|
 | _none_ | _none_ | _—_ | _—_ | _2026-05-20 evening — clean state after Wednesday's 13-commit ship. HEAD `f22f6e1` GREEN on Vercel. Pre-Thursday-demo._ |
+| _none_ | _none_ | _—_ | _—_ | _Agent B released its stage-chrome lock 2026-05-27 (see below)._ |
 
 ## Recently released (last 24h)
+
+| Agent B (Claude Code) | `src/components/stage-shell/*`, `src/app/killerapp/stages/{plan,build}/*`, `src/lib/specialists/{plan,build}.ts`, `src/lib/demo/marin-4000.ts`, `src/components/stage-kit/*` (ALL NEW) | 2026-05-27 | RELEASED | Plan + Build stages refit into the persistent StageShell chrome (JourneyRow + BudgetRibbon + ProToggle). Marin 4,000 sqft demo data. `npm run build` clean. Additive only — no edits to `layout.tsx`. **NOTE: chrome relocated from `killerapp-chrome/` → `stage-shell/` after rebasing onto the V3 rehaul (Agent A's `killerapp-chrome/` now owns that path). Two stage-chrome systems coexist — needs reconciliation.** Also: please gate the OLD global chrome off `/killerapp/stages/*`. |
 
 | Agent | File | Released (PT) | Commit | What changed |
 |---|---|---|---|---|
