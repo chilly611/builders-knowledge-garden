@@ -27,12 +27,12 @@ fix `$NaNK` + CUT list. Shipped tonight, direct to `main`.
 - [x] Append `docs/session-log.md`
 - [x] Update this file
 - [x] Append patterns to `tasks.lessons.md`
-- [ ] `git add -A && git commit && git push origin main`
-- [ ] Verify Vercel preview deploys clean within 3 minutes of push, open the canonical Marin UUID `/projects/55730cd3-5225-493d-8b5c-49086d942565` and confirm herbarium chrome renders
+- [x] `git add -A && git commit && git push origin main` → shipped as `61dd920` on `origin/main`
+- [x] Verify Vercel preview deploys clean within 3 minutes of push, confirm herbarium chrome renders — *verified live 2026-05-27 by the Claude Code verification pass on `/projects/proj-chen-farmhouse` (new `next/font` faces present, instrument tokens gone, no `$NaN`, no duplicate chrome). UUID `/projects/55730cd3-...` not separately opened — same render path (Marin seed fallback).*
 
 **Design System — Follow-ups (next sprint, not blocking Thursday):**
 - [ ] **Global SKILL install.** Founder needs to copy `bkg/.claude/skills/knowledge-gardens-design/` to `~/.claude/skills/knowledge-gardens-design/` on their Mac so the skill is cross-repo (BKG + Orchids + XRWorkers). Cowork sandbox can't reach host home.
-- [ ] **License fonts** for offline / PDF / PPTX export: EB Garamond, Pinyon Script (or Italianno fallback), JetBrains Mono. Until licensed, all PDF/PPTX export work is blocked or must use system-font fallbacks. Owner: Chilly.
+- [x] ~~License fonts for offline / PDF / PPTX export.~~ **Resolved 2026-05-27: no licensing required.** EB Garamond + Pinyon Script ship under SIL OFL 1.1; JetBrains Mono ships under Apache 2.0. All three are free to embed in PDF/PPTX. When the offline pipeline is built, just download the `.ttf` files from the design system's `fonts/` folder (or from Google Fonts) and drop them in `/Users/chilly/Developer/bkg/fonts/`. CDN is fine for the website (already wired via next/font/google).
 - [ ] **Orchids repo token migration** — Cowork session against `chilly611/knowledge-gardens-orchids`
 - [ ] **Dream Machine surface chrome** — build per design system spec (signature accents: brass + amber)
 - [ ] **Knowledge Garden surface chrome** — build per design system spec (signature accent: sage)

@@ -6,6 +6,26 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-27 — Claude Code Session: Demo-blocker VERIFICATION pass (post-Cowork)
+**Agent:** Claude Code (Opus 4.7, 1M context), checkout `/Users/chilly/Developer/bkg`
+**Branch:** `main` — **no code changes, no new code commit.**
+
+**Mandate (as briefed):** fix three demo blockers on `/projects/[id]` (1: `$NaNK` legacy Budget card; 2: strip duplicate chrome below the new chrome; 3: no scroll on chrome), then commit/push/verify.
+
+**What actually happened:** by session start, the parallel **Cowork** session had already completed all three blockers (and the design-system rollout) and pushed them as `61dd920`. A file I was reading changed *underneath* me mid-session — the convergence the brief said to stop for — so I halted and confirmed with the founder. Founder confirmed Cowork was finished. There was **no cleanup code left to write**; the brief's `git add -A` would only re-publish shipped work and trigger a redundant pre-demo Vercel rebuild.
+
+**Verification (origin/main `61dd920`, live):**
+- `origin/main == 61dd920` (0/0). Cowork's work is pushed.
+- New build is live: HTML `<head>` carries the new `next/font` faces (EB Garamond, Pinyon Script, JetBrains Mono); stale instrument-palette markers (`#FDF8F0`, `#E8443A`, `instrument-`) gone; `/projects/proj-chen-farmhouse` → 200, `x-matched-path /projects/[id]`.
+- Browser render @ 1280×800 — **B1:** SPEND $138K / INCOME $1.56M / HEADROOM $426K of $1.99M; **no `$NaN`**. **B2:** page = `KillerAppChrome` (budget ribbon + 7-stage journey) → Back to CRM + Export/Edit/Delete → RFI/Submittals/Change Orders/Punch List/Budget → Overview…Estimate → **AI Attention Items only**; no four metric cards, no Project Health sidebar, no Milestone Timeline dupe, no dup name header, no tagline. **B3:** chrome + both tab rows fit; only AI content extends below the fold (acceptable). Source confirms NaN-card + sidebar blocks gone; remaining `toLocaleString`/`toFixed` are Estimate-tab-only, `|| 0`-guarded.
+
+**Could NOT verify locally:** this checkout's `node_modules` is incomplete — empty `.bin/` + missing native `lightningcss.darwin-arm64.node`, so `npm run build` / local dev fail with 57 lightningcss module-not-found errors (a copy/hardlink install artifact, **not** a code defect). Vercel's clean CI build is authoritative and succeeded.
+
+**Flags (out of scope — did not touch):**
+- **AI-Attention-Items data mismatch:** chrome uses the Marin seed ($1.99M) but the AI items text references a different fixture — "LA County/Malibu", "Oceanview Residence", "the Hoffmans", "$1.2M". Reconcile the analyze API/fixture before the demo.
+- **Demo slug:** brief says `proj-chen-farmhouse`; Cowork's canonical Marin is UUID `55730cd3-5225-493d-8b5c-49086d942565`. Both render (chrome falls back to Marin seed for any id) — confirm which URL the contractor opens.
+- **Repair checkout:** `npm install` in `/Users/chilly/Developer/bkg` to restore `.bin/` + lightningcss before it can build/dev locally.
+
 ## 2026-05-27 — Cowork Session: Design System Rollout + Killer App Palette Merge (Phase 2)
 **Agent:** Cowork (claude-opus-4-7)
 **Branch:** `main` (direct commit, demo on Thursday)
