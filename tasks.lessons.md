@@ -4,6 +4,30 @@
 
 ---
 
+## Asset Sync — Mac 1 Cowork (2026-05-28 ~01:33 PT)
+
+### Audit pre-existing public/ assets BEFORE syncing from a design system folder
+**Date:** 2026-05-28
+**What happened:** Asset-sync prompt assumed a clean slate — copy 28 design-system files into `public/plates/`, `public/brand/`, etc., wire components, done. Reality on demo eve: every one of the four hero plates ALREADY lived in `public/logos/gardens/` and the production `/intro` cinematic was using them (raw `<img src="/logos/gardens/builders-hammer.png">`). Four BKG mark variants ALREADY lived in `public/logo/` (different filenames: `b_transparent_512.png` etc.). Two OG card files existed at `public/logo/og_image_{light,dark}.png` with names that didn't match what `layout.tsx` referenced. If I'd blindly copied AND swapped the `/intro` `<img>` to a new `<HeroPlate>`, the live demo could have broken at the worst possible moment.
+**Rule:** Before any "copy assets from source-of-truth into public/" task, run `ls public/` + `grep -rn "/logos/" "/logo/" "/og/" src/` and audit what's already wired. Then make a conscious choice — replace, coexist, or skip. On demo-critical files, coexist > replace; ship the new pattern (components, new paths) ready for adoption and document the swap as a follow-up.
+
+### Trust the OWNS list over the prompt's Step list when they conflict
+**Date:** 2026-05-28
+**What happened:** Prompt's Step 4 told me to wire `<Logo>` into the top nav (`src/components/KillerAppNav.tsx`) and `<HeroPlate>` into `/intro` (`src/app/intro/page.tsx`). My OWNS list for this session was `public/**`, `src/components/brand/**`, `src/components/surface/**`, `src/components/journey/**`, `src/app/layout.tsx` (metadata block only), `docs/asset-manifest.md`. Neither `KillerAppNav.tsx` nor `intro/page.tsx` is in OWNS. The OWNS list is the lock declaration that coordinates with other parallel agents — Step 4 was a wish-list, OWNS was the contract. I stayed inside OWNS, built the components ready, documented the two adoptions as follow-ups, and shipped without touching files that other agents might also be editing.
+**Rule:** When a session prompt's instruction list goes outside the OWNS scope, the OWNS scope wins. Follow-up actions get logged to `tasks.todo.md` for a future session with a different lock. Demos blow up when parallel agents stomp each other; better to ship 80% of a clean session than 100% of a session that races another agent on the same file.
+
+### Discovery results section in the asset manifest is more valuable than the placement table
+**Date:** 2026-05-28
+**What happened:** The manifest template (already in `docs/asset-manifest.md` from a previous session) had a comprehensive placement table — source → target → used-by. Good. But the discoveries from running the sync were the actually-valuable artifact: ① which manifest paths conflict with pre-existing repo paths, ② which expected assets weren't in the source, ③ which broken refs in the codebase got fixed as a side effect, ④ which placement filenames diverge from the manifest. The next time someone syncs, they want THIS section, not just the table.
+**Rule:** Every manifest-driven sync session must append a dated "discovery results" section to the manifest itself. Inventory · placed · renames · missing · unplaced · pre-existing duplicates · fixed broken refs · components created · follow-ups. The manifest is the contract; the discovery section is the audit trail. Without it the next agent has no idea what the actual state of the repo is vs. what the manifest promises.
+
+### tsc with the project tsconfig.json is the only valid quick check; tsc CLI flags are noise
+**Date:** 2026-05-28
+**What happened:** Tried to run `tsc --noEmit --skipLibCheck src/components/brand/*.tsx src/app/layout.tsx` to verify just my new files. Got 14 errors — all about `--jsx` not set, missing module declarations, etc. None of them were real bugs; they were all because tsc CLI didn't pick up the project's tsconfig with its `jsx: "preserve"` and path mappings. Re-ran `tsc --noEmit` with no file args (uses the project config) and grep'd for my filenames — clean. Wasted ~30 seconds on the wrong invocation.
+**Rule:** For a "are my new files broken?" quick check, always run `tsc --noEmit` (no file args) with the project config, then grep stderr for your filenames. Never pass individual `.tsx` files to tsc as args without setting `--project` — you'll get config-shape errors that hide real issues.
+
+---
+
 ## Stage Chrome + Multi-Agent Sprint (2026-05-27 → 28, Agent B / Claude Code)
 
 ### Inline `grid-template-columns` outranks `<style>` media-query classes

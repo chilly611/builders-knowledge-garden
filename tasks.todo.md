@@ -1,3 +1,28 @@
+## ═══ ASSET SYNC — Mac 1 Cowork (2026-05-28 ~01:33 PT) ═══
+
+Synced 28 design-system assets into BKG `public/`; built `<Logo>` + `<HeroPlate>` brand components; patched 2 broken metadata refs. See `docs/asset-manifest.md` discovery section and `docs/session-log.md` 2026-05-28 entry.
+
+**Shipped:**
+- [x] Lock claim + scope verify in `docs/in-flight.md`
+- [x] 28 assets copied (4 plates + 4 marks + 1 favicon ×3 destinations + 2 OG + 11 journey + 6 imagery)
+- [x] Three new component files: `src/components/brand/{Logo,HeroPlate,index}.tsx`
+- [x] `layout.tsx` `metadata.openGraph` + `metadata.twitter` images repointed from broken `/og/og-root.png` → `/og/og-light.png`
+- [x] Favicon `apple-touch-icon.png` now resolves (file copied to expected path)
+- [x] `docs/asset-manifest.md` discovery section appended
+- [x] Commit + push with explicit `git add` paths (no `git add -A`)
+- [x] Lock released in `docs/in-flight.md`
+
+**Follow-ups (next session, not blocking demo):**
+- [ ] Adopt `<Logo variant="default" />` in `src/components/KillerAppNav.tsx:155` (currently `<Logomark>`)
+- [ ] Adopt `<HeroPlate name="builders-hammer" />` in `/intro` Act 1 + Act 5 (currently raw `<img src="/logos/gardens/builders-hammer.png">`)
+- [ ] Sub-categorize `public/journey/` by stage when `<StageBackground>` component lands
+- [ ] Document the 11+ project-specific logos in `public/logos/gardens/` in their own manifest section
+- [ ] Wire `og-dark.png` into a dark-theme variant once any dark-theme surface exists
+- [ ] Repair `node_modules`: `rm -rf node_modules && npm install` (current state is wedged per multiple in-flight notes; Vercel CI still builds clean)
+- [ ] Add `assets/icons/*.svg` (Midjourney-generated icon set) when it lands in the design system folder
+
+---
+
 ## ═══ DEMO MORNING READY — Thursday 2026-05-28 ═══
 
 **Where we are on demo eve.** All seven `/killerapp/stages/*` routes are live on `main` (last code commit `e73e8df`; Vercel auto-deploys). The Killer App journey walks end-to-end on a single canonical Marin Farmhouse: **$312K / $1.65M · 37 wk · $347K headroom**, same numbers on every stage. The full demo runbook (URLs, what to click, what to highlight, fallbacks) is in **`docs/DEMO-MORNING-CHECKLIST.md`** — read that first in the morning.

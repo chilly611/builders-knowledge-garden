@@ -6,6 +6,55 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-28 (~01:33 PT) — Cowork Session: Asset Sync (Mac 1)
+**Agent:** Cowork (claude-opus-4-7)
+**Branch:** `main` (direct commit, demo Thursday morning)
+**Lock:** claimed/released via `docs/in-flight.md` with OWNS scoped to `public/**`, `src/components/brand/**`, `src/app/layout.tsx` (metadata block only), `docs/asset-manifest.md`.
+
+**Mandate:** Sync 28 design-system assets from `/Users/chilly/Developer/Knowledge Gardens Design System/assets/` into BKG `public/`. Build `<Logo>` + `<HeroPlate>` brand components ready for adoption. Update layout metadata.
+
+**What shipped:**
+- **28 assets copied** per `docs/asset-manifest.md`:
+  - 4 hero plates → `public/plates/{builders-hammer,chrome-killer-app,chrome-dream-machine,chrome-knowledge-garden}.png`
+  - 4 BKG marks → `public/brand/bkg-mark{,-light,-dark,-wood}.png`
+  - 1 favicon source → 3 destinations: `public/icon-192.png`, `public/apple-touch-icon.png`, `src/app/icon.png`
+  - 2 OG cards → `public/og/og-{light,dark}.png`
+  - 11 journey images → `public/journey/` (flat — per-stage subdir layout deferred)
+  - 6 imagery files → `public/imagery/` (flat)
+- **3 new component files** in `src/components/brand/`:
+  - `Logo.tsx` — `<Logo variant="default|light|dark|wood" />`, wraps next/image, default priority
+  - `HeroPlate.tsx` — `<HeroPlate name="builders-hammer|chrome-killer-app|chrome-dream-machine|chrome-knowledge-garden" />`, same pattern
+  - `index.ts` — barrel exports
+- **Two broken metadata refs in `src/app/layout.tsx` PATCHED:**
+  - `metadata.openGraph.images[0].url` was `/og/og-root.png` (404, file never existed) → now `/og/og-light.png` (live)
+  - `metadata.twitter.images[0]` was the same 404 → now `/og/og-light.png`
+  - `metadata.icons.apple` referenced `/apple-touch-icon.png` which didn't exist on disk — file now copied, ref now resolves
+- **`docs/asset-manifest.md`** appended with full discovery results section (inventory, placed/renamed/missing/duplicate-pre-existing, fixed broken refs, components created, follow-ups).
+
+**Intentionally skipped (out of OWNS scope, will land in a follow-up session):**
+- Top-nav `<Logomark>` → `<Logo>` swap in `src/components/KillerAppNav.tsx:155`
+- `/intro` Act 1 + Act 5 `<img src="/logos/gardens/builders-hammer.png">` → `<HeroPlate name="builders-hammer">` swap in `src/app/intro/page.tsx`
+- Both are working in production today (per `da74786` and earlier ships); swap is cosmetic-cleanup, not demo-critical.
+
+**Coordination notes:**
+- Top of `main` at session start: `f36eef1` (morning-prep checklist). After my session: this commit.
+- No active locks blocked OWNS paths. Recently-released locks at session start were all on chrome / stage / `/projects/[id]` files — non-overlapping.
+- `npm run build` not run — `node_modules` reported wedged in the most recent `in-flight.md` releases (framer-motion unresolvable after a churned `npm install`). Used `tsc --noEmit` instead: zero errors on `src/components/brand/*` and `src/app/layout.tsx`. Vercel CI will do the canonical build.
+
+**Verification:**
+- `tsc --noEmit` clean on all new/modified files
+- Asset paths verified via `ls public/{plates,brand,og,imagery,journey}/`
+- OG metadata + favicon refs now point at files that exist on disk (fixed 2 prior 404s as a collateral win)
+
+**Follow-ups (in `tasks.todo.md`):**
+- Adopt `<Logo>` in `KillerAppNav.tsx` (replace `<Logomark>`)
+- Adopt `<HeroPlate name="builders-hammer">` in `/intro` Act 1 + Act 5
+- Sub-categorize `public/journey/` by stage if the StageBackground component lands
+- Document the 11 extra logos in `public/logos/gardens/` (biomarker, channel-type, distribute, etc.) in their own manifest section
+- Wire `og-dark.png` for surfaces that need dark theme
+
+---
+
 ## 2026-05-27 (late) — Claude Code Session: FAB gating off /killerapp/stages/*
 **Agent:** Claude Code (Opus 4.7, 1M context), checkout `/Users/chilly/Developer/bkg`
 **Commit:** `da74786` on `main`. `npm run build` → **✓ Compiled successfully in 7.5s**.

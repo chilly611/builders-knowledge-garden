@@ -72,14 +72,21 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Builder's Knowledge Garden",
     description: "The operating system for construction. Every phase from dream to delivery, all in one platform.",
-    images: [{ url: "/og/og-root.png", width: 1200, height: 630 }],
+    // 2026-05-28: asset sync — was `/og/og-root.png` which was 404 (file never
+    // existed). Replaced with the canonical light OG card copied from the
+    // Knowledge Gardens Design System (assets/logo/og-light.png →
+    // public/og/og-light.png). Dark variant is available at /og/og-dark.png
+    // for surfaces that need it. See docs/asset-manifest.md.
+    images: [
+      { url: "/og/og-light.png", width: 1200, height: 630, alt: "Builder's Knowledge Garden" },
+    ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Builder's Knowledge Garden",
     description: "The operating system for construction.",
-    images: ["/og/og-root.png"],
+    images: ["/og/og-light.png"],
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Builder's KG" },
 };
