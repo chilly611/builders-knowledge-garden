@@ -54,7 +54,6 @@ import {
   TimeMachine,
   LifecycleMemory,
   InfiniteDescent,
-  Whisper,
   type StanceLane,
   type SourceCitation,
   type TimeMachineEntry,
@@ -306,10 +305,7 @@ export default function CredentialingPage() {
 
   const leisurelyRenewBlock = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <Whisper
-        whisperId="credentialing-floor-0"
-        message="Pick the credential closest to expiry. The platform re-checks each source nightly — the freshness stamp on every row tells you the last verification."
-      />
+      {/* WHISPER REMOVED 2026-05-27 per Charlie — demo clarity. Restore post-demo. */}
       <InvitationCard
         question="Renew which credential first?"
         proSubtitle="Sorted by soonest expiry; bulk-renew available in Pro mode."

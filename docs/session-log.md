@@ -2880,3 +2880,40 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 **Verification:** Production build clean (EXIT 0, all 7 stage routes compile).
 
 **Demo state for Thursday morning:** all seven `/killerapp/stages/*` routes are live with the same canonical Marin numbers (`$312K / $1.65M · 37 wk`) on every screen. Read either `docs/DEMO-MORNING-CHECKLIST.md` (walk script + per-stage highlights) or `docs/demos/DEMO-MORNING-READINESS.md` (recovery runbook angle) — they cover the same demo from complementary angles.
+
+---
+
+## 2026-05-28 — Whisper Removal on V3 Surfaces (Mac 2 / Claude Code, 1M)
+**Agent:** Claude Code (claude-opus-4-7, 1M) — Mac 2.
+
+**Charlie override (demo eve):** remove every whisper render site on V3 surfaces for demo-morning clarity. Keep the Whisper component file itself; restore post-demo. This converts the `tasks.todo.md` post-demo carry-forward "whisper removal on V3 surfaces" into a demo-eve must-ship.
+
+**Files touched (3):**
+- `src/app/killerapp/credentialing/page.tsx` — removed 1 `<Whisper whisperId="credentialing-floor-0" …>` JSX block at line 309; dropped `Whisper` from the `@/components/primitives` named-import at line 57; replaced render with single-line removal comment.
+- `src/app/killerapp/ask/page.tsx` — removed 1 `<Whisper whisperId="ask-anything-floor-0" …>` JSX block at line 135; dropped `Whisper` import at line 45; replaced render with removal comment.
+- `src/app/killerapp/rewards/page.tsx` — removed 1 `<Whisper whisperId="rewards-floor-0" …>` JSX block at line 159; dropped `Whisper` import at line 34; replaced render with removal comment. (Docstring header bullet at line 12 listing "Whisper" as a composition pattern left intact — it's a comment, not a render, and serves as a breadcrumb for the post-demo restoration.)
+
+Each removal site marked with `{/* WHISPER REMOVED 2026-05-27 per Charlie — demo clarity. Restore post-demo. */}` so the post-demo restore knows exactly where to put the renders back.
+
+**Removal count per file:** credentialing 1, ask 1, rewards 1. Total: **3 whisper renders gone** on V3 surfaces.
+
+**Out-of-scope sweep (Step 5 — flagged, NOT touched):**
+- `src/app/killerapp/stages/lock/page.tsx` — locally-defined `WhisperBanner` component + 1 render. **Agent B's territory** (already noted in their release log: "whispers no-op'd, render sites inert"). Charlie's directive is V3-surfaces-only.
+- `src/app/killerapp/stages/size-up/page.tsx` — locally-defined `WhisperBanner` + 5 renders. Same — Agent B's territory.
+- `src/components/stage-shell/ProToggle.tsx` — docstring mention of `FirstEncounterWhisper`, no render. Out of scope.
+
+**Verification:**
+- `npm run build` clean — EXIT 0, full route table emitted. Pre-existing lightningcss "Parsing CSS source code failed" warning unchanged (not a regression).
+- `grep -rn "Whisper\b\|FirstEncounterWhisper\b" src/app/killerapp/{credentialing,ask,rewards}/` → only match is the `rewards/page.tsx:12` docstring header bullet (intentionally preserved as breadcrumb). Removal comments don't match (`WHISPER` ≠ `Whisper\b` case-sensitive).
+- Dev server on :4100, navigated to each route and probed both DOM and raw SSR HTML:
+  - `/killerapp/credentialing` → 200, `hasWhisperData: false`, original Floor-0 text "Pick the credential closest to expiry" absent. Visual: header → lane buttons → `Renew which credential first?` InvitationCard with no banner between.
+  - `/killerapp/ask` → 200, `hasWhisperData: false`, "Same box, four lanes" absent. Visual: header → lane buttons → `What do you want to know?` with no banner.
+  - `/killerapp/rewards` → 200, `hasWhisperData: false`, "Points only accrue from verified events" absent. Visual: header → lane buttons → `750 points this quarter — what's next?` with no banner.
+- Browser console: **no errors** across all three routes.
+- SSR HTML proof artifacts saved to `docs/screenshots/whisper-removal/{credentialing,ask,rewards}.html` (greppable: `grep -c whisperId docs/screenshots/whisper-removal/*.html` → 0).
+
+**Coordination:**
+- Lock held `src/app/killerapp/{credentialing,ask,rewards}/page.tsx` only. No overlap with Cowork's concurrent asset-sync lock (Mac 1, `public/**` + `src/components/brand/**` + `src/app/layout.tsx` metadata). Confirmed Cowork's modifications to `src/app/layout.tsx` and `src/app/icon.png` are untouched by this commit (staged ONLY my three pages + this log entry + in-flight.md + the screenshot artifacts).
+- Agent B's prior release note (`docs/in-flight.md` Recently released) already flagged this exact task as outstanding: "Whisper renders on Agent A's pages (size-up/lock × `WhisperBanner`, credentialing/ask/rewards × `Whisper`) are still to be removed per Charlie #5 — flagged." This session closes the V3-surfaces half of that flag; the stage-route `WhisperBanner` half remains Agent B's territory.
+
+**Post-demo:** the three removal comments make restoration mechanical — drop the `<Whisper whisperId="…" message="…" />` block back in, re-add `Whisper,` to the named import.

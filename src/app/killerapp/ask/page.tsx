@@ -42,7 +42,6 @@ import {
   AskAnything,
   CulturalRender,
   TrustStrip,
-  Whisper,
   InvitationCard,
   useLocale,
   formatCurrency,
@@ -132,10 +131,7 @@ export default function AskPage() {
             </h1>
           </header>
 
-          <Whisper
-            whisperId="ask-anything-floor-0"
-            message="Same box, four lanes. Toggle below to see how the answer changes for an administrator vs. a professional vs. a homeowner vs. an AI agent."
-          />
+          {/* WHISPER REMOVED 2026-05-27 per Charlie — demo clarity. Restore post-demo. */}
 
           <section aria-label="Lane selector" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {(['administrator', 'professional', 'public', 'machine'] as StanceLane[]).map((l) => (

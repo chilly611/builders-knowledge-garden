@@ -31,7 +31,6 @@ import {
   EmotionalArc,
   ProgressiveReveal,
   LifecycleMemory,
-  Whisper,
   TrustStrip,
   type StanceLane,
   type ArcStage,
@@ -156,10 +155,7 @@ export default function RewardsPage() {
           </h1>
         </header>
 
-        <Whisper
-          whisperId="rewards-floor-0"
-          message="Points only accrue from verified events — completion + verified review + payment receipt. No vanity metrics. The TrustStrip on each row shows the three sources."
-        />
+        {/* WHISPER REMOVED 2026-05-27 per Charlie — demo clarity. Restore post-demo. */}
 
         <section aria-label="Lane selector" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {(['administrator', 'professional', 'public', 'machine'] as StanceLane[]).map((l) => (
