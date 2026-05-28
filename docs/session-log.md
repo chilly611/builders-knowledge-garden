@@ -2917,3 +2917,55 @@ Each removal site marked with `{/* WHISPER REMOVED 2026-05-27 per Charlie — de
 - Agent B's prior release note (`docs/in-flight.md` Recently released) already flagged this exact task as outstanding: "Whisper renders on Agent A's pages (size-up/lock × `WhisperBanner`, credentialing/ask/rewards × `Whisper`) are still to be removed per Charlie #5 — flagged." This session closes the V3-surfaces half of that flag; the stage-route `WhisperBanner` half remains Agent B's territory.
 
 **Post-demo:** the three removal comments make restoration mechanical — drop the `<Whisper whisperId="…" message="…" />` block back in, re-add `Whisper,` to the named import.
+
+
+## 2026-05-28 — Collect/Reflect verify + Marin DB canonical (Mac 3 / Claude Code, Opus 4.7 1M)
+
+**Status:** RELEASED. Demo-eve session to make the 7-stage journey walk land cleanly and to put a canonical Marin row in `command_center_projects` so the API hydration matches the front-end fixture.
+
+**What I expected to do vs. what was actually needed:**
+The prompt asked for creating Collect + Reflect stubs from a Tailwind template. Audit found they already exist (Agent B's PATCH 1 Coordination release, 2026-05-27) and use the canonical `StageShell` + token system — strictly better than the prompted template. Per the prompt's own "VERIFY AND LOCK" step: when the dirs already exist, "this session VERIFIES and improves them rather than recreating." So this turned into a small surgical patch + a DB row, not a stub creation.
+
+**The actual fix on the stage routes:**
+Walked the 7-stage advance chain. StageActionBar auto-routes via `STAGE_SLUG[stageId+1]` for stages 1-6, using the `STAGE_VERBS` map for labels. Stage 5 (Adapt) → "Settle changes, send pay app" → routes to collect ✓. Stage 6 (Collect) → "Close the books" → routes to reflect ✓. Stage 7 (Reflect) → "Save reflections, finish project" → **no next stage**, so the button just shows `✓ reflect wrapped — done coming soon` and dead-ends. The journey walk fails the prompt's spec: "Reflect → click → land on `/projects/<id>`."
+
+Patched `src/app/killerapp/stages/reflect/page.tsx` with the smallest possible change: added `useRouter` from `next/navigation` and passed `primaryAction={{ onActivate: () => setTimeout(() => router.push(`/projects/${MARIN_PROJECT_ID}`), 350) }}` on `<StageShell>`. The 350ms setTimeout matches the StageActionBar's internal 450ms autoroute pattern so the "✓ done" confirmation flashes briefly before navigation. No other stage page touched — they all work already.
+
+**Stub status summary (verified by reading each file):**
+- Adapt — EXISTS, correctly wired. STAGE_VERBS[5] = "Settle changes, send pay app" → routes to collect.
+- Collect — EXISTS, correctly wired. STAGE_VERBS[6] = "Close the books" → routes to reflect.
+- Reflect — EXISTS, was the only gap. PATCHED to push to /projects/<id> on the final click.
+
+**Marin DB row (canonical):**
+There is no `projects` table on this Supabase schema (`gtmjcslcerakkgftozfy`). The live table is `command_center_projects`, and the Marin row was **absent** (`SELECT count(*) WHERE id='55730cd3-…'` → 0). The schema is leaner than the prompt's field list — no `total_budget`/`spent_to_date`/`committed`/`remaining`/`substantial_completion` columns — only `budget_amount` (numeric) and `milestone_date` (date). The breakdown into spent/committed/remaining is computed by `src/components/killerapp-chrome/marin-adapter.ts` from the fixture's `BudgetLine[]` (`paid` → spent $312,400; `locked-in` + `estimated` → committed $186,200; `pending` → remaining $1,151,400) and those numbers are already canonical in `src/lib/demo/marin-4000.ts`. Nothing to update there.
+
+Inserted via `execute_sql` (data migration, not DDL) with `ON CONFLICT (id) DO UPDATE` for idempotence; also wrote the SQL to `supabase/migrations/20260528_marin_demo_canonical.sql` so re-provisions reproduce it. Two check-constraint snags caught on the first attempt:
+- `budget_status` accepts `on-track` / `over` / `ahead` (not `on_track`).
+- `phase` accepts uppercase `DREAM` / `DESIGN` / `PLAN` / `BUILD` / `DELIVER` / `GROW`.
+Migration file documents those inline.
+
+Final row (verified via RETURNING): `id 55730cd3-…`, `name 'Marin Farmhouse'`, `phase 'BUILD'`, `progress 42`, `sqft '4000'`, `budget_amount 1650000`, `budget_status 'on-track'`, `start_date '2026-03-17'`, `milestone_date '2026-12-03'`, `location 'Marin County, CA'`, `jurisdiction 'Marin County, CA'`, `client_name 'The Harwell Family'`, `project_type 'Custom farmhouse — 2 story, 4,000 sqft'`, `next_milestone 'Substantial completion'`, `risk_level 'low'`.
+
+Caveat for the post-demo cleanup: the chrome adapter (`src/components/killerapp-chrome/marin-adapter.ts`) hardcodes `START_DATE = '2026-03-18'` and `SUBSTANTIAL_COMPLETION = '2026-12-04'` (one day off from the prompt's canonical 2026-03-17 / 2026-12-03). The chrome paths read the adapter, not the DB row, so the displayed dates won't change visibly. The DB row uses the prompt's canonical values. The adapter is in killerapp-chrome territory ("stable, don't touch") so leaving the 1-day offset for a future reconciliation.
+
+**Files touched (4):**
+- `src/app/killerapp/stages/reflect/page.tsx` — added `useRouter` import + `onActivate` push to `/projects/${MARIN_PROJECT_ID}` so the 7-stage walk closes back into the project view.
+- `supabase/migrations/20260528_marin_demo_canonical.sql` (NEW) — idempotent UPSERT of the Marin demo row in `command_center_projects` with the constraint-correct enum values documented inline.
+- `docs/in-flight.md` — claimed + released my lock; preserved Mac 2's concurrent (now-released) whisper-removal row.
+- `docs/session-log.md` — this entry.
+
+Untouched (and why): `src/lib/demo/marin-4000.ts` (already canonical per Agent B's PATCH 1 release), Adapt/Collect stubs (already correct via STAGE_VERBS map), `src/components/killerapp-chrome/*` and `src/components/stage-shell/*` (chrome is stable territory), `src/app/layout.tsx` + `public/**` (Cowork's released scope), V3 surface pages (Mac 2's released scope), `tasks.todo.md` / `tasks.lessons.md` (no actionable carry-over for tomorrow).
+
+**Verification:**
+- DB `RETURNING` clause confirmed all 12 stored fields on insert.
+- Did NOT run `npm run build` locally — per [[bkg-parallel-agents]] this checkout's `node_modules` is wedged (lightningcss / framer-motion install artifacts). Per the same memory, Vercel's clean build is the source of truth and won't promote a failed build.
+- Did NOT screenshot the 7-stage walk locally — the running preview server on :4100 is sourced from the canonical tree (`~/Documents/The Builder Garden/app`), not this `~/Developer/bkg` checkout, and the canonical is at an older HEAD. Will verify via the live Vercel URL within ~3 min of push.
+
+**Coordination:**
+- Lock held `src/app/killerapp/stages/reflect/page.tsx` + the new migration file only. Mac 2's whisper-removal lock had already landed in Recently released by the time I claimed mine; no edit overlap with their V3 surfaces. Saw the file change underneath me once mid-session (cat output ≠ later Read output) — the documented shared-tree collision pattern. Re-read before each edit; staged only my four files (`git add` by explicit path, never `-A`).
+- The prompt's "Marin canonical numbers" list contained columns that don't exist on the live schema. Inserted only the fields that do exist; documented the columns-not-present and the chrome adapter's 1-day offset for the post-demo reconciliation.
+
+**Post-demo follow-ups (for whoever picks this up):**
+- Reconcile the chrome adapter's hardcoded 2026-03-18 / 2026-12-04 with the DB row's 2026-03-17 / 2026-12-03 (1-day offset, not visible in the current demo paths).
+- Decide whether to extend `command_center_projects` with `spent_to_date` / `committed` / `remaining` columns or migrate the chrome adapter to read budget lines from a DB table. Today's hybrid (DB total + adapter-computed breakdown) works but is two sources of truth.
+- The Reflect "Save reflections" press marks the stage complete in localStorage (`bkg:stage-complete:<id>`) BEFORE navigating — so the JourneyRow's ✓ on the project view will reflect the closure. Confirmed by reading `StageActionBar.activate()` (calls `markStageComplete` synchronously before the timeout that fires my onActivate's router.push).

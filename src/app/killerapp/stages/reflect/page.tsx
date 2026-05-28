@@ -9,6 +9,7 @@
  */
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
 import {
   MARIN_PROJECT,
@@ -52,11 +53,14 @@ function ReflectBody() {
 }
 
 export default function ReflectStagePage() {
+  const router = useRouter();
   useEffect(() => {
     ensureMarinActive();
     seedMarinBudget();
   }, []);
 
+  // Stage 7 has no next stage — close the 7-stage journey by returning to
+  // the project view so the walk doesn't dead-end on a "wrapped" message.
   return (
     <StageShell
       stageId={7}
@@ -66,7 +70,11 @@ export default function ReflectStagePage() {
       projectMeta={`${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`}
       initialBudget={MARIN_BUDGET_TOTAL}
       budgetSpent={MARIN_BUDGET_SPENT}
-      primaryAction={{}}
+      primaryAction={{
+        onActivate: () => {
+          setTimeout(() => router.push(`/projects/${MARIN_PROJECT_ID}`), 350);
+        },
+      }}
     >
       <ReflectBody />
     </StageShell>
