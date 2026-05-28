@@ -17,6 +17,15 @@ The canonical kit lives in the Knowledge Gardens Design System repository at:
 
 The kit is JSX-only (no TypeScript), uses unpkg CDN React + Babel-standalone, and is meant to be browsed as a static HTML demo. The same components are also installed for skill access at `bkg/.claude/skills/knowledge-gardens-design/ui_kits/builders-knowledge-garden/`.
 
+## Two chrome systems — parallel, not duplicate (resolved 2026-05-27)
+
+`killerapp-chrome/*` and `stage-shell/*` are **not** redundant — they serve different scopes and both ship:
+
+- **`src/components/killerapp-chrome/*`** — the sticky chrome on the **`/projects/[id]` project view**. `KillerAppChrome` mounts `BudgetRibbon` (SpendBlock / IncomeStacked / HeadroomGauge) + `JourneyTimeRow` + TimeMachine above project content. (Also mounted in the killerapp layout, but **gated OFF `/killerapp/stages/*`** so it never collides with the stage chrome.)
+- **`src/components/stage-shell/*`** — the **in-stage shell on every `/killerapp/stages/<stage>` route**. `StageShell` renders a compact `BudgetRibbon` (spent/total pill), the 7-icon `JourneyRow`, the `ProToggle`, and a sticky `StageActionBar` around the stage body. This is the canonical stage chrome (Size Up / Lock / Plan / Build / Adapt / Collect / Reflect all compose it).
+
+Post-demo: collapse both onto one shared `ProjectContext` so their numbers are guaranteed identical (today both are pinned to the same Marin seed). The `JourneyStrip` / `BudgetLattice` / `SurfaceHeader` rows below describe these two scopes, not a survivor contest.
+
 ## Component status
 
 Status legend:

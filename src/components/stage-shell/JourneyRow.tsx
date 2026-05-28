@@ -18,9 +18,11 @@ import { type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, fonts } from '@/design-system/tokens';
 import { readCompletedStages, STAGE_COMPLETE_EVENT, STAGE_SLUG } from './StageActionBar';
 
-const RED_CHROME = '#E8443A';
-const EXISTING = new Set<StageId>([1, 2, 3, 4]); // routes that exist today
-const DONE_GREEN = colors.status?.success ?? '#4F7A4A';
+const RUST = 'var(--specimen-rust)';          // herbarium specimen-rust (#A53A2D) = Killer App red
+const RUST_GLOW = 'rgba(165, 58, 45, 0.125)'; // specimen-rust @ 12.5% — current-stage glow
+const SAGE = 'var(--specimen-sage)';          // completed-ring fill (success)
+const SAGE_DEEP = 'var(--specimen-sage-deep)'; // completed ✓ overlay
+const EXISTING = new Set<StageId>([1, 2, 3, 4, 5, 6, 7]); // all 7 stage routes exist (5-7 are demo stubs)
 
 function hrefFor(stageId: StageId, projectId: string | null): string {
   const base = EXISTING.has(stageId) ? `/killerapp/stages/${STAGE_SLUG[stageId]}` : '/killerapp';
@@ -73,7 +75,7 @@ export default function JourneyRow({
                   height: 2,
                   borderRadius: 2,
                   marginTop: 13,
-                  background: isComplete || isCurrent ? RED_CHROME : colors.fadedRule,
+                  background: isComplete || isCurrent ? RUST : colors.fadedRule,
                   opacity: isComplete || isCurrent ? 0.7 : 0.4,
                 }}
               />
@@ -92,8 +94,8 @@ export default function JourneyRow({
                 minHeight: 44,
                 padding: '2px 4px',
                 borderRadius: 10,
-                background: isCurrent ? `${RED_CHROME}20` : 'transparent',
-                border: `1px solid ${isCurrent ? RED_CHROME : 'transparent'}`,
+                background: isCurrent ? RUST_GLOW : 'transparent',
+                border: `1px solid ${isCurrent ? RUST : 'transparent'}`,
                 cursor: 'pointer',
                 transition: 'background 160ms ease',
               }}
@@ -109,9 +111,9 @@ export default function JourneyRow({
                   justifyContent: 'center',
                   fontSize: isComplete ? 14 : 13,
                   fontWeight: 800,
-                  color: isComplete ? '#fff' : isCurrent ? RED_CHROME : colors.graphite,
-                  background: isComplete ? DONE_GREEN : isCurrent ? '#fff' : colors.paper.cream,
-                  border: `1.5px solid ${isComplete ? DONE_GREEN : isCurrent ? RED_CHROME : colors.paper.border}`,
+                  color: isComplete ? SAGE_DEEP : isCurrent ? RUST : colors.graphite,
+                  background: isComplete ? SAGE : isCurrent ? '#fff' : colors.paper.cream,
+                  border: `1.5px solid ${isComplete ? SAGE : isCurrent ? RUST : colors.paper.border}`,
                 }}
               >
                 {isComplete ? '✓' : stage.emoji}
@@ -124,7 +126,7 @@ export default function JourneyRow({
                   lineHeight: 1.1,
                   textAlign: 'center',
                   whiteSpace: 'nowrap',
-                  color: isCurrent ? RED_CHROME : isComplete ? colors.navy : colors.graphite,
+                  color: isCurrent ? RUST : isComplete ? colors.navy : colors.graphite,
                 }}
               >
                 {stage.name}

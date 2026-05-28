@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import type { StageId } from '@/design-system/tokens/stage-accents';
 import { colors, fonts } from '@/design-system/tokens';
 
-const RED_CHROME = '#E8443A'; // Killer App brand
+// Killer App red = herbarium --specimen-rust (#A53A2D). Use the token, never a literal.
 
 export const STAGE_VERBS: Record<StageId, string> = {
   1: 'Lock the scope',
@@ -37,8 +37,8 @@ export const STAGE_SLUG: Record<StageId, string> = {
   7: 'reflect',
 };
 
-/** Stage routes that actually exist today (others show a "coming soon" wrap). */
-const EXISTING_STAGE_ROUTES = new Set<StageId>([1, 2, 3, 4]);
+/** Stage routes that exist (5-7 are demo stubs). 7 has no next → shows completion. */
+const EXISTING_STAGE_ROUTES = new Set<StageId>([1, 2, 3, 4, 5, 6, 7]);
 
 const COMPLETE_EVENT = 'bkg:stage:complete';
 
@@ -128,11 +128,12 @@ export default function StageActionBar({
           fontSize: 15,
           fontWeight: 800,
           letterSpacing: 0.2,
-          color: '#fff',
-          background: done ? colors.status?.success ?? '#4F7A4A' : RED_CHROME,
-          boxShadow: done ? 'none' : `0 4px 14px ${RED_CHROME}40`,
+          color: 'var(--paper-cream)',
+          background: done ? 'var(--specimen-sage)' : 'var(--specimen-rust)',
+          boxShadow: done ? 'none' : '0 4px 14px rgba(165, 58, 45, 0.25)',
           transition: 'background 200ms ease, box-shadow 200ms ease',
         }}
+        className="stage-action-btn"
       >
         {done
           ? nextExists
@@ -140,6 +141,9 @@ export default function StageActionBar({
             : `✓ ${STAGE_SLUG[stageId]} wrapped — ${STAGE_SLUG[nextStage] ?? 'done'} coming soon`
           : verb}
       </button>
+      <style>{`
+        .stage-action-btn:not(:disabled):active { background: var(--specimen-rust-deep) !important; }
+      `}</style>
     </div>
   );
 }

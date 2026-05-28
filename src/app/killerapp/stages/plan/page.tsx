@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Reorder } from 'framer-motion';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
-import { AlphaStub, CodeLookup, FirstEncounterWhisper } from '@/components/stage-kit';
+import { AlphaStub, CodeLookup } from '@/components/stage-kit';
 import { runSequencingCheck } from '@/lib/specialists/plan';
 import {
   MARIN_PROJECT,
@@ -213,7 +213,7 @@ function PlanStageBody() {
         gap: 14,
       }}
     >
-      <FirstEncounterWhisper id="plan-sequencing" text="Drag any phase to reorder — the timeline & overhead update live as work overlaps." />
+      {/* WHISPER REMOVED 2026-05-27 per Charlie — demo clarity. Restore post-demo. */}
 
       {/* Working tools: phases | code (two columns on desktop, stacked on mobile) */}
       <div className="plan-cols" style={{ display: 'grid', gap: 14, alignItems: 'start' }}>

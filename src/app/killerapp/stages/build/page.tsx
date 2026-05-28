@@ -14,7 +14,7 @@
 
 import { useEffect } from 'react';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
-import { AlphaStub, CodeLookup, VoiceFieldReport, FirstEncounterWhisper } from '@/components/stage-kit';
+import { AlphaStub, CodeLookup, VoiceFieldReport } from '@/components/stage-kit';
 import AttachmentSection from '@/components/AttachmentSection';
 import {
   MARIN_PROJECT,
@@ -113,7 +113,7 @@ function BuildStageBody() {
         gap: 14,
       }}
     >
-      <FirstEncounterWhisper id="build-voice" text="Just talk — we turn your spoken update into a structured daily log and save it to the project." />
+      {/* WHISPER REMOVED 2026-05-27 per Charlie — demo clarity. Restore post-demo. */}
 
       <div className="build-cols" style={{ display: 'grid', gap: 14, alignItems: 'start' }}>
         {/* Voice field reporting (functional hero) */}

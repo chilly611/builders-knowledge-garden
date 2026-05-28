@@ -141,9 +141,19 @@ export const MARIN_BUDGET_LINES: BudgetLine[] = [
   line('marin-landscape', 'subcontractors', 'Landscape & hardscape', 49_000, 'pending'),
 ];
 
-/** Canonical Marin project-record budget — matches the DB row the demo runs on. */
+/**
+ * Canonical Marin project-record budget — the single source of truth every
+ * killerapp stage route reads (mirrors the intended DB row + the
+ * `marin-farmhouse` seed pending the post-demo ProjectContext merge).
+ */
 export const MARIN_BUDGET_TOTAL = 1_650_000;
-export const MARIN_BUDGET_SPENT = 312_000;
+export const MARIN_BUDGET_SPENT = 312_400;
+export const MARIN_BUDGET_COMMITTED = 186_200;
+export const MARIN_BUDGET_REMAINING = 1_151_400;
+/** Per-stage completion % (Size Up → Reflect). For progress displays. */
+export const MARIN_STAGE_COMPLETION: Record<number, number> = {
+  1: 100, 2: 100, 3: 85, 4: 42, 5: 0, 6: 0, 7: 0,
+};
 
 /** Base hard-cost total (sum of all budget lines). Tracks MARIN_BUDGET_TOTAL. */
 export const MARIN_BUDGET_BASE_TOTAL = MARIN_BUDGET_LINES.reduce((s, l) => s + l.amount, 0);
@@ -174,7 +184,7 @@ export interface PlanPhase {
 export const MARIN_PLAN_PHASES: PlanPhase[] = [
   { id: 'site-prep', name: 'Site prep & excavation', trade: 'Sitework', weeks: 3, parallelGroup: null, icon: '🚜' },
   { id: 'foundation', name: 'Foundation & concrete', trade: 'Concrete', weeks: 4, parallelGroup: null, icon: '🧱' },
-  { id: 'framing', name: 'Framing', trade: 'Carpentry', weeks: 8, parallelGroup: null, icon: '🪚' },
+  { id: 'framing', name: 'Framing', trade: 'Carpentry', weeks: 10, parallelGroup: null, icon: '🪚' },
   { id: 'dry-in', name: 'Roofing & dry-in', trade: 'Roofing', weeks: 3, parallelGroup: null, icon: '🏠' },
   { id: 'rough-elec', name: 'Rough electrical', trade: 'Electrical', weeks: 3, parallelGroup: 'mep', icon: '⚡' },
   { id: 'rough-plumb', name: 'Rough plumbing', trade: 'Plumbing', weeks: 3, parallelGroup: 'mep', icon: '🚿' },
