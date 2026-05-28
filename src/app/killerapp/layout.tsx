@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
 import { KillerAppChrome } from '@/components/killerapp-chrome';
-import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 import { Suspense } from 'react';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
@@ -40,8 +39,8 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
   // /intro Act 4 embeds /killerapp/budget in an iframe and needs the global
-  // chrome (KillerAppNav, AuthAndProjectIndicator, CompassWorkflowNav, etc.)
-  // suppressed. ?hideShell=1 renders only the providers + the page body.
+  // chrome (KillerAppNav, CompassWorkflowNav, etc.) suppressed.
+  // ?hideShell=1 renders only the providers + the page body.
   // BudgetClient still needs ProjectContext, so the providers must wrap the
   // children. Auto-seed is also skipped inside the iframe so the embed doesn't
   // touch global localStorage.
@@ -97,29 +96,26 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
         <ProjectProvider>
           <NavigatorProvider initialCollapseState="expanded">
         <StageBackdrop stage={stageId} />
+        {/* Auth + project indicator is now embedded inside KillerAppNav
+            itself (inline mode) to eliminate the top-right overlap with
+            stage chips. The standalone fixed-position pill was removed
+            in fix/header-overlap (2026-05-27). */}
         <KillerAppNav />
-        {/* W11 emergency-batch 2026-05-11: AuthAndProjectIndicator was
-            previously only mounted in /killerapp/page.tsx, so the auth
-            pill disappeared the moment a user clicked into any workflow.
-            Lifted to the layout so it travels with every /killerapp/*
-            route. Suspense required: AuthAndProjectIndicator uses
-            useSearchParams which Next 16 requires under Suspense. */}
-        <Suspense fallback={null}>
-          <AuthAndProjectIndicator />
-        </Suspense>
-        {/* 2026-05-27: KillerAppChrome — persistent BudgetRibbon + JourneyTimeRow.
-            Mounted after AuthAndProjectIndicator so it sits below the auth pill
-            and above any page content. Suspense-wrapped because StageNode +
-            JourneyTimeRow call useSearchParams under the hood. Falls back to
-            the Marin Farmhouse seed when no real project is wired through
-            ProjectContext yet. */}
-        {!isStageRoute && (
-          <Suspense fallback={null}>
-            <KillerAppChrome />
-          </Suspense>
-        )}
-        {!isStageRoute && <ProjectCockpit />}
+        {/* paddingTop:48 reserves space for the fixed KillerAppNav band.
+            KillerAppChrome and ProjectCockpit live INSIDE this wrapper so
+            they start at y=48 (flush below the nav) rather than at y=0
+            where the fixed nav would paint over their top half. */}
         <div style={{ paddingTop: 48 }}>
+          {/* 2026-05-27: KillerAppChrome — BudgetRibbon + JourneyTimeRow.
+              Placed first inside the content area so it appears immediately
+              below the nav bar. Suppressed on /killerapp/stages/* where
+              StageShell owns the chrome exclusively. */}
+          {!isStageRoute && (
+            <Suspense fallback={null}>
+              <KillerAppChrome />
+            </Suspense>
+          )}
+          {!isStageRoute && <ProjectCockpit />}
           {children}
           {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
           <LegalFooter />

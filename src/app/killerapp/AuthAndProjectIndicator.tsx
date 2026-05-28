@@ -78,7 +78,13 @@ async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
   return fetch(input, { ...init, headers });
 }
 
-export default function AuthAndProjectIndicator() {
+interface AuthAndProjectIndicatorProps {
+  /** When true, renders as an inline flex child (no fixed positioning).
+   *  Use this when embedding inside KillerAppNav. Default: false (fixed). */
+  inline?: boolean;
+}
+
+export default function AuthAndProjectIndicator({ inline = false }: AuthAndProjectIndicatorProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const projectId = searchParams.get('project');
@@ -466,7 +472,14 @@ export default function AuthAndProjectIndicator() {
   if (isMobile) {
     return (
       <div
-        style={{
+        style={inline ? {
+          // Inline mode: rendered as a flex child inside KillerAppNav.
+          // The drawer + scrim are still position:fixed (own coords), so they work correctly.
+          pointerEvents: 'none',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+        } : {
           position: 'fixed',
           top: 12,
           right: 16,
@@ -636,7 +649,82 @@ export default function AuthAndProjectIndicator() {
     );
   }
 
-  // Desktop layout — two stacked pills, top-right.
+  // Desktop layout.
+  // inline=false (default): two stacked pills, fixed top-right.
+  // inline=true: compact horizontal pills, no fixed positioning — sits in
+  //   the KillerAppNav flex row as the rightmost element. Pill height is
+  //   reduced (32px) to fit the 48px nav band, and the project pill shows
+  //   beside the auth pill rather than stacked below.
+  if (inline) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          flexShrink: 0,
+          pointerEvents: 'none',
+        }}
+        data-testid="auth-and-project-indicator"
+      >
+        {/* Separator before auth pill */}
+        <span
+          style={{
+            width: 1,
+            height: 20,
+            background: 'var(--faded-rule, #C9C3B3)',
+            flexShrink: 0,
+          }}
+        />
+
+        {/* Auth pill — compact for nav bar */}
+        <div
+          style={{
+            pointerEvents: 'auto',
+            padding: '5px 10px',
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--trace, #F4F0E6)',
+            border: '0.5px solid var(--faded-rule, #C9C3B3)',
+            borderRadius: 999,
+            fontSize: 11,
+            color: 'var(--graphite, #2E2E30)',
+            fontFamily: 'var(--font-archivo), sans-serif',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {authPillBody}
+        </div>
+
+        {/* Project pill — compact, beside auth pill */}
+        {project && (
+          <div
+            style={{
+              pointerEvents: 'auto',
+              padding: '5px 10px',
+              height: 28,
+              background: 'rgba(127, 207, 203, 0.18)',
+              border: '0.5px solid var(--robins-egg, #7FCFCB)',
+              borderRadius: 999,
+              fontSize: 11,
+              color: 'var(--graphite, #2E2E30)',
+              fontFamily: 'var(--font-archivo), sans-serif',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              maxWidth: 'min(220px, 20vw)',
+            }}
+          >
+            {projectPillBody}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fixed desktop layout (non-inline) — two stacked pills, top-right.
   // 2026-05-19 (Ship 21 hotfix): z-index bumped 50 -> 100. See matching
   // comment on the mobile branch above: the app-shell top bar / Compass
   // workflow nav is a position:fixed band at z=99 with a translucent

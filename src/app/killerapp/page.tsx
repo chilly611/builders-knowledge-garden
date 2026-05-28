@@ -38,7 +38,6 @@ import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
 import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
-import AuthAndProjectIndicator from './AuthAndProjectIndicator';
 import DiyCockpitOverlay from './DiyCockpitOverlay';
 import TermTooltip from '@/components/TermTooltip';
 import styles from './landing.module.css';
@@ -270,12 +269,9 @@ export default async function KillerAppPage({
 
   return (
     <div className={styles.pageContainer}>
-      {/* Auth + project-saved indicators in the top-right corner.
-          User feedback 2026-05-06 — visible trust signals so the user
-          always knows they're signed in and the project is saved. */}
-      <Suspense fallback={null}>
-        <AuthAndProjectIndicator />
-      </Suspense>
+      {/* Auth + project indicator now lives inside KillerAppNav (inline mode)
+          so it travels with the nav bar on every /killerapp/* route and
+          never overlaps the stage chips. Removed standalone instance here. */}
 
       {/* Hero with blueprint grid background */}
       <header className={styles.heroSection}>
