@@ -24,6 +24,10 @@ function GlobalChromeGateInner() {
 
   if (hideShell) return null;
   if (pathname === '/intro' || pathname.startsWith('/intro/')) return null;
+  // Lifecycle stage screens render their own self-contained chrome + a sticky
+  // primary-action bar at the bottom; the floating bloom + AI fab just hover
+  // over that action button. Hide them on /killerapp/stages/* the same way.
+  if (/^\/killerapp\/stages(\/|$)/.test(pathname)) return null;
 
   return (
     <>

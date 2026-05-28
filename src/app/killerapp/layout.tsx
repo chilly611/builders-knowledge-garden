@@ -122,7 +122,10 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
         <VoiceCommandNav onNavigate={handleVoiceNavigate} />
         <CommandPalette />
-        <CompassWorkflowNav />
+        {/* Workflow-nav compass FAB floats over the StageShell action bar
+            on lifecycle stages; hide it there for the same reason the cockpit
+            is hidden above. */}
+        {!isStageRoute && <CompassWorkflowNav />}
         <SaveStatusToast />
         {/* W9.D-W2 (2026-05-22): StageWelcome mounted via StageWelcomeMount.
             Renders nothing when there is no active project, when we're on
