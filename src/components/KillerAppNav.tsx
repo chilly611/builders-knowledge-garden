@@ -18,10 +18,11 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Logomark from '@/components/Logomark';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
+import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 
 // Stage landscape mapping: lifecycle stage ID (1–7) → label + first workflow
 // href. StageId itself is 1..7 (lifecycle-only); the Money group (stage 0)
@@ -291,6 +292,13 @@ export default function KillerAppNav() {
           })}
         </div>
       )}
+
+      {/* Auth + project indicator — embedded in the nav bar to avoid
+          overlapping the stage chips. Uses inline mode (no fixed position).
+          Suspense required: AuthAndProjectIndicator uses useSearchParams. */}
+      <Suspense fallback={null}>
+        <AuthAndProjectIndicator inline={!isMobile} />
+      </Suspense>
     </div>
   );
 }
