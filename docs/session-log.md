@@ -3039,3 +3039,44 @@ Untouched (and why): `src/lib/demo/marin-4000.ts` (already canonical per Agent B
 - Reconcile the chrome adapter's hardcoded 2026-03-18 / 2026-12-04 with the DB row's 2026-03-17 / 2026-12-03 (1-day offset, not visible in the current demo paths).
 - Decide whether to extend `command_center_projects` with `spent_to_date` / `committed` / `remaining` columns or migrate the chrome adapter to read budget lines from a DB table. Today's hybrid (DB total + adapter-computed breakdown) works but is two sources of truth.
 - The Reflect "Save reflections" press marks the stage complete in localStorage (`bkg:stage-complete:<id>`) BEFORE navigating — so the JourneyRow's ✓ on the project view will reflect the closure. Confirmed by reading `StageActionBar.activate()` (calls `markStageComplete` synchronously before the timeout that fires my onActivate's router.push).
+
+## 2026-05-28 — Auth repair: Marin "Unauthorized: you do not own this project" (Claude Code, Opus 4.7 1M)
+
+**Agent:** Claude Code (Opus 4.7, 1M context)
+
+**What was built:**
+- Reassigned canonical Marin demo project (`command_center_projects.id = 55730cd3-5225-493d-8b5c-49086d942565`) `user_id` from `b17df256-fddd-48ab-8d03-2a36a531e309` (`charlie@xrworkers.com`, the original seed account) to `5be41a72-d417-4aa3-ad23-24f17615044c` (`chillyd@gmail.com`). Applied via Supabase MCP `apply_migration` against project `vlezoyalutexenbnzzui`. Repo-side record: `supabase/migrations/20260528_marin_owner_chilly_auth_fix.sql` (idempotent: `WHERE user_id <> '5be41a72-...'`).
+- New `src/lib/auth/projectOwnership.ts` — the canonical per-project ownership guard for API sub-routes. Exports `DEMO_PROJECT_IDS` (the three seeded demos), `assertProjectReadAccess` (owner OR demo allowlist OR token-scoped `user_metadata.demo_project_id`), `assertProjectWriteAccess` (alias of read; precedent set by `projects/route.ts` PATCH on 2026-05-22), and `assertProjectOwnerStrict` (owner-only — for DELETE where the demo-allowlist semantics would let one trial account torch another's seeded demo).
+- `src/app/api/v1/projects/[id]/attachments/route.ts` — replaced its inline strict `assertProjectOwnership` with a thin shim that delegates to `assertProjectReadAccess`. Updated all four call sites (GET, POST, PATCH, DELETE) to pass `request` so the helper can read the bearer token's `user_metadata.demo_project_id`. The per-attachment `you do not own this attachment` check (PATCH/DELETE) is unchanged — that's about who uploaded the file, not who owns the project.
+- `src/app/api/v1/projects/[id]/conversations/route.ts` — same delegation; both GET and POST call sites updated.
+
+**Key decisions:**
+- **Two-layer fix, not one.** The DB reassignment alone solves Chilly's dogfooding (strict owner-match passes now). The code-side delegation is defense-in-depth for the demo-allowlist scenario: trial accounts (their `demo_project_id` is one of the three demos) and any observer signing into a demo allowlist project will now load attachments + conversations without 403. Without the code fix, the day a trial-contractor account demos against, say, the ADU in Sausalito (still owned by charlie), the same pill would resurface.
+- **Did NOT touch `projects/route.ts`.** Its inline DEMO_PROJECT_IDS + `getCallerDemoProjectId` are correct for its own logic (the GET list-page hydration semantics + PATCH demo-write rules from Sec+Auth Burn 6, 2026-05-22). Importing the shared constant would be DRY but would broaden this change's scope. Marked as a post-demo follow-up.
+- **Did NOT touch `extract-receipt/route.ts`.** It has the same strict-owner pattern but it's only triggered by an OCR action — not on workflow/stage page load. Out of scope.
+- **Did NOT touch RLS policies.** The existing `ccp_demo_select` / `ccp_demo_metadata_select` / `ccp_demo_metadata_update` policies already permit demo-allowlist reads + token-scoped writes on `command_center_projects`. The bug was strictly in the application-layer guard sitting in front of service-client queries.
+- **Only Marin reassigned.** The other two demo projects (ADU in Sausalito, Commercial TI in SoMa) intentionally stay owned by charlie. They remain the trial-account demo flow's source of truth.
+- **Worked from `~/Developer/bkg`, not the canonical checkout.** The canonical (`~/Documents/The Builder Garden/app`) is mid-rebase with unresolved `UU` markers in `docs/{in-flight,session-log}.md` and a bunch of `M` files. Per [[bkg-parallel-agents]] do not torch another agent's in-progress rebase. `~/Developer/bkg` is clean and synced to `origin/main`. Vercel will pick up the changes from origin/main and the canonical checkout's in-flight rebase is untouched.
+
+**Verification:**
+- Supabase `SELECT id, name, user_id FROM command_center_projects WHERE id = '55730cd3-...';` returns `user_id = 5be41a72-...` post-migration.
+- `node_modules/.bin/tsc --noEmit -p .` clean on the three files I touched (the only remaining errors are pre-existing `Property 'workflowId' does not exist on type 'NavigationIntent'` in `src/lib/__tests__/voice-commands.test.ts` — unrelated and present before this work).
+- Reloaded `/killerapp/workflows/estimating?project=55730cd3-5225-493d-8b5c-49086d942565` in the running preview server (canonical-checkout-sourced, doesn't have my route code yet — but the DB-side fix is enough for Chilly's owner check). DOM scan: zero occurrences of "Unauthorized" or "do not own" text. Note: preview session was unauthenticated, so the AttachmentSection took the 401 "signed-out" pill branch. The route-code defense-in-depth path will validate live on Vercel once the deploy lands.
+
+**Files touched (5):**
+- `supabase/migrations/20260528_marin_owner_chilly_auth_fix.sql` (NEW)
+- `src/lib/auth/projectOwnership.ts` (NEW)
+- `src/app/api/v1/projects/[id]/attachments/route.ts`
+- `src/app/api/v1/projects/[id]/conversations/route.ts`
+- `docs/in-flight.md` (lock claim + release) + this entry
+
+**Acceptance against prompt:**
+1. `/killerapp/workflows/estimating?project=55730cd3-...` — owner-match passes for Chilly, no 403 on `/api/v1/projects/[id]/{attachments,conversations}`. ✓
+2. Any `/killerapp/workflows/[name]?project=55730cd3-...` page mounting `AttachmentSection` or hitting `/conversations` — same path, same fix. ✓
+3. Any `/killerapp/stages/[stage]?project=55730cd3-...` page — these don't appear to hit `/api/v1/projects/[id]/{attachments,conversations}` directly (StageShell reads canonical seed via `getCanonicalProject`), but if they did, the same fix applies. ✓
+4. Chilly's full-journey dogfood: he now owns Marin, so every owner-strict check downstream passes too (including PATCH/DELETE in `projects/route.ts`). ✓
+
+**Post-demo follow-ups:**
+- Update `src/app/api/v1/projects/route.ts` to import `DEMO_PROJECT_IDS` and `getCallerDemoProjectId` from the new shared module (DRY). Right now the demo constants live in two places.
+- Optionally update `src/app/api/v1/projects/[id]/attachments/[attachmentId]/extract-receipt/route.ts` for the same demo-allowlist semantics if that route ever joins a demo flow.
+- Consider folding the parent route's `is_demo_project boolean` column (referenced in `projects/route.ts` line 17 as the long-term fix) so the allowlist isn't a string-set hardcoded in three places.

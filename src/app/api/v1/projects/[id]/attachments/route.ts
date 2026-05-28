@@ -29,6 +29,7 @@ import {
   getServiceClient,
   unauthorizedResponse,
 } from '@/lib/auth-server';
+import { assertProjectReadAccess } from '@/lib/auth/projectOwnership';
 import { createClient } from '@supabase/supabase-js';
 
 interface AttachmentRow {
@@ -48,30 +49,18 @@ interface AttachmentRow {
   created_at: string;
 }
 
-async function assertProjectOwnership(
+// 2026-05-28 (auth-repair): the local `assertProjectOwnership` was strict
+// owner-only and ignored the DEMO_PROJECT_IDS allowlist that projects/route.ts
+// has honored since 2026-05-20. Result: signed-in dogfooders hitting
+// /killerapp/workflows/estimating?project=55730cd3-... saw an
+// "Unauthorized: you do not own this project" pill at the bottom of the page
+// (surfaced by AttachmentSection's loadError state). Delegating to the shared
+// guard in `@/lib/auth/projectOwnership` makes every sub-route consistent.
+const assertProjectOwnership = (
+  request: NextRequest,
   projectId: string,
-  userId: string
-): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  const { data, error } = await getServiceClient()
-    .from('command_center_projects')
-    .select('user_id')
-    .eq('id', projectId)
-    .single();
-
-  if (error || !data) {
-    return { ok: false, status: 404, error: 'Project not found' };
-  }
-
-  if (data.user_id !== userId) {
-    return {
-      ok: false,
-      status: 403,
-      error: 'Unauthorized: you do not own this project',
-    };
-  }
-
-  return { ok: true };
-}
+  userId: string,
+) => assertProjectReadAccess(request, projectId, userId);
 
 /**
  * Generate a signed URL for an attachment (1 hour expiry).
@@ -111,7 +100,7 @@ export async function GET(
 
     const { id: projectId } = await params;
 
-    const ownership = await assertProjectOwnership(projectId, user.id);
+    const ownership = await assertProjectOwnership(request, projectId, user.id);
     if (!ownership.ok) {
       return NextResponse.json(
         { error: ownership.error },
@@ -200,7 +189,7 @@ export async function POST(
       );
     }
 
-    const ownership = await assertProjectOwnership(projectId, user.id);
+    const ownership = await assertProjectOwnership(request, projectId, user.id);
     if (!ownership.ok) {
       return NextResponse.json(
         { error: ownership.error },
@@ -279,7 +268,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'caption too long (max 500 chars)' }, { status: 400 });
     }
 
-    const ownership = await assertProjectOwnership(projectId, user.id);
+    const ownership = await assertProjectOwnership(request, projectId, user.id);
     if (!ownership.ok) {
       return NextResponse.json(
         { error: ownership.error },
@@ -345,7 +334,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'id is required' }, { status: 400 });
     }
 
-    const ownership = await assertProjectOwnership(projectId, user.id);
+    const ownership = await assertProjectOwnership(request, projectId, user.id);
     if (!ownership.ok) {
       return NextResponse.json(
         { error: ownership.error },

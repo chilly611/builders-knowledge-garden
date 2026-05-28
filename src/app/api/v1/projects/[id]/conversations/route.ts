@@ -20,6 +20,7 @@ import {
   getServiceClient,
   unauthorizedResponse,
 } from '@/lib/auth-server';
+import { assertProjectReadAccess } from '@/lib/auth/projectOwnership';
 
 interface ConversationRow {
   id: string;
@@ -30,30 +31,14 @@ interface ConversationRow {
   created_at: string;
 }
 
-async function assertProjectOwnership(
+// 2026-05-28 (auth-repair): see comment in attachments/route.ts. Local
+// strict-owner check replaced by the shared guard so demo-allowlist
+// projects don't 403 here either.
+const assertProjectOwnership = (
+  request: NextRequest,
   projectId: string,
-  userId: string
-): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  const { data, error } = await getServiceClient()
-    .from('command_center_projects')
-    .select('user_id')
-    .eq('id', projectId)
-    .single();
-
-  if (error || !data) {
-    return { ok: false, status: 404, error: 'Project not found' };
-  }
-
-  if (data.user_id !== userId) {
-    return {
-      ok: false,
-      status: 403,
-      error: 'Unauthorized: you do not own this project',
-    };
-  }
-
-  return { ok: true };
-}
+  userId: string,
+) => assertProjectReadAccess(request, projectId, userId);
 
 export async function GET(
   request: NextRequest,
@@ -65,7 +50,7 @@ export async function GET(
 
     const { id: projectId } = await params;
 
-    const ownership = await assertProjectOwnership(projectId, user.id);
+    const ownership = await assertProjectOwnership(request, projectId, user.id);
     if (!ownership.ok) {
       return NextResponse.json(
         { error: ownership.error },
@@ -129,7 +114,7 @@ export async function POST(
       );
     }
 
-    const ownership = await assertProjectOwnership(projectId, user.id);
+    const ownership = await assertProjectOwnership(request, projectId, user.id);
     if (!ownership.ok) {
       return NextResponse.json(
         { error: ownership.error },
