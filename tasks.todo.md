@@ -1,3 +1,31 @@
+## ═══ NOW — Verify the Demolition push on Vercel (2026-05-28, post commit `b7fe2a4`) ═══
+
+Pushed commit `b7fe2a4` at session close. Next session (any agent / any Mac) should:
+
+- [ ] **NOW:** Confirm Vercel preview build of `b7fe2a4` lands GREEN within ~3 min of push.
+- [ ] **NOW:** Smoke-test the live redirect: `/projects/<any-uuid>` → 308 → `/killerapp/projects/<uuid>` on the production URL.
+- [ ] **NOW:** Confirm the new project view's `<AIAttentionItems />` mount renders below ProjectCompass at `/killerapp/projects/55730cd3-…` without overlapping the chrome.
+- [ ] **NOW:** Spot-check the Plan stage's "Coming soon" fold renders the Gantt placeholder + (Pro-toggle on) Materials CSI inside it; spot-check Size Up's "▸ Assemble the team" collapsible renders TeamRoster inside the review step.
+
+## ═══ BRAND CONSOLIDATION — One logo, one stage nav (2026-05-28, Claude Code) ═══
+
+The Killer App now has a single brand mark (B at 40/32 in the global header) and a single stage nav (KillerAppChrome's Journey row with completion rings). The tree drawing is strictly an empty-state hero illustration. Commit `da25d5c` on `origin/main`.
+
+**Shipped:**
+- [x] Drop the 7-stage chip row ("Size up / Lock it in / Plan it out / Build / Adapt / Collect / Reflect") from `src/components/KillerAppNav.tsx`. Removed dead `STAGE_LANDSCAPE` map + unused hooks (`useRouter`, `useMemo`, `STAGE_ACCENTS`, `stageFromPathname`).
+- [x] Bump canonical B-mark Logomark to 40 px desktop / 32 px mobile in KillerAppNav.
+- [x] Remove `ProjectCockpit` mount from `src/app/killerapp/layout.tsx` — its `JourneyTimeline` was the OLD pill-button row appearing below the new Journey row. KillerAppChrome (BudgetRibbon + JourneyTimeRow) supersedes it. `/killerapp/stages/*` suppression contract preserved.
+- [x] Replace 180 px B-mark Logomark in `/killerapp` hero with the canonical tree illustration (`/logos/gardens/knowledge-gardens-tree.png`). Tree is strictly an illustration; B is strictly the brand mark.
+- [x] Gate the entire `/killerapp` hero on `!activeProjectId` so the "Pick a workflow." empty state only shows when no project context is active.
+- [x] Remove `<LifecycleMemory>` 7-pill row from `src/app/killerapp/projects-v3/page.tsx` and its now-unused import.
+- [x] Acceptance: `npm run build` clean. Preview-server screenshot @ /killerapp + /killerapp/projects-v3 + /killerapp/stages/build verified — single stage strip per page, single brand mark per page, hero only on empty state.
+- [x] `docs/session-log.md` appended; `docs/in-flight.md` release row added. Demolition agent's locked files untouched.
+
+**Follow-ups:**
+- [ ] If empty-state hero feels too bare on slow connections (gated on `?project=` server-side; KillerappProjectShell hydrates the active-project view in its place), add a lightweight skeleton/fallback.
+- [ ] Post-demo smoke pass: confirm the brand-consolidated chrome composes correctly with the Demolition agent's new `/killerapp/projects/[id]` view once their ship lands.
+- [ ] Investigate the Turbopack HMR lag that left stale chunks serving a `ReferenceError: stageIds is not defined` after I removed dead hook references. Production build was always clean; the issue was dev-server only and self-recovered via ErrorBoundary, but the console noise was misleading.
+
 ## ═══ DEMOLITION — Legacy `/projects/[id]` retired + CRM language stripped (2026-05-28, Claude Code) ═══
 
 The old `/projects/[id]` 7-tab CRM-language view is gone. Journey-aware
@@ -13,15 +41,16 @@ language is no longer surfaced to users; it remains an internal concept.
 - [x] Team Roster mounted in Size Up's review step inside a collapsible "Assemble the team" fold.
 - [x] User-facing "CRM" stripped/renamed across landing, clients, profile, manifesto, pricing, presentation, mcp pages and CompassNav/CompassBloom/DemoMode/LaneSelector/CRMDashboard/auth surfaces. Internal identifiers (file names, API routes, OpenAPI tags, MCP tool names, image keys, JSDocs, console.error strings) preserved.
 - [x] Acceptance: `grep -rn "Back to CRM" src/` → zero. User-facing "CRM" search → only internal-only matches remain. Old 7-tab nav (Overview/Codes/Schedule/Materials/Team/Permits/Estimate) gone. Orphan RFI/Submittals/Change-Orders/Punch-List/Budget pill row gone.
-- [x] `docs/session-log.md` appended; `docs/in-flight.md` lock released.
+- [x] `docs/session-log.md` appended (close-stanza + detailed log); `docs/in-flight.md` lock released.
+- [x] `tasks.lessons.md` updated with 6 net-new lessons (Next 16 async-params silent failure, console.log-before-redirect diagnostic, next.config.ts no-HMR, Recently-released as hand-off, net-zero-grep includes own JSDoc, "surface inside stage X" → `<details>`).
 - [x] Did NOT attempt local build per [[bkg-parallel-agents]] (wedged node_modules); trusting Vercel's clean build.
+- [x] Commit `b7fe2a4` pushed to `main` after a clean rebase honoring the morning data-consistency agent's explicit hand-off note on `/projects/[id]/page.tsx`.
 
-**Follow-ups:**
-- [ ] Confirm Vercel preview builds clean within ~3 min of push.
-- [ ] Live-render check on `/projects/<uuid>` → should land on `/killerapp/projects/<uuid>` via 308.
+**Follow-ups (deferred to later sessions; the Vercel + smoke checks moved to the NOW section at top):**
 - [ ] When the per-project `useKacProject(id)` hook lands, pass live `items` into `<AIAttentionItems items={...} />` so the COO surface hydrates from real data instead of the Marin fixture.
 - [ ] Real Gantt component (currently `GanttChartPlaceholder`) — on the WordPress list with an honest "alpha — coming soon" badge until shipped.
-- [ ] `CRMDashboard.tsx` file name + internal `fetchCRMData()` identifier are still on the internal-only side; rename if/when the file becomes a user-facing route.
+- [ ] `CRMDashboard.tsx` file name + internal `fetchCRMData()` identifier remain on the internal-only side; rename if/when the file becomes a user-facing route.
+- [ ] Two JSDoc-comment "CRM" references in `who-is-asking/{page,WhoIsAskingClient}.tsx` remain (inside `{/* */}` blocks — never rendered). Keep as internal docs unless founder asks otherwise.
 
 ## ═══ ASSET SYNC — Mac 1 Cowork (2026-05-28 ~01:33 PT) ═══
 
@@ -38,7 +67,7 @@ Synced 28 design-system assets into BKG `public/`; built `<Logo>` + `<HeroPlate>
 - [x] Lock released in `docs/in-flight.md`
 
 **Follow-ups (next session, not blocking demo):**
-- [ ] Adopt `<Logo variant="default" />` in `src/components/KillerAppNav.tsx:155` (currently `<Logomark>`)
+- [ ] Adopt `<Logo variant="default" />` in `src/components/KillerAppNav.tsx` (currently `<Logomark>` at 40/32 — already canonical per 2026-05-28 brand consolidation; this is cosmetic-only)
 - [ ] Adopt `<HeroPlate name="builders-hammer" />` in `/intro` Act 1 + Act 5 (currently raw `<img src="/logos/gardens/builders-hammer.png">`)
 - [ ] Sub-categorize `public/journey/` by stage when `<StageBackground>` component lands
 - [ ] Document the 11+ project-specific logos in `public/logos/gardens/` in their own manifest section

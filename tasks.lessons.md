@@ -4,6 +4,40 @@
 
 ---
 
+## Demolition — Claude Code (2026-05-28 PM, Opus 4.7 1M)
+
+### Next.js 16 route handlers: `params` is a Promise — sync access silently renders the global-error boundary
+**Date:** 2026-05-28
+**What happened:** Wrote the legacy-page redirect with `function Page({ params: { id } }: { params: { id: string } })` then `redirect(\`/killerapp/projects/${params.id}\`)`. Fetched `/projects/<id>` and got HTTP 200 with a 28 KB body containing `boundary:global-error` — looked like the redirect was being swallowed. Added `console.log()` inside the handler; the log NEVER fired. Spent ~10 min hunting layout / error-boundary interference before checking `package.json`: `next: "16.2.1"`. Next 15+ ships async params. Fix: `async function Page({ params }: { params: Promise<{ id: string }> })` with `const { id } = await params;` first, THEN `redirect()`. The previous code wasn't crashing visibly — params destructuring threw upstream of the function body and the router's outer error boundary rendered the global-error UI as a placeholder.
+**Rule:** When a server-component page in this repo silently renders the global-error boundary (a 28+ KB HTML response with `boundary:global-error` in the RSC payload) and your `console.log` inside the handler never fires, the FIRST thing to check is whether `params` is being accessed synchronously. Next 16 requires `params: Promise<{...}>` + `await`. Same for `searchParams`. The error doesn't say "params is a Promise" — it doesn't say anything at all.
+
+### Diagnose redirect failures with a `console.log` BEFORE the redirect call, not after
+**Date:** 2026-05-28
+**What happened:** Standard debugging instinct said *"redirect() isn't firing — maybe the redirect API is wrong."* Actually the function body wasn't executing AT ALL because params destructuring threw at signature time. The root `error.tsx` rendered a generic "something didn't load" client UI, hiding the real failure. A `console.log` on line 1 of the handler would have caught this immediately by being absent from the dev-server output — proving the handler never ran.
+**Rule:** When diagnosing a "redirect doesn't fire" in App Router, add `console.log('handler-name fired with', args)` as the very first line of the handler, then re-trigger. Log present + no redirect = the redirect API is misused. Log absent = the handler never runs (likely a signature / params issue). Don't poke at `redirect()` ergonomics until you've proven the handler executes.
+
+### `next.config.ts` redirects do NOT HMR in dev — verify on Vercel, not locally
+**Date:** 2026-05-28
+**What happened:** Added a `/projects/:id((?!new$).+)` → `/killerapp/projects/:id` rewrite to `next.config.ts` mid-session as a belt-and-suspenders alongside the page-level `redirect()`. Re-fetched the route immediately — still 200, no redirect. Spent a minute thinking the negative-lookahead regex was wrong. It wasn't — `next.config.ts` is loaded ONCE at server startup; changes need a dev-server restart to take effect. I couldn't restart (shared preview server, other agent might be using it), so the next.config redirect went out unverified. Acceptable because the page-level `redirect()` covers the same surface, but lesson learned.
+**Rule:** When you edit `next.config.{ts,mjs}`, `tsconfig.json`, `middleware.ts`, or `instrumentation.ts`, local dev mode won't pick up the change without a restart. If the shared dev server is off-limits, document the change as *"will only take effect on next cold start / Vercel build,"* push, and verify on Vercel's clean build instead. Don't waste 10+ min re-probing the local dev server for changes that physically can't be live there.
+
+### Read the `Recently released` table before resolving rebase conflicts — earlier same-day agents' lock notes are explicit hand-offs
+**Date:** 2026-05-28
+**What happened:** I locked `/projects/[id]/page.tsx` at session start. A morning data-consistency agent had ALREADY pushed an edit to that same file before my lock (replacing `MOCK_TEAM` with `MARIN_TEAM` and adding a `proj-chen-farmhouse` → UUID redirect). When I rebased at end-of-session, the conflict on that file was 700+ lines wide. Resolution was clear because their RELEASED-table note explicitly said: *"If Demolition's redirect target is `/killerapp/projects/[id]`, fine — replace this redirect block when you land. The MARIN_TEAM extraction + canonical-seed hydration logic is the contract worth keeping."* So I took my full demolition; their canonical-seed work was preserved in the new modules they'd added (`src/lib/seed-data/marin-farmhouse.ts` + `src/lib/projects/getCanonicalProject.ts`), which other surfaces consume.
+**Rule:** Always read `Recently released (last 24h)` in `docs/in-flight.md` BEFORE starting work AND AGAIN before resolving conflicts. Lock notes that say *"if X happens, your work wins"* or *"the contract worth keeping is X, not Y"* are explicit hand-offs from one agent to another — honor them in conflict resolution. When in doubt, prefer the agent who scoped narrowly (e.g., "extracted to library module, callers can adopt") over the agent who scoped broadly (e.g., "edited a file that's about to be demolished").
+
+### Net-zero string-grep acceptance can fail on your own JSDoc — reword to describe, don't quote
+**Date:** 2026-05-28
+**What happened:** Wrote a JSDoc on the new 12-line redirect file explaining what the legacy view had been. The JSDoc said *"...with the 'Back to CRM' header and the orphan..."* — quoting the demolished string. Acceptance criterion was *"The string 'Back to CRM' appears NOWHERE in the codebase."* The grep flagged my own comment. Reworded to *"with the legacy back-link header"* — preserved the meaning without re-introducing the literal token.
+**Rule:** When an acceptance criterion says *"string X appears nowhere,"* interpret it literally — that includes your own comments, even if they're quoting the thing you're removing. Reword to describe the removed string without including its text. Especially important for tokens that double as search keywords (UI labels, button text, brand names).
+
+### "Surface inside stage X" → use a `<details>` collapsible, never add a new wizard step
+**Date:** 2026-05-28
+**What happened:** Task said *"TeamRoster surfaces inside Size Up stage (assemble the team)."* First instinct was to add a 6th step to the 5-step wizard (`type → address → size → trades → review → team`). Looked at the page: 580 LOC, PATCH 1 had JUST locked the 5-step flow with a sticky single-primary-action footer per Charlie's live-review. Adding a step would shift the primary-action verb, break the stage-completion ring, and risk a collision with the Size Up/Lock agent's territory. Compromise: a `<details>` collapsible *inside the existing review step*, label *"▸ Assemble the team,"* only visible after the user has scoped the build. Zero disturbance to the 5-step flow; the team mount happens at the natural moment (you just sized the build; who's running which trade?).
+**Rule:** When adding a *"surface inside stage X"* component to a stage page that another agent recently churned, NEVER add a new top-level step / section / route — use a `<details>` collapsible inside an existing section. The wizard flow, navigation order, and primary-action verb are contracts; a collapsible respects them while still giving the new content a clear home. Document the choice in the JSDoc above the component import.
+
+---
+
 ## Asset Sync — Mac 1 Cowork (2026-05-28 ~01:33 PT)
 
 ### Audit pre-existing public/ assets BEFORE syncing from a design system folder

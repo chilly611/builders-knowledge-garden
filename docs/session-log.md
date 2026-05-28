@@ -6,7 +6,40 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
-## 2026-05-28 — Demolition: legacy `/projects/[id]` retired, CRM language stripped (Claude Code Opus 4.7 1M)
+## 2026-05-28 — Session Close: Demolition agent (Claude Code Opus 4.7 1M)
+**Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`. Commit: `b7fe2a4`.
+
+**Goal:** Demolish the legacy `/projects/[id]` 7-tab CRM-language project view. Make the journey-aware `/killerapp/projects/[id]` the only project view that ships. Strip CRM language from every user-facing surface (keep CRM as internal-only). Preserve the genuinely useful sub-surfaces (AI Attention Items, Permits, Materials CSI, Team Roster, Gantt placeholder) by extracting them into reusable components re-mounted on the journey-aware stage screens.
+
+**Shipped:**
+- 747-line legacy `/projects/[id]/page.tsx` → 12-line async server-component `redirect()` to `/killerapp/projects/[id]` (Next.js 16 `Promise<{id}>` params shape).
+- Edge-level 308 in `next.config.ts` (`/projects/:id((?!new$).+)` → `/killerapp/projects/:id`) — preserves `/projects/new` via negative-lookahead; belt-and-suspenders with the page redirect.
+- 5 new reusable components in `src/components/`: `AIAttentionItems`, `PermitsList`, `MaterialsCSI`, `TeamRoster`, `GanttChartPlaceholder` (the last with an explicit "alpha — coming soon" badge per BKG demo philosophy).
+- Re-mounts: AI Attention on `/killerapp/projects/[id]`; Permits + Gantt + Pro-gated CSI in Plan stage; Team Roster inside a collapsible "▸ Assemble the team" fold in Size Up's review step.
+- User-facing "CRM" stripped/renamed → "Pipeline" across 14 surfaces (landing, clients, profile, manifesto, pricing, presentation, mcp; CompassNav, CompassBloom, DemoMode, LaneSelector, CRMDashboard, WhoIsAskingClient, lib/auth). Internal CRM (file names, API routes `/api/v1/crm/*`, OpenAPI tags, MCP tool names, image-asset keys, JSDoc comments, console.error strings) preserved as internal-only per Charlie's direction.
+- Single commit `b7fe2a4`, 27 files changed, 715 insertions / 845 deletions; rebased over a same-day data-consistency agent's changes (their hand-off note on `/projects/[id]/page.tsx` explicitly delegated demolition to me).
+
+**Learned:**
+- **Next.js 16 dynamic route params are `Promise`-shaped.** A sync `function Page({ params: { id } })` silently fails (the page renders a global-error boundary instead of throwing) in dev. Signature must be `async function Page({ params }: { params: Promise<{ id: string }> })` with `const { id } = await params`. Fetched a `/projects/<id>` URL and saw HTTP 200 + a `boundary:global-error` payload, NOT the expected 307 — that was the symptom.
+- **`error.tsx` boundaries can swallow `NEXT_REDIRECT`.** With the wrong params shape, `redirect()` throws an error that the root `error.tsx` catches as a regular error. With the right shape, `redirect()` becomes a 307. So when redirect appears to not fire and you see the global-error UI: check the page signature before assuming the redirect itself is wrong.
+- **`next.config.ts` redirects don't HMR in dev — but they're worth keeping as a belt-and-suspenders for edge / cold-load / crawler hits in production.** Combined with the page-level `redirect()`, the route is covered three ways: edge (Vercel rewrites), app router (page redirect), and any future runtime that might bypass one of them.
+- **Mid-session collisions can come from agents who released hours ago.** A morning data-consistency agent had edited `/projects/[id]/page.tsx` and pushed to `main` *before* I claimed my lock — when I rebased, that edit hit me head-on. Their lock note explicitly delegated the file to demolition though, so the resolution was mechanical. Lesson: **lock notes that say "if X happens, your work wins" are extremely valuable**; always read the `Recently released` table before resolving a conflict, not just the `Active locks` table.
+- **The shared preview dev server can vanish mid-verify.** Halfway through verifying redirects, `preview_list` returned `[]` — another agent (or auto-shutdown) stopped it. Don't sleep-poll to wait for it; either restart cautiously (memory says don't if another agent might be coordinating) or fall back to grep + commit + Vercel verification. I chose the latter.
+- **Don't restart `node_modules` in this checkout.** Per `[[bkg-parallel-agents]]`, a churned `npm install` makes `framer-motion` unresolvable. Verified locally only via the dev-server probe while it was up; trusted Vercel for the production build.
+
+**Open:**
+- ⏳ Vercel preview build verification — pushed at session close; needs to be checked GREEN within ~3 min.
+- ⏳ Live `/projects/<uuid>` redirect smoke-test on production after Vercel promotes — confirm 308 → `/killerapp/projects/<uuid>`.
+- 🔄 `useKacProject(id)` per-project hook (noted earlier in the codebase): once it lands, `<AIAttentionItems items={…} />` should consume live data instead of the `MARIN_ATTENTION_ITEMS` fixture.
+- 🔄 Real Gantt component still on the WordPress list with the "alpha" badge until the real one ships.
+- 🔄 `CRMDashboard.tsx` file name + `fetchCRMData()` identifier are still on the internal-only side; rename if/when the component is exposed as a user-facing route.
+- 🔄 Two JSDoc-comment "CRM" references remain (`who-is-asking/page.tsx:4`, `who-is-asking/WhoIsAskingClient.tsx:479`). Both are inside `{/* */}` JSX comments — never rendered. Keeping as internal docs.
+
+**Next:** Either (a) the next contractor-demo dogfood session (any agent — interface that runs it depends on which Mac is online) verifies the redirect + the new project-view mounts in a live browser at `/projects/<uuid>` and reports on Vercel build status, or (b) the per-project `useKacProject(id)` hook session wires live AI Attention Items into the new project view. Both can run in parallel — they touch different files. Lock declarations in `docs/in-flight.md` should mention which one.
+
+---
+
+## 2026-05-28 — Demolition: legacy `/projects/[id]` retired, CRM language stripped (Claude Code Opus 4.7 1M) — DETAILED LOG
 **Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`.
 
 **What was built:**
@@ -57,31 +90,30 @@ This file is the canonical timeline of what was built, when, and why.
 ---
 
 ## 2026-05-28 — Claude Code Session: Brand consolidation — one logo, one stage nav
-**Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`.
+**Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`. Commit `da25d5c` on `origin/main`.
 
-**Mandate:** consolidate the brand mark and eliminate the duplicate stage nav. Before this pass, /killerapp and /killerapp/projects-v3 showed THREE stage strips at once (KillerAppNav chip row + KillerAppChrome JourneyTimeRow + ProjectCockpit JourneyTimeline), and the brand mark was inconsistent (tiny B in chrome, tree drawing pretending to be a brand mark in the hero).
+**Goal:** consolidate the brand mark and eliminate the duplicate stage nav. Before this pass, /killerapp and /killerapp/projects-v3 each rendered THREE stage strips at once (KillerAppNav chip row in header + KillerAppChrome JourneyTimeRow + ProjectCockpit JourneyTimeline / LifecycleMemory pill row), and the brand mark was inconsistent (small B mark in chrome on some pages, tree drawing pretending to be a brand mark in the hero on others).
 
-**What was built:**
-- `src/components/KillerAppNav.tsx` — Removed the 7-stage chip row ("Size up / Lock it in / Plan it out / Build / Adapt / Collect / Reflect") from the global header. Bumped the canonical B-mark Logomark size from 28/24 to 40/32 (desktop/mobile). Dropped the now-unused `STAGE_LANDSCAPE` map, `useRouter`, `useMemo`, `STAGE_ACCENTS`, `stageFromPathname` imports. Wordmark + `/Projects` link + signed-in pill + project-name chip preserved as the locked global-header content.
-- `src/app/killerapp/layout.tsx` — Removed the `ProjectCockpit` mount entirely. Its `JourneyTimeline` was the OLD pill-button row appearing below the new Journey row with completion rings. `KillerAppChrome` (BudgetRibbon + JourneyTimeRow) is the canonical chrome; ProjectCockpit's Budget + Time-Machine functionality is already present (BudgetRibbon + in-flight Time Machine surface). Suppression contract for `/killerapp/stages/*` (StageShell owns chrome) preserved.
-- `src/app/killerapp/page.tsx` — Replaced the 180px B-mark Logomark in the hero with the canonical tree illustration (`/logos/gardens/knowledge-gardens-tree.png`). Gated the entire hero on `!activeProjectId` — once a project is selected, KillerappProjectShell renders the dashboard inline and the "Pick a workflow." empty-state hero is hidden. The tree is now strictly an illustration; the B mark is strictly the brand mark.
-- `src/app/killerapp/projects-v3/page.tsx` — Removed the `<LifecycleMemory>` 7-pill stage row at the bottom of the projects-v3 dashboard. Dropped the now-unused import.
+**Shipped:**
+- `src/components/KillerAppNav.tsx` — dropped the 7-stage chip row ("Size up / Lock it in / Plan it out / Build / Adapt / Collect / Reflect") from the global header. Removed the now-unused `STAGE_LANDSCAPE` map + `useRouter` / `useMemo` / `STAGE_ACCENTS` / `stageFromPathname` imports. Bumped the canonical B-mark Logomark size from 28/24 to 40/32 (desktop/mobile). Global header is now locked to: B logo + "builder's knowledge garden" wordmark + Projects link + auth pill + project-name chip.
+- `src/app/killerapp/layout.tsx` — removed the `ProjectCockpit` mount. Its `JourneyTimeline` was the OLD pill-button row appearing below the new Journey row with completion rings on every /killerapp/* route. `KillerAppChrome` (BudgetRibbon + JourneyTimeRow) is the canonical chrome; ProjectCockpit's Budget + Time-Machine functionality is already covered there. Suppression contract for `/killerapp/stages/*` (StageShell owns chrome) preserved.
+- `src/app/killerapp/page.tsx` — replaced the 180px B-mark Logomark in the hero with the canonical tree illustration (`/logos/gardens/knowledge-gardens-tree.png`). Gated the entire hero on `!activeProjectId` — once a project is selected, KillerappProjectShell renders the dashboard inline and the "Pick a workflow." empty-state hero disappears. Tree = empty-state illustration only. B = brand mark only.
+- `src/app/killerapp/projects-v3/page.tsx` — removed the `<LifecycleMemory>` 7-pill stage row at the bottom of the dashboard and the now-unused import.
+- `docs/session-log.md` (this entry) + `docs/in-flight.md` (release row added).
 
-**Key decisions:**
-- One B mark across every Killer App page (`/icon.png` via Logomark, 40px / 32px). Tree drawing is an empty-state illustration only.
-- One stage nav: the Journey row in KillerAppChrome (completion rings + due-date markers). Stage chip rows in the header AND the legacy JourneyTimeline pill row both retired.
-- Hero is empty-state-only — surfacing it on top of an active-project dashboard was the contradiction making /killerapp feel cluttered.
+**Learned:**
+- **Worktree drift kills previews silently.** First round of edits landed in `/Users/chilly/Developer/bkg` (a parallel checkout of the same remote); `npm run build` was clean there but the Claude_Preview MCP showed no change. The dev server's `cwd` is `/Users/chilly/Documents/The Builder Garden/app` — a DIFFERENT git working tree on the same remote, with a different HEAD. Re-applied identical edits to the canonical tree; preview reflected them immediately. Confirm `preview_list[].cwd` BEFORE the first edit, every session.
+- **Stale Turbopack chunks throw misleading `ReferenceError`s.** After removing the chip row's `useRouter` / `useMemo` / `stageIds`, the dev server kept serving the old chunk URL for a while; the page actually rendered correctly (caught by `<ErrorBoundary>`), but the console filled with `ReferenceError: stageIds is not defined`. The fix wasn't code — the production build was clean — it was just HMR lag. Trust `npm run build` + screenshot over dev-server console errors.
+- **"Duplicate stage nav" is almost always three sources, not two.** Header chip row + canonical Journey row + a legacy in-page component (cockpit, LifecycleMemory). Walking the layout file + the page file is enough only if you also grep for every stage-strip component the project owns.
+- **Hero gating is empty-state-only.** Keeping "Pick a workflow." visible after a project context is established was the visual contradiction making /killerapp feel cluttered even before the duplicate nav.
+- **Respect other agents' in-flight locks during rebase.** Demolition agent had ~15 files mid-edit. `git stash push -u` before `git pull --rebase`, resolve conflicts on docs/in-flight.md + docs/session-log.md only, then `git stash pop` to restore their WIP. Commit only my own files via explicit `git add` paths — never `-A`.
 
-**Verification:**
-- `npm run build` clean (Compiled successfully in 6.9s, only pre-existing Sentry deprecation + marketplace `config` warnings).
-- Preview-server screenshot @ /killerapp: top header = B logo + "builder's knowledge garden" + Projects + auth pill (no stage chips); below = BudgetRibbon + JourneyTimeRow with completion rings (Size Up 100, Lock 100, Plan 85, Build 42, Adapt 0, Collect 0, Reflect 0); hero = tree illustration + "Pick a workflow." NO duplicate stage row anywhere on the page.
-- /killerapp/projects-v3 verified — same global chrome, no LifecycleMemory pill row at the bottom.
-- /killerapp/stages/build verified — StageShell's own in-shell stage rail still renders (it's the page chrome on stage routes), and the global KillerAppChrome is correctly suppressed via `isStageRoute`.
+**Open:**
+- `docs/asset-manifest.md` follow-up "Adopt `<Logo variant="default" />` in KillerAppNav.tsx:155" is now cosmetic-only — the header is correct with `<Logomark>` at the new 40/32 size. Keep open as a `<Logo>` adoption pass but no longer blocks brand consistency.
+- Empty-state hero gating reads `?project=` server-side. Active-project dashboard (KillerappProjectShell) is what renders in its place — when offline or before that island hydrates, the page shows the workflow list only, no hero stand-in. Probably fine; flag if it feels too bare on slow connections.
+- Demolition agent's WIP (`src/components/{AIAttentionItems,PermitsList,MaterialsCSI,TeamRoster,GanttChartPlaceholder}.tsx` new files + multiple page.tsx edits) restored to working tree via `git stash pop`. NOT committed by me. Their lock in docs/in-flight.md still active.
 
-**Files NOT touched (locked by another agent per docs/in-flight.md):**
-- `src/app/projects/[id]/page.tsx`, `src/components/{AIAttentionItems,PermitsList,MaterialsCSI,TeamRoster,GanttChartPlaceholder}.tsx` (new), `src/app/killerapp/stages/{plan,size-up}/page.tsx`, `src/app/killerapp/projects/[id]/ProjectDashboardClient.tsx`, `src/app/{page.tsx,clients/page.tsx,profile/page.tsx,killerapp/who-is-asking/WhoIsAskingClient.tsx}` — Demolition agent's CRM → Pipeline pass.
-
-**Env note (worktree gotcha):** initial edits accidentally landed in `/Users/chilly/Developer/bkg` (a parallel checkout of the same remote). The dev server runs `/Users/chilly/Documents/The Builder Garden/app` — the BKG parallel-agent canonical surface. Re-applied to the canonical tree and verified there. Memory: when the preview server's cwd doesn't match `/Users/chilly/Developer/bkg`, prefer editing whichever tree the preview reads.
+**Next:** None scheduled. If the Pipeline (Demolition) ship lands today, do a ~10-min smoke pass via Claude Code to confirm the brand-consolidation chrome still composes correctly with their new `/killerapp/projects/[id]` view.
 
 ---
 
