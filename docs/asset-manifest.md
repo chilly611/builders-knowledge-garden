@@ -1,192 +1,388 @@
-# BKG Asset Placement Manifest
+# BKG Asset Manifest
 
-*The single source of truth for where every asset in `/Users/chilly/Developer/Knowledge Gardens Design System/assets/` lives in the BKG codebase and which components reference it.*
+*The single audit-and-action document for every image, logo, animation, and illustration in the Builder's Knowledge Garden codebase. Rebuilt 2026-05-28 (~02:00 PT) as a comprehensive inventory + gap analysis, replacing the earlier design-system-sync template (which served its purpose and shipped 28 assets earlier tonight — see commit `953ae44`).*
 
-*Drop this at `/Users/chilly/Developer/bkg/docs/asset-manifest.md`. The Cowork sync prompt executes against it. To add a new asset: append one row.*
-
----
-
-## How this works
-
-1. **Source** = path in the design system folder
-2. **Target** = where Cowork copies it inside `bkg/public/`
-3. **Used by** = which component(s) reference it (existing or to-create)
-4. **Notes** = sizing, role, anything quirky
-
-Cowork's sync job walks every row, copies source → target, and verifies the component reference exists. Anything in the design system folder NOT in this manifest gets reported back so we decide where it goes.
-
-## Hero plates — the brand DNA
-
-| Source | Target | Used by | Notes |
-|---|---|---|---|
-| `assets/plates/builders-hammer.png` | `public/plates/builders-hammer.png` | `<HeroPlate name="builders-hammer">` — `/intro` hero, `/about`, OG card default, sign-in page background | Master mark; weight highest in any image-pick logic |
-| `assets/plates/chrome-killer-app.png` | `public/plates/chrome-killer-app.png` | `<SurfacePlate surface="killer">` — `/killerapp` index, empty states inside Killer App | Don't use as decorative background on a data-dense screen; competes with gauges |
-| `assets/plates/chrome-dream-machine.png` | `public/plates/chrome-dream-machine.png` | `<SurfacePlate surface="dream">` — future Dream Machine surfaces, "what if" prompts | Surface not yet built; asset stages for when it is |
-| `assets/plates/chrome-knowledge-garden.png` | `public/plates/chrome-knowledge-garden.png` | `<SurfacePlate surface="garden">` — `/lessons` index, `/projects` overview empty states | Use as the empty state when a builder has no lessons yet |
-
-## Brand marks — logos and OG
-
-| Source | Target | Used by | Notes |
-|---|---|---|---|
-| `assets/logo/bkg-transparent.png` | `public/brand/bkg-mark.png` | `<Logo variant="default">` — top nav, footer, default placement | 2x export, transparent bg |
-| `assets/logo/bkg-white-outline.png` | `public/brand/bkg-mark-light.png` | `<Logo variant="light">` — used on dark or photo backgrounds | |
-| `assets/logo/bkg-dark-outline.png` | `public/brand/bkg-mark-dark.png` | `<Logo variant="dark">` — strong silhouette over mid-tone | |
-| `assets/logo/bkg-wood-outline.png` | `public/brand/bkg-mark-wood.png` | `<Logo variant="wood">` — on cream / vellum backgrounds when default doesn't pop | |
-| `assets/logo/bkg-icon-192.png` | `public/icon-192.png` + `public/apple-touch-icon.png` | PWA manifest, browser favicon set | Also write to `app/icon.png` for Next.js metadata |
-| `assets/logo/og-card-bkg.png` | `public/og/bkg-default.png` | `app/layout.tsx` → `metadata.openGraph.images` default | If multiple OG variants exist in the folder, ALL get copied to `public/og/` keyed by filename |
-
-## Journey & stage photography
-
-The design system README §1 mentions `assets/journey/` for "scene/journey-stage photography." Map by filename naming convention if present:
-
-| Source pattern | Target | Used by |
-|---|---|---|
-| `assets/journey/size-up-*.{png,jpg,webp}` | `public/journey/size-up/` | `<StageBackground stage="size-up">` on `/killerapp/size-up` and stage chrome empty state |
-| `assets/journey/lock-*.{png,jpg,webp}` | `public/journey/lock/` | `<StageBackground stage="lock">` on `/killerapp/lock` |
-| `assets/journey/plan-*.{png,jpg,webp}` | `public/journey/plan/` | `<StageBackground stage="plan">` |
-| `assets/journey/build-*.{png,jpg,webp}` | `public/journey/build/` | `<StageBackground stage="build">` |
-| `assets/journey/adapt-*.{png,jpg,webp}` | `public/journey/adapt/` | `<StageBackground stage="adapt">` |
-| `assets/journey/collect-*.{png,jpg,webp}` | `public/journey/collect/` | `<StageBackground stage="collect">` |
-| `assets/journey/reflect-*.{png,jpg,webp}` | `public/journey/reflect/` | `<StageBackground stage="reflect">` |
-
-**Treatment** per design system §6 "Backgrounds": sepia tint overlay, `background-color: var(--ink-sepia); background-blend-mode: multiply; opacity: 0.85`. The `<StageBackground>` component applies this automatically — don't render journey photos raw.
-
-## Supporting imagery
-
-| Source pattern | Target | Used by |
-|---|---|---|
-| `assets/imagery/*.{png,jpg,webp}` | `public/imagery/` | Available via `<BrandImage src="<filename>">` — explicit placement only, no auto-binding |
-
-For supporting brand photography Cowork should not guess placement. Each file lands in `public/imagery/` and the manifest gets a follow-up row when a specific use is decided.
-
-## Icons — Midjourney-generated custom set
-
-If `assets/icons/` exists in the design system folder:
-
-| Source pattern | Target | Used by |
-|---|---|---|
-| `assets/icons/*.svg` | `public/icons/` | `<KGIcon name="<filename>">` component reads from `public/icons/<name>.svg` |
-| `assets/icons/*.png` | `public/icons/` | Same, but SVG preferred. Mark PNG-only icons for conversion in a follow-up. |
-
-**Note for Cowork:** read README §7 "Iconography" — the design system specifies hand-drawn line SVG, brass/sepia, `stroke: 1.25–1.5px`, `currentColor` fill. If any Midjourney-generated icons don't match this style (e.g., full-color, raster), copy them but flag in the session log for review.
-
-## Animations — Toxicology Garden lineage
-
-Per Chilly: animations from the Toxicology Garden project should be available for reuse here. They're not currently in the design system folder.
-
-**Action for Cowork:** if `assets/animations/` exists, copy contents to `public/animations/` and report what's there. If not, leave a placeholder section in `docs/asset-manifest.md` for animations to land later. Do not pull from the Toxicology Garden repo directly in this session; that's a separate cross-repo sync.
-
-## UI Kit reference HTML
-
-| Source | Target | Used by |
-|---|---|---|
-| `ui_kits/builders-knowledge-garden/index.html` | `public/internal/ui-kit-bkg.html` | Accessible at `/internal/ui-kit-bkg.html` for design reference only. Not linked from production nav. |
-| `ui_kits/orchids/index.html` | NOT copied to BKG repo | Belongs in the Orchids repo sync, not here |
-
-## Preview HTML (Design System tab)
-
-| Source | Target | Used by |
-|---|---|---|
-| `preview/*.html` | NOT copied | Lives in the design system folder only; not consumed by the BKG runtime |
-
-## Manifest discovery rules
-
-When Cowork syncs:
-
-1. List every file under `/Users/chilly/Developer/Knowledge Gardens Design System/assets/`
-2. For each, find the matching manifest row (specific path > glob pattern)
-3. Anything matched → copy to target, verify component reference exists
-4. Anything unmatched → list in session log under "Unplaced assets" with the file's full path
-5. Anything in the manifest with no matching source file → list under "Missing expected assets"
-6. After Cowork reports unplaced/missing, Chilly decides placement for each (1-line manifest update per asset), and runs the sync again
-
-## What NOT to auto-place
-
-- Anything in `/Users/chilly/Developer/Knowledge Gardens Design System/fonts/` — fonts wire through `next/font/google` per yesterday's Cowork session, not via `public/`
-- `colors_and_type.css` — already copied as `src/styles/tokens.css`
-- `SKILL.md` — already installed at both Skill paths
-- `README.md` — design system documentation, not runtime
+*Read-only audit pass. No code changes were made producing this doc. The next agent to touch assets uses this as the source of truth.*
 
 ---
 
-## 2026-05-28 sync session — discovery results
+## Concrete Next Actions
 
-**Session:** Cowork asset-sync, Mac 1 (~01:33 PT, demo morning). Lock claimed/released in `docs/in-flight.md`.
+### Tonight's must-do (P0 — blocks Thursday demo)
 
-### Inventory
+- **None blocking.** The demo flow works on every surface tested. `Logomark` is wired to the new `/icon.png` (live), `KillerAppNav` brand mark renders, `/intro` cinematic uses `/logos/gardens/builders-hammer.png` (live), all 7 stage routes render with emoji glyphs, OG card + favicon both resolve. Asset gaps that exist are cosmetic, not functional.
 
-28 files in the design system `assets/` tree:
-- 4 plates · 5 logos · 2 OG cards · 11 journey images · 6 imagery files · 0 icons · 0 animations
+### This week (P1 — before alpha cohort Friday)
 
-### Placed (28 of 28)
+- **Adopt `<Logo>` everywhere** — 8 places in `src/` directly reference `/logo/b_transparent_512.png` as `<Image>`. Swap each to `<Logo variant="default" />` (component already in `src/components/brand/`). Visual identical; future-proofs the swap.
+- **Adopt `<HeroPlate>` in `/intro`** — Act 1 hammer + Act 5 hammer-reprise + 3 chrome orbits + tree drawing all use raw `<img>` to `/logos/gardens/*`. Swap each to `<HeroPlate name="…">`.
+- **Replace 7 emoji journey glyphs.** `JourneyRow` renders 🧭🔒📐🔨🔄💰📖. The design constitution forbids emoji in chrome ("No emoji in UI chrome, marketing, or product copy"). These need brand-aligned hand-drawn line SVGs (brass/sepia, stroke 1.25–1.5px, currentColor — see design system §7). FLUX prompts below.
+- **Wire `/og/og-dark.png`** for any dark-theme surface (currently only `og-light.png` is referenced).
 
-All four hero plates → `public/plates/`.
-All four BKG marks → `public/brand/bkg-mark{,-light,-dark,-wood}.png`.
-Icon `bkg-icon-192.png` → `public/icon-192.png` + `public/apple-touch-icon.png` + `src/app/icon.png` (three destinations per manifest spec; the latter two also FIX broken metadata refs — see "Fixed broken refs" below).
-Both OG cards → `public/og/og-light.png` + `public/og/og-dark.png`.
-All 11 journey images → `public/journey/` (flat — manifest's per-stage subdirectory layout deferred to a follow-up sub-categorization pass).
-All 6 supporting imagery files → `public/imagery/` (flat — explicit-placement-only per manifest).
+### Later (P2 — post-demo polish)
 
-### Renames vs. manifest
+- Delete or repurpose 11+ orphan logos in `public/logos/gardens/` (biomarker, channel-type, distribute, garden-legal, optimize, orchid-garden, strategy, toxicology-caduceus, ui-pro-toggle-and-search, vertical-mobile-ad, legal, builder-lockin, builder-sizeup) — shipped 2026-05-20, never wired.
+- Delete or repurpose 15 orphan webp files in `public/logos/dream/` — Dream Machine surface concept assets, never adopted.
+- Delete 2 orphan files in `public/design-refs/` (journey-map-sketch.png, tiffany-blue-key.jpeg) — no src/ references.
+- Consolidate `public/journey/` and `public/stage-backdrops/` — duplicate file sets, neither currently referenced.
+- Delete orphan `public/logo/og_image_{dark,light}.png` after confirming `/og/og-light.png` is the only OG ref.
+- Delete `public/cinematic.html`, `public/killer-app.html`, `public/investor-brief.html` if they're stale prototypes (verify first).
+- Build per-stage hero illustrations to replace generic gradient stage backdrops (defer pending design direction).
+- Empty-state illustrations across `BuilderDashboard`, `NotificationOrchestra`, `JurisdictionPicker`, project list "no projects yet" — currently text-only.
 
-| Manifest expected | Source had | Action |
+---
+
+## 1. Current Inventory
+
+Every renderable image asset in `public/` and `src/app/icon.png` as of commit `953ae44`. Path · type · where referenced · state · notes.
+
+### Hero plates (canonical — synced from design system 2026-05-28)
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/plates/builders-hammer.png` | Hero illustration | `<HeroPlate name="builders-hammer">` (component built, NOT yet adopted) | good | 900 KB · design system master mark. Duplicate of `public/logos/gardens/builders-hammer.png`. |
+| `public/plates/chrome-killer-app.png` | Hero illustration | `<HeroPlate name="chrome-killer-app">` (NOT adopted) | good | 2.4 MB · Killer App surface accent. Duplicate of `public/logos/gardens/chrome-killer-app.png`. |
+| `public/plates/chrome-dream-machine.png` | Hero illustration | `<HeroPlate name="chrome-dream-machine">` (NOT adopted) | good | 2.4 MB · Dream Machine surface accent. Duplicate of `public/logos/gardens/chrome-dream-machine.png`. |
+| `public/plates/chrome-knowledge-garden.png` | Hero illustration | `<HeroPlate name="chrome-knowledge-garden">` (NOT adopted) | good | 2.3 MB · Knowledge Garden surface accent. Duplicate of `public/logos/gardens/chrome-knowledge-garden.png`. |
+
+### BKG brand marks (canonical — synced 2026-05-28)
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/brand/bkg-mark.png` | Logo | `<Logo variant="default">` (NOT adopted) | good | 240 KB · Master B-mark, transparent. Duplicate of `public/logo/b_transparent_512.png`. |
+| `public/brand/bkg-mark-light.png` | Logo | `<Logo variant="light">` (NOT adopted) | good | 268 KB · White outline for dark/photo BGs. Duplicate of `b_white_outline_512.png`. |
+| `public/brand/bkg-mark-dark.png` | Logo | `<Logo variant="dark">` (NOT adopted) | good | 256 KB · Dark outline. Duplicate of `b_dark_outline_512.png`. |
+| `public/brand/bkg-mark-wood.png` | Logo | `<Logo variant="wood">` (NOT adopted) | good | 269 KB · Wood outline for cream BGs. Duplicate of `b_wood_outline_512.png`. |
+
+### BKG brand marks (legacy paths — currently in use)
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/logo/b_transparent_512.png` | Logo | `SplashIntro.tsx`, `app/page.tsx`×2, `launch/page.tsx`, `profile/page.tsx`, `knowledge/page.tsx`, `presentation/page.tsx`×2 (8 places) | good (in use) | 512px · the production logo today. Will retire once `<Logo>` is adopted. |
+| `public/logo/b_dark_outline_512.png` | Logo | `app/dashboard/page.tsx` | good (in use) | 512px dark outline · single consumer. |
+| `public/logo/b_white_outline_512.png` | Logo | — | orphan | Not referenced in src/. |
+| `public/logo/b_wood_outline_512.png` | Logo | — | orphan | Not referenced in src/. |
+| `public/logo/b_icon_192x192.png` | Icon | `layout.tsx` `metadata.icons.icon` | good (in use) | PWA + favicon set. |
+| `public/logo/b_icon_512x512.png` | Icon | `layout.tsx` `metadata.icons.icon` | good (in use) | PWA + favicon set. |
+| `public/logo/favicon.ico` | Icon | `layout.tsx` `metadata.icons.icon` (as `/favicon.ico`) | good (in use) | Note: file lives at `/logo/favicon.ico` but metadata references `/favicon.ico` — likely served via root rewrite. |
+| `public/logo/og_image_light.png` | OG card | — | orphan | Superseded by `/og/og-light.png`. |
+| `public/logo/og_image_dark.png` | OG card | — | orphan | Superseded by `/og/og-dark.png`. |
+
+### Favicon / app icon (post-2026-05-28 sync)
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/icon-192.png` | Icon | not yet in `layout.tsx` metadata (file present, ref pending) | placed, not wired | 30 KB · canonical 192px icon. |
+| `public/apple-touch-icon.png` | Icon | `layout.tsx` `metadata.icons.apple` | good (in use) | 30 KB · ref now resolves (pre-sync it was 404). |
+| `src/app/icon.png` | Icon | Next.js auto-pickup + `Logomark.tsx` (`src="/icon.png"`) | good (in use) | 30 KB · canonical app icon. |
+
+### Open Graph cards
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/og/og-light.png` | OG card | `layout.tsx` `metadata.openGraph.images[0]` + `metadata.twitter.images[0]` | good (in use) | 195 KB · primary OG. Synced 2026-05-28; patches a `/og/og-root.png` 404. |
+| `public/og/og-dark.png` | OG card | — | placed, not wired | 183 KB · dark variant. Available when a dark-theme surface needs it. |
+
+### Garden logos (V3 rehaul set)
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/logos/gardens/builders-hammer.png` | Hero illustration | `intro/page.tsx`×2 (Act 1 hero, Act 5 reprise) | good (in use) | THE master mark in the cinematic. Will swap to `<HeroPlate name="builders-hammer">`. |
+| `public/logos/gardens/chrome-killer-app.png` | Hero illustration | `intro/page.tsx` (Act 1 ChromeOrbit) | good (in use) | Will swap to `<HeroPlate name="chrome-killer-app">`. |
+| `public/logos/gardens/chrome-dream-machine.png` | Hero illustration | `intro/page.tsx` (Act 1 ChromeOrbit) | good (in use) | Will swap to `<HeroPlate name="chrome-dream-machine">`. |
+| `public/logos/gardens/chrome-knowledge-garden.png` | Hero illustration | `intro/page.tsx` (Act 1 ChromeOrbit) | good (in use) | Will swap to `<HeroPlate name="chrome-knowledge-garden">`. |
+| `public/logos/gardens/knowledge-gardens-tree.png` | Hero illustration | `killerapp/page.tsx`, `intro/page.tsx` (Act 5 tree) | good (in use) | The tree drawing on the Killer App landing. No `<HeroPlate>` variant yet — would need `name="knowledge-gardens-tree"` added to the component's `PLATE_NAMES` const. |
+| `public/logos/gardens/biomarker.png` | Logo | — | orphan | Shipped 2026-05-20; never wired. |
+| `public/logos/gardens/builder-lockin.png` | Logo | — | orphan | Shipped 2026-05-20; never wired. |
+| `public/logos/gardens/builder-sizeup.png` | Logo | — | orphan | Shipped 2026-05-20; never wired. |
+| `public/logos/gardens/channel-type.png` | Logo | — | orphan | |
+| `public/logos/gardens/distribute.png` | Logo | — | orphan | |
+| `public/logos/gardens/garden-legal.png` | Logo | — | orphan | |
+| `public/logos/gardens/health-garden-caduceus.png` | Logo | — | orphan | |
+| `public/logos/gardens/legal.png` | Logo | — | orphan | |
+| `public/logos/gardens/optimize.png` | Logo | — | orphan | |
+| `public/logos/gardens/orchid-garden.png` | Logo | — | orphan | Future Orchids surface. |
+| `public/logos/gardens/strategy.png` | Logo | — | orphan | |
+| `public/logos/gardens/toxicology-caduceus.png` | Logo | — | orphan | Future Toxicology surface. |
+| `public/logos/gardens/ui-pro-toggle-and-search.png` | Logo | — | orphan | |
+| `public/logos/gardens/vertical-mobile-ad.png` | Logo | — | orphan | |
+| `public/logos/gardens/_originals/*.png` | Logo (backup) | — | orphan | 9 backup originals. Keep for reference. |
+
+### Dream Machine logos
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/logos/dream/{alchemist,browse,collider,cosmos,describe,explore,genome,inspire,narrator,oracle,plans,quest,sandbox,sketch,voice}.webp` (15 files) | Logo / glyph | — | orphan | None referenced in src/. Dream Machine surface concept assets; never adopted. |
+
+### Stage / journey imagery
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/journey/sizeup-journey.png` | Stage backdrop | — | orphan | Not referenced. |
+| `public/journey/lock-journey.png` | Stage backdrop | — | orphan | |
+| `public/journey/plan-journey.png` | Stage backdrop | — | orphan | |
+| `public/journey/build-journey.png` | Stage backdrop | — | orphan | |
+| `public/journey/beginning-journey.jpg` | Stage backdrop | — | orphan | |
+| `public/journey/Structural-journey.jpeg` | Stage backdrop | — | orphan | |
+| `public/journey/equipment-journey.PNG` | Stage backdrop | — | orphan | |
+| `public/journey/sequencing-journey.JPG` | Stage backdrop | — | orphan | |
+| `public/journey/sketch-journey.JPG` | Stage backdrop | — | orphan | |
+| `public/journey/tool-journey.PNG` | Stage backdrop | — | orphan | |
+| `public/journey/tree-portal-journey.PNG` | Stage backdrop | — | orphan | |
+| `public/journey/Journey-map-sketch.png` | Reference | — | orphan | Likely an annotation sketch; not a runtime asset. |
+| `public/stage-backdrops/sizeup-journey.png` | Stage backdrop | — | orphan | Same file as `public/journey/sizeup-journey.png`. Two paths to same image. |
+| `public/stage-backdrops/lock-journey.png` | Stage backdrop | — | orphan | Same as `public/journey/`. |
+| `public/stage-backdrops/plan-journey.png` | Stage backdrop | — | orphan | Same as `public/journey/`. |
+| `public/stage-backdrops/build-journey.png` | Stage backdrop | — | orphan | Same as `public/journey/`. |
+| `public/stage-backdrops/beginning-journey.jpg` | Stage backdrop | — | orphan | Same as `public/journey/`. |
+
+### Project / cinematic / close-out
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/intro-assets/tool-tree.mp4` | Hero animation | `intro/page.tsx` (referenced in comments at lines 1971, 2052) | possibly orphan | Comments indicate it WAS to be the Act-5 looping centerpiece. Need to verify if currently wired in the live cinematic. |
+| `public/design-assets/close-out-frames/frame-{001,002,003,004}.jpg` | Close-out animation frames | `killerapp/projects/[id]/close-out/CloseOutClient.tsx` line 42-45 | good (in use) | The Build/Reflect close-out ritual frames. Real production usage. |
+| `public/cinematic.html` | Static HTML prototype | — | orphan | Standalone prototype; not iframe'd by any src/ route. Likely safe to delete. |
+| `public/killer-app.html` | Static HTML prototype | — | orphan | Same — standalone prototype. |
+| `public/investor-brief.html` | Static HTML | — | orphan | Standalone. |
+| `public/bkg/anim.html` | Cinematic | `app/cinematic/page.tsx` (iframe src) | good (in use) | The `/cinematic` route's iframe target. Standalone HTML cinematic. |
+| `public/bkg/{n6k,p6k}.txt` | Data file | unknown | likely orphan | Plain-text data, possibly old. |
+| `public/llms.txt` | Bot directive | bot crawlers | good | Standard llms.txt. |
+| `public/robots.txt` | Bot directive | bot crawlers | good | Standard robots.txt. |
+| `public/bkg-mcp.mcpb` | MCP bundle | external | good | The MCP server bundle. |
+
+### Reference / design assets
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/design-refs/journey-map-sketch.png` | Reference | — | orphan | |
+| `public/design-refs/tiffany-blue-key.jpeg` | Reference | — | orphan | |
+
+### Imagery (synced 2026-05-28)
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/imagery/_.jpeg` | Brand photo | — | orphan (just placed) | 167 KB. Filename is `_` — possibly a Mac thumbnail or accidental copy. |
+| `public/imagery/img_2006.webp` | Brand photo | — | orphan (just placed) | 765 KB. |
+| `public/imagery/img_2008.jpg` | Brand photo | — | orphan (just placed) | 66 KB. |
+| `public/imagery/img_2014.jpg` | Brand photo | — | orphan (just placed) | 104 KB. |
+| `public/imagery/img_2082.png` | Brand photo | — | orphan (just placed) | 1.9 MB. |
+| `public/imagery/img_2094.jpg` | Brand photo | — | orphan (just placed) | 11 KB. |
+
+### Misc
+
+| Path | Type | Referenced by | State | Notes |
+|---|---|---|---|---|
+| `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg` | Misc SVG | — | orphan | Default Next.js scaffolding SVGs. Safe to delete (or leave). |
+| `public/logos/gardens/.gitkeep` | Marker | — | n/a | Empty file, keeps git directory. |
+
+---
+
+## 2. Key Visual Surfaces
+
+Each surface in the rendered UI graded by current state + recommendation.
+
+### Global header logo (B mark)
+
+- **Current:** `<Logomark>` component reads `/icon.png` (live, just rewired). Plus 8 places in `src/` directly use `<Image src="/logo/b_transparent_512.png">`.
+- **Recommendation (P1):** Migrate the 8 direct usages to `<Logo variant="default" width={N} height={N} />` from `src/components/brand/Logo.tsx`. Visually identical, single canonical source.
+
+### Killer App landing hero (the tree drawing)
+
+- **Current:** `<img src="/logos/gardens/knowledge-gardens-tree.png">` in `app/killerapp/page.tsx:302`.
+- **Recommendation (P1):** Add `knowledge-gardens-tree` to `PLATE_NAMES` in `src/components/brand/HeroPlate.tsx`, copy the file to `public/plates/knowledge-gardens-tree.png`, swap to `<HeroPlate name="knowledge-gardens-tree">`. Or accept that this isn't a "specimen plate" and leave the raw `<img>` — the tree drawing has its own visual treatment.
+
+### Cinematic first-visit intro (`/intro`)
+
+- **Current:** Act 1 hero + Act 5 reprise use `/logos/gardens/builders-hammer.png`. Three ChromeOrbits use the three chrome plates. Act 5 tree uses `knowledge-gardens-tree.png`. Centerpiece animation `tool-tree.mp4` MAY be wired (referenced only in comments — verify).
+- **Recommendation (P1):** Swap raw `<img>` to `<HeroPlate>` (5 swaps total). Confirm `tool-tree.mp4` wiring status.
+
+### Cinematic iframe target (`/cinematic`)
+
+- **Current:** `app/cinematic/page.tsx` iframes `/bkg/anim.html`.
+- **Recommendation:** Working — leave alone unless the cinematic redesign supersedes `anim.html`.
+
+### Killer App project dashboard (`/killerapp/projects/[id]`)
+
+- **Current:** No project thumbnail. `KillerAppChrome` (BudgetRibbon + JourneyTimeRow) above the data. Close-out ritual uses `/design-assets/close-out-frames/frame-00{1-4}.jpg`.
+- **Recommendation (P2):** Add a project hero thumbnail slot when project records carry a primary image. Today nothing's broken because nothing's shown.
+
+### Project header thumbnail (per project view)
+
+- **Current:** None. Project name + meta in the chrome header, no image.
+- **Recommendation (P2):** Add a small `<HeroPlate>` accent (per-surface plate, e.g. `chrome-killer-app` when on Killer App). Subtle, not centerpiece.
+
+### Stage headers (Size Up / Lock / Plan / Build / Adapt / Collect / Reflect)
+
+- **Current:** Each stage page renders `<StageShell>` which has a small colored accent bar (stage-accent token) + title. NO per-stage hero illustration.
+- **Recommendation (P2):** Per-stage hero illustrations exist as concept in `public/journey/sizeup-journey.png`, `lock-journey.png`, etc., but are NOT wired. Either delete the orphan files or build a `<StageBackground stage="…">` component that consumes them. Defer pending design direction — current accent-bar treatment is clean and uncluttered for the demo.
+
+### Stage glyphs in the journey row
+
+- **Current:** Emoji glyphs — 🧭 (Size up) · 🔒 (Lock) · 📐 (Plan) · 🔨 (Build) · 🔄 (Adapt) · 💰 (Collect) · 📖 (Reflect). Defined in `src/lib/lifecycle-stages.ts`. Rendered by `JourneyRow.tsx` and `JourneyTimeRow.tsx`.
+- **Recommendation (P1):** **Replace.** Design constitution §antipatterns: "No emoji in UI chrome, marketing, or product copy." Emoji glyphs in the journey row are a documented antipattern. Need brand-aligned hand-drawn line SVGs — see Sourcing §5.
+
+### Knowledge garden category illustrations
+
+- **Current:** None — `app/knowledge/page.tsx` is text-only with a top-left `<Logomark>` (using `/logo/b_transparent_512.png`).
+- **Recommendation (P2):** Add per-category specimen plate when categories are formalized.
+
+### Empty state illustrations
+
+- **Current:** None. Components like `BuilderDashboard`, `NotificationOrchestra`, `JurisdictionPicker`, the project-list "no projects yet" all use text/icons only.
+- **Recommendation (P2):** Add 3–4 brand-aligned empty-state plates. Out of scope tonight.
+
+### Background patterns / textures
+
+- **Current:** `tokens.css` defines `--paper-noise` (SVG fractal noise) and `--grid-line` (24px engineering grid). Used inline as needed. No external image textures wired.
+- **Recommendation:** Working — leave alone.
+
+### Favicon and app icon
+
+- **Current (post-sync):** `src/app/icon.png` (30 KB, canonical) · `public/icon-192.png` (30 KB) · `public/apple-touch-icon.png` (30 KB) · `public/logo/b_icon_{192x192,512x512}.png` (legacy, referenced in `layout.tsx`) · `public/logo/favicon.ico`.
+- **Recommendation:** Working. Consider de-duplicating to a single canonical icon set (`/icon-192.png`, `/icon-512.png`, `/apple-touch-icon.png`, `/favicon.ico`) in a follow-up.
+
+### Open Graph / Twitter card image
+
+- **Current:** `/og/og-light.png` (live, in `layout.tsx` metadata). `/og/og-dark.png` available, not wired.
+- **Recommendation:** Working. Wire dark variant if/when a dark theme exists.
+
+### Brand mark in auth/signup flow
+
+- **Current:** No `<Logomark>` or `<Logo>` in `app/auth/` or `app/accept-invite/` — need to verify those pages have any branding at all. (Quick `grep` returned nothing.)
+- **Recommendation (P1):** Add `<Logo variant="default" width={48} />` to the auth header. Without a brand mark on sign-in, the platform looks anonymous.
+
+### `/intro` chrome orbits (Act 1 satellites)
+
+- **Current:** Three `<ChromeOrbit>` instances using `/logos/gardens/chrome-{killer-app,dream-machine,knowledge-garden}.png`.
+- **Recommendation (P1):** Same swap to `<HeroPlate>` as the rest of the cinematic.
+
+### `/dashboard` page header logo
+
+- **Current:** `<img src="/logo/b_dark_outline_512.png">` (the only place this variant is used).
+- **Recommendation (P1):** Swap to `<Logo variant="dark" />`.
+
+---
+
+## 3. Gaps
+
+### P0 — blocks Thursday demo
+
+**None.** Every functional surface has a working asset.
+
+### P1 — blocks alpha cohort Friday
+
+| Surface | Current placeholder | Should be | Why now |
+|---|---|---|---|
+| Journey row stage glyphs | Emoji 🧭🔒📐🔨🔄💰📖 | 7 hand-drawn line SVGs (brass/sepia stroke) | Violates design constitution §antipatterns. First thing alpha builders will notice as "off-brand." |
+| `/intro` 5 hero refs | Raw `<img src="/logos/gardens/…">` | `<HeroPlate name="…">` (component already exists) | Single source of truth for plates; mid-flight palette/format changes propagate. |
+| 8 places using `b_transparent_512.png` | Raw `<Image>` | `<Logo variant="default">` | Same reason — single source of truth. |
+| Auth / sign-up page | No brand mark visible | `<Logo variant="default" width={48} />` in header | First impression for cohort signups; anonymous-looking today. |
+| `/dashboard` header | `<img src="/logo/b_dark_outline_512.png">` | `<Logo variant="dark">` | Same single-source rationale. |
+| `/og/og-dark.png` unused | n/a | Wire as the dark-theme OG fallback | When social shares are made from dark-theme surfaces. |
+
+### P2 — post-launch polish
+
+| Surface | Current | Should be |
 |---|---|---|
-| `og-card-bkg.png` | `og-light.png` + `og-dark.png` | Copied both. `og-light.png` is the primary (light theme; matches herbarium cream backgrounds). `og-dark.png` available for dark surfaces. Manifest row should be updated to reference the actual filenames. |
+| Per-stage hero illustration | `<StageShell>` accent bar only | Custom plate per stage (Size Up = scales, Lock = padlock-as-seed, Plan = blueprint sketch, Build = framing diagram, Adapt = course-correction compass, Collect = ledger, Reflect = annotated portfolio) |
+| Empty states (4+ surfaces) | Text only | Specimen-card style empty illustration |
+| Project thumbnail | None | Per-project hero image (uploadable, plate fallback) |
+| Knowledge garden categories | Text only | Per-category specimen plate |
+| Cinematic redesign | `/bkg/anim.html` iframe + `/intro` | Modernize once content is locked |
 
-### Missing expected assets
+---
 
-| Path | What was expected |
+## 4. Duplicate / Conflicting Assets
+
+The same brand visual exists at 2+ paths in the repo. Each row recommends ONE canonical path; the other paths get deleted post-demo.
+
+| Asset | Canonical | Duplicate(s) | Recommendation |
+|---|---|---|---|
+| B-mark (default) | `public/brand/bkg-mark.png` (240 KB) | `public/logo/b_transparent_512.png` (legacy 512px) | Keep both during P1 migration. After all 8 references swap to `<Logo>`, delete the legacy file. |
+| B-mark (white outline) | `public/brand/bkg-mark-light.png` | `public/logo/b_white_outline_512.png` | Legacy file is already orphan — delete now. |
+| B-mark (dark outline) | `public/brand/bkg-mark-dark.png` | `public/logo/b_dark_outline_512.png` | After `/dashboard` swap, delete legacy. |
+| B-mark (wood outline) | `public/brand/bkg-mark-wood.png` | `public/logo/b_wood_outline_512.png` | Legacy orphan — delete now. |
+| Hammer plate | `public/plates/builders-hammer.png` | `public/logos/gardens/builders-hammer.png` + `public/logos/gardens/_originals/builders-hammer.png` | After `/intro` swap, delete duplicates. Keep `_originals/` as historical reference. |
+| Chrome plates (3 surfaces) | `public/plates/chrome-{killer-app,dream-machine,knowledge-garden}.png` | `public/logos/gardens/chrome-*.png` + `_originals/` | Same — delete duplicates after `/intro` swap. |
+| OG card (light) | `public/og/og-light.png` (in use) | `public/logo/og_image_light.png` (orphan) | Delete orphan now. |
+| OG card (dark) | `public/og/og-dark.png` | `public/logo/og_image_dark.png` (orphan) | Delete orphan now. |
+| App icon (192px) | `src/app/icon.png` (Next convention) + `public/icon-192.png` (explicit) | `public/logo/b_icon_192x192.png` (legacy, in metadata) | Migrate `metadata.icons` to reference `/icon-192.png` instead of `/logo/b_icon_192x192.png`, then delete legacy. |
+| App icon (512px) | (no `/icon-512.png` yet) | `public/logo/b_icon_512x512.png` (in metadata) | Either copy a 512px variant to `/icon-512.png` and update metadata, or just leave the legacy reference. |
+| Favicon | `public/logo/favicon.ico` (referenced as `/favicon.ico` via what's probably a root-rewrite) | n/a | Verify rewrite works; if not, copy to `public/favicon.ico`. |
+| Stage backdrops | (pick one path) | `public/journey/*-journey.{png,jpg}` AND `public/stage-backdrops/*-journey.{png,jpg}` | Both sets are orphan today. Pick one path when the `<StageBackground>` component lands; delete the other. |
+
+---
+
+## 5. Sourcing Recommendation
+
+For each P1 gap, the concrete path to a brand-aligned asset.
+
+### Journey row stage glyphs (7 SVGs)
+
+**Approach:** Replicate FLUX 1.1 Pro for raster references → trace to SVG in Affinity / Figma.
+
+**Draft FLUX prompt (singular — repeat 7×, swapping `[STAGE]` and the metaphor):**
+
+```
+A single isolated hand-drawn line illustration of [STAGE METAPHOR],
+ink on aged cream paper, 1.25 px brass-sepia stroke, no fill, no
+shading, no color. Victorian botanical herbarium meets engineering
+schematic. Centered, generous margin. Style references: 1880s plant
+plate, Leonardo da Vinci codex page, Rapidograph technical drawing.
+Square frame. No text, no labels, no signatures. Background is solid
+cream paper #F2E9D2.
+```
+
+Per-stage metaphors (use these as `[STAGE METAPHOR]`):
+
+| Stage | Metaphor |
 |---|---|
-| `assets/icons/*.svg` | The custom Midjourney icon set; manifest section "Icons" present but `assets/icons/` doesn't exist yet in the design system folder. Skipped per manifest discovery rule 5. |
-| `assets/animations/` | Toxicology Garden lineage animations; manifest notes this is a future cross-repo sync. Skipped. |
+| Size up | A vintage brass compass and a folded survey map, opened mid-fold |
+| Lock | A small antique padlock with a key hanging from its hasp, threaded through a seed |
+| Plan | A blueprint scroll partially unrolled, with a draftsman's triangle resting on it |
+| Build | A framing square crossed over a hammer, with a single wood peg between them |
+| Adapt | A small ship's wheel mid-turn, with a compass needle deflecting |
+| Collect | A leather-bound ledger book half-open, with a quill resting on the page |
+| Reflect | A portfolio folder tied with twine, holding two leaves emerging from the spine |
 
-### Unplaced assets (none)
+After raster generation, trace into vector (Adobe Illustrator's Image Trace or Affinity Designer's Auto Trace, "Sketch" or "Detailed Line" preset), simplify to ≤200 anchor points each, export as 32×32 viewBox SVG with `stroke="currentColor"`, `fill="none"`, `stroke-width="1.25"`, `stroke-linecap="round"`.
 
-All 28 files matched a manifest row.
+Drop to `public/icons/stages/{size-up,lock,plan,build,adapt,collect,reflect}.svg` and reference from `JourneyRow.tsx` + `JourneyTimeRow.tsx` instead of `LIFECYCLE_STAGES[i].emoji`.
 
-### Pre-existing duplicates flagged for cleanup
+### `<HeroPlate>` and `<Logo>` adoption (no new assets needed)
 
-The new manifest paths now exist **alongside** the pre-existing paths the running code was already using. Don't delete the pre-existing files — they're wired into the production `/intro` cinematic and the existing `<Logomark>` component. Cleanup is a follow-up:
+Already in repo. Just edit consumers:
 
-| Pre-existing path (still used) | New canonical path | Used by |
-|---|---|---|
-| `public/logos/gardens/builders-hammer.png` | `public/plates/builders-hammer.png` | `/intro` Act 1 + Act 5 hammer-hero (raw `<img src>`). New path used by `<HeroPlate name="builders-hammer">` going forward. |
-| `public/logos/gardens/chrome-killer-app.png` | `public/plates/chrome-killer-app.png` | `/intro` chrome orbit-out animations. New path used by `<HeroPlate name="chrome-killer-app">`. |
-| `public/logos/gardens/chrome-dream-machine.png` | `public/plates/chrome-dream-machine.png` | `/intro` Dream Machine orbit. New: `<HeroPlate name="chrome-dream-machine">`. |
-| `public/logos/gardens/chrome-knowledge-garden.png` | `public/plates/chrome-knowledge-garden.png` | `/intro` Knowledge Garden orbit. New: `<HeroPlate name="chrome-knowledge-garden">`. |
-| `public/logo/b_transparent_512.png` | `public/brand/bkg-mark.png` | Existing `<Logomark>` component (top nav, footer). New: `<Logo variant="default">`. |
-| `public/logo/b_white_outline_512.png` | `public/brand/bkg-mark-light.png` | — / `<Logo variant="light">`. |
-| `public/logo/b_dark_outline_512.png` | `public/brand/bkg-mark-dark.png` | — / `<Logo variant="dark">`. |
-| `public/logo/b_wood_outline_512.png` | `public/brand/bkg-mark-wood.png` | — / `<Logo variant="wood">`. |
-| `public/logo/og_image_light.png` | `public/og/og-light.png` | OG metadata (was pointing at `/og/og-root.png` which didn't exist; now patched to `/og/og-light.png`). |
-| `public/logo/og_image_dark.png` | `public/og/og-dark.png` | — |
+- `src/app/intro/page.tsx` — 5 swaps (Act 1 hammer, 3 chrome orbits, Act 5 hammer reprise)
+- `src/app/page.tsx` — 2 swaps
+- `src/app/launch/page.tsx`, `src/app/profile/page.tsx`, `src/app/knowledge/page.tsx`, `src/app/presentation/page.tsx` (×2), `src/app/dashboard/page.tsx`, `src/components/SplashIntro.tsx` — 1 swap each
 
-### Fixed broken refs (collateral wins)
+### Auth / sign-up brand mark
 
-Two `metadata` references in `src/app/layout.tsx` were pointing at files that didn't exist on disk — both now have valid targets:
+In repo. Add `<Logo variant="default" width={48} />` to the auth page header. No asset sourcing needed.
 
-| Ref | Was | Now |
-|---|---|---|
-| `metadata.openGraph.images[0].url` | `/og/og-root.png` (404) | `/og/og-light.png` (live) |
-| `metadata.twitter.images[0]` | `/og/og-root.png` (404) | `/og/og-light.png` (live) |
-| `metadata.icons.apple` | `/apple-touch-icon.png` (file missing) | `/apple-touch-icon.png` (file now copied — 30,569 bytes) |
+### `/og/og-dark.png` wiring
 
-### Components created
+In repo at `public/og/og-dark.png`. When a dark-theme surface needs it:
 
-| File | Purpose |
-|---|---|
-| `src/components/brand/Logo.tsx` | `<Logo variant="default|light|dark|wood" width={32} height={32} />` — wraps next/image, default `priority`, herbarium-friendly variants. |
-| `src/components/brand/HeroPlate.tsx` | `<HeroPlate name="builders-hammer|chrome-killer-app|chrome-dream-machine|chrome-knowledge-garden" width={800} height={800} />` — same pattern. |
-| `src/components/brand/index.ts` | Barrel — `import { Logo, HeroPlate } from '@/components/brand'`. |
+```tsx
+// in layout.tsx
+openGraph: {
+  ...,
+  images: [
+    { url: "/og/og-light.png", width: 1200, height: 630, alt: "..." },
+    { url: "/og/og-dark.png",  width: 1200, height: 630, alt: "...", type: "image/png" },
+  ],
+},
+```
 
-### Wiring NOT done this session — flagged as follow-ups
+---
 
-The Cowork prompt's Step 4 listed four placements; two were inside this session's OWNS scope and were completed (OG metadata + favicon refs both patched in `layout.tsx`). The other two are OUTSIDE the asset-sync OWNS scope and were intentionally skipped on demo eve to avoid colliding with the active stage-chrome work:
+## Appendix — Source-of-truth references
 
-- **Top-nav `<Logo>` adoption.** The existing `<Logomark>` in `src/components/KillerAppNav.tsx:155` works; swap it to `<Logo variant="default" />` after the demo. File is not in this session's OWNS.
-- **`/intro` `<HeroPlate>` adoption.** `src/app/intro/page.tsx` currently uses raw `<img src="/logos/gardens/builders-hammer.png">` in Act 1 + Act 5 — it works (live on prod, hammer-hero shipped 2026-05-20). Swap to `<HeroPlate name="builders-hammer">` after the demo. File is not in this session's OWNS.
-
-### Next-time-someone-syncs notes
-
-- The pre-existing `public/logos/gardens/` set contains 11 extra logos beyond the four hero plates (biomarker, channel-type, distribute, garden-legal, health-garden-caduceus, knowledge-gardens-tree, optimize, orchid-garden, strategy, toxicology-caduceus, ui-pro-toggle-and-search, vertical-mobile-ad, legal, builder-lockin, builder-sizeup). These weren't in this session's design-system inventory; they're project-specific assets that should likely get their own manifest section if they're meant to be canonical.
-- `public/journey/` also has a pre-existing `Journey-map-sketch.png` not in the design system. Same treatment recommended.
+- **Design system:** `/Users/chilly/Developer/Knowledge Gardens Design System/` (read-only from BKG repo's perspective). README §§ 2 (brands), 6 (visual foundations), 7 (iconography), 9 (antipatterns) are the spec for any new asset.
+- **Tokens:** `src/styles/tokens.css` (synced from design system 2026-05-27). Use `var(--token)` references, not raw hex.
+- **Components ready for adoption:** `src/components/brand/Logo.tsx`, `src/components/brand/HeroPlate.tsx` (`import { Logo, HeroPlate } from '@/components/brand'`).
+- **Asset sync history:** commit `953ae44` (2026-05-28 Mac 1 Cowork — synced 28 design-system assets to `public/` + built `<Logo>` + `<HeroPlate>`).
+- **Previous version of this doc** (sync-spec form) is preserved in git history at commits before `953ae44`.
