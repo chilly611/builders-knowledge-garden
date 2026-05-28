@@ -121,7 +121,7 @@ export default function KillerAppNav() {
       style={{
         position: 'fixed',
         top: 0,
-        left: 64,
+        left: 0,
         right: 0,
         height: 48,
         zIndex: 99,
@@ -130,7 +130,11 @@ export default function KillerAppNav() {
         borderBottom: 'none',
         display: 'flex',
         alignItems: 'center',
-        paddingLeft: isMobile ? 12 : 16,
+        // Match the page content's 28px horizontal padding so the logo
+        // aligns with body content on all screen sizes. Previously left:64
+        // + paddingLeft:16 left a phantom 64px sidebar gap (the sidebar
+        // component exists but is never mounted — GlobalAiFab: "unused").
+        paddingLeft: isMobile ? 20 : 28,
         paddingRight: isMobile ? 12 : 16,
         gap: 12,
         fontFamily: 'var(--font-archivo), sans-serif',

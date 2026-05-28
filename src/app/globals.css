@@ -171,10 +171,11 @@ div { color: inherit; }
 }
 
 
-/* Desktop sidebar offset — pushes content right when sidebar is visible */
-@media (min-width: 900px) {
-  body > div { margin-left: 64px; transition: margin-left 0.25s ease; }
-}
+/* Desktop sidebar offset — removed 2026-05-27.
+   CompassNav sidebar exists in the codebase but is never mounted
+   (GlobalAiFab.tsx: "CompassNav exists but is unused"). The 64px
+   margin was leaving a phantom strip of empty space on the left on
+   desktop. KillerAppNav was also patched to left:0 at the same time. */
 
 /* ═══════════════════════════════════════════════
    BLUEPRINT DESIGN SYSTEM — Utility Classes
