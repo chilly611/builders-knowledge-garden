@@ -1,3 +1,23 @@
+## ═══ DEMO MORNING READY — Thursday 2026-05-28 ═══
+
+**Where we are on demo eve.** All seven `/killerapp/stages/*` routes are live on `main` (last code commit `e73e8df`; Vercel auto-deploys). The Killer App journey walks end-to-end on a single canonical Marin Farmhouse: **$312K / $1.65M · 37 wk · $347K headroom**, same numbers on every stage. The full demo runbook (URLs, what to click, what to highlight, fallbacks) is in **`docs/DEMO-MORNING-CHECKLIST.md`** — read that first in the morning.
+
+**Shipped this sprint (high-level):**
+- [x] Stage chrome — `src/components/stage-shell/*` (StageShell + JourneyRow + BudgetRibbon + ProToggle + StageActionBar) is the canonical stage shell consumed by all 7 stages. Herbarium-tokenized (zero forbidden hex literals).
+- [x] Stage pages — `size-up`, `lock`, `plan`, `build` are functional; `adapt`, `collect`, `reflect` are honest stubs (placeholder + insight + sticky action bar). Full 7-stage walk navigates via the StageActionBar verbs (and Agent A's internal CTAs on size-up/lock).
+- [x] Demo data — single canonical Marin fixture (`src/lib/demo/marin-4000.ts`): `MARIN_BUDGET_TOTAL = 1_650_000`, `MARIN_BUDGET_SPENT = 312_400`, `MARIN_BUDGET_COMMITTED = 186_200`, `MARIN_BUDGET_REMAINING = 1_151_400`, `MARIN_STAGE_COMPLETION = {1:100, 2:100, 3:85, 4:42, 5..7:0}`, framing 10 wk → `computeSchedule = 37 wk`.
+- [x] Layout-level KillerAppChrome + ProjectCockpit gated OFF `/killerapp/stages/*` so a stage screen shows only its own chrome (kills the `$16K/$914K vs $2.34M` mismatch).
+- [x] Whispers — removed from MY stage pages (plan, build) per Charlie #5. Component file kept; restore comment in place.
+
+**Post-demo carry-forward (do NOT do morning-of):**
+- [ ] Remove whisper renders on `credentialing`, `ask`, `rewards` per Charlie #5 (Agent A's V3 surfaces).
+- [ ] Update the DB Marin row (`command_center_projects` UUID `55730cd3-…`): `sqft="4000"`, `total_budget=1650000`, `spent_to_date=312400`. Today the fixture overrides the DB; aligning the DB row removes the override.
+- [ ] Collapse the two chrome systems onto one shared `ProjectContext` (`killerapp-chrome/*` = `/projects/[id]`; `stage-shell/*` = stages). Today both pin to the same Marin seed — coincidentally aligned, not architecturally.
+- [ ] Wire Size Up + Lock onto `StageShell.primaryAction` so the sticky action bar is the single primary across all 7 stages (Agent A deferred during sprint to avoid wizard-rewrite collision).
+- [ ] Cosmetic: `docs/session-log.md` line 1 has a literal `$(cat /tmp/session-log-b64.txt)` from a botched shell substitution by another session — fix on the next append.
+
+---
+
 ## ═══ HEADER CHROME CLEANUP — Overlapping nav elements (2026-05-27, Chat) ═══
 
 - [x] Remove brass section-number digit from StepCard expanded blocks

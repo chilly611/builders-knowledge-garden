@@ -2809,3 +2809,25 @@ f2ce2a0  fix(auto-verify): always stamp the row, never skip without writing
 - `docs/session-log.md` had been clobbered to 25 lines by an unexpanded shell heredoc literal (`$(cat /tmp/session-log-b64.txt)` at line 1) in commit `cf0cc39`. Restored the full 2,749-line history from `0e381d0`, re-appended the Chat header-overlap entry that the broken commit had isolated, and added this entry on top.
 
 **Demo-morning markdown:** `docs/demos/DEMO-MORNING-READINESS.md` written — single-page walkthrough of the 7-stage journey at 380px + 1280px with the canonical Marin numbers, last good commit, recovery runbook, and the one remaining open item (Documenso key).
+
+---
+
+## 2026-05-28 — Demo-Eve Consolidation (Agent B / Claude Code, 1M)
+**Agent:** Claude Code (claude-opus-4-7, 1M) — parallel pass on demo-prep markdown; converged with the sibling session that independently restored the session-log + wrote a `docs/demos/DEMO-MORNING-READINESS.md`. Both demo docs ship; they cover the same ground from slightly different angles and are cross-referenced.
+
+**What changed:**
+- **`docs/DEMO-MORNING-CHECKLIST.md`** (NEW, this session) — a second-angle demo runbook focused on the seven-stage walk script, what to highlight per stage, known constraints, and fallbacks. Complements `docs/demos/DEMO-MORNING-READINESS.md` (which leads with last-good-commit + canonical numbers + recovery runbook).
+- **`src/app/killerapp/stages/build/page.tsx`** — Build insight card: `62% complete` → **`42% complete`** and `$268K committed to interior finishes next` → **`$186K committed next`** to match `MARIN_STAGE_COMPLETION.Build = 42` and `MARIN_BUDGET_COMMITTED = 186_200` from the canonical seed. Small but the demo flagged it.
+- **`tasks.todo.md`** — added a top-of-file "DEMO MORNING READY" section with shipped state + the post-demo carry-forward list (whisper removal on V3 surfaces, DB Marin row sqft/budget alignment, two-chrome `ProjectContext` collapse, Size Up/Lock onto `StageShell.primaryAction`).
+- **`tasks.lessons.md`** — appended seven durable lessons from the stage-chrome + multi-agent sprint:
+  1. Inline `grid-template-columns` outranks `<style>` media-query classes — put responsive grid tracks in the CSS class.
+  2. Filter for visible elements when DOM-probing — React's hidden streaming buffer (`<div hidden id="S:n">`) doubles counts in dev.
+  3. Use an isolated `git worktree` for verification on a shared mount (hardlink `node_modules` from the canonical checkout; never symlink — Turbopack rejects it).
+  4. Dogfood un-pushed code by pointing the Claude_Preview browser at a local worktree dev server (`window.location.assign('http://localhost:4179/…')`).
+  5. Stage explicit paths only (`git add <path>`, never `-A`) — multi-agent collisions show up as untracked sibling files.
+  6. Origin/main jumps mid-session — fetch right before push, rebuild after rebase.
+  7. "Lovable > complete" + honest "alpha — coming soon" pills are the demo's legal cover.
+
+**Verification:** Production build clean (EXIT 0, all 7 stage routes compile).
+
+**Demo state for Thursday morning:** all seven `/killerapp/stages/*` routes are live with the same canonical Marin numbers (`$312K / $1.65M · 37 wk`) on every screen. Read either `docs/DEMO-MORNING-CHECKLIST.md` (walk script + per-stage highlights) or `docs/demos/DEMO-MORNING-READINESS.md` (recovery runbook angle) — they cover the same demo from complementary angles.

@@ -176,10 +176,10 @@ function BuildStageBody() {
         }}
       >
         <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
-          62% complete · framing inspection passed
+          42% complete · framing inspection passed
         </div>
         <div style={{ marginTop: 3, fontSize: 12.5, color: colors.graphite }}>
-          $312K of $1.65M spent · $268K committed to interior finishes next · hold change orders to protect the $347K headroom
+          $312K of $1.65M spent · $186K committed next · hold change orders to protect the $347K headroom
         </div>
       </div>
 

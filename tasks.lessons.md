@@ -4,6 +4,31 @@
 
 ---
 
+## Stage Chrome + Multi-Agent Sprint (2026-05-27 → 28, Agent B / Claude Code)
+
+### Inline `grid-template-columns` outranks `<style>` media-query classes
+A `.plan-cols` / `.build-cols` 2-column grid wouldn't collapse to one column under 860 px even though the `<style>` block had the right media query — because the inline `style={{ gridTemplateColumns: 'minmax(300px,5fr) minmax(320px,6fr)' }}` won by specificity. **Rule:** for any responsive grid, put `grid-template-columns` in the CSS class (in the `<style>` block) and keep only non-responsive bits inline (`display:grid`, `gap`, `alignItems`). Caught during the 380 px dogfood — the code-lookup column was clipped off-screen with `horizontalOverflow:false` because StageShell's `main` had `overflow:hidden`. Lesson: **`scrollWidth ≤ innerWidth` ≠ "fits"; it can also mean "clipped."**
+
+### Filter for visible elements when probing the DOM — React's hidden streaming buffer doubles content
+`document.querySelectorAll('main').length === 2` panicked me into thinking the page was rendering twice. It was actually React App Router's streaming hidden buffer (`<div hidden id="S:n">` holding the SSR-streamed copy alongside the live client render). **Rule:** when DOM-probing a Next.js dev page, always filter to visibles: `Array.from(els).filter(e => e.offsetParent !== null || e.getBoundingClientRect().height > 0)`. The hidden buffer is normal in dev and never reaches production.
+
+### Use an isolated `git worktree` for verification on a shared mount
+Three working trees point at the same `origin/main` on this machine; the canonical one is shared with another live agent. A clean `git worktree add --detach /path origin/main` + hardlinked `node_modules` from the canonical checkout gives you an isolated build/dogfood environment that excludes the other agent's untracked WIP and never touches their tree. Two gotchas: (1) put the worktree on the same volume as the canonical so `cp -al node_modules dst` hardlinks (cross-volume falls back to a slow full copy); (2) **don't symlink `node_modules`** — Turbopack rejects symlinks that point out of the project root with `"Symlink node_modules is invalid"`.
+
+### Dogfood your own un-pushed code via the Claude_Preview browser pointed at a local worktree dev server
+Claude_Preview servers are bound to one project root. To inspect your own un-pushed code without polluting the shared dev server, start a `next dev` from your worktree on a free port (e.g. 4179), then in the preview browser eval `window.location.assign('http://localhost:4179/…')`. The preview browser is just a browser — it'll load any URL. From there `getComputedStyle(cur).backgroundColor` confirms the exact token resolves (e.g. `rgba(165, 58, 45, 0.125)` for `var(--specimen-rust)` at 12.5%).
+
+### Stage explicit paths only; multi-agent collisions show up as untracked sibling files in your tree
+`git add -A` will sweep in another agent's uncommitted work. Always `git add <explicit paths>`. When a `git pull` / `git rebase` refuses with "untracked working tree files would be overwritten," those are the other agent's WIP — don't delete them in your shared checkout; rebase in a separate worktree instead.
+
+### Origin/main jumps during your session — fetch right before push and rebuild after rebase
+A push-eve sprint with 2–3 parallel agents pushing to `main` will see origin advance multiple times per hour. Always `git fetch origin` immediately before `git push`; rebase if origin moved; re-`npm run build` after a rebase even when it looks like only docs conflicted — your code is now sitting on top of new code.
+
+### Lovable > complete. Honest "alpha — coming soon" pills are the demo's legal cover
+This sprint shipped 4 functional stages (Size Up, Lock, Plan, Build) and 3 honest stubs (Adapt, Collect, Reflect) so the journey walks end-to-end without pretending the stubs work. The alpha pill **is** the demo guardrail: it lets you ship momentum without lying about what's real.
+
+---
+
 ## Design System Rollout — Phase 2 (2026-05-27 evening)
 
 ### When two agents work in parallel on overlapping scope, treat the merge as a planning problem, not an integration problem
