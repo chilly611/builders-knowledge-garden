@@ -6,6 +6,26 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-27 (late) — Claude Code Session: FAB gating off /killerapp/stages/*
+**Agent:** Claude Code (Opus 4.7, 1M context), checkout `/Users/chilly/Developer/bkg`
+**Commit:** `da74786` on `main`. `npm run build` → **✓ Compiled successfully in 7.5s**.
+
+**What shipped (2 files, 8 insertions, 1 deletion):**
+- `src/components/GlobalChromeGate.tsx` — `CompassBloom` + `GlobalAiFab` already gated off `/intro` and `?hideShell=1`. Added a stage-route gate so they're also hidden on `/killerapp/stages/*`.
+- `src/app/killerapp/layout.tsx` — `CompassWorkflowNav` compass FAB wrapped in `{!isStageRoute && …}` (matching how `ProjectCockpit` and `KillerAppChrome` are already gated by `isStageRoute`).
+
+**Why it matters for the demo:** Patch-1's sticky primary-action bar at the bottom of each lifecycle stage was being covered by three floating FABs the global killerapp shell mounts everywhere. Contractors on a phone could lose the action button under the bloom or the green AI fab. With the gates in, every stage screen now ends in a clean action bar with no floating chrome over it.
+
+**Context (collision arc this session):**
+- Earlier in the session I built a complete Patch-1 redesign as local commit `81afca4` (20 files). On `git fetch`, origin had a parallel Patch-1 implementation with a different architecture (separate `StageActionBar.tsx`, inline insight cards, `MARIN_BUDGET_TOTAL`/`MARIN_BUDGET_SPENT` constants for the chip) — missing adapt/collect/reflect. Founder picked "drop mine, cherry-pick FAB gating + 3 new stages."
+- I started the cherry-pick (commit `f87ac72` in reflog), but mid-pick the parallel session ALSO shipped adapt/collect/reflect (`dd85884`, `0e381d0`) as honest "ALPHA — COMING SOON" stubs, and then a header-overlap fix (`0916159`..`e73e8df`). My 3 new stages were now redundant; only the FAB gating remained genuinely unique to me.
+- Final action: reset to origin/main (their work — 7 stages, action bars, ring journey, in-flow whispers, budget chip = Marin seed all theirs), then layered just the 2 FAB-gating edits on top. Commit `da74786` is that minimal, conflict-free, additive change.
+
+**Live verification (2026-05-27 late, production URL):**
+- Walked Plan + Adapt on `https://builders.theknowledgegardens.com/killerapp/stages/*` via Chrome MCP. Confirmed: ring+label journey, red-chrome current glow, budget chip `$312K / $1.65M`, action bar pinned, **no floating FABs on any stage screen** (gate in effect). Reflect + Collect confirmed as "ALPHA — COMING SOON" placeholders. Morning-prep doc at `docs/DEMO-2026-05-28-MORNING.md` captures the precise live demo path.
+
+**Lessons recorded to memory:** the bkg checkout still has the dev-env hazards from earlier today (npm install churns `framer-motion`, `npm ci` refuses lockfile drift) — for a clean local build use `rm -rf node_modules && npm install`. The session-root `.claude/launch.json` `bkg-local` config (added earlier) points the preview MCP at the `~/Developer/bkg` checkout on port 4100 instead of the default `bkg-app` (which serves the `~/Documents/The Builder Garden/app` checkout).
+
 ## 2026-05-27 — Claude Code Session (cont.): AI-Attention-Items data-mismatch fix
 **Agent:** Claude Code (Opus 4.7, 1M context), checkout `/Users/chilly/Developer/bkg`
 **Branch:** `main`. Files: `src/app/projects/[id]/page.tsx`, `src/lib/demo/marin-4000.ts` (+ docs).
