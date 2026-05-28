@@ -22,7 +22,8 @@ import { AutoFillButton } from '@/components/stage-kit';
 import {
   MARIN_PROJECT,
   MARIN_PROJECT_ID,
-  MARIN_BUDGET_BASE_TOTAL,
+  MARIN_BUDGET_TOTAL,
+  MARIN_BUDGET_SPENT,
   ensureMarinActive,
   seedMarinBudget,
 } from '@/lib/demo/marin-4000';
@@ -82,36 +83,11 @@ function money(n: number): string {
 
 // ─── in-flow whisper banner (never occludes; one-time per id) ─────────────────
 
+// WHISPER REMOVED 2026-05-27 per Charlie (PATCH 1 #5) — demo clarity. Restore
+// post-demo by reinstating the banner body below. Render sites left in place
+// but now render nothing.
 function WhisperBanner({ id, text }: { id: string; text: string }) {
-  const key = `bkg:whisper:size-up:${id}`;
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    let raf = 0;
-    try {
-      if (!window.localStorage.getItem(key)) raf = requestAnimationFrame(() => setShow(true));
-    } catch {
-      /* ignore */
-    }
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [key]);
-  if (!show) return null;
-  const dismiss = () => {
-    try {
-      window.localStorage.setItem(key, '1');
-    } catch {
-      /* ignore */
-    }
-    setShow(false);
-  };
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: 'rgba(127,207,203,0.14)', border: `1px solid ${C.robin}`, color: C.navy, fontSize: 12.5, marginBottom: 12 }}>
-      <span aria-hidden>💡</span>
-      <span style={{ flex: 1 }}>{text}</span>
-      <button type="button" onClick={dismiss} aria-label="Dismiss tip" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.navy, fontSize: 16, lineHeight: 1 }}>×</button>
-    </div>
-  );
+  return id && text ? null : null;
 }
 
 // ─── completion ring overlay ──────────────────────────────────────────────────
@@ -290,7 +266,7 @@ export default function SizeUpPage() {
     projectId: null,
     name: MARIN_PROJECT.name,
     meta: `${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`,
-    initialBudget: MARIN_BUDGET_BASE_TOTAL,
+    initialBudget: MARIN_BUDGET_TOTAL,
     prefill: { buildingType: 'residential', address: MARIN_PROJECT.jurisdiction, jurisdiction: MARIN_PROJECT.jurisdiction, sqft: 4000, scopeText: MARIN_PROJECT.project_type },
   }));
 
@@ -330,7 +306,7 @@ export default function SizeUpPage() {
   }, []);
 
   return (
-    <StageShell stageId={1} stageTitle="Size Up" projectId={ctx.projectId} projectName={ctx.name} projectMeta={ctx.meta} initialBudget={ctx.initialBudget}>
+    <StageShell stageId={1} stageTitle="Size Up" projectId={ctx.projectId} projectName={ctx.name} projectMeta={ctx.meta} initialBudget={ctx.initialBudget} budgetSpent={MARIN_BUDGET_SPENT}>
       <SizeUpBody projectId={ctx.projectId} prefill={ctx.prefill} />
     </StageShell>
   );
@@ -340,7 +316,10 @@ export default function SizeUpPage() {
 
 function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill: Prefill }) {
   const router = useRouter();
-  const { proMode, setBudget } = useStageChrome();
+  // #6: read proMode only — the budget chip stays pinned to the Marin seed
+  // ($312K / $1.65M) for zero cross-screen mismatches; the estimate shows in
+  // the body, not the chrome ribbon.
+  const { proMode } = useStageChrome();
 
   const [stepIdx, setStepIdx] = useState(0);
   const step: StepId = STEPS[stepIdx];
@@ -391,13 +370,12 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
       const r = await runSizeUpEstimate({ projectId: projectId ?? undefined, buildingType, address: address || jurisdiction, jurisdiction, squareFootage: sqft, trades, scopeText, costPerSqftOverride: perSqftOverride ? Number(perSqftOverride) : undefined });
       setResult(r);
       setBudgetEdit(String(r.mid));
-      setBudget({ total: r.mid });
     } catch {
       setSaveNote('Could not run the estimate. Check your inputs and try again.');
     } finally {
       setRunning(false);
     }
-  }, [buildingType, projectId, address, jurisdiction, sqft, trades, scopeText, perSqftOverride, setBudget]);
+  }, [buildingType, projectId, address, jurisdiction, sqft, trades, scopeText, perSqftOverride]);
 
   const advance = useCallback(() => {
     if (advancedRef.current) return;
@@ -409,7 +387,6 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
   const lockTheScope = async () => {
     if (!result) return;
     const budget = Number(budgetEdit) || result.mid;
-    setBudget({ total: budget });
     // fire-and-forget persistence; the completion moment shouldn't wait on the network
     if (projectId) {
       void (async () => {
@@ -557,7 +534,7 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                     <div style={{ fontSize: 12.5, color: C.graphite, opacity: 0.7 }}>Most likely (editable)</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                       <span style={{ fontSize: 26, fontWeight: 800, color: C.brass }}>$</span>
-                      <input value={budgetEdit} onChange={(e) => { const v = e.target.value.replace(/[^\d]/g, ''); setBudgetEdit(v); if (v) setBudget({ total: Number(v) }); }} style={{ fontSize: 30, fontWeight: 800, color: C.brass, border: 'none', borderBottom: `2px dashed ${C.rule}`, width: 200, fontFamily: FONT, background: 'transparent' }} />
+                      <input value={budgetEdit} onChange={(e) => { const v = e.target.value.replace(/[^\d]/g, ''); setBudgetEdit(v); }} style={{ fontSize: 30, fontWeight: 800, color: C.brass, border: 'none', borderBottom: `2px dashed ${C.rule}`, width: 200, fontFamily: FONT, background: 'transparent' }} />
                       <AutoFillButton onFill={runSpecialist} label="Re-run" title="Re-run the specialist" />
                     </div>
                     <div style={{ fontSize: 13, color: C.graphite, marginTop: 6 }}>Range {money(result.low)} – {money(result.high)} · {money(result.perSqftUsed)}/sqft × {sqft.toLocaleString()} × {result.localeModifier.toFixed(2)} ({result.localeLabel})</div>

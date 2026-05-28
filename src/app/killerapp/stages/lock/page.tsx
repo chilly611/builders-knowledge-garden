@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
-import { MARIN_PROJECT, MARIN_PROJECT_ID, MARIN_BUDGET_BASE_TOTAL, ensureMarinActive, seedMarinBudget } from '@/lib/demo/marin-4000';
+import { MARIN_PROJECT, MARIN_PROJECT_ID, MARIN_BUDGET_TOTAL, MARIN_BUDGET_SPENT, ensureMarinActive, seedMarinBudget } from '@/lib/demo/marin-4000';
 import { colors, fonts } from '@/design-system/tokens';
 import { runLockReview, requestClientAgreement, emitLockWrite } from '@/lib/specialists/lock';
 import type { LockReviewResult, AgreementResult } from '@/lib/specialists/lock';
@@ -79,36 +79,11 @@ function btn(kind: 'primary' | 'ghost' | 'soft'): React.CSSProperties {
 }
 const inputStyle: React.CSSProperties = { flex: 1, minWidth: 0, height: 44, padding: '0 12px', borderRadius: 10, border: `1px solid ${C.rule}`, fontSize: 15, fontFamily: FONT, color: C.graphite, background: '#fff', boxSizing: 'border-box' };
 
+// WHISPER REMOVED 2026-05-27 per Charlie (PATCH 1 #5) — demo clarity. Restore
+// post-demo by reinstating the banner body. Render site left in place but
+// now renders nothing.
 function WhisperBanner({ id, text }: { id: string; text: string }) {
-  const key = `bkg:whisper:lock:${id}`;
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    let raf = 0;
-    try {
-      if (!window.localStorage.getItem(key)) raf = requestAnimationFrame(() => setShow(true));
-    } catch {
-      /* ignore */
-    }
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [key]);
-  if (!show) return null;
-  const dismiss = () => {
-    try {
-      window.localStorage.setItem(key, '1');
-    } catch {
-      /* ignore */
-    }
-    setShow(false);
-  };
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: 'rgba(127,207,203,0.14)', border: `1px solid ${C.robin}`, color: C.navy, fontSize: 12.5, marginBottom: 10 }}>
-      <span aria-hidden>💡</span>
-      <span style={{ flex: 1 }}>{text}</span>
-      <button type="button" onClick={dismiss} aria-label="Dismiss tip" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.navy, fontSize: 16, lineHeight: 1 }}>×</button>
-    </div>
-  );
+  return id && text ? null : null;
 }
 
 function MicButton({ onText, label }: { onText: (t: string) => void; label: string }) {
@@ -165,7 +140,7 @@ export default function LockPage() {
     projectId: null,
     name: MARIN_PROJECT.name,
     meta: `${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`,
-    initialBudget: MARIN_BUDGET_BASE_TOTAL,
+    initialBudget: MARIN_BUDGET_TOTAL,
     handoff: null,
     clientName: MARIN_PROJECT.client_name,
     scopeText: MARIN_PROJECT.project_type,
@@ -203,7 +178,7 @@ export default function LockPage() {
   }, []);
 
   return (
-    <StageShell stageId={2} stageTitle="Lock" projectId={ctx.projectId} projectName={ctx.name} projectMeta={ctx.meta} initialBudget={ctx.initialBudget}>
+    <StageShell stageId={2} stageTitle="Lock" projectId={ctx.projectId} projectName={ctx.name} projectMeta={ctx.meta} initialBudget={ctx.initialBudget} budgetSpent={MARIN_BUDGET_SPENT}>
       <LockBody projectId={ctx.projectId} projectName={ctx.name} clientName={ctx.clientName} scopeText={ctx.scopeText} handoff={ctx.handoff} />
     </StageShell>
   );
@@ -213,10 +188,11 @@ export default function LockPage() {
 
 function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { projectId: string | null; projectName: string; clientName: string; scopeText: string; handoff: Handoff | null }) {
   const router = useRouter();
-  const { proMode, setBudget } = useStageChrome();
+  // #6: read proMode only — budget chip stays pinned to the Marin seed.
+  const { proMode } = useStageChrome();
 
   const [materials, setMaterials] = useState<string[]>([]);
-  const initialBudget = handoff?.budget ?? handoff?.mid ?? MARIN_BUDGET_BASE_TOTAL;
+  const initialBudget = handoff?.budget ?? handoff?.mid ?? MARIN_BUDGET_TOTAL;
   const [budget, setBudgetVal] = useState<number>(initialBudget);
   const [budgetText, setBudgetText] = useState(String(initialBudget));
   const [budgetConfirmed, setBudgetConfirmed] = useState(false);
@@ -281,7 +257,6 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
       }
     }
 
-    setBudget({ total: budget });
     if (projectId) {
       void (async () => {
         try {
@@ -361,7 +336,7 @@ function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { 
               <input value={budgetText} onChange={(e) => { const v = e.target.value.replace(/[^\d]/g, ''); setBudgetText(v); setBudgetVal(Number(v) || 0); setBudgetConfirmed(false); }} placeholder="0" style={{ ...inputStyle, height: 40, maxWidth: 150, fontWeight: 800, color: C.brass, fontSize: 18 }} />
               <MicButton onText={(t) => { const v = t.replace(/[^\d]/g, ''); if (v) { setBudgetText(v); setBudgetVal(Number(v)); setBudgetConfirmed(false); } }} label="the budget" />
             </div>
-            <button type="button" onClick={() => { setBudgetConfirmed(true); setBudget({ total: budget }); }} disabled={budget <= 0} style={{ ...btn(budgetConfirmed ? 'soft' : 'primary'), height: 38, marginTop: 10, fontSize: 13, opacity: budget <= 0 ? 0.5 : 1 }}>{budgetConfirmed ? '✓ Locked' : 'Confirm this number'}</button>
+            <button type="button" onClick={() => { setBudgetConfirmed(true); }} disabled={budget <= 0} style={{ ...btn(budgetConfirmed ? 'soft' : 'primary'), height: 38, marginTop: 10, fontSize: 13, opacity: budget <= 0 ? 0.5 : 1 }}>{budgetConfirmed ? '✓ Locked' : 'Confirm this number'}</button>
             <CardFoot>{budget > 0 ? `From your Size Up ballpark: ${money(budget)}` : 'Carry over the Size Up estimate'}</CardFoot>
           </Card>
 
