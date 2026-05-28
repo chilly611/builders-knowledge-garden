@@ -23,7 +23,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { KillerAppChrome } from '@/components/killerapp-chrome';
-import { MARIN_ATTENTION_ITEMS } from '@/lib/demo/marin-4000';
+import {
+  MARIN_ATTENTION_ITEMS,
+  MARIN_TEAM,
+  MARIN_PROJECT_ID,
+} from '@/lib/seed-data/marin-farmhouse';
+import { getCanonicalProject } from '@/lib/projects/getCanonicalProject';
 
 /* ─── Types ─── */
 type TabId = 'overview' | 'codes' | 'schedule' | 'materials' | 'team' | 'permits' | 'estimate';
@@ -122,12 +127,16 @@ const MOCK_MILESTONES: Milestone[] = [
   { id: '5', name: 'Drywall & Finish', date: '2026-10-15', status: 'not_started' },
 ];
 
-const MOCK_TEAM: TeamMember[] = [
-  { id: '1', name: 'John Doe', trade: 'General Contractor', status: 'active', contact: 'john@example.com' },
-  { id: '2', name: 'Jane Smith', trade: 'Electrician', status: 'active', contact: 'jane@example.com' },
-  { id: '3', name: 'Mike Johnson', trade: 'Plumber', status: 'active', contact: 'mike@example.com' },
-  { id: '4', name: 'Sarah Brown', trade: 'HVAC', status: 'inactive', contact: 'sarah@example.com' },
-];
+// Team comes from the canonical Marin seed — see src/lib/seed-data/marin-farmhouse.ts.
+// Replaced 2026-05-28 (was John Doe / Jane Smith / Mike Johnson / Sarah Brown
+// — generic placeholders that contradicted every other page's team data).
+const PROJECT_TEAM: TeamMember[] = MARIN_TEAM.map((m) => ({
+  id: m.id,
+  name: m.name,
+  trade: m.trade,
+  status: m.status,
+  contact: m.contact,
+}));
 
 const MOCK_PERMITS: Permit[] = [
   { id: '1', name: 'Building Permit', status: 'in_progress', deadline: '2026-05-15' },
@@ -510,8 +519,41 @@ export default function ProjectDetailPage() {
   const [scheduleData, setScheduleData] = useState<any>(null);
   const [complianceData, setComplianceData] = useState<any>(null);
 
+  // Old demo project IDs that should resolve to the canonical Marin project.
+  // 2026-05-28: `proj-chen-farmhouse` was the pre-canonicalization slug; live
+  // links and bookmarks still point here. Redirect to the canonical UUID so
+  // every page reads the same seed instead of dead-ending on a 404.
+  useEffect(() => {
+    if (id === 'proj-chen-farmhouse') {
+      router.replace(`/projects/${MARIN_PROJECT_ID}`);
+    }
+  }, [id, router]);
+
   useEffect(() => {
     async function fetchProject() {
+      // The canonical Marin project always renders from the seed — guarantees
+      // the page matches the chrome's BudgetRibbon + every stage page.
+      if (id === MARIN_PROJECT_ID) {
+        const canonical = getCanonicalProject();
+        setProject({
+          id: canonical.id,
+          name: canonical.name,
+          phase: 'BUILD',
+          progress: canonical.stages.find((s) => s.id === 4)?.completion ?? 42,
+          budget_amount: canonical.budget.total,
+          buildingType: 'residential',
+          jurisdiction: canonical.location,
+          location: canonical.location,
+          totalSqFt: canonical.sqft,
+          created_at: canonical.schedule.startDate,
+          updated_at: new Date().toISOString(),
+        });
+        setBudgetLines([]);
+        setScheduleData(null);
+        setComplianceData(null);
+        setLoading(false);
+        return;
+      }
       try {
         const response = await fetch(`/api/v1/projects?id=${id}`);
         if (!response.ok) throw new Error('Failed to load project');
@@ -689,7 +731,7 @@ export default function ProjectDetailPage() {
                 }
               />
             )}
-            {activeTab === 'team' && <TeamTab key="team" team={MOCK_TEAM} />}
+            {activeTab === 'team' && <TeamTab key="team" team={PROJECT_TEAM} />}
             {activeTab === 'permits' && (
               <PermitsTab
                 key="permits"

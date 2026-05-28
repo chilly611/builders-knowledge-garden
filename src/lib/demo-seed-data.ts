@@ -2,7 +2,24 @@
  * Builder's Knowledge Garden — Demo Mode Seed Data
  * Comprehensive demo data for 5-minute guided walkthrough
  * Production-quality realistic construction industry data
+ *
+ * 2026-05-28: The Modern Farmhouse in Marin entry below pulls its
+ * canonical numbers (id, name, sqft, budget, location, owner) from
+ * `src/lib/seed-data/marin-farmhouse.ts` — the single source of truth.
+ * The legacy slug `proj-chen-farmhouse` was retired; the project now
+ * keys on the canonical UUID `55730cd3-5225-493d-8b5c-49086d942565`.
+ * Knowledge entities + notifications that reference the project use
+ * the same UUID so cross-page navigation stays consistent.
  */
+
+import {
+  MARIN_PROJECT_ID,
+  MARIN_PROJECT_NAME,
+  MARIN_LOCATION,
+  MARIN_BUDGET_TOTAL,
+  MARIN_CLIENT_NAME,
+  MARIN_SQFT_DISPLAY,
+} from '@/lib/seed-data/marin-farmhouse';
 
 export type Lane = 'dreamer' | 'builder' | 'specialist' | 'merchant' | 'ally' | 'crew' | 'fleet' | 'machine';
 export type ProjectPhase = 'dream' | 'plan' | 'build' | 'complete';
@@ -30,15 +47,15 @@ export interface DemoUser {
 export const DEMO_USERS: Record<Lane, DemoUser> = {
   dreamer: {
     id: 'user-dreamer',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@example.com',
+    name: 'The Harwell Family',
+    email: 'harwell.family@example.com',
     lane: 'dreamer',
-    company: 'Chen Residence',
+    company: 'Modern Farmhouse in Marin',
     xp: 1500,
     level: 'Builder',
     streak: 12,
     joinedDate: '2025-08-15',
-    bio: 'Planning my dream modern farmhouse renovation.',
+    bio: 'Building a custom 4,000 sqft modern farmhouse in Marin County.',
   },
   builder: {
     id: 'user-builder',
@@ -146,19 +163,18 @@ export interface DemoProject {
 
 export const DEMO_PROJECTS: DemoProject[] = [
   {
-    id: 'proj-chen-farmhouse',
-    title: 'Modern Farmhouse — Chen Residence',
-    // 2026-05-27: canonical Marin demo. 4,000 sqft, 4BR/3BA, $1.65M. Numbers
-    // mirror src/lib/seed-data/marin-farmhouse.ts which the KillerAppChrome
-    // reads — keep both in sync if these change.
-    description: '4,000 sq ft new build with open-plan kitchen, primary suite wing, and detached studio above the garage.',
+    // Canonical Modern Farmhouse in Marin — every value (id, name, sqft,
+    // budget, location) sourced from src/lib/seed-data/marin-farmhouse.ts.
+    id: MARIN_PROJECT_ID,
+    title: MARIN_PROJECT_NAME,
+    description: `${MARIN_SQFT_DISPLAY} sq ft new build with open-plan kitchen, primary suite wing, and detached studio above the garage.`,
     lane: 'dreamer',
     phase: 'build',
-    owner: 'Sarah Chen',
-    location: 'Marin County, CA',
-    budget: 1650000,
+    owner: MARIN_CLIENT_NAME,
+    location: MARIN_LOCATION,
+    budget: MARIN_BUDGET_TOTAL,
     timeline: 'Mar 18 → Dec 4, 2026 (substantial completion)',
-    participants: ['Sarah Chen', 'Marcus Rivera'],
+    participants: [MARIN_CLIENT_NAME, 'Marcus Rivera'],
     progress: 42,
     createdDate: '2026-01-10',
   },
@@ -244,7 +260,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'material',
     description: 'Multi-layered wood flooring with a plywood base. More stable than solid hardwood, resistant to humidity and temperature changes.',
     relatedLanes: ['dreamer', 'builder', 'specialist'],
-    relevantProjects: ['proj-chen-farmhouse', 'proj-downtown-office'],
+    relevantProjects: [MARIN_PROJECT_ID, 'proj-downtown-office'],
     cost: '$4-12 per sq ft',
     lifespan: '15-25 years',
     tags: ['flooring', 'residential', 'luxury', 'eco-friendly-option'],
@@ -255,7 +271,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'material',
     description: 'Closed-cell polyurethane foam provides air sealing and R-value of 6-7 per inch. Superior to fiberglass for energy efficiency.',
     relatedLanes: ['builder', 'specialist', 'ally'],
-    relevantProjects: ['proj-chen-farmhouse', 'proj-downtown-office'],
+    relevantProjects: [MARIN_PROJECT_ID, 'proj-downtown-office'],
     cost: '$1.50-2.50 per sq ft',
     lifespan: '80+ years',
     compliance: ['IRC 2021', 'IECC'],
@@ -267,7 +283,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'material',
     description: 'Vertical seams provide excellent water shedding and durability. Popular for both residential and commercial applications.',
     relatedLanes: ['builder', 'specialist'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     cost: '$10-15 per sq ft',
     lifespan: '40-70 years',
     tags: ['roofing', 'metal', 'energy-efficient', 'residential', 'commercial'],
@@ -278,7 +294,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'material',
     description: 'Non-porous engineered stone combining 90% quartz with resin. Requires no sealing, extremely durable and stain-resistant.',
     relatedLanes: ['dreamer', 'builder'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     cost: '$50-100 per linear foot',
     lifespan: '20-25 years',
     tags: ['kitchen', 'countertops', 'luxury', 'low-maintenance'],
@@ -289,7 +305,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'technique',
     description: 'Roof truss design allowing insulation above exterior wall top plate. Improves thermal performance at the thermal boundary.',
     relatedLanes: ['builder', 'specialist', 'ally'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     tags: ['framing', 'energy-efficiency', 'building-science', 'code-compliant'],
   },
   {
@@ -298,7 +314,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'technique',
     description: 'Insulation layer placed continuously on the exterior of structural elements without thermal breaks.',
     relatedLanes: ['builder', 'specialist'],
-    relevantProjects: ['proj-downtown-office', 'proj-chen-farmhouse'],
+    relevantProjects: ['proj-downtown-office', MARIN_PROJECT_ID],
     compliance: ['IECC 2021', 'Energy Star'],
     tags: ['energy-efficient', 'building-science', 'thermal-envelope'],
   },
@@ -308,7 +324,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'technique',
     description: 'ASTM E779 standard test measuring air tightness. Critical for passive house and high-performance construction.',
     relatedLanes: ['builder', 'specialist'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     tags: ['testing', 'quality-assurance', 'air-sealing', 'energy-audit'],
   },
   {
@@ -317,7 +333,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'regulation',
     description: 'International Residential Code 2021 minimum insulation requirements by climate zone. Zone 6: R-38 roof, R-20 walls.',
     relatedLanes: ['builder', 'specialist', 'ally'],
-    relevantProjects: ['proj-chen-farmhouse', 'proj-downtown-office'],
+    relevantProjects: [MARIN_PROJECT_ID, 'proj-downtown-office'],
     compliance: ['IRC 2021'],
     tags: ['code', 'insulation', 'energy', 'mandatory'],
   },
@@ -346,7 +362,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'standard',
     description: 'Standard test method for steady-state thermal transmission properties of homogeneous and non-homogeneous insulation.',
     relatedLanes: ['builder', 'specialist', 'ally'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     tags: ['testing', 'standards', 'insulation', 'performance'],
   },
   {
@@ -364,7 +380,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'supplier',
     description: 'Regional wholesale supplier of lumber, fasteners, and framing materials. 12 locations across Southwest. Volume discounts available.',
     relatedLanes: ['builder', 'specialist', 'merchant'],
-    relevantProjects: ['proj-downtown-office', 'proj-chen-farmhouse'],
+    relevantProjects: ['proj-downtown-office', MARIN_PROJECT_ID],
     tags: ['supplier', 'materials', 'wholesale', 'southwest'],
   },
   {
@@ -373,7 +389,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'supplier',
     description: 'Premium hardwood and custom millwork supplier. Specializes in architectural woodwork and specialty lumber.',
     relatedLanes: ['dreamer', 'builder', 'merchant'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     tags: ['supplier', 'hardwood', 'premium', 'millwork'],
   },
   {
@@ -391,7 +407,7 @@ export const DEMO_KNOWLEDGE_ENTITIES: DemoKnowledgeEntity[] = [
     type: 'technique',
     description: 'Design strategies to minimize heat flow through conductive materials. Includes cavity-back furring and insulated fasteners.',
     relatedLanes: ['builder', 'specialist', 'ally'],
-    relevantProjects: ['proj-chen-farmhouse'],
+    relevantProjects: [MARIN_PROJECT_ID],
     tags: ['building-science', 'energy-efficient', 'advanced'],
   },
   {
@@ -446,7 +462,7 @@ export const DEMO_NOTIFICATIONS: DemoNotification[] = [
     title: 'Material Delivery Confirmed',
     message: 'Your quartz countertop shipment (Order #QZ-2806) arrived at the job site.',
     urgency: 'info',
-    relatedTo: 'proj-chen-farmhouse',
+    relatedTo: MARIN_PROJECT_ID,
     timestamp: '2026-04-05T08:30:00Z',
     actionLabel: 'View Receipt',
     read: false,
@@ -456,7 +472,7 @@ export const DEMO_NOTIFICATIONS: DemoNotification[] = [
     title: 'Weather Alert - Project Site',
     message: 'Heavy rain forecast for next 2 days at Chen Residence location. Consider scheduling outdoor work accordingly.',
     urgency: 'warning',
-    relatedTo: 'proj-chen-farmhouse',
+    relatedTo: MARIN_PROJECT_ID,
     timestamp: '2026-04-05T07:15:00Z',
     read: false,
   },
@@ -494,7 +510,7 @@ export const DEMO_NOTIFICATIONS: DemoNotification[] = [
     title: 'Code Violation Notice',
     message: 'Inspector flagged missing blower door test for Chen Residence. Required before final inspection.',
     urgency: 'critical',
-    relatedTo: 'proj-chen-farmhouse',
+    relatedTo: MARIN_PROJECT_ID,
     timestamp: '2026-04-03T13:00:00Z',
     actionLabel: 'Schedule Test',
     read: false,

@@ -33,6 +33,49 @@ This file is the canonical timeline of what was built, when, and why.
 
 **Env note (worktree gotcha):** initial edits accidentally landed in `/Users/chilly/Developer/bkg` (a parallel checkout of the same remote). The dev server runs `/Users/chilly/Documents/The Builder Garden/app` — the BKG parallel-agent canonical surface. Re-applied to the canonical tree and verified there. Memory: when the preview server's cwd doesn't match `/Users/chilly/Developer/bkg`, prefer editing whichever tree the preview reads.
 
+---
+
+## 2026-05-28 (~morning PT) — Claude Code Session: Data Consistency Pass (single Marin seed)
+**Agent:** Claude Code (claude-opus-4-7)
+**Branch:** `main`
+**Lock:** claimed/released via `docs/in-flight.md` for `src/lib/seed-data/marin-farmhouse.ts` (NEW), `src/lib/projects/getCanonicalProject.ts` (NEW), `src/lib/demo/marin-4000.ts`, `src/components/killerapp-chrome/marin-adapter.ts`, `src/app/projects/[id]/page.tsx`, `src/lib/demo-seed-data.ts`, `src/app/intro/page.tsx`, `src/design-system/components/CostPerSquareFootBadge.tsx`, `docs/session-log.md`.
+
+**Mandate:** Make `src/lib/seed-data/marin-farmhouse.ts` the SINGLE source of truth so every page reads the same Modern Farmhouse in Marin seed. Demo-eve mismatches to fix:
+- Different pages showing 4,000 / 1,800 / 2,800 sqft for the same project.
+- BudgetRibbon showing $116K spent (line-state roll-up) vs the canonical $312K spent.
+- Mock team members "John Doe / Jane Smith / Mike Johnson / Sarah Brown" on `/projects/[id]`.
+- Legacy `proj-chen-farmhouse` ID still wired through `src/lib/demo-seed-data.ts` and broken when deep-linked.
+
+**What shipped:**
+- **NEW `src/lib/seed-data/marin-farmhouse.ts`** — canonical seed. Holds every constant the demo references: `MARIN_PROJECT_ID = 55730cd3-…`, `MARIN_PROJECT_NAME = "Modern Farmhouse in Marin"`, `MARIN_SQFT = 4_000`, `MARIN_BEDROOMS = 4`, `MARIN_BATHROOMS = 3`, `MARIN_BUDGET_TOTAL = 1_650_000`, `MARIN_BUDGET_SPENT = 312_400`, `MARIN_BUDGET_COMMITTED = 186_200`, `MARIN_BUDGET_REMAINING = 1_151_400`, `MARIN_INCOME_PROJECTED = 1_485_000` (16 draws), `MARIN_INCOME_RECEIVED = 495_000` (5 closed), `MARIN_START_DATE = 2026-03-18`, `MARIN_SUBSTANTIAL_COMPLETION = 2026-12-04`, `MARIN_STAGE_COMPLETION = {1:100, 2:100, 3:85, 4:42, 5..7:0}`, `MARIN_MATERIALS`, `MARIN_TEAM` (the 6 canonical members — Rivera Construction LLC, Ridgeline Framing, Tamalpais Concrete, Bay Roofing Co., Field Studio Architects, The Harwell Family), `MARIN_PROJECT`, `MARIN_ATTENTION_ITEMS`, `MARIN_BUDGET_LINES` (16 spine lines summing to $1.65M), `MARIN_PLAN_PHASES` (10 phases, `computeSchedule` → 37 wk), `seedMarinBudget()`, `ensureMarinActive()`.
+- **NEW `src/lib/projects/getCanonicalProject.ts`** — single helper every page uses to get the structured `KacProject` shape. Returns the canonical budget breakdown directly (`spent: 312_400 / committed: 186_200 / remaining: 1_151_400`) instead of rolling up budget-line states (which produced the $116K mismatch).
+- **`src/lib/demo/marin-4000.ts`** — converted to a thin re-export shim that points at the new canonical. All existing imports from `@/lib/demo/marin-4000` (the seven stage pages, marin-adapter, etc.) keep working.
+- **`src/components/killerapp-chrome/marin-adapter.ts`** — rewritten to thin-wrap `getCanonicalProject()`. Removed the `rolledBudget()` line-state summing that produced $116K spent and the standalone `timelineMarkers()` / `STAGE_COMPLETION` arrays that drifted from the seed.
+- **`src/app/projects/[id]/page.tsx`** — three fixes: (1) replaced `MOCK_TEAM` (John Doe et al.) with `MARIN_TEAM`-derived `PROJECT_TEAM`; (2) added redirect from legacy `proj-chen-farmhouse` ID → canonical UUID via `router.replace`; (3) when the route param IS the canonical UUID, hydrate `Project` directly from `getCanonicalProject()` instead of trusting the live API row (so the page matches the chrome / stages even when DB drifts).
+- **`src/lib/demo-seed-data.ts`** — Marin demo project's `id` now `MARIN_PROJECT_ID`; `title` now "Modern Farmhouse in Marin"; `owner`/`participants` now `MARIN_CLIENT_NAME` ("The Harwell Family") instead of "Sarah Chen". All 12 knowledge-entity `relevantProjects` and 3 notification `relatedTo` references swapped from `'proj-chen-farmhouse'` literal → `MARIN_PROJECT_ID` import.
+- **`src/app/intro/page.tsx`** — cinematic voice-input transcript and Act 5 Marin caption both updated `1,800 sf` → `4,000 sf` so the demo cinematic matches the rest of the app. (Material-quantity surfaces with `2,800 sf insulation` left intact — those are per-zone areas inside a 4,000 sqft house, not the project sqft.)
+- **`src/design-system/components/CostPerSquareFootBadge.tsx`** — refreshed the docstring pointing at the new canonical seed (was pinned to the 2,800 sf seed bug in the 2026-05-22 fix narrative).
+
+**Numbers locked across every page:**
+- 4,000 sqft · 4 BR / 3 BA · Marin County, CA
+- $1,650,000 total · $312,400 spent · $186,200 committed · $1,151,400 remaining
+- Projected income $1,485,000 (16 draws) · Received $495,000 (5 closed)
+- Mar 18 → Dec 4, 2026 · Size Up 100 · Lock 100 · Plan 85 · Build 42 · Adapt/Collect/Reflect 0
+- The Harwell Family · Rivera Construction LLC · 37 wk schedule
+
+**Acceptance:**
+- `npm run build` clean (EXIT 0, 216 static pages, all stage routes + `/projects/[id]` compiled).
+- `tsc --noEmit` shows zero errors in any touched file (pre-existing test-suite errors in `__tests__/` are unchanged).
+- Grep for `'proj-chen-farmhouse'` returns zero hits in source data (only the docstring retirement note in `src/lib/demo-seed-data.ts` references it).
+- Grep for `John Doe|Jane Smith|Mike Johnson|Sarah Brown` returns zero hits in source.
+- Legacy `proj-chen-farmhouse` URL now `router.replace`'s to the canonical UUID instead of 404'ing.
+
+**Notes:**
+- Did NOT run live-browser verification — the running preview server is bound to a different repo (`/Users/chilly/Documents/The Builder Garden`, an older `src/app`-only skeleton). Build + tsc are the proof for this pass.
+- Followed CLAUDE.md end-of-session protocol: locked in `docs/in-flight.md` before editing, this entry appended, will release the lock + push.
+
+---
+
 ## 2026-05-28 (~01:33 PT) — Cowork Session: Asset Sync (Mac 1)
 **Agent:** Cowork (claude-opus-4-7)
 **Branch:** `main` (direct commit, demo Thursday morning)

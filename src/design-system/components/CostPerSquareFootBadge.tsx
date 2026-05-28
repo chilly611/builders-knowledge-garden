@@ -5,13 +5,13 @@
  * ======================
  * Derives `$X–$Y/sf` at render time from a cost range and square footage.
  *
- * Why this exists (COCKPIT-FIXES Pain 1, 2026-05-22):
- *   The Marin AI summary said "At 2,800 sf with mid-grade you're ~$420–$590/sf"
- *   because the prose was baked from an older 1,800 sf seed — but the live
- *   cost range $900k–$1.2M ÷ 2,800 sf is actually $321–$429/sf. So the
- *   prose contradicted the math on every project page. Strip $/sf claims
- *   from AI prose; derive them here from the canonical numeric inputs so
- *   they ALWAYS agree.
+ * Why this exists (COCKPIT-FIXES Pain 1, 2026-05-22; refreshed 2026-05-28):
+ *   The Marin AI summary used to contradict the live math because the
+ *   prose was baked from one sqft seed (1,800 or 2,800 sf) while the
+ *   cost numbers came from another. The canonical seed is now
+ *   `src/lib/seed-data/marin-farmhouse.ts` (4,000 sqft, $1.65M total).
+ *   Strip $/sf claims from AI prose; derive them here from canonical
+ *   numeric inputs so the chip and the prose ALWAYS agree.
  *
  * Inputs are flexible — pass:
  *   - { costLow, costHigh, sqft } for a derived range, or

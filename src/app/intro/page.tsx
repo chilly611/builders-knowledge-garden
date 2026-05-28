@@ -817,7 +817,7 @@ function Act3JourneyStrip({ reduced }: { reduced: boolean }) {
 function Act3Aikido({ reduced }: { reduced: boolean }) {
   const isMobile = useIsMobile();
   const fullTranscript =
-    "I want to build a custom modern farmhouse in Marin. 1,800 square feet. 3 bed 2 bath. Slab on grade. Late summer 2026.";
+    "I want to build a custom modern farmhouse in Marin. 4,000 square feet. 4 bed 3 bath. Slab on grade. Late summer 2026.";
 
   const [chars, setChars] = useState(0);
   useEffect(() => {
@@ -1393,7 +1393,7 @@ function Act4PhaseJourney() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ fontSize: 13, color: COLORS.graphite, lineHeight: 1.5 }}>
-        Modern farmhouse · Marin County, CA · 1,800 sf · slab on grade · Q3 2026
+        Modern farmhouse · Marin County, CA · 4,000 sf · slab on grade · Q3 2026
       </div>
       <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
         {stages.map((s) => (
