@@ -115,7 +115,7 @@ function BuildStageBody() {
     >
       <FirstEncounterWhisper id="build-voice" text="Just talk — we turn your spoken update into a structured daily log and save it to the project." />
 
-      <div className="build-cols" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 5fr) minmax(320px, 6fr)', gap: 14, alignItems: 'start' }}>
+      <div className="build-cols" style={{ display: 'grid', gap: 14, alignItems: 'start' }}>
         {/* Voice field reporting (functional hero) */}
         <section style={{ ...sectionCard, minHeight: 360 }}>
           <h2 style={sectionHeading}>Voice field report</h2>
@@ -157,7 +157,7 @@ function BuildStageBody() {
         >
           ▸ Coming soon
         </summary>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, minHeight: 150, marginTop: 8 }} className="build-stubs">
+        <div style={{ display: 'grid', gap: 12, minHeight: 150, marginTop: 8 }} className="build-stubs">
           <AlphaStub compact title="Drone progress" description="Weekly aerial scans auto-compared to the schedule." icon="🚁" preview={<DronePreview />} />
           <AlphaStub compact title="Robot coordination" description="Dispatch layout & masonry bots from the daily plan." icon="🤖" preview={<RobotPreview />} />
           <AlphaStub compact title="IoT sensors" description="Live moisture, temp & concrete-cure telemetry." icon="📡" preview={<IoTPreview />} />
@@ -185,6 +185,8 @@ function BuildStageBody() {
 
       <style>{`
         .alpha-section > summary::-webkit-details-marker { display: none; }
+        .build-cols { grid-template-columns: minmax(300px, 5fr) minmax(320px, 6fr); }
+        .build-stubs { grid-template-columns: repeat(3, 1fr); }
         @media (max-width: 860px) {
           .build-cols { grid-template-columns: 1fr; }
         }

@@ -216,7 +216,7 @@ function PlanStageBody() {
       <FirstEncounterWhisper id="plan-sequencing" text="Drag any phase to reorder — the timeline & overhead update live as work overlaps." />
 
       {/* Working tools: phases | code (two columns on desktop, stacked on mobile) */}
-      <div className="plan-cols" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 5fr) minmax(320px, 6fr)', gap: 14, alignItems: 'start' }}>
+      <div className="plan-cols" style={{ display: 'grid', gap: 14, alignItems: 'start' }}>
         <section style={sectionCard}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
             <h2 style={sectionHeading}>Job sequencing</h2>
@@ -248,7 +248,7 @@ function PlanStageBody() {
         >
           ▸ Coming soon
         </summary>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, minHeight: 180, marginTop: 8 }} className="plan-stubs">
+        <div style={{ display: 'grid', gap: 14, minHeight: 180, marginTop: 8 }} className="plan-stubs">
           <AlphaStub title="Scheduling calendar" description="A full calendar view of the sequence — drag phases onto dates, see crew load per week." icon="📅" preview={<CalendarPreview />} />
           <AlphaStub title="Planning whiteboard" description="A shared canvas to sketch the site plan and pin notes with the crew." icon="🧮" preview={<WhiteboardPreview />} />
         </div>
@@ -295,6 +295,8 @@ function PlanStageBody() {
 
       <style>{`
         .alpha-section > summary::-webkit-details-marker { display: none; }
+        .plan-cols { grid-template-columns: minmax(300px, 5fr) minmax(320px, 6fr); }
+        .plan-stubs { grid-template-columns: 1fr 1fr; }
         @media (max-width: 860px) {
           .plan-cols { grid-template-columns: 1fr; }
         }
