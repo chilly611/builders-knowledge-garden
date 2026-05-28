@@ -11,7 +11,7 @@ import Logomark from "@/components/Logomark";
 const DESTINATIONS = [
   { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
   { icon: "🏗️", label: "Dream Builder", desc: "Describe what you want to build", href: "/dream", color: "#D85A30" },
-  { icon: "⚡", label: "Killer App", desc: "Projects, CRM, finances", href: "/killerapp", color: "#E8443A" },
+  { icon: "⚡", label: "Killer App", desc: "Projects, pipeline, finances", href: "/killerapp", color: "#E8443A" },
   { icon: "🧠", label: "AI Copilot", desc: "Ask anything about building", href: "#copilot", color: "#7F77DD" },
   { icon: "🪓", label: "Marketplace", desc: "Suppliers, subs, equipment", href: "/marketplace", color: "#378ADD" },
   { icon: "👤", label: "My Profile", desc: "Settings, team, billing", href: "/profile", color: "#BA7517" },

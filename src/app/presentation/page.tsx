@@ -172,7 +172,7 @@ export default function PresentationPage(){
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:24}}>
         {[{i:"🌿",t:"Knowledge Garden",d:"Browse codes, materials, methods, safety. 40K+ entities. Free. Open.",c:C.ac},
           {i:"💭",t:"Dream Builder",d:"Describe what you want to build. Full plan in 60 seconds. Free & viral.",c:C.w},
-          {i:"⚡",t:"Killer App",d:"Your projects, CRM, invoicing, finances. Private & encrypted.",c:C.rd},
+          {i:"⚡",t:"Killer App",d:"Your projects, pipeline, invoicing, finances. Private & encrypted.",c:C.rd},
           {i:"🧠",t:"AI Copilot",d:"Ask anything about construction. Cited answers. Voice or text.",c:C.p},
           {i:"🏪",t:"Marketplace",d:"Suppliers, subcontractors, equipment, services. Search, RFQ, transact.",c:C.bl},
           {i:"👤",t:"My Profile",d:"Settings, team, billing, certifications, reputation.",c:C.gd},
@@ -201,7 +201,7 @@ export default function PresentationPage(){
         <Rv delay={100}><div style={{padding:24,borderRadius:18,background:`${C.rd}04`,border:`2px solid ${C.rd}20`}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:28}}>⚡</span><div><div style={{fontSize:18,fontWeight:700,color:C.rd}}>Killer App</div><div style={{fontSize:8,letterSpacing:2,textTransform:"uppercase",color:"#7a8a9a"}}>private · secure · yours</div></div></div>
           <div style={{fontSize:11,color:"#5a6a7a",lineHeight:1.7,marginBottom:14}}>Your private business cockpit. Encrypted, backed up, exclusively yours. Never trains AI models.</div>
-          {["Project management dashboards","CRM (leads → contracts → warranty)","Invoicing & AIA pay applications","Budgets, P&L, cash flow","Client portal (branded)","Scheduling & resource allocation","Field reports & safety logs","Team & subcontractor mgmt"].map((a,i)=><div key={i} style={{fontSize:10,color:"#7a8a9a",padding:"2px 0"}}>🔒 {a}</div>)}
+          {["Project management dashboards","Pipeline (leads → contracts → warranty)","Invoicing & AIA pay applications","Budgets, P&L, cash flow","Client portal (branded)","Scheduling & resource allocation","Field reports & safety logs","Team & subcontractor mgmt"].map((a,i)=><div key={i} style={{fontSize:10,color:"#7a8a9a",padding:"2px 0"}}>🔒 {a}</div>)}
           <div style={{marginTop:14,padding:8,borderRadius:10,background:`${C.rd}10`,textAlign:"center",fontSize:10,fontWeight:600,color:C.rd}}>🔐 AUTH · ENCRYPTED · NIGHTLY BACKUP</div>
         </div></Rv>
       </div>
@@ -213,7 +213,7 @@ export default function PresentationPage(){
 
     {/* ═══ USER LANES ═══ */}
     {cur==="lanes"&&<Sec title="Choose Your Lane" sub="8 user types, each with different dreams. Onboarding adapts. Dashboard adapts. AI adapts. One platform, 8 experiences.">
-      {[{id:"gc",i:"🏗️",t:"General Contractors",c:C.bl,d:"Run projects, manage subs, invoice clients",n:"Full PM, CRM, invoicing, AIA pay apps, scheduling, field ops, safety, compliance, cash flow, sub mgmt",dr:"One platform replacing Procore + QuickBooks + Excel. See every project in one glance."},
+      {[{id:"gc",i:"🏗️",t:"General Contractors",c:C.bl,d:"Run projects, manage subs, invoice clients",n:"Full PM, pipeline, invoicing, AIA pay apps, scheduling, field ops, safety, compliance, cash flow, sub mgmt",dr:"One platform replacing Procore + QuickBooks + Excel. See every project in one glance."},
         {id:"diy",i:"🔨",t:"DIY Builders",c:C.w,d:"Building their own home — learning everything",n:"Dream Builder (free), permit navigator, simple budgets, plain-language codes, contractor matching",dr:"Feel confident. Understand what they don't know. Stay on budget. Pass inspection first time."},
         {id:"spec",i:"⚡",t:"Specialty Contractors",c:C.p,d:"Electrical, plumbing, HVAC, fire, concrete",n:"Trade-specific codes, cert tracking, workforce scheduling, job costing, procurement, toolbox talks",dr:"Win more work. Keep crews busy. Track certs. Get paid faster."},
         {id:"sup",i:"📦",t:"Suppliers & Manufacturers",c:C.ac,d:"Sell materials, products, systems",n:"Product listings, lead gen, RFQ mgmt, order tracking, code compliance mapping",dr:"Auto-matches: 'fire-rated drywall required' → their product appears."},
@@ -239,7 +239,7 @@ export default function PresentationPage(){
 
     {/* ═══ BUSINESS OPS ═══ */}
     {cur==="biz"&&<Sec title="Full Business Operations" sub="Everything a construction business does digitally — inside the Killer App. No more spreadsheets, no more 9 subscriptions.">
-      {[{t:"CRM & Pipeline",c:C.bl,i:"📊",its:[["Lead capture","Web form, phone, email, marketplace → auto-create"],["Pipeline","Lead → Qualified → Proposal → Won/Lost. Kanban."],["Client portal","Branded: progress, budget, selections, approvals"],["Proposal AI","Drafts from project type + knowledge engine"],["Comms log","Email, call, text — timestamped, searchable"],["Win/loss","Project types, margins, patterns"],["Reviews","Auto-request post-project. Profile display."]]},
+      {[{t:"Client Pipeline",c:C.bl,i:"📊",its:[["Lead capture","Web form, phone, email, marketplace → auto-create"],["Pipeline","Lead → Qualified → Proposal → Won/Lost. Kanban."],["Client portal","Branded: progress, budget, selections, approvals"],["Proposal AI","Drafts from project type + knowledge engine"],["Comms log","Email, call, text — timestamped, searchable"],["Win/loss","Project types, margins, patterns"],["Reviews","Auto-request post-project. Profile display."]]},
         {t:"Invoicing & Payments",c:C.ac,i:"💰",its:[["Invoice gen","Line items from cost codes. Retainage, tax."],["AIA pay apps","G702/G703, schedule of values, % complete"],["Change orders","Approved COs auto-add to next pay app"],["Lien waivers","Conditional/unconditional. Deadline alerts."],["Payments","Aging reports. Auto-reminders."],["Stripe","Online, ACH, credit card. Split payments."]]},
         {t:"Financial Intelligence",c:C.w,i:"📈",its:[["Job costing","Real-time budget vs actual by cost code"],["P&L","Revenue, COGS, margin — per project & portfolio"],["Cash flow AI","'Shortfall in 6 weeks based on billing'"],["Profitability","By project type, client, trade, region"],["Tax exports","QuickBooks, Xero, Sage. Multi-jurisdiction."],["Budget heartbeat","Committed, spent, remaining, projected"]]},
         {t:"Marketing & Growth",c:C.gn,i:"📣",its:[["Profile SEO","Optimized marketplace profile + portfolio"],["Lead scoring","Match marketplace leads to strengths"],["Retention","Warranty reminders, seasonal check-ins"],["Referrals","Track sources. Thank-you automation."],["Market intel","Growing project types? Competitor pricing?"]]},
@@ -360,7 +360,7 @@ export default function PresentationPage(){
       {[{f:"docs/security-architecture.md",a:"CREATE",d:"Three-zone data, encryption, RLS, backups, audit, trust signals",c:C.rd},
         {f:"docs/garden-vs-app.md",a:"CREATE",d:"Garden/App boundary. Public vs private. Data classification.",c:C.p},
         {f:"docs/user-lanes.md",a:"CREATE",d:"8 user types. Onboarding, dashboards, AI personality, features.",c:C.w},
-        {f:"docs/business-ops.md",a:"CREATE",d:"CRM, invoicing, financials, marketing. APIs, integrations.",c:C.gn},
+        {f:"docs/business-ops.md",a:"CREATE",d:"Pipeline, invoicing, financials, marketing. APIs, integrations.",c:C.gn},
         {f:"docs/navigation.md",a:"CREATE",d:"Compass bloom. Mobile/desktop. Context-aware. Animations.",c:C.ac},
         {f:"docs/gamification.md",a:"CREATE",d:"All features. Achievements. Lane milestones. Quest design.",c:C.gd},
         {f:"docs/architecture.md",a:"UPDATE",d:"Add security zones, lanes, compass, business ops modules.",c:C.bl},

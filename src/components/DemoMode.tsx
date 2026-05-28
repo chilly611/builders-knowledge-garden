@@ -119,7 +119,7 @@ const getStepConfigs = (lane: Lane): StepConfig[] => {
       title: 'Killer App Surface',
       description: 'Execution & operations',
       getContent: () =>
-        'The Killer App is where work gets done. Project management, CRM, financial tools, crew coordination. See real-time progress, budgets, and team performance across your portfolio.',
+        'The Killer App is where work gets done. Project management, client pipeline, financial tools, crew coordination. See real-time progress, budgets, and team performance across your portfolio.',
       spotlightElement: 'killer-app-card',
       allowSkip: false,
     },
@@ -631,7 +631,7 @@ function WelcomeStep({ lane }: { lane: Lane }) {
           icon="⚙️"
           title="Killer App"
           color={BRAND_COLORS.Red}
-          description="Project management, CRM, financials. Real-time tracking across your entire portfolio."
+          description="Project management, pipeline, financials. Real-time tracking across your entire portfolio."
         />
       </div>
     </motion.div>
@@ -772,7 +772,7 @@ function KillerAppStep() {
         <Card
           id="crm-card"
           icon="👥"
-          title="CRM"
+          title="Pipeline"
           color={BRAND_COLORS.Red}
           description="Contractors, suppliers, customers. Track interactions and relationships."
         />

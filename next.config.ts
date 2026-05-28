@@ -49,6 +49,17 @@ const nextConfig: NextConfig = {
         destination: '/killerapp/workflows/expenses',
         permanent: true,
       },
+      {
+        // 2026-05-28: the legacy `/projects/[id]` view (7-tab project
+        // page) was demolished. The journey-aware `/killerapp/projects/
+        // [id]` is the only project view that ships. Edge-level redirect
+        // so saved URLs and inbound links land on the new view. The
+        // `:id(?!new$)` constraint preserves `/projects/new` for the
+        // separate project-creation route.
+        source: '/projects/:id((?!new$).+)',
+        destination: '/killerapp/projects/:id',
+        permanent: true,
+      },
     ];
   },
 };

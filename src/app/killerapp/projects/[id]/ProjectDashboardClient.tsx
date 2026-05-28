@@ -14,6 +14,7 @@
 import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import ProjectCompass from '@/components/ProjectCompass';
+import { AIAttentionItems } from '@/components/AIAttentionItems';
 import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
 import { getDemoProject } from '@/lib/demo-seeder';
 
@@ -47,28 +48,37 @@ export default function ProjectDashboardClient({
   }
 
   return (
-    <ProjectCompass
-      stages={LIFECYCLE_STAGES}
-      currentStageId={demoProject.currentStage}
-      progressByStage={{
-        1: { worked: 4, done: 4, needsAttention: 0, total: 4 },
-        2: { worked: 3, done: 3, needsAttention: 0, total: 3 },
-        3: { worked: 5, done: 5, needsAttention: 0, total: 5 },
-        4: { worked: 8, done: 5, needsAttention: 1, total: 13 },
-        5: { worked: 0, done: 0, needsAttention: 0, total: 8 },
-        6: { worked: 0, done: 0, needsAttention: 0, total: 6 },
-        7: { worked: 0, done: 0, needsAttention: 0, total: 5 },
-      }}
-      visitedStageIds={[1, 2, 3, 4]}
-      projectId={projectId}
-      demoProject={demoProject}
-      onCloseOutClick={() => {
-        // 2026-05-08: was a no-op stub. Now navigates to the close-out
-        // sub-route (already exists at /killerapp/projects/[id]/close-out).
-        if (typeof window !== 'undefined') {
-          window.location.href = `/killerapp/projects/${encodeURIComponent(projectId)}/close-out`;
-        }
-      }}
-    />
+    <>
+      <ProjectCompass
+        stages={LIFECYCLE_STAGES}
+        currentStageId={demoProject.currentStage}
+        progressByStage={{
+          1: { worked: 4, done: 4, needsAttention: 0, total: 4 },
+          2: { worked: 3, done: 3, needsAttention: 0, total: 3 },
+          3: { worked: 5, done: 5, needsAttention: 0, total: 5 },
+          4: { worked: 8, done: 5, needsAttention: 1, total: 13 },
+          5: { worked: 0, done: 0, needsAttention: 0, total: 8 },
+          6: { worked: 0, done: 0, needsAttention: 0, total: 6 },
+          7: { worked: 0, done: 0, needsAttention: 0, total: 5 },
+        }}
+        visitedStageIds={[1, 2, 3, 4]}
+        projectId={projectId}
+        demoProject={demoProject}
+        onCloseOutClick={() => {
+          // 2026-05-08: was a no-op stub. Now navigates to the close-out
+          // sub-route (already exists at /killerapp/projects/[id]/close-out).
+          if (typeof window !== 'undefined') {
+            window.location.href = `/killerapp/projects/${encodeURIComponent(projectId)}/close-out`;
+          }
+        }}
+      />
+      {/* 2026-05-28: AI Attention Items extracted from the demolished
+          legacy /projects/[id] overview tab. Surfaced here on the new
+          journey-aware project view so the AI-COO call-outs continue
+          to render alongside the compass. */}
+      <div style={{ padding: '0 24px 32px' }}>
+        <AIAttentionItems />
+      </div>
+    </>
   );
 }

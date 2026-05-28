@@ -241,7 +241,7 @@ export default function ManifestoPage() {
                 The Killer App prototype opens with three gates named like they belong on a lawyer's desk:
                 <span className="mono text-base mx-2" style={{ color: "var(--red)" }}>Pre-Bid Risk Score.</span>
                 <span className="mono text-base mx-2" style={{ color: "var(--red)" }}>AI Estimating Gate.</span>
-                <span className="mono text-base mx-2" style={{ color: "var(--red)" }}>CRM Client Lookup.</span>
+                <span className="mono text-base mx-2" style={{ color: "var(--red)" }}>Pipeline Client Lookup.</span>
               </p>
               <p className="mb-6">
                 Builders don't open with risk. That's what lawyers do.

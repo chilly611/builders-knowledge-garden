@@ -42,7 +42,7 @@ export const TIERS: Record<Tier, TierConfig> = {
   },
   team: {
     id: "team", name: "Team", price: "$199/mo", priceMonthly: 199,
-    features: ["Unlimited projects", "Team management", "Financial tools + CRM", "Voice field ops", "XR instructions"],
+    features: ["Unlimited projects", "Team management", "Financial tools + pipeline", "Voice field ops", "XR instructions"],
     limits: { aiQueriesPerDay: Infinity, projects: Infinity, teamMembers: 50, voiceMinutesPerDay: Infinity },
     mode: "build",
   },

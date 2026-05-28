@@ -58,7 +58,7 @@ const TIERS: TierInfo[] = [
       'AI estimating & scheduling',
       'Compliance checker (all jurisdictions)',
       'Budget tracking & burn rate',
-      'Full CRM pipeline',
+      'Full client pipeline',
       'Marketplace access',
       'Voice field reporting',
       'Priority support',
@@ -208,7 +208,7 @@ const FEATURE_COMPARISON: FeatureCategory[] = [
         enterprise: true,
       },
       {
-        name: 'Full CRM Pipeline',
+        name: 'Full Client Pipeline',
         explorer: false,
         pro: true,
         team: true,

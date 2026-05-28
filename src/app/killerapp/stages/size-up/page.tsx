@@ -19,6 +19,7 @@ import { recordMaterialCost } from '@/lib/budget-spine';
 import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
 import { AutoFillButton } from '@/components/stage-kit';
+import { TeamRoster } from '@/components/TeamRoster';
 import {
   MARIN_PROJECT,
   MARIN_PROJECT_ID,
@@ -546,6 +547,26 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                 </div>
               )}
               {saveNote && <p style={{ color: C.redline, fontSize: 12.5, marginTop: 8 }}>{saveNote}</p>}
+
+              {/* 2026-05-28: Team Roster extracted from the demolished
+                  legacy `/projects/[id]` team tab and re-mounted here in
+                  Size Up — once you've scoped the build, the natural next
+                  question is "who's running which trade?". Collapsed by
+                  default so it doesn't compete with the ballpark card. */}
+              <details style={{ marginTop: 18 }}>
+                <summary
+                  style={{
+                    cursor: 'pointer', listStyle: 'none', fontSize: 12,
+                    fontWeight: 700, color: C.brass, textTransform: 'uppercase',
+                    letterSpacing: 0.5, padding: '4px 0',
+                  }}
+                >
+                  ▸ Assemble the team
+                </summary>
+                <div style={{ marginTop: 10 }}>
+                  <TeamRoster heading="Crew & trade partners" />
+                </div>
+              </details>
             </section>
           )}
         </div>

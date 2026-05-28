@@ -18,6 +18,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Reorder } from 'framer-motion';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
 import { AlphaStub, CodeLookup } from '@/components/stage-kit';
+import { PermitsList } from '@/components/PermitsList';
+import { MaterialsCSI } from '@/components/MaterialsCSI';
+import { GanttChartPlaceholder } from '@/components/GanttChartPlaceholder';
 import { runSequencingCheck } from '@/lib/specialists/plan';
 import {
   MARIN_PROJECT,
@@ -237,6 +240,14 @@ function PlanStageBody() {
         </section>
       </div>
 
+      {/* Permits readiness — extracted 2026-05-28 from the demolished
+          legacy `/projects/[id]` permits tab. Lands here in Plan because
+          permit deadlines drive the sequencing this page lets you tune. */}
+      <section style={sectionCard}>
+        <h2 style={sectionHeading}>Permits</h2>
+        <PermitsList flush />
+      </section>
+
       {/* Coming soon — WordPress'd, collapsible, never crowds the tools */}
       <details className="alpha-section" open>
         <summary
@@ -252,6 +263,22 @@ function PlanStageBody() {
           <AlphaStub title="Scheduling calendar" description="A full calendar view of the sequence — drag phases onto dates, see crew load per week." icon="📅" preview={<CalendarPreview />} />
           <AlphaStub title="Planning whiteboard" description="A shared canvas to sketch the site plan and pin notes with the crew." icon="🧮" preview={<WhiteboardPreview />} />
         </div>
+
+        {/* Gantt placeholder + milestone list — extracted 2026-05-28 from
+            the legacy schedule tab. Lives behind the alpha fold per the
+            BKG demo philosophy. */}
+        <div style={{ marginTop: 14 }}>
+          <GanttChartPlaceholder />
+        </div>
+
+        {/* Materials CSI breakdown — Pro-mode surface. Extracted 2026-05-28
+            from the legacy materials tab. Only rendered when the Pro toggle
+            is on so the default Plan view stays uncrowded. */}
+        {proMode && (
+          <div style={{ marginTop: 14 }}>
+            <MaterialsCSI twoColumn={false} />
+          </div>
+        )}
       </details>
 
       {/* Insight card — sits directly above the sticky action bar */}

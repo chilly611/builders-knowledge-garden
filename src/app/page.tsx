@@ -46,7 +46,7 @@ const PHASES = [
   { label: "PLAN", color: "#1D9E75", icon: "📋", desc: "AI estimating, smart scheduling, jurisdiction-aware permits, financing, AI contract drafting." },
   { label: "BUILD", color: "#378ADD", icon: "🏗️", desc: "Voice field reporting, daily ops, safety briefings, drone progress tracking, supply chain management." },
   { label: "DELIVER", color: "#BA7517", icon: "🏠", desc: "Punch list, commissioning, digital twin handoff, as-built docs, client portal, warranty tracking." },
-  { label: "GROW", color: "#639922", icon: "📈", desc: "AEC-native CRM, portfolio analytics, business intelligence, team training, reputation building." },
+  { label: "GROW", color: "#639922", icon: "📈", desc: "AEC-native pipeline, portfolio analytics, business intelligence, team training, reputation building." },
 ];
 
 const DEMO_SCREENS = [
@@ -61,7 +61,7 @@ const FEATURES = [
   { name: "Smart Project Launcher", tag: "THE AI COO", desc: "Your AI superhuman Chief Operating Officer. One-click project creation with auto-populated codes, phases, permits, materials, and CSI-division estimates. Full manual control when you need it.", color: "#1D9E75", href: "/launch", icon: "🚀" },
   { name: "Knowledge Database", tag: "2,200+ ENTITIES", desc: "The world's construction encyclopedia. Building codes, materials, methods, safety regulations — all searchable, all jurisdiction-aware, growing every day.", color: "#7F77DD", href: "/knowledge", icon: "📚" },
   { name: "AI Construction Copilot", tag: "VOICE + TEXT", desc: "Ask anything about construction. Get cited, jurisdiction-aware answers instantly. Works hands-free with voice input and response. 30+ languages.", color: "#378ADD", href: "#copilot", icon: "🧠" },
-  { name: "Killer App CRM", tag: "FULL LIFECYCLE", desc: "Lead → proposal → contract → project → warranty. Pipeline dashboard, lead scoring, AI proposal generation — all enriched by the knowledge engine.", color: "#E8443A", href: "/killerapp", icon: "⚡" },
+  { name: "Killer App Pipeline", tag: "FULL LIFECYCLE", desc: "Lead → proposal → contract → project → warranty. Pipeline dashboard, lead scoring, AI proposal generation — all enriched by the knowledge engine.", color: "#E8443A", href: "/killerapp", icon: "⚡" },
   { name: "Marketplace", tag: "COMING SOON", desc: "Every material in the knowledge engine connects to real suppliers. RFQ system, subcontractor network, Stripe Connect marketplace transactions.", color: "#639922", href: "/marketplace", icon: "🏪" },
 ];
 
@@ -93,7 +93,7 @@ const STATS = [
 const PRICING = [
   { tier: "Explorer", price: "Free", sub: "forever", target: "Everyone", features: ["Browse all knowledge", "5 AI queries/day", "Dream Builder", "Community access"], cta: "Start Free", href: "/pricing" },
   { tier: "Pro", price: "$49", sub: "/month", target: "Individual builder", features: ["Unlimited AI copilot", "5 active projects", "Estimating + scheduling", "Full marketplace access"], cta: "Start Building", href: "/pricing", highlight: true },
-  { tier: "Team", price: "$199", sub: "/month", target: "Companies 5–50", features: ["Unlimited projects", "Team management", "Financial tools + CRM", "Voice field ops"], cta: "Start Team", href: "/pricing" },
+  { tier: "Team", price: "$199", sub: "/month", target: "Companies 5–50", features: ["Unlimited projects", "Team management", "Financial tools + pipeline", "Voice field ops"], cta: "Start Team", href: "/pricing" },
   { tier: "Enterprise", price: "$499+", sub: "/month", target: "Large contractors", features: ["White-label + SSO", "Robot integration API", "Advanced analytics", "Dedicated support"], cta: "Contact Sales", href: "/pricing" },
 ];
 
@@ -103,7 +103,7 @@ const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
     { label: "Project Launcher", href: "/launch" },
     { label: "Knowledge Database", href: "/knowledge" },
     { label: "AI Copilot", href: "#copilot" },
-    { label: "CRM", href: "/killerapp" },
+    { label: "Pipeline", href: "/killerapp" },
     { label: "Marketplace", href: "/marketplace" },
   ],
   Company: [

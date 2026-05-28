@@ -6,6 +6,56 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-28 — Demolition: legacy `/projects/[id]` retired, CRM language stripped (Claude Code Opus 4.7 1M)
+**Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`.
+
+**What was built:**
+- **`src/app/projects/[id]/page.tsx`** — collapsed from a 747-line legacy view (the 7-tab CRM-language project page with the "Back to CRM" header and the orphan RFI/Submittals/Change-Orders/Punch-List/Budget pill row) to a 12-line async server component that calls `redirect('/killerapp/projects/${id}')` (Next.js 16 `params: Promise<{id: string}>` shape).
+- **`next.config.ts`** — added an edge-level 308 redirect `'/projects/:id((?!new$).+)' → '/killerapp/projects/:id'`. The negative-lookahead regex preserves `/projects/new` (the separate project-creation route). Belt-and-suspenders alongside the page redirect so direct HTTP hits / cold loads / crawlers also resolve correctly.
+- **5 new reusable components in `src/components/`:**
+  - `AIAttentionItems.tsx` — defaults to `MARIN_ATTENTION_ITEMS` fixture, preserves the AI-COO call-out surface from the demolished overview tab.
+  - `PermitsList.tsx` — required-permits card with status chips and deadlines.
+  - `MaterialsCSI.tsx` — 16-row CSI MasterFormat breakdown with expand-on-click rows.
+  - `TeamRoster.tsx` — crew & trade partners with optional trade-assignment matrix.
+  - `GanttChartPlaceholder.tsx` — honest "alpha — coming soon" dashed-frame stub + milestone list per BKG demo philosophy.
+- **Re-mounts on the journey-aware surfaces:**
+  - `/killerapp/projects/[id]` (ProjectDashboardClient) — `AIAttentionItems` mounted below `ProjectCompass`.
+  - `src/app/killerapp/stages/plan/page.tsx` — new "Permits" section card (parallel to sequencing & code-lookup), plus `GanttChartPlaceholder` and Pro-gated `MaterialsCSI` inside the existing "Coming soon" `<details>` fold.
+  - `src/app/killerapp/stages/size-up/page.tsx` — collapsible "▸ Assemble the team" `<details>` inside the review step that renders `TeamRoster`, so trade coverage is a natural follow-up to scoping the build without disturbing the 5-step wizard.
+- **CRM language stripped from every user-facing copy site** (CRM remains only as an internal identifier — file names like `CRMDashboard.tsx`, API routes `/api/v1/crm/*`, OpenAPI tags, MCP tool names like `crm_list_contacts`, image-asset keys, JSDoc comments, internal console.error strings):
+  - `src/app/page.tsx` — "AEC-native CRM" → "AEC-native pipeline"; "Killer App CRM" → "Killer App Pipeline"; footer link "CRM" → "Pipeline"; Team pricing tier feature.
+  - `src/app/clients/page.tsx` — feature "Full lifecycle CRM" → "Full lifecycle pipeline"; subheading; tagline ("A CRM that knows…" → "A pipeline that knows…"); competitor blurb.
+  - `src/app/profile/page.tsx` — Pro upgrade feature line.
+  - `src/app/manifesto/page.tsx` — gate name "CRM Client Lookup." → "Pipeline Client Lookup."
+  - `src/app/pricing/page.tsx` — feature "Full CRM pipeline" → "Full client pipeline"; feature-matrix row.
+  - `src/app/presentation/page.tsx` — four slide-content references.
+  - `src/app/mcp/page.tsx` — MCP tool descriptions ("Query CRM database" → "Query pipeline database"); Team pricing tier feature.
+  - `src/app/killerapp/who-is-asking/WhoIsAskingClient.tsx` — success banner "Added to CRM" → "Added to your pipeline".
+  - `src/components/CRMDashboard.tsx` — visible H1, subtitle, loading-state text (file name + internal identifiers preserved).
+  - `src/components/CompassNav.tsx` — Killer App nav desc.
+  - `src/components/CompassBloom.tsx` — Merchant route desc + Ally route label.
+  - `src/components/DemoMode.tsx` — Killer App description text + card title.
+  - `src/components/LaneSelector.tsx` — GC lane desc + features chips.
+  - `src/lib/auth.tsx` — Team-tier features list.
+
+**Key decisions:**
+- **Page-level redirect + edge redirect, both.** Next.js 16 `redirect()` from a server component is the in-process safety net. The `next.config.ts` 308 is the edge-level guarantee for direct HTTP hits / cold loads / crawlers — and exempts `/projects/new` via `((?!new$).+)` so the project-creation route still works.
+- **Re-mounts chose non-invasive entry points.** Plan's existing `<details className="alpha-section">` fold already had two `AlphaStub` cards; appending the Gantt placeholder + Pro-gated CSI inside it respected the page's information hierarchy without disturbing the working-tools two-column grid. Permits got its own card (parallel to sequencing) because permit deadlines drive sequencing. On Size Up, Team Roster landed as a collapsible at the bottom of the review step rather than as a new wizard step — wouldn't compete with the ballpark card or break the 5-step flow Charlie just locked.
+- **CRM as internal-only.** Per Charlie's direction, CRM stays internal (file names, API routes, OpenAPI tags, MCP tool names, image keys, identifier-level refs). Only rendered user-facing strings were stripped/renamed.
+- **Did NOT try to build locally.** Per [[bkg-parallel-agents]], this checkout's `node_modules` is wedged and a churned `npm install` makes it worse. Trusting Vercel's clean build at push time.
+
+**Acceptance checks:**
+- ✅ `grep -rn "Back to CRM" src/` → zero matches.
+- ✅ `/projects/[id]/` directory contains only the 12-line redirect page. 7-tab `TABS` array gone; orphan RFI/Submittals pill row gone.
+- ✅ User-facing "CRM" search across `.tsx`: only internal-only matches remain.
+- ✅ All 5 extracted components live in `src/components/` and are re-mounted on the new journey surfaces (project view, Plan, Size Up).
+- ⚠️ Production build verification deferred to Vercel — local builds blocked by wedged `node_modules`.
+
+**Coordination:**
+- Lock claimed in `docs/in-flight.md` at session start; released at end with full file-touch summary. No collisions with the four other 2026-05-28 agent releases (Brand consolidation, Mac 1 asset-sync, Mac 2 whisper-removal, Mac 3 stubs+DB) — none of them touched my files.
+
+---
+
 ## 2026-05-28 — Claude Code Session: Brand consolidation — one logo, one stage nav
 **Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`.
 

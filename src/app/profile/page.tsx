@@ -223,7 +223,7 @@ export default function ProfilePage() {
           border: "1px solid #1D9E7525",
         }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Upgrade to Pro — $49/mo</div>
-          <div style={{ fontSize: 11, color: "var(--fg-secondary)", marginBottom: 8 }}>Unlimited AI, 5 projects, estimating, scheduling, compliance, CRM</div>
+          <div style={{ fontSize: 11, color: "var(--fg-secondary)", marginBottom: 8 }}>Unlimited AI, 5 projects, estimating, scheduling, compliance, pipeline</div>
           <button style={{
             padding: "10px 24px", borderRadius: 20, border: "none",
             background: "linear-gradient(135deg, #1D9E75, #0F6E56)",

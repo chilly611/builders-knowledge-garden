@@ -17,9 +17,9 @@ export const LANES: Lane[] = [
   {
     id: "gc", icon: "🏗️", label: "General Contractor",
     tagline: "Run your entire operation",
-    desc: "Projects, crews, invoicing, CRM, compliance — one platform replacing Procore + QuickBooks + Excel.",
+    desc: "Projects, crews, invoicing, pipeline, compliance — one platform replacing Procore + QuickBooks + Excel.",
     color: "#1D9E75",
-    features: ["Full PM suite", "AIA invoicing", "CRM", "Scheduling", "Safety briefings"],
+    features: ["Full PM suite", "AIA invoicing", "Pipeline", "Scheduling", "Safety briefings"],
     pricing: "Pro $49/mo or Team $199/mo",
   },
   {

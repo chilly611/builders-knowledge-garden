@@ -6,7 +6,7 @@ import KillerAppNav from '@/components/KillerAppNav';
 const CLIENTS_FEATURES = [
   { icon: '🧠', title: 'AI-enriched lead scoring', desc: 'Every new lead is auto-enriched with project history, typical budget range, and likelihood to close — from your knowledge engine.' },
   { icon: '📝', title: 'Proposal generator', desc: 'Select a client + project type → AI generates a full proposal with your pricing, relevant code refs, and timeline.' },
-  { icon: '🔁', title: 'Full lifecycle CRM', desc: 'Lead → Proposal → Contract → Active Project → Warranty. One view. Never lose track of where a relationship stands.' },
+  { icon: '🔁', title: 'Full lifecycle pipeline', desc: 'Lead → Proposal → Contract → Active Project → Warranty. One view. Never lose track of where a relationship stands.' },
   { icon: '🌐', title: 'Client portal', desc: 'Branded client view of their project: progress, photos, schedule, invoices. They never need to call for an update.' },
   { icon: '📊', title: 'Win/loss analytics', desc: 'Which project types do you win? Which clients are most profitable? AI surfaces the patterns you miss.' },
   { icon: '🔔', title: 'Repeat client radar', desc: '"Sarah last built 3 years ago. Her neighborhood is booming. Time to reach out?" — AI-triggered relationship alerts.' },
@@ -35,11 +35,11 @@ export function ClientsPage() {
                 <span style={{ fontSize: 28 }}>👥</span>
                 <div>
                   <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Clients</h1>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--fg-secondary, #555555)' }}>AEC-native CRM · proposals · client portal</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--fg-secondary, #555555)' }}>AEC-native pipeline · proposals · client portal</p>
                 </div>
               </div>
               <p style={{ fontSize: 15, color: '#666', maxWidth: 520, lineHeight: 1.6, margin: '12px 0 0' }}>
-                A CRM that knows building codes. Every client relationship connected to real project data, real knowledge, and AI that understands construction.
+                A pipeline that knows building codes. Every client relationship connected to real project data, real knowledge, and AI that understands construction.
               </p>
             </div>
             <div style={{ background: 'rgba(127,119,221,0.08)', border: '1px solid rgba(127,119,221,0.2)', borderRadius: 12, padding: '16px 20px', minWidth: 180, textAlign: 'center' }}>
@@ -83,7 +83,7 @@ export function ClientsPage() {
           <div style={{ padding: '24px 20px' }}>
             <div style={{ background: 'rgba(127,119,221,0.06)', border: '1px solid rgba(127,119,221,0.15)', borderRadius: 12, padding: '14px', marginBottom: 14 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#7F77DD', margin: '0 0 6px' }}>vs. Salesforce, HubSpot</p>
-              <p style={{ fontSize: 11, color: '#888', margin: 0, lineHeight: 1.5 }}>Generic CRMs don't know a draw schedule from a change order. Ours does. Your proposals auto-reference live cost data and jurisdiction requirements.</p>
+              <p style={{ fontSize: 11, color: '#888', margin: 0, lineHeight: 1.5 }}>Generic pipelines don't know a draw schedule from a change order. Ours does. Your proposals auto-reference live cost data and jurisdiction requirements.</p>
             </div>
             <input placeholder="your@email.com" style={{ width: '100%', boxSizing: 'border-box', background: '#F0F0EB', border: '1px solid #e5e5e0', borderRadius: 8, padding: '8px 12px', color: '#1a1a1a', fontSize: 12, marginBottom: 10, fontFamily: 'inherit', outline: 'none' }} />
             <button style={{ width: '100%', background: '#7F77DD', border: 'none', borderRadius: 8, padding: '10px 0', color: '#1a1a1a', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>👥 Notify me</button>

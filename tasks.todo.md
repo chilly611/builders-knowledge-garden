@@ -1,3 +1,28 @@
+## ═══ DEMOLITION — Legacy `/projects/[id]` retired + CRM language stripped (2026-05-28, Claude Code) ═══
+
+The old `/projects/[id]` 7-tab CRM-language view is gone. Journey-aware
+`/killerapp/projects/[id]` is the only project view that ships. CRM
+language is no longer surfaced to users; it remains an internal concept.
+
+**Shipped:**
+- [x] `src/app/projects/[id]/page.tsx` collapsed 747 → 12 lines; async `redirect()` to `/killerapp/projects/${id}` (Next.js 16 Promise-params shape).
+- [x] `next.config.ts` edge-level 308: `/projects/:id((?!new$).+)` → `/killerapp/projects/:id` (preserves `/projects/new`).
+- [x] 5 reusable components created in `src/components/`: `AIAttentionItems`, `PermitsList`, `MaterialsCSI`, `TeamRoster`, `GanttChartPlaceholder`.
+- [x] AI Attention Items mounted on `/killerapp/projects/[id]` below ProjectCompass.
+- [x] Permits / Materials CSI (Pro-gated) / Gantt placeholder (alpha) mounted in Plan stage.
+- [x] Team Roster mounted in Size Up's review step inside a collapsible "Assemble the team" fold.
+- [x] User-facing "CRM" stripped/renamed across landing, clients, profile, manifesto, pricing, presentation, mcp pages and CompassNav/CompassBloom/DemoMode/LaneSelector/CRMDashboard/auth surfaces. Internal identifiers (file names, API routes, OpenAPI tags, MCP tool names, image keys, JSDocs, console.error strings) preserved.
+- [x] Acceptance: `grep -rn "Back to CRM" src/` → zero. User-facing "CRM" search → only internal-only matches remain. Old 7-tab nav (Overview/Codes/Schedule/Materials/Team/Permits/Estimate) gone. Orphan RFI/Submittals/Change-Orders/Punch-List/Budget pill row gone.
+- [x] `docs/session-log.md` appended; `docs/in-flight.md` lock released.
+- [x] Did NOT attempt local build per [[bkg-parallel-agents]] (wedged node_modules); trusting Vercel's clean build.
+
+**Follow-ups:**
+- [ ] Confirm Vercel preview builds clean within ~3 min of push.
+- [ ] Live-render check on `/projects/<uuid>` → should land on `/killerapp/projects/<uuid>` via 308.
+- [ ] When the per-project `useKacProject(id)` hook lands, pass live `items` into `<AIAttentionItems items={...} />` so the COO surface hydrates from real data instead of the Marin fixture.
+- [ ] Real Gantt component (currently `GanttChartPlaceholder`) — on the WordPress list with an honest "alpha — coming soon" badge until shipped.
+- [ ] `CRMDashboard.tsx` file name + internal `fetchCRMData()` identifier are still on the internal-only side; rename if/when the file becomes a user-facing route.
+
 ## ═══ ASSET SYNC — Mac 1 Cowork (2026-05-28 ~01:33 PT) ═══
 
 Synced 28 design-system assets into BKG `public/`; built `<Logo>` + `<HeroPlate>` brand components; patched 2 broken metadata refs. See `docs/asset-manifest.md` discovery section and `docs/session-log.md` 2026-05-28 entry.

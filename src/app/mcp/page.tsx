@@ -91,7 +91,7 @@ const tools = [
   },
   {
     name: 'crm_list_contacts',
-    description: 'Query CRM database for contacts, contractors, and team members',
+    description: 'Query pipeline database for contacts, contractors, and team members',
     params: [
       { name: 'contact_type', type: 'string', required: false, description: 'Filter by type (contractor, supplier, client, etc.)' },
       { name: 'status', type: 'string', required: false, description: 'Filter by status (active, archived, etc.)' },
@@ -99,7 +99,7 @@ const tools = [
   },
   {
     name: 'crm_pipeline_stats',
-    description: 'Get project pipeline metrics and deal statistics from CRM',
+    description: 'Get project pipeline metrics and deal statistics',
     params: [
       { name: 'time_range', type: 'string', required: false, description: 'Time period (30d, 90d, 1y, all)' },
       { name: 'status_filter', type: 'string', required: false, description: 'Filter by deal status' },
@@ -124,7 +124,7 @@ const pricingTiers = [
     name: 'Team',
     price: '$199/mo',
     requests: '10,000/day',
-    features: ['All Pro features', 'CRM integration', 'Team management', 'Advanced analytics', 'Priority support', 'Up to 5 team members'],
+    features: ['All Pro features', 'Pipeline integration', 'Team management', 'Advanced analytics', 'Priority support', 'Up to 5 team members'],
   },
   {
     name: 'Enterprise',

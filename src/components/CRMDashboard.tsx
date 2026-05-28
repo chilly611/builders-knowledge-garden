@@ -591,7 +591,7 @@ export default function CRMDashboard() {
         >
           ⚙️
         </motion.div>
-        <span style={{ marginLeft: '8px' }}>Loading CRM Dashboard...</span>
+        <span style={{ marginLeft: '8px' }}>Loading Pipeline Dashboard...</span>
       </div>
     );
   }
@@ -615,10 +615,10 @@ export default function CRMDashboard() {
         }}
       >
         <h1 style={{ fontSize: '32px', fontWeight: '800', color: COLORS.text_dark, margin: '0 0 8px 0' }}>
-          CRM Dashboard
+          Pipeline Dashboard
         </h1>
         <p style={{ fontSize: '14px', color: COLORS.text_light, margin: 0 }}>
-          AI-powered CRM with real-time attention queue
+          AI-powered pipeline with real-time attention queue
         </p>
       </motion.div>
 

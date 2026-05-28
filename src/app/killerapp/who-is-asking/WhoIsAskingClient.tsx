@@ -604,7 +604,7 @@ export default function WhoIsAskingClient({ initialProjectId }: WhoIsAskingClien
                 fontSize: fontSizes.sm,
               }}
             >
-              Added to CRM
+              Added to your pipeline
               {contact && contact.first_name ? ` — ${contact.first_name} is in the pipeline.` : '.'}
             </div>
           ) : (
