@@ -1,0 +1,5 @@
+
+# Append-only logs — union both sides on merge (auto-keep all entries)
+docs/session-log.md merge=union
+tasks.lessons.md merge=union
+tasks.todo.md merge=union

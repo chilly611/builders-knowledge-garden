@@ -70,6 +70,60 @@ This file is the canonical timeline of what was built, when, and why.
 - Future per-Lane content blocks (`MARIN_GC_LENS`, `MARIN_SUB_LENS_*`, etc.) follow the `OwnerLens` shape.
 
 ---
+## 2026-05-28 (evening PT) — Cowork Session: V3 Killer App Rehaul Verification + Cleanup
+**Agent:** Cowork (Claude Opus 4.7) — orchestrator only; verification subagent dispatched.
+**Branch:** `main` (read-only verification; no code changes).
+**Originating brief:** "Cowork Session V3 — BKG Killer App Rehaul (Restart, Branch-Isolated)" pasted by founder, expecting V3 dispatch from scratch.
+
+**Goal:** Continue the prior failed Cowork session that had completed WS1 (presentation deep-dive 13–20) and dispatched WS2–WS6 but crashed on `.git/index.lock` mount-permission issues with the `isolation: "worktree"` Agent tool mode. Founder pasted V3 brief tonight (improved architecture: WS0 sequential primitives → WS2-6 parallel; branch-per-WS for Vercel previews; founder reviews on iPhone via GitHub mobile).
+
+**Shipped:**
+- **Discovery:** Inspected repo state on entry. Found the entire V3 rehaul is ALREADY on `main` — shipped by a parallel Cowork session (likely Mac 2 on a different checkout) that I wasn't part of. Evidence:
+  - 19 primitives at `src/components/primitives/` (2,349 lines total).
+  - Stance Card resolver at `src/lib/stance-card.ts` (real signal-reading, not stub — UA/lang/`prefers-reduced-motion`/pathname/localStorage).
+  - Brand tokens at `src/lib/brand-tokens.ts`.
+  - All 6 V3 routes: `/killerapp/credentialing` (483L), `/killerapp/projects-v3` (467L), `/killerapp/compliance` (360L), `/killerapp/alerts` (258L), `/killerapp/rewards` (221L), `/killerapp/ask` (202L).
+  - Credentialing route JSDoc opens with the moat paragraph verbatim, enumerates Pattern Language compositions, documents all four lane Floor 0 questions inline.
+- **Verification report** written to `docs/handoff/v3-verification-report.md` (~2,140 words). Subagent walked the 11-item hard-gates checklist against all 6 surfaces.
+  - **4 of 6 clean** (credentialing, projects-v3, compliance, ask-soft-partial-only).
+  - **2 with material partials:** `alerts` and `rewards` — both claim four-lane Floor 0 in headers but actual render only does 2-way `proMode = (lane === 'professional' || lane === 'administrator')`. Public lane gets admin's UI; Machine lane has no JSON payload front-and-center. This is the biggest dogfood-gate hole for Charlies 3 and 4.
+  - **0 outright failures.**
+  - **121 pre-existing `tsc` errors**, all in `src/{design-system,lib}/__tests__/*` from missing `@types/jest` / `@testing-library/react`. Zero new errors from V3.
+- **Founder dogfood gate prep** written into the verification report — four Charlies walkthrough with per-persona URL order and what-to-look-for, including known gaps so the founder isn't surprised.
+
+**Learned:**
+- **`isolation: "worktree"` is broken on this mount.** The Agent tool's worktree-spawn step calls `git rev-parse HEAD`, which triggers a git write that recreates `.git/index.lock`, which can't be `rm`'d from the sandbox bash (only `mv`'d). The cycle repeats every retry. Sequential dispatch from the main worktree works; parallel worktrees do not. Captured in `tasks.lessons.md`.
+- **Bit-identical primitives across parallel agents is a validation of the canonical-schema-in-prompt pattern.** All 5 stale WS branches contained the exact same primitive files (verified by blob SHAs: `a5c2feb`, `c488551`, etc., identical across `ws2..ws6`). This confirms embedding canonical TypeScript schemas verbatim in every agent's prompt produces deterministic shared files. If we'd been able to run worktree-isolated parallel, the merge would have dedupe-clean.
+- **Stale-base branches are dangerous, not just behind.** WS2–WS6 stale branches forked from merge-base `39ba06c`. Main has since advanced to `07e64c8`. Diff: `200 files changed, 649 insertions(+), 20967 deletions(-)`. Merging any one of them would have deleted ~21k lines of valuable main work (stage-kit, stage-shell, specialists, time-machine, Marin demo, auth fixes, migrations). Lesson: always `git diff --stat main..branch | tail -1` before merging any feature branch older than ~24h.
+- **The Pattern Language composition is honest where it shipped.** Credentialing's JSDoc enumerates compositions and code branches on lane — that surface passed all 11 gates. Alerts and rewards have the same comment structure but the render branching doesn't deliver — a doc-vs-code drift caught only by the verification walk. Comments lie when code doesn't follow through; a dedicated verification pass is the only check that catches it.
+- **GreenFlashProvider preservation worked.** Exactly one commit in its history (`1257e7d`), untouched by any V3 work. The "do not modify, only consume" instruction held across multiple parallel sessions.
+
+**Open / Blocked:**
+- **Stale V3 branches still present on local + origin.** All 7 (`feature/v3-killerapp-rehaul` parent + `ws0/2/3/4/5/6`) need deletion. Local deletion blocked by `.git/packed-refs.lock` (mount-permission, same root cause as worktree isolation failure). Founder needs to run this from Mac terminal:
+  ```bash
+  cd /Users/chilly/Developer/bkg
+  rm -f .git/packed-refs.lock .git/refs/heads/feature/v3-killerapp-rehaul*.lock
+  for b in feature/v3-killerapp-rehaul feature/v3-killerapp-rehaul-ws0 feature/v3-killerapp-rehaul-ws2 feature/v3-killerapp-rehaul-ws3 feature/v3-killerapp-rehaul-ws4 feature/v3-killerapp-rehaul-ws5 feature/v3-killerapp-rehaul-ws6; do
+    git branch -D $b
+    git push origin --delete $b
+  done
+  ```
+- **Verification report flagged 6 follow-ups** (see `docs/handoff/v3-verification-report.md` "Recommended Next Moves"):
+  1. Add lane-branched Floor 0 to `alerts` and `rewards` (~50 LOC each; closes Charlies 3+4 dogfood-gate holes).
+  2. Stand up `/api/v1/credentialing/route.ts` (page footer advertises endpoint that doesn't exist; mirror `/api/v1/ask/route.ts` shape; ~30 LOC).
+  3. Reconcile `rewards/page.tsx` Pattern Language doc-comment with Whisper removal (drift: comment lists Whisper, JSX has `{/* WHISPER REMOVED 2026-05-27 per Charlie */}`).
+  4. Add in-route cross-link on `compliance`, `alerts`, `ask` (one footer link satisfies Federation Contract gate 6).
+  5. Install `@types/jest` + `@testing-library/react` to clear 121 pre-existing `tsc` errors.
+  6. Document Stance Card persistence in `MICHAEL-START-HERE.md` (`kgos:stance-card:v1` localStorage survives across surfaces).
+
+**Next:**
+- **Founder dogfood walk on iPhone tonight** using the four-Charlies checklist in the verification report. Production URL: `builders.theknowledgegardens.com/killerapp/{credentialing,projects-v3,compliance,alerts,rewards,ask}`. Lane override pill on each page mutates `kgos:stance-card:v1` in localStorage.
+- **Thursday 2026-05-29 (Mac) session — Claude Code or Cowork:** branch cleanup (manual), then knock through the 6 verification follow-ups in priority order. Start with lane-branched Floor 0 on alerts + rewards (highest demo impact), then `/api/v1/credentialing` route, then comment reconciliation. The verification report has file:line refs for each fix.
+
+---
+
+## 2026-05-28 — Claude Code Session: Brand consolidation — one logo, one stage nav
+**Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`.
 
 ## 2026-05-28 — Session Close: Demolition agent (Claude Code Opus 4.7 1M)
 **Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`. Commit: `b7fe2a4`.

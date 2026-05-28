@@ -116,6 +116,48 @@ language is no longer surfaced to users; it remains an internal concept.
 - [ ] `CRMDashboard.tsx` file name + internal `fetchCRMData()` identifier remain on the internal-only side; rename if/when the file becomes a user-facing route.
 - [ ] Two JSDoc-comment "CRM" references in `who-is-asking/{page,WhoIsAskingClient}.tsx` remain (inside `{/* */}` blocks — never rendered). Keep as internal docs unless founder asks otherwise.
 
+## ═══ V3 KILLER APP REHAUL — VERIFICATION + CLEANUP (2026-05-28 evening Cowork) ═══
+
+The V3 work shipped on main from a parallel Cowork session. Tonight's session verified it
+against the 11-item hard-gates checklist (4 of 6 clean, 2 partials, 0 failures) and produced
+a four-Charlies dogfood walkthrough. Full report: `docs/handoff/v3-verification-report.md`.
+
+**Shipped tonight:**
+- [x] Inspect V3 branches; surface that all 6 surfaces shipped on main; flag stale branches
+- [x] Verification report against 11 hard gates — `docs/handoff/v3-verification-report.md`
+- [x] Four-Charlies dogfood gate prep — URLs + per-persona checklist baked into the report
+
+**Founder action (TONIGHT, iPhone) — dogfood gate:**
+- [ ] Walk Charlie 1 (Administrator) — credentialing → compliance → projects-v3 → alerts
+- [ ] Walk Charlie 2 (Professional) — credentialing → projects-v3 → compliance → ask
+- [ ] Walk Charlie 3 (Public) — credentialing → projects-v3 → compliance → rewards *(known gap: rewards renders same as admin)*
+- [ ] Walk Charlie 4 (Machine) — credentialing JSON-LD → projects-v3 → compliance → ask *(known gap: `/api/v1/credentialing` server endpoint absent)*
+- [ ] File issues against any friction that the Pattern Language pieces should have prevented
+
+**Founder action (Mac terminal, when convenient) — stale branch cleanup:**
+```bash
+cd /Users/chilly/Developer/bkg
+rm -f .git/packed-refs.lock .git/refs/heads/feature/v3-killerapp-rehaul*.lock
+for b in feature/v3-killerapp-rehaul feature/v3-killerapp-rehaul-ws0 \
+         feature/v3-killerapp-rehaul-ws2 feature/v3-killerapp-rehaul-ws3 \
+         feature/v3-killerapp-rehaul-ws4 feature/v3-killerapp-rehaul-ws5 \
+         feature/v3-killerapp-rehaul-ws6; do
+  git branch -D $b
+  git push origin --delete $b
+done
+```
+
+**Next-sprint follow-ups from verification (NOW order, demo-impact first):**
+- [ ] Add lane-branched Floor 0 to `src/app/killerapp/alerts/page.tsx` — currently only renders the 2-way `proMode = administrator|professional`; Public + Machine lanes render admin's UI. ~50 LOC, mirror the compliance pattern (compliance/page.tsx lines 232-235).
+- [ ] Add lane-branched Floor 0 to `src/app/killerapp/rewards/page.tsx` — same shape as alerts. ~50 LOC.
+- [ ] Create `src/app/api/v1/credentialing/route.ts` — credentialing/page.tsx line 478 advertises this endpoint but it doesn't exist; mirror `/api/v1/ask/route.ts` shape; return the JSON-LD `EducationalOccupationalCredential` payload `MachineFloor0` already generates. ~30 LOC.
+- [ ] Reconcile Pattern Language doc-comment vs Whisper removal in `rewards/page.tsx` lines 11-16 (drift: comment lists Whisper, JSX has `{/* WHISPER REMOVED 2026-05-27 per Charlie */}` at line 158). Either restore Whisper post-demo or update the comment.
+- [ ] Add in-route cross-link on `compliance/page.tsx`, `alerts/page.tsx`, `ask/page.tsx` — one footer link to a sibling V3 surface satisfies Federation Contract gate 6.
+- [ ] Install `@types/jest` + `@testing-library/react` to clear 121 pre-existing `tsc --noEmit` errors in `src/{design-system,lib}/__tests__/*`. None are V3-introduced, but they make `tsc` output noisy enough to mask future regressions.
+- [ ] Document Stance Card persistence in `docs/onboarding/MICHAEL-START-HERE.md` — `kgos:stance-card:v1` localStorage key survives across surfaces (debugging surprise for new teammates).
+
+---
+
 ## ═══ ASSET SYNC — Mac 1 Cowork (2026-05-28 ~01:33 PT) ═══
 
 Synced 28 design-system assets into BKG `public/`; built `<Logo>` + `<HeroPlate>` brand components; patched 2 broken metadata refs. See `docs/asset-manifest.md` discovery section and `docs/session-log.md` 2026-05-28 entry.
