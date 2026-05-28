@@ -2104,3 +2104,30 @@ Vercel's image optimization at `/_next/image?url=...` is a SEPARATE caching laye
 **The rule:** When `git fsck` reports missing objects AND `git pull` fails repeatedly, do not waste cycles on in-place repair. Sequence: back up uncommitted changes → mv broken clone aside → fresh clone → restore uncommitted files → verify. Total time ~5 minutes; in-place repair attempts in this session consumed 30+ before we gave up.
 
 **The corollary:** Stuck worktrees in `/tmp/` are common — macOS wipes `/tmp/` on reboot, git retains the lock metadata, leaving an orphan that blocks `git gc`. If `git worktree list` shows a `/tmp/` entry as locked, discard with `git worktree remove --force /tmp/<name>` followed by `git worktree prune`.
+
+
+---
+
+## Lesson — Fixed-position overlays must share a single DOM parent or they collide (learned 2026-05-27)
+
+The mistake: KillerAppNav (fixed, top:0, z:99) rendered stage chips on the right side, and AuthAndProjectIndicator (fixed, top:12, right:16, z:100) was mounted separately in layout.tsx and page.tsx. They occupied the same top-right corner with no coordination.
+
+The rule: When two fixed-position elements need to share a horizontal band, put them in the same flex row. Either merge the second element into the first as a flex child (inline prop or similar), or give the first explicit paddingRight sized to the second element's known width. Two independently-fixed elements will always collide when the viewport changes.
+
+The corollary: Search for all render sites before declaring an element removed. AuthAndProjectIndicator was mounted in three places (layout.tsx, page.tsx, KillerAppNav) — removing it from two while adding it to a third left a duplicate until all three were audited with grep -rn.
+
+---
+
+## Lesson — Normal-flow elements placed before a fixed nav are painted over by it (learned 2026-05-27)
+
+The mistake: KillerAppChrome (BudgetRibbon + JourneyTimeRow) was added to the layout BEFORE the paddingTop:48 content wrapper. Because KillerAppNav is position:fixed (takes no space in flow), KillerAppChrome started at y=0 and the fixed nav painted over its top half.
+
+The rule: Every normal-flow element that should appear below a fixed nav must be inside the paddingTop:navHeight wrapper, not outside it. Elements outside the wrapper start at y=0 regardless of the nav.
+
+---
+
+## Lesson — Vercel env pull defaults to development environment which is often empty (learned 2026-05-27)
+
+The situation: vercel env pull .env.local wrote only a comment line — the project had no development environment variables configured. The app fell back to placeholder.supabase.co, causing Failed to fetch on every auth call.
+
+The rule: Always check which Vercel environment holds the real secrets. Try vercel env ls first. If development is empty, pull from production (vercel env pull --environment=production) or copy keys directly from the service dashboards (Supabase → Settings → API).
