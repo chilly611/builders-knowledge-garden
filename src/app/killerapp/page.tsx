@@ -29,8 +29,8 @@ import type { Metadata } from 'next';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Suspense } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import Logomark from '@/components/Logomark';
 import ScrollStage from '@/design-system/components/ScrollStage';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
@@ -273,64 +273,71 @@ export default async function KillerAppPage({
           so it travels with the nav bar on every /killerapp/* route and
           never overlaps the stage chips. Removed standalone instance here. */}
 
-      {/* Hero with blueprint grid background */}
-      <header className={styles.heroSection}>
-        {/* Blueprint 32px grid background */}
-        <div className={styles.blueprintGrid} />
+      {/* Hero with blueprint grid background.
+          2026-05-28 (brand consolidation pass):
+            - Replaced the 180px B-mark Logomark with the canonical tree
+              illustration. The B mark is a chrome / brand pill asset
+              (top-left, 40px) — using it twice at 180px in the hero made
+              the mark feel decorative rather than authoritative. The tree
+              IS the hero illustration; the B IS the brand mark. One job
+              each.
+            - Gated the whole hero on `!activeProjectId`. Once a project is
+              selected (`?project=<id>`), KillerappProjectShell renders the
+              project dashboard inline and the empty-state hero is gone.
+              "Pick a workflow." copy only makes sense BEFORE you've picked
+              one. */}
+      {!activeProjectId && (
+        <header className={styles.heroSection}>
+          {/* Blueprint 32px grid background */}
+          <div className={styles.blueprintGrid} />
 
-        {/* Hairline rule — architectural aesthetic */}
-        <div className={styles.hairlineRule} />
+          {/* Hairline rule — architectural aesthetic */}
+          <div className={styles.hairlineRule} />
 
-        {/* Hero content: Logomark + text stack.
-            Logomark is one flex column; h1 + subhead stack vertically in
-            the second flex column. Without the text-stack wrapper, h1 and
-            subhead became siblings of the logomark (3 flex items in a
-            row), cramming the h1 into a narrow column and wrapping every
-            word with `hyphens: auto` into a vertical mess — cf. the W7.O+
-            live-site regression we fixed. */}
-        <div className={styles.heroContent}>
-          {/* Large Logomark (180px) anchors the hero */}
-          <div className={styles.heroLogomark}>
-            <Logomark size={180} alt="Builder's Knowledge Garden" />
+          <div className={styles.heroContent}>
+            {/* Tree illustration anchors the empty state — evocative without
+                pretending to be the brand mark. */}
+            <div className={styles.heroLogomark}>
+              <Image
+                src="/logos/gardens/knowledge-gardens-tree.png"
+                alt=""
+                width={180}
+                height={180}
+                priority
+              />
+            </div>
+
+            <div className={styles.heroTextStack}>
+              <h1 className={styles.heroHeading}>
+                Pick a workflow.
+              </h1>
+
+              <p className={styles.heroSubhead}>
+                Start anywhere in the 7-stage lifecycle. Every tool wired together.
+              </p>
+            </div>
           </div>
 
-          <div className={styles.heroTextStack}>
-            {/* 2026-05-27: Killed the "operating system for your build" tagline
-                per chrome build spec. The persistent KillerAppChrome (mounted
-                in killerapp/layout.tsx) is the new opening statement —
-                budget + journey at a glance. The hero now leads with the
-                workflow picker subhead directly. Original copy preserved in
-                git history (this commit's parent) and in
-                src/components/_archive/2026-05-27/ context notes. */}
-            <h1 className={styles.heroHeading}>
-              Pick a workflow.
-            </h1>
-
-            <p className={styles.heroSubhead}>
-              Start anywhere in the 7-stage lifecycle. Every tool wired together.
-            </p>
+          {/* Natural-language entry: styled as engraved field */}
+          <div className={styles.searchBoxWrapper}>
+            <div
+              style={{
+                fontSize: '13px',
+                color: 'var(--graphite)',
+                opacity: 0.65,
+                marginBottom: '8px',
+                fontWeight: 400,
+                letterSpacing: '0.2px',
+              }}
+            >
+              Tell us what you&apos;re working on. We&apos;ll point you at the right tool.
+            </div>
+            <SearchBoxErrorBoundary>
+              <WorkflowPickerSearchBox />
+            </SearchBoxErrorBoundary>
           </div>
-        </div>
-
-        {/* Natural-language entry: styled as engraved field */}
-        <div className={styles.searchBoxWrapper}>
-          <div
-            style={{
-              fontSize: '13px',
-              color: 'var(--graphite)',
-              opacity: 0.65,
-              marginBottom: '8px',
-              fontWeight: 400,
-              letterSpacing: '0.2px',
-            }}
-          >
-            Tell us what you&apos;re working on. We&apos;ll point you at the right tool.
-          </div>
-          <SearchBoxErrorBoundary>
-            <WorkflowPickerSearchBox />
-          </SearchBoxErrorBoundary>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/*
         Project Spine v1 — when ?project=<id> is present, this client

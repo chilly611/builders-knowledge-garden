@@ -11,43 +11,24 @@
 //   ✓ Refined wordmark in graphite (not red), lowercase treatment, proper letterspacing
 //   ✓ Blueprint hairline bottom border (0.5px var(--faded-rule)) in place of red divider
 //   ✓ "Workflows" back-link when inside a workflow route (fluid, not quest-driven)
-//   ✓ Stage landscape chip row on right side showing all 7 stages
+//   ✓ Auth + project chip on the right (signed-in + project name)
+//   (Stage chip row removed 2026-05-28 — KillerAppChrome Journey row owns
+//    stage nav; rendering both produced a duplicate strip.)
 //
 // Export name preserved (default `KillerAppNav`) so the 8 route groups
 // that already import it don't break. Renaming can happen later.
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useMemo, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Logomark from '@/components/Logomark';
-import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
 import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
-
-// Stage landscape mapping: lifecycle stage ID (1–7) → label + first workflow
-// href. StageId itself is 1..7 (lifecycle-only); the Money group (stage 0)
-// has its own always-on entry point in CompassWorkflowNav.
-const STAGE_LANDSCAPE: Record<StageId, { label: string; href: string }> = {
-  1: { label: 'Size up', href: '/killerapp/workflows/estimating' },
-  2: { label: 'Lock it in', href: '/killerapp/workflows/contract-templates' },
-  3: { label: 'Plan it out', href: '/killerapp/workflows/job-sequencing' },
-  4: { label: 'Build', href: '/killerapp/workflows/daily-log' },
-  5: { label: 'Adapt', href: '/killerapp/workflows/services-todos' },
-  6: { label: 'Collect', href: '/killerapp/workflows/expenses' },
-  7: { label: 'Reflect', href: '/killerapp/workflows/compass-nav' },
-};
 
 export default function KillerAppNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const currentStageId = stageFromPathname(pathname);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  // Project Spine v1 (2026-05-06 fix): preserve ?project=<id> when the
-  // user clicks a stage chip. Without this, clicking "Lock it in" or
-  // "Build" navigates to a workflow without project_id, the workflow
-  // hook redirects back to /killerapp, and the user reports "the page
-  // just refreshes."
+  // Preserve ?project=<id> across the brand-link click + workflow back-link.
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,22 +61,6 @@ export default function KillerAppNav() {
       window.removeEventListener('bkg:project:changed', sync);
     };
   }, [pathname]); // re-read on every route change
-
-  // INP fix (2026-05-06): Memoize stage keys to avoid re-creating the array
-  // on every render. Object.keys() is expensive and unnecessary to re-compute.
-  //
-  // CRITICAL (2026-05-06b): This useMemo MUST be called before the
-  // `if (!mounted) return null` early return. Calling a hook AFTER an early
-  // return is a Rules of Hooks violation: SSR runs the early return path
-  // (no useMemo), client mount runs the full path (with useMemo), so React
-  // sees a different number of hooks across renders and throws "Rendered
-  // more hooks than during the previous render," cascading the entire
-  // /killerapp/* layout into Next's 500 fallback. Hooks first, returns
-  // second — always.
-  const stageIds = useMemo(
-    () => Object.keys(STAGE_LANDSCAPE) as unknown as StageId[],
-    []
-  );
 
   if (!mounted) return null;
 
@@ -151,8 +116,10 @@ export default function KillerAppNav() {
           flexShrink: 0,
         }}
       >
-        {/* Logomark: 28px tall on desktop, 24px on mobile */}
-        <Logomark size={isMobile ? 24 : 28} alt="Builder's Knowledge Garden" />
+        {/* Canonical B mark — 40px on desktop, 32px on mobile.
+            One mark, every page. The tree drawing is a hero/illustration
+            asset only; it never appears as the brand mark. */}
+        <Logomark size={isMobile ? 32 : 40} alt="Builder's Knowledge Garden" />
 
         {/* Wordmark: hidden on mobile (<640px), visible above */}
         {!isMobile && (
@@ -240,62 +207,10 @@ export default function KillerAppNav() {
       {/* spacer */}
       <div style={{ flex: 1 }} />
 
-      {/* Stage landscape chip row — desktop only (640px+) */}
-      {!isMobile && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 6,
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {stageIds.map((stageId) => {
-            const stage = STAGE_LANDSCAPE[stageId];
-            const isActive = currentStageId === stageId;
-            const accentColor = STAGE_ACCENTS[stageId].hex;
-
-            return (
-              <button
-                key={stageId}
-                onClick={() => router.push(withProjectId(stage.href))}
-                style={{
-                  height: 24,
-                  paddingLeft: 10,
-                  paddingRight: 10,
-                  borderRadius: 12,
-                  border: isActive ? 'none' : `1px solid var(--faded-rule)`,
-                  background: isActive ? accentColor : 'transparent',
-                  color: isActive ? 'var(--trace)' : 'var(--graphite)',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  fontFamily: 'inherit',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  textTransform: 'lowercase',
-                  transition: 'border-color 0.2s',
-                  ...(isActive && {
-                    transform: 'translateY(-1px)',
-                  }),
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                    e.currentTarget.style.borderColor = '#1B3B5E';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = 'var(--faded-rule)';
-                  }
-                }}
-                title={`Go to ${stage.label}`}
-              >
-                {stage.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Stage landscape chip row REMOVED (2026-05-28): the new Journey row
+          inside KillerAppChrome (completion rings + due-date markers) IS
+          the stage nav now. Mounting both produced a duplicate stage strip
+          in the header AND below — see brand-consolidation pass. */}
 
       {/* Auth + project indicator — embedded in the nav bar to avoid
           overlapping the stage chips. Uses inline mode (no fixed position).

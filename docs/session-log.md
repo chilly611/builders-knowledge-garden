@@ -6,6 +6,33 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-28 — Claude Code Session: Brand consolidation — one logo, one stage nav
+**Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`.
+
+**Mandate:** consolidate the brand mark and eliminate the duplicate stage nav. Before this pass, /killerapp and /killerapp/projects-v3 showed THREE stage strips at once (KillerAppNav chip row + KillerAppChrome JourneyTimeRow + ProjectCockpit JourneyTimeline), and the brand mark was inconsistent (tiny B in chrome, tree drawing pretending to be a brand mark in the hero).
+
+**What was built:**
+- `src/components/KillerAppNav.tsx` — Removed the 7-stage chip row ("Size up / Lock it in / Plan it out / Build / Adapt / Collect / Reflect") from the global header. Bumped the canonical B-mark Logomark size from 28/24 to 40/32 (desktop/mobile). Dropped the now-unused `STAGE_LANDSCAPE` map, `useRouter`, `useMemo`, `STAGE_ACCENTS`, `stageFromPathname` imports. Wordmark + `/Projects` link + signed-in pill + project-name chip preserved as the locked global-header content.
+- `src/app/killerapp/layout.tsx` — Removed the `ProjectCockpit` mount entirely. Its `JourneyTimeline` was the OLD pill-button row appearing below the new Journey row with completion rings. `KillerAppChrome` (BudgetRibbon + JourneyTimeRow) is the canonical chrome; ProjectCockpit's Budget + Time-Machine functionality is already present (BudgetRibbon + in-flight Time Machine surface). Suppression contract for `/killerapp/stages/*` (StageShell owns chrome) preserved.
+- `src/app/killerapp/page.tsx` — Replaced the 180px B-mark Logomark in the hero with the canonical tree illustration (`/logos/gardens/knowledge-gardens-tree.png`). Gated the entire hero on `!activeProjectId` — once a project is selected, KillerappProjectShell renders the dashboard inline and the "Pick a workflow." empty-state hero is hidden. The tree is now strictly an illustration; the B mark is strictly the brand mark.
+- `src/app/killerapp/projects-v3/page.tsx` — Removed the `<LifecycleMemory>` 7-pill stage row at the bottom of the projects-v3 dashboard. Dropped the now-unused import.
+
+**Key decisions:**
+- One B mark across every Killer App page (`/icon.png` via Logomark, 40px / 32px). Tree drawing is an empty-state illustration only.
+- One stage nav: the Journey row in KillerAppChrome (completion rings + due-date markers). Stage chip rows in the header AND the legacy JourneyTimeline pill row both retired.
+- Hero is empty-state-only — surfacing it on top of an active-project dashboard was the contradiction making /killerapp feel cluttered.
+
+**Verification:**
+- `npm run build` clean (Compiled successfully in 6.9s, only pre-existing Sentry deprecation + marketplace `config` warnings).
+- Preview-server screenshot @ /killerapp: top header = B logo + "builder's knowledge garden" + Projects + auth pill (no stage chips); below = BudgetRibbon + JourneyTimeRow with completion rings (Size Up 100, Lock 100, Plan 85, Build 42, Adapt 0, Collect 0, Reflect 0); hero = tree illustration + "Pick a workflow." NO duplicate stage row anywhere on the page.
+- /killerapp/projects-v3 verified — same global chrome, no LifecycleMemory pill row at the bottom.
+- /killerapp/stages/build verified — StageShell's own in-shell stage rail still renders (it's the page chrome on stage routes), and the global KillerAppChrome is correctly suppressed via `isStageRoute`.
+
+**Files NOT touched (locked by another agent per docs/in-flight.md):**
+- `src/app/projects/[id]/page.tsx`, `src/components/{AIAttentionItems,PermitsList,MaterialsCSI,TeamRoster,GanttChartPlaceholder}.tsx` (new), `src/app/killerapp/stages/{plan,size-up}/page.tsx`, `src/app/killerapp/projects/[id]/ProjectDashboardClient.tsx`, `src/app/{page.tsx,clients/page.tsx,profile/page.tsx,killerapp/who-is-asking/WhoIsAskingClient.tsx}` — Demolition agent's CRM → Pipeline pass.
+
+**Env note (worktree gotcha):** initial edits accidentally landed in `/Users/chilly/Developer/bkg` (a parallel checkout of the same remote). The dev server runs `/Users/chilly/Documents/The Builder Garden/app` — the BKG parallel-agent canonical surface. Re-applied to the canonical tree and verified there. Memory: when the preview server's cwd doesn't match `/Users/chilly/Developer/bkg`, prefer editing whichever tree the preview reads.
+
 ## 2026-05-28 (~01:33 PT) — Cowork Session: Asset Sync (Mac 1)
 **Agent:** Cowork (claude-opus-4-7)
 **Branch:** `main` (direct commit, demo Thursday morning)

@@ -41,7 +41,6 @@ import {
   InvitationCard,
   ProToggle,
   CrossSurfaceBridge,
-  LifecycleMemory,
   TrustStrip,
   InfiniteDescent,
   TempoAdapt,
@@ -454,7 +453,10 @@ export default function ProjectsV3Page() {
           ]}
         />
 
-        <LifecycleMemory stages={lifecycleStages} currentStageId={PROJECTS[0].stage} />
+        {/* LifecycleMemory pill row removed 2026-05-28 — the new Journey row
+            in KillerAppChrome (top of every /killerapp/* page) is the canonical
+            stage nav. Two stage strips on one page = "OLD pill-button row" the
+            brand-consolidation pass eliminated. */}
 
         <footer style={{ ...mono, color: BRAND_COLORS.steel, paddingTop: '1.5rem', borderTop: `1px solid ${BRAND_COLORS.copperLine}` }}>
           API · GET /api/v1/projects (WS3 wires this to Supabase)

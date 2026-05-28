@@ -8,7 +8,6 @@ import { Suspense } from 'react';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
 import { ProjectProvider } from '@/contexts/ProjectContext';
-import { ProjectCockpit } from '@/components/cockpit';
 import LegalFooter from '@/components/LegalFooter';
 import StageBackdrop from '@/design-system/components/StageBackdrop';
 import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
@@ -106,16 +105,20 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
             they start at y=48 (flush below the nav) rather than at y=0
             where the fixed nav would paint over their top half. */}
         <div style={{ paddingTop: 48 }}>
-          {/* 2026-05-27: KillerAppChrome — BudgetRibbon + JourneyTimeRow.
-              Placed first inside the content area so it appears immediately
-              below the nav bar. Suppressed on /killerapp/stages/* where
-              StageShell owns the chrome exclusively. */}
+          {/* KillerAppChrome — BudgetRibbon + JourneyTimeRow. This is the
+              canonical stage nav (completion rings + due-date markers).
+              Suppressed on /killerapp/stages/* where StageShell owns the
+              chrome exclusively.
+              ProjectCockpit was removed 2026-05-28 — it stacked a second
+              7-segment journey strip below this one (the "OLD pill-button
+              row" the brand consolidation pass eliminated). Budget +
+              Time-Machine functionality continues to live in BudgetRibbon
+              + the in-flight Time Machine surface in KillerAppChrome. */}
           {!isStageRoute && (
             <Suspense fallback={null}>
               <KillerAppChrome />
             </Suspense>
           )}
-          {!isStageRoute && <ProjectCockpit />}
           {children}
           {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
           <LegalFooter />
