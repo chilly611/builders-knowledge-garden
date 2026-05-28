@@ -68,10 +68,11 @@ Refit the Size Up + Lock lifecycle stages (stages 1 & 2) to be FULLY FUNCTIONAL 
 - [x] docs/session-log.md appended; tasks.todo.md updated; committed + pushed to main.
 - [x] **PATCH 1 (post live-review):** sticky single primary action per stage (Size Up "Lock the scope" → Lock; Lock "Send the agreement" → Plan) with completion ring + check + auto-advance; insight card above the action bar; in-flow whisper banners (no occlusion). Dogfooded Size Up → Lock → Plan at 380px. Build clean; pushed (33d6184). Items 2/3/4 (journey labels, budget-chip consistency, three-column) are chrome/Plan-owned — flagged below.
 
-**Carry-forward / coordination:**
-- [ ] **Seed sqft:** the live Marin DB row is `sqft = "2800"` but the fixture (and demo script) is **4,000**. Update the `command_center_projects` row to 4,000 to match, or keep fixture-first.
-- [ ] **Reconcile the two stage chromes** — Size Up/Lock + Plan/Build all use `@/components/stage-shell`; the layout also mounts the V3 `@/components/killerapp-chrome` (`KillerAppChrome`) + the legacy `KillerAppNav` strip. Three chromes stack on `/killerapp/stages/*`; suppress the legacy + pick one canonical chrome (layout owner).
-- [ ] **Documenso** — set `DOCUMENSO_API_KEY` in the demo env so the Lock agreement card sends a real e-sign instead of the "prepared" fallback.
+**Carry-forward / coordination — status as of 2026-05-27 evening:**
+- [x] ~~**Seed sqft**~~ — RESOLVED by `0e381d0`. The canonical fixture (`src/lib/demo/marin-4000.ts`) is the source of truth at 4,000 sqft / $1,650,000 / $312,400 spent / $186,200 committed / $1,151,400 remaining / 37 wk. The DB row update (sqft → 4000) is no longer blocking; fixture wins for the demo.
+- [x] ~~**Three chromes stacking on `/killerapp/stages/*`**~~ — RESOLVED by `0916159` + `e73e8df`. `KillerAppChrome` is now path-aware (skipped on `/killerapp/stages/*`); `KillerAppNav` auth pills moved inline; nav and stage chrome no longer overlap.
+- [ ] **Documenso** — still open. Set `DOCUMENSO_API_KEY` in the demo env so the Lock agreement card sends a real e-sign instead of the safe "prepared" fallback. Without it, the card shows "Drafted: Agreement drafted and ready..." — still a coherent demo outcome.
+- **Demo readiness:** see `docs/demos/DEMO-MORNING-READINESS.md` for the rock-solid walkthrough + recovery runbook. Live commit: `e73e8df`. All seven stages compile.
 
 ## ═══ KILLER APP CHROME — Thursday Contractor Demo (2026-05-27) ═══
 
