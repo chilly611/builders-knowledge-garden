@@ -1109,7 +1109,6 @@ pushes instead. `tsc --noEmit` also times out before producing output.
 The ONLY usable signal is the GitHub commit-status API.
 
 
-
 ---
 
 ### Record<string, unknown> spread widens through `as T` cast — narrow the assignment target locally
@@ -1766,7 +1765,6 @@ Total: 2 successful pushes (Ship 35, Ship 36c) + 3 rollbacks + 1 bisect-step (Sh
 **Rule:** every major shipping round (3+ feature commits) gets a systematic E2E verifier agent, not just spot-checks on the headline features. The verifier's job is to walk every demo persona through every primary surface the round touched, asserting both POSITIVE invariants (numbers tie, text matches, links resolve) and NEGATIVE invariants (this route requires auth, this RLS policy blocks the wrong tenant, this column is non-NULL). Cost: 10-20 minutes of agent-time. Benefit: catches the failure-mode that spot-checks systematically miss — the surfaces nobody thought to spot-check. Anti-pattern: "we tested the thing we shipped" — that's necessary but not sufficient. The bugs that bite are the surfaces adjacent to the thing you shipped, on the personas you didn't think to retest. Make the E2E verifier a standing item in the round-ship template.
 
 
-
 ### When an agent HALTS on a wrong-brief premise, listen — don't override
 **Date:** 2026-05-24 (Cowork round-6, JSONB-DROP halt + JSONB-DROP-V2 re-dispatch)
 **What happened:** The round-6 brief told JSONB-DROP to "drop the `command_center_projects.project_budgets` JSONB column; legacy consumer `/api/v1/budget/items` is dead code and can be deleted." Agent went to do the work and found that `/api/v1/budget/items` was NOT dead — `src/lib/budget-spine.ts` still imported and called it on every `recordMaterialCost` event, and three production cockpit flows hit it. Agent HALTED instead of forcing the drop, posted "the brief's premise is wrong; here's the live caller graph; need a corrected plan that handles the dependency chain (drop column + delete route + repoint spine + tests) atomically." The orchestrator's reflex was to push back ("just drop it, the spine writer is also legacy"). The right call was to accept the halt: agents have local context the orchestrator doesn't, and a halt-on-premise-failure is a feature, not a blocker. JSONB-DROP-V2 was re-dispatched with the corrected dependency chain in one commit — drop column + delete `/api/v1/budget/items/route.ts` + repoint `budget-spine.ts` to canonical `PATCH /api/v1/budget` + update one test. Shipped clean in 12 minutes.
@@ -2214,3 +2212,40 @@ The rule: Every normal-flow element that should appear below a fixed nav must be
 The situation: vercel env pull .env.local wrote only a comment line — the project had no development environment variables configured. The app fell back to placeholder.supabase.co, causing Failed to fetch on every auth call.
 
 The rule: Always check which Vercel environment holds the real secrets. Try vercel env ls first. If development is empty, pull from production (vercel env pull --environment=production) or copy keys directly from the service dashboards (Supabase → Settings → API).
+
+
+---
+
+## Lesson — When a structure is widely consumed, add a richer parallel structure rather than reshape the original (learned 2026-05-28)
+
+**The situation:** Seed file `src/lib/seed-data/marin-farmhouse.ts` exposed `MARIN_TEAM` (6 rows: id, name, trade, status, contact, company) consumed by `/projects/[id]/page.tsx` and the `marin-4000.ts` shim. Tonight's brief asked for a 14-member multi-lane cast with new fields (lane, laneSubtype, joined_at, invited_by, personalizing_detail). Reshaping `MARIN_TEAM` would have meant editing every consumer in the same change.
+
+**The rule:** When a published data structure is already consumed and the new requirement is additive (more rows, richer per-row data), add a richer parallel structure (e.g., `MARIN_CAST` alongside `MARIN_TEAM`) with new types. Preserve every existing export's shape verbatim so consumers don't churn. Document the "collapse the two" path in the code comment for a future session to take.
+
+**The corollary:** "Minimal impact" doesn't mean "minimum lines of code." It means minimum surface area of change. A 200-line additive block that touches one file is lower-impact than a 50-line reshape that ripples through seven importers. The tsc baseline ("121 errors before, 121 after") is the proof.
+
+**The anti-pattern this prevents:** A previous session shipped a `$116K vs $312K` budget mismatch and a `1,800 vs 2,800 vs 4,000 sqft` mismatch by editing a downstream roll-up instead of the canonical seed. Additive-at-the-canonical-source is the inverse — every reader stays in agreement because the source of truth never had two versions of itself.
+
+---
+
+## Lesson — Distinguish "remaining" from "headroom" with separate constants from day one (learned 2026-05-28)
+
+**The realization:** `MARIN_BUDGET_REMAINING = $1,151,400` and `MARIN_BUDGET_HEADROOM = $347,000` are both money sitting inside the same locked $1.65M contract, but they mean entirely different things:
+- **Remaining** = total − spent − committed. What hasn't been spent or locked-in yet. Mechanical accounting.
+- **Headroom** = projected favorable variance at substantial completion. What the team expects to walk away with if they hold the line on change orders. Forward-looking forecast.
+
+**The rule:** When two numbers describe the same bucket from different framings, give them separate exported constants from the start, each with a doc-comment explaining the discriminator. Don't make a future page reverse-engineer which framing was intended.
+
+**The corollary:** UI chips that show "$1.15M remaining" and "$347K headroom" side-by-side teach the user the difference. UI that shows one number and labels it inconsistently teaches confusion. The data layer should set this up, not the component layer.
+
+---
+
+## Lesson — Project-role lanes ≠ platform business lanes (learned 2026-05-28)
+
+**The risk:** BKG has two layers of "lanes" and they describe orthogonal concepts:
+- **Platform business lanes** (from `03_PLATFORM.md`): Admin / Professional / Public / Machine. These are revenue-model lanes — who pays us, what they pay for, what the CAC/LTV looks like. They apply to every garden.
+- **Project-role lanes** (BKG-specific to a build): OWNER / GC / SUB / SERVICE-PROVIDER / SUPPLIER / WORKER. These are who someone IS on a specific construction project. They apply only to BKG-style project surfaces.
+
+**The rule:** When introducing a "Lane" type into BKG code, NAME WHICH ONE in both the type doc-comment and the union name (or at least in a tight discriminating comment). The two lane sets sit one import away from each other; a future agent will conflate them if the code doesn't call out the distinction. Today's `Lane` type in `marin-farmhouse.ts` opens with: `/** The six BKG project-role lanes. NOT the platform's business lanes. */`
+
+**The corollary:** When the same word means two things in adjacent contexts, the cost of disambiguating in code comments is much lower than the cost of someone shipping a feature against the wrong framing. The architect-lane drift (PE filed under SUB instead of SERVICE-PROVIDER) is the kind of mistake this lesson prevents.
