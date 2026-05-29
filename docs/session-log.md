@@ -3393,3 +3393,4 @@ wiring live pay-app and closeout-publication flows.
 Marin seed verified on origin/main (6eb23d0); MARIN_CAST / MARIN_OWNER_LENS / MARIN_BUDGET_HEADROOM = $347K live; Owner Lane v2 visual spec added at specs/bkg/owner-lane-home-v2.html.
 
 ---
+## 2026-05-29 (Cowork) — Published Owner Lane standalone at /owner-lane.html (commit 5ed4137, current Size Up→Reflect export; stale Dream→Grow v2 not used). Live + browser-verified: https://builders.theknowledgegardens.com/owner-lane.html
