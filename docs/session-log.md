@@ -6,6 +6,71 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-28 (late evening PT) — Cowork Session: Marin Seed — Multi-Lane Cast + Owner Lens
+**Agent:** Cowork (Claude Opus 4.7), single seed-file refresh; additive edits only.
+**Branch:** `main` (direct push, demo-eve consolidation work).
+**Lock:** none claimed — single-file additive edit on `src/lib/seed-data/marin-farmhouse.ts`; coordinated through this log entry rather than `docs/in-flight.md` because no other agent is touching the seed file tonight.
+
+**Mandate:** Refresh `src/lib/seed-data/marin-farmhouse.ts` with a multi-lane project cast (OWNER / GC / SUB / SERVICE-PROVIDER / SUPPLIER / WORKER) and per-Lane content for the Owner Lens, plus a founder-locked `MARIN_BUDGET_HEADROOM = $347_000` constant. Streams B & C downstream need a richer cast to wire Lane Lens surfaces.
+
+**What was built (one file, additive):**
+- **`MARIN_BUDGET_HEADROOM = 347_000`** — new exported constant immediately below `MARIN_BUDGET_REMAINING`. Doc comment distinguishes it from `MARIN_BUDGET_REMAINING` (remaining = unspent/uncommitted; headroom = projected favorable variance against the locked contract).
+- **`Lane` + `LaneSubtype` types** — the six BKG project-role lanes (`OWNER | GC | SUB | SERVICE-PROVIDER | SUPPLIER | WORKER`) and the subtype union (`Architect | Engineer | Framing | Foundation | Roofing | Plumbing | Electrical | Lumber | Windows | Laborer | Apprentice | null`). Explicitly NOT the platform's four business-model lanes (Admin/Pro/Public/Machine).
+- **`CastMember` interface + `MARIN_CAST`** — 14-member project cast with `id, name, role, contact, company?, lane, laneSubtype, joined_at, invited_by, personalizing_detail, status`. Breakdown: 2 OWNER (Cody + Sara Harwell), 1 GC (Marcus Rivera / Rivera Construction LLC, preserved id `t-builder`), 5 SUB (Ridgeline Framing, Tamalpais Concrete, Bay Roofing Co., Larkspur Plumbing & Mechanical, North Bay Electric Co.), 2 SERVICE-PROVIDER (Field Studio Architects, Headlands Structural Engineering), 2 SUPPLIER (Golden Gate Lumber & Building Supply, Marvin), 2 WORKER (José Hernández, Daniel Park). Every member has a one-sentence personalizing detail. The `invited_by` graph closes — every reference resolves to another cast id or the string `'founder'`.
+- **`castInLane(lane)` helper** — small filter convenience for Lane Lens surfaces.
+- **Module-load invariant check** — non-production warning if OWNER/GC/WORKER lane counts drift from the brief (2/1/2).
+- **`MARIN_OWNER_LENS`** — first per-Lane content block. Fields:
+  - `cast_ids`: links the lens to Cody + Sara's CastMember ids.
+  - `welcome_message`: first-person paragraph from the Harwells written at kickoff.
+  - `contributions` (3): paint-chip photo (Farrow & Ball Pavilion Gray), garden sketch (south-facing herb garden), Ferguson fixture receipt ($1,247). Each with stub `asset_path` under `/uploads/marin/`.
+  - `pending_approvals` (2): Pay App #4 to Ridgeline Framing ($48,000, framing milestone) and Change Order #002 (kitchen island 6ft → 9ft + prep sink, $14,800).
+- **`OwnerContribution`, `OwnerApproval`, `OwnerLens` interfaces** exported alongside.
+
+**Numbers held the line (no drift):**
+- `MARIN_BUDGET_TOTAL` 1_650_000 — unchanged
+- `MARIN_BUDGET_SPENT` 312_400 — unchanged (rounds to $312K)
+- `MARIN_BUDGET_COMMITTED` 186_200 — unchanged (rounds to $186K)
+- `MARIN_BUDGET_REMAINING` 1_151_400 — unchanged (rounds to $1.15M)
+- `MARIN_BUDGET_HEADROOM` 347_000 — **new** ($347K)
+- Invariants: `spent + committed + remaining = total` ✓ · `MARIN_BUDGET_LINES.sum = total` ✓ (unchanged)
+
+**Back-compat:**
+- `MARIN_TEAM` shape and 6 entries kept verbatim — every consumer (`/projects/[id]/page.tsx`, `marin-4000.ts` shim, etc.) continues to read the same six rows.
+- `MarinTeamMember` interface unchanged.
+- `MARIN_CLIENT_NAME = 'The Harwell Family'` unchanged — still the collective owner label used by `demo-seed-data.ts`.
+- Existing cast ids preserved (`t-builder`, `t-framing`, `t-concrete`, `t-roofing`, `t-architect`). New cast members use prefixed ids (`owner-*`, `t-plumbing`, `t-electrical`, `svc-*`, `sup-*`, `wk-*`).
+- No edits to `getCanonicalProject.ts`, `marin-4000.ts` shim, or any consumer.
+
+**Verification:**
+- `tsc --noEmit` clean. Total error count: 121 — **exactly the pre-existing baseline** (all in `src/{design-system,lib}/__tests__/*` from missing `@types/jest` / `@testing-library/react`). Zero new TS errors in `seed-data/marin-farmhouse.ts` or anywhere else.
+- Grep against tsc output for `marin|Marin|Lane|Cast|OwnerLens`: empty.
+- `npm run dev` not run from the Cowork sandbox — its `node_modules` is darwin-arm64 and the Linux sandbox can't execute esbuild/tsx (matches the "node_modules wedged" note already in tasks.todo.md). Vercel CI will produce the canonical build confirmation when this push lands.
+- Math + structure invariants hand-checked. Documented in the session response so a verifier can replay the assertions.
+
+**Key decisions:**
+- **Project-role lanes ≠ platform business lanes.** Used a new `Lane` union (`OWNER | GC | SUB | SERVICE-PROVIDER | SUPPLIER | WORKER`) for the cast. Comment in the code calls this out so future agents don't conflate it with the platform's Admin/Pro/Public/Machine lanes from `03_PLATFORM.md`.
+- **MARIN_CAST adds, MARIN_TEAM stays.** Considered collapsing the two into a single derived view. Held off — MARIN_TEAM is the work-relevant 6-row team list every consumer renders today; collapsing introduces churn for no demo benefit. Documented the future "collapse the two" path in the cast doc-comment.
+- **Headroom as its own constant.** $347K projected favorable variance lives inside the $1.15M remaining bucket — but it's a different concept (remaining = unspent; headroom = expected cushion at substantial completion). Distinct constants prevent a future page from showing one number while meaning the other.
+- **Realistic Marin/Bay-Area company names.** Plumbing → Larkspur Plumbing & Mechanical; electrical → North Bay Electric Co.; structural → Headlands Structural Engineering; lumber → Golden Gate Lumber & Building Supply. Marvin retained as the locked window-supplier per the existing budget line. All plausible-but-fictional except Marvin which is a real national brand referenced in the existing budget line.
+- **Workers as named individuals on the GC's payroll.** José Hernández + Daniel Park, both with `company: 'Rivera Construction LLC'`. This is closer to how a real Marin custom build runs — the GC carries the laborers, the subs bring their own crews.
+
+**Coordination (Streams B & C):**
+- Seed is ready for any surface that needs Lane Lens data. Import path: `import { MARIN_CAST, castInLane, MARIN_OWNER_LENS, type Lane, type CastMember, type OwnerLens } from '@/lib/seed-data/marin-farmhouse'`.
+- The Owner Lens content block is the first per-Lane payload. When SUB / SERVICE-PROVIDER / SUPPLIER / WORKER lenses come online, mirror the `OwnerLens` shape (welcome message + contributions + pending approvals) rather than inventing a new structure per lane — that's the explicit handoff contract.
+- Stub asset paths under `/uploads/marin/` (paint chip, garden sketch, Ferguson receipt) are referenced but not yet present in `public/`. Either drop placeholder files in `public/uploads/marin/` before the Owner Lens surface ships, or have the surface tolerate missing assets with a sensible empty state.
+
+**Issues / open:**
+- Stub asset files aren't created — they're referenced data only. Surface that consumes them must handle 404 gracefully or files must be added to `public/uploads/marin/`.
+- `MARIN_TEAM` and `MARIN_CAST` overlap by id but the cast has 14 rows and the team has 6. A future pass should derive `MARIN_TEAM` from `MARIN_CAST` once a consumer is willing to handle the wider list. Not blocking.
+- `node_modules` remains wedged on darwin-arm64 (sandbox can't `next build`). Vercel CI will validate this push on the deploy.
+
+**Next:**
+- Push to `origin/main`; Vercel auto-deploys.
+- Stream B / Stream C: consume `MARIN_CAST`, `castInLane`, `MARIN_OWNER_LENS` for their Lane Lens surfaces.
+- Future per-Lane content blocks (`MARIN_GC_LENS`, `MARIN_SUB_LENS_*`, etc.) follow the `OwnerLens` shape.
+
+---
+
 ## 2026-05-28 — Session Close: Demolition agent (Claude Code Opus 4.7 1M)
 **Agent:** Claude Code (Opus 4.7, 1M context), canonical checkout `/Users/chilly/Documents/The Builder Garden/app`. Branch: `main`. Commit: `b7fe2a4`.
 
