@@ -1,5 +1,9 @@
 # CLAUDE.md — Agent Instructions for Builder's Knowledge Garden
 
+## Canonical Working Folder (locked 2026-05-28)
+
+**Canonical working folder: `/Users/chilly/Developer/bkg` . It is the only clone. It is NOT in any cloud-synced directory. All other Builder-Garden and bkg folders are archived. Every session begins with: cd to this folder, git status, git pull.**
+
 ## MANDATORY: End-of-Session Protocol
 
 **At the end of EVERY task (Chat or Cowork), you MUST:**
