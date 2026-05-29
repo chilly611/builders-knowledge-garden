@@ -3301,4 +3301,32 @@ wiring live pay-app and closeout-publication flows.
 **Issues/bugs found:**
 - Mid-session the working tree was moved by a local cleanup into `Documents/BKG-archive-2026-05-28/The Builder Garden/app`. The git repo + remote stayed intact and in sync with live `origin/main`; work continued there without loss.
 
+---
+
+## 2026-05-29 — Claude Code Session: Owner Lane UI (design implementation)
+**Agent:** Claude Code (Claude Opus 4.7)
+**Branch:** `main` (direct push).
+**Mandate:** Implement the Knowledge Gardens design bundle's "Owner Lane (standalone)" as a production React surface. (Explicit user direction overriding Stream B's "no UI" lock.)
+
+**What was built — new top-level `/owner` route:**
+- **`src/app/owner/OwnerLaneClient.tsx`** — `'use client'` interactive surface. Faithful rebuild of the design's `owner-lane/{app,components}.jsx`: persistent budget + journey "time machine" strips, hero ("Where your build stands"), "Needs you" pay-app approval (local-optimistic approve/hold), the big-three readings as brass instrument **gauges** or specimen **cards** (toggle), plain-words summary, field-log composer, recent entries. Hand-drawn line icons + the animated "Viver" logo (`BkgMark` autoplay video). Consumes one fully-resolved serializable `OwnerLaneData` prop — no numbers live in the client.
+- **`src/app/owner/page.tsx`** — server entry. Resolves `OwnerLaneData` from `getCanonicalProject()` + `MARIN_OWNER_LENS` + `MARIN_*` constants. The single wiring point.
+- **`src/app/owner/owner-lane.css`** — ~700 lines, every selector scoped under `.ol-root` (`ol-` prefixed), all colour via herbarium tokens. Verified: zero global/bare-element selectors leak.
+- **`src/app/owner/layout.tsx`** — thin wrapper that imports the scoped CSS for the route subtree.
+- **Assets** → `public/owner-lane/`: `bkg-logo.mp4`, `structural-journey.jpeg`, `sketch-journey.jpg`.
+
+**Key decisions:**
+- **7 LOCKED stages win over the design's 6 phases** (founder decision #2). The design's Dream→Grow is mapped onto Size Up→Reflect; money/journey state derived by position relative to the active **Build** stage.
+- **Production canon wins for shared records:** framer **"Ridgeline Framing"** (design said "Tahoe Carpentry Co."), pay-app **$48,000** (design $48,200), project **"Modern Farmhouse in Marin"** (design "· Marin"). Owner-facing *presentation* (the three readings, the "short version", journey wk-17 position) stays design-locked.
+- **No PersistentNav rebuilt** — the design's compass-bloom + "Ask the garden" already exist app-wide via `GlobalChromeGate` (root layout), and appear on `/owner`. Rebuilding would collide bottom-right.
+- **Built at top-level `/owner`, NOT inside `killerapp/layout.tsx`** — that layout is heavy and regression-prone (per the in-repo warning in `ask/page.tsx`). `/owner` inherits the clean root shell (tokens, fonts, providers, global compass) and is ungated by middleware.
+- **`useId()` (not `Math.random`)** for the SVG gauge gradient ids — SSR-safe + satisfies `react-hooks/purity`; colons stripped so `url(#…)` resolves.
+
+**Verification:** `tsc --noEmit` clean for `src/app/owner/*` (only pre-existing unrelated test-file errors elsewhere); `eslint src/app/owner` clean; `next build` exit 0 with `/owner` in the route table (`ƒ`, consistent with every other route — root auth provider opts the tree into on-demand rendering).
+
+**Human-call flags (need founder ratification):**
+- **Schedule reading is design-locked, not reconciled to GC dates.** The owner sees "wk 17 of 37 · ~20 wks to move-in · a few days ahead." The production GC schedule (`MARIN_START_DATE` 2026-03-18 → `MARIN_SUBSTANTIAL_COMPLETION` 2026-12-04) computes to a *different* calendar week. The two have never been reconciled to one formula; the owner reading is presented as-designed and flagged in `page.tsx`. Founder should pick the canonical schedule math before this goes in front of a real owner.
+- **Approve / hold / add-to-log are local-optimistic only** — no write path yet. The real routes land when the Owner Lens write API ships (depends on Stream E construction-counsel items 1, 2, 5 for live pay-app flow).
+- **`/owner` is currently ungated** — no Lens permission check wraps it yet (Stream B's `checkLensPermission` exists but isn't wired here; the surface reads seed data only). Gate before exposing real project data.
+
 **Next (Stream C):** consume `src/lib/lens/` — call `checkLensPermission` to gate UI surfaces per lane. Do not redefine the enums; import from `types.ts`. Await matrix ratification before exposing non-Owner/GC lanes.
