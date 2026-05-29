@@ -70,6 +70,7 @@ This file is the canonical timeline of what was built, when, and why.
 - Future per-Lane content blocks (`MARIN_GC_LENS`, `MARIN_SUB_LENS_*`, etc.) follow the `OwnerLens` shape.
 
 ---
+
 ## 2026-05-28 (evening PT) — Cowork Session: V3 Killer App Rehaul Verification + Cleanup
 **Agent:** Cowork (Claude Opus 4.7) — orchestrator only; verification subagent dispatched.
 **Branch:** `main` (read-only verification; no code changes).
