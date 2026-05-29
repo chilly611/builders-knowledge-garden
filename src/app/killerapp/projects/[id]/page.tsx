@@ -2,19 +2,17 @@
  * Project Dashboard — Route Handler
  * ==================================
  *
- * Server component that renders the project dashboard for a given [id].
- * For the demo-project, this loads demo data and displays a populated
- * Compass view showing a mid-flight residential build.
- *
- * When a real project is implemented, this will fetch live data from the API.
+ * Server component for the project home at /killerapp/projects/[id]. It
+ * defers to LaneRouter, which resolves the signed-in user's Lane for THIS
+ * project and renders the matching home: Owner → OwnerHomeClient, GC →
+ * the existing ProjectDashboardClient (untouched), anything else → a
+ * "your Lane home is coming" placeholder.
  */
 
-import ProjectDashboardClient from './ProjectDashboardClient';
+import LaneRouter from './LaneRouter';
 
 interface ProjectPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export const metadata = {
@@ -22,6 +20,7 @@ export const metadata = {
   description: 'View your project status, budget, team, and timeline.',
 };
 
-export default function ProjectPage({ params }: ProjectPageProps) {
-  return <ProjectDashboardClient projectId={params.id} />;
+export default async function ProjectPage({ params }: ProjectPageProps) {
+  const { id } = await params;
+  return <LaneRouter projectId={id} />;
 }

@@ -2469,3 +2469,29 @@ Items for the founder to handle from the Mac terminal (Cowork mount can't do the
 - [ ] **Decide whether to move the archive up to `~/`** — Cowork placed the archive at `~/Documents/BKG-archive-2026-05-29/` because only Documents + CloudStorage were mounted. Move with: `mv ~/Documents/BKG-archive-2026-05-29 ~/` if you want the original location.
 - [ ] **Review preserved Lens permission WIP** — 4 files were copied from `~/Documents/The Builder Garden/app/` into canonical before that folder was archived. Files: `src/lib/lens/check-permission.ts`, `check-permission.test.ts`, `types.ts`, `supabase/migrations/20260528_lanes_lens_permission_matrix.sql`. Decide commit or discard.
 - [ ] **Recover any unreviewed work from `~/Documents/BKG-archive-2026-05-29/The Builder Garden/app-stale/`** — that subfolder had 377 untracked files (local-only debris). Worth a glance before treating the archive as cold storage.
+
+## ═══ 2026-05-29 MLP-OWNER CARRYOVER ═══
+
+- [ ] **Push `feat/owner-lane-home`** — committed locally; SSH push is broken in
+      the agent env (no PAT). Push from Mac terminal after reviewing the two
+      decisions below.
+- [ ] **DECIDE: can the Owner contribute to their field log?** Shipped Lens matrix
+      grants owner photos_field_logs VIEW+EXPORT only (NOT create), so the FieldLog
+      composer is fail-closed-disabled for real owners. To enable: grant owner
+      create in `20260528_lanes_lens_permission_matrix.sql` (Stream B) OR uncomment
+      the `custom_lens_overrides` block in `20260529_marin_owner_lane_membership.sql`.
+      Blocked-by the upload-consent counsel item above.
+- [ ] **Apply `20260529_marin_owner_lane_membership.sql`** — committed, NOT applied.
+      Seeds the Marin owner's project_members + project_lane_memberships rows so the
+      Owner home resolves a real lane (not fail-closed-empty) in non-preview. Fold
+      into Stream D's canonical seed (`20260528_marin_demo_canonical.sql`), which
+      today seeds only command_center_projects.
+- [ ] **FieldLog persistence** — `/api/owner-home/contribute` validates + acks but
+      does NOT persist (no contributions table). Land the table so owner entries
+      show in both the Owner field log and the GC view.
+- [ ] **Pay-app approve** — NeedsYouCard approve is a local stub (no Stripe/write).
+      Keep demo-wrapped until counsel clears the pay-app flow.
+- [ ] **Stream D — verify seed data** matches the locked display canon used by
+      `/api/owner-home`: budget total $1.65M, remaining $1.15M, pay-app $48K,
+      build 42%, week 17/37, framer "Tahoe Carpentry Co.", owners "Cody & Sara
+      Harwell".

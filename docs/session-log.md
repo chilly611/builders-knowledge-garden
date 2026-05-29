@@ -6,6 +6,10 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-29 (Cowork) — Session close: Marin seed verified on `origin/main` (6eb23d0) — `MARIN_CAST` (14-member cast) / `MARIN_OWNER_LENS` / `MARIN_BUDGET_HEADROOM = $347K` confirmed live; task complete, no code changes this session.
+
+---
+
 ## 2026-05-28 (late evening PT) — Cowork Session: Marin Seed — Multi-Lane Cast + Owner Lens
 **Agent:** Cowork (Claude Opus 4.7), single seed-file refresh; additive edits only.
 **Branch:** `main` (direct push, demo-eve consolidation work).
@@ -3388,3 +3392,57 @@ wiring live pay-app and closeout-publication flows.
 - Review whether the Lens permission WIP (4 files) should be committed.
 
 **Next:** Founder pulls + pushes from Mac terminal, then every interface (Chat, Cowork, Claude Code) starts every session with `cd ~/Developer/bkg && git status && git pull`.
+
+## 2026-05-29 — MLP-Owner: Owner Lane home wired into /killerapp/projects/[id]
+**Agent:** Claude Code (claude-opus-4-8)
+**Branch:** `feat/owner-lane-home`
+
+**Goal:** Ship the Owner Lane home (Modern Farmhouse · Marin) as the real in-app
+screen — a faithful port of the design export's standalone `OwnerView`, with
+EVERY data cell gated through the Lanes×Lenses matrix (fail-closed → redacted).
+
+**Shipped (all net-new unless noted):**
+- `src/app/killerapp/projects/[id]/owner/` — `OwnerHomeClient.tsx` (composition),
+  `parts.tsx` (GlobalStrips, OwnerGauge, NeedsYouCard, FieldLog, OwnerEntry,
+  PersistentNav, BkgMark), `icons.tsx`, `owner-lane.css` (all selectors scoped
+  under `.ov-root`; demo-wall scaffolding dropped).
+- `src/app/api/owner-home/route.ts` — single GET read path. Auth + 7 parallel
+  `checkLensPermission` calls; denied cells OMITTED from payload. Dev-only
+  `?preview=1` bypass (NODE_ENV-guarded).
+- `src/app/api/owner-home/contribute/route.ts` — POST for the Owner field-log
+  composer; gated on photos_field_logs/create. Persistence is a TODO (no
+  contributions table yet).
+- `src/app/killerapp/projects/[id]/LaneRouter.tsx` — resolves the user's role for
+  the ROUTE param id (owner→OwnerHomeClient, gc→existing ProjectDashboardClient
+  untouched, else placeholder). Dev `?preview=1` / `?lane=<role>` overrides.
+- `page.tsx` (MODIFIED) — now async, awaits `params` (Next 16), renders LaneRouter.
+- `supabase/migrations/20260529_marin_owner_lane_membership.sql` — seeds the Marin
+  owner's project_members + project_lane_memberships rows. COMMITTED, NOT APPLIED.
+- `specs/bkg/owner-lane-home-v2.html` — the standalone design export, implemented from.
+- `public/owner-lane/` — bkg-logo.mp4 + journey images.
+
+**Verified:** typecheck clean for all touched files (only pre-existing test-config
+errors remain). Dev server + browser preview at
+`/killerapp/projects/55730cd3-…?preview=1` renders the full screen — greeting,
+budget/journey strips, pay-app "Needs you" card, 3 gauges (42% / ~20wks / $1.15M),
+plain-language summary, FieldLog composer, 2 site entries. 0 console errors.
+Fixed a real bug: `params.id` accessed synchronously → `projectId=undefined` to the
+API; resolved by awaiting `params`.
+
+**NEEDS HUMAN REVIEW before push:**
+- **Owner-contribute permission conflict (product + possibly legal).** The shipped
+  Lens matrix grants the owner lane photos_field_logs VIEW+EXPORT only — NOT
+  create. So a real owner's FieldLog composer is correctly DISABLED (fail-closed),
+  even though the SA3 design shows it. To enable, either grant owner create in the
+  matrix (Stream B) or uncomment the per-membership `custom_lens_overrides` block
+  in the new seed migration. I did NOT make this call — it expands permissions and
+  the upload-consent UX is already a counsel item in tasks.todo.md.
+- **Pay-app approval UX is legal-adjacent.** NeedsYouCard's approve is a local
+  state stub (no Stripe, no write) with a TODO — kept demo-only per tasks.todo
+  ("pin demo wrapper until counsel clears pay-app flow").
+
+**Flags:**
+- **SSH push broken** (no PAT / host-key error in env). Did NOT push. Founder
+  pushes `feat/owner-lane-home` from Mac terminal after reviewing the two items above.
+- Stray `Owner Lane _standalone_.html` at repo root (accidental artifact) left
+  untracked — not committed.
