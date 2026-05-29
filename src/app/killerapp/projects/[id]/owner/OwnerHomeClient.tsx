@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import './owner-lane.css';
 import {
   OwnerGauge, NeedsYouCard, FieldLog, OwnerEntry, GlobalStrips, PersistentNav,
+  SealMark, Reveal,
   type Reading, type EntryData,
 } from './parts';
 
@@ -127,33 +128,39 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
 
           {/* Hero */}
           {overview ? (
-            <header className="ov-hero">
-              <div className="ov-hero-img" style={{ backgroundImage: 'url(/owner-lane/structural-journey.jpeg)' }} />
-              <div className="ov-hero-tint" />
-              <div className="ov-hero-grid" />
-              <div className="ov-hero-scrim" />
-              <div className="ov-hero-text">
-                <div className="ov-hero-eyebrow">Your build · by the instruments</div>
-                <h1 className="ov-hero-title">Where your build stands</h1>
-                <div className="ov-hero-sub">The same gauges your builder reads — in plain words, just for you.</div>
-              </div>
-              <div className="ov-hero-cap"><span className="plate-caption">Modern Farmhouse</span></div>
-            </header>
+            <Reveal>
+              <header className="ov-hero">
+                <div className="ov-hero-img" style={{ backgroundImage: 'url(/owner-lane/structural-journey.jpeg)' }} />
+                <div className="ov-hero-tint" />
+                <div className="ov-hero-grid" />
+                <div className="ov-hero-scrim" />
+                <div className="ov-hero-text">
+                  <div className="ov-hero-eyebrow">Your build · by the instruments</div>
+                  <h1 className="ov-hero-title">Where your build stands</h1>
+                  <div className="ov-hero-sub">The same gauges your builder reads — in plain words, just for you.</div>
+                </div>
+                <div className="ov-hero-seal"><SealMark size={76} delay={0.15} /></div>
+                <div className="ov-hero-cap"><span className="plate-caption">Modern Farmhouse</span></div>
+              </header>
+            </Reveal>
           ) : (
             <div className="bkg-section"><Redacted what="The project overview" /></div>
           )}
 
           {/* Needs you */}
-          <section className="bkg-section">
-            <div className="bkg-section-head"><h2>Needs you</h2><span className="eng-label">1 WAITING · APPROVALS</span></div>
-            {needsYou ? (
-              <NeedsYouCard amount={needsYou.amount} budgetLeft={needsYou.budgetLeft} budgetLeftLabel={needsYou.budgetLeftLabel} framer={needsYou.framer} canApprove={needsYou.canApprove} approved={needsYou.approved} projectId={projectId} preview={data.preview} />
-            ) : (
-              <Redacted what="Approvals" />
-            )}
-          </section>
+          <Reveal delay={0.06}>
+            <section className="bkg-section">
+              <div className="bkg-section-head"><h2>Needs you</h2><span className="eng-label">1 WAITING · APPROVALS</span></div>
+              {needsYou ? (
+                <NeedsYouCard amount={needsYou.amount} budgetLeft={needsYou.budgetLeft} budgetLeftLabel={needsYou.budgetLeftLabel} framer={needsYou.framer} canApprove={needsYou.canApprove} approved={needsYou.approved} projectId={projectId} preview={data.preview} />
+              ) : (
+                <Redacted what="Approvals" />
+              )}
+            </section>
+          </Reveal>
 
           {/* The big three */}
+          <Reveal delay={0.12}>
           <section className="bkg-section">
             <div className="bkg-section-head"><h2>The big three, at a glance</h2><span className="eng-label">MARIN · WK {schedule?.weekOf ?? '—'} OF {schedule?.weeksTotal ?? '—'} · STAGE 04</span></div>
             <div className="ov-gauges">
@@ -162,6 +169,7 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
               {budget ? <OwnerGauge question={budget.reading.question} value={budget.reading.value} accent={budget.reading.accent} read={budget.reading.gaugeRead} note={budget.reading.note} noteTone={budget.reading.noteTone} /> : <RedactedGauge label="Budget" />}
             </div>
           </section>
+          </Reveal>
 
           {/* Plain-language summary */}
           {overview && (

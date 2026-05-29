@@ -38,7 +38,7 @@ function makeDb(seed: Row[] = [], opts: { failReads?: boolean } = {}) {
         },
       }),
       insert: async (newRows: Row[]) => {
-        newRows.forEach((r) => rows.push({ id: String(nextId++), ...r }));
+        newRows.forEach((r) => rows.push({ ...r, id: String(nextId++) }));
         return { error: null };
       },
     };

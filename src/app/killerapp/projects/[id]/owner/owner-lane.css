@@ -124,6 +124,8 @@
 .ov-root .ov-hero-sub { font-family: var(--font-editorial); font-style: italic; font-size: 19px; color: var(--ink-script); margin-top: 12px; max-width: 30ch; line-height: 1.35; }
 .ov-root .ov-hero-cap { position: absolute; right: 30px; bottom: 16px; z-index: 3; }
 .ov-root .ov-hero-cap .plate-caption { font-size: 24px; line-height: 1.2; color: var(--ink-script); white-space: nowrap; text-shadow: 0 1px 0 var(--paper-cream), 0 0 10px var(--paper-cream); }
+/* The big animated seal — a botanical medallion anchored top-right of the hero. */
+.ov-root .ov-hero-seal { position: absolute; top: 16px; right: 20px; z-index: 4; line-height: 0; }
 
 /* ─── NEEDS-YOU card ─────────────────────────────────────────────────────── */
 .ov-root .ny-grid { display: grid; grid-template-columns: 1fr 256px; }

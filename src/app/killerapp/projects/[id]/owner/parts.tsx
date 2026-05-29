@@ -10,7 +10,8 @@
  * composition layer, not inside these parts).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { Ico } from './icons';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
@@ -47,6 +48,46 @@ export function BkgMark({ size = 28, radius = 4 }: { size?: number; radius?: num
     <span className="bkg-mark" style={{ width: size, height: size, borderRadius: radius }}>
       <video ref={ref} src="/owner-lane/bkg-logo.mp4" autoPlay loop muted playsInline preload="auto" />
     </span>
+  );
+}
+
+// ── The seal — the big animated botanical mark ───────────────────────────────
+// Wraps the looping BkgMark video in a spring entrance + a slow "breathing"
+// scale so the seal reads as alive and prominent. Honors prefers-reduced-motion:
+// when reduced, it appears at rest with no entrance and no loop.
+export function SealMark({ size = 72, radius, delay = 0.1 }: { size?: number; radius?: number; delay?: number }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.span
+      className="ov-seal"
+      style={{ display: 'inline-flex' }}
+      initial={reduce ? false : { scale: 0.55, opacity: 0, rotate: -12 }}
+      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+      transition={{ type: 'spring', stiffness: 150, damping: 15, delay }}
+    >
+      <motion.span
+        style={{ display: 'inline-flex' }}
+        animate={reduce ? undefined : { scale: [1, 1.035, 1] }}
+        transition={reduce ? undefined : { duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <BkgMark size={size} radius={radius ?? Math.round(size / 6)} />
+      </motion.span>
+    </motion.span>
+  );
+}
+
+// ── Reveal — a small entrance wrapper (fade + rise) for owner sections ────────
+export function Reveal({ children, delay = 0, y = 16, className }: { children: ReactNode; delay?: number; y?: number; className?: string }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduce ? false : { opacity: 0, y }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: [0.22, 0.61, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -336,11 +377,12 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
   const segW = 100 / PHASES.length;
   const cur = ai * segW + segW * (buildPct / 100);
   const payLabel = fmtK(payApp);
+  const reduce = useReducedMotion();
   return (
     <div className="gstrips">
       <div className="gstrip">
         <div className="gstrip-lead">
-          <BkgMark size={38} />
+          <SealMark size={40} delay={0} />
           <div className="gstrip-lead-txt">
             <div className="gstrip-brand">{projectName}</div>
             <div className="gstrip-kicker">Builder&apos;s Knowledge Garden · Owner</div>
@@ -377,7 +419,7 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
         {showSchedule ? (
           <>
             <div className="gstrip-track jtrack">
-              <div className="jline"><div className="jline-fill" style={{ width: cur + '%' }} /></div>
+              <div className="jline"><motion.div className="jline-fill" initial={reduce ? false : { width: 0 }} animate={{ width: cur + '%' }} transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }} /></div>
               {PHASES.map((p, i) => (
                 <div key={p.id} className={`jnode ${ai > i ? 'is-done' : ''} ${p.id === active ? 'is-cur' : ''}`}>
                   <span className="jdot" />
