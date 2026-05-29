@@ -3357,3 +3357,34 @@ wiring live pay-app and closeout-publication flows.
 - Mid-session the working tree was moved by a local cleanup into `Documents/BKG-archive-2026-05-28/The Builder Garden/app`. The git repo + remote stayed intact and in sync with live `origin/main`; work continued there without loss.
 
 **Next (Stream C):** consume `src/lib/lens/` — call `checkLensPermission` to gate UI surfaces per lane. Do not redefine the enums; import from `types.ts`. Await matrix ratification before exposing non-Owner/GC lanes.
+## 2026-05-29 — Cowork Session: Canonical-folder lock-in + duplicate-folder archive
+**Agent:** Cowork (claude-opus-4-7, 1M)
+
+**Goal:** Lock in `~/Developer/bkg` as the single canonical clone, record the decision so every interface stops guessing where to work, archive all duplicate Builder-Garden / bkg folders safely (mv, not rm), and document Google Drive cleanup that has to happen from the Drive app.
+
+**Shipped:**
+- **Canonical decision recorded** — added "Canonical Working Folder (locked 2026-05-29)" block near the top of `CLAUDE.md` so every session starts there. Committed locally as `478fd3b`. `BKG-PROJECT-INSTRUCTIONS.md` does not exist in the repo; the platform-docs copy should be updated separately.
+- **WIP committed locally** — the 9 untracked items in canonical (BKG-MULTI-LANE-STRATEGY-BRIEF.md, john walkthrough May 28 files/, images/Owner Lane Home v1 PDF, 5 new TSX components in `src/components/`, `.claude/launch.json`) committed as `1acb293` "wip: stream B/C/D work-in-progress checkpoint" so they aren't dangling.
+- **6 duplicate folders archived** (~10.6 GB total, all intra-`Documents` mv, instant):
+  - `~/Documents/the Builder Garden PC 1` (1.4G)
+  - `~/Documents/The Builder Garden` (5.7G) — including the prior active parallel clone at `app/`
+  - `~/Documents/The Builder Garden PC 2` (189M)
+  - `~/Documents/bkg-killer-app` (304K)
+  - `~/Documents/Claude/Projects/bkg-killer-app` (288K)
+  - `~/Documents/Claude/Projects/The Builder Garden` (3.0G)
+  Destination: `~/Documents/BKG-archive-2026-05-29/` (intentionally NOT `~/` — the Cowork sandbox only had `~/Documents` and `~/Library/CloudStorage` mounted; moving to `~/Documents` keeps everything on one volume = fast rename, no copy. Mac terminal can `mv` it up to `~/` if preferred).
+- **4 untracked WIP files preserved before archiving** — `The Builder Garden/app/` had `src/lib/lens/check-permission{,.test}.ts`, `src/lib/lens/types.ts`, `supabase/migrations/20260528_lanes_lens_permission_matrix.sql` (Lens permission matrix work). Copied into canonical before archive moved the parent. Review whether to commit.
+- **Archive manifest written** to `~/Documents/BKG-archive-2026-05-29/MANIFEST.txt` (per-folder size + source path + recover-from-archive recipe).
+- **Google Drive cleanup deferred** — 3 BKG paths exist in `~/Library/CloudStorage/GoogleDrive-chillyd@gmail.com/`. NOT moved (mv-while-Drive-syncs corrupts state). Logged in `~/Documents/BKG-archive-2026-05-29/DRIVE-FOLDERS-TO-CLEAN.txt` for manual cleanup via the Drive app.
+
+**Learned (added to `tasks.lessons.md`):**
+- The Cowork FUSE mount cannot `unlink` any file (not just `.git/*.lock` — *any* file). Multi-stage git ops that delete files (rebase, pull, reset, checkout-over-changes) all fail with "Operation not permitted". Additive ops (commit-of-new-content, ref updates) succeed. Plan around this: do file deletes / rebases from the Mac terminal, not from Cowork bash. The lock-creation-without-unlink loop documented earlier in this file applies to ALL files, not just .lock.
+- Never keep the active git clone in a cloud-synced folder. One clone, outside cloud sync, recorded in CLAUDE.md.
+
+**Open / deferred to founder's Mac terminal:**
+- `cd ~/Developer/bkg && git pull --rebase origin main && git push` — local is now 4 commits ahead of origin (WIP + canonical-folder doc), origin is 13 ahead of local. Cowork can't rebase due to the unlink limitation. Conflict surface: my local `c87fe5c` "seed: multi-lane cast + Owner Lens on Marin Farmhouse" overlaps with origin's `568c153` "seed(marin): multi-lane cast + Owner Lens + $347K headroom" (parallel-session twin) — rebase will likely need a manual conflict resolution on `src/lib/seed-data/marin-farmhouse.ts`. The 4 preserved Lens permission files are net-new — won't conflict.
+- Move `~/Documents/BKG-archive-2026-05-29/` to `~/BKG-archive-2026-05-29/` if you prefer the original location.
+- Clean up Google Drive BKG duplicates via the Drive app (see `~/Documents/BKG-archive-2026-05-29/DRIVE-FOLDERS-TO-CLEAN.txt`).
+- Review whether the Lens permission WIP (4 files) should be committed.
+
+**Next:** Founder pulls + pushes from Mac terminal, then every interface (Chat, Cowork, Claude Code) starts every session with `cd ~/Developer/bkg && git status && git pull`.

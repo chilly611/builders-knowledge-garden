@@ -2460,3 +2460,12 @@ The 20 pieces need formal specs. Sequence:
 - [ ] OG image generator for closeout pages — propose to Stream A
 - [ ] "Codes met" data source: tie strictly to inspector pass records OR add
       disclaimer
+## ═══ 2026-05-29 COWORK SESSION CARRYOVER ═══
+
+Items for the founder to handle from the Mac terminal (Cowork mount can't do them):
+
+- [ ] **Reconcile canonical clone with origin** — Cowork couldn't `git pull --rebase` (FUSE mount unlink limitation). Local `~/Developer/bkg` is 4 ahead of origin (incl. WIP commit `1acb293` and canonical-folder doc `478fd3b`), origin is 13 ahead. Likely conflict on `src/lib/seed-data/marin-farmhouse.ts` (local `c87fe5c` vs origin `568c153` — both implement the same multi-lane cast). From Mac terminal: `cd ~/Developer/bkg && git pull --rebase origin main` → resolve seed-data conflict (origin's version is canonical per stream-E) → `git push origin main`.
+- [ ] **Clean up Google Drive BKG duplicates via the Drive app** — see `~/Documents/BKG-archive-2026-05-29/DRIVE-FOLDERS-TO-CLEAN.txt`. Three paths under `~/Library/CloudStorage/GoogleDrive-chillyd@gmail.com/`. Must be removed from inside the Drive app or the web UI, NOT by mv in Finder.
+- [ ] **Decide whether to move the archive up to `~/`** — Cowork placed the archive at `~/Documents/BKG-archive-2026-05-29/` because only Documents + CloudStorage were mounted. Move with: `mv ~/Documents/BKG-archive-2026-05-29 ~/` if you want the original location.
+- [ ] **Review preserved Lens permission WIP** — 4 files were copied from `~/Documents/The Builder Garden/app/` into canonical before that folder was archived. Files: `src/lib/lens/check-permission.ts`, `check-permission.test.ts`, `types.ts`, `supabase/migrations/20260528_lanes_lens_permission_matrix.sql`. Decide commit or discard.
+- [ ] **Recover any unreviewed work from `~/Documents/BKG-archive-2026-05-29/The Builder Garden/app-stale/`** — that subfolder had 377 untracked files (local-only debris). Worth a glance before treating the archive as cold storage.

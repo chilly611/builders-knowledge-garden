@@ -42,3 +42,4 @@ next-env.d.ts
 
 .vercel
 scripts/__pycache__/
+gitlock-trash/

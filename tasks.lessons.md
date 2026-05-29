@@ -2344,3 +2344,31 @@ memberships (any single permit wins), and evaluates per-membership overrides
 before the shared matrix. Absence of a matrix row = deny. Keep this contract:
 a pure decision layer is testable without a real DB and reusable from any
 caller that has already authenticated the user.
+---
+
+## Never keep the active git clone in a cloud-synced folder (learned 2026-05-29)
+
+**The mistake:** Multiple BKG clones drifted across `~/Documents/The Builder Garden/app`, `~/Documents/Claude/Projects/The Builder Garden/app`, `~/Documents/the Builder Garden PC 1/app`, `~/Documents/The Builder Garden PC 2/app`, plus three Google Drive copies. Every session, the agent had to guess which clone was "current," and parallel sessions on different clones forked the history (e.g. `c87fe5c` local "seed: multi-lane cast" vs origin `568c153` "seed(marin): multi-lane cast" — the same work shipped twice). The folder-name ambiguity ("The Builder Garden" vs "the Builder Garden PC 1" vs "Claude/Projects/The Builder Garden") made every audit slow and error-prone.
+
+**The rule:** **One clone, outside cloud sync, recorded in `CLAUDE.md`.** The canonical working folder is `~/Developer/bkg`. It is the only clone. It is NOT in any cloud-synced directory (no Drive, no iCloud, no Dropbox). Every session begins with `cd ~/Developer/bkg && git status && git pull`. All other Builder-Garden / bkg folders are archived. Google Drive copies are cleaned up from inside the Drive app, never by `mv` in Finder while the Drive daemon is syncing.
+
+**The corollary:** When the canonical decision is added to `CLAUDE.md`, do it near the top so every interface that reads the file in order (Cowork, Chat, Claude Code) sees it immediately. Burying it under the End-of-Session Protocol or further down means agents that read only the first ~50 lines (which most do for orientation) miss the lock.
+
+---
+
+## The Cowork FUSE mount cannot unlink any file — not just .git/*.lock (learned 2026-05-29)
+
+**The mistake:** Tried to `git pull --rebase origin main` from Cowork bash. It failed with `unable to unlink '.git/index.lock': Operation not permitted`. Reflexively swept the lock file, retried — same failure. Then tried `git reset --hard origin/main` and discovered the unlink restriction applies to *every* file in the mount, not just `.git/*.lock`:
+```
+error: unable to unlink old 'src/components/CRMDashboard.tsx': Operation not permitted
+error: unable to unlink old 'tasks.lessons.md': Operation not permitted
+[...]
+fatal: Could not reset index file to revision 'origin/main'.
+```
+Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /projects/[id]"). Any multi-stage git op that needs to remove tracked files (rebase, pull, reset, checkout-over-changes) fails immediately on this mount. **Only additive ops work** — `git commit` of net-new content succeeds because it only writes new blobs and updates the HEAD ref pointer.
+
+**The rule:** From Cowork bash, treat the BKG mount as append-only. You can `git commit` net-new files, write to `docs/`, append to `tasks.*.md`, run any pure-read git command (`status`, `log`, `diff`). You CANNOT rebase, pull, reset --hard, or checkout-over-changes. When the workflow needs any of those, finish what you can in Cowork (e.g. preserve WIP files, write docs, mv folders OUTSIDE `.git`) and defer the git-mutation step to the founder's Mac terminal with a clear handoff in `tasks.todo.md`. The `mv` operation (rename) works fine across the mount — so archiving folders and quarantining lockfiles is feasible. Just not `rm` or anything git does internally that requires `unlink`.
+
+**The corollary:** The earlier lesson "isolation: worktree is broken on this mount" was a special case of this. The general lesson is broader: ANY git op that needs to delete a file is broken on this mount. Plan around the constraint instead of fighting it. Don't burn 20 minutes sweeping `.lock` files — sweep once, attempt the op, and if it fails on a non-lock unlink, switch to a different strategy.
+
+**The corollary's corollary:** Quarantining locks: `mv .git/index.lock gitlock-trash/...` works because mv is a rename, not an unlink. But the renamed-aside lock files accumulate; over time `.git/refs/heads/` accumulates `.stale-1780016689` files that git scans as refs and chokes on. Quarantine OUTSIDE `.git/` (e.g. `gitlock-trash/` in the repo root), not inside it.
