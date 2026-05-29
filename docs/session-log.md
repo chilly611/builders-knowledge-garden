@@ -3388,3 +3388,8 @@ wiring live pay-app and closeout-publication flows.
 - Review whether the Lens permission WIP (4 files) should be committed.
 
 **Next:** Founder pulls + pushes from Mac terminal, then every interface (Chat, Cowork, Claude Code) starts every session with `cd ~/Developer/bkg && git status && git pull`.
+
+## 2026-05-29 (Cowork) — Session close
+Marin seed verified on origin/main (6eb23d0); MARIN_CAST / MARIN_OWNER_LENS / MARIN_BUDGET_HEADROOM = $347K live; Owner Lane v2 visual spec added at specs/bkg/owner-lane-home-v2.html.
+
+---
