@@ -1,3 +1,44 @@
+## ═══ MARIN SEED — MULTI-LANE CAST + OWNER LENS (2026-05-28 late evening Cowork) ═══
+
+`src/lib/seed-data/marin-farmhouse.ts` now exposes the multi-lane cast and the first
+per-Lane content block (Owner Lens). Streams B & C are unblocked. Budget headline
+held the line: $1.65M total / $312K spent / $186K committed / $1.15M remaining /
+**$347K headroom (new constant)**.
+
+**Shipped:**
+- [x] Add `Lane` + `LaneSubtype` types (project-role lanes: OWNER / GC / SUB / SERVICE-PROVIDER / SUPPLIER / WORKER — distinct from the platform's Admin/Pro/Public/Machine business lanes)
+- [x] Add `CastMember` interface + `MARIN_CAST` (14 members: 2 OWNER, 1 GC, 5 SUB, 2 SERVICE-PROVIDER, 2 SUPPLIER, 2 WORKER) with name, role, contact, lane, laneSubtype, joined_at, invited_by, personalizing_detail
+- [x] Add `castInLane()` helper + module-load invariant warning if lane counts drift
+- [x] Add `MARIN_BUDGET_HEADROOM = 347_000` (distinct from remaining: projected favorable variance under the locked $1.65M contract)
+- [x] Add `OwnerContribution`, `OwnerApproval`, `OwnerLens` types
+- [x] Add `MARIN_OWNER_LENS` — welcome message from the Harwells + 3 contributions (paint chip / garden sketch / Ferguson receipt) + 2 pending approvals ($48K framing pay-app, $14.8K kitchen-island change order)
+- [x] Preserve `MARIN_TEAM` shape + 6 entries (zero churn for the 7 importing files)
+- [x] `tsc --noEmit` clean (121 baseline preserved, zero new errors)
+
+**Available for Streams B & C (import contract):**
+```ts
+import {
+  MARIN_CAST,
+  castInLane,
+  MARIN_OWNER_LENS,
+  MARIN_BUDGET_HEADROOM,
+  type Lane,
+  type LaneSubtype,
+  type CastMember,
+  type OwnerLens,
+  type OwnerContribution,
+  type OwnerApproval,
+} from '@/lib/seed-data/marin-farmhouse';
+```
+
+**Follow-ups (not blocking the demo):**
+- [ ] Drop placeholder asset files in `public/uploads/marin/` for the 3 Owner Lens contributions (paint-chip JPG, garden-sketch PNG, Ferguson receipt PDF) — OR have the Owner Lens surface tolerate missing assets with an empty-state graphic.
+- [ ] When SUB / SERVICE-PROVIDER / SUPPLIER / WORKER lenses come online, mirror the `OwnerLens` shape (welcome + contributions + pending_approvals) rather than inventing a new structure per lane. Future blocks: `MARIN_GC_LENS`, `MARIN_SUB_LENS_*` keyed by `t-framing`/`t-plumbing`/etc.
+- [ ] A future pass can derive `MARIN_TEAM` from `MARIN_CAST` once a consumer is willing to handle the wider 14-row list. Today they coexist and share ids where they align.
+- [ ] If `MARIN_BUDGET_HEADROOM` should be wired into the BudgetRibbon as a fifth chip, that's a one-line addition in `src/components/killerapp-chrome/marin-adapter.ts` / `BudgetRibbon.tsx`.
+
+---
+
 ## ═══ NOW — Verify the Demolition push on Vercel (2026-05-28, post commit `b7fe2a4`) ═══
 
 Pushed commit `b7fe2a4` at session close. Next session (any agent / any Mac) should:
