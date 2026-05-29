@@ -13,19 +13,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Ico } from './icons';
+import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 
-// ── Journey phases (locked stage names — do not rename) ──────────────────────
-export const PHASES = [
-  { id: 'dream', label: 'Dream', n: '01' },
-  { id: 'design', label: 'Design', n: '02' },
-  { id: 'plan', label: 'Plan', n: '03' },
-  { id: 'build', label: 'Build', n: '04' },
-  { id: 'deliver', label: 'Deliver', n: '05' },
-  { id: 'grow', label: 'Grow', n: '06' },
-] as const;
+// ── Journey phases — the 7 LOCKED lifecycle stages, sourced from the shared
+//    canon (KAC_STAGES) so the owner strip can never drift from the rest of the
+//    Killer App: Size Up → Lock → Plan → Build → Adapt → Collect → Reflect.
+export const PHASES = KAC_STAGES.map((s) => ({
+  id: s.slug as string,
+  label: s.short,
+  n: String(s.id).padStart(2, '0'),
+}));
 
+// Where the money sits across the 7 stages, for the budget strip.
 const MONEY_STATE: Record<string, 'paid' | 'now' | 'soon'> = {
-  dream: 'paid', design: 'paid', plan: 'paid', build: 'now', deliver: 'soon', grow: 'soon',
+  'size-up': 'paid', lock: 'paid', plan: 'paid', build: 'now', adapt: 'soon', collect: 'soon', reflect: 'soon',
 };
 
 const fmtUSD = (n: number) => '$' + n.toLocaleString('en-US');
@@ -81,7 +82,7 @@ export function Gauge({ value = 0.5, label = '', accent = '#3C7A8A' }: { value?:
       <circle cx="85" cy="85" r="66" fill="#F2E9D2" stroke="#7C6235" strokeWidth="0.5" />
       <circle cx="85" cy="85" r="62" fill={`url(#face-${id})`} />
       {ticks}
-      {label && <text x="85" y="128" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="8" letterSpacing="1.6" fill="#2A2620">{label.toUpperCase()}</text>}
+      {label && <text x="85" y="128" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="8" letterSpacing="1.6" fill="#2A2620">{label.toUpperCase()}</text>}
       <g transform={`translate(85 85) rotate(${deg})`}>
         <line x1="0" y1="6" x2="0" y2="-50" stroke="#2A2620" strokeWidth="2" strokeLinecap="round" />
       </g>
@@ -142,27 +143,56 @@ export function BigThree({ readings, style }: { readings: Reading[]; style: 'gau
   );
 }
 
-// ── NEEDS-YOU — the framing pay-app approval ─────────────────────────────────
-export function NeedsYouCard({ amount, budgetLeft, budgetLeftLabel, framer, canApprove }: { amount: number; budgetLeft: number; budgetLeftLabel: string; framer: string; canApprove: boolean }) {
-  const [state, setState] = useState<'pending' | 'approved' | 'held'>('pending');
+// ── NEEDS-YOU — the framing pay-app approval (REAL, persisted) ───────────────
+export function NeedsYouCard({
+  amount, budgetLeft, budgetLeftLabel, framer, canApprove,
+  approved = false, projectId, preview = false,
+}: {
+  amount: number; budgetLeft: number; budgetLeftLabel: string; framer: string;
+  canApprove: boolean; approved?: boolean; projectId: string; preview?: boolean;
+}) {
+  const [state, setState] = useState<'pending' | 'approved' | 'held'>(approved ? 'approved' : 'pending');
+  const [busy, setBusy] = useState(false);
   const pct = Math.max(2, Math.round((amount / budgetLeft) * 100));
 
-  // PAYMENTS NOT WIRED. This UI captures the owner's intent only. The actual
-  // release of funds (Stripe / lender draw package) is intentionally out of
-  // scope for the MLP — wiring it touches a legal-adjacent money-movement flow
-  // that needs human review before it ships. See tasks.todo.md.
-  const onApprove = () => setState('approved'); // TODO: POST to pay-app approval endpoint once payments are wired + reviewed.
+  // Reflect server truth if the loader re-resolves the approval (e.g. on return).
+  useEffect(() => { setState(approved ? 'approved' : 'pending'); }, [approved]);
+
+  // REAL approval. POSTs to /api/owner-home/approve, which re-checks the
+  // change_orders/approve Lens server-side and persists to project_change_orders
+  // so the decision survives leave → return. No optimistic fake: the card only
+  // flips after the server confirms.
+  async function postApproval(next: boolean) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      const res = await fetch(`/api/owner-home/approve${preview ? '?preview=1' : ''}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ projectId, approve: next }),
+      });
+      if (!res.ok) throw new Error(`approve ${res.status}`);
+      setState(next ? 'approved' : 'pending');
+    } catch (err) {
+      console.error('[NeedsYou] approval failed:', err);
+      // Leave state unchanged on failure — never show a success that didn't persist.
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (state === 'approved') {
     return (
       <article className="bkg-specimen">
         <header className="bkg-specimen-head">
-          <span className="eng-label">PLATE NO. 0042 · BUILD · PAY APPLICATION 03</span>
+          <span className="eng-label">PLATE NO. 0042 · BUILD · PAY APPLICATION 04</span>
           <span className="bkg-specimen-tag tone-sage">Approved</span>
         </header>
-        <h2 className="ny-title">Payment released — {fmtUSD(amount)}</h2>
-        <p className="ny-blurb"><em>{framer}</em> has been paid for the framing. It&apos;s recorded in your field log and your budget — nothing more is needed from you right now.</p>
-        <button className="btn-link" onClick={() => setState('pending')}>Undo <Ico.arrow /></button>
+        <h2 className="ny-title">Payment approved — {fmtUSD(amount)}</h2>
+        <p className="ny-blurb">You&apos;ve approved the framing payment for <em>{framer}</em>. It&apos;s recorded in your field log and your budget — nothing more is needed from you right now.</p>
+        <button className="btn-link" onClick={() => postApproval(false)} disabled={busy}>{busy ? 'Saving…' : <>Undo <Ico.arrow /></>}</button>
       </article>
     );
   }
@@ -170,7 +200,7 @@ export function NeedsYouCard({ amount, budgetLeft, budgetLeftLabel, framer, canA
   return (
     <article className="bkg-specimen ny">
       <header className="bkg-specimen-head">
-        <span className="eng-label">PLATE NO. 0042 · BUILD · PAY APPLICATION 03</span>
+        <span className="eng-label">PLATE NO. 0042 · BUILD · PAY APPLICATION 04</span>
         <span className="bkg-specimen-tag tone-rust">Needs you</span>
       </header>
       <div className="ny-grid">
@@ -190,11 +220,11 @@ export function NeedsYouCard({ amount, budgetLeft, budgetLeftLabel, framer, canA
             </p>
           )}
           <div className="ny-actions">
-            <button className="btn btn-accent btn-amount" onClick={onApprove} disabled={!canApprove} title={canApprove ? undefined : 'Your Lens does not permit approving payments'}>Approve {fmtUSD(amount)}</button>
-            <button className="btn btn-ghost" onClick={() => setState(held ? 'pending' : 'held')}>
+            <button className="btn btn-accent btn-amount" onClick={() => postApproval(true)} disabled={!canApprove || busy} title={canApprove ? undefined : 'Your Lens does not permit approving payments'}>{busy ? 'Approving…' : `Approve ${fmtUSD(amount)}`}</button>
+            <button className="btn btn-ghost" onClick={() => setState(held ? 'pending' : 'held')} disabled={busy}>
               <Ico.pause /> {held ? 'Resume' : 'Hold — ask a question'}
             </button>
-            <button className="btn-link">See the framing photos <Ico.arrow /></button>
+            <button className="btn-link is-alpha" disabled title="Alpha — photo viewing is coming soon">See the framing photos · soon</button>
           </div>
         </div>
         <div className="ny-amount">
@@ -219,39 +249,18 @@ const KINDS = [
   { id: 'receipt', label: 'Receipt', icon: Ico.receipt },
 ] as const;
 
-export function FieldLog({ projectId, canCreate, preview = false }: { projectId: string; canCreate: boolean; preview?: boolean }) {
+export function FieldLog({ canCreate }: { projectId: string; canCreate: boolean; preview?: boolean }) {
   const [kind, setKind] = useState<string>('photo');
   const [note, setNote] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function submit() {
-    if (!note.trim() || busy) return;
-    setBusy(true);
-    setDone(false);
-    try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      // The endpoint re-checks 'create' permission on photos_field_logs through
-      // the Lens before accepting — the client gate below is UX-only.
-      const res = await fetch(`/api/owner-home/contribute${preview ? '?preview=1' : ''}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ projectId, kind, note: note.trim(), fileName: file?.name ?? null }),
-      });
-      if (res.ok) {
-        setDone(true);
-        setNote('');
-        setFile(null);
-        if (inputRef.current) inputRef.current.value = '';
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
+  // ALPHA — saving an owner upload to the shared field log is not wired yet.
+  // The composer stays fully interactive so the experience is legible, but the
+  // action is honestly disabled rather than faking a successful save. (The
+  // Owner Lens also grants photos_field_logs VIEW/EXPORT only, not create.)
+  const alphaNote = canCreate ? 'Alpha · coming soon' : 'Not on your Lens yet';
 
   return (
     <div className="fl">
@@ -282,11 +291,8 @@ export function FieldLog({ projectId, canCreate, preview = false }: { projectId:
           <div className="fl-foot">
             <span className="eng-label"><Ico.clip /> &nbsp;Goes straight to your builder &amp; your field log</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-              {done && <span className="fl-ok">Added ✓</span>}
-              <button className="btn btn-accent" disabled={!note.trim() || !canCreate || busy} onClick={submit}
-                title={canCreate ? undefined : 'Your Lens does not permit adding to the field log'}>
-                {busy ? 'Adding…' : 'Add to log'}
-              </button>
+              <span className="ov-alpha-tag">{alphaNote}</span>
+              <button className="btn btn-accent" disabled title="Alpha — saving to your file is coming soon">Add to log</button>
             </span>
           </div>
         </div>
@@ -432,13 +438,13 @@ export function PersistentNav() {
     <div className="pnav">
       {ask && (
         <div className="pnav-panel pnav-ask-panel">
-          <div className="pnav-panel-head"><span className="eng-label">Ask the garden</span><button className="pnav-x" onClick={() => setAsk(false)}>✕</button></div>
+          <div className="pnav-panel-head"><span className="eng-label">Ask the garden</span><span className="pnav-lane">Alpha</span><button className="pnav-x" onClick={() => setAsk(false)}>✕</button></div>
           <form className="bkg-composer" onSubmit={(e) => e.preventDefault()}>
             <div className="bkg-composer-leader"><Ico.search /></div>
-            <input className="bkg-composer-input" placeholder="Ask about your build, budget, or a decision…" />
-            <button type="submit" className="bkg-composer-submit">Ask</button>
+            <input className="bkg-composer-input" placeholder="Ask about your build, budget, or a decision…" disabled />
+            <button type="submit" className="bkg-composer-submit" disabled title="Alpha — coming soon">Ask</button>
           </form>
-          <div className="pnav-ask-hint">The garden answers in plain words — and shows its work.</div>
+          <div className="pnav-ask-hint">Alpha — the garden&apos;s plain-language answers are coming soon.</div>
         </div>
       )}
       {nav && (

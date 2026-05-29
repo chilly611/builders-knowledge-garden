@@ -27,7 +27,7 @@ interface OwnerHomeData {
   overview: { name: string; owners: string; detail: string; location: string; greeting: string; progressReading: Reading; summary: string } | null;
   budget: { budgetLeftLabel: string; budgetTotalLabel: string; payApp: number; reading: Reading } | null;
   schedule: { buildPct: number; weekOf: number; weeksTotal: number; active: string; reading: Reading } | null;
-  needsYou: { amount: number; framer: string; budgetLeft: number; budgetLeftLabel: string; canApprove: boolean } | null;
+  needsYou: { amount: number; framer: string; budgetLeft: number; budgetLeftLabel: string; canApprove: boolean; approved: boolean } | null;
   entries: EntryData[] | null;
   canContribute: boolean;
 }
@@ -74,6 +74,17 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
     })();
     return () => { cancelled = true; };
   }, [projectId, preview]);
+
+  // Owner lane owns its chrome: suppress the generic KillerAppChrome (budget +
+  // journey ribbon) and the workflow compass FAB that the shared killerapp
+  // layout renders, so the herbarium GlobalStrips are the only chrome — faithful
+  // to the standalone. Scoped to the owner surface via a body class; the
+  // GC/Builder lane is untouched. See owner-lane.css [body.bkg-lane-owner].
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.add('bkg-lane-owner');
+    return () => document.body.classList.remove('bkg-lane-owner');
+  }, []);
 
   if (status === 'loading') {
     return <div className="ov-root" style={{ padding: 48, fontFamily: 'var(--font-editorial)', fontStyle: 'italic', color: 'var(--ink-faded)' }}>Loading your build…</div>;
@@ -136,7 +147,7 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
           <section className="bkg-section">
             <div className="bkg-section-head"><h2>Needs you</h2><span className="eng-label">1 WAITING · APPROVALS</span></div>
             {needsYou ? (
-              <NeedsYouCard amount={needsYou.amount} budgetLeft={needsYou.budgetLeft} budgetLeftLabel={needsYou.budgetLeftLabel} framer={needsYou.framer} canApprove={needsYou.canApprove} />
+              <NeedsYouCard amount={needsYou.amount} budgetLeft={needsYou.budgetLeft} budgetLeftLabel={needsYou.budgetLeftLabel} framer={needsYou.framer} canApprove={needsYou.canApprove} approved={needsYou.approved} projectId={projectId} preview={data.preview} />
             ) : (
               <Redacted what="Approvals" />
             )}

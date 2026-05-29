@@ -1,3 +1,32 @@
+## ═══ NOW — FUNCTIONAL Owner Lane (2026-05-29, Cowork / Opus) ═══
+
+Make the already-merged Owner Lane home (`/killerapp/projects/[id]` → `OwnerHomeClient`) FUNCTIONAL +
+faithful to the published standalone `public/owner-lane.html`. Reuse the shared App Shell; no schema
+changes (reuse `project_change_orders` + the lanes/lens tables already in prod).
+
+**Decisions (founder, this session):** I commit + verify; founder pushes/deploys/dogfoods. Approval
+persists via existing `project_change_orders` (status lifecycle). Suppress generic `KillerAppChrome` for
+the OWNER lane only (GC/Builder untouched).
+
+**Commit 1 — structure + data wiring + permissions:**
+- [ ] Reconcile owner journey strip to the 7 LOCKED stages (Size Up → Lock → Plan → Build → Adapt → Collect → Reflect) — import canonical `KAC_STAGES`; retire stale `Dream/Design/Plan/Build/Deliver/Grow`. CSS `.btrack`/`.jtrack` 6→7 cols.
+- [ ] Source values from seed (live Marin): bump `MARIN_OWNER_LENS.pending_approvals[0].amount` 48_000 → **48_200**; route fallback → 48_200; framer = Tahoe Carpentry Co. (owner-facing canon).
+- [ ] `POST /api/owner-home/approve` — auth + lens (`change_orders`/`approve`) gate; upsert an 'approved' row in `project_change_orders` (service client; idempotent by deterministic description marker). Supports approve + unapprove.
+- [ ] `GET /api/owner-home` reads back the marker row → `needsYou.approved`; client renders approved state on return. **Real loop, no dead button.**
+- [ ] Suppress generic chrome + compass FAB for owner lane only (body class `bkg-lane-owner` + CSS on stable aria-labels). GC keeps KillerAppChrome.
+- [ ] Honest "alpha — coming soon" for Ask the garden / Add to file / video / "see photos" (no fake-functional).
+- [ ] Palette/fonts/copy compliance: kill `#fff` (→ paper-cream); scope locked trio (Archivo + Cormorant Garamond + Space Mono) under `.ov-root`; no red #E8443A; no "CRM"; owner never sees `sub_margin`.
+
+**Commit 2 — Framer Motion (separate):**
+- [ ] Big animated seal (prominent) + journey/hero/needs-you entrance transitions; honor `prefers-reduced-motion` (useReducedMotion).
+
+**Verify before done:**
+- [ ] `tsc --noEmit` clean for changed files; vitest (lens + new approve loop) green; integration test proves approve → read-back persists (mocked Supabase).
+- [ ] Guardrails: no margin on owner surface, no red/#fff, Size Up→Reflect present, big animated seal, no "CRM"; Builder lane + standalone byte-unchanged.
+- [ ] (Sandbox can't finish `next build`/push/deploy/sign-in — handed to founder; Vercel runs the authoritative build.)
+
+---
+
 ## ═══ NOW — Lanes × Lenses data layer + enforcement landed (2026-05-29, Claude Code / Stream B) ═══
 
 Stream B shipped the DB layer + pure permission middleware. New paths only — zero churn to existing files.

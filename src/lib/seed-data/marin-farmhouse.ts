@@ -567,7 +567,7 @@ export const MARIN_OWNER_LENS: OwnerLens = {
       title: 'Pay Application #4 — Framing milestone',
       description:
         'Ridgeline Framing pay app for the framing-start mobilization + first 30% draw. Routes back to Rivera Construction once signed and triggers the lender draw package.',
-      amount: 48_000,
+      amount: 48_200,
       routes_to: 't-framing',
       kind: 'pay_app',
       submitted_at: '2026-05-19T16:00:00.000Z',

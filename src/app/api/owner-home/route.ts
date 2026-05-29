@@ -17,9 +17,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth-server';
+import { getAuthUser, getServiceClient } from '@/lib/auth-server';
 import { checkLensPermission } from '@/lib/lens/check-permission';
 import type { DataCategory, LensAction } from '@/lib/lens/types';
+import { readFramingApprovalStatus } from './approval-store';
 import {
   MARIN_PROJECT_NAME,
   MARIN_LOCATION,
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
 
   const budgetLeftLabel = fmtM(MARIN_BUDGET_REMAINING);
   const budgetTotalLabel = fmtM(MARIN_BUDGET_TOTAL);
-  const payApp = MARIN_OWNER_LENS.pending_approvals[0]?.amount ?? 48_000;
+  const payApp = MARIN_OWNER_LENS.pending_approvals[0]?.amount ?? 48_200;
 
   // ── Build the payload, omitting any cell the Lens denies ───────────────────
   const overview = ovView
@@ -125,6 +126,14 @@ export async function GET(req: NextRequest) {
       }
     : null;
 
+  // Real loop: read back the persisted approval (reuses project_change_orders
+  // via the Lens-aligned change_orders category). Skipped in preview — no DB,
+  // and the design preview always opens on the pending card.
+  const framingApproved =
+    coView && !preview
+      ? (await readFramingApprovalStatus(getServiceClient(), projectId)) === 'approved'
+      : false;
+
   const needsYou = coView
     ? {
         amount: payApp,
@@ -132,6 +141,7 @@ export async function GET(req: NextRequest) {
         budgetLeft: MARIN_BUDGET_REMAINING,
         budgetLeftLabel,
         canApprove: coApprove,
+        approved: framingApproved,
       }
     : null;
 

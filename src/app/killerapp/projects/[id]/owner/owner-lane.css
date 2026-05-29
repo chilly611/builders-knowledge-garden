@@ -14,6 +14,12 @@
    plate + phone mock.
    ───────────────────────────────────────────────────────────────────────── */
 
+/* Locked owner type stack (brief): Archivo + Cormorant Garamond + Space Mono.
+   Loaded here + scoped to .ov-root so the rest of the Killer App keeps the
+   tokens.css fonts (minimal blast radius). Mirrors tokens.css's Google Fonts
+   @import pattern. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Mono:wght@400;700&display=swap');
+
 /* ─── Shell ──────────────────────────────────────────────────────────────── */
 .ov-root {
   position: relative;
@@ -21,6 +27,9 @@
   min-height: 100%;
   color: var(--ink-sepia);
   font-family: var(--font-ui);
+  /* Scope the locked trio to the owner surface only — no global token churn. */
+  --font-editorial: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
 }
 .ov-root .ov { position: relative; background: var(--paper-cream); min-height: 100%; }
 .ov-root .ov::before {
@@ -144,7 +153,7 @@
   display: inline-flex; align-items: center; gap: 9px; letter-spacing: 0.01em;
 }
 .ov-root .btn:active { transform: translateY(1px); }
-.ov-root .btn-accent { background: var(--specimen-teal); border-color: var(--specimen-teal); color: #fff; }
+.ov-root .btn-accent { background: var(--specimen-teal); border-color: var(--specimen-teal); color: var(--paper-cream); }
 .ov-root .btn-accent:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
 .ov-root .btn-ghost { background: transparent; color: var(--ink-graphite); border-color: var(--paper-edge); }
 .ov-root .btn-ghost:hover { border-color: var(--specimen-brass-aged); }
@@ -222,7 +231,7 @@
 .ov-root .gstrip-end-big { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.02em; color: var(--ink-graphite); line-height: 1; font-variant-numeric: tabular-nums; font-weight: 400; }
 .ov-root .gstrip-end-sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); margin-top: 3px; }
 
-.ov-root .btrack { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.ov-root .btrack { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .ov-root .bcell { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); background: var(--paper-cream); padding: 6px 9px; min-height: 40px; display: flex; flex-direction: column; justify-content: center; gap: 1px; cursor: pointer; transition: box-shadow 140ms var(--ease-out-paper); }
 .ov-root .bcell:hover { box-shadow: var(--shadow-page-2); }
 .ov-root .bcell-lab { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); }
@@ -236,7 +245,7 @@
 .ov-root .bcell.is-cur { box-shadow: 0 0 0 1.5px var(--specimen-brass-aged); }
 .ov-root .bcell-tick { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--specimen-rust); box-shadow: 0 0 0 2px var(--paper-cream); }
 
-.ov-root .jtrack { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); align-items: center; height: 46px; padding-top: 6px; }
+.ov-root .jtrack { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); align-items: center; height: 46px; padding-top: 6px; }
 .ov-root .jline { position: absolute; left: 3%; right: 3%; top: 17px; height: 2px; background: var(--paper-edge); border-radius: 2px; }
 .ov-root .jline-fill { height: 100%; background: var(--specimen-teal); border-radius: 2px; }
 .ov-root .jnode { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; }
@@ -297,3 +306,26 @@
 @media (prefers-reduced-motion: reduce) {
   .ov-root * { animation: none !important; transition: none !important; }
 }
+
+/* ─── Owner lane owns its chrome ─────────────────────────────────────────────
+   The Owner home sets body.bkg-lane-owner on mount. Hide the generic
+   KillerAppChrome (budget/journey ribbon) + the workflow compass FAB the shared
+   killerapp layout renders, so the herbarium GlobalStrips are the only chrome —
+   faithful to the standalone. The GC/Builder lane carries no body class, so its
+   chrome is untouched. Targets stable aria-labels (no shared-component edits). */
+body.bkg-lane-owner [aria-label="Project chrome"],
+body.bkg-lane-owner [aria-label="Open workflow navigator"],
+body.bkg-lane-owner [aria-label="Close workflow navigator"],
+body.bkg-lane-owner [aria-label="Workflow navigator"] { display: none !important; }
+
+/* ─── Honest "alpha — coming soon" affordances ───────────────────────────────
+   For interactions that are intentionally not wired yet (Ask the garden, Add to
+   file, photo viewing). They look real but never fake success. */
+.ov-root .ov-alpha-tag {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--specimen-brass-aged);
+  border: 1px solid var(--specimen-brass-aged); border-radius: var(--radius-xs);
+  padding: 3px 7px; white-space: nowrap;
+}
+.ov-root .btn-link.is-alpha,
+.ov-root .btn-link.is-alpha:hover { color: var(--ink-faded); cursor: default; opacity: 0.75; }
