@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Walkthrough · Knowledge Gardens</title>
+<meta name="description" content="Four screens. One conversation. A field briefing for a 12-minute introduction to the Knowledge Gardens.">
+
+<!-- Brand fonts: matches frontiermap + KG OS -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   THE WALKTHROUGH — John's control center · animation-heavy
+   Brand: matches frontiermap.theknowledgegardens.com
+   Parchment + copper + forest-ink · Cormorant Garamond + Space Mono
+   ============================================================ */
+
+:root {
+  --parchment:      #F5F0E8;
+  --parchment-deep: #EFE8DC;
+  --parchment-warm: #F8F3EB;
+  --bone-pale:      #F5F0E8;
+
+  --copper:         #B87333;
+  --copper-deep:    #8E5524;
+  --copper-soft:    rgba(184, 115, 51, 0.18);
+  --copper-line:    rgba(184, 115, 51, 0.35);
+
+  --steel:          #71797E;
+  --steel-light:    #A8ADB1;
+  --steel-soft:     rgba(113, 121, 126, 0.40);
+
+  --forest-ink:     #0F2419;
+  --forest:         #1A3A2E;
+  --moss:           #3C5A4A;
+  --sage:           #5A7561;
+
+  --warning:        #8B2A1F;
+  --crimson:        #A03A4C;
+  --gold:           #C9A84C;
+
+  --display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --mono:    'Space Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--display);
+  background: var(--parchment);
+  color: var(--forest-ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(184,115,51,.05) 0%, transparent 35%),
+    radial-gradient(circle at 88% 92%, rgba(26,58,46,.06) 0%, transparent 40%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .04 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+}
+
+.mono { font-family: var(--mono); font-weight: 400; letter-spacing: .02em; }
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 56px 32px 88px;
+  position: relative;
+}
+
+/* Corner ticks — matches OS page */
+.page::before, .page::after {
+  content: "";
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--copper-line);
+  pointer-events: none;
+}
+.page::before { top: 28px; left: 20px; border-right: none; border-bottom: none; }
+.page::after  { bottom: 56px; right: 20px; border-left: none; border-top: none; }
+
+/* Compass — same as frontiermap */
+.compass {
+  position: absolute;
+  top: 36px;
+  right: 16px;
+  width: 84px;
+  height: 84px;
+  opacity: .50;
+}
+@media (max-width: 720px) { .compass { display: none; } }
+
+/* =========== HERO =========== */
+.hero {
+  padding: 40px 0 32px;
+  border-bottom: 1px solid var(--steel-light);
+  position: relative;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+  color: var(--copper-deep);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.eyebrow::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--copper);
+}
+
+.hero h1 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(48px, 8vw, 96px);
+  line-height: .96;
+  color: var(--forest-ink);
+  letter-spacing: -.02em;
+  margin-bottom: 18px;
+}
+.hero h1 .num {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--copper);
+  font-feature-settings: "lnum";
+}
+
+.tagline {
+  font-size: 21px;
+  line-height: 1.45;
+  color: var(--moss);
+  max-width: 720px;
+  margin-bottom: 28px;
+}
+.tagline em { color: var(--forest); font-style: italic; }
+
+.meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 36px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--steel);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+}
+.meta-strip strong {
+  color: var(--forest);
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* =========== SECTION DIVIDER =========== */
+.section-divider {
+  margin: 56px 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--copper-deep);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.section-divider::before, .section-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--copper-line);
+}
+
+/* =========== CARD GRID =========== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1100px) { .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px)  { .cards { grid-template-columns: 1fr; } }
+
+/* Card */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--parchment-warm);
+  border: 1px solid var(--steel-light);
+  border-left: 3px solid var(--copper);
+  text-decoration: none;
+  color: inherit;
+  transition: all .22s cubic-bezier(0.22, 0.61, 0.36, 1);
+  min-height: 480px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.card:hover {
+  border-color: var(--forest);
+  border-left-color: var(--copper);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(26,58,46,.12);
+  background: var(--parchment-deep);
+}
+
+.card-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--copper);
+  pointer-events: none;
+  z-index: 3;
+}
+.card-corner.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.card-corner.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+/* =========== CARD VIDEO THUMB =========== */
+.card-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--forest-ink);
+  overflow: hidden;
+  border-bottom: 1px solid var(--steel-light);
+}
+.card-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Subtle bottom-edge gradient so the card-num + status read against the video */
+.card-video::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 36, 25, 0) 0%,
+    rgba(15, 36, 25, 0) 55%,
+    rgba(15, 36, 25, 0.35) 100%
+  );
+  pointer-events: none;
+}
+/* Card num + status pinned over the video bottom-left + bottom-right */
+.card-video-meta {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 2;
+}
+.card-video-meta .card-num {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--parchment);
+  letter-spacing: .12em;
+  text-shadow: 0 1px 4px rgba(15,36,25,0.6);
+}
+.card-video-meta .card-status {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--parchment);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1px solid rgba(245, 240, 232, 0.7);
+  background: rgba(15, 36, 25, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+/* Card body — below the video */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 22px;
+  flex-grow: 1;
+}
+
+.card-name {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 28px;
+  line-height: 1.05;
+  color: var(--forest-ink);
+  letter-spacing: -.01em;
+  margin-bottom: 4px;
+}
+.card-name em {
+  font-style: italic;
+  color: var(--forest);
+}
+.card-tag {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--moss);
+  margin-bottom: 18px;
+  line-height: 1.3;
+}
+
+/* Talk track block — what John actually says */
+.card-talk {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--forest);
+  padding: 14px 14px 14px 16px;
+  border-left: 2px solid var(--copper-line);
+  background: rgba(184,115,51,.05);
+  margin-bottom: 14px;
+  flex-grow: 1;
+}
+.card-talk::before {
+  content: "say:";
+  display: block;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: .22em;
+  color: var(--copper-deep);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.card-pointat {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--moss);
+  line-height: 1.55;
+  padding-top: 12px;
+  border-top: 1px dotted var(--steel-light);
+  margin-bottom: 12px;
+}
+.card-pointat b {
+  color: var(--forest);
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.card-url {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--steel);
+  letter-spacing: .04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+.card-url .arrow {
+  color: var(--copper);
+  font-size: 14px;
+}
+
+/* Visited state — gets stamped when John clicks */
+.card.visited {
+  background: var(--parchment-deep);
+  opacity: .88;
+}
+.card.visited .card-video::before {
+  content: "✓ opened";
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--sage);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1px solid var(--sage);
+  background: rgba(245, 240, 232, 0.92);
+  backdrop-filter: blur(4px);
+}
+.card.visited .card-video-meta .card-status { display: none; }
+.card.visited .card-video-meta .card-num { color: var(--sage); }
+.card.visited { border-left-color: var(--sage); }
+
+/* =========== THE ASK =========== */
+.ask {
+  margin-top: 64px;
+  padding: 40px 36px;
+  background: var(--parchment-deep);
+  border: 1px solid var(--steel-light);
+  position: relative;
+}
+.ask-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--copper);
+}
+.ask-corner.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.ask-corner.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.ask-corner.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+.ask-corner.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+.ask-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--copper-deep);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.ask h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(36px, 5vw, 56px);
+  color: var(--forest-ink);
+  line-height: 1.0;
+  letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+.ask-sub {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--moss);
+  margin-bottom: 28px;
+}
+
+.ask-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  margin-bottom: 28px;
+}
+@media (max-width: 720px) { .ask-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+.ask-col h3 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--forest);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--copper-line);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+.ask-col.give h3 { color: var(--sage); }
+.ask-col.give h3 { border-bottom-color: rgba(90,117,97,.4); }
+.ask-col.take h3 { color: var(--copper-deep); }
+
+.ask-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ask-list li {
+  font-family: var(--display);
+  font-size: 17px;
+  color: var(--forest);
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.4;
+}
+.ask-list li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--copper);
+  font-weight: 600;
+}
+.ask-list li em {
+  font-style: italic;
+  color: var(--moss);
+}
+
+.ask-signoff {
+  padding-top: 24px;
+  border-top: 1px dotted var(--steel-light);
+  text-align: center;
+}
+.ask-signoff .script {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(22px, 3vw, 32px);
+  color: var(--forest-ink);
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.ask-signoff .qualifier {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+
+/* =========== FOOTER =========== */
+.foot {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--steel-light);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--steel);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.foot .mantra {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--moss);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.foot .reset {
+  background: none;
+  border: 1px solid var(--steel-light);
+  color: var(--steel);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.foot .reset:hover {
+  border-color: var(--copper);
+  color: var(--copper-deep);
+}
+
+/* =========== FADE-UP ON LOAD =========== */
+.fade-up {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp .7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.fade-up.d1 { animation-delay: .10s; }
+.fade-up.d2 { animation-delay: .20s; }
+.fade-up.d3 { animation-delay: .32s; }
+.fade-up.d4 { animation-delay: .44s; }
+.fade-up.d5 { animation-delay: .56s; }
+.fade-up.d6 { animation-delay: .68s; }
+.fade-up.d7 { animation-delay: .82s; }
+.fade-up.d8 { animation-delay: 1.0s; }
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========== STAGE SHORTCUTS =========== */
+.section-divider.sub {
+  margin: 48px 0 20px;
+  color: var(--steel);
+  font-size: 10px;
+}
+.section-divider.sub::before, .section-divider.sub::after {
+  background: var(--steel-soft);
+}
+
+.stages {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+@media (max-width: 1100px) { .stages { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 640px)  { .stages { grid-template-columns: repeat(2, 1fr); } }
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 12px 12px;
+  background: var(--parchment-warm);
+  border: 1px solid var(--steel-light);
+  border-left: 2px solid var(--steel-light);
+  text-decoration: none;
+  color: inherit;
+  transition: all .18s cubic-bezier(0.22, 0.61, 0.36, 1);
+  cursor: pointer;
+}
+.stage:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(26,58,46,.08);
+}
+.stage.done       { border-left-color: var(--sage); }
+.stage.done:hover { border-color: var(--sage); }
+.stage.hero       { border-left-color: var(--copper); border-left-width: 3px; }
+.stage.hero:hover { border-color: var(--forest); }
+.stage.alpha      { border-left-color: var(--steel-light); border-style: dashed; opacity: .82; }
+.stage.alpha:hover { opacity: 1; }
+
+.stage-num {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--steel);
+}
+.stage.done  .stage-num { color: var(--sage); }
+.stage.hero  .stage-num { color: var(--copper); }
+
+.stage-name {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--forest-ink);
+  line-height: 1.1;
+}
+.stage-meta {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.stage.hero .stage-meta { color: var(--copper-deep); }
+
+/* =========== CAVEAT ROW =========== */
+.caveat {
+  margin: 18px 0 0;
+  padding: 14px 18px;
+  background: rgba(139, 42, 31, 0.04);
+  border-left: 2px solid var(--warning);
+  font-family: var(--display);
+  font-size: 14px;
+  color: var(--moss);
+  line-height: 1.5;
+}
+.caveat strong {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--warning);
+}
+.caveat code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--forest);
+  background: var(--parchment-deep);
+  padding: 1px 6px;
+  border: 1px solid var(--copper-line);
+}
+
+/* =========== REDUCED MOTION =========== */
+@media (prefers-reduced-motion: reduce) {
+  .fade-up { animation: none; opacity: 1; transform: none; }
+  .card-video video { display: none; }
+  .card-video {
+    background:
+      var(--forest)
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><circle cx='40' cy='40' r='30' fill='none' stroke='%23B87333' stroke-width='1' opacity='.4'/><circle cx='40' cy='40' r='4' fill='%23B87333'/></svg>")
+      center / 80px no-repeat;
+  }
+}
+
+/* =========== PRINT =========== */
+@media print {
+  .page::before, .page::after, .compass, .foot .reset { display: none; }
+  body { background: white; }
+  .card { break-inside: avoid; min-height: auto; }
+  .card-video { display: none; }
+  .ask { background: white; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <!-- Compass — matches frontiermap -->
+  <svg class="compass" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="44" fill="none" stroke="#71797E" stroke-width=".6"/>
+    <circle cx="50" cy="50" r="36" fill="none" stroke="#71797E" stroke-width=".4" stroke-dasharray="2 2"/>
+    <circle cx="50" cy="50" r="2" fill="#8B2A1F"/>
+    <path d="M50 8 L54 50 L50 92 L46 50 Z" fill="#1A3A2E" opacity=".75"/>
+    <path d="M8 50 L50 46 L92 50 L50 54 Z" fill="#B87333" opacity=".55"/>
+    <text x="50" y="6" text-anchor="middle" font-family="Space Mono" font-size="5" fill="#1A3A2E">N</text>
+    <text x="50" y="98" text-anchor="middle" font-family="Space Mono" font-size="5" fill="#1A3A2E">S</text>
+    <text x="2" y="52" text-anchor="middle" font-family="Space Mono" font-size="5" fill="#1A3A2E">W</text>
+    <text x="98" y="52" text-anchor="middle" font-family="Space Mono" font-size="5" fill="#1A3A2E">E</text>
+  </svg>
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="eyebrow fade-up">The Walkthrough · v1 · A field briefing</div>
+    <h1 class="fade-up d1">Four screens.<br>One conversation.</h1>
+    <p class="tagline fade-up d2">
+      Big to small. <em>The Frontier</em> → <em>The Operating System</em> → <em>The Builder's Killer App</em> → <em>the live build</em>.
+      Each card is a click. Each click opens the next destination in a new tab. <em>This page stays open as your control desk.</em>
+    </p>
+    <div class="meta-strip fade-up d3">
+      <span><strong>Morning of</strong> May 28, 2026</span>
+      <span><strong>Presenter</strong> John</span>
+      <span><strong>For</strong> introduction · 12 minutes</span>
+      <span><strong>Sign in first</strong> demo trial account · Chrome</span>
+      <span><strong>Runbook</strong> docs/DEMO-MORNING-CHECKLIST.md</span>
+    </div>
+  </header>
+
+  <!-- ============ ORDER OF OPERATIONS ============ -->
+  <div class="section-divider fade-up d4">Order of operations · click in sequence</div>
+
+  <div class="cards">
+
+    <!-- CARD 01 — FRONTIER MAP -->
+    <a class="card fade-up d5" data-card="frontier" href="https://frontiermap.theknowledgegardens.com/" target="_blank" rel="noopener">
+      <span class="card-corner tl"></span><span class="card-corner br"></span>
+      <div class="card-video">
+        <video autoplay loop muted playsinline preload="metadata" aria-hidden="true">
+          <source src="/animations/knowledge_garden_umbrella_animation.mp4" type="video/mp4">
+        </video>
+        <div class="card-video-meta">
+          <span class="card-num">01</span>
+          <span class="card-status">Open first · 60 sec</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">The <em>Frontier</em></div>
+        <div class="card-tag">Fifty-nine domains. Four lanes.</div>
+        <div class="card-talk">
+          One architecture, four lanes, three surfaces, one self-improving knowledge graph — across <strong>fifty-nine domains</strong>. Three already shipping. Eight in build. <em>The pattern is the moat.</em>
+        </div>
+        <div class="card-pointat">
+          <b>Point at</b>
+          The four-layer count at top — 3 Deployed, 8 Building, 9 Scoped, 39 Frontier. Then scroll once. Don't read cards.
+        </div>
+        <div class="card-url">
+          <span class="arrow">→</span>
+          frontiermap.theknowledgegardens.com
+        </div>
+      </div>
+    </a>
+
+    <!-- CARD 02 — KG OS -->
+    <a class="card fade-up d6" data-card="os" href="https://frontiermap.theknowledgegardens.com/theKnowledgeGardensOS" target="_blank" rel="noopener">
+      <span class="card-corner tl"></span><span class="card-corner br"></span>
+      <div class="card-video">
+        <video autoplay loop muted playsinline preload="metadata" aria-hidden="true">
+          <source src="/animations/knowledge_garden_OS_animation.mp4" type="video/mp4">
+        </video>
+        <div class="card-video-meta">
+          <span class="card-num">02</span>
+          <span class="card-status">Open second · 90 sec</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">The <em>Operating System</em></div>
+        <div class="card-tag">Why the pattern works.</div>
+        <div class="card-talk">
+          The platform <strong>improves itself in public</strong>. Every garden ingests its source data on a domain cadence. Every claim has a freshness stamp. <em>We get more right every week — that's the moat in the AI era.</em>
+        </div>
+        <div class="card-pointat">
+          <b>Point at</b>
+          The Moat statement + RSI Heartbeat pulse. Scroll to the Architecture diagram. Skip Pattern Language and Stance Card unless asked.
+        </div>
+        <div class="card-url">
+          <span class="arrow">→</span>
+          …/theKnowledgeGardensOS
+        </div>
+      </div>
+    </a>
+
+    <!-- CARD 03 — BKG INTRO -->
+    <a class="card fade-up d7" data-card="intro" href="https://builders.theknowledgegardens.com/intro" target="_blank" rel="noopener">
+      <span class="card-corner tl"></span><span class="card-corner br"></span>
+      <div class="card-video">
+        <video autoplay loop muted playsinline preload="metadata" aria-hidden="true">
+          <source src="/animations/hammer_roots_builders_garden_animation.mp4" type="video/mp4">
+        </video>
+        <div class="card-video-meta">
+          <span class="card-num">03</span>
+          <span class="card-status">Open third · 45 sec</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">The Builder's <em>Killer App</em></div>
+        <div class="card-tag">Construction is the cash engine.</div>
+        <div class="card-talk">
+          Construction funds the meaning gardens. <strong>$17 trillion industry</strong>, broken software, every contractor we talk to is starving for this. Seven stages — <em>Size Up through Reflect</em> — and we're picking partners now.
+        </div>
+        <div class="card-pointat">
+          <b>Point at</b>
+          The hammer-with-roots plate (industrial × organic). Scroll past the seven stages. Don't dwell — the live build is one card away.
+        </div>
+        <div class="card-url">
+          <span class="arrow">→</span>
+          builders.theknowledgegardens.com/intro
+        </div>
+      </div>
+    </a>
+
+    <!-- CARD 04 — LIVE DEMO -->
+    <a class="card fade-up d8" data-card="demo" href="https://builders.theknowledgegardens.com/killerapp/stages/size-up?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="card-corner tl"></span><span class="card-corner br"></span>
+      <div class="card-video">
+        <video autoplay loop muted playsinline preload="metadata" aria-hidden="true">
+          <source src="/animations/builder_killerapp_animation.mp4" type="video/mp4">
+        </video>
+        <div class="card-video-meta">
+          <span class="card-num">04</span>
+          <span class="card-status">Open fourth · 4–6 min</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-name"><em>Marin Farmhouse</em></div>
+        <div class="card-tag">Start at Size Up. The sticky action bar walks all seven stages.</div>
+        <div class="card-talk">
+          Four thousand square feet for the Harwell family. <strong>$1.65M total · $312K spent · $1.15M remaining · $347K headroom.</strong> 37-week timeline. Build at 42% — framing inspection just passed. <em>Plan and Build are the functional heroes — real Claude calls for code lookup, real voice-to-database for the field report.</em>
+        </div>
+        <div class="card-pointat">
+          <b>Point at</b>
+          Top ribbon — one number everywhere. The sticky <em>primary action button</em> at the bottom of every stage walks the journey end to end. Pro toggle top-right flips foreman vernacular to code citations. Adapt/Collect/Reflect carry honest "alpha — coming soon" pills.
+        </div>
+        <div class="card-url">
+          <span class="arrow">→</span>
+          …/stages/size-up?project=55730cd3-…
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ============ STAGE SHORTCUTS — fallback ladder ============ -->
+  <div class="section-divider sub fade-up d8">If you need to jump · the seven stages</div>
+
+  <div class="stages" id="stages">
+    <a class="stage done"  data-stage="size-up" href="https://builders.theknowledgegardens.com/killerapp/stages/size-up?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">01</span>
+      <span class="stage-name">Size Up</span>
+      <span class="stage-meta">100% · done</span>
+    </a>
+    <a class="stage done"  data-stage="lock" href="https://builders.theknowledgegardens.com/killerapp/stages/lock?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">02</span>
+      <span class="stage-name">Lock</span>
+      <span class="stage-meta">100% · done</span>
+    </a>
+    <a class="stage hero"  data-stage="plan" href="https://builders.theknowledgegardens.com/killerapp/stages/plan?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">03 ★</span>
+      <span class="stage-name">Plan</span>
+      <span class="stage-meta">85% · functional hero</span>
+    </a>
+    <a class="stage hero"  data-stage="build" href="https://builders.theknowledgegardens.com/killerapp/stages/build?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">04 ★</span>
+      <span class="stage-name">Build</span>
+      <span class="stage-meta">42% · functional hero · current</span>
+    </a>
+    <a class="stage alpha" data-stage="adapt" href="https://builders.theknowledgegardens.com/killerapp/stages/adapt?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">05</span>
+      <span class="stage-name">Adapt</span>
+      <span class="stage-meta">alpha · stub</span>
+    </a>
+    <a class="stage alpha" data-stage="collect" href="https://builders.theknowledgegardens.com/killerapp/stages/collect?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">06</span>
+      <span class="stage-name">Collect</span>
+      <span class="stage-meta">alpha · stub</span>
+    </a>
+    <a class="stage alpha" data-stage="reflect" href="https://builders.theknowledgegardens.com/killerapp/stages/reflect?project=55730cd3-5225-493d-8b5c-49086d942565" target="_blank" rel="noopener">
+      <span class="stage-num">07</span>
+      <span class="stage-name">Reflect</span>
+      <span class="stage-meta">alpha · stub</span>
+    </a>
+  </div>
+
+  <p class="caveat fade-up d8">
+    <strong>Don't go here</strong> &nbsp;·&nbsp; <code>/killerapp/credentialing</code>, <code>/killerapp/ask</code>, <code>/killerapp/rewards</code> (V3 surfaces, whispers not yet removed).
+    &nbsp;·&nbsp; <strong>If asked for a dashboard view</strong>: <code>/projects/55730cd3-…</code> is safe and aligned to the same $1.65M canonical, but it's not part of the seven-stage walk.
+  </p>
+
+  <!-- ============ THE ASK ============ -->
+  <section class="ask">
+    <span class="ask-corner tl"></span><span class="ask-corner tr"></span>
+    <span class="ask-corner bl"></span><span class="ask-corner br"></span>
+
+    <div class="ask-eyebrow">After the live build · the close</div>
+    <h2>The first fifty.</h2>
+    <p class="ask-sub">Partners, not customers.</p>
+
+    <div class="ask-grid">
+      <div class="ask-col give">
+        <h3>We give</h3>
+        <ul class="ask-list">
+          <li>Lower pricing — <em>for life</em></li>
+          <li>You shape what ships next</li>
+          <li>Named launch partner when we open broadly</li>
+        </ul>
+      </div>
+      <div class="ask-col take">
+        <h3>We ask</h3>
+        <ul class="ask-list">
+          <li>Anonymized build data</li>
+          <li>Workflow input — <em>your real fights, our real fixes</em></li>
+          <li>One honest reference call</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ask-signoff">
+      <p class="script">If you know one — please introduce us.</p>
+      <p class="qualifier">$5M–$20M / yr · custom residential · CA · NV · AZ · TX · FL</p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="foot">
+    <span>Walkthrough · v1 · 2026-05-28</span>
+    <span class="mantra">Money gardens fund meaning gardens.</span>
+    <button class="reset" id="resetBtn" type="button">Reset progress</button>
+  </footer>
+
+</main>
+
+<script>
+(function() {
+  // Visited-state: each clicked card gets stamped, persists across reloads
+  var STORAGE_KEY = 'kg_walkthrough_visited_v1';
+  var visited = {};
+
+  try {
+    var stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) visited = JSON.parse(stored);
+  } catch (e) { visited = {}; }
+
+  var cards = document.querySelectorAll('.card');
+  cards.forEach(function(card) {
+    var id = card.getAttribute('data-card');
+    if (visited[id]) card.classList.add('visited');
+
+    card.addEventListener('click', function() {
+      // Stamp visited but don't prevent the link from opening
+      visited[id] = Date.now();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(visited)); } catch (e) {}
+      card.classList.add('visited');
+    });
+  });
+
+  // Reset
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    cards.forEach(function(c) { c.classList.remove('visited'); });
+  });
+
+  // Pause videos on tabs not in focus (perf + battery)
+  document.addEventListener('visibilitychange', function() {
+    var videos = document.querySelectorAll('.card-video video');
+    videos.forEach(function(v) {
+      if (document.hidden) v.pause();
+      else v.play().catch(function() {}); // autoplay may be blocked, ignore
+    });
+  });
+})();
+</script>
+</body>
+</html>
