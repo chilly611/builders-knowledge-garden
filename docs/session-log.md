@@ -3227,3 +3227,46 @@ Untouched (and why): `src/lib/demo/marin-4000.ts` (already canonical per Agent B
 - Update `src/app/api/v1/projects/route.ts` to import `DEMO_PROJECT_IDS` and `getCallerDemoProjectId` from the new shared module (DRY). Right now the demo constants live in two places.
 - Optionally update `src/app/api/v1/projects/[id]/attachments/[attachmentId]/extract-receipt/route.ts` for the same demo-allowlist semantics if that route ever joins a demo flow.
 - Consider folding the parent route's `is_demo_project boolean` column (referenced in `projects/route.ts` line 17 as the long-term fix) so the allowlist isn't a string-set hardcoded in three places.
+
+
+---
+
+## 2026-05-28 — Multi-Lane Copy Drafts (Chat — Stream E)
+
+**Goal:** Draft three plain-language copy artifacts for multi-lane MLP:
+Owner invitation/welcome, data-sharing notices for eight Lanes, and the
+closeout "We built this" marketing-page template.
+
+**Shipped:**
+- Owner Lane invitation email (118 words) + in-app welcome screen (108 words)
+  → copy/lanes/owner-invite-welcome.md
+- Data-sharing notices for 8 Lanes (Owner, GC, Sub, Worker, Supplier,
+  Architect/Engineer, Inspector, Lender), each under 100 words
+  → copy/lanes/data-sharing-notices.md
+- Closeout "We built this" marketing-page template + meta + OG tags + CTA
+  variants → copy/closeout/we-built-this-template.md
+- Multi-lane strategy brief landed → docs/multi-lane-strategy-brief.md
+- Consolidated legal review checklist sorted by counsel domain
+
+**Learned:**
+- Plain-language consent is a legal artifact. Every sentence is enforceable;
+  plain language makes consent honest AND raises exposure because users
+  actually understand what they agree to.
+- Lender Lane is the highest legal-risk Lane — different regulatory domain
+  (lending) than construction contracting; needs different counsel.
+- Closeout page exposes UGC, photo rights, and warranty-adjacent claims.
+  Per-upload consent at moment-of-upload is the right pattern.
+- These markdown copy docs belong in the GitHub repo, NOT in the Supabase
+  knowledge graph. Knowledge graph is the moat; internal copy is not a
+  knowledge entity.
+
+**Open:**
+- Counsel reviews queued: construction (6 items), lending (1), employment
+  (1), public-records (1)
+- Decide: state-by-state consent versions vs. national + CA addendum
+- Photo/video/sketch upload consent UX — opt-in per upload (recommended)
+  vs. onboarding blanket consent. Stream C implementation depends on this.
+
+**Next:** Chat session to digest counsel redlines once Artifacts 1-3 return
+from review. Stream C waits on construction-counsel items 1, 2, 5 before
+wiring live pay-app and closeout-publication flows.
