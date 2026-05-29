@@ -2373,3 +2373,25 @@ The 20 pieces need formal specs. Sequence:
 - [ ] Delete `~/bkg-work/app-broken-2026-05-25/` after one week of issue-free operation on the fresh clone (target: 2026-06-01)
 - [ ] Mirror `design-constitution.md` from the BKG repo into the Knowledge Gardens umbrella project files
 - [ ] Update all project instructions (BKG, OKG, TKG, HKG, MKG, umbrella) to lead with the RSI Heartbeat moat paragraph
+
+
+---
+
+### NOW — Multi-Lane MLP-Owner (additions from Stream E)
+
+- [ ] Send to construction counsel: Owner Lane data-sharing notice, Owner
+      invitation pay-app language, closeout page warranty language + UGC +
+      photo rights, GC Lane no-share commitment, Sub Lane platform-party
+      question, Architect/Engineer privity
+- [ ] Send to lending counsel (separate engagement): Lender Lane data-sharing
+      notice
+- [ ] Send to employment counsel: Worker Lane data-sharing notice if Worker
+      Lane stores timesheets
+- [ ] Decide: per-state consent versions vs. national + CA addendum
+- [ ] Spec photo/video/sketch upload consent UX (opt-in per upload
+      recommended) — hand to Stream C as a dependency
+- [ ] Pin demo / non-paid wrapper on MLP-Owner pay-app flow until counsel
+      clears items 1, 2, 5
+- [ ] OG image generator for closeout pages — propose to Stream A
+- [ ] "Codes met" data source: tie strictly to inspector pass records OR add
+      disclaimer
