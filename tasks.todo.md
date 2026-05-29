@@ -1,3 +1,26 @@
+## ═══ NOW — Lanes × Lenses data layer + enforcement landed (2026-05-29, Claude Code / Stream B) ═══
+
+Stream B shipped the DB layer + pure permission middleware. New paths only — zero churn to existing files.
+
+**Shipped:**
+- [x] `supabase/migrations/20260528_lanes_lens_permission_matrix.sql` — `lanes` (9 seeded), `project_lane_memberships`, `lens_permission_matrix` (594-cell grid). Idempotent + reversible. RLS on all three.
+- [x] `src/lib/lens/types.ts` — canonical enums + Zod schemas (single source of truth).
+- [x] `src/lib/lens/check-permission.ts` — `checkLensPermission(args, client?)`, fail-closed, UNION across memberships, overrides-then-matrix. 11/11 tests pass, tsc clean.
+- [x] Founder decisions applied: 9 lanes (added DIY Builder), 6 service-provider subtypes, budget split (`budget_total` owner-visible / `sub_margin` GC-private).
+
+**NOW — needs founder action:**
+- [ ] **Ratify the default permission matrix** cell-by-cell. Values were designed from domain knowledge (no canonical matrix existed). Defensible but unratified — do not expose any lane beyond Owner/GC in UI until signed off.
+- [ ] **Apply the migration** to Supabase (NOT yet applied — no DB write performed this session). Use Supabase MCP/CLI after ratification.
+
+**NOW — Stream C consumption contract:**
+```ts
+import { checkLensPermission, isLensPermitted } from '@/lib/lens/check-permission';
+import { LANE_SLUGS, DATA_CATEGORIES, LENS_ACTIONS, type DataCategory, type LensAction } from '@/lib/lens/types';
+```
+- [ ] Gate UI surfaces via `checkLensPermission({ userId, projectId, dataCategory, action })`. Do NOT redefine the enums — import from `types.ts`. Caller resolves auth (Clerk) and passes `userId`; middleware does not touch auth.
+
+---
+
 ## ═══ MARIN SEED — MULTI-LANE CAST + OWNER LENS (2026-05-28 late evening Cowork) ═══
 
 `src/lib/seed-data/marin-farmhouse.ts` now exposes the multi-lane cast and the first

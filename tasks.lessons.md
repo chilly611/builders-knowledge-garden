@@ -2289,3 +2289,32 @@ Supabase's source-of-truth role is app data and the knowledge graph
 Dumping markdown copy into the knowledge graph pollutes the moat. Keep the
 two sources of truth in their correct lanes: repo for docs/code, Supabase
 for structured app + knowledge data.
+
+## 2026-05-29 — Reconcile the session prompt against the canonical brief before building
+
+The Stream B prompt specified 8 lanes and a single `budget_financials`
+category. The canonical `docs/multi-lane-strategy-brief.md` specified 9 lanes
+and an explicit `Owner × Sub-Margin → not permitted` rule. Building straight
+from the prompt would have shipped a schema that leaks subcontractor markup to
+the owner. Lesson: when a build prompt and the canonical brief disagree on a
+locked domain fact (lane set, permission rule), STOP and reconcile with the
+founder — don't silently follow the prompt. Here it produced DIY Builder (9th
+lane) and the `budget_total` / `sub_margin` split.
+
+## 2026-05-29 — zod v4 z.record over an enum requires ALL keys; use z.string() for sparse maps
+
+`z.record(enumSchema, valueSchema)` in zod v4 demands every enum key be present
+at parse time — unusable for a sparse per-membership override map. Use
+`z.record(z.string(), z.record(z.string(), z.boolean()))`, which infers as the
+desired sparse `Record<string, Record<string, boolean>>` shape. Applied in
+`src/lib/lens/types.ts` for `CustomLensOverridesSchema`.
+
+## 2026-05-29 — Permission middleware fails closed and never resolves auth
+
+`src/lib/lens/check-permission.ts` accepts `userId` as a parameter and leaves
+auth resolution to the caller (mirrors `lane-server.ts`). It fails closed on
+any DB error or empty result, applies UNION semantics across active lane
+memberships (any single permit wins), and evaluates per-membership overrides
+before the shared matrix. Absence of a matrix row = deny. Keep this contract:
+a pure decision layer is testable without a real DB and reusable from any
+caller that has already authenticated the user.

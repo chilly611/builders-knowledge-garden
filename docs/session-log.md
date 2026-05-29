@@ -3270,3 +3270,35 @@ closeout "We built this" marketing-page template.
 **Next:** Chat session to digest counsel redlines once Artifacts 1-3 return
 from review. Stream C waits on construction-counsel items 1, 2, 5 before
 wiring live pay-app and closeout-publication flows.
+
+---
+
+## 2026-05-29 — Claude Code Session: Lanes × Lenses Data Layer + Enforcement (Stream B)
+**Agent:** Claude Code (Claude Opus 4.8)
+**Branch:** `main` (direct push).
+**Lock:** Stream B owned the new `supabase/migrations/` + `src/lib/lens/` paths; did not touch UI (Stream C) or any existing file.
+
+**Mandate:** Build the Lanes × Lenses DB layer + pure permission middleware. Three single-task sub-agents against one locked contract.
+
+**What was built:**
+- **`supabase/migrations/20260528_lanes_lens_permission_matrix.sql`** — 3 tables, idempotent + reversible:
+  - `public.lanes` — 9 canonical lanes seeded (Owner, GC, DIY Builder, Sub, Worker, Supplier, Equipment-Provider, Service-Provider, Robot/AI). Service-Provider `default_lens_config.subtypes` = architect, structural-engineer, inspector, lender, lawyer, future-buyer.
+  - `public.project_lane_memberships` — `(project_id text, user_id, lane_id, subtype, custom_lens_overrides jsonb, invited_by, invited_at, revoked_at)`. `project_id` is `text` (NO FK — matches `project_members`; there is no `projects` table). Partial unique index on active (non-revoked) `(project_id,user_id,lane_id)`.
+  - `public.lens_permission_matrix` — the full 9 × 11 × 6 = 594-cell grid, seeded via CROSS JOIN + EXISTS, ON CONFLICT DO UPDATE (self-healing). Absence-is-deny.
+  - RLS on all three: service_role FOR ALL; authenticated SELECT on `lanes` + `lens_permission_matrix`; own-row SELECT on memberships (`user_id = auth.uid()`). Commented rollback block at bottom.
+- **`src/lib/lens/types.ts`** — canonical enums (LANE_SLUGS, DATA_CATEGORIES, LENS_ACTIONS, SERVICE_PROVIDER_SUBTYPES) + Zod schemas (Lane, LaneMembership, LensConfig, CustomLensOverrides, PermissionCheck). Single source of truth shared with migration + middleware.
+- **`src/lib/lens/check-permission.ts`** — pure decision middleware `checkLensPermission({userId, projectId, dataCategory, action}, client?)`. Fail-closed; UNION across active memberships (any permit wins); overrides-first-then-matrix. Accepts user_id as param — does NOT resolve auth (caller's job, mirrors lane-server.ts). Lazy service-role singleton.
+- **`src/lib/lens/check-permission.test.ts`** — 11 vitest tests, injected fake client. **11/11 pass. tsc --noEmit clean for src/lib/lens.**
+
+**Key decisions:**
+- **9 lanes (not 8):** prompt listed 8; canonical `docs/multi-lane-strategy-brief.md` lists 9. Reconciled with founder → added **DIY Builder** (owner acting as own GC). Service-Provider subtypes extended to 6 (added lawyer, future-buyer).
+- **Budget category split:** the coarse `budget_financials` would leak subcontractor markup to the owner, violating the brief's `Owner × Sub-Margin → not permitted`. Split into **`budget_total`** (owner-visible) + **`sub_margin`** (GC-private). Owner/Robot-AI get `budget_total` only; GC + DIY Builder get both.
+
+**Human-call flags (need founder ratification):**
+- The **default permission matrix values** were designed from domain knowledge — no canonical matrix existed in the repo. The grid is defensible but should be ratified cell-by-cell before any lane other than Owner/GC is exposed in UI.
+- Migration is written but **NOT applied** to Supabase (no DB write performed). Apply via Supabase MCP/CLI after matrix ratification.
+
+**Issues/bugs found:**
+- Mid-session the working tree was moved by a local cleanup into `Documents/BKG-archive-2026-05-28/The Builder Garden/app`. The git repo + remote stayed intact and in sync with live `origin/main`; work continued there without loss.
+
+**Next (Stream C):** consume `src/lib/lens/` — call `checkLensPermission` to gate UI surfaces per lane. Do not redefine the enums; import from `types.ts`. Await matrix ratification before exposing non-Owner/GC lanes.
