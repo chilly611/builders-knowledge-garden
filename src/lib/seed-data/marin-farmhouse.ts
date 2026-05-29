@@ -69,6 +69,17 @@ export const MARIN_BUDGET_COMMITTED = 186_200;
 /** Remaining — pending lines that are still floating. */
 export const MARIN_BUDGET_REMAINING = MARIN_BUDGET_TOTAL - MARIN_BUDGET_SPENT - MARIN_BUDGET_COMMITTED;
 
+/**
+ * Headroom — the founder-locked projected favorable variance against the
+ * $1.65M contract. Sits inside `MARIN_BUDGET_REMAINING` as the cushion the
+ * Harwells should still have at substantial completion if the team holds
+ * the line on change orders. Distinct from `MARIN_BUDGET_REMAINING` —
+ * remaining is "what hasn't been spent or committed yet"; headroom is
+ * "what we expect to walk away with under the locked contract." Drift
+ * here = bug.
+ */
+export const MARIN_BUDGET_HEADROOM = 347_000;
+
 // ─── Income (draws) ─────────────────────────────────────────────────────────
 
 /** Projected total over 16 scheduled draws. */
@@ -162,6 +173,421 @@ export const MARIN_TEAM: MarinTeamMember[] = [
   { id: 't-architect', name: 'Field Studio Architects', trade: 'Architecture & Structural', status: 'active', contact: 'studio@fieldstudio.co' },
   { id: 't-client', name: 'The Harwell Family', trade: 'Client', status: 'active', contact: 'harwell.family@example.com' },
 ];
+
+// ─── Multi-Lane Cast (project-role lanes for Lane Lens views) ────────────────
+//
+// `MARIN_CAST` is the full project cast keyed by the six BKG project-role
+// lanes: OWNER, GC, SUB, SERVICE-PROVIDER, SUPPLIER, WORKER. These are
+// distinct from the platform's four business-model lanes (Admin / Pro /
+// Public / Machine) — they describe who someone IS on this specific build.
+//
+// `MARIN_TEAM` above stays as the work-relevant 6-row team list every page
+// already consumes (the Harwells appear as a single family entry there).
+// `MARIN_CAST` is the richer source-of-truth for new Lane Lens surfaces
+// (Owner Lens, Sub Lens, etc.) and reuses the same team IDs where they
+// align — so a future "this person on every page" reconciliation can
+// collapse the two without ID churn.
+
+/** The six BKG project-role lanes. NOT the platform's business lanes. */
+export type Lane =
+  | 'OWNER'
+  | 'GC'
+  | 'SUB'
+  | 'SERVICE-PROVIDER'
+  | 'SUPPLIER'
+  | 'WORKER';
+
+/**
+ * Lane subtype narrows a generic lane to a specific role. Examples:
+ *   - SUB → Framing | Foundation | Roofing | Plumbing | Electrical
+ *   - SERVICE-PROVIDER → Architect | Engineer
+ *   - SUPPLIER → Lumber | Windows
+ *   - WORKER → Laborer | Apprentice
+ *
+ * `null` for lanes where the lane name is the whole story (OWNER, GC).
+ */
+export type LaneSubtype =
+  | 'Architect'
+  | 'Engineer'
+  | 'Framing'
+  | 'Foundation'
+  | 'Roofing'
+  | 'Plumbing'
+  | 'Electrical'
+  | 'Lumber'
+  | 'Windows'
+  | 'Laborer'
+  | 'Apprentice'
+  | null;
+
+export interface CastMember {
+  /** Stable ID. Matches `MARIN_TEAM[].id` where the cast member also appears there. */
+  id: string;
+  /** Person or company name as it should display. */
+  name: string;
+  /** Plain-English role description (e.g., "Plumbing — rough + finish"). */
+  role: string;
+  /** Primary contact (email by convention; fake but plausible domain). */
+  contact: string;
+  /** Company affiliation if the row is a person; omit for company-as-cast. */
+  company?: string;
+  /** Project-role lane. */
+  lane: Lane;
+  /** Lane subtype, or `null` when the lane name is the whole story. */
+  laneSubtype: LaneSubtype;
+  /** ISO date the cast member joined the project. */
+  joined_at: string;
+  /**
+   * Stable id of whoever invited them — another cast member's id, or
+   * the string `'founder'` for the original project-team seeds.
+   */
+  invited_by: string;
+  /** One short personalizing detail. Drives the "human" texture in cast cards. */
+  personalizing_detail: string;
+  /** Active on the build today? */
+  status: 'active' | 'inactive';
+}
+
+/**
+ * The full 14-member project cast. Order is roughly the order each lane
+ * came on board: Owners first, then GC, then subs in trade sequence,
+ * then service providers, suppliers, and workers.
+ *
+ * Invariant: every `id` here that matches an id in `MARIN_TEAM` must
+ * agree on name + contact. Drift = bug.
+ */
+export const MARIN_CAST: CastMember[] = [
+  // ── OWNER lane ────────────────────────────────────────────────────────────
+  {
+    id: 'owner-cody-harwell',
+    name: 'Cody Harwell',
+    role: 'Project owner',
+    contact: 'cody.harwell@example.com',
+    lane: 'OWNER',
+    laneSubtype: null,
+    joined_at: '2025-09-12',
+    invited_by: 'founder',
+    personalizing_detail:
+      'Lives in Mill Valley, three kids, this is their first custom build. Runs a small UX studio in San Francisco. Wants weekly Saturday walk-throughs and a Slack-style daily log.',
+    status: 'active',
+  },
+  {
+    id: 'owner-sara-harwell',
+    name: 'Sara Harwell',
+    role: 'Project owner',
+    contact: 'sara.harwell@example.com',
+    lane: 'OWNER',
+    laneSubtype: null,
+    joined_at: '2025-09-12',
+    invited_by: 'founder',
+    personalizing_detail:
+      'Pediatrician at Marin General. Cares most about natural light, kid-safe stairs, and a south-facing herb garden. Decision-maker on finishes and fixtures.',
+    status: 'active',
+  },
+
+  // ── GC lane ───────────────────────────────────────────────────────────────
+  {
+    id: 't-builder',
+    name: 'Marcus Rivera',
+    role: 'General Contractor',
+    contact: 'marcus@riveraconstruction.com',
+    company: 'Rivera Construction LLC',
+    lane: 'GC',
+    laneSubtype: null,
+    joined_at: '2025-10-04',
+    invited_by: 'owner-cody-harwell',
+    personalizing_detail:
+      'Marin native, third-generation builder. Crew of seven. Has built four custom farmhouses in the county. Direct, no-drama communicator — prefers a single weekly client meeting over daily check-ins.',
+    status: 'active',
+  },
+
+  // ── SUB lane ──────────────────────────────────────────────────────────────
+  {
+    id: 't-framing',
+    name: 'Ridgeline Framing',
+    role: 'Framing — rough carpentry',
+    contact: 'ops@ridgelineframing.com',
+    lane: 'SUB',
+    laneSubtype: 'Framing',
+    joined_at: '2025-11-22',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'Petaluma shop run by crew lead Diego Salas. Booked for the Jul 7 framing start; loses the slot if the lumber package isn\'t released this week.',
+    status: 'active',
+  },
+  {
+    id: 't-concrete',
+    name: 'Tamalpais Concrete',
+    role: 'Foundation & concrete',
+    contact: 'estimates@tamalpaisconcrete.com',
+    lane: 'SUB',
+    laneSubtype: 'Foundation',
+    joined_at: '2025-11-22',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'Wrapped the slab pour on May 14 — clean job, zero callbacks. Specializes in hillside slab + retaining-wall details across Marin and Sonoma.',
+    status: 'active',
+  },
+  {
+    id: 't-roofing',
+    name: 'Bay Roofing Co.',
+    role: 'Roofing & weatherproofing',
+    contact: 'jobs@bayroofing.com',
+    lane: 'SUB',
+    laneSubtype: 'Roofing',
+    joined_at: '2025-12-10',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'Specializes in standing-seam metal — the locked roofing spec. 12-week backlog; their slot is sequenced behind Ridgeline framing.',
+    status: 'active',
+  },
+  {
+    id: 't-plumbing',
+    name: 'Larkspur Plumbing & Mechanical',
+    role: 'Plumbing — rough + finish',
+    contact: 'bids@larkspurpm.com',
+    lane: 'SUB',
+    laneSubtype: 'Plumbing',
+    joined_at: '2026-02-18',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'Family shop in Larkspur. Known for tankless heat-pump combinations on Marin custom builds. Owner Tom Larkin has done three jobs with Rivera Construction.',
+    status: 'active',
+  },
+  {
+    id: 't-electrical',
+    name: 'North Bay Electric Co.',
+    role: 'Electrical — rough + finish',
+    contact: 'service@northbayelectric.com',
+    lane: 'SUB',
+    laneSubtype: 'Electrical',
+    joined_at: '2026-02-18',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'C-10 contractor based in San Rafael. EV-charger circuits and solar-ready rough-in are standard on every panel they install. Lead estimator: Priya Suresh.',
+    status: 'active',
+  },
+
+  // ── SERVICE-PROVIDER lane ─────────────────────────────────────────────────
+  {
+    id: 't-architect',
+    name: 'Field Studio Architects',
+    role: 'Design architect',
+    contact: 'studio@fieldstudio.co',
+    lane: 'SERVICE-PROVIDER',
+    laneSubtype: 'Architect',
+    joined_at: '2025-08-06',
+    invited_by: 'owner-cody-harwell',
+    personalizing_detail:
+      'Sausalito firm, principal Jordan Ng, AIA. Drew the four farmhouse iterations the Harwells loved. Comes to weekly OAC meetings; flags finish drift early.',
+    status: 'active',
+  },
+  {
+    id: 'svc-structural',
+    name: 'Headlands Structural Engineering',
+    role: 'Structural engineer of record',
+    contact: 'pe@headlandsstructural.com',
+    lane: 'SERVICE-PROVIDER',
+    laneSubtype: 'Engineer',
+    joined_at: '2025-09-29',
+    invited_by: 't-architect',
+    personalizing_detail:
+      'PE Aileen Cortez stamped the framing package. Specializes in Marin hillside slab + shear-wall details and coastal wind-load calcs. Two-day turnaround on RFIs.',
+    status: 'active',
+  },
+
+  // ── SUPPLIER lane ─────────────────────────────────────────────────────────
+  {
+    id: 'sup-lumber',
+    name: 'Golden Gate Lumber & Building Supply',
+    role: 'Lumber & sheathing supplier',
+    contact: 'orders@goldengatelumber.com',
+    lane: 'SUPPLIER',
+    laneSubtype: 'Lumber',
+    joined_at: '2026-03-04',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'San Rafael yard. Doug fir + LVL stock. Currently quoting 4–6 week lead time on the engineered framing members for the 2-story span — driving the framing-lumber attention item.',
+    status: 'active',
+  },
+  {
+    id: 'sup-windows',
+    name: 'Marvin',
+    role: 'Window & exterior-door supplier',
+    contact: 'quote@marvin.com',
+    lane: 'SUPPLIER',
+    laneSubtype: 'Windows',
+    joined_at: '2026-03-04',
+    invited_by: 't-architect',
+    personalizing_detail:
+      'Coastal-spec Ultimate line specified for the black-frame elevations. 8–12 week lead time — needs release this week to hit weather-tight before the fall rains.',
+    status: 'active',
+  },
+
+  // ── WORKER lane ───────────────────────────────────────────────────────────
+  {
+    id: 'wk-jose',
+    name: 'José Hernández',
+    role: 'Site laborer',
+    contact: 'j.hernandez@riveraconstruction.com',
+    company: 'Rivera Construction LLC',
+    lane: 'WORKER',
+    laneSubtype: 'Laborer',
+    joined_at: '2026-03-18',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'Eight years on Rivera\'s crew. Site cleanup, small-format demo, material staging. Native Spanish speaker; bilingual. Lives in San Rafael, ten minutes from site.',
+    status: 'active',
+  },
+  {
+    id: 'wk-daniel',
+    name: 'Daniel Park',
+    role: 'Site laborer / apprentice carpenter',
+    contact: 'd.park@riveraconstruction.com',
+    company: 'Rivera Construction LLC',
+    lane: 'WORKER',
+    laneSubtype: 'Apprentice',
+    joined_at: '2026-04-22',
+    invited_by: 't-builder',
+    personalizing_detail:
+      'Year-1 apprentice via the Marin Builders Exchange program. Pre-framing prep + pickup carpentry. Aims to test for journeyman by 2028.',
+    status: 'active',
+  },
+];
+
+/** Filter helper: cast members in a given lane. */
+export function castInLane(lane: Lane): CastMember[] {
+  return MARIN_CAST.filter((m) => m.lane === lane);
+}
+
+/** Sanity invariants. Throws at module load if any drift; surfaces in tsc/dev. */
+const _ownerCount = MARIN_CAST.filter((m) => m.lane === 'OWNER').length;
+const _gcCount = MARIN_CAST.filter((m) => m.lane === 'GC').length;
+const _workerCount = MARIN_CAST.filter((m) => m.lane === 'WORKER').length;
+if (process.env.NODE_ENV !== 'production') {
+  // Two Harwells, one Rivera, two laborers — matches the brief.
+  if (_ownerCount !== 2 || _gcCount !== 1 || _workerCount !== 2) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[marin-farmhouse] cast lane counts drift: OWNER=${_ownerCount} (expect 2), GC=${_gcCount} (expect 1), WORKER=${_workerCount} (expect 2)`,
+    );
+  }
+}
+
+// ─── Owner Lens — per-Lane content for the Harwells ──────────────────────────
+//
+// First per-Lane data block. Read by the Owner Lens surface (planned) to
+// render the homeowner's personalized view of the project: their welcome
+// message, what they've uploaded to the build, and what's waiting on
+// their approval.
+//
+// Each Sub / Service-Provider / Supplier lane will get a parallel block
+// as those surfaces come online. Owner is shipping first because the
+// dogfood demo walks an Owner Lens path.
+
+export interface OwnerContribution {
+  id: string;
+  kind: 'photo' | 'sketch' | 'receipt' | 'note';
+  title: string;
+  description: string;
+  /** Stub asset path under `/public/uploads/marin/`. File need not exist yet. */
+  asset_path: string;
+  uploaded_by: 'owner-cody-harwell' | 'owner-sara-harwell';
+  uploaded_at: string;
+}
+
+export interface OwnerApproval {
+  id: string;
+  /** Plain-English headline shown in the approval card. */
+  title: string;
+  /** One-line context for what they're being asked to approve. */
+  description: string;
+  /** Dollar amount in scope, if any. */
+  amount?: number;
+  /** Who the approval will route to (cast member id) once signed. */
+  routes_to: string;
+  /** What kind of approval this is — drives the card icon and CTA. */
+  kind: 'pay_app' | 'change_order' | 'selection' | 'rfi';
+  submitted_at: string;
+  /** Days the approval has been sitting; surfaces aging badges. */
+  age_days: number;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface OwnerLens {
+  /** Cast member ids whose welcome message + contributions render here. */
+  cast_ids: string[];
+  /** First-person welcome message written by the Harwells at kickoff. */
+  welcome_message: string;
+  /** Files / notes the Harwells have added to the build. */
+  contributions: OwnerContribution[];
+  /** Items waiting on owner signature / decision. */
+  pending_approvals: OwnerApproval[];
+}
+
+export const MARIN_OWNER_LENS: OwnerLens = {
+  cast_ids: ['owner-cody-harwell', 'owner-sara-harwell'],
+  welcome_message:
+    "We're Cody and Sara — and we're thrilled to finally build the place our three kids will grow up in. We picked this team because we trust them, and we want this to feel like a partnership, not a transaction. Keep us looped in on the calls we need to make, flag the trade-offs early, and don't be shy with bad news — we'd rather hear it on Tuesday than read it in a change order on Friday. Thank you for the work you're doing for our family.",
+  contributions: [
+    {
+      id: 'owner-contrib-paint-chip',
+      kind: 'photo',
+      title: 'Farrow & Ball Pavilion Gray — exterior trim swatch',
+      description:
+        "Photo Sara took at the showroom. They're leaning toward Pavilion Gray for the exterior trim with a softer white on the siding. Wanted to confirm with the architect before locking the finish schedule.",
+      asset_path: '/uploads/marin/harwell-paint-chip-pavilion-gray.jpg',
+      uploaded_by: 'owner-sara-harwell',
+      uploaded_at: '2026-05-12T18:22:00.000Z',
+    },
+    {
+      id: 'owner-contrib-garden-sketch',
+      kind: 'sketch',
+      title: 'South-facing herb garden — freehand layout',
+      description:
+        'Sara\'s sketch of the herb garden she wants tucked against the south wall: raised cedar beds, drip irrigation tied into the rainwater cistern, room for the kids to pick basil from the kitchen door. Wants the landscape line item to leave room for this.',
+      asset_path: '/uploads/marin/harwell-garden-sketch.png',
+      uploaded_by: 'owner-sara-harwell',
+      uploaded_at: '2026-05-04T20:15:00.000Z',
+    },
+    {
+      id: 'owner-contrib-ferguson-receipt',
+      kind: 'receipt',
+      title: 'Ferguson showroom visit — fixture candidates',
+      description:
+        'Receipt from the Ferguson visit on Sat May 16. Pulled-down kitchen faucet candidates + a master-bath rain head they liked. Total tagged for selection cards: $1,247. Asking the team to price the finalists in the next finishes pass.',
+      asset_path: '/uploads/marin/harwell-ferguson-receipt-2026-05-16.pdf',
+      uploaded_by: 'owner-cody-harwell',
+      uploaded_at: '2026-05-16T22:48:00.000Z',
+    },
+  ],
+  pending_approvals: [
+    {
+      id: 'owner-approval-payapp-04-framing',
+      title: 'Pay Application #4 — Framing milestone',
+      description:
+        'Ridgeline Framing pay app for the framing-start mobilization + first 30% draw. Routes back to Rivera Construction once signed and triggers the lender draw package.',
+      amount: 48_000,
+      routes_to: 't-framing',
+      kind: 'pay_app',
+      submitted_at: '2026-05-19T16:00:00.000Z',
+      age_days: 9,
+      status: 'pending',
+    },
+    {
+      id: 'owner-approval-co-002-kitchen-island',
+      title: 'Change Order #002 — Kitchen island expansion',
+      description:
+        'Enlarges the kitchen island from the locked 6ft to 9ft and adds a prep sink. Pricing includes plumbing rough-in re-run and a quartz upgrade to span the new length. Field Studio has signed; awaiting owner sign-off before issuing to subs.',
+      amount: 14_800,
+      routes_to: 't-builder',
+      kind: 'change_order',
+      submitted_at: '2026-05-22T19:30:00.000Z',
+      age_days: 6,
+      status: 'pending',
+    },
+  ],
+};
 
 // ─── AI Attention Items (curated AI COO surface) ────────────────────────────
 
