@@ -16,9 +16,15 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-/** Stable marker stored in project_change_orders.description for THE framing pay-app. */
+/**
+ * Stable marker stored in project_change_orders.description for THE framing pay-app.
+ * Intentionally carries NO sub name: a DB sentinel must stay stable across seed
+ * edits, so it mirrors the seed's pending-approval *title* (which is name-free),
+ * not the framing sub. The sub name shown to the owner is sourced separately
+ * from the seed (MARIN_FRAMING_SUB).
+ */
 export const FRAMING_APPROVAL_MARKER =
-  'OWNER-APPROVAL · Pay Application #4 — Framing milestone (Tahoe Carpentry Co.)';
+  'OWNER-APPROVAL · Pay Application #4 — Framing milestone';
 
 /** Dollar amount in scope for the framing pay-app (mirrors the Marin seed). */
 export const FRAMING_APPROVAL_AMOUNT = 48_200;

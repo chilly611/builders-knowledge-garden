@@ -174,6 +174,10 @@ export const MARIN_TEAM: MarinTeamMember[] = [
   { id: 't-client', name: 'The Harwell Family', trade: 'Client', status: 'active', contact: 'harwell.family@example.com' },
 ];
 
+/** The framing sub, derived from MARIN_TEAM so the name has one source of truth. */
+export const MARIN_FRAMING_SUB =
+  MARIN_TEAM.find((m) => m.trade === 'Framing')?.name ?? 'Framing crew';
+
 // ─── Multi-Lane Cast (project-role lanes for Lane Lens views) ────────────────
 //
 // `MARIN_CAST` is the full project cast keyed by the six BKG project-role

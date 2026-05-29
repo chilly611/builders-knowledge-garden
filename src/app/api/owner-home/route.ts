@@ -30,11 +30,12 @@ import {
   MARIN_BUDGET_TOTAL,
   MARIN_BUDGET_REMAINING,
   MARIN_OWNER_LENS,
+  MARIN_FRAMING_SUB,
 } from '@/lib/seed-data/marin-farmhouse';
 
 // ── Locked display canon (Modern Farmhouse · Marin) ──────────────────────────
 const OWNERS = 'Cody & Sara Harwell';
-const FRAMER = 'Tahoe Carpentry Co.';
+const FRAMER = MARIN_FRAMING_SUB;
 const BUILD_PCT = 42;
 const WEEK_OF = 17;
 const WEEKS_TOTAL = 37;
@@ -149,7 +150,7 @@ export async function GET(req: NextRequest) {
     ? [
         {
           plate: '0041', date: '2026·05·26', title: 'Framing passed inspection', meta: 'From your builder · both floors',
-          quote: 'Inspector signed off Tuesday. Tahoe Carpentry wrapped both floors — roof and sheathing are next.',
+          quote: `Inspector signed off Tuesday. ${FRAMER} wrapped both floors — roof and sheathing are next.`,
           tag: 'From your builder', tagTone: 'teal', thumb: '/owner-lane/structural-journey.jpeg',
         },
         {
