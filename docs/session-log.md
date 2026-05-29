@@ -6,6 +6,34 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-05-29 — [Cowork] Session: FUNCTIONAL Owner Lane (real persisted approval loop)
+**Agent:** Cowork (Opus)
+**Commits:** `ed455a0` (structure + data + permissions) · `f165730` (Framer Motion) — local; awaiting founder push.
+
+**What was built:**
+- Made the already-merged Owner Lane home (`/killerapp/projects/[id]` → `OwnerHomeClient`) FUNCTIONAL + faithful to the standalone `public/owner-lane.html`.
+- **Real, persisted approval loop** (the shipping gate): new `POST /api/owner-home/approve` + `src/app/api/owner-home/approval-store.ts` persist the framing pay-app decision to the existing `project_change_orders` table (status lifecycle; NO schema change). `GET /api/owner-home` reads the marker row back, so approve → leave → return stays approved. `NeedsYouCard` wired to it (approve + Undo); dead `setState` no-op removed.
+- **Journey strip → 7 LOCKED stages** (Size Up → Lock → Plan → Build → Adapt → Collect → Reflect), sourced from shared `KAC_STAGES`; CSS `.btrack`/`.jtrack` 6→7 cols. Retired the stale Dream/Design/…/Grow phases.
+- **Lens enforcement** honored: owner sees `budget_total`, never `sub_margin` (margin structurally absent); `change_orders/approve` gates the button server-side (fail-closed 403). Owner has no `photos_field_logs/create`, so "Add to file" is honestly disabled.
+- **Owner-only chrome suppression**: body class `bkg-lane-owner` + CSS on stable aria-labels hides the generic `KillerAppChrome` + workflow compass FAB so the herbarium strips are the only chrome. GC/Builder lane untouched.
+- **Big animated seal** (`SealMark`, Framer Motion) — hero medallion (76px) + budget-strip mark (40px); hero/Needs-you/big-three `Reveal` entrances; journey progress fill animates 0→current. Honors `prefers-reduced-motion`.
+- **Honest "alpha — coming soon"** for Ask the garden / Add to file / photo viewing (removed the fake "Added ✓").
+- **Compliance**: seed framing pay-app 48_000 → **48_200** (brief, Tahoe Carpentry); killed `#fff` (→ paper-cream); scoped Archivo + Cormorant Garamond + Space Mono to `.ov-root`; no red #E8443A; no "CRM".
+- Added `approval-store.test.ts` (loop persist + idempotency + Undo + isolation + fail-closed).
+
+**Key decisions:**
+- Persist via existing `project_change_orders` (the framing pay-app is already gated under the `change_orders` lens) — no schema change, minimal blast radius.
+- Suppress generic chrome for the owner lane only (founder-approved) to match the standalone without touching the Builder lane.
+- Followed the brief over the standalone where they conflict: Space Mono (standalone used JetBrains Mono) and `$48,200`.
+
+**Verification:** `tsc --noEmit` → 0 non-test errors (121 baseline held, 0 in changed files); approve→persist→read-back loop proven via a compiled `node` harness (6/6 assertions, amount $48,200); Builder lane + shared chrome + `owner-lane.html` untouched.
+
+**Issues/blockers:**
+- Sandbox can't finish `next build` (per-call PID-namespace teardown + 45s cap), can't push (SSH host-key verification fails), and has no `vercel`/`gh`/PAT — so deploy + browser sign-in dogfood are handed to the founder. Vercel runs the authoritative `next build` on push.
+- `vitest`/`tsx` can't run in the Cowork Linux sandbox (node_modules carries darwin-only native bindings for rolldown/esbuild) — verified the loop logic by compiling with `tsc` and running under `node`. The vitest suite runs normally on the founder's Mac / CI.
+
+---
+
 ## 2026-05-29 (Cowork) — Session close: Marin seed verified on `origin/main` (6eb23d0) — `MARIN_CAST` (14-member cast) / `MARIN_OWNER_LENS` / `MARIN_BUDGET_HEADROOM = $347K` confirmed live; task complete, no code changes this session.
 
 ---

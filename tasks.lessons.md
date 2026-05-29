@@ -2386,3 +2386,29 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The rule:** On Next 15+/16, any `page.tsx`/`layout.tsx`/route handler that reads `params` or `searchParams` must await them. A synchronous read won't throw — it returns undefined and corrupts everything downstream. When a server component "renders but the data is wrong," check for an unawaited `params` before anything else. Verify by reading the actual API query string in `preview_logs`, not just the rendered DOM.
 
 **Corollary (verification):** The preview screenshot tool didn't reflect `window.scrollTo`/`scrollIntoView` — post-scroll captures came back blank cream even though `getComputedStyle`/`getBoundingClientRect`/`elementFromPoint` confirmed the elements were painted and on-screen. Trust DOM-state assertions (innerText, computed opacity, elementFromPoint hit-testing) over a post-scroll screenshot when they disagree.
+
+## 2026-05-29 — Cowork Linux sandbox can't run `vitest`/`tsx`; verify TS logic via `tsc`-emit + `node`
+
+**Context:** FUNCTIONAL Owner Lane. Wrote an integration test for the approve→persist→read-back loop and tried to run it.
+
+**The mistake / discovery:** `npx vitest run …` died with `Cannot find module '@rolldown/binding-linux-arm64-gnu'`; `npx tsx …` died the same way for esbuild. Root cause: `node_modules` was populated on the founder's Mac (darwin-arm64), so the platform-specific native binaries for rolldown (vitest's bundler) and esbuild (tsx) are darwin-only — the Linux-arm64 Cowork sandbox has no matching `.node` binary. This is an environment/arch mismatch, NOT a test failure.
+
+**The fix / workaround:** Pure-JS toolchains still work. `tsc` runs fine. To prove runtime logic in-sandbox: `npx tsc <file>.ts --outDir /tmp/x --module commonjs --target es2022 --skipLibCheck`, then `node` a small CJS harness that `require()`s the emitted JS and asserts with `node:assert`. (Works cleanly when the source's only imports are type-only / erasable.) The real `vitest` suite still runs on the founder's Mac and CI.
+
+**The rule:** In the Cowork sandbox, don't trust `vitest`/`tsx`/`next build` to run end-to-end — they need platform-native binaries the darwin-installed `node_modules` lacks, and `next build` also exceeds the 45s-per-call cap (each bash call is its own PID namespace with `--die-with-parent`, so backgrounded builds die between calls). Verify with `tsc --noEmit` (type safety) + a `tsc`-emit→`node` harness (runtime logic), and hand the authoritative `next build` to Vercel.
+
+## 2026-05-29 — Cowork `.git` mount: stale `*.lock` files; commits succeed despite "unable to unlink" warnings
+
+**Context:** Committing the Owner Lane work locally.
+
+**What happened:** Every `git add`/`git commit` printed a wall of `warning: unable to unlink '.git/objects/**/tmp_obj_*': Operation not permitted` and `unable to unlink '.git/HEAD.lock'`. The commit nonetheless SUCCEEDED (HEAD advanced to the new SHA). But the leftover `.git/HEAD.lock` then blocks the *next* git write.
+
+**The rule:** On this mount, `.git/*.lock` can't be `rm`'d (only renamed). Before each git write, clear locks defensively: `for l in .git/index.lock .git/HEAD.lock; do [ -e "$l" ] && mv "$l" "$l.stale.$(date +%s)"; done`. Treat the `unable to unlink` warnings as noise (pipe through `grep -v "unable to unlink"`); confirm success by reading `git log -1` afterward, not by the absence of warnings.
+
+## 2026-05-29 — Suppress shared chrome for ONE lane without editing the shared chrome
+
+**Context:** The Owner lane needed to hide the generic `KillerAppChrome` (budget/journey ribbon) + the workflow compass FAB that the `/killerapp` layout renders for everyone, but the GC/Builder lane (same `/projects/[id]` route) must keep them.
+
+**The pattern:** The lane-specific client (`OwnerHomeClient`) toggles a body class on mount/unmount (`document.body.classList.add('bkg-lane-owner')`), and the lane's own scoped CSS hides the shared elements via **stable `aria-label` selectors** (`[aria-label="Project chrome"]`, `[aria-label="Open workflow navigator"]`) gated on that body class. Zero edits to the shared components, zero impact on other lanes, race-free enough (hides as the lane mounts). Brief flash of generic chrome during async lane-resolution is acceptable for an MLP.
+
+**The rule:** To scope-suppress shared, layout-level chrome for a single client surface, prefer a body-class + CSS-on-stable-selectors hook over prop-drilling/context through the layout or editing the shared component. Verify the target elements expose stable `aria-label`/`role` first (they did) so the selector can't silently rot.
