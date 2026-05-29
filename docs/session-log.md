@@ -3478,3 +3478,4 @@ API; resolved by awaiting `params`.
   pushes `feat/owner-lane-home` from Mac terminal after reviewing the two items above.
 - Stray `Owner Lane _standalone_.html` at repo root (accidental artifact) left
   untracked — not committed.
+## 2026-05-29 (Cowork) — Published Owner Lane standalone at /owner-lane.html (commit 5ed4137, current Size Up→Reflect export; stale Dream→Grow v2 not used). Live + browser-verified: https://builders.theknowledgegardens.com/owner-lane.html
