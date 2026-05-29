@@ -2372,3 +2372,17 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The corollary:** The earlier lesson "isolation: worktree is broken on this mount" was a special case of this. The general lesson is broader: ANY git op that needs to delete a file is broken on this mount. Plan around the constraint instead of fighting it. Don't burn 20 minutes sweeping `.lock` files — sweep once, attempt the op, and if it fails on a non-lock unlink, switch to a different strategy.
 
 **The corollary's corollary:** Quarantining locks: `mv .git/index.lock gitlock-trash/...` works because mv is a rename, not an unlink. But the renamed-aside lock files accumulate; over time `.git/refs/heads/` accumulates `.stale-1780016689` files that git scans as refs and chokes on. Quarantine OUTSIDE `.git/` (e.g. `gitlock-trash/` in the repo root), not inside it.
+
+---
+
+## 2026-05-29 — Next 16: `params` is a Promise; sync access silently yields `undefined`
+
+**Context:** MLP-Owner. The Owner home loaded but `/api/owner-home` was hit with `projectId=undefined`, so every Lens check ran against a garbage id.
+
+**The mistake:** Wrote the project page as `function ProjectPage({ params }) { return <LaneRouter projectId={params.id} /> }`. On Next.js 16, `params` is a `Promise`; the dev compat shim logged a warning but `params.id` evaluated to `undefined` rather than the route value. The page still rendered (200), so it looked fine until I checked the API query string in the server logs.
+
+**The fix:** Make the page `async` and `const { id } = await params;`. Type the prop as `Promise<{ id: string }>`.
+
+**The rule:** On Next 15+/16, any `page.tsx`/`layout.tsx`/route handler that reads `params` or `searchParams` must await them. A synchronous read won't throw — it returns undefined and corrupts everything downstream. When a server component "renders but the data is wrong," check for an unawaited `params` before anything else. Verify by reading the actual API query string in `preview_logs`, not just the rendered DOM.
+
+**Corollary (verification):** The preview screenshot tool didn't reflect `window.scrollTo`/`scrollIntoView` — post-scroll captures came back blank cream even though `getComputedStyle`/`getBoundingClientRect`/`elementFromPoint` confirmed the elements were painted and on-screen. Trust DOM-state assertions (innerText, computed opacity, elementFromPoint hit-testing) over a post-scroll screenshot when they disagree.

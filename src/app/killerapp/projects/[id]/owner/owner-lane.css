@@ -1,0 +1,299 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   OWNER LANE — in-app stylesheet.
+
+   Ported from the Knowledge Gardens design export (owner-lane/owner.css +
+   the .bkg-* subset of ui_kits/builders-knowledge-garden/styles.css). Every
+   rule is scoped under `.ov-root` so the herbarium Owner home never leaks
+   into the rest of the Killer App chrome.
+
+   Design tokens (--paper-cream, --specimen-*, --ink-*, fonts, shadows) are
+   the canonical ones from src/styles/tokens.css — not redefined here.
+
+   Demo-wall scaffolding (.stage-*, .frame-*, .phone, .win) is intentionally
+   dropped: in the app this renders as one responsive screen, not a pinned
+   plate + phone mock.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ─── Shell ──────────────────────────────────────────────────────────────── */
+.ov-root {
+  position: relative;
+  background: var(--paper-cream);
+  min-height: 100%;
+  color: var(--ink-sepia);
+  font-family: var(--font-ui);
+}
+.ov-root .ov { position: relative; background: var(--paper-cream); min-height: 100%; }
+.ov-root .ov::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(124, 98, 53, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 98, 53, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.ov-root .ov > * { position: relative; z-index: 1; }
+.ov-root .ov-content { padding-bottom: 96px; }
+.ov-root .ov-greetrow {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; padding: 16px 28px 0;
+}
+.ov-root .ov-greet { font-family: var(--font-editorial); font-style: italic; color: var(--ink-script); font-size: var(--text-lg); }
+.ov-root .ov-greet-mono { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faded); margin-top: 3px; }
+
+/* ─── Section / engineering label / specimen card (from kit styles.css) ──── */
+.ov-root .eng-label, .ov-root .label-eng {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-faded); font-weight: 600;
+}
+.ov-root .plate-caption {
+  font-family: var(--font-script); color: var(--ink-script);
+  font-size: var(--text-2xl); line-height: 1; letter-spacing: 0.01em;
+}
+.ov-root .bkg-section { padding: 24px 28px; }
+.ov-root .bkg-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.ov-root .bkg-section-head h2 { font-family: var(--font-display); font-size: 22px; letter-spacing: -0.015em; color: var(--ink-graphite); margin: 0; font-weight: 400; }
+.ov-root .bkg-section-head .eng-label { color: var(--ink-faded); }
+
+.ov-root .bkg-specimens { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.ov-root .bkg-specimen {
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 18px 20px 16px;
+  box-shadow: var(--shadow-page-2); position: relative;
+}
+.ov-root .bkg-specimen-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--paper-edge); padding-bottom: 8px; margin-bottom: 10px;
+}
+.ov-root .bkg-specimen-tag {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em;
+  text-transform: uppercase; padding: 2px 6px; border: 1px solid currentColor;
+  border-radius: var(--radius-xs);
+}
+.ov-root .bkg-specimen-tag.tone-rust { color: var(--specimen-rust); }
+.ov-root .bkg-specimen-tag.tone-sage { color: var(--specimen-sage-deep); }
+.ov-root .bkg-specimen-tag.tone-amber { color: var(--specimen-amber-deep); }
+.ov-root .bkg-specimen-tag.tone-teal { color: var(--specimen-teal-deep); }
+.ov-root .bkg-specimen-title { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.01em; color: var(--ink-graphite); margin: 2px 0 4px; line-height: 1.1; font-weight: 400; }
+.ov-root .bkg-specimen-meta { font-family: var(--font-ui); font-size: 13px; color: var(--ink-faded); margin-bottom: 8px; }
+.ov-root .bkg-specimen-quote { font-family: var(--font-editorial); font-style: italic; font-size: 14px; color: var(--ink-script); line-height: 1.35; margin: 0 0 6px; }
+
+.ov-root .bkg-foot-rule { height: 1px; background: var(--paper-edge); margin: 32px 28px 0; }
+.ov-root .bkg-foot { padding: 18px 28px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-faded); letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* composer (Ask the garden) */
+.ov-root .bkg-composer { display: flex; align-items: center; gap: 6px; background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); padding: 6px 8px; box-shadow: var(--shadow-inset); transition: border-color 140ms var(--ease-out-paper); }
+.ov-root .bkg-composer:focus-within { border-color: var(--specimen-teal); box-shadow: var(--shadow-focus); }
+.ov-root .bkg-composer-leader { color: var(--ink-faded); padding-left: 4px; display: flex; }
+.ov-root .bkg-composer-input { flex: 1; border: 0; outline: 0; background: transparent; font-family: var(--font-ui); font-size: 14px; color: var(--ink-graphite); padding: 6px 4px; }
+.ov-root .bkg-composer-input::placeholder { color: var(--ink-faded); font-style: italic; }
+.ov-root .bkg-composer-submit { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; background: var(--ink-graphite); color: var(--paper-cream); border: 0; border-radius: var(--radius-xs); padding: 7px 14px; cursor: pointer; }
+.ov-root .bkg-composer-submit:hover { background: var(--specimen-teal-deep); }
+
+/* ─── Animated botanical logo mark ───────────────────────────────────────── */
+.ov-root .bkg-mark { display: inline-block; overflow: hidden; border: 1px solid var(--paper-edge); background: var(--paper-cream); box-shadow: var(--shadow-page-1); flex: 0 0 auto; }
+.ov-root .bkg-mark video { width: 100%; height: 100%; object-fit: cover; transform: scale(1.16); display: block; }
+
+/* ─── HERO ───────────────────────────────────────────────────────────────── */
+.ov-root .ov-hero { position: relative; height: 300px; margin: 24px 28px 0; border: 1px solid var(--paper-edge); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-plate); background: var(--paper-cream); }
+.ov-root .ov-hero-img { position: absolute; inset: 0; background-size: cover; background-position: center 38%; }
+.ov-root .ov-hero-tint { position: absolute; inset: 0; background: var(--ink-sepia); mix-blend-mode: multiply; opacity: 0.14; }
+.ov-root .ov-hero-scrim {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, var(--paper-cream) 0%, color-mix(in oklab, var(--paper-cream) 88%, transparent) 38%, transparent 70%),
+    linear-gradient(0deg, color-mix(in oklab, var(--paper-cream) 70%, transparent) 0%, transparent 30%);
+}
+.ov-root .ov-hero-grid {
+  position: absolute; inset: 0; opacity: 0.5; pointer-events: none;
+  background-image: linear-gradient(rgba(124, 98, 53, 0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 98, 53, 0.10) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 45%, #000 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, transparent 45%, #000 100%);
+}
+.ov-root .ov-hero-text { position: relative; z-index: 3; height: 100%; padding: 0 46px; max-width: 640px; display: flex; flex-direction: column; justify-content: center; }
+.ov-root .ov-hero-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-teal-deep); margin-bottom: 10px; }
+.ov-root .ov-hero-title { font-family: var(--font-display); font-size: 52px; letter-spacing: -0.03em; line-height: 0.98; color: var(--ink-graphite); margin: 0; font-weight: 400; }
+.ov-root .ov-hero-sub { font-family: var(--font-editorial); font-style: italic; font-size: 19px; color: var(--ink-script); margin-top: 12px; max-width: 30ch; line-height: 1.35; }
+.ov-root .ov-hero-cap { position: absolute; right: 30px; bottom: 16px; z-index: 3; }
+.ov-root .ov-hero-cap .plate-caption { font-size: 24px; line-height: 1.2; color: var(--ink-script); white-space: nowrap; text-shadow: 0 1px 0 var(--paper-cream), 0 0 10px var(--paper-cream); }
+
+/* ─── NEEDS-YOU card ─────────────────────────────────────────────────────── */
+.ov-root .ny-grid { display: grid; grid-template-columns: 1fr 256px; }
+.ov-root .ny-main { padding-right: 26px; }
+.ov-root .ny-title { font-family: var(--font-display); font-size: var(--text-2xl); letter-spacing: -0.02em; color: var(--ink-graphite); margin: 2px 0 10px; line-height: 1.04; font-weight: 400; }
+.ov-root .ny-blurb { font-family: var(--font-editorial); font-size: 17px; line-height: 1.5; color: var(--ink-script); margin: 0 0 16px; max-width: 50ch; }
+.ov-root .ny-blurb em { font-style: normal; color: var(--ink-graphite); font-weight: 600; font-family: var(--font-ui); }
+.ov-root .ny-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.ov-root .ny-check { display: flex; align-items: flex-start; gap: 10px; font-size: var(--text-sm); color: var(--ink-sepia); line-height: 1.45; }
+.ov-root .ny-check svg { flex: 0 0 auto; margin-top: 3px; color: var(--specimen-sage-deep); }
+.ov-root .ny-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ov-root .ny-amount { border-left: 1px solid var(--paper-edge); padding-left: 26px; display: flex; flex-direction: column; justify-content: center; }
+.ov-root .ny-amount-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faded); }
+.ov-root .ny-amount-big { font-family: var(--font-display); font-size: 46px; letter-spacing: -0.03em; color: var(--ink-graphite); line-height: 1; margin: 8px 0 4px; font-variant-numeric: tabular-nums; font-weight: 400; }
+.ov-root .ny-amount-sub { font-family: var(--font-editorial); font-style: italic; font-size: 14px; color: var(--ink-faded); }
+.ov-root .ny-amount-meter { margin-top: 18px; }
+.ov-root .ny-meter-track { height: 6px; background: var(--paper-fold); border-radius: 999px; overflow: hidden; border: 1px solid var(--paper-edge); }
+.ov-root .ny-meter-fill { height: 100%; background: var(--specimen-teal); border-radius: 999px; }
+.ov-root .ny-meter-cap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-faded); margin-top: 7px; }
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.ov-root .btn {
+  font-family: var(--font-ui); font-size: 14px; font-weight: 600; line-height: 1.1;
+  border-radius: var(--radius-xs); padding: 11px 20px; cursor: pointer;
+  border: 1.5px solid var(--ink-graphite); background: var(--ink-graphite); color: var(--paper-cream);
+  transition: transform 80ms var(--ease-out-paper), background-color 180ms var(--ease-out-paper), border-color 180ms var(--ease-out-paper);
+  display: inline-flex; align-items: center; gap: 9px; letter-spacing: 0.01em;
+}
+.ov-root .btn:active { transform: translateY(1px); }
+.ov-root .btn-accent { background: var(--specimen-teal); border-color: var(--specimen-teal); color: #fff; }
+.ov-root .btn-accent:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
+.ov-root .btn-ghost { background: transparent; color: var(--ink-graphite); border-color: var(--paper-edge); }
+.ov-root .btn-ghost:hover { border-color: var(--specimen-brass-aged); }
+.ov-root .btn-amount { font-variant-numeric: tabular-nums; }
+.ov-root .btn-link { background: none; border: 0; padding: 4px 0; cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--specimen-teal-deep); display: inline-flex; align-items: center; gap: 6px; }
+.ov-root .btn-link:hover { color: var(--specimen-rust); }
+.ov-root .btn:disabled { opacity: 0.45; cursor: default; }
+
+/* ─── Owner gauges ───────────────────────────────────────────────────────── */
+.ov-root .ov-gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ov-root .ovg { background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); box-shadow: var(--shadow-page-2); padding: 16px 16px 18px; text-align: center; }
+.ov-root .ovg-q { font-family: var(--font-editorial); font-style: italic; font-size: 15px; color: var(--ink-script); margin-bottom: 2px; }
+.ov-root .ovg-gaugewrap { max-width: 178px; margin: 0 auto; }
+.ov-root .ovg-read { font-family: var(--font-display); font-size: 30px; letter-spacing: -0.02em; color: var(--ink-graphite); margin-top: -6px; font-weight: 400; }
+.ov-root .ovg-note { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; }
+.ov-root .ovg-note .pip { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04); }
+.ov-root .note-good { color: var(--specimen-sage-deep); } .ov-root .note-good .pip { background: var(--specimen-sage); }
+.ov-root .note-watch { color: var(--specimen-amber-deep); } .ov-root .note-watch .pip { background: var(--specimen-amber); }
+.ov-root .note-info { color: var(--specimen-teal-deep); } .ov-root .note-info .pip { background: var(--specimen-teal); }
+
+.ov-root .ovstat { text-align: left; }
+.ov-root .ovstat-big { font-family: var(--font-display); font-size: 44px; letter-spacing: -0.03em; color: var(--ink-graphite); line-height: 1; margin: 4px 0 6px; font-variant-numeric: tabular-nums; font-weight: 400; }
+.ov-root .ovstat-cap { font-family: var(--font-editorial); font-style: italic; font-size: 16px; color: var(--ink-script); margin-bottom: 14px; }
+.ov-root .ovstat-meter { height: 6px; background: var(--paper-fold); border: 1px solid var(--paper-edge); border-radius: 999px; overflow: hidden; }
+.ov-root .ovstat-fill { height: 100%; border-radius: 999px; }
+
+/* ─── Plain-language summary strip ───────────────────────────────────────── */
+.ov-root .ov-summary { background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); box-shadow: var(--shadow-page-2); padding: 20px 24px; display: grid; grid-template-columns: 1.3fr 1px repeat(3, 1fr); gap: 22px; align-items: center; }
+.ov-root .ov-summary-lead p { font-family: var(--font-editorial); font-size: 17px; line-height: 1.5; color: var(--ink-script); margin: 6px 0 0; }
+.ov-root .ov-summary-rule { background: var(--paper-edge); align-self: stretch; }
+.ov-root .ov-stat { text-align: left; }
+.ov-root .ov-stat-num { font-family: var(--font-display); font-size: var(--text-2xl); letter-spacing: -0.02em; color: var(--ink-graphite); line-height: 1; font-variant-numeric: tabular-nums; font-weight: 400; }
+.ov-root .ov-stat-lab { font-family: var(--font-ui); font-size: 13px; color: var(--ink-faded); margin-top: 5px; }
+
+/* ─── Field-log composer (owner upload) ──────────────────────────────────── */
+.ov-root .fl { background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); box-shadow: var(--shadow-page-2); padding: 20px 22px; }
+.ov-root .fl-row { display: grid; grid-template-columns: 178px 1fr; gap: 18px; align-items: stretch; }
+.ov-root .fl-drop { display: flex; flex-direction: column; gap: 8px; }
+.ov-root .fl-slot {
+  width: 100%; min-height: 138px; border: 1px dashed var(--paper-edge);
+  border-radius: var(--radius-xs); background: var(--paper-cream);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; cursor: pointer; text-align: center; padding: 12px;
+  color: var(--ink-faded); transition: border-color 140ms var(--ease-out-paper), background-color 140ms var(--ease-out-paper);
+}
+.ov-root .fl-slot:hover, .ov-root .fl-slot.is-drag { border-color: var(--specimen-teal); background: rgba(60, 122, 138, 0.05); }
+.ov-root .fl-slot-hint { font-family: var(--font-editorial); font-style: italic; font-size: 13px; line-height: 1.3; }
+.ov-root .fl-slot-name { font-family: var(--font-mono); font-size: 11px; color: var(--specimen-teal-deep); word-break: break-all; }
+.ov-root .fl-slot input[type="file"] { display: none; }
+.ov-root .fl-kinds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.ov-root .fl-chip { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); background: var(--paper-cream); color: var(--ink-faded); padding: 7px 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 140ms var(--ease-out-paper); }
+.ov-root .fl-chip.is-on { color: var(--specimen-teal-deep); border-color: var(--specimen-teal); background: rgba(60, 122, 138, 0.07); }
+.ov-root .fl-chip:hover { border-color: var(--specimen-brass-aged); }
+.ov-root .fl-note { display: flex; flex-direction: column; }
+.ov-root .fl-note textarea { flex: 1; resize: none; min-height: 100px; font-family: var(--font-ui); font-size: 15px; color: var(--ink-graphite); background: var(--paper-cream); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); padding: 12px 14px; box-shadow: var(--shadow-inset); outline: none; line-height: 1.5; }
+.ov-root .fl-note textarea::placeholder { color: var(--ink-faded); font-style: italic; font-family: var(--font-editorial); font-size: 16px; }
+.ov-root .fl-note textarea:focus { border-color: var(--specimen-teal); box-shadow: var(--shadow-focus); }
+.ov-root .fl-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 12px; }
+.ov-root .fl-foot .eng-label { color: var(--ink-faded); display: inline-flex; align-items: center; gap: 6px; }
+.ov-root .fl-ok { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--specimen-sage-deep); }
+
+/* ─── Recent owner entries ───────────────────────────────────────────────── */
+.ov-root .ov-entry-thumb { height: 104px; border-radius: var(--radius-xs); border: 1px solid var(--paper-edge); margin: 4px 0 10px; background-size: cover; background-position: center; filter: saturate(0.92) sepia(0.06); }
+
+/* ─── GLOBAL STRIPS — budget + journey ───────────────────────────────────── */
+.ov-root .gstrips { position: sticky; top: 0; z-index: 25; background: var(--paper-cream); border-bottom: 1px solid var(--paper-edge); box-shadow: var(--shadow-page-1); }
+.ov-root .gstrip { display: grid; grid-template-columns: 290px 1fr 132px; align-items: center; padding: 9px 24px; }
+.ov-root .gstrip + .gstrip { border-top: 1px dashed var(--paper-edge); }
+.ov-root .gstrip-lead { display: flex; align-items: center; gap: 12px; padding-right: 20px; }
+.ov-root .gstrip-brand { font-family: var(--font-display); font-size: 15px; letter-spacing: -0.01em; color: var(--ink-graphite); line-height: 1.05; font-weight: 400; }
+.ov-root .gstrip-kicker { font-family: var(--font-editorial); font-style: italic; font-size: 12px; color: var(--ink-faded); margin-top: 1px; }
+.ov-root .gstrip-lead-j .eng-label { color: var(--specimen-brass-aged); }
+.ov-root .gstrip-track { position: relative; }
+.ov-root .gstrip-end { text-align: right; padding-left: 16px; }
+.ov-root .gstrip-end-big { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.02em; color: var(--ink-graphite); line-height: 1; font-variant-numeric: tabular-nums; font-weight: 400; }
+.ov-root .gstrip-end-sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); margin-top: 3px; }
+
+.ov-root .btrack { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.ov-root .bcell { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); background: var(--paper-cream); padding: 6px 9px; min-height: 40px; display: flex; flex-direction: column; justify-content: center; gap: 1px; cursor: pointer; transition: box-shadow 140ms var(--ease-out-paper); }
+.ov-root .bcell:hover { box-shadow: var(--shadow-page-2); }
+.ov-root .bcell-lab { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); }
+.ov-root .bcell-amt { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--ink-graphite); font-variant-numeric: tabular-nums; }
+.ov-root .bcell.st-paid { background: color-mix(in oklab, var(--specimen-sage) 13%, var(--paper-cream)); border-color: var(--specimen-sage-pale); }
+.ov-root .bcell.st-paid .bcell-amt { color: var(--specimen-sage-deep); }
+.ov-root .bcell.st-now { border-color: var(--specimen-brass-aged); background: color-mix(in oklab, var(--specimen-brass) 14%, var(--paper-cream)); }
+.ov-root .bcell.st-now .bcell-amt { color: var(--specimen-rust); }
+.ov-root .bcell.st-soon { opacity: 0.65; }
+.ov-root .bcell.st-soon .bcell-amt { color: var(--ink-faded); }
+.ov-root .bcell.is-cur { box-shadow: 0 0 0 1.5px var(--specimen-brass-aged); }
+.ov-root .bcell-tick { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--specimen-rust); box-shadow: 0 0 0 2px var(--paper-cream); }
+
+.ov-root .jtrack { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); align-items: center; height: 46px; padding-top: 6px; }
+.ov-root .jline { position: absolute; left: 3%; right: 3%; top: 17px; height: 2px; background: var(--paper-edge); border-radius: 2px; }
+.ov-root .jline-fill { height: 100%; background: var(--specimen-teal); border-radius: 2px; }
+.ov-root .jnode { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.ov-root .jdot { width: 11px; height: 11px; border-radius: 50%; background: var(--paper-cream); border: 2px solid var(--paper-edge); margin-bottom: 3px; }
+.ov-root .jnode.is-done .jdot { background: var(--specimen-teal); border-color: var(--specimen-teal-deep); }
+.ov-root .jnode.is-cur .jdot { background: var(--specimen-rust); border-color: var(--specimen-rust-deep); box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-rust) 28%, transparent); }
+.ov-root .jn { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em; color: var(--ink-faded); }
+.ov-root .jnode.is-cur .jn { color: var(--specimen-rust); }
+.ov-root .jl { font-size: 11px; font-weight: 600; color: var(--ink-graphite); letter-spacing: -0.005em; }
+.ov-root .jscrub { position: absolute; top: -3px; transform: translateX(-50%); z-index: 4; }
+.ov-root .jscrub-flag { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-cream); background: var(--ink-graphite); padding: 2px 6px; border-radius: var(--radius-xs); white-space: nowrap; }
+
+/* ─── PERSISTENT NAV — compass bloom + Ask the garden ────────────────────── */
+.ov-root .pnav { position: absolute; right: 18px; bottom: 18px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.ov-root .pnav-cluster { display: flex; align-items: center; gap: 10px; }
+.ov-root .pnav-ask { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 600; font-size: 14px; color: var(--paper-cream); background: var(--ink-graphite); border: 1.5px solid var(--ink-graphite); border-radius: var(--radius-pill); padding: 11px 18px; cursor: pointer; box-shadow: var(--shadow-page-2); transition: background-color 160ms var(--ease-out-paper); }
+.ov-root .pnav-ask:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
+.ov-root .pnav-ask-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--flash-teal); box-shadow: 0 0 6px var(--flash-teal); }
+.ov-root .pnav-compass { width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #F2E9D2, #E2CFA6 50%, #C9B98A); border: 2px solid var(--paper-edge); box-shadow: 0 4px 18px rgba(42, 38, 32, 0.18), inset 0 -3px 6px rgba(90, 59, 31, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; transition: border-color 200ms var(--ease-out-paper); }
+.ov-root .pnav-compass:hover { border-color: var(--specimen-brass-aged); }
+.ov-root .pnav-panel { width: 300px; background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-md); box-shadow: var(--shadow-plate); padding: 14px; transform-origin: bottom right; animation: ov-pnav-bloom 220ms var(--ease-out-paper); }
+@keyframes ov-pnav-bloom { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: none; } }
+.ov-root .pnav-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--paper-edge); }
+.ov-root .pnav-panel-head .eng-label { color: var(--ink-faded); }
+.ov-root .pnav-lane { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--specimen-teal-deep); border: 1px solid var(--specimen-teal-pale); border-radius: var(--radius-xs); padding: 3px 7px; }
+.ov-root .pnav-x { background: none; border: 0; color: var(--ink-faded); cursor: pointer; font-size: 12px; line-height: 1; }
+.ov-root .pnav-item { display: flex; align-items: stretch; gap: 10px; width: 100%; padding: 9px 10px; border: 1px solid transparent; background: transparent; cursor: pointer; text-align: left; border-radius: var(--radius-xs); transition: all 140ms var(--ease-out-paper); }
+.ov-root .pnav-item:hover { background: rgba(60, 122, 138, 0.06); border-color: var(--paper-edge); }
+.ov-root .pnav-item-marker { width: 3px; flex: 0 0 auto; border-radius: 1px; background: var(--specimen-teal); }
+.ov-root .pnav-item-l { display: block; font-size: 14px; font-weight: 600; color: var(--ink-graphite); }
+.ov-root .pnav-item-s { display: block; font-family: var(--font-editorial); font-style: italic; font-size: 12px; color: var(--ink-faded); margin-top: 1px; }
+.ov-root .pnav-ask-panel { width: 344px; }
+.ov-root .pnav-ask-hint { font-family: var(--font-editorial); font-style: italic; font-size: 12px; color: var(--ink-faded); margin-top: 8px; }
+
+/* ─── Redacted state — when the Lens denies a data cell ──────────────────── */
+.ov-root .ov-redacted {
+  background: var(--bg-raised); border: 1px dashed var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 18px 20px;
+  display: flex; align-items: center; gap: 12px; color: var(--ink-faded);
+}
+.ov-root .ov-redacted-mark { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-aged); border: 1px solid var(--specimen-brass-aged); border-radius: var(--radius-xs); padding: 3px 7px; flex: 0 0 auto; }
+.ov-root .ov-redacted-txt { font-family: var(--font-editorial); font-style: italic; font-size: 14px; }
+
+/* ─── Responsive — single-column below the kit breakpoint ────────────────── */
+@media (max-width: 1000px) {
+  .ov-root .ov-gauges, .ov-root .bkg-specimens { grid-template-columns: 1fr; }
+  .ov-root .ny-grid { grid-template-columns: 1fr; }
+  .ov-root .ny-amount { border-left: 0; border-top: 1px dashed var(--paper-edge); padding-left: 0; padding-top: 16px; margin-top: 4px; }
+  .ov-root .ny-main { padding-right: 0; }
+  .ov-root .ov-summary { grid-template-columns: 1fr; gap: 14px; }
+  .ov-root .ov-summary-rule { display: none; }
+  .ov-root .fl-row { grid-template-columns: 1fr; }
+  .ov-root .gstrip { grid-template-columns: 1fr auto; gap: 6px 10px; }
+  .ov-root .gstrip-track { grid-column: 1 / -1; }
+  .ov-root .ov-hero-title { font-size: 34px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-root * { animation: none !important; transition: none !important; }
+}
