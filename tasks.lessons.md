@@ -2249,3 +2249,43 @@ The rule: Always check which Vercel environment holds the real secrets. Try verc
 **The rule:** When introducing a "Lane" type into BKG code, NAME WHICH ONE in both the type doc-comment and the union name (or at least in a tight discriminating comment). The two lane sets sit one import away from each other; a future agent will conflate them if the code doesn't call out the distinction. Today's `Lane` type in `marin-farmhouse.ts` opens with: `/** The six BKG project-role lanes. NOT the platform's business lanes. */`
 
 **The corollary:** When the same word means two things in adjacent contexts, the cost of disambiguating in code comments is much lower than the cost of someone shipping a feature against the wrong framing. The architect-lane drift (PE filed under SUB instead of SERVICE-PROVIDER) is the kind of mistake this lesson prevents.
+
+
+---
+
+## 2026-05-28 — Plain-language consent is a legal artifact
+
+Every sentence in a data-sharing notice is enforceable. Plain language makes
+consent honest AND increases legal exposure simultaneously, because users now
+actually understand what they're agreeing to.
+
+Pattern: every Lane's data-sharing notice gets two reviews — UX review for
+plainness and completeness, legal review for compliance. Both must pass
+before any paid use.
+
+## 2026-05-28 — Match the lawyer to the regulatory domain
+
+When a Lane touches a regulated industry (lending, insurance, real-estate
+transaction, healthcare, labor, public records), the domain of counsel must
+match the regulation. Construction counsel does not cover lending. Employment
+counsel does not cover AHJ rules. Surface the regulatory domain when speccing
+a Lane, not when drafting consent copy.
+
+## 2026-05-28 — Capture publication consent at moment-of-upload
+
+For UGC (photos, videos, sketches, written reflections), the right pattern is
+opt-in consent at the moment of upload — not blanket onboarding consent.
+Opt-in per upload survives platform policy changes, gives the contributor
+real agency, and is the position counsel will defend cleanly. Stream C should
+design upload flows with a small "OK to publish at closeout?" checkbox per
+item.
+
+## 2026-05-28 — The knowledge graph is the moat; internal docs are not entities
+
+When asked to make internal team docs (copy, session logs, strategy briefs)
+a "single source of truth," the answer is the GitHub repo, not Supabase.
+Supabase's source-of-truth role is app data and the knowledge graph
+(lanes, lens_permission_matrix, project_lane_memberships, knowledge_entities).
+Dumping markdown copy into the knowledge graph pollutes the moat. Keep the
+two sources of truth in their correct lanes: repo for docs/code, Supabase
+for structured app + knowledge data.
