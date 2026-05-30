@@ -2,7 +2,7 @@
  * Hand-drawn line icons for the Owner Lane — brass/sepia, stroke 1.5, no fill.
  * Ported verbatim from the design export (owner-lane/components.jsx `Ico`).
  */
-import type { SVGProps } from 'react';
+import type { ReactElement, SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -55,6 +55,60 @@ export const Ico = {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...p}>
       <circle cx="11" cy="11" r="7" />
       <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+    </svg>
+  ),
+};
+
+/**
+ * Per-stage glyphs for the 7 locked lifecycle stages, keyed by KAC_STAGES slug.
+ * Same brass/sepia line style as `Ico`; ported verbatim from the design export's
+ * journey + budget strips so the owner sees the build as a sequence of drawn
+ * marks, not text labels. 16px so they sit cleanly in a strip cell.
+ */
+export const StageIco: Record<string, (p: IconProps) => ReactElement> = {
+  'size-up': (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M8 3v15M16 3v18" />
+      <path d="M8 6h4M8 10h4M16 12h-4" />
+      <path d="M8 18h8" />
+    </svg>
+  ),
+  lock: (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <circle cx="12" cy="9.5" r="5.5" />
+      <circle cx="12" cy="9.5" r="2.2" />
+      <path d="M9 14l-1.3 7 4.3-2.2 4.3 2.2L15 14" />
+    </svg>
+  ),
+  plan: (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M5 5h11l3 3v11H5z" />
+      <path d="M16 5v3h3" />
+      <path d="M8 12h7M8 15h7M8 9h3" />
+    </svg>
+  ),
+  build: (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M6 4v14h14" />
+      <path d="M9.5 18v-2.5M13 18v-2.5M16.5 18v-2.5M6 7.5h2.5M6 11h2.5M6 14.5h2.5" />
+    </svg>
+  ),
+  adapt: (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M16 3.5a4 4 0 00-3.2 6.4L5 18l1.6 1.6 7.9-7.8A4 4 0 1016 3.5z" />
+      <path d="M14.2 4.4l-1.7 2 1 2.6 2.6.6 1.7-2" />
+    </svg>
+  ),
+  collect: (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M12 7.5v9M14 9.6h-3a1.6 1.6 0 000 3.2h2a1.6 1.6 0 010 3.2H9.8" />
+    </svg>
+  ),
+  reflect: (p: IconProps) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M5 19C5 11 11 5 19 5c0 8-6 14-14 14z" />
+      <path d="M5 19C9 15 12.5 11.5 16 8" />
     </svg>
   ),
 };

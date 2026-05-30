@@ -11,9 +11,9 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { Ico } from './icons';
+import { Ico, StageIco } from './icons';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 
 // ── Journey phases — the 7 LOCKED lifecycle stages, sourced from the shared
@@ -30,8 +30,39 @@ const MONEY_STATE: Record<string, 'paid' | 'now' | 'soon'> = {
   'size-up': 'paid', lock: 'paid', plan: 'paid', build: 'now', adapt: 'soon', collect: 'soon', reflect: 'soon',
 };
 
+// Plain-language subtitle under each journey stage — the owner reads what the
+// stage means, not its trade name. Keyed by KAC_STAGES slug.
+const PLAIN: Record<string, string> = {
+  'size-up': 'Scoping', lock: 'Scope & budget set', plan: 'Planning',
+  build: 'Building', adapt: 'Changes', collect: 'Payments & closeout', reflect: 'Wrap-up',
+};
+
 const fmtUSD = (n: number) => '$' + n.toLocaleString('en-US');
 const fmtK = (n: number) => '$' + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+
+// ── Money count-up — animates a money label (e.g. "$1.15M") from 0 → target ──
+// Drives the budget strip's end figure. Uses a framer-motion MotionValue (NOT
+// React state) so it never trips react-hooks/set-state-in-effect, and renders
+// the live value as a motion.span text child. Honors prefers-reduced-motion by
+// snapping straight to the final value. Parses an optional non-digit prefix
+// ("$"), the numeric body (thousands separators / decimals), and a trailing
+// unit ("M"/"K"/"%") so "$1.15M", "$48,000", and "42%" all count correctly.
+function MoneyCountUp({ label, dur = 0.7, delay = 0.2 }: { label: string; dur?: number; delay?: number }) {
+  const reduce = useReducedMotion();
+  const m = label.match(/^(\D*)([\d,]*\.?\d+)(.*)$/);
+  const target = m ? parseFloat(m[2].replace(/,/g, '')) : NaN;
+  const decimals = m && m[2].includes('.') ? m[2].split('.')[1].length : 0;
+  const mv = useMotionValue(0);
+  useEffect(() => {
+    if (Number.isNaN(target)) return;
+    if (reduce) { mv.set(target); return; }
+    const controls = animate(mv, target, { duration: dur, delay, ease: [0.22, 0.61, 0.36, 1] });
+    return () => controls.stop();
+  }, [target, reduce, dur, delay, mv]);
+  const text = useTransform(mv, (v) => (m ? `${m[1]}${v.toFixed(decimals)}${m[3]}` : label));
+  if (!m || Number.isNaN(target)) return <>{label}</>;
+  return <motion.span>{text}</motion.span>;
+}
 
 // ── Animated botanical logo mark ─────────────────────────────────────────────
 export function BkgMark({ size = 28, radius = 4 }: { size?: number; radius?: number }) {
@@ -123,7 +154,7 @@ export function Gauge({ value = 0.5, label = '', accent = '#3C7A8A' }: { value?:
       <circle cx="85" cy="85" r="66" fill="#F2E9D2" stroke="#7C6235" strokeWidth="0.5" />
       <circle cx="85" cy="85" r="62" fill={`url(#face-${id})`} />
       {ticks}
-      {label && <text x="85" y="128" textAnchor="middle" fontFamily="'Space Mono', monospace" fontSize="8" letterSpacing="1.6" fill="#2A2620">{label.toUpperCase()}</text>}
+      {label && <text x="85" y="128" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" letterSpacing="1.6" fill="#2A2620">{label.toUpperCase()}</text>}
       <g transform={`translate(85 85) rotate(${deg})`}>
         <line x1="0" y1="6" x2="0" y2="-50" stroke="#2A2620" strokeWidth="2" strokeLinecap="round" />
       </g>
@@ -378,8 +409,12 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
   const cur = ai * segW + segW * (buildPct / 100);
   const payLabel = fmtK(payApp);
   const reduce = useReducedMotion();
+  // Stagger the strip cells in on mount — `is-lit` cascades the per-stage icons
+  // (the reduced-motion media query in owner-lane.css strips the animation).
+  const [lit, setLit] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setLit(true), 30); return () => clearTimeout(t); }, []);
   return (
-    <div className="gstrips">
+    <div className={`gstrips ${lit ? 'is-lit' : ''}`}>
       <div className="gstrip">
         <div className="gstrip-lead">
           <SealMark size={40} delay={0} />
@@ -393,9 +428,10 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
             <div className="gstrip-track btrack">
               {PHASES.map((p) => {
                 const st = MONEY_STATE[p.id];
+                const Icon = StageIco[p.id];
                 return (
-                  <div key={p.id} className={`bcell st-${st} ${p.id === active ? 'is-cur' : ''}`}>
-                    <span className="bcell-lab">{p.label}</span>
+                  <div key={p.id} className={`bcell st-${st} ${p.id === active ? 'is-cur' : ''}`} title={p.label}>
+                    <span className="bcell-ico">{Icon && <Icon />}</span>
                     <span className="bcell-amt">{st === 'paid' ? 'Paid' : st === 'now' ? payLabel : 'Soon'}</span>
                     {p.id === active && <span className="bcell-tick" title="Framing payment awaiting you" />}
                   </div>
@@ -403,7 +439,7 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
               })}
             </div>
             <div className="gstrip-end">
-              <div className="gstrip-end-big">{budgetLeftLabel}</div>
+              <div className="gstrip-end-big"><MoneyCountUp label={budgetLeftLabel} /></div>
               <div className="gstrip-end-sub">left of {budgetTotalLabel}</div>
             </div>
           </>
@@ -420,13 +456,17 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
           <>
             <div className="gstrip-track jtrack">
               <div className="jline"><motion.div className="jline-fill" initial={reduce ? false : { width: 0 }} animate={{ width: cur + '%' }} transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }} /></div>
-              {PHASES.map((p, i) => (
-                <div key={p.id} className={`jnode ${ai > i ? 'is-done' : ''} ${p.id === active ? 'is-cur' : ''}`}>
-                  <span className="jdot" />
-                  <span className="jn">{p.n}</span>
-                  <span className="jl">{p.label}</span>
-                </div>
-              ))}
+              {PHASES.map((p, i) => {
+                const Icon = StageIco[p.id];
+                return (
+                  <div key={p.id} className={`jnode ${ai > i ? 'is-done' : ''} ${p.id === active ? 'is-cur' : ''}`}>
+                    <span className="jdot" />
+                    <span className="jico" style={reduce ? undefined : { animationDelay: `${i * 70}ms` }}>{Icon && <Icon />}</span>
+                    <span className="jname">{p.label}</span>
+                    <span className="jplain">{PLAIN[p.id]}</span>
+                  </div>
+                );
+              })}
               <div className="jscrub" style={{ left: cur + '%' }}><span className="jscrub-flag">wk {weekOf}</span></div>
             </div>
             <div className="gstrip-end">

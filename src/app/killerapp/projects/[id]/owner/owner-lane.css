@@ -14,22 +14,16 @@
    plate + phone mock.
    ───────────────────────────────────────────────────────────────────────── */
 
-/* Locked owner type stack (brief): Archivo + Cormorant Garamond + Space Mono.
-   Loaded here + scoped to .ov-root so the rest of the Killer App keeps the
-   tokens.css fonts (minimal blast radius). Mirrors tokens.css's Google Fonts
-   @import pattern. */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Mono:wght@400;700&display=swap');
-
 /* ─── Shell ──────────────────────────────────────────────────────────────── */
+/* The owner lane inherits the canonical type stack from tokens.css — EB Garamond
+   (editorial) + JetBrains Mono — same as the rest of the app and the Knowledge
+   Gardens design system. No owner-only font override. */
 .ov-root {
   position: relative;
   background: var(--paper-cream);
   min-height: 100%;
   color: var(--ink-sepia);
   font-family: var(--font-ui);
-  /* Scope the locked trio to the owner surface only — no global token churn. */
-  --font-editorial: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-  --font-mono: 'Space Mono', 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
 }
 .ov-root .ov { position: relative; background: var(--paper-cream); min-height: 100%; }
 .ov-root .ov::before {
@@ -222,7 +216,7 @@
 
 /* ─── GLOBAL STRIPS — budget + journey ───────────────────────────────────── */
 .ov-root .gstrips { position: sticky; top: 0; z-index: 25; background: var(--paper-cream); border-bottom: 1px solid var(--paper-edge); box-shadow: var(--shadow-page-1); }
-.ov-root .gstrip { display: grid; grid-template-columns: 290px 1fr 132px; align-items: center; padding: 9px 24px; }
+.ov-root .gstrip { display: grid; grid-template-columns: 320px 1fr 132px; align-items: center; padding: 11px 24px; }
 .ov-root .gstrip + .gstrip { border-top: 1px dashed var(--paper-edge); }
 .ov-root .gstrip-lead { display: flex; align-items: center; gap: 12px; padding-right: 20px; }
 .ov-root .gstrip-brand { font-family: var(--font-display); font-size: 15px; letter-spacing: -0.01em; color: var(--ink-graphite); line-height: 1.05; font-weight: 400; }
@@ -234,29 +228,44 @@
 .ov-root .gstrip-end-sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); margin-top: 3px; }
 
 .ov-root .btrack { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.ov-root .bcell { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); background: var(--paper-cream); padding: 6px 9px; min-height: 40px; display: flex; flex-direction: column; justify-content: center; gap: 1px; cursor: pointer; transition: box-shadow 140ms var(--ease-out-paper); }
+.ov-root .bcell { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); background: var(--paper-cream); padding: 6px 6px; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; transition: box-shadow 140ms var(--ease-out-paper), opacity 300ms var(--ease-out-paper), background-color 300ms var(--ease-out-paper); }
 .ov-root .bcell:hover { box-shadow: var(--shadow-page-2); }
-.ov-root .bcell-lab { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); }
+.ov-root .bcell-ico { color: var(--ink-faded); display: flex; }
 .ov-root .bcell-amt { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--ink-graphite); font-variant-numeric: tabular-nums; }
 .ov-root .bcell.st-paid { background: color-mix(in oklab, var(--specimen-sage) 13%, var(--paper-cream)); border-color: var(--specimen-sage-pale); }
+.ov-root .bcell.st-paid .bcell-ico { color: var(--specimen-sage-deep); }
 .ov-root .bcell.st-paid .bcell-amt { color: var(--specimen-sage-deep); }
 .ov-root .bcell.st-now { border-color: var(--specimen-brass-aged); background: color-mix(in oklab, var(--specimen-brass) 14%, var(--paper-cream)); }
+.ov-root .bcell.st-now .bcell-ico { color: var(--specimen-rust); }
 .ov-root .bcell.st-now .bcell-amt { color: var(--specimen-rust); }
 .ov-root .bcell.st-soon { opacity: 0.65; }
+.ov-root .bcell.st-soon .bcell-ico { opacity: 0.55; }
 .ov-root .bcell.st-soon .bcell-amt { color: var(--ink-faded); }
 .ov-root .bcell.is-cur { box-shadow: 0 0 0 1.5px var(--specimen-brass-aged); }
 .ov-root .bcell-tick { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--specimen-rust); box-shadow: 0 0 0 2px var(--paper-cream); }
+@keyframes ov-fadeUp { from { transform: translateY(6px); } to { transform: none; } }
+.ov-root .gstrips.is-lit .btrack .bcell { animation: ov-fadeUp 320ms var(--ease-out-paper) both; }
 
-.ov-root .jtrack { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); align-items: center; height: 46px; padding-top: 6px; }
-.ov-root .jline { position: absolute; left: 3%; right: 3%; top: 17px; height: 2px; background: var(--paper-edge); border-radius: 2px; }
+.ov-root .jtrack { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); align-items: start; height: 64px; padding-top: 8px; }
+.ov-root .jline { position: absolute; left: 3%; right: 3%; top: 13px; height: 2px; background: var(--paper-edge); border-radius: 2px; }
 .ov-root .jline-fill { height: 100%; background: var(--specimen-teal); border-radius: 2px; }
-.ov-root .jnode { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.ov-root .jdot { width: 11px; height: 11px; border-radius: 50%; background: var(--paper-cream); border: 2px solid var(--paper-edge); margin-bottom: 3px; }
+.ov-root .jnode { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; transition: transform 160ms var(--ease-out-paper); }
+.ov-root .jnode:hover { transform: translateY(-3px); }
+.ov-root .jdot { width: 11px; height: 11px; border-radius: 50%; background: var(--paper-cream); border: 2px solid var(--paper-edge); transition: background-color 200ms var(--ease-out-paper), border-color 200ms var(--ease-out-paper); }
 .ov-root .jnode.is-done .jdot { background: var(--specimen-teal); border-color: var(--specimen-teal-deep); }
-.ov-root .jnode.is-cur .jdot { background: var(--specimen-rust); border-color: var(--specimen-rust-deep); box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-rust) 28%, transparent); }
-.ov-root .jn { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em; color: var(--ink-faded); }
-.ov-root .jnode.is-cur .jn { color: var(--specimen-rust); }
-.ov-root .jl { font-size: 11px; font-weight: 600; color: var(--ink-graphite); letter-spacing: -0.005em; }
+.ov-root .jnode.is-cur .jdot { background: var(--specimen-rust); border-color: var(--specimen-rust-deep); box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-rust) 28%, transparent); animation: ov-jpulse 2.4s var(--ease-in-out-paper) infinite; }
+@keyframes ov-jpulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-rust) 28%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--specimen-rust) 10%, transparent); }
+}
+.ov-root .jico { color: var(--ink-faded); margin-top: 4px; display: flex; }
+.ov-root .gstrips.is-lit .jico { animation: ov-fadeUp 320ms var(--ease-out-paper) both; }
+.ov-root .jnode.is-done .jico { color: var(--specimen-teal-deep); }
+.ov-root .jnode.is-cur .jico { color: var(--specimen-rust); }
+.ov-root .jname { font-size: 11px; font-weight: 600; color: var(--ink-graphite); letter-spacing: -0.005em; white-space: nowrap; margin-top: 2px; }
+.ov-root .jnode.is-cur .jname { color: var(--specimen-rust); }
+.ov-root .jplain { font-family: var(--font-editorial); font-style: italic; font-size: 10px; color: var(--ink-faded); opacity: 0.75; white-space: nowrap; }
+.ov-root .jnode:hover .jplain { opacity: 1; color: var(--ink-script); }
 .ov-root .jscrub { position: absolute; top: -3px; transform: translateX(-50%); z-index: 4; }
 .ov-root .jscrub-flag { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-cream); background: var(--ink-graphite); padding: 2px 6px; border-radius: var(--radius-xs); white-space: nowrap; }
 
@@ -303,6 +312,12 @@
   .ov-root .gstrip { grid-template-columns: 1fr auto; gap: 6px 10px; }
   .ov-root .gstrip-track { grid-column: 1 / -1; }
   .ov-root .ov-hero-title { font-size: 34px; }
+  /* On narrow screens the journey collapses to dots + glyphs — the names and
+     plain-language subtitles drop, keeping the strip legible at 7-across. */
+  .ov-root .jtrack { height: 44px; }
+  .ov-root .jname, .ov-root .jplain { display: none; }
+  .ov-root .bcell { min-height: 38px; }
+  .ov-root .bcell-amt { font-size: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
