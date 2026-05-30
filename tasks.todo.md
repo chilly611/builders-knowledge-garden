@@ -1,3 +1,19 @@
+## ═══ NOW — Owner Lane DESIGN PARITY pass (2026-05-30, Claude Code / Opus) ═══
+
+Bring the in-app Owner lane to VISUAL parity with the corrected export `specs/bkg/Owner Lane _standalone_ (3).html` (Knowledge Gardens herbarium system). Data/permission/approval loop already shipped + correct — this is the visual layer only. Scope = Owner lane only; GC lens (live) untouched.
+
+**STATUS: ✅ code complete + verified locally (3 files, uncommitted). AWAITING founder go-ahead to commit + push — held pending the font-override confirmation (FLAG #1). Push → Vercel auto-deploy, sits next to the live GC lane.**
+
+- [x] `owner/icons.tsx` — `StageIco` map: 7 hand-drawn stage glyphs (size-up→reflect), brass/sepia 1.5-stroke, 16px, ported verbatim from the export.
+- [x] `owner/parts.tsx` (GlobalStrips) — budget cells = glyph + amount (sage Paid / rust current + tick / faded Soon); journey nodes = dot + glyph + name + italic plain-language subtitle (`PLAIN`); staggered reveal gated by `useReducedMotion`; gauge tick Space Mono → JetBrains Mono.
+- [x] `owner/owner-lane.css` — dropped the owner-only Cormorant/Space Mono `@import` + `.ov-root` override → inherits canonical EB Garamond + JetBrains Mono; widened budget col + cell heights; journey 64px + hover lift + current rust pulse (`ov-jpulse`); transform-only reveal (`ov-fadeUp`, no opacity); mobile (≤1000px) collapses journey to dots + glyphs. Preserved `.ov-redacted*`, chrome-suppression, reduced-motion guard, `.ov-hero-seal`.
+- [x] Verify: desktop 1280px (full journey + budget) + mobile 390px (collapsed) screenshots; reduced-motion guard + keyframes present in loaded CSS; `tsc` 0 errors in changed files; my code eslint-clean; redaction/permission paths untouched.
+- [ ] **FONT — founder call (FLAG #1):** removing the override reverses `ed455a0`'s deliberate "brief over standalone: Space Mono" choice. Standalone + app-global `tokens.css` both use JetBrains Mono + EB Garamond, so the lane now matches them. If Space Mono/Cormorant was an intentional owner signature, restore the one override block. Fully reversible.
+- [ ] **FOUNDER:** commit the 3 files + `git push origin main` → Vercel auto-deploy → spot-check `/killerapp/projects/55730cd3-5225-493d-8b5c-49086d942565` as owner.
+- [ ] Pre-existing (NOT this pass, flag-only): `react-hooks/purity` on `Gauge` `useRef(Math.random())` in `parts.tsx`; `globals.css:3748` `:global(input)` warning.
+
+---
+
 ## ═══ NOW — FUNCTIONAL Owner Lane (2026-05-29, Cowork / Opus) ═══
 
 Make the already-merged Owner Lane home (`/killerapp/projects/[id]` → `OwnerHomeClient`) FUNCTIONAL +

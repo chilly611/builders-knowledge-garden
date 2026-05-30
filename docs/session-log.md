@@ -3505,3 +3505,34 @@ API; resolved by awaiting `params`.
 - Animation polish + FINAL logo await the CORRECTED export (precondition still unmet). A new, different `specs/bkg/Owner Lane _standalone_ (3).html` (5.2MB, today) appeared and MAY be the corrected export — render to confirm before acting.
 - Pay-app approval = **needs legal review before wiring live payments** (no Stripe; demo-wrapped). Tracked in tasks.todo (counsel item).
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
+
+---
+
+## 2026-05-30 — Claude Code: Owner Lane — DESIGN PARITY pass (Knowledge Gardens system)
+**Agent:** Claude Code (claude-opus-4-8)
+**Commits:** _none yet_ — code complete + verified locally (3 files, uncommitted). AWAITING founder go-ahead to commit + push (push → Vercel auto-deploy, sits next to the live GC lane).
+
+**Context:** The precondition the prior entry waited on is now met — the new `specs/bkg/Owner Lane _standalone_ (3).html` (fetched from the Anthropic design API) IS the corrected export: locked-7 journey (Size Up→Reflect), Knowledge-Gardens herbarium palette + type. This session brings the in-app Owner lane to VISUAL parity with it (the data / permission / approval loop was already shipped + correct). Scope = Owner lane only; GC lens (live) untouched.
+
+**What was built (3 files, owner-scoped):**
+- **7 hand-drawn stage glyphs** (`owner/icons.tsx`): new `StageIco` map keyed by `KAC_STAGES` slug (size-up/lock/plan/build/adapt/collect/reflect), same brass/sepia 1.5-stroke line style as `Ico`, 16px. Ported verbatim from the export so the owner reads the build as a sequence of drawn marks, not text labels.
+- **Enriched GlobalStrips** (`owner/parts.tsx`): budget cells render the per-stage glyph + amount (sage Paid / brass-bordered rust current + tick / faded Soon) instead of a text label; journey nodes render dot + glyph + stage name + an italic plain-language subtitle (`PLAIN` map). Staggered reveal (per-icon `animationDelay: i*70ms`) gated behind `useReducedMotion`. Gauge tick font Space Mono → JetBrains Mono.
+- **owner-lane.css → canonical design**: dropped the owner-only `@import` + `.ov-root` font override (Cormorant Garamond / Space Mono) so the lane inherits the app-global + design-system canon (EB Garamond + JetBrains Mono). Widened the budget label col (290→320px), cells min-height 44px; journey track 64px with hover lift + current-node rust pulse (`ov-jpulse`); transform-only reveal (`ov-fadeUp` — translateY 6px→0, NO opacity change → content always painted for SSR/no-JS). Mobile (≤1000px): journey collapses to dots + glyphs (names/subtitles hidden, track 44px).
+
+**Key decisions:**
+- **Font override REMOVED — reverses a prior deliberate choice (FLAG #1 below).**
+- Reveal animates transform only, never opacity, so strips are fully visible without JS; the `is-lit` class only adds motion. Two-layer reduced-motion guard kept: JS omits the inline delay AND `.ov-root *` kills animation/transition under `prefers-reduced-motion`.
+- Preserved all app-specific rules NOT in the export: `.ov-redacted*`, `.ov-alpha-tag`, the `bkg-lane-owner` chrome-suppression selectors, the reduced-motion guard, `.ov-hero-seal`.
+
+**Verified (preview server @ 1280px + 390px + DOM/CSS assertions):**
+- Desktop: 7 journey nodes (dot + glyph + name + italic subtitle), Build current in rust with "WK 17" flag + pulse; budget glyphs + amounts, "$1.15M / LEFT OF $1.65M", "42% / WK 17 / 37". Matches the export.
+- Mobile (390px): `matchMedia(max-width:1000px)` true → `.jname`/`.jplain` display:none, `.jico` still flex, `.jtrack` 44px; budget strip intact, header → hamburger.
+- Reduced-motion guard present in loaded CSS (`.ov-root *` → animation/transition none) + both keyframes (`ov-fadeUp`, `ov-jpulse`) loaded; JS layer gates inline delays.
+- `tsc --noEmit`: 0 errors in the 3 changed files; my added code is eslint-clean. Data / permission / redaction paths untouched (preview returns permitted; `.ov-redacted` rules preserved) — owner still sees `budget_total`, never `sub_margin`.
+
+**FLAGS — founder decision:**
+1. **FONT OVERRIDE REMOVED — reverses `ed455a0`'s deliberate "brief over standalone" call.** The FUNCTIONAL entry recorded scoping Cormorant Garamond + Space Mono under `.ov-root` "per the brief (standalone used JetBrains Mono)." This session's task was "implement the standalone design," and the standalone + the app-global `tokens.css` both use EB Garamond + JetBrains Mono — so I dropped the owner-only override to align. If Space Mono / Cormorant was an intentional owner-lane signature, restore the `@import` + `.ov-root` override (one block in `owner-lane.css`). Fully reversible.
+2. **Design mockup says "Tahoe Carpentry Co."; app correctly shows seed "Ridgeline Framing"** (resolved in `c1f7e56`). My pass preserves the seed name — no regression. Informational.
+3. **Pre-existing, out of scope (NOT mine):** `react-hooks/purity` eslint error on the `Gauge` `useRef(Math.random())` line in `parts.tsx` (confirmed via git diff — predates my edits); `globals.css:3748` `:global(input)` CSS parse warning. Neither is in my diff; flagging so they aren't attributed to this pass.
+
+**AWAITING:** founder go-ahead to commit + `git push origin main` (→ Vercel auto-deploy next to the live GC lane). Held pending the FLAG #1 font confirmation.

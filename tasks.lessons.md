@@ -2425,3 +2425,13 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The pattern:** The lane-specific client (`OwnerHomeClient`) toggles a body class on mount/unmount (`document.body.classList.add('bkg-lane-owner')`), and the lane's own scoped CSS hides the shared elements via **stable `aria-label` selectors** (`[aria-label="Project chrome"]`, `[aria-label="Open workflow navigator"]`) gated on that body class. Zero edits to the shared components, zero impact on other lanes, race-free enough (hides as the lane mounts). Brief flash of generic chrome during async lane-resolution is acceptable for an MLP.
 
 **The rule:** To scope-suppress shared, layout-level chrome for a single client surface, prefer a body-class + CSS-on-stable-selectors hook over prop-drilling/context through the layout or editing the shared component. Verify the target elements expose stable `aria-label`/`role` first (they did) so the selector can't silently rot.
+
+## 2026-05-30 — preview "desktop" preset ≠ 1280 CSS px; assert `innerWidth` before judging a responsive layout
+
+**Context:** Verifying the Owner-lane design-parity pass. The journey strip showed dots + glyphs but NO stage names — looked like the names had failed to render.
+
+**The mistake:** Read the missing journey names off the first screenshot as a layout bug. They were `display:none` *on purpose* — the viewport was 747 CSS px (the preset renders at a high devicePixelRatio, so label-px ≠ the "1280" implied by the "desktop" label), below the lane's ≤1000px breakpoint that intentionally hides `.jname`/`.jplain` on mobile.
+
+**The fix:** `preview_resize` to an explicit width 1280, then assert `window.innerWidth` + `matchMedia('(max-width:1000px)').matches` via `preview_eval` BEFORE reading the screenshot. Confirmed innerWidth 1280 / mqMobile false / `.jname` display:block — names present, no bug.
+
+**The rule:** When verifying responsive CSS in the preview tool, never trust the preset *label* — read the actual `window.innerWidth` and the relevant `matchMedia(...).matches` first. A "missing" element at an unexpected width is usually a correctly-firing breakpoint, not a render failure. Pair every responsive screenshot with a one-line `preview_eval` that prints the width + the media-query booleans you care about. (Same family as the earlier corollary that post-scroll screenshots come back blank — assert DOM/CSS state, don't trust the image alone.)
