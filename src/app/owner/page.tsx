@@ -60,6 +60,20 @@ export const metadata: Metadata = {
 const BUDGET_LEFT_LABEL = '$1.15M';
 const BUDGET_TOTAL_LABEL = '$1.65M';
 
+// Per-stage owner presentation, keyed by the production lifecycle slug.
+// `icon` selects a botanical-instrument mark in OwnerLaneClient's STAGE_ICO;
+// `plain` is the plain-language journey sublabel (the design's `.jplain`).
+// Both are design-locked owner copy, mapped onto the 7 LOCKED slugs.
+const STAGE_PRESENTATION: Record<string, { icon: string; plain: string }> = {
+  'size-up': { icon: 'calipers', plain: 'Scoping' },
+  lock: { icon: 'seal', plain: 'Scope & budget set' },
+  plan: { icon: 'blueprint', plain: 'Planning' },
+  build: { icon: 'square', plain: 'Building' },
+  adapt: { icon: 'wrench', plain: 'Changes' },
+  collect: { icon: 'ledger', plain: 'Payments & closeout' },
+  reflect: { icon: 'leaf', plain: 'Wrap-up' },
+};
+
 function buildOwnerLaneData(): OwnerLaneData {
   const project = getCanonicalProject();
 
@@ -88,10 +102,13 @@ function buildOwnerLaneData(): OwnerLaneData {
       i < currentIndex ? 'paid' : i === currentIndex ? 'now' : 'soon';
     const status: OwnerStage['status'] =
       i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'upcoming';
+    const present = STAGE_PRESENTATION[s.slug] ?? { icon: 'square', plain: '' };
     return {
       slug: s.slug,
       label: shortBySlug.get(s.slug) ?? s.slug,
       n: String(s.id).padStart(2, '0'),
+      icon: present.icon,
+      plain: present.plain,
       money,
       status,
       ...(money === 'now' ? { payLabel } : {}),
@@ -111,6 +128,9 @@ function buildOwnerLaneData(): OwnerLaneData {
     weeksTotal: 37,
     budgetLeftLabel: BUDGET_LEFT_LABEL,
     budgetTotalLabel: BUDGET_TOTAL_LABEL,
+    // Numeric remaining ($1,151,400) drives the strip's count-up; it formats
+    // to the same "$1.15M" as BUDGET_LEFT_LABEL at two decimals.
+    budgetLeftValue: project.budget.remaining,
     jscrubLabel: 'wk 17',
 
     // Design-locked owner readings. Accents are the resolved hex of the

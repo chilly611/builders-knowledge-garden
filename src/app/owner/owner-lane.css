@@ -107,58 +107,94 @@
   display: block;
 }
 
-/* budget track — one cell per lifecycle stage */
+/* budget track — 7 stage cells (icon + amount), aligned with journey nodes */
 .ol-btrack {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
   align-items: stretch;
-  gap: 4px;
   min-width: 0;
 }
 .ol-bcell {
-  flex: 1 1 0;
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 6px 8px;
+  min-height: 44px;
+  padding: 6px;
   border-radius: var(--radius-xs);
-  border: 1px solid transparent;
-  background: rgba(201, 185, 138, 0.22);
-}
-.ol-bcell.is-paid {
-  background: rgba(94, 122, 86, 0.16);
-}
-.ol-bcell.is-now {
+  border: 1px solid var(--paper-edge);
   background: var(--paper-cream);
-  border-color: var(--specimen-rust);
-  box-shadow: 0 0 0 1px var(--specimen-rust);
+  cursor: pointer;
+  transition: box-shadow 140ms var(--ease-out-paper),
+    opacity 300ms var(--ease-out-paper),
+    background-color 300ms var(--ease-out-paper);
 }
-.ol-bcell.is-soon {
-  background: rgba(201, 185, 138, 0.14);
+.ol-bcell:hover {
+  box-shadow: var(--shadow-page-2);
 }
-.ol-bcell-lab {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.ol-bcell-ico {
+  display: flex;
   color: var(--ink-faded);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .ol-bcell-amt {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
   color: var(--ink-graphite);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.ol-bcell.is-paid {
+  background: color-mix(in oklab, var(--specimen-sage) 13%, var(--paper-cream));
+  border-color: var(--specimen-sage-pale);
+}
+.ol-bcell.is-paid .ol-bcell-ico,
+.ol-bcell.is-paid .ol-bcell-amt {
+  color: var(--specimen-sage-deep);
+}
+.ol-bcell.is-now {
+  border-color: var(--specimen-brass-aged);
+  background: color-mix(in oklab, var(--specimen-brass) 14%, var(--paper-cream));
+}
+.ol-bcell.is-now .ol-bcell-ico,
 .ol-bcell.is-now .ol-bcell-amt {
   color: var(--specimen-rust);
 }
+.ol-bcell.is-soon .ol-bcell-ico {
+  opacity: 0.55;
+}
 .ol-bcell.is-soon .ol-bcell-amt {
   color: var(--ink-faded);
-  font-weight: 600;
+}
+/* current cell — a quiet brass ring + a single rust tick, the only red */
+.ol-bcell.is-cur {
+  box-shadow: 0 0 0 1.5px var(--specimen-brass-aged);
+}
+.ol-bcell-tick {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--specimen-rust);
+  box-shadow: 0 0 0 2px var(--paper-cream);
+}
+/* reveal left→right on load — one-shot animation owns the end state */
+@keyframes ol-fadeUp {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: none;
+  }
+}
+.ol-strips.is-lit .ol-btrack .ol-bcell {
+  animation: ol-fadeUp 320ms var(--ease-out-paper) both;
 }
 
 .ol-strip-end {
@@ -180,28 +216,31 @@
   margin-top: 3px;
 }
 
-/* journey track — 7 stage nodes on a progress axis with a "you are here" flag */
+/* journey / time-machine track — 7 nodes (dot · icon · name · plain) on a
+   progress line, with a hover-scrubbable "you are here" flag */
 .ol-jtrack {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 14px 6px 4px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: start;
+  height: 64px;
+  padding-top: 8px;
   min-width: 0;
 }
 .ol-jline {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  top: 20px;
+  left: 3%;
+  right: 3%;
+  top: 13px;
   height: 2px;
   background: var(--paper-edge);
   border-radius: 2px;
 }
 .ol-jline-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--specimen-sage), var(--specimen-teal));
+  background: var(--specimen-teal);
   border-radius: 2px;
+  transition: width 600ms var(--ease-out-paper);
 }
 .ol-jnode {
   position: relative;
@@ -209,63 +248,103 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  flex: 1 1 0;
+  gap: 1px;
   min-width: 0;
+  cursor: default;
+  transition: transform 160ms var(--ease-out-paper);
+}
+.ol-jnode:hover {
+  transform: translateY(-3px);
 }
 .ol-jdot {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: var(--paper-vellum);
+  background: var(--paper-cream);
   border: 2px solid var(--paper-edge);
+  transition: background-color 300ms var(--ease-out-paper),
+    border-color 300ms var(--ease-out-paper),
+    box-shadow 300ms var(--ease-out-paper);
 }
-.ol-jnode.is-done .ol-jdot {
-  background: var(--specimen-sage);
-  border-color: var(--specimen-sage-deep);
-}
-.ol-jnode.is-cur .ol-jdot {
+.ol-jnode.lit.is-done .ol-jdot {
   background: var(--specimen-teal);
   border-color: var(--specimen-teal-deep);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-teal) 30%, transparent);
 }
-.ol-jn {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  color: var(--ink-faded);
-  letter-spacing: 0.08em;
+.ol-jnode.is-cur .ol-jdot {
+  background: var(--specimen-rust);
+  border-color: var(--specimen-rust-deep);
 }
-.ol-jl {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.ol-jnode.lit.is-cur .ol-jdot {
+  animation: ol-jpulse 2.4s var(--ease-in-out-paper) infinite;
+}
+@keyframes ol-jpulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--specimen-rust) 36%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--specimen-rust) 0%, transparent);
+  }
+}
+.ol-jico {
+  display: flex;
+  margin-top: 4px;
   color: var(--ink-faded);
+  transition: color 300ms var(--ease-out-paper);
+}
+.ol-strips.is-lit .ol-jico {
+  animation: ol-fadeUp 320ms var(--ease-out-paper) both;
+}
+.ol-jnode.is-done .ol-jico {
+  color: var(--specimen-teal-deep);
+}
+.ol-jnode.is-cur .ol-jico {
+  color: var(--specimen-rust);
+}
+.ol-jname {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-graphite);
+  letter-spacing: -0.005em;
+  margin-top: 2px;
   white-space: nowrap;
 }
-.ol-jnode.is-cur .ol-jl,
-.ol-jnode.is-cur .ol-jn {
-  color: var(--specimen-teal-deep);
-  font-weight: 700;
+.ol-jnode.is-cur .ol-jname {
+  color: var(--specimen-rust);
+}
+.ol-jplain {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 10px;
+  line-height: 1.05;
+  text-align: center;
+  color: var(--ink-faded);
+  margin-top: 1px;
+  opacity: 0.75;
+  transition: opacity 160ms var(--ease-out-paper);
+}
+.ol-jnode:hover .ol-jplain {
+  opacity: 1;
+  color: var(--ink-script);
 }
 .ol-jscrub {
   position: absolute;
-  top: 6px;
+  top: -4px;
   transform: translateX(-50%);
-  z-index: 2;
+  z-index: 4;
+  transition: left 420ms var(--ease-out-paper);
 }
 .ol-jscrub-flag {
   font-family: var(--font-mono);
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 8px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--paper-cream);
-  background: var(--specimen-rust);
-  padding: 2px 7px;
-  border-radius: var(--radius-pill);
+  background: var(--ink-graphite);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(90, 59, 31, 0.25);
+  box-shadow: var(--shadow-page-1);
 }
 
 /* ── CONTENT COLUMN ────────────────────────────────────────────────── */
@@ -956,14 +1035,27 @@
   }
 }
 
-@media (max-width: 560px) {
-  .ol-bcell-lab,
-  .ol-jl {
-    font-size: 0;
+@media (max-width: 640px) {
+  /* tight rows: drop the italic plain-language sublabels, compact the cells */
+  .ol-jplain {
+    display: none;
   }
-  .ol-bcell-lab::first-letter,
-  .ol-jl::first-letter {
-    font-size: 8.5px;
+  .ol-jtrack {
+    height: 52px;
+  }
+  .ol-bcell {
+    min-height: 38px;
+    padding: 5px 3px;
+  }
+  .ol-bcell-amt {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 560px) {
+  /* phone: dot + icon only on the journey, single-column summary */
+  .ol-jname {
+    display: none;
   }
   .ol-summary {
     grid-template-columns: 1fr;
@@ -971,6 +1063,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* mirror the design's blanket motion-off, scoped to this surface only */
+  .ol-root *,
+  .ol-root *::before,
+  .ol-root *::after {
+    animation: none !important;
+    transition: none !important;
+  }
   .ol-mark video {
     display: none;
   }

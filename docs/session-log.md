@@ -3330,3 +3330,36 @@ wiring live pay-app and closeout-publication flows.
 - **`/owner` is currently ungated** — no Lens permission check wraps it yet (Stream B's `checkLensPermission` exists but isn't wired here; the surface reads seed data only). Gate before exposing real project data.
 
 **Next (Stream C):** consume `src/lib/lens/` — call `checkLensPermission` to gate UI surfaces per lane. Do not redefine the enums; import from `types.ts`. Await matrix ratification before exposing non-Owner/GC lanes.
+
+---
+
+## 2026-05-29 — Claude Code Session: Owner Lane redesign (design B — the global killer-app shell)
+**Agent:** Claude Code (Claude Opus 4.7)
+**Branch:** `main`.
+**Lock:** owned only the existing `src/app/owner/*` surface (page.tsx, OwnerLaneClient.tsx, owner-lane.css); no other path touched.
+
+**Mandate:** A *new* "Owner Lane (standalone)" design landed (local `Owner Lane _standalone_.html` + two design hashes `T6Nh0BHUT6JcPv5H4CkR4w` / `qV7m5zpg6vVNGZY9gN31IA`). Founder direction: "this is owner lane design and killer-app redesign will look like it globally." Redesign the production `/owner` (built earlier today) to match the new design's app-shell aesthetic — implementing specifically the Owner-Lane deltas, not the whole global shell.
+
+**Recovering the design copy:** the standalone HTML is a React bundle — `<body>` is an empty `<div id="root">`; the real source lives in a `<script type="__bundler/manifest">` JSON map of base64+gzip code entries. Decompressed the two owner entries (`app.jsx`, `components.jsx`) to recover the new `PHASES` array and `STAGE_ICO`. The critical unknowns recovered: the per-stage **plain-language sublabels** (`.jplain`) and the **icon mapping** (one botanical/instrument mark per stage).
+
+**What changed — structural deltas onto the existing surface:**
+- **Budget strip → icon cells.** The 7 budget cells dropped their text label for a per-stage line **icon** + amount (`Paid` / `$48K` / `Soon`). New `STAGE_ICO` (calipers, seal, blueprint, square, wrench, ledger, leaf) added to the client, SVG verbatim from the bundle. Paid = sage tint, current ("now") = brass tint + ring + rust tick dot, soon = faded.
+- **Journey strip → named nodes with sublabels.** Each node is now dot + icon + **stage name** + an *italic editorial* plain-language sublabel (Scoping / Scope & budget set / Planning / Building / Changes / Payments & closeout / Wrap-up). Dropped the stage number.
+- **Reveal-on-load.** `OwnerStrips` flips an `is-lit` class on mount (`requestAnimationFrame`); budget cells `ol-fadeUp` stagger (i·55ms), journey icons rise (i·70ms), the journey line **draws** (width 0→current, 600ms), the current dot **pulses** (`ol-jpulse`). New `CountUp` component counts the budget-left value up to `$1.15M` on mount.
+- **Hover-scrub.** Hovering a journey node slides a "you are here" flag (`ol-jscrub`) along the timeline; leaves snaps back to the live position.
+- **CSS** — all new selectors `.ol-`-prefixed and scoped under `.ol-root`; budget/journey grids, the lit/fadeUp/jpulse keyframes, and the scrub flag added; obsolete `.ol-bcell-lab`/`.ol-jl` responsive rules replaced with `max-width:640px` (hide sublabels, compact cells) + `max-width:560px` (hide names, 1-col summary) + a `prefers-reduced-motion` block that kills all `.ol-root` animation/transition.
+
+**Key decisions:**
+- **Production canon preserved (unchanged from this morning).** Design B's "Tahoe Carpentry Co." / $48,200 / "PAY APPLICATION 03" do **not** override production: framer stays **Ridgeline Framing**, pay-app **$48,000**, **Pay Application 04**. Owner-facing presentation (readings, summary, wk-17/37 journey) stays design-locked.
+- **Slug mismatch handled.** Design B keys stages on `sizeup` (no hyphen); production uses `size-up`. The new `STAGE_PRESENTATION` map (in page.tsx) is keyed on **production** slugs with a `{ icon:'square', plain:'' }` fallback, so the 7 LOCKED slugs drive everything.
+- **Hydration-safe motion.** `lit` and `CountUp` render unlit / `0` on both server and first client paint, then the mount effect flips them — no mismatch. Under reduced motion the CSS makes the lit state apply instantly.
+- **No global shell rebuilt.** Founder's "globally" is aspirational for the wider redesign; this session implemented only the Owner-Lane deltas. The compass-bloom + "Ask the garden" fab still come from `GlobalChromeGate` (root layout) — not duplicated here.
+
+**Issues/bugs found & fixed:**
+- New React-19 lint rule `react-hooks/set-state-in-effect` flagged the two **synchronous** `setState` calls in the reduced-motion branches (`setVal(to)` in `CountUp`, `setLit(true)` in `OwnerStrips`). Fixed by deferring both into a `requestAnimationFrame` callback (and collapsing `OwnerStrips`' redundant reduced-motion branch into the single rAF path — the CSS already snaps the final state under reduced motion). `eslint src/app/owner` now exits 0.
+
+**Verification:** `tsc --noEmit` — **zero** `app/owner` errors (only the pre-existing, unrelated `@testing-library`/jest test-file errors remain elsewhere). `eslint src/app/owner` — clean (exit 0). `next build` — exit 0, `/owner` present in the route table (`ƒ`).
+
+**Human-call flags (still open, carried from this morning):** schedule reading still design-locked / not reconciled to GC dates; approve / hold / add-to-log still local-optimistic (no write path); `/owner` still ungated by `checkLensPermission`. The new design's "redesign will look like it globally" is **not** yet applied beyond `/owner` — the wider killer-app shell restyle is a separate, larger effort to scope with the founder.
+
+**Push status:** this redesign commit + the morning's `dd20acb` (Owner Lane UI) remain **local-only**. Both known GitHub PATs are invalid; a fresh credential is required before `origin/main` can receive them. (Tokens must be used one-off via an explicit push URL, never persisted to git config.)

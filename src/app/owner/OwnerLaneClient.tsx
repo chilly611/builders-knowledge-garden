@@ -32,6 +32,8 @@ export interface OwnerStage {
   slug: string;
   label: string;
   n: string;
+  icon: string; // key into STAGE_ICO (calipers · seal · blueprint · …)
+  plain: string; // plain-language journey sublabel (`.ol-jplain`)
   money: 'paid' | 'now' | 'soon';
   status: 'done' | 'current' | 'upcoming';
   payLabel?: string;
@@ -69,6 +71,7 @@ export interface OwnerLaneData {
   weekOf: number;
   weeksTotal: number;
   budgetLeftLabel: string;
+  budgetLeftValue: number; // numeric remaining, drives the strip count-up
   budgetTotalLabel: string;
   jscrubLabel: string;
   readings: OwnerReading[];
@@ -125,6 +128,65 @@ const KIND_ICONS = {
   sketch: Ico.ruler,
   receipt: Ico.receipt,
 } as const;
+
+// ── Stage icons — herbarium / botanical-instrument line set ──────────────
+// One mark per lifecycle stage (Size Up → Reflect), lifted verbatim from the
+// design's STAGE_ICO. Shared by the budget cells (.ol-bcell-ico) and the
+// journey nodes (.ol-jico); `color` is inherited so the herbarium tokens win.
+const _si: IcoProps = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+const STAGE_ICO: Record<string, (p: IcoProps) => React.ReactElement> = {
+  calipers: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><path d="M8 3v15M16 3v18" /><path d="M8 6h4M8 10h4M16 12h-4" /><path d="M8 18h8" /></svg>
+  ),
+  seal: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><circle cx="12" cy="9.5" r="5.5" /><circle cx="12" cy="9.5" r="2.2" /><path d="M9 14l-1.3 7 4.3-2.2 4.3 2.2L15 14" /></svg>
+  ),
+  blueprint: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><path d="M5 5h11l3 3v11H5z" /><path d="M16 5v3h3" /><path d="M8 12h7M8 15h7M8 9h3" /></svg>
+  ),
+  square: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><path d="M6 4v14h14" /><path d="M9.5 18v-2.5M13 18v-2.5M16.5 18v-2.5M6 7.5h2.5M6 11h2.5M6 14.5h2.5" /></svg>
+  ),
+  wrench: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><path d="M16 3.5a4 4 0 00-3.2 6.4L5 18l1.6 1.6 7.9-7.8A4 4 0 1016 3.5z" /><path d="M14.2 4.4l-1.7 2 1 2.6 2.6.6 1.7-2" /></svg>
+  ),
+  ledger: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><circle cx="12" cy="12" r="7.5" /><path d="M12 7.5v9M14 9.6h-3a1.6 1.6 0 000 3.2h2a1.6 1.6 0 010 3.2H9.8" /></svg>
+  ),
+  leaf: (p) => (
+    <svg viewBox="0 0 24 24" {..._si} {...p}><path d="M5 19C5 11 11 5 19 5c0 8-6 14-14 14z" /><path d="M5 19C9 15 12.5 11.5 16 8" /></svg>
+  ),
+};
+
+// ── Count-up (reduced-motion aware) — animates a number on mount ─────────
+function CountUp({ to, format, dur = 700 }: { to: number; format: (v: number) => string; dur?: number }) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      // Snap to the final value on the next frame (deferring the setState keeps
+      // it out of the effect body so it can't trigger a cascading render).
+      const raf = requestAnimationFrame(() => setVal(to));
+      return () => cancelAnimationFrame(raf);
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / dur);
+      setVal(to * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, dur]);
+  return <>{format(val)}</>;
+}
 
 // ── BKG logo mark — the animated "Viver" hammer-with-roots ───────────────
 function BkgMark({ size = 28, radius = 4, src }: { size?: number; radius?: number; src: string }) {
@@ -199,11 +261,28 @@ function Gauge({ value = 0.5, accent = '#3C7A8A', label = '' }: { value?: number
 }
 
 // ── Persistent strips — budget + journey, owner's plain-words slice ──────
+// Two representations of one project (money + time), aligned column-for-column
+// across the 7 locked stages. Reveals on mount: the journey line draws in, the
+// instrument marks rise (`is-lit`), and the budget counts up. Hovering a stage
+// scrubs the "you are here" flag along the timeline. All motion is suppressed
+// under prefers-reduced-motion: the CSS kills the keyframes/transitions, so
+// flipping `lit` on the next frame applies the final state instantly.
 function OwnerStrips({ data }: { data: OwnerLaneData }) {
+  const [lit, setLit] = useState(false);
+  const [scrub, setScrub] = useState<number | null>(null);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setLit(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+
   const curIndex = data.stages.findIndex((s) => s.status === 'current');
-  const cur = ((curIndex + data.buildPct / 100) / data.stages.length) * 100;
+  const segW = 100 / data.stages.length;
+  const cur = curIndex * segW + segW * (data.buildPct / 100);
+  const fillW = lit ? cur : 0;
+  const scrubLeft = scrub != null ? scrub : lit ? cur : 0;
+
   return (
-    <div className="ol-strips">
+    <div className={`ol-strips ${lit ? 'is-lit' : ''}`}>
       {/* BUDGET — money */}
       <div className="ol-strip">
         <div className="ol-strip-lead">
@@ -214,17 +293,30 @@ function OwnerStrips({ data }: { data: OwnerLaneData }) {
           </div>
         </div>
         <div className="ol-btrack">
-          {data.stages.map((s) => (
-            <div key={s.slug} className={`ol-bcell is-${s.money}`}>
-              <span className="ol-bcell-lab">{s.label}</span>
-              <span className="ol-bcell-amt">
-                {s.money === 'paid' ? 'Paid' : s.money === 'now' ? s.payLabel : 'Soon'}
-              </span>
-            </div>
-          ))}
+          {data.stages.map((s, i) => {
+            const Icon = STAGE_ICO[s.icon] ?? STAGE_ICO.square;
+            return (
+              <div
+                key={s.slug}
+                className={`ol-bcell is-${s.money} ${s.status === 'current' ? 'is-cur' : ''}`}
+                style={{ animationDelay: `${i * 55}ms` }}
+                title={`${s.label} — ${s.money === 'paid' ? 'paid' : s.money === 'now' ? 'awaiting you' : 'upcoming'}`}
+              >
+                <span className="ol-bcell-ico">
+                  <Icon width={15} height={15} />
+                </span>
+                <span className="ol-bcell-amt">
+                  {s.money === 'paid' ? 'Paid' : s.money === 'now' ? s.payLabel : 'Soon'}
+                </span>
+                {s.status === 'current' && <span className="ol-bcell-tick" aria-hidden="true" />}
+              </div>
+            );
+          })}
         </div>
         <div className="ol-strip-end">
-          <div className="ol-strip-end-big">{data.budgetLeftLabel}</div>
+          <div className="ol-strip-end-big">
+            <CountUp to={data.budgetLeftValue} format={(v) => `$${(v / 1e6).toFixed(2)}M`} />
+          </div>
           <div className="ol-strip-end-sub">left of {data.budgetTotalLabel}</div>
         </div>
       </div>
@@ -236,16 +328,28 @@ function OwnerStrips({ data }: { data: OwnerLaneData }) {
         </div>
         <div className="ol-jtrack">
           <div className="ol-jline">
-            <div className="ol-jline-fill" style={{ width: `${cur}%` }} />
+            <div className="ol-jline-fill" style={{ width: `${fillW}%` }} />
           </div>
-          {data.stages.map((s) => (
-            <div key={s.slug} className={`ol-jnode ${s.status === 'done' ? 'is-done' : ''} ${s.status === 'current' ? 'is-cur' : ''}`}>
-              <span className="ol-jdot" />
-              <span className="ol-jn">{s.n}</span>
-              <span className="ol-jl">{s.label}</span>
-            </div>
-          ))}
-          <div className="ol-jscrub" style={{ left: `${cur}%` }}>
+          {data.stages.map((s, i) => {
+            const Icon = STAGE_ICO[s.icon] ?? STAGE_ICO.square;
+            const nodeLit = lit && i <= curIndex;
+            return (
+              <div
+                key={s.slug}
+                className={`ol-jnode ${s.status === 'done' ? 'is-done' : ''} ${s.status === 'current' ? 'is-cur' : ''} ${nodeLit ? 'lit' : ''}`}
+                onMouseEnter={() => setScrub((i + 0.5) * segW)}
+                onMouseLeave={() => setScrub(null)}
+              >
+                <span className="ol-jdot" />
+                <span className="ol-jico" style={{ animationDelay: `${i * 70}ms` }}>
+                  <Icon width={16} height={16} />
+                </span>
+                <span className="ol-jname">{s.label}</span>
+                <span className="ol-jplain">{s.plain}</span>
+              </div>
+            );
+          })}
+          <div className="ol-jscrub" style={{ left: `${scrubLeft}%` }}>
             <span className="ol-jscrub-flag">{data.jscrubLabel}</span>
           </div>
         </div>
