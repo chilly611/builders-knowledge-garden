@@ -12,7 +12,7 @@ the OWNER lane only (GC/Builder untouched).
 
 **Commit 1 — structure + data wiring + permissions (`ed455a0`):**
 - [x] Reconcile owner journey strip to the 7 LOCKED stages (Size Up → Lock → Plan → Build → Adapt → Collect → Reflect) — import canonical `KAC_STAGES`; retired stale `Dream/Design/Plan/Build/Deliver/Grow`. CSS `.btrack`/`.jtrack` 6→7 cols.
-- [x] Source values from seed (live Marin): bumped `MARIN_OWNER_LENS.pending_approvals[0].amount` 48_000 → **48_200**; route fallback → 48_200; framer = Tahoe Carpentry Co. (owner-facing canon).
+- [x] Source values from seed (live Marin): bumped `MARIN_OWNER_LENS.pending_approvals[0].amount` 48_000 → **48_200**; route fallback → 48_200; framer = Tahoe Carpentry Co. (owner-facing canon). **[CORRECTED 2026-05-29 (`c1f7e56`): "Tahoe Carpentry Co." is NOT in the seed — it came from the design export. Per brief "DATA from marin-farmhouse.ts ONLY", framer now = seed `t-framing.name` "Ridgeline Framing" via derived `MARIN_FRAMING_SUB`. If Tahoe was an intentional brand, change the seed (one place), not the route.]**
 - [x] `POST /api/owner-home/approve` — auth + lens (`change_orders`/`approve`) gate; upserts an 'approved' row in `project_change_orders` (service client; idempotent by deterministic description marker). Supports approve + unapprove.
 - [x] `GET /api/owner-home` reads back the marker row → `needsYou.approved`; client renders approved state on return. **Real loop, no dead button.**
 - [x] Suppress generic chrome + compass FAB for owner lane only (body class `bkg-lane-owner` + CSS on stable aria-labels). GC keeps KillerAppChrome.
@@ -2524,5 +2524,6 @@ Items for the founder to handle from the Mac terminal (Cowork mount can't do the
       Keep demo-wrapped until counsel clears the pay-app flow.
 - [ ] **Stream D — verify seed data** matches the locked display canon used by
       `/api/owner-home`: budget total $1.65M, remaining $1.15M, pay-app $48K,
-      build 42%, week 17/37, framer "Tahoe Carpentry Co.", owners "Cody & Sara
-      Harwell".
+      build 42%, week 17/37, framer "Ridgeline Framing" (seed `t-framing`;
+      corrected 2026-05-29 from the export's "Tahoe Carpentry Co."), owners
+      "Cody & Sara Harwell".

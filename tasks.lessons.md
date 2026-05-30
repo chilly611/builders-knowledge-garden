@@ -1,6 +1,19 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-28
+## Updated: 2026-05-29
+
+---
+
+## Owner Lane — the seed is canon, the export is a placeholder (2026-05-29, Claude Code / Opus 4.8)
+
+### A name from the design export ("Tahoe Carpentry Co.") leaked into shipped code and got labeled "owner-facing canon"
+The first Owner-lane build sourced amounts/percentages from the Marin seed but kept the export's framing-crew name and recorded it in tasks.todo as "(owner-facing canon)". The seed has **zero** "Tahoe" — its only framing sub is `t-framing` = "Ridgeline Framing". The export is LAYOUT/PALETTE reference only; every datum, names included, must come from `marin-farmhouse.ts`. Fix: derive `MARIN_FRAMING_SUB` from `MARIN_TEAM` (one source) and use it in the route + the recent-entry quote. When a prior session's note conflicts with the current authoritative brief, the brief wins — but flag the override so the founder can reverse a deliberate choice.
+
+### Run `git log --oneline` before acting on a "build from scratch" brief — it may already be shipped
+This brief read as a greenfield Owner-lane build. Recon found it already built, animated, and shipped across `ed455a0` + `f165730`; the real task was a 3-line data fix. One `git log` up front reframed the whole session and prevented a redundant rebuild.
+
+### A DB sentinel must not embed display data
+`FRAMING_APPROVAL_MARKER` (the `project_change_orders.description` key for THE framing pay-app) embedded the sub's name — coupling a stable lookup key to mutable display copy. Dropped the name so the marker mirrors the seed's name-free pending-approval *title*. Caveat: changing a sentinel string can orphan an already-approved row; benign here because the read fail-closes to "pending" (the showcase state) and re-approve self-heals.
 
 ---
 

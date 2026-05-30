@@ -3479,3 +3479,29 @@ API; resolved by awaiting `params`.
 - Stray `Owner Lane _standalone_.html` at repo root (accidental artifact) left
   untracked — not committed.
 ## 2026-05-29 (Cowork) — Published Owner Lane standalone at /owner-lane.html (commit 5ed4137, current Size Up→Reflect export; stale Dream→Grow v2 not used). Live + browser-verified: https://builders.theknowledgegardens.com/owner-lane.html
+
+---
+## 2026-05-29 — Claude Code: Owner Lane — framing-sub name corrected to seed (Ridgeline)
+**Agent:** Claude Code (claude-opus-4-8)
+
+**Context — brief read as greenfield; two findings reframed it:**
+1. **PRECONDITION GATE FAILED.** `specs/bkg/owner-lane-home-v2.html` (and its byte-identical copy `public/_design-preview/owner-v3.html`) still render the OLD 6-phase Dream→Grow journey + placeholder logo. Per founder decision ("build now, locked-7 + seed"), treated the export as LAYOUT/PALETTE reference only.
+2. **Already shipped.** The Owner lane was already built + animated across `ed455a0` + `f165730`. The real delta was a single data-correctness fix — not a rebuild.
+
+**Shipped (`c1f7e56`, pushed to main → Vercel auto-deploy):**
+- Corrected the owner-facing framing-sub from the export placeholder "Tahoe Carpentry Co." to the seed's real sub **"Ridgeline Framing"**, via a new derived export `MARIN_FRAMING_SUB` (from `MARIN_TEAM` trade='Framing' — one source, no mirrored constant).
+- `/api/owner-home`: `FRAMER = MARIN_FRAMING_SUB`; the "Lately on site" framing-inspection quote uses it too (single-sourced template literal).
+- `approval-store.ts`: dropped the sub name from `FRAMING_APPROVAL_MARKER` so the DB sentinel mirrors the seed's name-free pending-approval *title* (decoupled key from display copy).
+
+**Verified (preview server + browser):**
+- `/api/owner-home?…&preview=1` → framer "Ridgeline Framing", $48,200, $1.15M of $1.65M, all 7 lens cells permitted.
+- Golden render: locked-7 (Size Up→Reflect), Build active, "Ridgeline Framing — your framing crew" in Needs-you, logo video, herbarium palette, two strips. No "Tahoe" anywhere.
+- Deny/redacted (fetch-override): denying budget hides the budget strip + shows a redacted gauge; denying photos shows the redacted card; permitted cells still render.
+- Fail-closed: unauth non-preview → 401, no data leaked. `tsc --noEmit`: 0 errors in changed files; eslint clean.
+
+**FLAG — founder decision:** `tasks.todo.md:15` recorded "framer = Tahoe Carpentry Co. (owner-facing canon)" — a deliberate prior choice. The seed has zero "Tahoe"; this session's brief mandates "DATA from marin-farmhouse.ts ONLY," so I corrected to "Ridgeline Framing". If "Tahoe Carpentry Co." was an intentional demo brand, change the seed's `t-framing.name` (one place) — do NOT re-hardcode in the route.
+
+**Still deferred:**
+- Animation polish + FINAL logo await the CORRECTED export (precondition still unmet). A new, different `specs/bkg/Owner Lane _standalone_ (3).html` (5.2MB, today) appeared and MAY be the corrected export — render to confirm before acting.
+- Pay-app approval = **needs legal review before wiring live payments** (no Stripe; demo-wrapped). Tracked in tasks.todo (counsel item).
+- Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
