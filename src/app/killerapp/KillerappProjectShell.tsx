@@ -24,6 +24,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useProject } from '@/lib/hooks/useProject';
+import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import { applyJurisdictionOverride } from '@/lib/project-display';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -192,10 +193,13 @@ export default function KillerappProjectShell() {
   }, [projectId]);
 
   // Auto-trigger stream when project has no assistant message yet.
+  const ledger = useProjectLedger(projectId);
+
   useEffect(() => {
     if (!projectId || !project) return;
     if (project.id !== projectId) return; // guard: project record not yet refreshed for this id
     if (loading || streaming) return;
+    if (!ledger.ready) return; // wait for the project's REAL current stage before firing
     if (triggeredStreamFor.current === projectId) return;
 
     const hasAssistantMessage = conversations.some(
@@ -207,11 +211,11 @@ export default function KillerappProjectShell() {
     if (!seedQuery) return;
 
     triggeredStreamFor.current = projectId;
-    void streamCopilot(projectId, seedQuery);
+    void streamCopilot(projectId, seedQuery, ledger.journey?.currentStage ?? 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project, conversations, loading, streaming]);
+  }, [projectId, project, conversations, loading, streaming, ledger.ready]);
 
-  async function streamCopilot(pid: string, query: string) {
+  async function streamCopilot(pid: string, query: string, stageId: number = 0) {
     setStreaming(true);
     setStreamingResponse('');
     try {
@@ -223,7 +227,7 @@ export default function KillerappProjectShell() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ query, projectId: pid, stage: 0 }),
+        body: JSON.stringify({ query, projectId: pid, stage: stageId }),
       });
 
       if (!res.ok || !res.body) {

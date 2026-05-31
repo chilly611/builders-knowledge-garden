@@ -145,6 +145,27 @@
   .bkg-shell .pnav-ask { padding: 11px; }
 }
 
+/* ─── Phone (DIY is mobile-first) — keep the ribbon readable at 375px ─────── */
+@media (max-width: 480px) {
+  .bkg-shell .gstrip { grid-template-columns: 1fr; gap: 8px; padding: 8px 12px; }
+  .bkg-shell .gstrip-lead { padding-right: 0; }
+  .bkg-shell .gstrip-lead .bkg-mark { width: 40px !important; height: 40px !important; }
+  .bkg-shell .gstrip-brand { font-size: 14px; }
+  .bkg-shell .gstrip-track { grid-column: auto; }
+  .bkg-shell .btrack { gap: 3px; }
+  .bkg-shell .bcell { min-height: 32px; padding: 4px 1px; gap: 1px; }
+  .bkg-shell .bcell-amt { font-size: 8px; letter-spacing: 0; }
+  .bkg-shell .bcell-ico svg { width: 13px; height: 13px; }
+  .bkg-shell .gstrip-end { text-align: left; padding-left: 0; display: flex; align-items: baseline; gap: 6px; }
+  .bkg-shell .gstrip-end-big { font-size: 15px; }
+  .bkg-shell .gstrip-end-sub { margin-top: 0; }
+  .bkg-shell .jtrack { height: 34px; padding-top: 4px; }
+  .bkg-shell .jico svg { width: 13px; height: 13px; }
+  .bkg-shell .pnav { right: 12px; bottom: 12px; gap: 8px; }
+  .bkg-shell .pnav-compass { width: 48px; height: 48px; }
+  .bkg-shell .pnav-ask-panel { width: calc(100vw - 24px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bkg-shell * { animation: none !important; transition: none !important; }
 }
