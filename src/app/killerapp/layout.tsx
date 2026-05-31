@@ -13,12 +13,20 @@ import StageBackdrop from '@/design-system/components/StageBackdrop';
 import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
 import CommandPalette from '@/design-system/components/CommandPalette';
 import CompassWorkflowNav from '@/components/CompassWorkflowNav';
+import { ShellConfigProvider, ShellStrips, ShellNav } from '@/components/app-shell';
 import SaveStatusToast from '@/components/SaveStatusToast';
 import StageWelcomeMount from '@/components/StageWelcomeMount';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
+
+// APP-SHELL (2026-05-31): the shared herbarium shell (ShellStrips + ShellNav,
+// promoted from the proven Owner Lane) is the ONE chrome every Killer App
+// surface mounts, replacing the generic KillerAppChrome + CompassWorkflowNav.
+// Flag-gated for instant rollback: set NEXT_PUBLIC_APP_SHELL=0 to restore the
+// previous chrome without a code change.
+const USE_APP_SHELL = process.env.NEXT_PUBLIC_APP_SHELL !== '0';
 
 // Outer wrapper exists so the useSearchParams call inside the inner layout
 // is wrapped in Suspense, which Next 16 requires for any static prerender
@@ -94,6 +102,7 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <ProjectProvider>
           <NavigatorProvider initialCollapseState="expanded">
+          <ShellConfigProvider>
         <StageBackdrop stage={stageId} />
         {/* Auth + project indicator is now embedded inside KillerAppNav
             itself (inline mode) to eliminate the top-right overlap with
@@ -114,10 +123,18 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
               row" the brand consolidation pass eliminated). Budget +
               Time-Machine functionality continues to live in BudgetRibbon
               + the in-flight Time Machine surface in KillerAppChrome. */}
-          {!isStageRoute && (
-            <Suspense fallback={null}>
-              <KillerAppChrome />
-            </Suspense>
+          {USE_APP_SHELL ? (
+            !isStageRoute && (
+              <div className="bkg-shell" data-shell-mount="layout">
+                <ShellStrips />
+              </div>
+            )
+          ) : (
+            !isStageRoute && (
+              <Suspense fallback={null}>
+                <KillerAppChrome />
+              </Suspense>
+            )
           )}
           {children}
           {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
@@ -128,7 +145,7 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
         {/* Workflow-nav compass FAB floats over the StageShell action bar
             on lifecycle stages; hide it there for the same reason the cockpit
             is hidden above. */}
-        {!isStageRoute && <CompassWorkflowNav />}
+        {USE_APP_SHELL ? <ShellNav /> : (!isStageRoute && <CompassWorkflowNav />)}
         <SaveStatusToast />
         {/* W9.D-W2 (2026-05-22): StageWelcome mounted via StageWelcomeMount.
             Renders nothing when there is no active project, when we're on
@@ -143,6 +160,7 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
             reads user_metadata via supabase and writes back through the
             auth.updateUser API. See src/components/onboarding/. */}
         <OnboardingModal />
+          </ShellConfigProvider>
           </NavigatorProvider>
         </ProjectProvider>
       </Suspense>
