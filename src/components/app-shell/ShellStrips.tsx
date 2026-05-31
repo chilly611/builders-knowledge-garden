@@ -13,6 +13,8 @@
  * (KAC_STAGES): Size Up → Lock → Plan → Build → Adapt → Collect → Reflect.
  */
 
+import { useEffect, useState } from 'react';
+import { motion, useReducedMotion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 import './app-shell.css';
 import { Seal } from './Seal';
@@ -20,6 +22,26 @@ import { StageIco } from './icons';
 import { STAGE_PLAIN } from './config';
 import { useShellConfig } from './ShellConfigContext';
 import type { ShellConfig } from './types';
+
+// Count a money label (e.g. "$1.15M") up from 0 → target on mount. Uses a
+// MotionValue (not state) so it never trips react-hooks rules; honors
+// reduced-motion by snapping to the final value.
+function MoneyCountUp({ label, dur = 0.7, delay = 0.2 }: { label: string; dur?: number; delay?: number }) {
+  const reduce = useReducedMotion();
+  const m = label.match(/^(\D*)([\d,]*\.?\d+)(.*)$/);
+  const target = m ? parseFloat(m[2].replace(/,/g, '')) : NaN;
+  const decimals = m && m[2].includes('.') ? m[2].split('.')[1].length : 0;
+  const mv = useMotionValue(0);
+  useEffect(() => {
+    if (Number.isNaN(target)) return;
+    if (reduce) { mv.set(target); return; }
+    const controls = animate(mv, target, { duration: dur, delay, ease: [0.22, 0.61, 0.36, 1] });
+    return () => controls.stop();
+  }, [target, reduce, dur, delay, mv]);
+  const text = useTransform(mv, (v) => (m ? `${m[1]}${v.toFixed(decimals)}${m[3]}` : label));
+  if (!m || Number.isNaN(target)) return <>{label}</>;
+  return <motion.span>{text}</motion.span>;
+}
 
 function Redacted({ label }: { label: string }) {
   return (
@@ -34,13 +56,19 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
   const ctx = useShellConfig();
   const cfg = config ?? ctx;
   const { budget, journey } = cfg;
+  const reduce = useReducedMotion();
+
+  // Stagger the strip cells/glyphs in on mount via the `is-lit` class (the CSS
+  // bkgshell-fadeUp keyframe is stripped under prefers-reduced-motion).
+  const [lit, setLit] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setLit(true), 30); return () => clearTimeout(t); }, []);
 
   const ai = KAC_STAGES.findIndex((s) => s.slug === journey.activeStage);
   const segW = 100 / KAC_STAGES.length;
   const cur = (ai < 0 ? 0 : ai) * segW + segW * (journey.pct / 100);
 
   return (
-    <div className="gstrips">
+    <div className={`gstrips ${lit ? 'is-lit' : ''}`}>
       {/* Budget strip — seal · identity · project · 7 cells · end figure */}
       <div className="gstrip">
         <div className="gstrip-lead">
@@ -65,7 +93,7 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
               })}
             </div>
             <div className="gstrip-end">
-              <div className="gstrip-end-big">{budget.endBig}</div>
+              <div className="gstrip-end-big"><MoneyCountUp label={budget.endBig} /></div>
               <div className="gstrip-end-sub">{budget.endSub}</div>
             </div>
           </>
@@ -82,7 +110,7 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
         {journey.show ? (
           <>
             <div className="gstrip-track jtrack">
-              <div className="jline"><div className="jline-fill" style={{ width: cur + '%' }} /></div>
+              <div className="jline"><motion.div className="jline-fill" initial={reduce ? false : { width: 0 }} animate={{ width: cur + '%' }} transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }} /></div>
               {KAC_STAGES.map((s, i) => {
                 const Icon = StageIco[s.slug];
                 return (
