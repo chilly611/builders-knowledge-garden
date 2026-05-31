@@ -1,3 +1,52 @@
+## ═══ NOW — ONE SHARED APP SHELL across the Killer App (2026-05-31, Claude Code / Opus) ═══
+
+Promote the proven Owner-Lane chrome into ONE config-driven `<AppShell>` that EVERY `/killerapp`
+surface mounts, so the whole Killer App reads as one platform. The shell now lives in
+`src/components/app-shell/` (killerapp-native), NOT under `owner/` — **Owner is now just one lane
+CONFIG of the shell, not a bespoke copy.** Branch: `feat/shared-app-shell` (NOT merged to main).
+
+**Founder decisions this session (via AskUserQuestion):**
+- Owner is a demo persona to be folded INTO the killerapp → did the architectural inversion (shell is
+  app-native; Owner consumes it; old generic chrome retired behind a flag).
+- **Seal = the umbrella mark from `brand_assets`** (`tree-umbrella-mark-motion-a.mp4`, garden_scope
+  `umbrella`). NOTE: there is **no BKG-scoped seal** in brand_assets (only umbrella/hkg/tkg/cross-cutting);
+  used the umbrella mark per founder call. Public object path needs the `assets/` prefix the DB
+  `storage_path` omits → `…/brand-assets/assets/umbrella/…`.
+
+**Commit 1 — shell + 7 elements + REAL magic button:**
+- [x] `src/components/app-shell/` — `ShellStrips` (seal · identity+lane · project · 7 budget cells · journey/time-machine), `ShellNav` (compass-bloom + "Ask or tell the garden"), `Seal` (umbrella mark), `AskTheGarden` (multimodal capture), `ShellConfigContext` (default lane/project config; surfaces can push), `config.ts` (Marin/lane derivation + `SEAL_SRC` + money/journey fmt), `app-shell.css` (chrome ported 1:1 from owner `.ov-root` → `.bkg-shell`), `icons.tsx` (moved from owner; `owner/icons.tsx` re-exports).
+- [x] `POST/GET /api/garden/capture` — service-client persistence. Text → `copilot_interactions` (query + `citation_audit` jsonb tag {project_id, lane, surface, attachment}); file → `project-evidence` storage + `project_attachments` (project_id/user_id native, lane in `step_id`, source in `workflow_id`). GET reads back recent for project+lane+user. **No schema changes** (reused existing columns). Bearer-auth, fail-closed 401.
+- [x] `killerapp/layout.tsx` — swapped `KillerAppChrome`→`ShellStrips` and `CompassWorkflowNav`→`ShellNav` 1:1, behind `USE_APP_SHELL` flag (set `NEXT_PUBLIC_APP_SHELL=0` to roll back). Strips suppressed on `/stages/*` (StageShell owns those); magic button on every surface.
+- [x] `owner/OwnerHomeClient.tsx` — drops its private `GlobalStrips`/`PersistentNav`, renders its own lens-gated `<ShellStrips config={ownerConfig}>`, pushes owner config to `ShellNav` via `useSetShellConfig`. Hero seal → umbrella `<Seal size={76}>`. `body.bkg-lane-owner` now only suppresses the LAYOUT strips (no double band). Owner content untouched.
+- [x] Verify (local dev, 1280px): `tsc` clean (121 test-file baseline held, 0 in my files); `next build` exit 0 (`/api/garden/capture` + owner compiled). **7 elements present on Builder (picker) AND Owner**; Owner renders faithfully (single strips band, Harwell greeting/hero/needs-you intact); old navy CompassWorkflowNav FAB gone; umbrella seal loaded (readyState 4); magic panel opens multimodal (Photo/Video/File) tagged to lane.
+
+**Commit 2 — Framer Motion (next):** seal spring-entrance + breathing, strip stagger (`is-lit`), journey progress-fill, panel bloom, MoneyCountUp. Honors `prefers-reduced-motion`.
+
+**Open / hand-off:**
+- [ ] **FOUNDER (signed-in E2E):** sign in as owner on the preview, click "Ask or tell the garden", send a TEXT and a PHOTO → confirm they persist + survive reload (agent verified the data-model + read-back via SQL; signed-in click needs founder auth, matching the established owner-approval verification pattern).
+- [ ] **session-log.md NOT updated here** — it has a parallel stream's uncommitted RLS append; append this session via the GitHub Contents API (no PAT in this env) so the two streams don't collide.
+- [ ] Parallel **RLS-lockdown stream** is enabling RLS on shared `knowledge-gardens-prod` tables — capture route uses the service client so it's unaffected, but coordinate before that stream merges.
+- [ ] Deploy: `vercel` (preview) from this branch → verify → merge to `main` (founder) for prod auto-deploy, or `vercel --prod` once confirmed.
+- [ ] Follow-up: workflow-catalog parity in the compass (default nav currently = picker + budget + 7 stages; full 19-workflow launcher still lives in `CompassWorkflowNav`, available via the flag); per-project (non-Marin) budget/journey still falls back to the canonical Marin numbers (same as old chrome).
+
+---
+
+## ═══ NOW — Owner Lane DESIGN PARITY pass (2026-05-30, Claude Code / Opus) ═══
+
+Bring the in-app Owner lane to VISUAL parity with the corrected export `specs/bkg/Owner Lane _standalone_ (3).html` (Knowledge Gardens herbarium system). Data/permission/approval loop already shipped + correct — this is the visual layer only. Scope = Owner lane only; GC lens (live) untouched.
+
+**STATUS: ✅ code complete + verified locally (3 files, uncommitted). AWAITING founder go-ahead to commit + push — held pending the font-override confirmation (FLAG #1). Push → Vercel auto-deploy, sits next to the live GC lane.**
+
+- [x] `owner/icons.tsx` — `StageIco` map: 7 hand-drawn stage glyphs (size-up→reflect), brass/sepia 1.5-stroke, 16px, ported verbatim from the export.
+- [x] `owner/parts.tsx` (GlobalStrips) — budget cells = glyph + amount (sage Paid / rust current + tick / faded Soon); journey nodes = dot + glyph + name + italic plain-language subtitle (`PLAIN`); staggered reveal gated by `useReducedMotion`; gauge tick Space Mono → JetBrains Mono.
+- [x] `owner/owner-lane.css` — dropped the owner-only Cormorant/Space Mono `@import` + `.ov-root` override → inherits canonical EB Garamond + JetBrains Mono; widened budget col + cell heights; journey 64px + hover lift + current rust pulse (`ov-jpulse`); transform-only reveal (`ov-fadeUp`, no opacity); mobile (≤1000px) collapses journey to dots + glyphs. Preserved `.ov-redacted*`, chrome-suppression, reduced-motion guard, `.ov-hero-seal`.
+- [x] Verify: desktop 1280px (full journey + budget) + mobile 390px (collapsed) screenshots; reduced-motion guard + keyframes present in loaded CSS; `tsc` 0 errors in changed files; my code eslint-clean; redaction/permission paths untouched.
+- [ ] **FONT — founder call (FLAG #1):** removing the override reverses `ed455a0`'s deliberate "brief over standalone: Space Mono" choice. Standalone + app-global `tokens.css` both use JetBrains Mono + EB Garamond, so the lane now matches them. If Space Mono/Cormorant was an intentional owner signature, restore the one override block. Fully reversible.
+- [ ] **FOUNDER:** commit the 3 files + `git push origin main` → Vercel auto-deploy → spot-check `/killerapp/projects/55730cd3-5225-493d-8b5c-49086d942565` as owner.
+- [ ] Pre-existing (NOT this pass, flag-only): `react-hooks/purity` on `Gauge` `useRef(Math.random())` in `parts.tsx`; `globals.css:3748` `:global(input)` warning.
+
+---
+
 ## ═══ NOW — FUNCTIONAL Owner Lane (2026-05-29, Cowork / Opus) ═══
 
 Make the already-merged Owner Lane home (`/killerapp/projects/[id]` → `OwnerHomeClient`) FUNCTIONAL +
