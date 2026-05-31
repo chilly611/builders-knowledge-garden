@@ -3505,3 +3505,29 @@ API; resolved by awaiting `params`.
 - Animation polish + FINAL logo await the CORRECTED export (precondition still unmet). A new, different `specs/bkg/Owner Lane _standalone_ (3).html` (5.2MB, today) appeared and MAY be the corrected export — render to confirm before acting.
 - Pay-app approval = **needs legal review before wiring live payments** (no Stripe; demo-wrapped). Tracked in tasks.todo (counsel item).
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
+
+---
+## 2026-05-31 — Claude Code: Playwright e2e + data-consistency harness (the regression net)
+**Agent:** Claude Code (claude-opus-4-8)
+**Branch:** `test/e2e-consistency` (PR only, no merge)
+
+**What was built (tests/ only — zero app-code changes under `src/`):**
+- `playwright.config.ts` — drives the real `next dev` (Turbopack) on a dedicated port (3210, override `BKG_E2E_PORT`) so it never collides with a `:3000` server in another worktree; `testMatch: **/*.e2e.ts` so the app's `vitest` (`npm test`) never executes these; artifacts under `tests/.artifacts/` (gitignored). Added `@playwright/test` to devDependencies + Chromium.
+- `tests/e2e/fixtures/bkg.ts` — chrome-agnostic readers (`readChromeBudget`/`readChromeJourney`/`readDemoBody`, `chromeRegion`) that match BOTH today's `killerapp-chrome` (ARIA accessible names — it ships no `data-*`) and the post-fix `app-shell` (`.bkg-shell .gstrip-*`); `parseMoney`; deterministic setup (`pinAnonymous`, `dismissStageWelcome`, `seedBudgetLedger`).
+- `tests/e2e/data-consistency.e2e.ts` — the **Marin-over-other-project** regression net.
+- `tests/e2e/real-loop.e2e.ts` — sign-in surface → open a project → budget editor → save → leave → return → resume.
+- `tests/e2e/mobile-chrome.e2e.ts` — chrome ribbon at 375px: no horizontal page overflow + no KPI-block collision.
+
+**Key decisions:**
+- **No auth needed.** Clerk is unwired and no route is gated; the app boots/renders fully unauthenticated with placeholder Supabase env. Tests assert the client-side path (per brief: don't block on auth-gated surfaces).
+- **Consistency target = `demo-project`** — the one project whose body + ledger resolve with NO backend (`ProjectDashboardClient → getDemoProject() → docs/demo-data/demo-project.json`, "Willow Creek ADU"). Real UUIDs are backend-gated (`GET /api/v1/budget` → 401), so they can't anchor an anonymous net.
+- **The net flips RED→GREEN with no test edits:** readers prefer the app-shell hooks when present. Today the old chrome renders Marin; after Stage 2 the app-shell reads the same demo fixture, so chrome === body === ledger.
+- **Real-loop persistence = budget-editor localStorage** (`bkg-budget-anonymous`) — the verified backend-free happy-path. On return a non-empty ledger renders the saved line as a collapsed grid row, so resume is asserted as the description visible as text (not as an input value) plus the rehydrated `.bkg-budget-grid`.
+
+**Verified (live suite, `npx playwright test`): 3 passed / 2 RED-by-design.**
+- GREEN: consistency *control* (body === ledger: Willow Creek $116k remaining / $340k total), mobile 375px (no overflow, no KPI collision), real-loop (line survives leave→return + rehydrates).
+- RED (the net, expected on `main`): the persistent chrome shows Marin **$1.15M remaining / $1.65M total / "Plan" 85%** while the open project's body+ledger are **$116k / $340k / "Build" 62%**; and the chrome still shows Marin `$312K`/`$1.65M` over a deliberately-seeded demo ledger. Root cause confirmed live: `src/app/killerapp/layout.tsx` mounts `<KillerAppChrome />` with no `project` prop → `marinKacProject()` → `getCanonicalProject()` (hardcoded Marin). Turns GREEN once Stage 2 binds the chrome to the viewed project.
+
+**Notes:**
+- Co-developed with a parallel stream (fixtures/config/spec scaffolding referencing dogfood pass-01). This session reconciled the suite (removed a duplicate mobile spec), corrected the real-loop resume assertion (input→visible-text on return), added the Playwright `.gitignore` block, and verified the suite end-to-end against the live dev server.
+- Pre-existing harmless dev-server noise unchanged: `globals.css` `:global(...)` PostCSS warning, image `qualities` warning, `middleware`→`proxy` deprecation.
