@@ -29,12 +29,24 @@ const PATHNAME_TO_STAGE: Record<string, StageId> = {
   '/killerapp/workflows/compass-nav': 7,
 };
 
+// The 7 lifecycle stages as URL slugs (matches /killerapp/stages/<slug>).
+const STAGE_SLUG_TO_ID: Record<string, StageId> = {
+  'size-up': 1, lock: 2, plan: 3, build: 4, adapt: 5, collect: 6, reflect: 7,
+};
+
 /**
  * Get stage ID from pathname.
  * @param pathname - Current URL pathname
  * @returns Stage ID (0–7), defaults to 0 if no match
+ *
+ * Handles `/killerapp/stages/<slug>` (which were NOT in the static map and so
+ * fell through to 0 — that's why the copilot called every stage screen
+ * "Landing"). Project-scoped screens should pass the project's CURRENT stage.
  */
 export function stageFromPathname(pathname: string): StageId {
-  const stage = PATHNAME_TO_STAGE[pathname];
-  return stage !== undefined ? stage : 0;
+  const exact = PATHNAME_TO_STAGE[pathname];
+  if (exact !== undefined) return exact;
+  const m = pathname.match(/^\/killerapp\/stages\/([a-z-]+)/);
+  if (m && STAGE_SLUG_TO_ID[m[1]] !== undefined) return STAGE_SLUG_TO_ID[m[1]];
+  return 0;
 }

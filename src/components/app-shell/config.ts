@@ -1,28 +1,25 @@
 /**
- * App Shell config helpers — the DEFAULT lane/project config and the
- * formatters that drive the budget + journey strips. The Owner Lane builds
- * its own config from lens-gated /api/owner-home data; everything else falls
- * back to the canonical Marin project via `buildDefaultConfig`.
+ * App Shell config helpers — build the lane/project config from the project's
+ * REAL ledger numbers (via useProjectLedger), not a hardcoded fixture. The
+ * Owner Lane pushes its own lens-gated config; every other surface reads the
+ * default built here.
  */
 
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
-import type { KacProject } from '@/components/killerapp-chrome/types';
 import type { ProjectRole } from '@/lib/use-user-lane';
-import type { ShellConfig, ShellNavItem, ShellBudgetCell } from './types';
+import type { ShellConfig, ShellNavItem, ShellBudgetCell, MoneyState } from './types';
+import type { LedgerResult } from './useProjectLedger';
 
 /**
  * Canonical animated seal — the umbrella "tree" mark from the public
- * `brand-assets` bucket (brand_assets.slug = tree-umbrella-mark-motion-a).
- * The DB stores `storage_path` relative to an `assets/` root, so the public
- * object lives under `…/brand-assets/assets/umbrella/…`. Derived from the
- * configured Supabase URL with a prod fallback so the seal resolves even
- * when the public env var is absent at build time.
+ * `brand-assets` bucket. DB `storage_path` is relative to an `assets/` root,
+ * so the public object lives under `…/brand-assets/assets/umbrella/…`.
  */
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vlezoyalutexenbnzzui.supabase.co';
 export const SEAL_SRC = `${SUPABASE_URL}/storage/v1/object/public/brand-assets/assets/umbrella/tree-umbrella-mark-motion-a.mp4`;
 
-/** Plain-language subtitle under each journey stage (owner-facing voice). */
+/** Plain-language subtitle under each journey stage. */
 export const STAGE_PLAIN: Record<string, string> = {
   'size-up': 'Scoping',
   lock: 'Scope & budget set',
@@ -48,7 +45,7 @@ export function laneLabel(slug: string | null | undefined): string {
   return LANE_LABELS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
-/** Compact money — "$1.65M", "$312K", "$840". Used by the budget strip. */
+/** Compact money — "$1.65M", "$312K", "$840". */
 export function fmtMoney(n: number): string {
   if (!Number.isFinite(n)) return '—';
   const a = Math.abs(n);
@@ -57,74 +54,83 @@ export function fmtMoney(n: number): string {
   return '$' + Math.round(n).toLocaleString('en-US');
 }
 
+const STAGE_NAV = (activeSlug: string): ShellNavItem[] =>
+  KAC_STAGES.map((s) => ({
+    id: s.slug,
+    label: s.short,
+    sub: STAGE_PLAIN[s.slug],
+    href: `/killerapp/stages/${s.slug}`,
+    group: 'Journey · time machine',
+    flag: s.slug === activeSlug,
+  }));
+
 /**
- * Build the default shell config from the canonical KacProject + the user's
- * effective lane. Used on every non-owner surface (the owner surface pushes
- * its own lens-gated config).
+ * Build the default shell config from the project's real ledger + the user's
+ * RESOLVED lane. Lane is never silently defaulted to GC: when unknown the
+ * shell shows a neutral "Preview" state with a minimal nav (no GC firehose).
  */
 export function buildDefaultConfig(opts: {
-  project: KacProject;
-  lane: ProjectRole | string | null;
+  ledger: LedgerResult;
+  /** Resolved real role, or null when unknown. */
+  lane: ProjectRole | null;
+  laneKnown: boolean;
   projectId: string | null;
   projectName?: string | null;
 }): ShellConfig {
-  const { project, lane, projectId } = opts;
-  const stages = project.stages;
+  const { ledger, lane, laneKnown, projectId } = opts;
 
-  // Active stage = first in-progress (0 < completion < 100); else the cell
-  // right after the last fully-complete stage; else the first.
-  let activeIdx = stages.findIndex((s) => s.completion > 0 && s.completion < 100);
-  if (activeIdx < 0) {
-    let lastDone = -1;
-    stages.forEach((s, i) => { if (s.completion >= 100) lastDone = i; });
-    activeIdx = lastDone >= 0 ? Math.min(lastDone + 1, stages.length - 1) : 0;
-  }
-  const activeStage = stages[activeIdx]?.slug ?? 'build';
-  const pct = Math.round(stages[activeIdx]?.completion ?? 0);
+  const label = laneKnown && lane ? laneLabel(lane) : 'Preview';
+  const slug = laneKnown && lane ? lane : 'guest';
+  const kicker = laneKnown && lane
+    ? `Builder's Knowledge Garden · ${label}`
+    : "Builder's Knowledge Garden";
 
-  const cells: ShellBudgetCell[] = stages.map((s, i) => ({
-    stage: s.slug,
-    state: s.completion >= 100 ? 'paid' : i === activeIdx ? 'now' : 'soon',
-    amountLabel: s.completion >= 100 ? 'Paid' : i === activeIdx ? 'Now' : 'Soon',
-  }));
+  const name = ledger.name || opts.projectName || (projectId ? 'Your build' : 'Pick a project');
 
-  // Weeks from the schedule span; week-of from overall fraction across stages.
-  const start = Date.parse(project.schedule.startDate);
-  const end = Date.parse(project.schedule.substantialCompletionDate);
-  const weeksTotal = end > start ? Math.round((end - start) / (7 * 86_400_000)) : 37;
-  const overall = (activeIdx + pct / 100) / Math.max(1, stages.length);
-  const weekOf = Math.max(1, Math.round(weeksTotal * overall));
+  const b = ledger.budget;
+  const j = ledger.journey;
+  const currentStage = j?.currentStage ?? 0;
+  const activeSlug = currentStage >= 1 && currentStage <= 7 ? KAC_STAGES[currentStage - 1].slug : '';
 
-  const label = laneLabel(lane as string);
+  const cells: ShellBudgetCell[] = KAC_STAGES.map((s) => {
+    const state: MoneyState = !currentStage
+      ? 'soon'
+      : s.id < currentStage ? 'paid' : s.id === currentStage ? 'now' : 'soon';
+    return { stage: s.slug, state, amountLabel: state === 'paid' ? 'Paid' : state === 'now' ? 'Now' : 'Soon' };
+  });
+
+  const pct = j ? (j.stageProgress[currentStage] ?? 0) : 0;
+
+  // Universal journey nav only once the lane is known; neutral state keeps it
+  // to the essentials (no lane-specific tool firehose).
   const nav: ShellNavItem[] = [
-    { id: 'picker', label: 'Pick a workflow', sub: 'Your projects & tools', href: '/killerapp' },
+    { id: 'picker', label: 'Pick a project', sub: 'Your projects & tools', href: '/killerapp' },
     { id: 'budget', label: 'Budget', sub: 'Money & estimating', href: '/killerapp/budget', group: 'Money' },
-    ...KAC_STAGES.map((s) => ({
-      id: s.slug,
-      label: s.short,
-      sub: STAGE_PLAIN[s.slug],
-      href: `/killerapp/stages/${s.slug}`,
-      group: 'Journey · time machine',
-      flag: s.slug === activeStage,
-    })),
+    ...(laneKnown ? STAGE_NAV(activeSlug) : []),
   ];
 
   return {
-    laneSlug: (lane as string) || 'gc',
+    laneSlug: slug,
     laneLabel: label,
-    kicker: `Builder's Knowledge Garden · ${label}`,
+    kicker,
     projectId,
-    projectName: opts.projectName || project.name,
+    projectName: name,
     sealSrc: SEAL_SRC,
     budget: {
-      show: true,
+      show: !!b && ledger.hasData,
       cells,
-      activeStage,
-      endBig: fmtMoney(project.budget.remaining),
-      endSub: `left of ${fmtMoney(project.budget.total)}`,
+      activeStage: activeSlug,
+      endBig: b ? fmtMoney(b.remaining) : '—',
+      endSub: b ? `left of ${fmtMoney(b.total)}` : '',
     },
-    journey: { show: true, activeStage, pct, weekOf, weeksTotal },
+    journey: {
+      show: !!j && ledger.hasData,
+      activeStage: activeSlug,
+      pct,
+      weekOf: 0,
+      weeksTotal: 0,
+    },
     nav,
-    ready: true,
+    ready: ledger.ready,
   };
 }
