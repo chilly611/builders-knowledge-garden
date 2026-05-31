@@ -13,6 +13,13 @@
 # testing
 /coverage
 
+# playwright e2e (config writes artifacts under tests/.artifacts/)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+tests/.artifacts/
+
 # next.js
 /.next/
 /out/
