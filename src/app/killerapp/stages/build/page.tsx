@@ -27,6 +27,7 @@ import {
   seedMarinBudget,
 } from '@/lib/demo/marin-4000';
 import { colors, fonts } from '@/design-system/tokens';
+import { fmtMoney } from '@/components/app-shell/config';
 
 const STAGE_ACCENT = '#E05E4B'; // stage 4 (coral)
 
@@ -176,10 +177,10 @@ function BuildStageBody() {
         }}
       >
         <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
-          42% complete · framing inspection passed
+          {fmtMoney(MARIN_BUDGET_SPENT)} of {fmtMoney(MARIN_BUDGET_TOTAL)} spent · framing inspection passed
         </div>
         <div style={{ marginTop: 3, fontSize: 12.5, color: colors.graphite }}>
-          $312K of $1.65M spent · $186K committed next · hold change orders to protect the $347K headroom
+          Hold change orders here to protect your remaining budget.
         </div>
       </div>
 
