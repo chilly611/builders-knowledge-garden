@@ -3536,3 +3536,52 @@ API; resolved by awaiting `params`.
 3. **Pre-existing, out of scope (NOT mine):** `react-hooks/purity` eslint error on the `Gauge` `useRef(Math.random())` line in `parts.tsx` (confirmed via git diff — predates my edits); `globals.css:3748` `:global(input)` CSS parse warning. Neither is in my diff; flagging so they aren't attributed to this pass.
 
 **AWAITING:** founder go-ahead to commit + `git push origin main` (→ Vercel auto-deploy next to the live GC lane). Held pending the FLAG #1 font confirmation.
+
+---
+
+## 2026-05-31 — RLS exposure remediation (Group A), branch-verified — PROD NOT DEPLOYED
+
+**Task:** Close the 21-table `rls_disabled_in_public` exposure (2026-05-30 Supabase advisory) before commercial ship. Policy-first; no blanket enable.
+
+**Instance:** `knowledge-gardens-prod` (`vlezoyalutexenbnzzui`) — confirmed SHARED: its 37-migration history *is* the BKG deploy history, and it co-hosts the Toxicology/EWG scientific dataset + a second app's `knex` framework. (`builders-knowledge-garden`/`gtmjcslcerakkgftozfy` is a near-empty separate project — NOT this task; left alone.)
+
+### Classification (owner sign-off 2026-05-31)
+
+**GROUP A — BKG-owned → ENABLE RLS + least-privilege policy (7):**
+| table | rows | owner key | policy |
+|---|---|---|---|
+| user_achievements | 0 | user_id uuid | authn SELECT own; service_role ALL |
+| user_progress | 0 | user_id uuid | authn SELECT own; service_role ALL |
+| daily_briefings | 0 | user_id uuid | authn SELECT own; service_role ALL |
+| crm_voice_fingerprint | 0 | user_id text | authn SELECT own (::text); service_role ALL |
+| crm_contact_activities | 0 | contact_id→crm_contacts | authn SELECT via accessible parent contact (owner+demo allowlist+demo_project_id); service_role ALL |
+| specialist_runs | 547 | none | service_role ALL only |
+| improvement_ledger | 0 | none | service_role ALL only |
+
+**GROUP B — other-garden / foreign → NOT ALTERED, flagged (14):** substances(329), substance_aliases(5947), substance_classifications(217), substance_exposures(329), substance_health_effects(816), substance_sources(329), exposure_routes(6), health_effects(18), regulatory_limits(100), classifications(12), source_documents(329), water_data(322) [Toxicology/EWG dataset]; knex_migrations(1), knex_migrations_lock(1) [foreign app's migrator]. Reason: owned & written by other gardens' apps; an anon-SELECT-only RLS could silently break their ingestion writes. Requires the Toxicology/EWG owner's sign-off before any RLS change.
+
+**GROUP C — BKG public reference needing anon SELECT: 0.** No BKG-owned ownerless reference data among the 21 → zero blanket enables performed.
+
+### Policies added
+File: `supabase/migrations/20260531_rls_group_a_lockdown.sql` (idempotent; consistent with `20260522_secauth_rls_lockdown` + `lens_permission_matrix` model — service-role writes, owner/project-scoped reads, fail-closed).
+
+### Verification — Supabase branch `rls-groupa-verify` (`iurydglhirpgzqahykdn`): created → tested → deleted (~$0.003 total)
+Branch migration replay FAILED (status MIGRATIONS_FAILED — pre-existing repo-vs-applied-history divergence; ADJACENT finding, not fixed here). A faithful harness was therefore built directly on the branch: exact table column types + Supabase API-role grants (so RLS is the deciding gate), migration applied via `apply_migration` (success), seeded User A / User B / demo-allowlist contact.
+
+Per-role read access (row counts seen):
+| role | user_achv | user_prog | daily_brief | voice_fp | contact_act | specialist_runs | improv_ledger |
+|---|---|---|---|---|---|---|---|
+| anon | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| auth User A | 1 | 1 | 1 | 1 | 2 | 0 | 0 |
+| auth User B | 1 | 1 | 1 | 1 | 2 | 0 | 0 |
+| service_role | 2 | 2 | 2 | 2 | 3 | 2 | 2 |
+
+- anon sees nothing → exposure closed. Authenticated sees only own rows; A vs B isolation holds; CRM correctly adds the demo-allowlist contact. specialist_runs/improvement_ledger invisible to anon AND authenticated.
+- Write-denial: authenticated INSERT into specialist_runs AND into own user_achievements both rejected with `ERROR 42501 new row violates row-level security policy`. Writes are service-role-only; service_role retains full access.
+- Policy-presence: all 7 tables RLS-on with >=1 policy; schema-wide `rls_on_but_policyless = {}` → nothing left locked.
+
+### Status / next steps
+- **PROD UNTOUCHED** — re-verified post-run: all 7 Group A tables still `rls_on=false`, 0 policies on `vlezoyalutexenbnzzui`. Nothing deployed.
+- Migration ready to deploy to prod on owner's go (apply via `apply_migration` to `vlezoyalutexenbnzzui`, then re-run the security advisor).
+- **GROUP B (14 tables) remain RLS-disabled by design** — flag for the Toxicology/EWG garden owner; do NOT enable without their sign-off.
+- Adjacent advisory items NOT in scope: 19 `audit_log_*` partitions + 1 other already RLS-on-no-policy; 14 always-true policies; 17 `user_metadata`-referencing policies; 3 security-definer views + executable security-definer fns; `pg_trgm` in public; leaked-password protection off; branch migration-replay failure.
