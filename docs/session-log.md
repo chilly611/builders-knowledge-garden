@@ -3536,3 +3536,36 @@ API; resolved by awaiting `params`.
 3. **Pre-existing, out of scope (NOT mine):** `react-hooks/purity` eslint error on the `Gauge` `useRef(Math.random())` line in `parts.tsx` (confirmed via git diff — predates my edits); `globals.css:3748` `:global(input)` CSS parse warning. Neither is in my diff; flagging so they aren't attributed to this pass.
 
 **AWAITING:** founder go-ahead to commit + `git push origin main` (→ Vercel auto-deploy next to the live GC lane). Held pending the FLAG #1 font confirmation.
+
+---
+
+## 2026-05-31 — Claude Code: Code Compliance Lookup — SERVICE layer (Stage 1, API/lib only)
+**Agent:** Claude Code (claude-opus-4-8)
+**Branch:** `feat/compliance-service` — **PR only, NOT merged** (per task). Worktree: `/Users/chilly/Developer/bkg-compliance`.
+**Scope:** Service layer ONLY. No UI (waits behind Stage 2), no shell, no schema changes.
+
+**Diagnosis (the load-bearing finding):**
+- The `jurisdictions` (44) + `knowledge_entities` (2256) tables named in the task live in the **`knowledge-gardens-prod`** Supabase project (`vlezoyalutexenbnzzui`) — the DB the app actually uses — **NOT** the similarly-named `builders-knowledge-garden` project (`gtmjcslcerakkgftozfy`), which has `kg_`-prefixed tables at 26/35 rows. Building against the latter would have been wrong; row counts (2256/44) were the tell.
+- **Code sections are modeled as `knowledge_entities` rows**: `entity_type IN (building_code[569], code_section, safety_regulation, standard, code)`, linked to `jurisdictions` via `jurisdiction_ids uuid[]` (or flagged `applies_globally`). `title`/`summary` are jsonb `{en}`. Section + code system live in `metadata` under **inconsistent keys** (`{section, code_body}` vs `{code_section, code_system}`) — the service handles both. Provenance = `source_urls[]`; attestation = `manually_verified_at` / `auto_verified_at` (+`auto_verification_flagged`).
+- Coverage is uneven: CA richly covered (~88 scoped, e.g. ca-marin 29, ca-sf 12); NV/AZ partial; national model codes are their own jurisdictions (ibc-2024=57). FL/TX/CO/NY/NC/WA jurisdictions EXIST but hold **zero** scoped codes.
+
+**What was built (3 new files):**
+- **`src/lib/compliance-lookup.ts`** — the service. `lookupCodeCitations({query, jurisdiction, discipline?, limit?})` returns code citations drawn ONLY from structured data. Jurisdiction resolution done in TS over the 44-row table (handles the `CA` vs `California` casing split + a US state code↔name alias map). Walks `parent_id` so a city/county inherits state + ancestor codes. DB surface is a tiny injectable `ComplianceDataSource` interface (default = `createSupabaseDataSource()` on the anon client, same RLS path as `code-sources/rag.ts` + `/api/v1/search`).
+- **`src/app/api/v1/compliance/lookup/route.ts`** — `GET` (`?q=&jurisdiction=&discipline=&limit=`) + `POST` (JSON). 200 with explicit `status` for any real answer; 400 missing input; **503 fail-closed** when the data source is unconfigured/unavailable (never a placeholder/mock answer); 500 unexpected. Emits `compliance.check` (RSI Loop 4), best-effort.
+- **`src/lib/__tests__/compliance-lookup.test.ts`** — 42 tests, hermetic via a fake data source.
+
+**LIABILITY design (the whole point):**
+- **No LLM anywhere on this path.** Every citation is a real `knowledge_entities` row carrying `entityId` (audit anchor), `sourceUrls` (verbatim), matched `jurisdiction` + `scope` (`jurisdiction`/`ancestor`/`global`), and `verification` level. The `citation` label is *derived* from stored fields; absent fields → `null`, never a placeholder.
+- **3-state honest coverage:** `covered` (resolves + has scoped data + query matches) · `no_results` (covered jurisdiction, query matched nothing — still no guess) · `not_covered` → exact phrase **"not yet covered for {jurisdiction}"** for both unknown jurisdictions (`reason: unknown_jurisdiction`) and known-but-no-data ones like Texas (`reason: no_code_data_for_jurisdiction`).
+- **Fail closed:** data-source errors throw `ComplianceDataError` (route → 503) rather than degrade to a misleading "not covered".
+- Coverage is established by **scoped** data only; global model codes are returned (labelled `scope:global`) but don't by themselves make a jurisdiction "covered". National model-code jurisdictions (IBC-2024) are NOT auto-applied to a state query unless the parent chain links them — including them would be inference, which is forbidden.
+
+**Verified:**
+- `vitest`: **42/42 pass**. `tsc --noEmit`: 0 errors in the new files (123 pre-existing project-wide errors are unrelated tech debt). eslint: clean (test dir is outside eslint scope by config).
+- **Live run against prod** (real `createSupabaseDataSource`): CA + "egress windows" → `covered`, `IBC §1027 (2021)` scoped to ca-marin (auto-verified, ICC source) ranked above global model codes. CA + "fire sprinkler" → IFC 903 / NFPA 13 (global, sourced). **Texas → "not yet covered for Texas"** (known, no data, resolved tx-state/tx-aus). **Oregon → "not yet covered for Oregon"** (unknown).
+
+**Issues / flags:**
+- **RLS advisory (pre-existing, NOT mine, schema untouched):** `knowledge_entities` + `jurisdictions` both have RLS enabled (good). The advisory flags other tables (toxicology `substances*`, `specialist_runs`, etc.) with RLS disabled — out of scope here; surfacing per policy, not acting.
+- The OR-of-ilike FTS fallback can surface weakly-relevant rows (relevance `0.1`, `matchedOn:["full-text"]`) when `plainto_tsquery` returns nothing — identical behavior to the existing `/api/v1/search` route + `rag.ts`. Not fabrication (every row real + sourced); Stage-2 UI can threshold on `relevance`.
+- This service is intentionally narrower than `src/lib/code-sources` (the 6-source RAG orchestrator that blends external citation-only publishers + vector recall) — structured-data-only is the right trust posture for an actionable compliance answer.
+- Session-log appended **in-branch** (part of the PR), not pushed to `main`, per "PR only; don't merge." `tasks.todo.md` / `tasks.lessons.md` left untouched (out of the stated file scope).
