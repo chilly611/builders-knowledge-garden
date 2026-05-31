@@ -1,3 +1,23 @@
+## ═══ NOW — STAGE 2 AMENDMENT: ledger-bound chrome (dogfood pass-01) (2026-05-31, Claude Code / Opus) ═══
+
+Blocking dogfood fixes on top of the shared shell. Branch `feat/shared-app-shell` (commits `dcc5ca2`, `5003c80`, pushed → Vercel preview).
+
+**Done + verified:**
+- [x] **Chrome binds to the ACTIVE project's REAL ledger** — `useProjectLedger` reads `/api/v1/budget` (synthesizes `project_budget_lines`) for real projects, the demo fixture for `demo-project`. **Removed the hardcoded Marin `getCanonicalProject` from the chrome.** `ShellConfigProvider` uses the route `[id]` on `/killerapp/projects/<id>` (not the `?project=` context id, which can disagree).
+- [x] **chrome === body === ledger** on `/killerapp/projects/demo-project` — verified live: chrome **$116K left of $340K · Build 62%** === body Budget River (**$187k spent / $224k committed / $116k remaining**, Stage 4) === seeded `project_budget_lines` ($340k/$187.4k/$224.1k). Seeded demo-project ledger to match the fixture.
+- [x] **Lane robustness** — no silent GC default; unknown → neutral "Preview" (no GC firehose). Uses raw `projectRole`/`legacyLane`, not `effectiveLane`.
+- [x] **Mobile 375px** — ribbon readable, 7 cells fit, **no horizontal overflow** (verified). Stacked lead + shrunk cells ≤480px.
+- [x] **Copilot real stage** — `stageFromPathname` maps `/killerapp/stages/<slug>` (was 0 = "Landing"); `KillerappProjectShell` passes the project's current stage (was hardcoded `stage:0`).
+- [x] **Owner preserved** — `$1.15M`/42%/wk 17/Harwell greeting intact; layout strips suppressed (no double band). Removing the stuck `MoneyCountUp` ($0K) also fixed Owner's figure.
+- [x] **Build-stage insight from data** — derives from the same `MARIN_BUDGET_*` the stage ribbon uses (Plan was already data-driven; Size Up/Lock have none).
+
+**Remaining (blocking-adjacent, needs a focused pass):**
+- [ ] **Decouple `/killerapp/stages/*` from Marin** — those pages call `ensureMarinActive`/`seedMarinBudget` + import `marin-4000`; their StageShell `BudgetRibbon` shows Marin regardless of the active project (the second chrome system). Binding stage chrome + sequencing/schedule to the active project's ledger is the "collapse two chrome systems" refactor — demo-critical (sequencing/schedule features depend on the Marin fixtures), so it deserves its own session, not a rushed tail edit.
+- [ ] **Copilot mock mode** — `/api/v1/copilot` falls back to a mock (stage-0 "Landing" prose) when `ANTHROPIC_API_KEY` is unset. Confirm the key is set on the preview/prod env so the real stage-aware path runs.
+- [ ] **FOUNDER signed-in E2E** of the magic button (text + photo) still pending (carried from Stage 1).
+
+---
+
 ## ═══ NOW — ONE SHARED APP SHELL across the Killer App (2026-05-31, Claude Code / Opus) ═══
 
 Promote the proven Owner-Lane chrome into ONE config-driven `<AppShell>` that EVERY `/killerapp`
