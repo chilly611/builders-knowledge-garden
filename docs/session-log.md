@@ -3505,3 +3505,40 @@ API; resolved by awaiting `params`.
 - Animation polish + FINAL logo await the CORRECTED export (precondition still unmet). A new, different `specs/bkg/Owner Lane _standalone_ (3).html` (5.2MB, today) appeared and MAY be the corrected export — render to confirm before acting.
 - Pay-app approval = **needs legal review before wiring live payments** (no Stripe; demo-wrapped). Tracked in tasks.todo (counsel item).
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
+
+---
+
+## 2026-06-01 — Claude Code: Stage 5 — tamper-evident signing chain (contracts legal gate, engineering half)
+**Agent:** Claude Code (claude-opus-4-8) · stream = backend/lib + API
+**Branch:** `feat/contracts-signing` (worktree `bkg-contracts-signing`, off local `main`, rebased `--onto origin/main` for a clean PR). **PR only — NOT merged.** New code only; no UI re-roll, no other stage. This is the *engineering* half of founder-locked gate **#11**; it does **not** replace the lawyer's review of the contract templates.
+
+**Context / diagnosis (read first):** Confirmed prod = `knowledge-gardens-prod` `vlezoyalutexenbnzzui` (Postgres 17, shared — co-hosts Toxicology/EWG). The two target tables pre-exist (`20260522b_ship_round3_schema.sql`): `signed_documents` (id, project_id, document_type, document_id, **document_hash NOT NULL**, pdf_url, title, status, required_signers jsonb, created_by, created_at, finalized_at; + documenso_* from `20260524_…`) and `signature_events` (id, signed_document_id→cascade, signer_user_id, signer_role/name/email, signature_method CHECK typed|drawn|docusign|dropbox_sign|documenso, signature_data, ip_address, user_agent, signed_at). Both RLS-critical (healthcheck guards all 17 tables). Three writers insert events today: `[id]/sign/route.ts` (main), `[id]/reject/route.ts`, `lib/documenso-sync.ts`.
+- **Load-bearing finding:** `document_hash` is **not** the document bytes. Both `POST /signatures` (`route.ts:177`) and `PATCH …/sign` (`sign/route.ts:120`) set it to SHA-256 of a **metadata JSON snapshot** (id/project/type/title/signers) — the code comment even admits "we'd ideally fetch and SHA-256 the bytes." The migration's own column comment intends "SHA-256 of the rendered PDF; immutable provenance." So byte-hashing is the *intended* semantics, never implemented. Stage 5 implements it.
+- **Founder-locked #11 → did NOT rewire the live signing path.** Built the engine as isolated new code the founder wires when opening the gate.
+
+**What was built (new code only):**
+- **`src/lib/signing-chain.ts`** — the engine, all derivable from stored columns:
+  - anchor = `signed_documents.document_hash` = `SHA-256(exact document bytes)` (PDF bytes via `pdf_url`, else a deterministic canonical-JSON fallback for byte-less in-app docs).
+  - `event[0].prev = anchor`; `event[i].prev = event[i-1].event_hash`; `event_hash = SHA-256( canonical(content) ‖ prev )`; `sequence_number = i` (0-based contiguous).
+  - `appendSignatureEvent()` — "on signing": loads doc, **re-anchors `document_hash` to the byte hash**, finds the chain tip, computes prev/seq/hash, inserts ONE row with signer identity + timestamp + IP + UA + chain fields. Refuses to extend a chain with an unchained predecessor.
+  - `buildSigningPacket()` — packages document row + **exact bytes (base64)** + ordered events + `chain_anchor` + a `packet_hash`, **from stored data only**.
+  - `verifySigningPacket()` (offline) + `verifyStoredDocument()` (live re-hash) — re-hash the bytes vs `document_hash`, walk the chain recomputing every `event_hash` and checking each prev-link + sequence.
+  - `normalizeTimestamp()` collapses app-written ms-ISO ("…Z") and PG read-back ("+00:00") to one instant so hashes survive the DB round-trip (tested).
+- **`src/lib/signing-access.ts`** — `callerCanAccessDocument()` (service client bypasses RLS → app-level gate): creator OR required-signer OR has a recorded event.
+- **`src/app/api/v1/signatures/[id]/packet/route.ts`** — `GET` export packet (`?download=1` → attachment).
+- **`src/app/api/v1/signatures/[id]/verify/route.ts`** — `GET` verify stored doc; `POST` verify an uploaded packet (path id must match `packet.signed_document_id`).
+- **`supabase/migrations/20260601_signature_event_chain.sql`** — the ONE allowed schema change: adds `sequence_number`/`prev_event_hash`/`event_hash` to `signature_events` (nullable → legacy writers keep working) + partial-unique `uq_signature_events_doc_seq(signed_document_id, sequence_number)` **fork guard** + `idx_signature_events_chain_tip`. Tables otherwise reused as-is.
+- **Tests (41, all green):** `src/lib/__tests__/signing-chain.test.ts` + `signing-access.test.ts` + route tests under each `[id]/{packet,verify}/__tests__/`.
+
+**Trust posture:** keyless ⇒ **tamper-EVIDENT, not tamper-PROOF.** A naive byte edit, a reorder, or a field mutation is caught; mutating a *middle* event cascades (breaks later prev-links). A full chain re-forge by someone with write access is out of scope (needs a signing key / external TSA) — documented in the lib header. Records are **only** stored data, never fabricated.
+
+**Verified:**
+- **41/41 new tests pass.** Tamper cases fail **even when the attacker re-stamps the wrapper `packet_hash`** — proving the cryptographic chain, not the wrapper, is the guarantee: byte-alter → `document_hash_matches` fails; reorder → `event[0].prev_link`/`sequence` fail; earlier-event re-hash + wrapper re-stamp → `event[1].prev_link` fails (cascade). End-to-end: sign 2 events → `verifyStoredDocument` clean; alter the stored bytes → fails.
+- `tsc --noEmit`: **0 errors in Stage 5 files.** eslint: **0 errors** (test dirs ignored by repo config).
+- Full suite in this env: **10 files / 36 tests fail identically on clean `main`** (missing `jsdom` + `@testing-library/react` in node_modules; plus the long-standing `@/` real-resolution gap in existing component/route tests — no tsconfig-paths plugin). My branch = those same 10 + **4 new files / 41 passing tests, 0 regressions** (56→60 passing files, 680→721 passing tests). Not touching the pre-existing failures (other stages, out of scope).
+
+**FLAGS — founder decision:**
+1. **Migration NOT applied to shared prod** `vlezoyalutexenbnzzui`. It ships in the PR; apply when wiring gate #11. Nullable columns + partial index ⇒ the current unchained writers are unaffected if it lands early.
+2. **Live signing path NOT rewired (founder-locked #11).** The 3 writers (`[id]/sign`, `[id]/reject`, `lib/documenso-sync`) still insert **unchained** rows. **Activation = route each insert through `appendSignatureEvent(...)`** (single source of truth; the verifier reports pre-engine docs honestly — `document_hash` won't match bytes until first re-anchor). Left to the founder because it touches the live legal gate.
+3. **`document_hash` re-anchor.** First chained append **UPDATEs** `signed_documents.document_hash` to the true byte hash (a write to that table — allowed; reuse, not a new column), overwriting the legacy metadata-snapshot value. Docs never signed through the engine will (correctly) report "cannot confirm byte-intact."
+4. **Scope:** `tasks.todo.md` / `tasks.lessons.md` left untouched (session-log only, matching the compliance/RSI sibling sessions).
