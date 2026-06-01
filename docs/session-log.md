@@ -3571,3 +3571,36 @@ API; resolved by awaiting `params`.
 - The OR-of-ilike FTS fallback can surface weakly-relevant rows (relevance `0.1`, `matchedOn:["full-text"]`) when `plainto_tsquery` returns nothing — identical behavior to the existing `/api/v1/search` route + `rag.ts`. Not fabrication (every row real + sourced); Stage-2 UI can threshold on `relevance`.
 - This service is intentionally narrower than `src/lib/code-sources` (the 6-source RAG orchestrator that blends external citation-only publishers + vector recall) — structured-data-only is the right trust posture for an actionable compliance answer.
 - Session-log appended **in-branch** (part of the PR), not pushed to `main`, per "PR only; don't merge." `tasks.todo.md` / `tasks.lessons.md` left untouched (out of the stated file scope).
+
+---
+
+## 2026-05-31 — Integration pass: shared App Shell (Stage 2) + RSI heartbeat + compliance → main → PROD
+
+Single-session integration onto the **clean base `origin/main` = `cc54ab9`** (NOT local main, which carried 2 held Owner-Lane commits). Sole writer to `main`; confirmed each merge with the founder.
+
+### Held Owner-Lane commits — EXCLUDED from main (per instruction), preserved
+- `03272c3` feat(owner): design parity · `398539e` docs(session): Owner Lane design-parity pass
+- These were local `main`'s 2-commit lead over `origin/main`. **Two of three feature branches were stacked on top of them**, so a plain "rebase on origin/main" would have shipped them. Dropped surgically (`git rebase --onto origin/main 398539e <branch>`).
+- Preserved on new branch **`owner-lane-held` = `398539e`** (+ reflog). Absent from `main`.
+
+### Merges (in order)
+1. **feat/shared-app-shell** — rebased `--onto origin/main 398539e` (dropped both held). Conflict in `src/app/killerapp/projects/[id]/owner/icons.tsx` → resolved to the app-shell thin re-export (`export { Ico, StageIco } from '@/components/app-shell/icons'`; centralized module verified self-contained). `npm run build` GREEN (124 routes). Merged ff → `caf32ed 3ec2396 25d2762 8fbb8e2 d1b63d4`.
+2. **feat/rsi-heartbeat** — clean single commit; rebased onto new main (no conflict) `9be83cc`→`35c461e`. `npm run build` GREEN. Merged ff → `35c461e`. (Adds a `vercel.json` cron entry.)
+3. **feat/compliance-service** — rebased `--onto main 398539e` (dropped both held; no conflict) `5e3f779`→`dc91eca`. **42/42** unit tests pass. Merged ff → `dc91eca`.
+
+**Final `main` = `dc91eca`** — 7 commits on `cc54ab9`, zero Owner-Lane commits.
+
+### Full e2e suite on main (Playwright harness from `test/e2e-consistency` @ `18e7e76`, run against `dc91eca`)
+- **data-consistency.e2e.ts (project-home `chrome === body === ledger`): 3/3 GREEN** — the regression net flipped **RED→GREEN** (chrome now bound to the viewed project: `$116K` remaining / `$340K` total / Build 62%, Willow Creek; zero Marin leakage). Required a 1-line `waitFor` added to `readDemoBody` **locally only** (defeats a post-Stage-2 hydration race); the test branch is untouched — flag for the test stream.
+- **mobile-chrome.e2e.ts: GREEN.**
+- **real-loop.e2e.ts: 1 RED** — harness flow mismatch (budget empty-state add-line selectors stale: expects `Materials` / `+ Add a line` buttons; live UI uses category cards + AI-estimate CTAs). **Not an app bug, not integration-caused** (`src/app/killerapp/**` + `app-shell/**` diff `d1b63d4`↔`dc91eca` is empty). Flag for the test stream to recalibrate.
+
+### Deploys (Vercel · the-knowledge-gardens/builders-knowledge-garden)
+- **Preview** (Stage 2): `builders-knowledge-garden-jc651lj4l-the-knowledge-gardens.vercel.app` (target=preview, READY; SSO-gated).
+- **Production** (`vercel --prod`, `dpl_37gsPtmc7P25NadPWZuodHPR2HAV`): **https://builders-knowledge-garden.vercel.app** — target=production, READY.
+
+### Explicitly NOT done (by design)
+- **RLS migration NOT deployed** (separate founder step). `supabase/migrations/20260531_rls_group_a_lockdown.sql` + its log note remain parked in the `bkg` worktree (untracked file + `git stash@{0}`); never added to `main`.
+- **2 held Owner-Lane commits NOT merged** (on `owner-lane-held`).
+- **`main` NOT pushed to origin** (local integration; `origin/main` still `cc54ab9`, fast-forwardable to `dc91eca`).
+- Rebased `feat/shared-app-shell` + `feat/compliance-service` now diverge from their `origin` counterparts (history rewritten to drop held commits) — force-push needed to update those PRs.
