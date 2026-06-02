@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Space_Mono } from "next/font/google";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getCapabilityStats } from "@/lib/capability-stats";
 import HomeClient from "@/components/marketing/HomeClient";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -55,31 +55,10 @@ export const metadata: Metadata = {
 // ISR — refresh the live counts hourly. The page is otherwise static.
 export const revalidate = 3600;
 
-// Verified live 2026-06-01: 2,256 published knowledge entities, 44
-// jurisdictions (California-first). We query Supabase the same way
-// /api/v1/mcp does (the public, RLS-safe capability counts). If Supabase
-// isn't configured (local dev) or the query fails, we fall back to the
-// verified numbers — NEVER 0. This is the root-cause fix for the old
-// SSR-0 counters that rendered "$0T / 0 / 0 / 0".
-const FALLBACK = { entities: 2256, jurisdictions: 44 } as const;
-
-async function getCapabilityStats(): Promise<{ entities: number; jurisdictions: number }> {
-  if (!isSupabaseConfigured()) return FALLBACK;
-  try {
-    const [entitiesRes, jurisdictionsRes] = await Promise.all([
-      supabase.from("knowledge_entities").select("*", { count: "exact", head: true }).eq("status", "published"),
-      supabase.from("jurisdictions").select("*", { count: "exact", head: true }),
-    ]);
-    return {
-      // `|| FALLBACK` guards against a null/0 count (e.g. RLS) so the public
-      // page never advertises zero.
-      entities: entitiesRes.count || FALLBACK.entities,
-      jurisdictions: jurisdictionsRes.count || FALLBACK.jurisdictions,
-    };
-  } catch {
-    return FALLBACK;
-  }
-}
+// Live capability counts (with verified fallback, never 0) now live in
+// src/lib/capability-stats.ts so the homepage, the API self-descriptions
+// (/api/v1/health, /api/v1/openapi), and the copilot prompt all read the
+// SAME source. (2026-06-02 — root-cause fix for the stale "40,000+" claims.)
 
 export default async function Home() {
   const { entities, jurisdictions } = await getCapabilityStats();

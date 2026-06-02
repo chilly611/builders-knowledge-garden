@@ -3762,3 +3762,15 @@ Founder shared the live link in iMessage — the preview card showed the old "B"
 - **Single-source = bkg-main:** `tasks.todo.md` / `tasks.lessons.md` are canonical in `~/Developer/bkg-main`; the ~12 other worktree copies are stale and were left untouched.
 
 **Commit:** `docs: reset tasks to Phase 1 revenue + archive May batches` (tasks.todo.md, tasks.todo.archive.md, docs/session-log.md, tasks.lessons.md).
+---
+
+## 2026-06-02 — Prod-verification quartet (fix/killerapp-quartet, PR only)
+
+Four decision-free fixes off `main = 4fa7839`; verified in a real browser (webpack dev :3310, anon) + `next build` ✓.
+
+1. **React #418 on /killerapp** — root cause: `KillerappProjectShell:440` formatted sqft with **bare `toLocaleString()`** inside SSR'd HTML; Vercel's server ICU vs the visitor's browser can disagree ("4,950" vs "4.950") → text mismatch → #418 **in prod only** (dev server shares the laptop's locale/TZ, which is why dev shows no error — verified clean console). Before: `toLocaleString()` · After: `toLocaleString('en-US')` (matches `app-shell/config.ts` fmtUsd). Only un-pinned formatter in the route's SSR path (audited).
+2. **Anon /killerapp infinite "Running the numbers…"** — TWO roots: (a) the copilot 401 path set an `error` that only renders when `!project`; (b) worse, for anon the auto-trigger never fires at all (conversations 401 + ledger gating), so no failure state was ever set. Fix: `aiUnavailable: 'auth'|'error'` state — set on 401/403, stream errors, AND a mount-time session check that short-circuits signed-out viewers. Before: eternal pulse · After: "**Sign in** to see the AI take for this project." (browser-verified anon). Public `ai_summary` still wins when present.
+3. **Two completion %s on the demo page** — HeroBand "Status" showed spent/approved (55%) while the chrome's journey showed `stageProgress[currentStage]` (62%). Single-sourced IN CODE: `ProjectCompass.percentageThrough` now reads `demoProject.stageProgress[currentStageId]` — the same field the chrome reads via `useProjectLedger`. No data touched. Browser-verified: chrome 62% == body Status 62%.
+4. **"40,000+" claims** — extracted the homepage's count source to `src/lib/capability-stats.ts` (live query + verified fallback 2,256/44, never 0) and pointed FOUR surfaces at it: homepage (moved), `rag.ts` prompt (sync → fallback constants: "2,256+ … 44 jurisdictions (California-first)"), `/api/v1/health` (live; also **dropped** the invented `domains: 8` / `code_sections: 2847` — unverifiable, no test pinned them), `/api/v1/openapi` (live). Verified: health returns `2256/44`.
+
+**Left + noted (not decision-free):** `pricing/page.tsx` ("Browse 40,000+ …" ×2 — page is pending the founder's pricing redesign) and `install-mcp/page.tsx` marketing copy; `rag.buildSystemPrompt` appears dead (route imports but never calls — uses its own `buildStageAwareSystemPrompt`); founder may want live counts threaded into the prompt path later.

@@ -121,7 +121,13 @@ export default function ProjectCompass({
   const totalSpent = demoProject.budget.spent;
   const totalCommitted = demoProject.budget.committed;
   const remaining = totalBudget - totalCommitted;
-  const percentageThrough = (totalSpent / totalBudget) * 100;
+  // SINGLE-SOURCE (2026-06-02): the HeroBand "Status" % must read the SAME
+  // field the persistent chrome's journey % reads — the current stage's
+  // progress (demo-project.json stageProgress, what useProjectLedger feeds
+  // the app-shell). It previously showed spent/approved (55%) while the
+  // chrome showed stage progress (62%) — two different "completion" numbers
+  // on one screen. Budget-consumed remains visible via "remaining" below it.
+  const percentageThrough = demoProject.stageProgress[currentStageId ?? 1] ?? 0;
 
   // Get stage 7 progress for close-out CTA
   const stage7Progress = demoProject.stageProgress[7] ?? 0;

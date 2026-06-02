@@ -3,14 +3,18 @@
 // This serves as both documentation and machine-readable API contract
 
 import { NextResponse } from "next/server";
+import { getCapabilityStats } from "@/lib/capability-stats";
 
 export async function GET() {
+  // Live counts, same source as the homepage — replaces hardcoded
+  // "40,000+ / 142+" marketing numbers. (2026-06-02)
+  const stats = await getCapabilityStats();
   const spec = {
     openapi: "3.1.0",
     info: {
       title: "Builder's Knowledge Garden API",
       version: "0.1.0",
-      description: "The AI-native construction knowledge API. 40,000+ entities, 142+ jurisdictions, full lifecycle coverage. Serves humans via web, AI agents via MCP, robots via structured JSON.",
+      description: `The AI-native construction knowledge API. ${stats.entities.toLocaleString("en-US")}+ entities, ${stats.jurisdictions} jurisdictions (California-first), full lifecycle coverage. Serves humans via web, AI agents via MCP, robots via structured JSON.`,
       contact: { url: "https://builders.theknowledgegardens.com" },
     },
     servers: [
