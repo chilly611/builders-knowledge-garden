@@ -3604,3 +3604,14 @@ Single-session integration onto the **clean base `origin/main` = `cc54ab9`** (NO
 - **2 held Owner-Lane commits NOT merged** (on `owner-lane-held`).
 - **`main` NOT pushed to origin** (local integration; `origin/main` still `cc54ab9`, fast-forwardable to `dc91eca`).
 - Rebased `feat/shared-app-shell` + `feat/compliance-service` now diverge from their `origin` counterparts (history rewritten to drop held commits) — force-push needed to update those PRs.
+
+---
+
+## 2026-05-31 — Reconcile repo ⇄ deployed prod (founder: leave prod live)
+
+Founder decision on the early CLI `vercel --prod`: **keep it** (integrated build is the intended direction; rollback would only restore the stale build). Reconciled the repo so the deployed state is git-sourced going forward.
+
+- **Pushed `main` → origin:** `origin/main` fast-forwarded `cc54ab9 → e841471` (no force; held Owner-Lane commits verified absent). `origin/main == e841471` confirmed. This is the normal prod path — Vercel git-integration should auto-deploy from it.
+- **Production domain:** `builders.theknowledgegardens.com` + `builders-knowledge-garden.vercel.app` both serve HTTP 200, and the SSR HTML carries the Stage-2 app-shell (`.bkg-shell`, `.gstrip`) with **no** Marin/old-chrome markers — the integrated build is live. *Caveat:* the `e841471` app bundle is byte-identical to the earlier CLI deploy (`dc91eca` + a docs-only commit), and with no Vercel dashboard access I could not independently confirm the git-integration deployment fired vs. the CLI one — **founder to verify a fresh git-sourced deployment in the Vercel dashboard** (2FA pending).
+- **RLS Group A:** already applied to the prod DB (`knowledge-gardens-prod`, founder's separate step). Committed the migration file (`supabase/migrations/20260531_rls_group_a_lockdown.sql`, `5050c83`) so the repo tracks what's live — inert to the Vercel build (Supabase migrations run out-of-band), idempotent. App talks to the 7 secured tables via the service-role client → app + secured DB consistent; no conflict from deploy order.
+- **NOT done:** held Owner-Lane commits still unmerged (`owner-lane-held`). The RLS-file + this session-log commit are **local only** — `origin/main` deliberately left at `e841471` pending founder go to push them.
