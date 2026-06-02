@@ -3665,3 +3665,21 @@ The founder's homepage-rebuild brief arrived after this branch landed; verified 
 - **Flag #5 (type stack) RESOLVED by the founder's brief** — Archivo + Cormorant Garamond + Space Mono explicitly confirmed; the scoped implementation stands.
 - **Still open for the founder**: #2 lanes (brief says 8 with Architect/Lender top-level; repo canon `LANE_SLUGS` = 9 with them as Service-Provider subtypes — page keeps the 9 until called) · #8 pricing numbers (page stays number-free → `/pricing`) · #4 global `layout.tsx` "AI COO" default title · #1 clean seal swap to the shared `<Seal/>`/`BKG_SEAL_SRC` once `feat/viver-seal` (PR #13) merges · #6 "system of record" boldness · #7 GC-vs-Owner public narrative · #11 real social proof.
 - PR opened against `main` (`ef54dd3`). **PR only — do not merge** before the founder's preview pass (Vercel previews are SSO-gated; screenshots + audit above stand in).
+
+---
+
+## 2026-06-01 — Preview sign-in fix: Vercel env store found EMPTY, baseline restored (no secret values in this log)
+
+**Diagnosis.** "Auth service is not configured on this deployment" comes from `src/app/api/auth/signup-beta/route.ts` (guards `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`). The sign-IN path (`src/lib/supabase-browser.ts`, used by `/login` + `AuthModal`) needs `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (falls back to a placeholder host when absent). `/knowledge` queries PostgREST directly from the browser with the same public pair. No app-side Google/Clerk env exists (`signInWithOAuth` → provider config lives in Supabase).
+
+**Audit (the hypothesis was wrong in an important way).** Not Production-only scoping: `vercel env ls` + the API showed the project env store **completely EMPTY** — zero vars in any environment. Live production works only because its deployment snapshotted env at build time; every build since (all branch previews) was keyless. Who/what wiped it is unknown — needs the dashboard audit log once 2FA works.
+
+**Fix.** Set via API (upsert) for **Production + Preview + Development**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL` — values sourced authoritatively from the Supabase MCP (`get_project_url`, `get_publishable_keys`, project `vlezoyalutexenbnzzui`), not guessed. **NOT set: `SUPABASE_SERVICE_ROLE_KEY`** (secret; cannot be pulled — the store was empty; founder to supply). **⚠️ PROD-DEPLOY FREEZE: do not push `main`/deploy production until the service key is restored**, or signup + ~57 service-role server routes break on the new prod deployment.
+
+**Redeploy + verify** (old `edveg5jj3` preview left frozen, not tested): empty commit `715f6b9` → new preview `…-5dao4o1k2-…` READY. Verified: compliance API (anon path) **503 → 200** on the new preview; locally with the pulled Preview env (`.env.local`, gitignored, deleted after): `/login` dummy submit → **"Invalid login credentials"** via `POST …supabase.co/auth/v1/token` (real Supabase round-trip; config banner gone) [screenshot]; `/knowledge` renders entities + live category counts [screenshot]; production re-probed unaffected (signup-beta returns validation 400; domain 200).
+
+**Flagged, not fixed (out of scope):**
+1. **Google OAuth provider not enabled on the Supabase project** — `…/auth/v1/authorize?provider=google` → `"provider is not enabled"`. "Continue with Google" is broken everywhere incl. prod, and predates this; needs a Google OAuth client + Supabase auth settings (dashboard), not a Vercel var.
+2. **`/knowledge` hardcodes `limit=500`** and derives its header from fetched rows → shows "500 ENTITIES · 2 TYPES", can never show the true ~2,256/all types. Suggest a `count=exact` head query (or server count) + paging.
+3. Email/password **sign-UP** (beta route) stays 500 until `SUPABASE_SERVICE_ROLE_KEY` lands.
+4. Step-6 RLS fallback **not triggered**: prod anon reads verified working (homepage live stats, compliance API on prod) — no policy changes made.
