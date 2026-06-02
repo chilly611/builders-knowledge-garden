@@ -136,7 +136,7 @@ export default function SplashIntro({ onComplete }: { onComplete: () => void }) 
         <div style={{ animation: "splashLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1)" }}>
           <img
             ref={logoRef}
-            src="/logo/b_transparent_512.png"
+            src="/brand/bkg-mark.png"
             alt="Builder's Knowledge Garden"
             style={{ width: "clamp(160px, 35vw, 280px)", height: "auto" }}
             crossOrigin="anonymous"
@@ -145,7 +145,7 @@ export default function SplashIntro({ onComplete }: { onComplete: () => void }) 
       )}
       {/* Hidden img for pixel sampling during explode */}
       {phase !== "logo" && (
-        <img ref={logoRef} src="/logo/b_transparent_512.png" alt="" style={{ display: "none" }} crossOrigin="anonymous" />
+        <img ref={logoRef} src="/brand/bkg-mark.png" alt="" style={{ display: "none" }} crossOrigin="anonymous" />
       )}
       {/* Particle canvas */}
       <canvas ref={canvasRef} style={{

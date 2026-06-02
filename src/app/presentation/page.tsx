@@ -90,7 +90,7 @@ export default function PresentationPage(){
     <div style={{position:"sticky",top:0,zIndex:100,background:"rgba(247,248,250,.92)",backdropFilter:"blur(16px)",borderBottom:"1px solid #e2e6ec",padding:"12px 0"}}>
       <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={34} height={34} style={{borderRadius:10}} />
+          <Image src="/brand/bkg-mark.png" alt="Builder's KG" width={34} height={34} style={{borderRadius:10}} />
           <div><div style={{fontSize:14,fontWeight:700}}>Builder&apos;s Knowledge Garden</div><div style={{fontSize:9,color:"#7a8a9a",letterSpacing:2,textTransform:"uppercase"}}>complete platform architecture · march 2026</div></div>
         </div>
         <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{SLIDES.map((s,i)=><button key={i} onClick={()=>go(i)} style={{padding:"5px 12px",borderRadius:16,border:sl===i?"1.5px solid #1a2433":"1px solid #e2e6ec",background:sl===i?"#1a2433":"#fff",color:sl===i?"#fff":"#7a8a9a",fontSize:10,fontWeight:500,cursor:"pointer",transition:".2s",whiteSpace:"nowrap"}}>{s.lb}</button>)}</div>
@@ -101,7 +101,7 @@ export default function PresentationPage(){
     {/* ═══ COVER ═══ */}
     {cur==="cover"&&<Sec>
       <div style={{textAlign:"center",paddingTop:32}}>
-        <Rv><div style={{display:"flex",justifyContent:"center",marginBottom:18}}><Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={80} height={80} style={{filter:"drop-shadow(0 4px 16px rgba(29,158,117,0.3))"}} /></div></Rv>
+        <Rv><div style={{display:"flex",justifyContent:"center",marginBottom:18}}><Image src="/brand/bkg-mark.png" alt="Builder's KG" width={80} height={80} style={{filter:"drop-shadow(0 4px 16px rgba(29,158,117,0.3))"}} /></div></Rv>
         <Rv delay={100}><div style={{fontSize:9,letterSpacing:3,textTransform:"uppercase",color:C.br,fontWeight:600}}>The Operating System for the $17T Construction Economy</div></Rv>
         <Rv delay={200}><h1 style={{fontSize:38,fontWeight:700,margin:"12px 0",lineHeight:1.2,background:`linear-gradient(135deg,#1a2433 40%,${C.ac})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>The Builder&apos;s<br/>Knowledge Garden</h1></Rv>
         <Rv delay={300}><p style={{fontSize:14,color:"#5a6a7a",maxWidth:520,margin:"0 auto 16px",lineHeight:1.7}}>One platform. Every phase. 40 structured databases. Voice-first. AI-native. The thing that makes every competitor look like a point solution.</p></Rv>

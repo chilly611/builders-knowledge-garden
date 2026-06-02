@@ -3705,3 +3705,13 @@ Replaced the umbrella "tree" motion mark in the shared App Shell with the **BKG 
 **Verify (preview, `:3210`, `--webpack` — Turbopack rejects the symlinked `node_modules`):** killerapp shell + Owner home both resolve the seal to `…/assets/bkg/hammer-roots-mark-motion.mp4` + emblem poster (all instances); container bg `#F2E9D2` paper-cream (no pure white), no red, no console errors; video loads `readyState 4`. Animation = the umbrella's proven `autoPlay loop muted` mechanism (the headless compositor won't advance the media clock, so frame-advance is verified by code, not pixels). Reduced-motion verified by code path + poster reachability (the preview env can't emulate the media query). Owner home otherwise unchanged.
 
 **NOT done (by design):** not merged, not deployed (PR only). Dev `.env.local` (same-project anon key, sourced from the EWG `.env` on the shared `vlezoyalutexenbnzzui` instance) is gitignored and not committed.
+
+---
+
+## 2026-06-01 — Logo rollout: old "B" → Viver seal everywhere (feat/seal-rollout)
+
+Founder go on the rollout plan. PR #13 (app-shell seal) was rebased onto main (clean; the worktree's symlinked `node_modules` had to become a real clone — third worktree with that trap) and ff-merged (`e270541`). This branch then kills the remaining "B"s:
+- **`brand/Logo.tsx` repointed by file-swap:** all four `public/brand/bkg-mark{,-light,-dark,-wood}.png` regenerated as **512×512 squares** from the canonical `brand_assets` emblem (old files were 327×512 portrait; square call-sites would distort a portrait file — and a cover-crop clipped the hammer, caught + fixed before commit). Variant API untouched; **single plate serves all four variants for now** (the emblem carries its own cream ground; bespoke light/dark/wood renders are a later file-drop, founder's earlier open question resolved pragmatically).
+- **7 direct refs in 5 files** (`/launch`, `/profile`, `/knowledge`, `/presentation` ×2, `SplashIntro` ×2) repointed `/logo/b_transparent_512.png` → `/brand/bkg-mark.png`; zero `b_transparent_512` refs remain in `src/`.
+- **Defensive:** `public/logo/b_transparent_512.png` itself also seal-swapped (square) for anything unswept (e.g. archived HTML).
+- Build ✓. Social cards/favicons are PR #15 (separate, pending).
