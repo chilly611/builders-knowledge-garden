@@ -3683,3 +3683,7 @@ The founder's homepage-rebuild brief arrived after this branch landed; verified 
 2. **`/knowledge` hardcodes `limit=500`** and derives its header from fetched rows → shows "500 ENTITIES · 2 TYPES", can never show the true ~2,256/all types. Suggest a `count=exact` head query (or server count) + paging.
 3. Email/password **sign-UP** (beta route) stays 500 until `SUPABASE_SERVICE_ROLE_KEY` lands.
 4. Step-6 RLS fallback **not triggered**: prod anon reads verified working (homepage live stats, compliance API on prod) — no policy changes made.
+
+### Addendum — service key restored, prod-deploy freeze LIFTED (names only)
+
+Founder supplied the modern **`sb_secret_…`** Supabase secret key; set as `SUPABASE_SERVICE_ROLE_KEY` (type *sensitive*) for **Production + Preview** (Vercel rejects sensitive vars on the development target — local dev uses `.env.local`). Works drop-in for the legacy var name: redeployed the verified preview build (`…-79ee4b98c-…`) and the signup-beta probe flipped **500 "not configured" → 400 "A valid email is required."** — admin client constructs, sign-UP path configured. Anon path re-confirmed 200; production untouched and healthy. **Env store is now complete → the prod-deploy freeze is lifted; pushes to `main` are safe again.** Outstanding (unchanged): enable the Google provider in Supabase (broken everywhere, pre-existing); `/knowledge` `limit=500` header bug; rotate the `sb_secret` key post-crunch (it transited chat).
