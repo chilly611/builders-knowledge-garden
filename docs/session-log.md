@@ -3655,3 +3655,13 @@ Not a broken fetch. `STATS` were **hardcoded constants** gated behind an Interse
 
 ### Not done (by design)
 PR not merged (PR only). Global `layout.tsx` title + constitution "AI COO" left for the founder. Pricing numbers pending. Shared `GlobalAiFab`/`CopilotPanel` styling untouched. Seal swap pending the `viver-seal` stream landing in `brand_assets`.
+
+### Addendum 2026-06-01 — independent verification + PR (integration session)
+
+The founder's homepage-rebuild brief arrived after this branch landed; verified the branch satisfies it end-to-end instead of rebuilding.
+
+- **Production build now verified** — `next build` ✓ (`/` route = ƒ). The worktree's `node_modules` was a **symlink** (fine for the webpack dev preview above, fatal for Turbopack: "Symlink [project]/node_modules is invalid"); replaced with a real clone (`cp -Rc`). Environment-only — no code change. Note for sibling streams: Turbopack needs a real `node_modules` per worktree.
+- **Rendered audit (prod server :3301)**: GC-clarity `<title>`; counters render **$17T / 2,256 / 44 / 7** with no zeros anywhere; hammer-roots plate in nav/hero/footer via `next/image`; **0** banned markers (`#E8443A`, dark/pure-white blocks, "CRM", "COMING SOON", "AI COO", "Six killer products"); herbarium tokens in use; 9 lanes GC-first with the "Architect, engineer, inspector, lender…" Service-Provider subtype line; 7 stages Size up→Reflect; ask-the-garden fab present, bloom compass absent. Desktop + 375 px screenshots clean (wordmark hides, no overflow); browser console clean.
+- **Flag #5 (type stack) RESOLVED by the founder's brief** — Archivo + Cormorant Garamond + Space Mono explicitly confirmed; the scoped implementation stands.
+- **Still open for the founder**: #2 lanes (brief says 8 with Architect/Lender top-level; repo canon `LANE_SLUGS` = 9 with them as Service-Provider subtypes — page keeps the 9 until called) · #8 pricing numbers (page stays number-free → `/pricing`) · #4 global `layout.tsx` "AI COO" default title · #1 clean seal swap to the shared `<Seal/>`/`BKG_SEAL_SRC` once `feat/viver-seal` (PR #13) merges · #6 "system of record" boldness · #7 GC-vs-Owner public narrative · #11 real social proof.
+- PR opened against `main` (`ef54dd3`). **PR only — do not merge** before the founder's preview pass (Vercel previews are SSO-gated; screenshots + audit above stand in).
