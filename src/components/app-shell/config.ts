@@ -11,13 +11,28 @@ import type { ShellConfig, ShellNavItem, ShellBudgetCell, MoneyState } from './t
 import type { LedgerResult } from './useProjectLedger';
 
 /**
- * Canonical animated seal — the umbrella "tree" mark from the public
- * `brand-assets` bucket. DB `storage_path` is relative to an `assets/` root,
- * so the public object lives under `…/brand-assets/assets/umbrella/…`.
+ * Canonical animated seal — the BKG "Viver" mark from the public `brand-assets`
+ * bucket: a hammer whose handle becomes roots (herbarium plate, self-animating).
+ * DB `storage_path` is relative to an `assets/` root, so the public object lives
+ * under `…/brand-assets/assets/bkg/…` (the `assets/` prefix quirk).
  */
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vlezoyalutexenbnzzui.supabase.co';
-export const SEAL_SRC = `${SUPABASE_URL}/storage/v1/object/public/brand-assets/assets/umbrella/tree-umbrella-mark-motion-a.mp4`;
+const BRAND_ASSETS = `${SUPABASE_URL}/storage/v1/object/public/brand-assets/assets`;
+
+/** Animated BKG seal (brand_assets garden_scope='bkg', asset_type='motion'). */
+export const BKG_SEAL_SRC = `${BRAND_ASSETS}/bkg/hammer-roots-mark-motion.mp4`;
+/** Static herbarium emblem — video poster + prefers-reduced-motion fallback. */
+export const BKG_SEAL_POSTER = `${BRAND_ASSETS}/bkg/hammer-roots-emblem.png`;
+
+/**
+ * Parent Knowledge Gardens mark — the umbrella "tree" motion. Retained for the
+ * cross-garden switcher (the level ABOVE BKG); no longer the BKG shell seal.
+ */
+export const UMBRELLA_SEAL_SRC = `${BRAND_ASSETS}/umbrella/tree-umbrella-mark-motion-a.mp4`;
+
+/** @deprecated Back-compat alias — the shell seal is now {@link BKG_SEAL_SRC}. */
+export const SEAL_SRC = BKG_SEAL_SRC;
 
 /** Plain-language subtitle under each journey stage. */
 export const STAGE_PLAIN: Record<string, string> = {

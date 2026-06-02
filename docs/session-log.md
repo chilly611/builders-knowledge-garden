@@ -3687,3 +3687,21 @@ The founder's homepage-rebuild brief arrived after this branch landed; verified 
 ### Addendum — service key restored, prod-deploy freeze LIFTED (names only)
 
 Founder supplied the modern **`sb_secret_…`** Supabase secret key; set as `SUPABASE_SERVICE_ROLE_KEY` (type *sensitive*) for **Production + Preview** (Vercel rejects sensitive vars on the development target — local dev uses `.env.local`). Works drop-in for the legacy var name: redeployed the verified preview build (`…-79ee4b98c-…`) and the signup-beta probe flipped **500 "not configured" → 400 "A valid email is required."** — admin client constructs, sign-UP path configured. Anon path re-confirmed 200; production untouched and healthy. **Env store is now complete → the prod-deploy freeze is lifted; pushes to `main` are safe again.** Outstanding (unchanged): enable the Google provider in Supabase (broken everywhere, pre-existing); `/knowledge` `limit=500` header bug; rotate the `sb_secret` key post-crunch (it transited chat).
+## 2026-06-01 — Viver seal becomes the canonical BKG mark (feat/viver-seal)
+
+Replaced the umbrella "tree" motion mark in the shared App Shell with the **BKG "Viver" hammer-roots mark** (a hammer whose handle becomes roots — herbarium plate, self-animating). Branched `feat/viver-seal` off `origin/main` (`ef54dd3`). **PR only — not merged, not deployed.**
+
+**Asset reality (diagnosis stopped + asked first):** there is no `bkg-seal.svg` anywhere — not on disk, not in git history (any branch), not in the `brand-assets` bucket, not in any session transcript; the prior run of this task was cut off at the same point. The real mark the founder wants "living everywhere" is a **motion MP4 + static PNG emblem**, not an SVG: `BKG hammer roots animated logo.mp4` (960×960, 5.08s) + `BKG emblem (hammer + roots).png` (1024×1024) from `~/Downloads`. This fits the existing video-based `Seal` cleanly (asset swap, no SVG refactor).
+
+**brand_assets is now the source of truth for BKG** (none existed before — only `umbrella`/`hkg`/`tkg`/`cross-cutting`). Uploaded to the public `brand-assets` bucket and inserted 2 rows (`garden_scope='bkg'`), mirroring the `assets/`-prefix-stripped `storage_path` convention:
+- `bkg/hammer-roots-mark-motion.mp4` → public at `…/brand-assets/assets/bkg/hammer-roots-mark-motion.mp4` (`asset_type='motion'`, slug `bkg-hammer-roots-motion`, id `92975b90…`).
+- `bkg/hammer-roots-emblem.png` (`asset_type='plate'`, slug `bkg-hammer-roots-emblem`, id `1bebcfe8…`; parent of the motion row).
+
+**Wiring** (`src/components/app-shell/`, 3 files):
+- `config.ts` — added `BKG_SEAL_SRC` (motion) + `BKG_SEAL_POSTER` (emblem) + `UMBRELLA_SEAL_SRC`. The umbrella is **kept as the parent Knowledge Gardens / garden-switcher mark** (not deleted). `SEAL_SRC` is now a back-compat alias → `BKG_SEAL_SRC`.
+- `Seal.tsx` — defaults to the BKG mark; `<video>` gets the emblem `poster`; **prefers-reduced-motion** renders the static emblem via a non-playing `<video preload="none" poster>` (no entrance, no breathe, no video fetch). Framer spring + 6.5s breathe preserved for normal motion. `types.ts` doc updated.
+- Swapping the `Seal` default flips every render site — killerapp shell `ShellStrips` (52px) + Owner hero (76px) — with **no layout change**. `parts.tsx` `GlobalStrips`/`SealMark`/`BkgMark` left untouched (dead/legacy, not rendered; its local `/owner-lane/bkg-logo.mp4` is byte-identical to the canonical MP4).
+
+**Verify (preview, `:3210`, `--webpack` — Turbopack rejects the symlinked `node_modules`):** killerapp shell + Owner home both resolve the seal to `…/assets/bkg/hammer-roots-mark-motion.mp4` + emblem poster (all instances); container bg `#F2E9D2` paper-cream (no pure white), no red, no console errors; video loads `readyState 4`. Animation = the umbrella's proven `autoPlay loop muted` mechanism (the headless compositor won't advance the media clock, so frame-advance is verified by code, not pixels). Reduced-motion verified by code path + poster reachability (the preview env can't emulate the media query). Owner home otherwise unchanged.
+
+**NOT done (by design):** not merged, not deployed (PR only). Dev `.env.local` (same-project anon key, sourced from the EWG `.env` on the shared `vlezoyalutexenbnzzui` instance) is gitignored and not committed.

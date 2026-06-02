@@ -60,7 +60,7 @@ export interface ShellConfig {
   /** Element 4 — what project you're on. */
   projectId: string | null;
   projectName: string;
-  /** Animated seal source (umbrella mark from brand-assets by default). */
+  /** Animated seal source (BKG "Viver" hammer-roots mark from brand-assets by default). */
   sealSrc: string;
   budget: ShellBudget;
   journey: ShellJourney;
