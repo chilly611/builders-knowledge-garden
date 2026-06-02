@@ -3715,3 +3715,9 @@ Founder go on the rollout plan. PR #13 (app-shell seal) was rebased onto main (c
 - **7 direct refs in 5 files** (`/launch`, `/profile`, `/knowledge`, `/presentation` ×2, `SplashIntro` ×2) repointed `/logo/b_transparent_512.png` → `/brand/bkg-mark.png`; zero `b_transparent_512` refs remain in `src/`.
 - **Defensive:** `public/logo/b_transparent_512.png` itself also seal-swapped (square) for anything unswept (e.g. archived HTML).
 - Build ✓. Social cards/favicons are PR #15 (separate, pending).
+
+---
+
+## 2026-06-01 — Social cards + favicons: old "B" → Viver seal (fix/social-card-seal)
+
+Founder shared the live link in iMessage — the preview card showed the old "B": `og:image` (layout + homepage metadata) points at `public/og/og-light.png`, and the corner icon at `/logo/b_icon_*.png` / `favicon.ico` — all still the old mark. Fix is asset-only (paths unchanged → zero code edits): regenerated `og/og-light.png` (1200×630, emblem on corner-sampled plate-cream canvas, 172KB) + all 8 icon PNGs at their native dims + `favicon.ico` (PNG-in-ICO, 48px) from the canonical `brand_assets` emblem (`bkg-hammer-roots-emblem`, bucket `brand-assets`, `assets/bkg/hammer-roots-emblem.png` — `intended_use` includes `favicon-source`, approved_for_production). Build ✓. Note: iMessage/socials cache link previews — old threads keep the stale card; fresh shares pick up the seal after deploy.
