@@ -6,6 +6,21 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-02 — [Cowork] Session: Deploy/domain forensics + context-routing plan (read-only)
+**Agent:** Cowork (Opus). Read-only investigation; deliverables on branch `docs/deploy-context-forensics-2026-06-02` (off main 4fa7839).
+**Produced:** `docs/findings/deploy-domain-2026-06-02.md` (deploy/domain/env forensics, live-confirmed via read-only Vercel API) · `docs/plans/context-routing-plan.md` (per-project context-routing root cause + staged plan).
+**Key findings:**
+- Single Vercel team (`team_4qRqC7dVa1IrrGvTpcptHf4o`); the BKG app is the project **`app`** (`prj_1WUoho…`). No separate `builders-knowledge-garden` project — "team vs personal app" was a misconception.
+- `app` is the sole production project, git-connected to the repo, all-branch CD (main→prod, branches→preview). 23:43 06-01 prod deploy = `main`@`e270541`. Domain `builders.theknowledgegardens.com` is on `app`, verified.
+- **Env-incident root cause:** Supabase + Anthropic keys scoped **production-only** on `app`, absent from preview/dev → preview sign-in broke ("env store found empty"); prod unaffected. Recommended (un-executed) fix: scope the 4 keys to preview+development.
+- `/john` is **not** a route and never was — it's the person **John Bou** (GC demo persona, Michael Bou's brother).
+- Context-routing root cause: the 7 stage pages read static `@/lib/demo/marin-4000` (+ SF-hardcoded `CodeLookup`) instead of the active project → same codes/cost-split/Marin numbers everywhere.
+**Guardrails honored:** no Vercel mutations, no env/domain/deploy changes, no code changes, no merges.
+**Follow-ups:** push the docs branch; rotate the Vercel token (pasted in chat); scope preview/dev env vars; confirm Clerk status; implement the context-routing plan when ready.
+
+---
+
+
 ## 2026-05-29 — [Cowork] Session: FUNCTIONAL Owner Lane (real persisted approval loop)
 **Agent:** Cowork (Opus)
 **Commits:** `ed455a0` (structure + data + permissions) · `f165730` (Framer Motion) — local; awaiting founder push.

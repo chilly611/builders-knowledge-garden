@@ -1,3 +1,19 @@
+## ═══ NOW — Deploy/domain forensics + context-routing plan (2026-06-02, Cowork / read-only) ═══
+
+Two read-only deliverables on branch `docs/deploy-context-forensics-2026-06-02` (off main 4fa7839):
+- [x] `docs/findings/deploy-domain-2026-06-02.md` — deploy/domain/env forensics (live-confirmed via read-only Vercel API).
+- [x] `docs/plans/context-routing-plan.md` — per-project context-routing root cause + staged plan.
+
+**Confirmed:** `app` is the sole BKG prod project (all-branch CD); domain correct; **env root cause = Supabase/Anthropic keys scoped production-only, missing from preview/dev** (broke preview sign-in). `/john` = John Bou (no route).
+
+**Open (founder):**
+- [ ] Push the docs branch: `git push origin docs/deploy-context-forensics-2026-06-02`
+- [ ] Rotate the Vercel token pasted during the investigation
+- [ ] (Optional) Scope `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `ANTHROPIC_API_KEY` to Preview+Development on `app`
+- [ ] (Future) Implement the context-routing plan — per-project loader; thread jurisdiction/projectType into stage tools. No schema change.
+
+---
+
 ## ═══ NOW — STAGE 2 AMENDMENT: ledger-bound chrome (dogfood pass-01) (2026-05-31, Claude Code / Opus) ═══
 
 Blocking dogfood fixes on top of the shared shell. Branch `feat/shared-app-shell` (commits `dcc5ca2`, `5003c80`, pushed → Vercel preview).

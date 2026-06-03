@@ -2425,3 +2425,13 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The pattern:** The lane-specific client (`OwnerHomeClient`) toggles a body class on mount/unmount (`document.body.classList.add('bkg-lane-owner')`), and the lane's own scoped CSS hides the shared elements via **stable `aria-label` selectors** (`[aria-label="Project chrome"]`, `[aria-label="Open workflow navigator"]`) gated on that body class. Zero edits to the shared components, zero impact on other lanes, race-free enough (hides as the lane mounts). Brief flash of generic chrome during async lane-resolution is acceptable for an MLP.
 
 **The rule:** To scope-suppress shared, layout-level chrome for a single client surface, prefer a body-class + CSS-on-stable-selectors hook over prop-drilling/context through the layout or editing the shared component. Verify the target elements expose stable `aria-label`/`role` first (they did) so the selector can't silently rot.
+
+## 2026-06-02 — Token-gated infra forensics from the Cowork sandbox: the token lives on the Mac, not here
+
+**Context:** Vercel deploy/domain forensics. The repo brief said "VERCEL_TOKEN already set" — but that's the founder's *Mac shell*, not the Cowork sandbox (no `.env` here, not in env). Authenticated Vercel API calls can't run from the sandbox.
+
+**What worked:** drive the read-only `GET`s from the founder's Mac terminal (token stays in their `$VERCEL_TOKEN`), one command at a time, paste output back for me to parse. Two traps caught: (1) `r.get('deployments',[])` prints clean-empty whether the list is truly empty OR the body was `{"error":…}` (missing token / missing `teamId`) — always surface the raw error branch; (2) team projects need `?teamId=` or every call returns empty/forbidden.
+
+**Rule:** For Vercel (or any token-gated infra) forensics from Cowork, don't expect the token in-sandbox. Either connect the Vercel MCP connector (OAuth, read tools) or hand the founder read-only `curl` one-liners that keep the token in their shell — never have them paste the token into chat; if it lands there, flag it for rotation. Parsers must include the error branch and `teamId`.
+
+**Identity-before-theory:** "two projects (team + personal)" was a misconception — it was one team with a project named `app`. Confirm project identity via `/v9/projects` before reasoning about "what keeps deploying it"; a single all-branch-CD project explains constant deploys with no duplicate.
