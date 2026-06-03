@@ -1,6 +1,6 @@
 # Deploy + Domain Forensics — 2026-06-02
 
-_Status: read-only investigation. **No Vercel mutations, no env changes, no deploys, no domain moves.** This is a report + a recommended (un-executed) morning action._
+_Status: read-only investigation — **live-confirmed via read-only Vercel API on 2026-06-02 (see §0.5).** No Vercel mutations, no env changes, no deploys, no domain moves. This is a report + a recommended (un-executed) morning action._
 _Author: Cowork (Opus), read-only pass._
 
 ---
@@ -16,9 +16,27 @@ What I could **not** read (and why):
 - **The live Vercel API.** `VERCEL_TOKEN` is *"already set in the user's shell environment"* (`docs/strategy/cowork-brief-v3-killerapp-rehaul.md:89`) — i.e. on the Mac, **not** in this sandbox. There is no `.env`/`.env.local` here and the token is not in the sandbox environment. So the three live-API items below (current domain→project attachment, the `app` project's Git connection, current env-var scoping) are marked **CONFIRM-PENDING** with the exact read-only call to run.
 - A **Vercel MCP connector** has been surfaced in chat (read tools: `list_projects`, `get_project`, `list_deployments`, `get_deployment`, `list_teams`). Connecting it (or pasting the token output) lets me fill the CONFIRM-PENDING sections without any mutation.
 
-Two Vercel projects are in play:
-- **Team:** `builders-knowledge-garden` (the intended production project).
-- **Personal:** `app` — project id **`prj_1WUohosoE53PfQVOyyoDxsCIVK09`** (recorded in `docs/session-log.md:627`).
+Projects in play (corrected by the live check below): a **single team** `team_4qRqC7dVa1IrrGvTpcptHf4o` holds all Vercel projects. The BKG app is the project literally named **`app`** (`prj_1WUohosoE53PfQVOyyoDxsCIVK09`). **There is no `builders-knowledge-garden` project** — the "team project vs personal app" framing in the original brief was a misconception.
+
+---
+
+## 0.5 LIVE CONFIRMATION — read-only Vercel API, 2026-06-02
+
+All previously-CONFIRM-PENDING items were resolved via read-only `GET`s (token in the founder's shell, run on the Mac). Headlines:
+
+- **One team, one BKG project.** All projects under `team_4qRqC7dVa1IrrGvTpcptHf4o`; the BKG app = `app` (`prj_1WUoho…`). No separate `builders-knowledge-garden` project exists.
+- **`app` is THE production project**, git-connected to `chilly611/builders-knowledge-garden`, auto-deploying **every push** — `main` → production, feature branches → preview. (It even built a preview of this docs branch, `ac121e1`, at 15:02 on 06-02.) The **23:43 06-01 production deploy was `main` @ `e270541`** (Viver app-shell). This is normal CD, **not** a rogue/duplicate deployer. `main` has since advanced to **`f2fc9cf`** (deployed 06-02 11:41).
+- **Domain is correct.** `builders.theknowledgegardens.com` is attached to `app`, `verified=true`, `redirect=none`, serving production (plus the default `app-five-kohl-37.vercel.app`). **No domain move occurred and none is needed.**
+- **Env incident — ROOT CAUSE.** On `app`, the core auth keys are scoped to **`production` ONLY** and are **absent from `preview` + `development`**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`. That is precisely the "preview sign-in — env store found empty" symptom: `app` builds a preview for every feature-branch push, and those previews have no Supabase credentials. The 06-01 restore returned the keys to **production** but not preview/dev — which is why the live site works while preview sign-in broke.
+- **Also absent** (present in `.env.example`, not on the project): `SUPABASE_URL` (non-public; code reads `NEXT_PUBLIC_SUPABASE_URL`, so likely fine), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` (confirm Clerk is fully replaced by Supabase auth), `BRAVE_SEARCH_API_KEY`. `REPLICATE_API_TOKEN` is missing from `development` only. (Many extra real vars exist beyond `.env.example`: DOCUMENSO, KV/REDIS, POSTHOG, SENTRY×4, RESEND×2, OPENAI, STRIPE_PRICE/LINK×, SIGNATURE_PROVIDER, NEXT_PUBLIC_APP_URL — all scoped to all three envs.)
+
+### Revised recommended morning action — DO NOT auto-execute (env changes are out of scope per the fence)
+Production is healthy; **there is no rogue project or domain to fix.** The one real issue is **preview/development env scoping** on `app`:
+1. Add the 4 keys above to **Preview** (and Development): Vercel → `app` → Settings → Environment Variables → edit each → tick Preview + Development. First decide whether preview should reuse the prod Supabase project (`knowledge-gardens-prod`) or a separate preview instance. This restores preview sign-in.
+2. Confirm whether **Clerk** is still used; if it was fully replaced by Supabase auth, delete the stale `.env.example` lines; if still used, both Clerk keys are missing everywhere.
+3. **Rotate the Vercel token** that was pasted into chat during this investigation (Vercel → Account Settings → Tokens → delete + re-mint).
+
+> The original "what keeps deploying `app`" worry resolves to: **`app` is the legitimate prod project on normal all-branch CD** — not a misconfiguration. The actual incident was the env-store wipe whose restore missed the preview/dev scopes.
 
 ---
 
