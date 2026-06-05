@@ -2425,3 +2425,14 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The pattern:** The lane-specific client (`OwnerHomeClient`) toggles a body class on mount/unmount (`document.body.classList.add('bkg-lane-owner')`), and the lane's own scoped CSS hides the shared elements via **stable `aria-label` selectors** (`[aria-label="Project chrome"]`, `[aria-label="Open workflow navigator"]`) gated on that body class. Zero edits to the shared components, zero impact on other lanes, race-free enough (hides as the lane mounts). Brief flash of generic chrome during async lane-resolution is acceptable for an MLP.
 
 **The rule:** To scope-suppress shared, layout-level chrome for a single client surface, prefer a body-class + CSS-on-stable-selectors hook over prop-drilling/context through the layout or editing the shared component. Verify the target elements expose stable `aria-label`/`role` first (they did) so the selector can't silently rot.
+
+
+## 2026-06-05 — Jurisdiction labels: derive from the active project when the code data is statewide
+**Context:** Demo-polish FIX 2 — the Plan/Build code lookup showed "📍 San Francisco, CA" for a Marin project.
+**What happened:** I first recommended flattening the label to "California" to avoid mislabeling SF-only data as Marin. But the wired UpCodes rows are CA-*statewide* code (CRC / Title 24 / CALGreen) that apply in Marin — one topic already references "Marin's expansive clays". The founder chose "derive from the active project," which is both honest and more specific.
+**The rule:** When the underlying code data is statewide, label the lookup with the ACTIVE PROJECT's jurisdiction, not a flattened state name. Only fall back to a broader level if the data is genuinely jurisdiction-specific and doesn't cover the project's locale. Inspect what the data actually contains before choosing the label's specificity.
+
+## 2026-06-05 — Re-fetch origin/main immediately before merging a worktree branch
+**Context:** Merging `fix/demo-polish-0603` → main after the fixes were verified.
+**What happened:** The fast-forward push was rejected — a parallel commit (`f2fc9cf`) had landed on `main` after I branched, and stale `__locktest` / `*.lock.stale.*` files in `.git/refs` were silently breaking `git fetch`, so my `origin/main` ref looked current when it wasn't.
+**The rule:** Before merging, clear stale lock artifacts, run a clean `git fetch`, and compare `HEAD..origin/main`. If main moved, rebase onto current `origin/main` (check file overlap first), `--force-with-lease` the feature branch, then FF main. Note: with Vercel git-integration auto-deploy on `main`, a manual `vercel --prod` from a stale base can transiently roll back newer commits — deploy the merged HEAD last.

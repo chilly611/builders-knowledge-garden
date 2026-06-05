@@ -3721,3 +3721,31 @@ Founder go on the rollout plan. PR #13 (app-shell seal) was rebased onto main (c
 ## 2026-06-01 — Social cards + favicons: old "B" → Viver seal (fix/social-card-seal)
 
 Founder shared the live link in iMessage — the preview card showed the old "B": `og:image` (layout + homepage metadata) points at `public/og/og-light.png`, and the corner icon at `/logo/b_icon_*.png` / `favicon.ico` — all still the old mark. Fix is asset-only (paths unchanged → zero code edits): regenerated `og/og-light.png` (1200×630, emblem on corner-sampled plate-cream canvas, 172KB) + all 8 icon PNGs at their native dims + `favicon.ico` (PNG-in-ICO, 48px) from the canonical `brand_assets` emblem (`bkg-hammer-roots-emblem`, bucket `brand-assets`, `assets/bkg/hammer-roots-emblem.png` — `intended_use` includes `favicon-source`, approved_for_production). Build ✓. Note: iMessage/socials cache link previews — old threads keep the stale card; fresh shares pick up the seal after deploy.
+
+
+---
+
+## 2026-06-05 — [Cowork] Session: Demo polish — AI COO title, code-lookup jurisdiction, Reflect copy
+**Agent:** Cowork (claude-opus-4-8)
+
+**What was built (branch `fix/demo-polish-0603`, off main; merged → `main` as `0c78d87`):**
+- **FIX 1 — retired "AI COO" title.** `src/app/layout.tsx` `metadata.title.default`: "The AI COO for Construction" → "run the whole build from one place". Fixes the default `<title>` on `/intro` + the 7 `/killerapp/stages/*` pages (homepage already overrode it). Titles/meta only — body copy and system prompts left intact per scope.
+- **FIX 2 — code lookup jurisdiction now derives from the active project.** `CodeLookup` gained a `jurisdiction` prop; the `plan` + `build` pages pass `MARIN_PROJECT.jurisdiction` ("Marin County, CA"), replacing the hardcoded `SF_JURISDICTION_LABEL` for the pin, idle text, and the specialist `jurisdiction` arg. Coherent because the wired UpCodes rows are CA-statewide code (CRC / Title 24 / CALGreen) that apply in Marin (one topic already cites "Marin's expansive clays"). Softened one SF-specific CALGreen phrase to Bay-Area framing; verify-with-AHJ note retained; curated fallback unchanged so the lookup never empties.
+- **FIX 3 — removed false Reflect completion.** `reflect/page.tsx`: dropped "Project complete · 9 mo total · final variance −$8,300" (Build is at 42%) → "Close-out summary lands here when the build wraps"; kept the "alpha — coming soon" framing.
+
+**Verification:**
+- Local prod server (`next start` on :4322) checked: `/intro` `<title>` clean (0 "AI COO"); plan + build render "Marin County, CA" and 0 "San Francisco, CA"; reflect has 0 "Project complete"/"final variance"; `/`, `/intro`, `/killerapp`, plan/build/reflect/size-up all return 200.
+- `npm run build` (local) and the Vercel build both green — 0 TS errors.
+
+**Deploy:**
+- Preview: https://builders-knowledge-garden-qji5tt9gh-the-knowledge-gardens.vercel.app (Vercel login-walled; verified via the local server instead).
+- Prod (CLI `vercel --prod`): `0c78d87` → https://builders-knowledge-garden.vercel.app.
+
+**Key decisions / notes:**
+- FIX 2 direction = "derive from active project" (founder's choice over my initial "California" suggestion); validated against the seed data before implementing.
+- Worked in the isolated worktree `bkg-demo-polish`; did NOT touch the dirty `feat/shared-app-shell` clone.
+- `origin/main` had advanced by one commit (`f2fc9cf`, a GitHub web "Add files via upload") after branching; rebased onto it (no file overlap), `--force-with-lease`'d the branch, then FF-merged → `main`. My first manual `--prod` (pre-merge) briefly put prod behind `f2fc9cf`; the post-merge `--prod` of `0c78d87` restored the complete state.
+- Cleared stale `__locktest` / `*.lock.stale.*` junk in `.git` that was breaking `git fetch`.
+
+**Follow-up (not done):**
+- `MARIN_CODE_JURISDICTION` seed constant is still `'San Francisco, CA'` (now unused by `CodeLookup`; harmless, left as cleanup).

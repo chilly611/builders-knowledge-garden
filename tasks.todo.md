@@ -2596,3 +2596,10 @@ Items for the founder to handle from the Mac terminal (Cowork mount can't do the
       build 42%, week 17/37, framer "Ridgeline Framing" (seed `t-framing`;
       corrected 2026-05-29 from the export's "Tahoe Carpentry Co."), owners
       "Cody & Sara Harwell".
+
+
+## Shipped 2026-06-05 — demo polish (fix/demo-polish-0603 → main `0c78d87`, prod live)
+- [x] Retire "AI COO" default `<title>` (layout.tsx) — fixes /intro + 7 stage pages
+- [x] Code lookup jurisdiction derives from active project ("Marin County, CA"), not hardcoded SF
+- [x] Remove false Reflect "Project complete · −$8,300" line
+- [ ] **Cleanup:** `MARIN_CODE_JURISDICTION` seed constant is still `'San Francisco, CA'` and now unused by `CodeLookup` — delete it or repoint to `MARIN_LOCATION` to avoid latent confusion.
