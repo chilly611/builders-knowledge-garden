@@ -45,7 +45,7 @@ function ReflectBody() {
         </span>
       </section>
       <div style={{ marginTop: 'auto', padding: '12px 14px', borderRadius: 12, background: `${ACCENT}12`, borderLeft: `4px solid ${ACCENT}`, border: `1px solid ${ACCENT}55` }}>
-        <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>Project complete · 9 mo total · final variance −$8,300</div>
+        <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>Close-out summary lands here when the build wraps</div>
         <div style={{ marginTop: 3, fontSize: 12.5, color: colors.graphite }}>Capture lessons learned and add the Marin Farmhouse to the portfolio.</div>
       </div>
     </div>

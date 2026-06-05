@@ -1,5 +1,5 @@
 /**
- * Curated San Francisco / California residential code topics.
+ * Curated California residential code topics (CRC / Title 24 / CALGreen) — statewide, applied per the active project's jurisdiction.
  *
  * The brief's "UpCodes 200 rows already pulled" power the live lookup via the
  * compliance specialist (server-side `queryAllSources` → UpCodes adapter +
@@ -70,7 +70,7 @@ export const SF_CODE_TOPICS: CodeTopic[] = [
     section: 'CALGreen 4.408 — Construction waste reduction',
     phase: 'plan',
     plain:
-      'CALGreen requires diverting at least 65% of construction & demolition debris from landfill, with a waste-management plan and tracking. SF enforces this hard — line up a debris-box hauler that gives you diversion receipts before demo starts.',
+      'CALGreen requires diverting at least 65% of construction & demolition debris from landfill, with a waste-management plan and tracking. Bay Area building departments enforce this hard — line up a debris-box hauler that gives you diversion receipts before demo starts.',
   },
   {
     id: 'garage-separation',

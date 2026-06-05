@@ -130,7 +130,7 @@ function BuildStageBody() {
           <section style={{ ...sectionCard, minHeight: 220 }}>
             <h2 style={sectionHeading}>Plain-speak code lookup</h2>
             <div style={{ flex: 1, minHeight: 150 }}>
-              <CodeLookup phase="build" proMode={proMode} projectType={MARIN_PROJECT.project_type} />
+              <CodeLookup phase="build" proMode={proMode} projectType={MARIN_PROJECT.project_type} jurisdiction={MARIN_PROJECT.jurisdiction} />
             </div>
           </section>
 

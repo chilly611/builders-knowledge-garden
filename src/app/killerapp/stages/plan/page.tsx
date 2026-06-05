@@ -235,7 +235,7 @@ function PlanStageBody() {
         <section style={{ ...sectionCard, minHeight: 280 }}>
           <h2 style={sectionHeading}>Plain-speak code lookup</h2>
           <div style={{ flex: 1, minHeight: 160 }}>
-            <CodeLookup phase="plan" proMode={proMode} projectType={MARIN_PROJECT.project_type} />
+            <CodeLookup phase="plan" proMode={proMode} projectType={MARIN_PROJECT.project_type} jurisdiction={MARIN_PROJECT.jurisdiction} />
           </div>
         </section>
       </div>
