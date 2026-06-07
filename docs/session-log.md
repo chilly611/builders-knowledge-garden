@@ -3791,3 +3791,24 @@ Founder shared the live link in iMessage — the preview card showed the old "B"
 **Key decisions:** canonical-Marin-wins keeps the demo pixel-stable while the same code goes multi-tenant; broad scope (Team/Materials/Permits bound per-project, founder's call); no-project → Marin fallback. Hook name `useStageProject` is adjustable.
 
 **Follow-ups (not done):** per-project **team** beyond generic fallback (no `project_members`→roster fetch); permits from the GET `compliance` subobject; stub stages still stubs; the env service-key fix above.
+
+
+---
+
+## 2026-06-07 — [Cowork] Resolution: service-role key fixed → context-routing GATE passed live (fix/context-routing)
+**Agent:** Cowork (claude-opus-4-8) · addendum to the entry above (commit `5b13c70`, not amended)
+
+The `⚠️` infra blocker from the entry above is **resolved**. Root cause confirmed read-only: the server (auth + service client, [auth-server.ts](src/lib/auth-server.ts)) and the browser both resolve to `NEXT_PUBLIC_SUPABASE_URL` = **vlezoyalutexenbnzzui** — one unified DB, no fork. The 404s were purely a bad `SUPABASE_SERVICE_ROLE_KEY` (wrong project / wrong key-type — an anon-in-the-service-slot or rotated value; the copies in `bkg-bugfixes` *and* `bkg-sor-gate` were both stale). Founder supplied the correct `vlezoyalutexenbnzzui` `service_role` secret; set in `bkg-context-routing/.env.local` (in place, one line), dev server restarted.
+
+**GATE re-run LIVE through the real API (no stub):**
+- `GET /api/v1/projects?id=…` → **200** for Marin (`55730cd3`) and SoMa (`bb22c33d`) (was 404/404).
+- **SoMa (non-canonical) — real data from the API:** "Commercial TI in SoMa · 4,200 sqft · San Francisco, CA", budget **$0 / $1.25M**, CodeLookup 📍 **San Francisco, CA** (from the hydrated jurisdiction, not the fallback), generic permits — **no Marin bleed**.
+- **Marin (canonical) — fixtures win over a now-readable STALE DB row:** the API returns the diverged row (`__bkg_project__` = "Modern farmhouse in Marin" / **4,950 sqft** / **$2.32M** / "residential"), but the stage **displays** the canonical fixture: "Modern Farmhouse in Marin · **4,000 sqft** · Marin County, CA", **$312K / $1.65M**. `useStageProject`'s canonical-wins precedence actively shields the demo from the drift. Switching the active project flips every dimension. Screenshots captured.
+
+So the multi-tenant context routing is verified end-to-end against the real backend. (Side note for later: the prod Marin DB row at `55730cd3` is stale vs the canonical seed — harmless today because the canonical id is fixture-served, but a candidate for reconciliation.)
+
+**Follow-ups (logged, NOT fixed here — out of this PR's scope):**
+1. **ProjectContext re-hydrate-on-auth.** A *cold deep-link* to a non-canonical project (`/killerapp/stages/<stage>?project=<uuid>` as the first load) doesn't auto-hydrate: the hydrate effect fires on mount and races the Supabase session restore (amplified by dev StrictMode's double-invoke + fetch/cancel), and never re-fetches once auth warms (deps are `[projectId, fetchKey]`, not the session). Worked around in the GATE by driving the app's own `bkg:project:changed` event from a warm neutral page. Pre-existing in `ProjectContext` (this PR left it untouched). Candidate fix: re-trigger hydrate on `onAuthStateChange`/session-ready.
+2. **Prod sanity-check:** does a cold deep-link to a non-canonical project hydrate correctly in a **production build** (no StrictMode double-invoke)? Confirm whether #1 is dev-only or a real prod UX gap before investing in the fix.
+
+**State:** env one-line key fix + restart + live re-test done. **No DB writes; no merge** (founder merges). Stage-routing changes unchanged at `5b13c70`.
