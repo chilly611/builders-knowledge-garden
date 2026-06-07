@@ -3762,3 +3762,32 @@ Founder shared the live link in iMessage — the preview card showed the old "B"
 - **Single-source = bkg-main:** `tasks.todo.md` / `tasks.lessons.md` are canonical in `~/Developer/bkg-main`; the ~12 other worktree copies are stale and were left untouched.
 
 **Commit:** `docs: reset tasks to Phase 1 revenue + archive May batches` (tasks.todo.md, tasks.todo.archive.md, docs/session-log.md, tasks.lessons.md).
+
+
+---
+
+## 2026-06-07 — [Cowork] Single source of project context → multi-tenant-ready stages (fix/context-routing)
+**Agent:** Cowork (claude-opus-4-8) · worktree `bkg-context-routing` off `origin/main`
+
+**Problem:** the 7 lifecycle stage pages (`/killerapp/stages/*`) mounted Marin-bound. Each imported `MARIN_*` constants directly and called `ensureMarinActive()` on mount (force-writing `localStorage['bkg-active-project'] = MARIN_PROJECT_ID`), so building-type, jurisdiction, lane, budget, identity, and every tool (CodeLookup, VoiceFieldReport, TeamRoster, MaterialsCSI, PermitsList) were pinned to Marin regardless of the open project — and self-contradictory. The `2026-06-05` FIX 2 made CodeLookup's jurisdiction a prop, but the *callers* still hardcoded Marin. A `ProjectProvider` already existed + was mounted in `/killerapp/layout.tsx` — the stages just bypassed it.
+
+**What was built (a *wiring* job, not a rebuild):**
+- **`src/lib/hooks/useStageProject.ts` (NEW)** — the single normalized accessor every stage + tool reads. Composes the existing `useProjectContext()` with a canonical-Marin fallback. Precedence: (1) no active project → canonical Marin (display only, **never writes localStorage** — the anti-`ensureMarinActive`); (2) Marin id → canonical fixtures (so the DB row "Marin Farmhouse" can't override the canonical "Modern Farmhouse in Marin" — demo pixel-stable); (3) other id loaded → derive from the live `ProjectRecord`; (4) other id loading/404 → honest `loading`/`notFound`, **never Marin**. Exposes the 4 dimensions (`buildingType`/`buildingKind`, `jurisdiction`, `lane` = projectRole, `projectId`) + name/client/meta/sqft/budget/`isCanonicalDemo`.
+- **`src/lib/projects/projectToolData.ts` (NEW)** — `teamForProject`/`permitsForProject`/`materialsForProject`: canonical Marin → its real cast/permits/CSI-costs (derived from `MARIN_TEAM`/`MARIN_BUDGET_LINES`, no mirror constants); any other project → `undefined` → the component's generic default. A 2nd project never shows Marin's data (the routing proof).
+- **`src/lib/projects/buildingType.ts` (NEW)** — lifted `inferBuildingType` out of size-up so the hook + page share one copy.
+- **`src/contexts/ProjectContext.tsx`** — added `budget_amount` to `ProjectRecord` + mapping, **coerced via `coerceNum()`** (PostgREST serializes `numeric` as a JSON string → a raw `typeof === 'number'` check read every DB budget as unset; caught during the GATE).
+- **All 7 stage pages rewired** — dropped `MARIN_*` context imports + `ensureMarinActive()`; read `useStageProject()`; feed `StageShell` + tools from it. `seedMarinBudget()` gated on `isCanonicalDemo`. size-up + lock lost their bespoke `readActiveProjectId()` + fetch (duplicated ProjectProvider) and remount on project change via a `key`. `MARIN_PLAN_PHASES` kept as the shared demo sequencing seed.
+- **Out of scope (left intact):** ProjectProvider logic, the API, RLS, specialists, vestigial `MARIN_CODE_JURISDICTION`, lock's `MATERIAL_CHIPS`.
+
+**Verification (real browser, preview `ctx-routing` :3330, `--webpack`; signed in as `gc-trial-03`):**
+- **Marin (canonical, full real path):** header "Modern Farmhouse in Marin · 4,000 sqft · Marin County, CA", budget $312K/$1.65M, CodeLookup "📍 Marin County, CA · live", Permits = Marin set. Default (`/stages/plan` w/o `?project=`) also resolves to Marin. Screenshots captured.
+- **SoMa (non-canonical):** the **same** plan code rendered "Commercial TI in SoMa · 4,200 sqft · San Francisco, CA", budget $0/**$1.25M** (SoMa's, not Marin's), CodeLookup "📍 San Francisco, CA · live", Permits = **generic** (no Marin bleed). `window.__bkg_project__` hydrated with the real SoMa row. Switching the active project flips every dimension.
+- `tsc --noEmit` + `eslint` clean on all changed files. The only tsc/vitest failures are pre-existing (`__tests__` needing `jsdom` — missing dev-dep in worktree — + AI-specialist tests); none import the changed modules.
+
+**⚠️ Pre-existing infra blocker found (NOT this change):** the dev `.env.local` (copied from `bkg-bugfixes`) has a `SUPABASE_SERVICE_ROLE_KEY` **invalid for `vlezoyalutexenbnzzui`** → `GET /api/v1/projects?id=<uuid>` returns **404** for *every* real project (after a ~200–550 ms failed round-trip); `demo-`prefixed ids bypass the DB and 200. So the server can't read any project locally — Marin only renders via canonical fixtures. To finish the SoMa GATE I stubbed *only* that broken call with SoMa's actual DB row + dispatched the app's own `bkg:project:changed` event, exercising the real ProjectContext→useStageProject→components pipeline. **Founder action: drop a valid `vlezoyalutexenbnzzui` service-role key into the env** (env-store-wipe / sb_secret-rotation saga) — then the live 2nd-project path works with zero code change.
+
+**Data change (shared DB `vlezoyalutexenbnzzui`):** SoMa demo row (`bb22c33d…`) `budget_amount` was `NULL` → set to **1,250,000** (idempotent UPDATE, BKG's own `command_center_projects`) so the GATE shows a per-project budget. Captured as `supabase/migrations/20260607_demo_soma_budget.sql`.
+
+**Key decisions:** canonical-Marin-wins keeps the demo pixel-stable while the same code goes multi-tenant; broad scope (Team/Materials/Permits bound per-project, founder's call); no-project → Marin fallback. Hook name `useStageProject` is adjustable.
+
+**Follow-ups (not done):** per-project **team** beyond generic fallback (no `project_members`→roster fetch); permits from the GET `compliance` subobject; stub stages still stubs; the env service-key fix above.
