@@ -64,6 +64,18 @@ function writeLaneCookie(lane: string | null): void {
     `Max-Age=${LANE_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+/**
+ * Coerce a possibly-stringified numeric into a number (or null). PostgREST
+ * serializes `numeric` columns (e.g. budget_amount) as JSON strings to
+ * preserve precision, so a raw `typeof === 'number'` check downstream would
+ * treat a real budget as unset.
+ */
+function coerceNum(v: number | string | null | undefined): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export interface ProjectRecord {
   id: string;
   name: string | null;
@@ -75,6 +87,7 @@ export interface ProjectRecord {
   estimated_cost_low: number | null;
   estimated_cost_high: number | null;
   client_name?: string | null;
+  budget_amount?: number | null;
 }
 
 // LANE-INFRA (2026-05-22): mirror of `ProjectRole` in
@@ -251,6 +264,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           estimated_cost_low: json.estimated_cost_low ?? null,
           estimated_cost_high: json.estimated_cost_high ?? null,
           client_name: (json as { client_name?: string | null }).client_name ?? null,
+          budget_amount: coerceNum((json as { budget_amount?: number | string | null }).budget_amount),
         };
         setProject(record);
         setLoading(false);

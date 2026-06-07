@@ -17,15 +17,11 @@ import { StageShell, useStageChrome } from '@/components/stage-shell';
 import { AlphaStub, CodeLookup, VoiceFieldReport } from '@/components/stage-kit';
 import AttachmentSection from '@/components/AttachmentSection';
 import {
-  MARIN_PROJECT,
-  MARIN_PROJECT_ID,
-  MARIN_BUDGET_TOTAL,
-  MARIN_BUDGET_SPENT,
   MARIN_PLAN_PHASES,
   computeSchedule,
-  ensureMarinActive,
   seedMarinBudget,
 } from '@/lib/demo/marin-4000';
+import { useStageProject } from '@/lib/hooks/useStageProject';
 import { colors, fonts } from '@/design-system/tokens';
 import { fmtMoney } from '@/components/app-shell/config';
 
@@ -93,12 +89,13 @@ const sectionHeading: React.CSSProperties = {
 
 function BuildStageBody() {
   const { setBudget, proMode } = useStageChrome();
+  const sp = useStageProject();
 
   // Contract total holds steady; show the planned timeline for continuity.
   useEffect(() => {
     const s = computeSchedule(MARIN_PLAN_PHASES);
-    setBudget({ total: MARIN_BUDGET_TOTAL, timelineWeeks: s.totalWeeks });
-  }, [setBudget]);
+    setBudget({ total: sp.budgetTotal ?? 0, timelineWeeks: s.totalWeeks });
+  }, [setBudget, sp.budgetTotal]);
 
   return (
     <div
@@ -121,7 +118,7 @@ function BuildStageBody() {
         <section style={{ ...sectionCard, minHeight: 360 }}>
           <h2 style={sectionHeading}>Voice field report</h2>
           <div style={{ flex: 1, minHeight: 0 }}>
-            <VoiceFieldReport projectId={MARIN_PROJECT_ID} projectType={MARIN_PROJECT.project_type} />
+            <VoiceFieldReport projectId={sp.projectId} projectType={sp.buildingType} />
           </div>
         </section>
 
@@ -130,14 +127,14 @@ function BuildStageBody() {
           <section style={{ ...sectionCard, minHeight: 220 }}>
             <h2 style={sectionHeading}>Plain-speak code lookup</h2>
             <div style={{ flex: 1, minHeight: 150 }}>
-              <CodeLookup phase="build" proMode={proMode} projectType={MARIN_PROJECT.project_type} jurisdiction={MARIN_PROJECT.jurisdiction} />
+              <CodeLookup phase="build" proMode={proMode} projectType={sp.buildingType} jurisdiction={sp.jurisdiction} />
             </div>
           </section>
 
           <section style={sectionCard}>
             <h2 style={sectionHeading}>Project photos</h2>
             <AttachmentSection
-              projectId={MARIN_PROJECT_ID}
+              projectId={sp.projectId}
               workflowId="q15"
               stepId="stage-build-progress-photos"
               title="Upload progress photos"
@@ -177,7 +174,7 @@ function BuildStageBody() {
         }}
       >
         <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
-          {fmtMoney(MARIN_BUDGET_SPENT)} of {fmtMoney(MARIN_BUDGET_TOTAL)} spent · framing inspection passed
+          {fmtMoney(sp.budgetSpent ?? 0)} of {fmtMoney(sp.budgetTotal ?? 0)} spent{sp.isCanonicalDemo ? ' · framing inspection passed' : ''}
         </div>
         <div style={{ marginTop: 3, fontSize: 12.5, color: colors.graphite }}>
           Hold change orders here to protect your remaining budget.
@@ -200,20 +197,20 @@ function BuildStageBody() {
 }
 
 export default function BuildStagePage() {
+  const sp = useStageProject();
   useEffect(() => {
-    ensureMarinActive();
-    seedMarinBudget();
-  }, []);
+    if (sp.isCanonicalDemo) seedMarinBudget();
+  }, [sp.isCanonicalDemo]);
 
   return (
     <StageShell
       stageId={4}
       stageTitle="Build"
-      projectId={MARIN_PROJECT_ID}
-      projectName={MARIN_PROJECT.name}
-      projectMeta={`${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`}
-      initialBudget={MARIN_BUDGET_TOTAL}
-      budgetSpent={MARIN_BUDGET_SPENT}
+      projectId={sp.projectId}
+      projectName={sp.projectName}
+      projectMeta={sp.projectMeta}
+      initialBudget={sp.budgetTotal}
+      budgetSpent={sp.budgetSpent}
       primaryAction={{}}
     >
       <BuildStageBody />
