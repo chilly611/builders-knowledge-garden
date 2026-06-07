@@ -3849,3 +3849,33 @@ Task: clear the React #418 hydration error on `/killerapp`, the anon AI-take 401
 
 ## 2026-06-07 — [Code] Phase 0 closed: committed canonical doc set
 
+---
+
+## 2026-06-07 — [Code] System-of-Record gate verified on shared prod (feat/system-of-record-gate)
+
+Task: land the uncommitted System-of-Record work on the three field surfaces and prove it persists in a real browser without polluting shared prod. Plan-mode first; founder-merge PR at the end.
+
+**Surfaces (the SoR commit `7880f62`, only 3 files):**
+- **FieldOps (`/field`)** — copilot stream + photo→`project-evidence` bucket + `/api/v1/projects/[id]/attachments` + daily-log **read-merge-write** on `command_center_projects.daily_log_state`; all rehydrated on mount, keyed to `localStorage['bkg-active-project']`.
+- **VoiceFieldReport (Build stage)** — field notes → `daily_log_state` `field-report-*` keys via read-merge-write (fixes the prior whole-column clobber). `projectId` arrives as a prop.
+- **GlobalAiFab** — copilot Q&A → `project_conversations`; magic-button answer rehydrated on open from `/api/v1/projects/[id]/conversations`; authed POST.
+
+**Step 0 — env.** The sor-gate `SUPABASE_SERVICE_ROLE_KEY` was a `__PASTE_…` placeholder; synced the working `sb_secret_…` key from `bkg-context-routing/.env.local` (byte-identical, sha `80a0fe10…`). `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_URL` already both `vlezoyalutexenbnzzui`. Set a real `ANTHROPIC_API_KEY` locally for the copilot test, **scrubbed back to placeholder afterward** (rotate it + the sb_secret key — both transited chat). `.env.local` is gitignored; nothing committed.
+
+**Step 1 — rebase.** The SoR work was **uncommitted** (3 modified files, no new files), so committed as one commit, then `git rebase origin/main`. `origin/main` now includes **#18 (context-routing, `2669ec7`)**. **Zero conflicts** — SoR touches only the 3 components; #18 touches the stage pages + `useStageProject`/`ProjectContext` → disjoint files. "Keep both" is satisfied by construction: #18's `build/page.tsx` does `<VoiceFieldReport projectId={sp.projectId} …/>` (per-tenant), SoR consumes the prop; both sides key off the same `bkg-active-project`. No reconciliation edits needed.
+
+**Step 2 — real-browser verification** (launcher `sor-gate` config, `:3320`, **cwd confirmed = bkg-sor-gate** via `lsof` before trusting the preview). Self-provisioned a throwaway user `zz-test-sor-…@example.com` + a per-tenant project, injected the supabase-js session. All authed routes 200 for the test user. Verified against `vlezoyalutexenbnzzui`:
+- Daily log → `daily_log_state.field-ops-daily-log` persisted; **rehydrated after full reload** (form pre-filled — screenshot, "signed in · zz-test-sor-…"). ✓
+- Copilot → `project_conversations` with a **real** Claude answer (`model claude-sonnet-4`, 8.8 s — not the no-key mock); rehydrated via the FAB **"Last answer · saved to this project"** pane. ✓
+- Photo → `project-evidence` storage (200) + `project_attachments` (201); storage RLS accepts the authenticated user's own-folder write; rehydrates (count 1). ✓
+- VoiceFieldReport → `daily_log_state.field-report-*` **coexists** with `field-ops-daily-log` (read-merge-write **clobber fix proven**: `field_ops_log_survived = true`). ✓
+- **Cleanup:** deleted the test user (cascaded identities) + all rows + the storage object; **baselines restored exactly** — `project_conversations` 206 / `project_attachments` 1 / `command_center_projects` 42; **zero residue** (incl. no `zz-test-sor-%` project). The failed onboard left no orphans.
+
+**Found / flagged (NOT in scope, NOT my files):**
+- `POST /api/v1/onboard-new-user` **500s on this shared DB** — `PGRST204: Could not find the 'metadata' column of 'command_center_projects'` (schema drift; that column doesn't exist here). New signups can't auto-create their first project until reconciled. Worked around by inserting the test project directly.
+- Supabase advisor: **14 tables have RLS disabled** — all co-tenant **Toxicology/EWG** tables (`substances`, `water_data`, …), **not** BKG. Flagged only.
+
+**Process note:** dev-server **Fast Refresh churn** repeatedly reset controlled-input React state, so two UI submits (copilot textarea, VoiceFieldReport "Save to daily log") were exercised via their **exact** endpoints/persist paths instead (`/api/v1/copilot` with `projectId`; the `field-report-*` read-merge-write) — faithful to the component code. The daily-log, photo, and FAB UI paths worked directly.
+
+**Verification:** HEAD = SoR commit `7880f62` on top of `origin/main` (#18); PR opened for founder merge (3 SoR files + this log + tasks). Tight scope held — only the SoR surfaces + the rebase.
+
