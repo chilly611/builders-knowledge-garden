@@ -3792,3 +3792,7 @@ Task: clear the React #418 hydration error on `/killerapp`, the anon AI-take 401
 **Process gotcha (cost real time — recording it):** the preview launcher's `bkg-dev` config runs `npm run dev` in **`/Users/chilly/Developer/bkg` (the main repo, `feat/shared-app-shell` = `d1b63d4`, pre-seal-rollout)**, NOT this worktree — so every early browser check silently tested the wrong code (old umbrella seal in the network trace + a `console.log` probe that never appeared gave it away). The correct per-worktree config is **`bkg-bugfixes`** (`:3310`, `--webpack`, cwd forced) in the central `~/Documents/The Builder Garden/.claude/launch.json`. Lesson: confirm the `next dev` process cwd (`lsof -iTCP:<port>`) before trusting a preview across sibling worktrees.
 
 **Verification:** all three GATE conditions confirmed in a real browser on `:3310` (pure quartet + seal): clean console, anon "Sign in" state, header Viver seal. `next build` ✓ (`/killerapp` builds). Rebased onto `origin/main` (`e9e0658`) for a clean PR — only `docs/session-log.md` overlapped and merged automatically. `.env.local` (public anon URL+key, gitignored) not committed.
+
+---
+
+## 2026-06-07 — [Code] Phase 0 closed: committed canonical doc set
