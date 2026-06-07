@@ -3749,3 +3749,16 @@ Founder shared the live link in iMessage — the preview card showed the old "B"
 
 **Follow-up (not done):**
 - `MARIN_CODE_JURISDICTION` seed constant is still `'San Francisco, CA'` (now unused by `CodeLookup`; harmless, left as cleanup).
+
+---
+
+## 2026-06-07 — [Code] Session: tasks reset to Phase 1 revenue + archive May batches
+**Agent:** Claude Code (claude-opus-4-8)
+
+**What changed (committed directly on `main`):**
+- **`tasks.todo.md` reset to the Phase 1 revenue focus** — pared down to the current NOW (Vision / Guiding-Principles preamble retained at top); **2,605 lines** of superseded May batches removed from the live file (now ~69 lines).
+- **`tasks.todo.archive.md`** — those May batches moved here under a dated archive note (archived, not deleted; +2,614 lines).
+- **`tasks.lessons.md`** — appended the "Don't assume a file's structure from memory or stale docs" lesson (2026-06-07).
+- **Single-source = bkg-main:** `tasks.todo.md` / `tasks.lessons.md` are canonical in `~/Developer/bkg-main`; the ~12 other worktree copies are stale and were left untouched.
+
+**Commit:** `docs: reset tasks to Phase 1 revenue + archive May batches` (tasks.todo.md, tasks.todo.archive.md, docs/session-log.md, tasks.lessons.md).

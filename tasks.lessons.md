@@ -2455,3 +2455,28 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 - Lesson: when two copies diverge, compare CONTENT (section headers, git-tracking), NOT mtime. The bkg-work loose docs are export artifacts; bkg-main on `main` is the single source of truth.
 - The two copies shared only 1 of ~80 sections; the bkg-work "folded-in APPEND" (Design Constitution Work) was already identical in bkg-main → the consolidation added nothing.
 - Salvaged the evergreen Vision + Guiding Principles preamble (de-corrupted via `iconv -f UTF-8 -t WINDOWS-1252`) into bkg-main; archived the stale copy → `~/bkg-work/_archive-tasks-2026-06-06/tasks.todo.bkg-work-stale-2026-03.md`.
+
+---
+
+## Lesson — Don't assume a file's structure from memory or stale docs (2026-06-07)
+
+### The miss
+The Phase 1 tasks.todo block was handed down as "replace the NOW section, keep NEXT/LATER,
+supersede Phase 0/1." None matched the live file. bkg-main/tasks.todo.md is a chronological stack
+of dated `## ═══ NOW — … ═══` batches under a Vision/Guiding-Principles preamble — no NEXT/LATER,
+and Phase 0/1 only appeared deep in old batches. The assumed shape came from memory
+("NOW/NEXT/LATER buckets") and older uploaded docs ("Phase 0/1"), both stale vs. the repo. The
+executing session had to stop and disambiguate before writing.
+
+### The rule
+When an instruction manipulates a specific file's structure, never assume that structure from
+memory or stale uploads. Either read the live file first, or write the instruction
+structure-agnostic and have the agent inspect-then-confirm before any destructive write. Repo is
+the source of truth; memory and project-knowledge uploads lag it.
+
+### The specific fact (so it isn't rediscovered)
+- Canonical tasks file = /Users/chilly/Developer/bkg-main/tasks.todo.md (single-source; commit
+  9693337 made it so). The other ~12 worktree copies are stale and non-authoritative.
+- Shape: Vision/Principles preamble (top, untouched) → dated `## ═══ NOW ═══` batches, newest-first.
+  On reset, old batches move to tasks.todo.archive.md under a dated `> **Archived YYYY-MM-DD**` note —
+  archived, not deleted.
