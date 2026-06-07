@@ -26,6 +26,8 @@
 > One UI-editing lane at a time, PR-only, founder merges. Recon + Legal parallelize.
 > Shipping gate = real human dogfood of the paid loop (smoke-green ≠ works).
 
+**↳ In review (PR open · 2026-06-07 · feat/system-of-record-gate):** System-of-Record gate for the field surfaces — **FieldOps `/field`, VoiceFieldReport (Build), GlobalAiFab**. Verified in a real browser on shared prod (`vlezoyalutexenbnzzui`) with a throwaway user, then cleaned to baseline: daily-log + `field-report-*` read-merge-write (**clobber fix**), photo→`project-evidence`+`project_attachments`, copilot→`project_conversations` (real Claude), all **rehydrate across reload / leave→return**. Rebased clean onto #18 (zero conflicts). ⚠️ Found: `POST /api/v1/onboard-new-user` **500s** (`metadata` column missing on `command_center_projects` — schema drift) → blocks new-signup auto-project; not in this PR's scope.
+
 ### Lane 0 — Recon (read-only, no writes) [BLOCKS precise scoping of Lanes 1–2]
 - [ ] Merge state of feat/shared-app-shell, feat/rsi-heartbeat, feat/compliance-service vs main
 - [ ] Stripe routes + mock-vs-real + whether the access gate reads real subscription status

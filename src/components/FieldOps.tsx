@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 // Brand colors
 const COLORS = {
@@ -43,6 +44,241 @@ type ScreenMode =
   | 'punch-list'
   | 'safety-alert';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// System-of-record wiring (2026-06-07)
+// ─────────────────────────────────────────────────────────────────────────────
+// Field Ops was a pure front-end mock. These helpers make TALK TO AI, LOG
+// PHOTO, and DAILY LOG persist to the active project's record so they survive
+// reload — reusing the existing routes (no new endpoints, no schema change):
+//   - copilot       → /api/v1/copilot (persists Q&A to project_conversations)
+//   - photo         → project-evidence bucket + /api/v1/projects/[id]/attachments
+//   - daily log     → command_center_projects.daily_log_state (read-merge-write)
+// Field Ops has no ?project= in its URL, so it rescues the active project id
+// from localStorage (set by the killerapp project shell), same key everywhere.
+
+const ACTIVE_PROJECT_KEY = 'bkg-active-project';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FIELD_OPS_LOG_KEY = 'field-ops-daily-log';
+
+interface DailyLogData {
+  safetyBriefing: boolean;
+  ppeCheck: boolean;
+  weather: string;
+  crewCount: string;
+  workCompleted: string;
+  issues: string;
+}
+
+interface FieldPhoto {
+  id: string;
+  signed_url: string | null;
+  caption: string | null;
+  created_at: string;
+}
+
+function getActiveProjectId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const v = window.localStorage.getItem(ACTIVE_PROJECT_KEY);
+    return v && UUID_RE.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+async function bearer(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+// TALK TO AI → the real construction copilot (stage 4 = Build). Streams the
+// answer back via onText; the route persists the Q&A to project_conversations
+// server-side when a real projectId is supplied, so it survives reload.
+async function askCopilotStream(
+  projectId: string | null,
+  query: string,
+  onText: (full: string) => void
+): Promise<void> {
+  const token = await bearer();
+  const res = await fetch('/api/v1/copilot', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ query, stage: 4, ...(projectId ? { projectId } : {}) }),
+  });
+  if (!res.ok || !res.body) {
+    onText('Copilot is unavailable right now — try again in a moment.');
+    return;
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let assembled = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split('\n\n');
+    buffer = frames.pop() ?? '';
+    for (const frame of frames) {
+      const line = frame.trim();
+      if (!line.startsWith('data:')) continue;
+      try {
+        const p = JSON.parse(line.slice(5).trim()) as { type?: string; text?: string };
+        if (p.type === 'chunk' && p.text) {
+          assembled += p.text;
+          onText(assembled);
+        } else if (p.type === 'complete' && typeof p.text === 'string') {
+          assembled = p.text;
+          onText(assembled);
+        }
+      } catch {
+        /* ignore partial frames */
+      }
+    }
+  }
+}
+
+async function loadLastAiAnswer(projectId: string): Promise<string> {
+  const token = await bearer();
+  if (!token) return '';
+  try {
+    const res = await fetch(
+      `/api/v1/projects/${encodeURIComponent(projectId)}/conversations`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) return '';
+    const json = (await res.json()) as {
+      conversations?: Array<{ role: string; content: string }>;
+    };
+    return (
+      (json.conversations ?? [])
+        .filter((c) => c.role === 'assistant')
+        .at(-1)?.content ?? ''
+    );
+  } catch {
+    return '';
+  }
+}
+
+// LOG PHOTO → upload the captured frame to project-evidence + record metadata
+// (workflow_id 'field-ops'), mirroring AttachmentUploader's client-side path.
+async function uploadFieldPhoto(
+  projectId: string,
+  blob: Blob,
+  category: string
+): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  const userId = data.session?.user?.id;
+  if (!token || !userId) return false;
+  const filePath = `${userId}/${projectId}/${crypto.randomUUID()}-fieldops.jpg`;
+  const { error: upErr } = await supabase.storage
+    .from('project-evidence')
+    .upload(filePath, blob, { cacheControl: '3600', upsert: false, contentType: 'image/jpeg' });
+  if (upErr) {
+    console.error('[FieldOps] photo upload failed:', upErr.message);
+    return false;
+  }
+  const res = await fetch(
+    `/api/v1/projects/${encodeURIComponent(projectId)}/attachments`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        file_path: filePath,
+        mime_type: 'image/jpeg',
+        byte_size: blob.size,
+        original_filename: `fieldops-${category}.jpg`,
+        caption: category,
+        workflow_id: 'field-ops',
+        step_id: category,
+      }),
+    }
+  );
+  return res.ok;
+}
+
+async function loadFieldPhotos(projectId: string): Promise<FieldPhoto[]> {
+  const token = await bearer();
+  if (!token) return [];
+  try {
+    const res = await fetch(
+      `/api/v1/projects/${encodeURIComponent(projectId)}/attachments`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as {
+      attachments?: Array<{
+        id: string;
+        workflow_id: string | null;
+        signed_url: string | null;
+        caption: string | null;
+        created_at: string;
+      }>;
+    };
+    return (json.attachments ?? [])
+      .filter((a) => a.workflow_id === 'field-ops')
+      .map((a) => ({
+        id: a.id,
+        signed_url: a.signed_url,
+        caption: a.caption,
+        created_at: a.created_at,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+// DAILY LOG → one namespaced key inside daily_log_state, read-merge-write so we
+// never clobber the Daily Log workflow's step payloads or VoiceFieldReport.
+async function saveFieldOpsDailyLog(projectId: string, log: DailyLogData): Promise<boolean> {
+  const token = await bearer();
+  if (!token) return false;
+  let merged: Record<string, unknown> = {};
+  try {
+    const getRes = await fetch(`/api/v1/projects?id=${encodeURIComponent(projectId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (getRes.ok) {
+      const j = (await getRes.json()) as { daily_log_state?: Record<string, unknown> };
+      if (j.daily_log_state && typeof j.daily_log_state === 'object') {
+        merged = { ...j.daily_log_state };
+      }
+    }
+  } catch {
+    /* a partial write beats no write */
+  }
+  merged[FIELD_OPS_LOG_KEY] = { value: JSON.stringify(log) };
+  const res = await fetch('/api/v1/projects', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id: projectId, daily_log_state: merged }),
+  });
+  return res.ok;
+}
+
+async function loadFieldOpsDailyLog(projectId: string): Promise<DailyLogData | null> {
+  const token = await bearer();
+  if (!token) return null;
+  try {
+    const res = await fetch(`/api/v1/projects?id=${encodeURIComponent(projectId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as {
+      daily_log_state?: Record<string, { value?: string }>;
+    };
+    const raw = j.daily_log_state?.[FIELD_OPS_LOG_KEY]?.value;
+    if (!raw) return null;
+    return JSON.parse(raw) as DailyLogData;
+  } catch {
+    return null;
+  }
+}
+
 export default function FieldOps() {
   // State management
   const [screen, setScreen] = useState<ScreenMode>('home');
@@ -64,7 +300,7 @@ export default function FieldOps() {
       completed: false,
     },
   ]);
-  const [dailyLogData, setDailyLogData] = useState({
+  const [dailyLogData, setDailyLogData] = useState<DailyLogData>({
     safetyBriefing: false,
     ppeCheck: false,
     weather: 'clear',
@@ -73,11 +309,21 @@ export default function FieldOps() {
     issues: '',
   });
 
+  // System-of-record state: active project + rehydrated/persisted artifacts.
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(true); // optimistic; corrected on mount
+  const [aiStreaming, setAiStreaming] = useState(false);
+  const [photoCategory, setPhotoCategory] = useState('Foundation');
+  const [fieldPhotos, setFieldPhotos] = useState<FieldPhoto[]>([]);
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
+  const [logNote, setLogNote] = useState<string | null>(null);
+
   // Refs for Web Speech API
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Initialize Web Speech API
   useEffect(() => {
@@ -126,6 +372,32 @@ export default function FieldOps() {
     };
   }, []);
 
+  // Bootstrap project context + rehydrate persisted artifacts so Field Ops is a
+  // true system-of-record surface. Runs once on mount; best-effort (signed-out
+  // or no active project → screens still work, just don't persist).
+  useEffect(() => {
+    const pid = getActiveProjectId();
+    setProjectId(pid);
+    let cancelled = false;
+    (async () => {
+      const token = await bearer();
+      if (!cancelled) setSignedIn(!!token);
+      if (!pid || !token) return;
+      const [answer, photos, log] = await Promise.all([
+        loadLastAiAnswer(pid),
+        loadFieldPhotos(pid),
+        loadFieldOpsDailyLog(pid),
+      ]);
+      if (cancelled) return;
+      if (answer) setAiResponse(answer);
+      setFieldPhotos(photos);
+      if (log) setDailyLogData(log);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Start voice input
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
@@ -157,23 +429,24 @@ export default function FieldOps() {
     }
   };
 
-  // Mock AI response handler
+  // TALK TO AI → the real construction copilot (Build stage). Streams the
+  // answer into the panel; the route persists the Q&A to the project record so
+  // it survives reload. Speaks the answer once it lands.
   const handleAiInput = async (input: string) => {
-    const mockResponses: { [key: string]: string } = {
-      safety: 'Safety alert logged. Project manager notified immediately.',
-      schedule:
-        'Next crew arrives at 7 AM. Weather forecast shows clear skies.',
-      electrical: 'Electrical panel is in the east corner of the main building.',
-      weather: 'Current conditions: clear, 72 degrees, light wind.',
-      default: 'I understand. What would you like to do next?',
-    };
-
-    const response = Object.entries(mockResponses).find(([key]) =>
-      input.toLowerCase().includes(key)
-    )?.[1] || mockResponses.default;
-
-    setAiResponse(response);
-    speak(response);
+    const q = input.trim();
+    if (!q || aiStreaming) return;
+    setAiStreaming(true);
+    setAiResponse('');
+    let finalText = '';
+    try {
+      await askCopilotStream(projectId, q, (full) => {
+        finalText = full;
+        setAiResponse(full);
+      });
+    } finally {
+      setAiStreaming(false);
+    }
+    if (finalText) speak(finalText);
   };
 
   // Camera capture
@@ -182,6 +455,7 @@ export default function FieldOps() {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
       });
+      streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -190,21 +464,45 @@ export default function FieldOps() {
     }
   };
 
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
+  // Capture the current frame, upload it to the project-evidence bucket, and
+  // record it against the project (workflow_id 'field-ops') so it survives
+  // reload. Falls back gracefully when signed out / no active project.
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(
-          videoRef.current,
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      async (blob) => {
+        stopCamera();
+        if (!blob) {
+          setScreen('home');
+          return;
+        }
+        if (!projectId) {
+          setPhotoNote('Pick a project up top to save photos.');
+          setScreen('home');
+          window.setTimeout(() => setPhotoNote(null), 3500);
+          return;
+        }
+        const ok = await uploadFieldPhoto(projectId, blob, photoCategory);
+        setPhotoNote(
+          ok ? 'Photo saved to this project ✓' : 'Could not save — sign in to keep your photos.'
         );
-        // Photo captured - in real app, would send to backend
+        if (ok) setFieldPhotos(await loadFieldPhotos(projectId));
         setScreen('home');
-      }
-    }
+        window.setTimeout(() => setPhotoNote(null), 3500);
+      },
+      'image/jpeg',
+      0.9
+    );
   };
 
   // Add punch item
@@ -264,6 +562,35 @@ export default function FieldOps() {
             Works With Dirty Hands
           </p>
         </div>
+
+        {(photoNote || logNote) && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '10px 16px',
+              borderRadius: 10,
+              background: COLORS.white,
+              border: `2px solid ${COLORS.green}`,
+              color: COLORS.darkText,
+              fontSize: 15,
+              fontWeight: 700,
+            }}
+          >
+            {photoNote || logNote}
+          </div>
+        )}
+        {!signedIn && (
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: 13,
+              color: COLORS.darkText,
+              opacity: 0.7,
+            }}
+          >
+            Sign in and pick a project to save your work to the project record.
+          </div>
+        )}
 
         {/* Talk to AI - Full Width Top Button */}
         <motion.button
@@ -488,33 +815,26 @@ export default function FieldOps() {
           🎤
         </motion.div>
 
-        {/* Transcript Display */}
-        {transcript && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              backgroundColor: COLORS.white,
-              border: `2px solid ${COLORS.green}`,
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '30px',
-              width: '100%',
-              textAlign: 'center',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: COLORS.green,
-                margin: 0,
-              }}
-            >
-              {transcript}
-            </p>
-          </motion.div>
-        )}
+        {/* Type or talk — typed input is equal to voice (mic denied / noisy
+            jobsite). Also what makes the answer testable without a mic. */}
+        <textarea
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          placeholder="Tap the mic and talk, or type your question…"
+          rows={2}
+          style={{
+            width: '100%',
+            marginBottom: '24px',
+            padding: '16px',
+            fontSize: '18px',
+            borderRadius: '12px',
+            border: `2px solid ${COLORS.border}`,
+            backgroundColor: COLORS.white,
+            color: COLORS.darkText,
+            fontFamily: 'Archivo, sans-serif',
+            resize: 'none',
+          }}
+        />
 
         {/* AI Response Display */}
         {aiResponse && (
@@ -687,6 +1007,8 @@ export default function FieldOps() {
             Category:
           </label>
           <select
+            value={photoCategory}
+            onChange={(e) => setPhotoCategory(e.target.value)}
             style={{
               width: '100%',
               padding: '16px',
@@ -736,7 +1058,10 @@ export default function FieldOps() {
           </motion.button>
 
           <motion.button
-            onClick={() => setScreen('home')}
+            onClick={() => {
+              stopCamera();
+              setScreen('home');
+            }}
             whileTap={{ scale: 0.95 }}
             style={{
               width: '100%',
@@ -754,6 +1079,76 @@ export default function FieldOps() {
             CANCEL
           </motion.button>
         </div>
+
+        {/* Saved photos — rehydrated from the project record, so they survive
+            reload. Reads project_attachments filtered to workflow_id 'field-ops'. */}
+        {!signedIn && (
+          <p style={{ marginTop: 20, fontSize: 14, color: COLORS.darkText, opacity: 0.7 }}>
+            Sign in and pick a project to save photos to the project record.
+          </p>
+        )}
+        {fieldPhotos.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 'bold',
+                color: COLORS.darkText,
+                marginBottom: 10,
+              }}
+            >
+              Saved to this project · {fieldPhotos.length}
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {fieldPhotos.map((p) => (
+                <div key={p.id} style={{ width: 96 }}>
+                  {p.signed_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.signed_url}
+                      alt={p.caption ?? 'Field photo'}
+                      style={{
+                        width: 96,
+                        height: 96,
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        border: `1px solid ${COLORS.border}`,
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 96,
+                        height: 96,
+                        borderRadius: 8,
+                        background: COLORS.border,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 28,
+                      }}
+                    >
+                      📷
+                    </div>
+                  )}
+                  {p.caption && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: COLORS.darkText,
+                        opacity: 0.7,
+                        marginTop: 4,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {p.caption}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1016,6 +1411,23 @@ export default function FieldOps() {
           </div>
         </div>
 
+        {logNote && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '12px 16px',
+              borderRadius: 8,
+              background: COLORS.white,
+              border: `2px solid ${COLORS.green}`,
+              color: COLORS.darkText,
+              fontSize: 15,
+              fontWeight: 700,
+            }}
+          >
+            {logNote}
+          </div>
+        )}
+
         {/* Submit Button */}
         <div
           style={{
@@ -1025,7 +1437,19 @@ export default function FieldOps() {
           }}
         >
           <motion.button
-            onClick={() => setScreen('home')}
+            onClick={async () => {
+              if (!projectId) {
+                setLogNote('Pick a project up top to save your log.');
+                return;
+              }
+              const ok = await saveFieldOpsDailyLog(projectId, dailyLogData);
+              setLogNote(
+                ok
+                  ? 'Daily log saved to this project ✓'
+                  : 'Could not save — sign in to keep your log.'
+              );
+              if (ok) window.setTimeout(() => setScreen('home'), 800);
+            }}
             whileTap={{ scale: 0.95 }}
             style={{
               width: '100%',

@@ -44,6 +44,7 @@ import {
 import { usePathname } from 'next/navigation';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { markdownToJsx } from '@/design-system/components/utils/markdownToJsx';
+import { supabase } from '@/lib/supabase';
 
 // Minimal SpeechRecognition typing — the web APIs differ per browser and
 // we only need .start(), .stop(), .onresult, .onerror, .onend for the MVP.
@@ -97,6 +98,23 @@ function readSurfaceContext(pathname: string): SurfaceContext {
   return { pathname, surfaceId, workflowId, breadcrumbLabel };
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// The active project id is written to localStorage by KillerappProjectShell /
+// useProject whenever the user lands on a project. Only treat real UUIDs as a
+// project context — the FAB's copilot POST falls back to 'default' otherwise,
+// which the route deliberately does NOT persist.
+function getActiveProjectId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const v = window.localStorage.getItem('bkg-active-project');
+    return v && UUID_RE.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────
 
 export default function GlobalAiFab() {
@@ -107,6 +125,9 @@ export default function GlobalAiFab() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Last answer persisted to project_conversations for the active project.
+  // Rehydrated on open so the magic-button answer survives reload.
+  const [lastAnswer, setLastAnswer] = useState('');
 
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -119,6 +140,44 @@ export default function GlobalAiFab() {
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // Rehydrate the most recent saved answer for the active project. The copilot
+  // route persists every Q&A to project_conversations server-side; here we read
+  // the last assistant turn back so reopening the FAB after a reload still shows
+  // the answer. Best-effort + auth-gated (signed out → just show nothing).
+  const loadLastAnswer = useCallback(async () => {
+    const projectId = getActiveProjectId();
+    if (!projectId) {
+      setLastAnswer('');
+      return;
+    }
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setLastAnswer('');
+        return;
+      }
+      const res = await fetch(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/conversations`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) return;
+      const json = (await res.json()) as {
+        conversations?: Array<{ role: string; content: string }>;
+      };
+      const last = (json.conversations ?? [])
+        .filter((c) => c.role === 'assistant')
+        .at(-1);
+      setLastAnswer(last?.content ?? '');
+    } catch {
+      /* best-effort — the live response pane still works without history */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) void loadLastAnswer();
+  }, [open, loadLastAnswer]);
 
   // Listen for bkg:ai-fab:open event to open FAB and focus textarea.
   // If detail.prompt is provided, seed the textarea with it so the user
@@ -179,9 +238,14 @@ export default function GlobalAiFab() {
         ? localStorage.getItem('bkg-active-project') || 'default'
         : 'default';
 
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
       const res = await fetch('/api/v1/copilot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         signal: abortRef.current.signal,
         body: JSON.stringify({
           query: q,
@@ -471,6 +535,24 @@ export default function GlobalAiFab() {
           {response && (
             <article style={responseStyle} aria-live="polite">
               {markdownToJsx(response)}
+            </article>
+          )}
+
+          {!isStreaming && !response && !error && lastAnswer && (
+            <article style={responseStyle} aria-live="polite">
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  color: '#B6873A',
+                  marginBottom: 6,
+                }}
+              >
+                Last answer · saved to this project
+              </div>
+              {markdownToJsx(lastAnswer)}
             </article>
           )}
         </div>

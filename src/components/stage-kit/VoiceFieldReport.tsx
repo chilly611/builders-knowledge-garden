@@ -68,14 +68,34 @@ async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
   return fetch(input, { ...init, headers });
 }
 
-/** Merge the new entries into the project's daily_log_state JSONB. Returns true on a durable DB write. */
+/**
+ * Persist the field-report entries into the project's daily_log_state JSONB.
+ *
+ * READ-MERGE-WRITE: daily_log_state is a single jsonb column shared with the
+ * Daily Log workflow (q15 step payloads) and the /field Field Ops surface. The
+ * previous version PATCHed a map of ONLY `field-report-*` keys, which replaced
+ * the whole column and silently destroyed every other writer's entries. We now
+ * fetch the current column first and merge our keys in. Returns true on a
+ * durable DB write.
+ */
 async function persistToDb(projectId: string, entries: FieldEntry[]): Promise<boolean> {
   try {
-    const map: Record<string, { value: string }> = {};
-    for (const e of entries) map[`field-report-${e.id}`] = { value: e.text };
+    let merged: Record<string, unknown> = {};
+    try {
+      const getRes = await authedFetch(`/api/v1/projects?id=${encodeURIComponent(projectId)}`);
+      if (getRes.ok) {
+        const json = (await getRes.json()) as { daily_log_state?: Record<string, unknown> };
+        if (json.daily_log_state && typeof json.daily_log_state === 'object') {
+          merged = { ...json.daily_log_state };
+        }
+      }
+    } catch {
+      /* fall through with an empty base — a partial write beats no write */
+    }
+    for (const e of entries) merged[`field-report-${e.id}`] = { value: e.text };
     const res = await authedFetch('/api/v1/projects', {
       method: 'PATCH',
-      body: JSON.stringify({ id: projectId, daily_log_state: map }),
+      body: JSON.stringify({ id: projectId, daily_log_state: merged }),
       keepalive: true,
     });
     return res.ok;
@@ -115,9 +135,56 @@ export default function VoiceFieldReport({
   const [saveNote, setSaveNote] = useState<string | null>(null);
   const lastTranscript = useRef('');
 
-  // Hydrate today's entries from the localStorage mirror.
+  // Hydrate from the localStorage mirror immediately (instant paint), then
+  // reconcile with the DB so reports survive a fresh / cleared / different
+  // browser — the mirror alone is not a system of record. We pull
+  // daily_log_state, lift the `field-report-*` keys back into entries, and
+  // merge: local copies win (they carry the structured breakdown) while
+  // DB-only entries are appended.
   useEffect(() => {
+    let cancelled = false;
     setEntries(readMirror(projectId));
+    if (!projectId) return;
+    (async () => {
+      try {
+        const res = await authedFetch(`/api/v1/projects?id=${encodeURIComponent(projectId)}`);
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          daily_log_state?: Record<string, { value?: string }>;
+        };
+        const state = json.daily_log_state ?? {};
+        const fromDb: FieldEntry[] = Object.entries(state)
+          .filter(([k]) => k.startsWith('field-report-'))
+          .map(([k, v]) => {
+            const id = k.slice('field-report-'.length);
+            const ms = Number(id);
+            return {
+              id,
+              at: Number.isFinite(ms) ? new Date(ms).toISOString() : new Date().toISOString(),
+              text: typeof v?.value === 'string' ? v.value : '',
+              structured: null,
+              persisted: 'db' as const,
+            };
+          })
+          .filter((e) => e.text.trim().length > 0);
+        if (cancelled || fromDb.length === 0) return;
+        setEntries((local) => {
+          const byId = new Map<string, FieldEntry>();
+          for (const e of fromDb) byId.set(e.id, e);
+          // Local entry that's also in the DB → keep its richer fields but flip
+          // the pill to "synced"; local-only entry → keep as-is.
+          for (const e of local) byId.set(e.id, byId.has(e.id) ? { ...e, persisted: 'db' } : e);
+          const merged = Array.from(byId.values()).sort((a, b) => Number(b.id) - Number(a.id));
+          writeMirror(projectId, merged);
+          return merged;
+        });
+      } catch {
+        /* best-effort — the mirror is already shown */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Append final speech results to the draft.
