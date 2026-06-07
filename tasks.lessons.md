@@ -2436,3 +2436,22 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **Context:** Merging `fix/demo-polish-0603` → main after the fixes were verified.
 **What happened:** The fast-forward push was rejected — a parallel commit (`f2fc9cf`) had landed on `main` after I branched, and stale `__locktest` / `*.lock.stale.*` files in `.git/refs` were silently breaking `git fetch`, so my `origin/main` ref looked current when it wasn't.
 **The rule:** Before merging, clear stale lock artifacts, run a clean `git fetch`, and compare `HEAD..origin/main`. If main moved, rebase onto current `origin/main` (check file overlap first), `--force-with-lease` the feature branch, then FF main. Note: with Vercel git-integration auto-deploy on `main`, a manual `vercel --prod` from a stale base can transiently roll back newer commits — deploy the merged HEAD last.
+
+---
+
+## Lessons — Desktop Commander setup & repo topology (2026-06-06)
+- DC `allowedDirectories` must be absolute paths (was bare string "chilly"); verify with a real listing. `[]` = full-disk.
+- DC hangs on terminal spawns AND on file mutations into the git worktree dirs (~/Developer/bkg-*). Reads/config/appends in normal dirs are reliable. Route all terminal/git/build/in-repo file work to Claude Code.
+- DC `fileWriteLineLimit` raised 50 → 1000.
+- Map git topology without a terminal: read `.git/config`, `.git/HEAD`, and check if `.git` is a file (worktree) or dir (clone).
+- Topology: canonical repo = chilly611/builders-knowledge-garden; home base = ~/Developer/bkg (worktree host); 12 worktrees = ~/Developer/bkg-*; ~/bkg-work/app = redundant 2nd clone (retire); ~/bkg-work = loose docs.
+- bkg-jurisdictions worktree had stale git locks — clear before use.
+- Source of truth: tasks.todo.md + tasks.lessons.md now canonical in ~/Developer/bkg-main (on main); read by absolute path from any lane.
+
+---
+
+## Lessons — tasks.todo.md fork resolution (2026-06-06)
+- `~/bkg-work/tasks.todo.md` was NOT a newer version — it was a stale **March-2026** snapshot, re-exported today (BOM + CRLF + double-encoded mojibake), so its mtime (Jun 6) was misleading. `~/Developer/bkg-main/tasks.todo.md` (git-tracked, commit `99e08a9`) is canonical and holds all April→June content.
+- Lesson: when two copies diverge, compare CONTENT (section headers, git-tracking), NOT mtime. The bkg-work loose docs are export artifacts; bkg-main on `main` is the single source of truth.
+- The two copies shared only 1 of ~80 sections; the bkg-work "folded-in APPEND" (Design Constitution Work) was already identical in bkg-main → the consolidation added nothing.
+- Salvaged the evergreen Vision + Guiding Principles preamble (de-corrupted via `iconv -f UTF-8 -t WINDOWS-1252`) into bkg-main; archived the stale copy → `~/bkg-work/_archive-tasks-2026-06-06/tasks.todo.bkg-work-stale-2026-03.md`.

@@ -1,3 +1,22 @@
+# Builder's Knowledge Garden — Tasks
+
+## Vision: The EVERYTHING Platform for the $17T Global Construction Economy
+**Full lifecycle: DREAM → DESIGN → PLAN → BUILD → DELIVER → GROW**
+**Every phase, every layer, every stakeholder — simultaneously**
+
+---
+
+## Guiding Principles
+- **Minimal Lovable Product (MLP)** — "Minimum Viable Product" is not in our vocabulary. We ship things people LOVE, not things that barely work.
+- **Knowledge is the foundation** — 40K+ entities are the floor, not the ceiling. Everything we build is smarter because of the knowledge engine underneath.
+- **The databases ARE the product** — The 40 structured databases are what make us the most informed AEC destination in the universe. Everything else is UI on top of the data. Every entity gets its own URL. Every relationship is queryable. Every piece of data serves humans, AI agents, robots, and LLM crawlers.
+- **Voice-first everywhere** — Voice is a layer across the ENTIRE platform, not a separate product.
+- **AI-native from day one** — Every feature has AI woven in. Not bolted on.
+- **The full journey** — We don't build tools. We build the operating system for the entire lifecycle of building anything, anywhere.
+- **The platform carries the cognitive load** — Humans have limited memory, energy, and attention. The platform tracks ALL variables, surfaces what needs attention NOW, presents clear options with tradeoffs, and the human decides with confidence.
+
+---
+
 ## ═══ NOW — STAGE 2 AMENDMENT: ledger-bound chrome (dogfood pass-01) (2026-05-31, Claude Code / Opus) ═══
 
 Blocking dogfood fixes on top of the shared shell. Branch `feat/shared-app-shell` (commits `dcc5ca2`, `5003c80`, pushed → Vercel preview).
