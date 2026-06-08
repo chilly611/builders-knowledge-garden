@@ -216,6 +216,15 @@ vi.mock('@/lib/email', () => ({
     .replace(/>/g, '&gt;'),
 }));
 
+// `@/` specifiers don't resolve under this vitest setup (no alias / no
+// tsconfig-paths plugin), so EVERY `@/` dep the route imports must be mocked
+// or the module fails to load at import time. `@/lib/posthog` was added to the
+// route after this test was written, which is why the suite started failing on
+// import. It's fire-and-forget analytics — a no-op stub is enough.
+vi.mock('@/lib/posthog', () => ({
+  captureServerEvent: vi.fn(async () => {}),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -320,9 +329,11 @@ describe('POST /api/v1/onboard-new-user — happy path', () => {
     expect(omRow.role).toBe('owner');
     expect(omRow.user_id).toBe(FIXED_USER.id);
 
-    // command_center_projects row carries metadata.is_first_run = true.
+    // command_center_projects row carries the seeded defaults. No `metadata`
+    // key — that column was never applied to shared prod (migration 20260522f)
+    // and is read nowhere; the first-run banner uses the ?first_run=1 param.
     const projRow = state.inserts.find((i) => i.table === 'command_center_projects')!.rows[0];
-    expect((projRow.metadata as Record<string, unknown>).is_first_run).toBe(true);
+    expect(projRow.metadata).toBeUndefined();
     expect(projRow.name).toBe('My first project');
     expect(projRow.project_type).toBe('single_family');
 
