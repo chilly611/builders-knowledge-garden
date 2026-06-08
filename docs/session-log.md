@@ -3879,3 +3879,30 @@ Task: land the uncommitted System-of-Record work on the three field surfaces and
 
 **Verification:** HEAD = SoR commit `7880f62` on top of `origin/main` (#18); PR opened for founder merge (3 SoR files + this log + tasks). Tight scope held — only the SoR surfaces + the rebase.
 
+---
+
+## 2026-06-07 — [Claude Code] Session: canonical demo polish — cold `?project=` deep-link renders fixture-clean (metadata + AI-take)
+**Agent:** Claude Code (Opus) · worktree `bkg-canonical-demo-polish` on `fix/canonical-demo-polish` off `origin/main` (`43db7f6`, includes #18 + #19).
+**Commit:** this entry's commit on `fix/canonical-demo-polish`; PR for founder merge (4 source files + this log). **No DB writes.**
+
+**Problem (investor-facing):** Opening the canonical demo cold — `/killerapp?project=55730cd3-…` ("Modern Farmhouse in Marin") — rendered the **stale DB row** (sqft 4,950 / phase PLAN 15% / "1,800 sf" in the description) and a **stale, off-topic AI-take** (a "solar codes this week" answer), instead of the canonical spec (4,000 sqft / $1.65M total / $312K spent / Build 42%).
+
+**Root cause:** #18's canonical-wins (`useStageProject()`, keyed on `isCanonicalProjectId`) was wired only into the 7 stage pages. The main cockpit + chrome read raw sources directly, so the demo id got **no** override on the `/killerapp?project=` view:
+- chrome budget/journey strip ← `useProjectLedger(uuid)` → `GET /api/v1/budget` (drifted `project_budget_lines`);
+- shell header sqft/cost/description ← `useProject().project` = the drifted `command_center_projects` row;
+- AI-take ← latest `project_conversations` assistant row (the solar answer).
+Confirmed live (read-only) on `vlezoyalutexenbnzzui`: row last edited 2026-06-04 → name "Modern farmhouse in Marin", sqft "4950", budget_amount 2320300, phase PLAN/15, raw_input "1,800 sf…", ai_summary "2,800 sf…"; 12 conversation rows, newest assistant = solar. The cold-deep-link non-hydration follow-up flagged in #18 is this wiring gap (not a true hydration race — `projectId` is set from the URL on first render).
+
+**Fix (fixture-driven, 3 seams, all gated on `isCanonicalProjectId`, zero DB writes):**
+- **Seed** `src/lib/seed-data/marin-farmhouse.ts`: new `MARIN_RAW_INPUT`, `MARIN_AI_SUMMARY`, `MARIN_AI_TAKE` (canonical, investor-clean copilot take in the copilot voice; no trailing "**What next?**" block — the static CTA row renders the next steps).
+- **`src/contexts/ProjectContext.tsx`**: in the hydrate effect, short-circuit the canonical id to a canonical `ProjectRecord` built from the seed — **no** `/api/v1/projects` fetch. Fixes the shell header + description + `ShellConfig` name; works cold or warm, signed-in or anon.
+- **`src/components/app-shell/useProjectLedger.ts`**: canonical branch (mirrors the existing `isDemo` branch) returns `getCanonicalProject()` budget + journey (currentStage 4 / 42%), not `/api/v1/budget`.
+- **`src/app/killerapp/KillerappProjectShell.tsx`**: `rawAiText = MARIN_AI_TAKE` for the demo; skip the conversations fetch and the copilot auto-fire for the demo id.
+
+**Verification (GATE — real browser, launcher `canonical-demo` `:3340`, cwd confirmed = bkg-canonical-demo-polish):**
+- **Canonical cold deep-link, anon AND signed-in (`gc-trial-01`):** 4,000 sq ft · strip "$1.15M LEFT OF $1.65M" · journey "Build / 42%" · canonical description · canonical AI-take (ends clean — no "Location not specified"). No stale tokens (4,950 / 1,800 / 2,800 / 2,320,300 / solar). Zero console errors (no React #418). `window.__bkg_project__` = canonical values (`sqft "4000"`, `budget_amount 1650000`) — **proves the overlay fired**, not the DB row.
+- **Non-canonical control (SoMa `bb22c33d-…`, signed-in):** renders its OWN real data — "Commercial TI in SoMa" / San Francisco, CA / $1.13M ledger / 16% Plan / its own SoMa AI-take — with **zero Marin bleed**. Confirms the special-case is id-scoped only. (SoMa's live AI-take is clean because *its* conversations never drifted — which is exactly why only Marin needs the fixture.)
+- `npx tsc --noEmit`: **0 errors in changed files** (the 121-line pre-existing baseline in `__tests__/*` is unchanged). Vercel builds the branch on push.
+
+**Notes / out of scope:** Left the drifted DB row + conversations **untouched** (brief: do NOT fix via DB edit; the fixture path makes the demo resilient to whatever is in the DB). The row is still the documented source-of-truth — recommend the founder later reconcile `command_center_projects[55730cd3]` to canonical (sqft 4000 / budget 1650000 / phase BUILD / progress 42) so non-cockpit surfaces (e.g. the project-picker name, currently lowercase "Modern farmhouse in Marin") also match — separate, optional. The anon canonical render shows the nav "Project Name" pill as "Untitled project" (a nav-local draft field, not the cockpit) — pre-existing, out of scope. Added an additive `canonical-demo` (`:3340`) config to the central launcher (`~/Documents/The Builder Garden/.claude/launch.json`).
+
