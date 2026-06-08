@@ -21,6 +21,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getDemoProject } from '@/lib/demo-seeder';
+import { getCanonicalProject, isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
 
 export interface LedgerBudget { total: number; spent: number; committed: number; remaining: number; }
 export interface LedgerJourney { currentStage: number; stageProgress: Record<number, number>; }
@@ -75,6 +76,33 @@ export function useProjectLedger(projectId: string | null): LedgerResult {
   useEffect(() => {
     let cancelled = false;
     if (!projectId) { setRes({ ...EMPTY, ready: true }); return; }
+
+    // Canonical Marin demo — fixture-first (mirrors the metadata overlay in
+    // ProjectContext). The DB ledger for 55730cd3-… has drifted, so read the
+    // canonical budget + journey straight from the seed, not /api/v1/budget.
+    if (isCanonicalProjectId(projectId)) {
+      const p = getCanonicalProject();
+      const staged = p.stages.filter((s) => s.completion > 0);
+      const currentStage = staged.length ? Math.max(...staged.map((s) => s.id)) : 1;
+      setRes({
+        ready: true,
+        hasData: true,
+        name: p.name,
+        budget: {
+          total: p.budget.total,
+          spent: p.budget.spent,
+          committed: p.budget.committed,
+          remaining: p.budget.remaining,
+        },
+        journey: {
+          currentStage,
+          stageProgress: Object.fromEntries(
+            p.stages.map((s) => [s.id, s.completion]),
+          ) as Record<number, number>,
+        },
+      });
+      return;
+    }
 
     // Demo path — the fixture the body reads; the DB ledger is seeded to match.
     if (isDemo(projectId)) {
