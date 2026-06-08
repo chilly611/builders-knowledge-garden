@@ -39,6 +39,17 @@ import {
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
+import {
+  MARIN_PROJECT_NAME,
+  MARIN_CLIENT_NAME,
+  MARIN_LOCATION,
+  MARIN_SQFT,
+  MARIN_BUDGET_TOTAL,
+  MARIN_RAW_INPUT,
+  MARIN_AI_SUMMARY,
+  MARIN_PROJECT,
+} from '@/lib/seed-data/marin-farmhouse';
 
 export const ACTIVE_PROJECT_KEY = 'bkg-active-project';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -64,6 +75,18 @@ function writeLaneCookie(lane: string | null): void {
     `Max-Age=${LANE_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+/**
+ * Coerce a possibly-stringified numeric into a number (or null). PostgREST
+ * serializes `numeric` columns (e.g. budget_amount) as JSON strings to
+ * preserve precision, so a raw `typeof === 'number'` check downstream would
+ * treat a real budget as unset.
+ */
+function coerceNum(v: number | string | null | undefined): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export interface ProjectRecord {
   id: string;
   name: string | null;
@@ -75,6 +98,7 @@ export interface ProjectRecord {
   estimated_cost_low: number | null;
   estimated_cost_high: number | null;
   client_name?: string | null;
+  budget_amount?: number | null;
 }
 
 // LANE-INFRA (2026-05-22): mirror of `ProjectRole` in
@@ -210,6 +234,35 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       setError(null);
       return;
     }
+    // CANONICAL DEMO (fix/canonical-demo-polish): the Marin demo is a fixture,
+    // not a DB read. Its source-of-truth row (command_center_projects 55730cd3-…)
+    // has drifted (stale sqft / budget / raw_input), and we must not let that
+    // bleed into the investor deep-link. Serve the canonical record straight from
+    // the seed — no fetch — so a cold ?project= deep-link shows the documented
+    // numbers whether or not the visitor is signed in. Non-canonical ids fall
+    // through to the live API below.
+    if (isCanonicalProjectId(projectId)) {
+      const canonical: ProjectRecord = {
+        id: projectId,
+        name: MARIN_PROJECT_NAME,
+        raw_input: MARIN_RAW_INPUT,
+        ai_summary: MARIN_AI_SUMMARY,
+        jurisdiction: MARIN_LOCATION,
+        sqft: String(MARIN_SQFT), // "4000" — the shell formats via Number(sqft)
+        project_type: MARIN_PROJECT.project_type,
+        estimated_cost_low: MARIN_PROJECT.estimated_cost_low,
+        estimated_cost_high: MARIN_PROJECT.estimated_cost_high,
+        client_name: MARIN_CLIENT_NAME,
+        budget_amount: MARIN_BUDGET_TOTAL,
+      };
+      setProject(canonical);
+      setLoading(false);
+      setError(null);
+      if (typeof window !== 'undefined') {
+        (window as unknown as { __bkg_project__?: ProjectRecord }).__bkg_project__ = canonical;
+      }
+      return;
+    }
     // Skip concurrent in-flight fetches for the same (id, fetchKey) pair.
     // A fetchKey bump (from refreshProject) bypasses this guard so a
     // re-fetch always fires even when the project id hasn't changed.
@@ -251,6 +304,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           estimated_cost_low: json.estimated_cost_low ?? null,
           estimated_cost_high: json.estimated_cost_high ?? null,
           client_name: (json as { client_name?: string | null }).client_name ?? null,
+          budget_amount: coerceNum((json as { budget_amount?: number | string | null }).budget_amount),
         };
         setProject(record);
         setLoading(false);

@@ -34,7 +34,7 @@ export default function ProfilePage() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={36} height={36} style={{ borderRadius: 10 }} />
+          <Image src="/brand/bkg-mark.png" alt="Builder's KG" width={36} height={36} style={{ borderRadius: 10 }} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>My Profile</div>
             <div style={{ fontSize: 10, color: "var(--fg-secondary)", letterSpacing: 1 }}>SETTINGS · TEAM · BILLING</div>

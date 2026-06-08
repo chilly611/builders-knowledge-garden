@@ -8,8 +8,9 @@
  *
  *   1. Auto-create an `organizations` row + add caller as 'owner' in
  *      `org_members`.
- *   2. Create a starter `command_center_projects` row stamped with
- *      `metadata.is_first_run = true`.
+ *   2. Create a starter `command_center_projects` row. (The first-run
+ *      banner is driven by the `?first_run=1` redirect param set in
+ *      `signup/page.tsx`, not by a DB column.)
  *   3. Add caller to `project_members` as 'gc' (the safe default for
  *      contractor-flavored signups; the welcome wizard re-maps DIY users
  *      after).
@@ -349,8 +350,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<OnboardRe
   }
 
   // ----- 5. Create the first project ----------------------------------------
-  // user_id is text on command_center_projects (see schema). Stamp
-  // metadata.is_first_run so the cockpit can show the welcome banner.
+  // user_id is text on command_center_projects (see schema). We intentionally
+  // do NOT stamp a `metadata` column: it doesn't exist on shared prod
+  // (migration 20260522f was never applied there) and is read nowhere — the
+  // first-run banner is driven by the `?first_run=1` redirect param, not a
+  // project column. Writing it 500s the whole onboarding with PGRST204.
   const { data: proj, error: projErr } = await sb
     .from('command_center_projects')
     .insert([{
@@ -361,7 +365,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<OnboardRe
       progress: 0,
       budget_status: 'on-track',
       risk_level: 'medium',
-      metadata: { is_first_run: true, plg_source: 'signup', plg_org_id: orgId },
     }])
     .select('id')
     .single();

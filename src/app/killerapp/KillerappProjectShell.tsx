@@ -24,7 +24,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useProject } from '@/lib/hooks/useProject';
+import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import { applyJurisdictionOverride } from '@/lib/project-display';
+import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
+import { MARIN_AI_TAKE } from '@/lib/seed-data/marin-farmhouse';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -128,7 +131,26 @@ export default function KillerappProjectShell() {
   const [error, setError] = useState<string | null>(null);
   const [streamingResponse, setStreamingResponse] = useState<string>('');
   const [streaming, setStreaming] = useState(false);
+  // 2026-06-02: when the copilot can't produce an AI take (401 anon, 5xx,
+  // network), record WHY so the UI can show a graceful state instead of the
+  // "Running the numbers…" pulse spinning forever. 'auth' → invite sign-in.
+  const [aiUnavailable, setAiUnavailable] = useState<null | 'auth' | 'error'>(null);
   const triggeredStreamFor = useRef<string | null>(null);
+
+  // Anon short-circuit (2026-06-02): for signed-out viewers the auto-trigger
+  // pipeline stalls before it ever calls the copilot (conversations 401,
+  // ledger gating), so the 401 handler below never runs and the pulse spun
+  // forever. If there is no session, say "sign in" immediately — if the
+  // project carries a public ai_summary, aiText wins and this is ignored.
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled && !data.session) setAiUnavailable('auth');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // C1 spine: on bare /killerapp with no ?project= but a stored project,
   // align the URL via setActiveProject. Skip when the user just got
@@ -158,6 +180,15 @@ export default function KillerappProjectShell() {
     }
 
     setActiveProjectInLocalStorage(projectId);
+
+    // CANONICAL DEMO: the Marin deep-link shows a fixture AI take (see
+    // rawAiText), so never load its project_conversations — the latest row has
+    // drifted to a stale, off-topic answer. Skip the fetch for the demo id.
+    if (isCanonicalProjectId(projectId)) {
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
     setLoading(true);
@@ -192,10 +223,14 @@ export default function KillerappProjectShell() {
   }, [projectId]);
 
   // Auto-trigger stream when project has no assistant message yet.
+  const ledger = useProjectLedger(projectId);
+
   useEffect(() => {
     if (!projectId || !project) return;
+    if (isCanonicalProjectId(projectId)) return; // canonical demo uses a fixture take — never auto-fire copilot
     if (project.id !== projectId) return; // guard: project record not yet refreshed for this id
     if (loading || streaming) return;
+    if (!ledger.ready) return; // wait for the project's REAL current stage before firing
     if (triggeredStreamFor.current === projectId) return;
 
     const hasAssistantMessage = conversations.some(
@@ -207,13 +242,14 @@ export default function KillerappProjectShell() {
     if (!seedQuery) return;
 
     triggeredStreamFor.current = projectId;
-    void streamCopilot(projectId, seedQuery);
+    void streamCopilot(projectId, seedQuery, ledger.journey?.currentStage ?? 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, project, conversations, loading, streaming]);
+  }, [projectId, project, conversations, loading, streaming, ledger.ready]);
 
-  async function streamCopilot(pid: string, query: string) {
+  async function streamCopilot(pid: string, query: string, stageId: number = 0) {
     setStreaming(true);
     setStreamingResponse('');
+    setAiUnavailable(null);
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
@@ -223,11 +259,15 @@ export default function KillerappProjectShell() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ query, projectId: pid, stage: 0 }),
+        body: JSON.stringify({ query, projectId: pid, stage: stageId }),
       });
 
       if (!res.ok || !res.body) {
         setError('Copilot is unavailable right now.');
+        // 401/403 = signed-out viewer (the copilot API requires auth). Tell
+        // the AI-take panel WHY so it renders "sign in" instead of pulsing
+        // forever — the anon /killerapp infinite-spinner bug. (2026-06-02)
+        setAiUnavailable(res.status === 401 || res.status === 403 ? 'auth' : 'error');
         setStreaming(false);
         return;
       }
@@ -275,6 +315,7 @@ export default function KillerappProjectShell() {
     } catch (e) {
       console.error('Copilot stream error:', e);
       setError('Copilot stream failed.');
+      setAiUnavailable('error');
     } finally {
       setStreaming(false);
     }
@@ -340,11 +381,15 @@ export default function KillerappProjectShell() {
   // recent text the user saw). The "streaming…" label still flips off
   // via the `streaming` flag, but the body text stays stable across the
   // stream-end / persist-write window.
-  const rawAiText =
-    streamingResponse ||
-    persistedAssistant?.content ||
-    project?.ai_summary ||
-    '';
+  // CANONICAL DEMO: render the stable, investor-clean fixture take for the
+  // Marin deep-link — never the latest project_conversations row (which has
+  // drifted to a stale, off-topic answer). Other projects keep live behavior.
+  const rawAiText = isCanonicalProjectId(projectId)
+    ? MARIN_AI_TAKE
+    : streamingResponse ||
+      persistedAssistant?.content ||
+      project?.ai_summary ||
+      '';
   // Strip the trailing **What next?** action block — the static link row
   // below renders the canonical CTAs. Without this, the markdown leaks
   // as literal text alongside the rendered buttons. (Demo readiness fix
@@ -423,7 +468,13 @@ export default function KillerappProjectShell() {
             const facts: string[] = [];
             if (project?.project_type) facts.push(project.project_type);
             if (project?.jurisdiction) facts.push(project.jurisdiction);
-            if (sqft) facts.push(`${Number(sqft).toLocaleString()} sq ft`);
+            // Locale PINNED (2026-06-02): bare toLocaleString() formats with
+            // the runtime's locale — Vercel's server ICU vs the visitor's
+            // browser can disagree ("4,950" vs "4.950"), and since this line
+            // is in the SSR'd HTML the mismatch is the React #418 hydration
+            // error seen on prod /killerapp. en-US matches every other number
+            // format in the app (see app-shell/config.ts fmtUsd).
+            if (sqft) facts.push(`${Number(sqft).toLocaleString('en-US')} sq ft`);
             if (!facts.length) return null;
             return (
               <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--graphite)', opacity: 0.7 }}>
@@ -454,6 +505,33 @@ export default function KillerappProjectShell() {
                 }}
               >
                 {aiText}
+              </div>
+            ) : aiUnavailable ? (
+              // 2026-06-02: the copilot couldn't run (anon 401, 5xx, network).
+              // Never leave the pulse spinning forever — say why, quietly.
+              <div
+                style={{
+                  fontSize: 14,
+                  color: 'var(--graphite)',
+                  opacity: 0.75,
+                }}
+                aria-live="polite"
+              >
+                {aiUnavailable === 'auth' ? (
+                  <>
+                    <a
+                      href={`/login?next=${encodeURIComponent(
+                        window.location.pathname + window.location.search
+                      )}`}
+                      style={{ color: 'var(--brass, #B6873A)', textDecoration: 'underline' }}
+                    >
+                      Sign in
+                    </a>{' '}
+                    to see the AI take for this project.
+                  </>
+                ) : (
+                  <>The AI take isn&rsquo;t available right now — it&rsquo;ll be here next visit.</>
+                )}
               </div>
             ) : (
               // The auto-trigger fires on hydrate, so the empty state is

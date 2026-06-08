@@ -1,6 +1,23 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-29
+## Updated: 2026-06-08
+
+---
+
+## OAuth client flowType must match the callback's exchange method (2026-06-08, Claude Code / Opus 4.8)
+
+### Google sign-in bounced to `/login?error=missing_code` — implicit client vs PKCE callback
+"Continue with Google" succeeded at Google but returned to `/login?error=missing_code`, never entering the app (prod, fresh incognito). Root cause was a **flow-type mismatch**, NOT a routing/redirect regression: the shared browser client (`src/lib/supabase.ts`) was `createClient(url, anon)` with no `auth` options, so `@supabase/auth-js` defaulted to `flowType: 'implicit'` — which returns the session in the URL **hash**, so the OAuth callback never received a `?code=` query param. But the callback (`auth/callback/page.tsx`) was written for **PKCE** (`exchangeCodeForSession(params.get('code'))`), so it always saw no code and bounced. Fix: set `flowType: 'pkce'` on the client (one line). This had **never worked** end-to-end (the client lacked `flowType` since v0.1); only the outbound `302 → accounts.google.com` had ever been verified.
+**Rules:**
+- The OAuth **client `flowType` must match the callback's exchange method**: a PKCE callback (`exchangeCodeForSession` + `?code=`) requires `flowType: 'pkce'` on the *same* client that calls `signInWithOAuth`. `@supabase/auth-js` defaults to `implicit` (session in the URL hash, no `?code=`).
+- **Verify the full OAuth round-trip, not just the outbound leg.** "Verified 302 → Google" only proves initiation; the return leg (provider → `?code=` → exchange → signed in) is where flow-type / redirect-uri / cookie bugs surface. A latent bug sits unnoticed if only the outbound redirect was ever checked.
+- **Fast local check without completing Google:** click "Continue with Google" and confirm a `sb-<ref>-auth-token-code-verifier` appears in storage — that artifact is written only under PKCE (implicit creates none), proving the client's flow type without needing IdP consent or a redirect-allow-list entry.
+
+### Safari addendum (2026-06-08): the localStorage PKCE verifier doesn't survive the redirect — route it to a cookie
+After `flowType:'pkce'` shipped (#22), Chrome signed in fine but **Safari** failed at the exchange: *"PKCE code verifier not found in storage."* supabase-js writes the verifier to localStorage and then we immediately navigate to the IdP; Safari doesn't reliably persist that just-before-unload localStorage write across the cross-site OAuth bounce (ITP + write-not-flushed-before-unload). `document.cookie` writes are synchronous and committed before navigation and survive as a first-party cookie.
+**Rules:**
+- For client-side PKCE that must work in **Safari**, store the `code_verifier` in a **cookie**, not localStorage. Minimal fix: a hybrid `auth.storage` adapter routing only the `*-code-verifier` key to a first-party cookie (`SameSite=Lax`, `Secure` on https, short `Max-Age`) while the session stays in localStorage — avoids a full `@supabase/ssr` migration and keeps every other localStorage client sharing the same session.
+- **A passing Chrome test does NOT prove Safari.** Chrome persists localStorage across the OAuth redirect; Safari doesn't. Verify OAuth in Safari specifically (or use cookies from the start). The blessed robust path is `@supabase/ssr` (server-set cookies); the hybrid cookie adapter is the lower-risk hotfix.
 
 ---
 
@@ -2425,3 +2442,58 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The pattern:** The lane-specific client (`OwnerHomeClient`) toggles a body class on mount/unmount (`document.body.classList.add('bkg-lane-owner')`), and the lane's own scoped CSS hides the shared elements via **stable `aria-label` selectors** (`[aria-label="Project chrome"]`, `[aria-label="Open workflow navigator"]`) gated on that body class. Zero edits to the shared components, zero impact on other lanes, race-free enough (hides as the lane mounts). Brief flash of generic chrome during async lane-resolution is acceptable for an MLP.
 
 **The rule:** To scope-suppress shared, layout-level chrome for a single client surface, prefer a body-class + CSS-on-stable-selectors hook over prop-drilling/context through the layout or editing the shared component. Verify the target elements expose stable `aria-label`/`role` first (they did) so the selector can't silently rot.
+
+
+## 2026-06-05 — Jurisdiction labels: derive from the active project when the code data is statewide
+**Context:** Demo-polish FIX 2 — the Plan/Build code lookup showed "📍 San Francisco, CA" for a Marin project.
+**What happened:** I first recommended flattening the label to "California" to avoid mislabeling SF-only data as Marin. But the wired UpCodes rows are CA-*statewide* code (CRC / Title 24 / CALGreen) that apply in Marin — one topic already references "Marin's expansive clays". The founder chose "derive from the active project," which is both honest and more specific.
+**The rule:** When the underlying code data is statewide, label the lookup with the ACTIVE PROJECT's jurisdiction, not a flattened state name. Only fall back to a broader level if the data is genuinely jurisdiction-specific and doesn't cover the project's locale. Inspect what the data actually contains before choosing the label's specificity.
+
+## 2026-06-05 — Re-fetch origin/main immediately before merging a worktree branch
+**Context:** Merging `fix/demo-polish-0603` → main after the fixes were verified.
+**What happened:** The fast-forward push was rejected — a parallel commit (`f2fc9cf`) had landed on `main` after I branched, and stale `__locktest` / `*.lock.stale.*` files in `.git/refs` were silently breaking `git fetch`, so my `origin/main` ref looked current when it wasn't.
+**The rule:** Before merging, clear stale lock artifacts, run a clean `git fetch`, and compare `HEAD..origin/main`. If main moved, rebase onto current `origin/main` (check file overlap first), `--force-with-lease` the feature branch, then FF main. Note: with Vercel git-integration auto-deploy on `main`, a manual `vercel --prod` from a stale base can transiently roll back newer commits — deploy the merged HEAD last.
+
+---
+
+## Lessons — Desktop Commander setup & repo topology (2026-06-06)
+- DC `allowedDirectories` must be absolute paths (was bare string "chilly"); verify with a real listing. `[]` = full-disk.
+- DC hangs on terminal spawns AND on file mutations into the git worktree dirs (~/Developer/bkg-*). Reads/config/appends in normal dirs are reliable. Route all terminal/git/build/in-repo file work to Claude Code.
+- DC `fileWriteLineLimit` raised 50 → 1000.
+- Map git topology without a terminal: read `.git/config`, `.git/HEAD`, and check if `.git` is a file (worktree) or dir (clone).
+- Topology: canonical repo = chilly611/builders-knowledge-garden; home base = ~/Developer/bkg (worktree host); 12 worktrees = ~/Developer/bkg-*; ~/bkg-work/app = redundant 2nd clone (retire); ~/bkg-work = loose docs.
+- bkg-jurisdictions worktree had stale git locks — clear before use.
+- Source of truth: tasks.todo.md + tasks.lessons.md now canonical in ~/Developer/bkg-main (on main); read by absolute path from any lane.
+
+---
+
+## Lessons — tasks.todo.md fork resolution (2026-06-06)
+- `~/bkg-work/tasks.todo.md` was NOT a newer version — it was a stale **March-2026** snapshot, re-exported today (BOM + CRLF + double-encoded mojibake), so its mtime (Jun 6) was misleading. `~/Developer/bkg-main/tasks.todo.md` (git-tracked, commit `99e08a9`) is canonical and holds all April→June content.
+- Lesson: when two copies diverge, compare CONTENT (section headers, git-tracking), NOT mtime. The bkg-work loose docs are export artifacts; bkg-main on `main` is the single source of truth.
+- The two copies shared only 1 of ~80 sections; the bkg-work "folded-in APPEND" (Design Constitution Work) was already identical in bkg-main → the consolidation added nothing.
+- Salvaged the evergreen Vision + Guiding Principles preamble (de-corrupted via `iconv -f UTF-8 -t WINDOWS-1252`) into bkg-main; archived the stale copy → `~/bkg-work/_archive-tasks-2026-06-06/tasks.todo.bkg-work-stale-2026-03.md`.
+
+---
+
+## Lesson — Don't assume a file's structure from memory or stale docs (2026-06-07)
+
+### The miss
+The Phase 1 tasks.todo block was handed down as "replace the NOW section, keep NEXT/LATER,
+supersede Phase 0/1." None matched the live file. bkg-main/tasks.todo.md is a chronological stack
+of dated `## ═══ NOW — … ═══` batches under a Vision/Guiding-Principles preamble — no NEXT/LATER,
+and Phase 0/1 only appeared deep in old batches. The assumed shape came from memory
+("NOW/NEXT/LATER buckets") and older uploaded docs ("Phase 0/1"), both stale vs. the repo. The
+executing session had to stop and disambiguate before writing.
+
+### The rule
+When an instruction manipulates a specific file's structure, never assume that structure from
+memory or stale uploads. Either read the live file first, or write the instruction
+structure-agnostic and have the agent inspect-then-confirm before any destructive write. Repo is
+the source of truth; memory and project-knowledge uploads lag it.
+
+### The specific fact (so it isn't rediscovered)
+- Canonical tasks file = /Users/chilly/Developer/bkg-main/tasks.todo.md (single-source; commit
+  9693337 made it so). The other ~12 worktree copies are stale and non-authoritative.
+- Shape: Vision/Principles preamble (top, untouched) → dated `## ═══ NOW ═══` batches, newest-first.
+  On reset, old batches move to tasks.todo.archive.md under a dated `> **Archived YYYY-MM-DD**` note —
+  archived, not deleted.

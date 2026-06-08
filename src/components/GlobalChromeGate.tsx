@@ -29,9 +29,17 @@ function GlobalChromeGateInner() {
   // over that action button. Hide them on /killerapp/stages/* the same way.
   if (/^\/killerapp\/stages(\/|$)/.test(pathname)) return null;
 
+  // The logged-out marketing homepage ("/") is a clean landing surface, not
+  // the Killer App shell. The bloom compass (CompassBloom) is in-app chrome —
+  // a project/lane navigator that only makes sense once you're inside a
+  // project — so we suppress it here. The "ask the garden" composer
+  // (GlobalAiFab) stays: it's the one ambient affordance a logged-out
+  // visitor should have. (2026-06-01 homepage rebuild.)
+  const isMarketingHome = pathname === '/';
+
   return (
     <>
-      <CompassBloom />
+      {!isMarketingHome && <CompassBloom />}
       <GlobalAiFab />
     </>
   );
