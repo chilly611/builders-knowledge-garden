@@ -146,7 +146,7 @@ export default function LaunchPage() {
       {/* Top Nav with Quest Line */}
       <nav className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "var(--border)" }}>
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo/b_transparent_512.png" alt="Builder's KG" width={28} height={28} className="rounded-md" />
+          <Image src="/brand/bkg-mark.png" alt="Builder's KG" width={28} height={28} className="rounded-md" />
           <span className="font-semibold text-sm">Smart Project Launcher</span>
         </Link>
         {step !== "dashboard" ? (

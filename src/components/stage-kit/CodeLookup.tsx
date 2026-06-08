@@ -44,11 +44,19 @@ export default function CodeLookup({
   phase,
   proMode,
   projectType,
+  jurisdiction,
 }: {
   phase: 'plan' | 'build';
   proMode: boolean;
   projectType?: string;
+  /** Active project's jurisdiction. Falls back to the SF demo seed label. */
+  jurisdiction?: string;
 }) {
+  // Display + lookup jurisdiction follows the active project. The wired
+  // UpCodes rows are California statewide code (CRC / Title 24 / CALGreen),
+  // which apply in Marin and elsewhere in CA; local amendments still need an
+  // AHJ check (see the verify note below).
+  const jLabel = jurisdiction?.trim() || SF_JURISDICTION_LABEL;
   const [query, setQuery] = useState('');
   const [state, setState] = useState<LookupState>({
     status: 'idle',
@@ -69,7 +77,7 @@ export default function CodeLookup({
         topicLabel: topic.label,
         section: topic.section,
         discipline: topic.discipline,
-        jurisdiction: SF_JURISDICTION_LABEL,
+        jurisdiction: jLabel,
         query: query.trim() || topic.label,
         projectType,
       });
@@ -111,7 +119,7 @@ export default function CodeLookup({
             color: colors.navy,
           }}
         >
-          <span aria-hidden>📍</span> {SF_JURISDICTION_LABEL}
+          <span aria-hidden>📍</span> {jLabel}
           <span style={{ color: '#14B8A6' }}>· live</span>
         </div>
         <span style={{ fontSize: 11, color: colors.graphite }}>
@@ -201,7 +209,7 @@ export default function CodeLookup({
         {state.status === 'idle' && (
           <p style={{ margin: 0, fontSize: 13, color: colors.graphite }}>
             Pick a topic above or type a question. You&rsquo;ll get a plain-language answer for{' '}
-            <b style={{ color: colors.navy }}>{SF_JURISDICTION_LABEL}</b> — no code-speak required.
+            <b style={{ color: colors.navy }}>{jLabel}</b> — no code-speak required.
           </p>
         )}
 

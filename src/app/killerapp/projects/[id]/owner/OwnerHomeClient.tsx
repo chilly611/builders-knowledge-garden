@@ -14,14 +14,15 @@
  * level up in LaneRouter.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import './owner-lane.css';
 import {
-  OwnerGauge, NeedsYouCard, FieldLog, OwnerEntry, GlobalStrips, PersistentNav,
-  SealMark, Reveal,
+  OwnerGauge, NeedsYouCard, FieldLog, OwnerEntry, Reveal,
   type Reading, type EntryData,
 } from './parts';
+import { ShellStrips, Seal, useSetShellConfig, SEAL_SRC, type ShellConfig } from '@/components/app-shell';
+import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 
 interface OwnerHomeData {
   preview: boolean;
@@ -49,6 +50,59 @@ function RedactedGauge({ label }: { label: string }) {
       <div className="ovg-q" style={{ marginTop: 8 }}>{label} isn&apos;t shared with you</div>
     </div>
   );
+}
+
+// Map the owner's lens-gated /api/owner-home data into a shared-shell config.
+// The owner budget cells keep the proven money-state map (Paid · pay-app · Soon)
+// and the journey reflects the schedule. Identical numbers to the old GlobalStrips.
+function buildOwnerConfig(data: OwnerHomeData | null, projectId: string): ShellConfig {
+  const overview = data?.overview ?? null;
+  const budget = data?.budget ?? null;
+  const schedule = data?.schedule ?? null;
+  const active = schedule?.active ?? 'build';
+  const MONEY: Record<string, 'paid' | 'now' | 'soon'> = {
+    'size-up': 'paid', lock: 'paid', plan: 'paid', build: 'now', adapt: 'soon', collect: 'soon', reflect: 'soon',
+  };
+  const fmtK = (n: number) => '$' + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  const cells = KAC_STAGES.map((s) => {
+    const st = MONEY[s.slug] ?? 'soon';
+    return {
+      stage: s.slug,
+      state: st,
+      amountLabel: st === 'paid' ? 'Paid' : st === 'now' ? fmtK(budget?.payApp ?? 0) : 'Soon',
+      tick: s.slug === active,
+    };
+  });
+  return {
+    laneSlug: 'owner',
+    laneLabel: 'Owner',
+    kicker: "Builder's Knowledge Garden · Owner",
+    projectId,
+    projectName: overview?.name ?? 'Your build',
+    sealSrc: SEAL_SRC,
+    budget: {
+      show: !!budget,
+      cells,
+      activeStage: active,
+      endBig: budget?.budgetLeftLabel ?? '—',
+      endSub: budget ? `left of ${budget.budgetTotalLabel}` : '',
+    },
+    journey: {
+      show: !!schedule,
+      activeStage: active,
+      pct: schedule?.buildPct ?? 0,
+      weekOf: schedule?.weekOf ?? 0,
+      weeksTotal: schedule?.weeksTotal ?? 0,
+    },
+    nav: [
+      { id: 'home', label: 'Your build', sub: 'Where things stand' },
+      { id: 'needs', label: 'Needs you', sub: '1 waiting', flag: true },
+      { id: 'files', label: 'Photos & files', sub: 'Your field log' },
+      { id: 'money', label: 'Money', sub: 'Budget & payments' },
+      { id: 'people', label: 'People', sub: 'Builder & crew' },
+    ],
+    ready: !!data,
+  };
 }
 
 export default function OwnerHomeClient({ projectId, preview = false }: { projectId: string; preview?: boolean }) {
@@ -87,6 +141,18 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
     return () => document.body.classList.remove('bkg-lane-owner');
   }, []);
 
+  // Promote the owner's lens-gated data into the shared App Shell so the
+  // persistent ShellNav (compass + "Ask or tell the garden") reflects the
+  // Owner lane and tags captures to project + lane. The owner renders its OWN
+  // ShellStrips below (lens-gated); the layout-level strips are suppressed on
+  // this surface via body.bkg-lane-owner.
+  const setShell = useSetShellConfig();
+  const ownerConfig = useMemo<ShellConfig>(() => buildOwnerConfig(data, projectId), [data, projectId]);
+  useEffect(() => {
+    if (data) setShell(ownerConfig);
+    return () => setShell(null);
+  }, [data, ownerConfig, setShell]);
+
   if (status === 'loading') {
     return <div className="ov-root" style={{ padding: 48, fontFamily: 'var(--font-editorial)', fontStyle: 'italic', color: 'var(--ink-faded)' }}>Loading your build…</div>;
   }
@@ -100,18 +166,9 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
   return (
     <div className="ov-root">
       <div className="ov ov-desktop">
-        <GlobalStrips
-          projectName={projectName}
-          active={schedule?.active ?? 'build'}
-          payApp={budget?.payApp ?? 0}
-          budgetLeftLabel={budget?.budgetLeftLabel ?? ''}
-          budgetTotalLabel={budget?.budgetTotalLabel ?? ''}
-          buildPct={schedule?.buildPct ?? 0}
-          weekOf={schedule?.weekOf ?? 0}
-          weeksTotal={schedule?.weeksTotal ?? 0}
-          showBudget={!!budget}
-          showSchedule={!!schedule}
-        />
+        <div className="bkg-shell" data-shell-mount="page">
+          <ShellStrips config={ownerConfig} />
+        </div>
 
         <div className="ov-content">
           {/* Greeting */}
@@ -139,7 +196,7 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
                   <h1 className="ov-hero-title">Where your build stands</h1>
                   <div className="ov-hero-sub">The same gauges your builder reads — in plain words, just for you.</div>
                 </div>
-                <div className="ov-hero-seal"><SealMark size={76} delay={0.15} /></div>
+                <div className="ov-hero-seal"><Seal size={76} /></div>
                 <div className="ov-hero-cap"><span className="plate-caption">Modern Farmhouse</span></div>
               </header>
             </Reveal>
@@ -209,8 +266,6 @@ export default function OwnerHomeClient({ projectId, preview = false }: { projec
             <span>XRWorkers · Knowledge Gardens · 2026</span>
           </div>
         </div>
-
-        <PersistentNav />
       </div>
     </div>
   );

@@ -23,23 +23,28 @@ import { MaterialsCSI } from '@/components/MaterialsCSI';
 import { GanttChartPlaceholder } from '@/components/GanttChartPlaceholder';
 import { runSequencingCheck } from '@/lib/specialists/plan';
 import {
-  MARIN_PROJECT,
-  MARIN_PROJECT_ID,
-  MARIN_BUDGET_TOTAL,
-  MARIN_BUDGET_SPENT,
   MARIN_PLAN_PHASES,
   WEEKLY_OVERHEAD,
   computeSchedule,
-  ensureMarinActive,
   seedMarinBudget,
   type PlanPhase,
 } from '@/lib/demo/marin-4000';
+import { useStageProject } from '@/lib/hooks/useStageProject';
+import { permitsForProject, materialsForProject } from '@/lib/projects/projectToolData';
 import { colors, fonts } from '@/design-system/tokens';
 
 const STAGE_ACCENT = '#2E9E9A'; // stage 3 (teal)
 
 function fmtMoney(n: number): string {
   return `$${Math.round(n).toLocaleString('en-US')}`;
+}
+
+// Compact form for the insight ribbon ($1.65M / $950K). Marin's 1,650,000
+// renders as "$1.65M" exactly as before, so the canonical demo is unchanged.
+function fmtCompact(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2).replace(/\.?0+$/, '')}M`;
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
+  return `$${Math.round(n)}`;
 }
 
 // ── Static previews for the WordPress'd stubs ──────────────────────────────
@@ -161,16 +166,20 @@ const sectionHeading: React.CSSProperties = {
 
 function PlanStageBody() {
   const { setBudget, proMode } = useStageChrome();
+  const sp = useStageProject();
   const [phases, setPhases] = useState<PlanPhase[]>(MARIN_PLAN_PHASES);
   const [aiNote, setAiNote] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
 
   const schedule = useMemo(() => computeSchedule(phases), [phases]);
+  const budgetLabel = sp.budgetTotal
+    ? `${fmtCompact(sp.budgetTotal)} budget holding steady`
+    : 'budget holding steady';
 
   // Contract total holds steady; the sequencing drag moves the live TIMELINE.
   useEffect(() => {
-    setBudget({ total: MARIN_BUDGET_TOTAL, timelineWeeks: schedule.totalWeeks });
-  }, [schedule, setBudget]);
+    setBudget({ total: sp.budgetTotal ?? 0, timelineWeeks: schedule.totalWeeks });
+  }, [schedule, setBudget, sp.budgetTotal]);
 
   const concurrentIds = useMemo(() => {
     const ids = new Set<string>();
@@ -190,8 +199,8 @@ function PlanStageBody() {
       const res = await runSequencingCheck({
         phaseNames: phases.map((p) => p.name),
         totalWeeks: schedule.totalWeeks,
-        projectType: MARIN_PROJECT.project_type,
-        jurisdiction: MARIN_PROJECT.jurisdiction,
+        projectType: sp.buildingType,
+        jurisdiction: sp.jurisdiction,
       });
       const n = (res.narrative || '').trim();
       setAiNote(n.length > 30 ? n : 'Sequence looks workable. Keep the MEP rough-ins clustered so they run concurrently, and don’t start drywall until rough inspections pass.');
@@ -235,7 +244,7 @@ function PlanStageBody() {
         <section style={{ ...sectionCard, minHeight: 280 }}>
           <h2 style={sectionHeading}>Plain-speak code lookup</h2>
           <div style={{ flex: 1, minHeight: 160 }}>
-            <CodeLookup phase="plan" proMode={proMode} projectType={MARIN_PROJECT.project_type} />
+            <CodeLookup phase="plan" proMode={proMode} projectType={sp.buildingType} jurisdiction={sp.jurisdiction} />
           </div>
         </section>
       </div>
@@ -245,7 +254,7 @@ function PlanStageBody() {
           permit deadlines drive the sequencing this page lets you tune. */}
       <section style={sectionCard}>
         <h2 style={sectionHeading}>Permits</h2>
-        <PermitsList flush />
+        <PermitsList permits={permitsForProject(sp)} flush />
       </section>
 
       {/* Coming soon — WordPress'd, collapsible, never crowds the tools */}
@@ -276,7 +285,7 @@ function PlanStageBody() {
             is on so the default Plan view stays uncrowded. */}
         {proMode && (
           <div style={{ marginTop: 14 }}>
-            <MaterialsCSI twoColumn={false} />
+            <MaterialsCSI divisions={materialsForProject(sp)} twoColumn={false} />
           </div>
         )}
       </details>
@@ -301,7 +310,7 @@ function PlanStageBody() {
         <div style={{ marginTop: 3, fontSize: 12.5, color: colors.graphite }}>
           {schedule.weeksSavedByParallel > 0
             ? <>≈ {fmtMoney(schedule.weeksSavedByParallel * WEEKLY_OVERHEAD)} in general-conditions overhead saved · $1.65M budget holding steady</>
-            : <>Cluster the MEP rough-ins together to run them concurrently and cut overhead · $1.65M budget holding steady</>}
+            : <>Cluster the MEP rough-ins together to run them concurrently and cut overhead · {budgetLabel}</>}
         </div>
         <button
           type="button"
@@ -336,20 +345,20 @@ function PlanStageBody() {
 }
 
 export default function PlanStagePage() {
+  const sp = useStageProject();
   useEffect(() => {
-    ensureMarinActive();
-    seedMarinBudget();
-  }, []);
+    if (sp.isCanonicalDemo) seedMarinBudget();
+  }, [sp.isCanonicalDemo]);
 
   return (
     <StageShell
       stageId={3}
       stageTitle="Plan it out"
-      projectId={MARIN_PROJECT_ID}
-      projectName={MARIN_PROJECT.name}
-      projectMeta={`${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`}
-      initialBudget={MARIN_BUDGET_TOTAL}
-      budgetSpent={MARIN_BUDGET_SPENT}
+      projectId={sp.projectId}
+      projectName={sp.projectName}
+      projectMeta={sp.projectMeta}
+      initialBudget={sp.budgetTotal}
+      budgetSpent={sp.budgetSpent}
       primaryAction={{}}
     >
       <PlanStageBody />

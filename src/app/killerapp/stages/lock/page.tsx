@@ -18,7 +18,8 @@ import { supabase } from '@/lib/supabase';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
-import { MARIN_PROJECT, MARIN_PROJECT_ID, MARIN_BUDGET_TOTAL, MARIN_BUDGET_SPENT, ensureMarinActive, seedMarinBudget } from '@/lib/demo/marin-4000';
+import { seedMarinBudget } from '@/lib/demo/marin-4000';
+import { useStageProject } from '@/lib/hooks/useStageProject';
 import { colors, fonts } from '@/design-system/tokens';
 import { runLockReview, requestClientAgreement, emitLockWrite } from '@/lib/specialists/lock';
 import type { LockReviewResult, AgreementResult } from '@/lib/specialists/lock';
@@ -35,7 +36,6 @@ const C = {
   paper: colors.paper.white,
 };
 const FONT = fonts.body;
-const ACTIVE_PROJECT_KEY = 'bkg-active-project';
 
 const MATERIAL_CHIPS = [
   'Standing seam metal roof',
@@ -50,16 +50,6 @@ const MATERIAL_CHIPS = [
   'Tankless water heater',
 ];
 
-function readActiveProjectId(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const fromUrl = new URL(window.location.href).searchParams.get('project');
-    if (fromUrl) return fromUrl;
-    return window.localStorage.getItem(ACTIVE_PROJECT_KEY);
-  } catch {
-    return null;
-  }
-}
 async function authedFetch(input: string, init: RequestInit = {}) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -136,50 +126,48 @@ interface Handoff {
 // ─── outer ────────────────────────────────────────────────────────────────────
 
 export default function LockPage() {
-  const [ctx, setCtx] = useState<{ projectId: string | null; name: string; meta: string; initialBudget: number; handoff: Handoff | null; clientName: string; scopeText: string }>(() => ({
-    projectId: null,
-    name: MARIN_PROJECT.name,
-    meta: `${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`,
-    initialBudget: MARIN_BUDGET_TOTAL,
-    handoff: null,
-    clientName: MARIN_PROJECT.client_name,
-    scopeText: MARIN_PROJECT.project_type,
-  }));
+  const sp = useStageProject();
+  const [handoff, setHandoff] = useState<Handoff | null>(null);
 
   useEffect(() => {
-    ensureMarinActive();
-    seedMarinBudget();
+    if (sp.isCanonicalDemo) seedMarinBudget();
+  }, [sp.isCanonicalDemo]);
+
+  // Read the Size Up → Lock handoff (budget + scope carry-over) for the ACTIVE
+  // project. Identity / jurisdiction / client / budget come from useStageProject().
+  // Deferred to a microtask so the localStorage read doesn't setState
+  // synchronously inside the effect body (react-hooks/set-state-in-effect).
+  useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const id = readActiveProjectId() ?? MARIN_PROJECT_ID;
-      let handoff: Handoff | null = null;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      let next: Handoff | null = null;
       try {
-        const raw = window.localStorage.getItem(`bkg:sizeup:${id}`);
-        if (raw) handoff = JSON.parse(raw) as Handoff;
+        const raw = window.localStorage.getItem(`bkg:sizeup:${sp.projectId}`);
+        next = raw ? (JSON.parse(raw) as Handoff) : null;
       } catch {
-        /* ignore */
+        next = null;
       }
-      if (!cancelled) {
-        setCtx((c) => ({ ...c, projectId: id, handoff, initialBudget: handoff?.budget ?? handoff?.mid ?? c.initialBudget, scopeText: handoff?.scopeText ?? c.scopeText }));
-      }
-      try {
-        const res = await authedFetch(`/api/v1/projects?id=${encodeURIComponent(id)}`);
-        if (!res.ok) return;
-        const j = (await res.json()) as Record<string, unknown>;
-        if (cancelled || !j || !j.id) return;
-        setCtx((c) => ({ ...c, name: (j.name as string) || c.name, clientName: (j.client_name as string) || c.clientName, scopeText: (j.notes as string) || (j.ai_summary as string) || c.scopeText }));
-      } catch {
-        /* offline / unauth */
-      }
-    })();
+      setHandoff(next);
+    });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [sp.projectId]);
+
+  const initialBudget = handoff?.budget ?? handoff?.mid ?? sp.budgetTotal;
+  const scopeText = handoff?.scopeText ?? sp.buildingType;
 
   return (
-    <StageShell stageId={2} stageTitle="Lock" projectId={ctx.projectId} projectName={ctx.name} projectMeta={ctx.meta} initialBudget={ctx.initialBudget} budgetSpent={MARIN_BUDGET_SPENT}>
-      <LockBody projectId={ctx.projectId} projectName={ctx.name} clientName={ctx.clientName} scopeText={ctx.scopeText} handoff={ctx.handoff} />
+    <StageShell stageId={2} stageTitle="Lock" projectId={sp.projectId} projectName={sp.projectName} projectMeta={sp.projectMeta} initialBudget={initialBudget} budgetSpent={sp.budgetSpent}>
+      <LockBody
+        key={`${sp.projectId}:${sp.loading ? 'loading' : 'ready'}`}
+        projectId={sp.projectId}
+        projectName={sp.projectName}
+        clientName={sp.clientName}
+        scopeText={scopeText}
+        handoff={handoff}
+      />
     </StageShell>
   );
 }
@@ -188,17 +176,17 @@ export default function LockPage() {
 
 function LockBody({ projectId, projectName, clientName, scopeText, handoff }: { projectId: string | null; projectName: string; clientName: string; scopeText: string; handoff: Handoff | null }) {
   const router = useRouter();
-  // #6: read proMode only — budget chip stays pinned to the Marin seed.
   const { proMode } = useStageChrome();
+  const sp = useStageProject();
 
   const [materials, setMaterials] = useState<string[]>([]);
-  const initialBudget = handoff?.budget ?? handoff?.mid ?? MARIN_BUDGET_TOTAL;
+  const initialBudget = handoff?.budget ?? handoff?.mid ?? (sp.budgetTotal ?? 0);
   const [budget, setBudgetVal] = useState<number>(initialBudget);
   const [budgetText, setBudgetText] = useState(String(initialBudget));
   const [budgetConfirmed, setBudgetConfirmed] = useState(false);
 
   const [agreementOpen, setAgreementOpen] = useState(false);
-  const [signerName, setSignerName] = useState(clientName !== MARIN_PROJECT.client_name ? clientName : '');
+  const [signerName, setSignerName] = useState(!sp.isCanonicalDemo && clientName ? clientName : '');
   const [signerEmail, setSignerEmail] = useState('');
   const [agreement, setAgreement] = useState<AgreementResult | null>(null);
 
