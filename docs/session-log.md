@@ -3507,29 +3507,27 @@ API; resolved by awaiting `params`.
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
 
 ---
+## 2026-05-31 — Claude Code: Playwright e2e + data-consistency harness (the regression net)
+**Agent:** Claude Code (claude-opus-4-8)
+**Branch:** `test/e2e-consistency` (PR only, no merge)
 
-## 2026-05-31 — Claude Code: RSI OUTBOUND daily heartbeat (Stage 4a · Loop 1 Code & Data Drift)
-**Agent:** Claude Code (claude-opus-4-8) · stream = backend/schema
-**Branch:** `feat/rsi-heartbeat` (worktree `bkg-heartbeat`, rebased onto `origin/main`). PR opened vs `main`; **NOT merged.** New code only — no UI, no shell.
+**What was built (tests/ only — zero app-code changes under `src/`):**
+- `playwright.config.ts` — drives the real `next dev` (Turbopack) on a dedicated port (3210, override `BKG_E2E_PORT`) so it never collides with a `:3000` server in another worktree; `testMatch: **/*.e2e.ts` so the app's `vitest` (`npm test`) never executes these; artifacts under `tests/.artifacts/` (gitignored). Added `@playwright/test` to devDependencies + Chromium.
+- `tests/e2e/fixtures/bkg.ts` — chrome-agnostic readers (`readChromeBudget`/`readChromeJourney`/`readDemoBody`, `chromeRegion`) that match BOTH today's `killerapp-chrome` (ARIA accessible names — it ships no `data-*`) and the post-fix `app-shell` (`.bkg-shell .gstrip-*`); `parseMoney`; deterministic setup (`pinAnonymous`, `dismissStageWelcome`, `seedBudgetLedger`).
+- `tests/e2e/data-consistency.e2e.ts` — the **Marin-over-other-project** regression net.
+- `tests/e2e/real-loop.e2e.ts` — sign-in surface → open a project → budget editor → save → leave → return → resume.
+- `tests/e2e/mobile-chrome.e2e.ts` — chrome ribbon at 375px: no horizontal page overflow + no KPI-block collision.
 
-**Context / diagnosis (read first):** `docs/rsi/README.md` + `docs/strategy/rsi-narrative.md` (Loop 1 = "Code & Data Drift Detection"), the **Manual RSI Protocol** (multi-lane brief — human-in-loop, never auto-apply), and the two target tables. `heartbeat_reports` (id, location, project_types[], alert_level CHECK green/yellow/red, summary, report_data jsonb, generated_by) and `improvement_ledger` (loop NOT NULL, action_type NOT NULL, description, impact_metric, impact_before/after numeric, cost jsonb, confidence numeric, metadata jsonb — **no status column → review state lives in metadata**) both pre-exist on the SHARED prod instance `vlezoyalutexenbnzzui`, both RLS service-role-only (per `20260531_rls_group_a_lockdown.sql`). KG = `knowledge_entities` (2,256 published). **No schema changes.**
+**Key decisions:**
+- **No auth needed.** Clerk is unwired and no route is gated; the app boots/renders fully unauthenticated with placeholder Supabase env. Tests assert the client-side path (per brief: don't block on auth-gated surfaces).
+- **Consistency target = `demo-project`** — the one project whose body + ledger resolve with NO backend (`ProjectDashboardClient → getDemoProject() → docs/demo-data/demo-project.json`, "Willow Creek ADU"). Real UUIDs are backend-gated (`GET /api/v1/budget` → 401), so they can't anchor an anonymous net.
+- **The net flips RED→GREEN with no test edits:** readers prefer the app-shell hooks when present. Today the old chrome renders Marin; after Stage 2 the app-shell reads the same demo fixture, so chrome === body === ledger.
+- **Real-loop persistence = budget-editor localStorage** (`bkg-budget-anonymous`) — the verified backend-free happy-path. On return a non-empty ledger renders the saved line as a collapsed grid row, so resume is asserted as the description visible as text (not as an input value) plus the rehydrated `.bkg-budget-grid`.
 
-**What was built (new code only):**
-- `src/lib/rsi-outbound/sources.ts` — **the sources registry config** (21 enabled: ICC IBC/IRC/IFC/IMC/IPC/IECC, CA Title 24, NFPA 70/101, OSHA 1926/1910, EPA, ACI/AISC/ASCE/ASHRAE/AWC, Federal Register JSON feed, CPSC recalls, Census C30, BLS PPI; URLs from `docs/EXTERNAL-CODE-SOURCES.md`). Edit + bump `REGISTRY_VERSION` to add/retire a source. Carries `KG_ENTITY_TYPE_BASELINE` (offline impact-sizing fallback).
-- `src/lib/rsi-outbound/heartbeat.ts` — **engine** `runOutboundHeartbeat()`: poll each source for a drift signature (HTTP ETag/Last-Modified/Content-Length; HEAD, GET-range for bot-blockers; 8s timeout, errors non-fatal) → diff vs the previous OUTBOUND run (stored in the last `report_data.sources[].signature`) → classify unchanged/changed/new/error → ENQUEUE an `improvement_ledger` candidate per changed/seeded source (loop=`loop1_code_data_drift`, action_type=`kg_drift_candidate`, metadata.status=`pending_review`, auto_apply=false) → write a `heartbeat_reports` run summary (alert green/yellow/red). Reads `knowledge_entities` only to size impact.
-- `src/lib/rsi-outbound/types.ts` — shared types.
-- `src/app/api/v1/cron/rsi-heartbeat/route.ts` — **Vercel cron entry** (GET=cron, POST=manual, `?dryRun=1`). Auth `x-vercel-cron:1` OR `Bearer CRON_SECRET` (matches onboarding-reminders/crm-send-flush); missing Supabase → 200 skip.
-- `src/scripts/rsi-outbound-heartbeat-dryrun.ts` — VERIFY runner (`npx tsx src/scripts/rsi-outbound-heartbeat-dryrun.ts`).
-- `vercel.json` — **additive** cron `{ "/api/v1/cron/rsi-heartbeat", "0 9 * * *" }` (only existing file touched; required to run daily).
+**Verified (live suite, `npx playwright test`): 3 passed / 2 RED-by-design.**
+- GREEN: consistency *control* (body === ledger: Willow Creek $116k remaining / $340k total), mobile 375px (no overflow, no KPI collision), real-loop (line survives leave→return + rehydrates).
+- RED (the net, expected on `main`): the persistent chrome shows Marin **$1.15M remaining / $1.65M total / "Plan" 85%** while the open project's body+ledger are **$116k / $340k / "Build" 62%**; and the chrome still shows Marin `$312K`/`$1.65M` over a deliberately-seeded demo ledger. Root cause confirmed live: `src/app/killerapp/layout.tsx` mounts `<KillerAppChrome />` with no `project` prop → `marinKacProject()` → `getCanonicalProject()` (hardcoded Marin). Turns GREEN once Stage 2 binds the chrome to the viewed project.
 
-**GUARDRAIL (Manual RSI Protocol):** enqueue-only. Engine carries a write allow-list `['heartbeat_reports','improvement_ledger']` (throws on anything else); `knowledge_entities` is read-only; every candidate is `auto_apply=false` / `requires=founder_review`; report_data records `guardrail.knowledge_graph_writes=0`.
-
-**Verified (dry run → real tables → cleanup):**
-- Offline dry run: 21 scanned, **5 drifted** (IBC, IRC, NEC, OSHA-1926, Federal Register — the seeded high-signal set), 16 unchanged, 0 errors; **5 candidates**; alert=red; eslint-clean on all new files.
-- Wrote the engine's exact payloads to prod via the service-role path: **1 `heartbeat_reports` row + 5 `improvement_ledger` candidates** inserted (satisfied NOT NULL loop/action_type, alert_level CHECK, jsonb). SELECT confirmed every candidate `status=pending_review` / `auto_apply=false` / impact_before 977/918/569/569/325 / confidence 0.7.
-- Cleaned up: deleted the 6 dry-run-tagged rows by run_id; both tables back to 0. **No residue in shared prod.**
-
-**FLAGS — founder decision:**
-1. **Shared `heartbeat_reports` reader.** The existing `/api/v1/heartbeat` GET (contractor "AI COO" briefing) returns the LATEST row of that table **unfiltered**. Once both that briefing AND this OUTBOUND job write, the briefing could surface an RSI run summary. Out of scope here ("touch nothing else") — recommend the briefing GET filter `report_data->>'kind' <> 'rsi_outbound_heartbeat'`. OUTBOUND rows are already tagged `generated_by='rsi-outbound-heartbeat:*'` + `report_data.kind`.
-2. **Docs scope.** Did NOT touch `tasks.todo.md` / `tasks.lessons.md` (task scope = session-log only) — update at merge if desired.
-3. **No LLM dependency.** v1 drift detection is HTTP-validator based (deterministic, free). Enriching candidate descriptions via Claude is a clean future add. NFPA/concrete.org bot-block HEAD → may log `error` (non-fatal; alert reflects it).
+**Notes:**
+- Co-developed with a parallel stream (fixtures/config/spec scaffolding referencing dogfood pass-01). This session reconciled the suite (removed a duplicate mobile spec), corrected the real-loop resume assertion (input→visible-text on return), added the Playwright `.gitignore` block, and verified the suite end-to-end against the live dev server.
+- Pre-existing harmless dev-server noise unchanged: `globals.css` `:global(...)` PostCSS warning, image `qualities` warning, `middleware`→`proxy` deprecation.

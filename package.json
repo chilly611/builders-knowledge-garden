@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "seed:codes": "node scripts/seed-code-entities.mjs",
     "probe:adversarial": "node scripts/probes/adversarial-codes.mjs",
     "build:mcpb": "node scripts/build-mcpb.mjs",
@@ -42,6 +43,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
