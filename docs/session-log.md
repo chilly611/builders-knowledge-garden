@@ -3531,3 +3531,416 @@ API; resolved by awaiting `params`.
 **Notes:**
 - Co-developed with a parallel stream (fixtures/config/spec scaffolding referencing dogfood pass-01). This session reconciled the suite (removed a duplicate mobile spec), corrected the real-loop resume assertion (input→visible-text on return), added the Playwright `.gitignore` block, and verified the suite end-to-end against the live dev server.
 - Pre-existing harmless dev-server noise unchanged: `globals.css` `:global(...)` PostCSS warning, image `qualities` warning, `middleware`→`proxy` deprecation.
+**Branch:** `feat/compliance-service` — **PR only, NOT merged** (per task). Worktree: `/Users/chilly/Developer/bkg-compliance`.
+**Scope:** Service layer ONLY. No UI (waits behind Stage 2), no shell, no schema changes.
+
+**Diagnosis (the load-bearing finding):**
+- The `jurisdictions` (44) + `knowledge_entities` (2256) tables named in the task live in the **`knowledge-gardens-prod`** Supabase project (`vlezoyalutexenbnzzui`) — the DB the app actually uses — **NOT** the similarly-named `builders-knowledge-garden` project (`gtmjcslcerakkgftozfy`), which has `kg_`-prefixed tables at 26/35 rows. Building against the latter would have been wrong; row counts (2256/44) were the tell.
+- **Code sections are modeled as `knowledge_entities` rows**: `entity_type IN (building_code[569], code_section, safety_regulation, standard, code)`, linked to `jurisdictions` via `jurisdiction_ids uuid[]` (or flagged `applies_globally`). `title`/`summary` are jsonb `{en}`. Section + code system live in `metadata` under **inconsistent keys** (`{section, code_body}` vs `{code_section, code_system}`) — the service handles both. Provenance = `source_urls[]`; attestation = `manually_verified_at` / `auto_verified_at` (+`auto_verification_flagged`).
+- Coverage is uneven: CA richly covered (~88 scoped, e.g. ca-marin 29, ca-sf 12); NV/AZ partial; national model codes are their own jurisdictions (ibc-2024=57). FL/TX/CO/NY/NC/WA jurisdictions EXIST but hold **zero** scoped codes.
+
+**What was built (3 new files):**
+- **`src/lib/compliance-lookup.ts`** — the service. `lookupCodeCitations({query, jurisdiction, discipline?, limit?})` returns code citations drawn ONLY from structured data. Jurisdiction resolution done in TS over the 44-row table (handles the `CA` vs `California` casing split + a US state code↔name alias map). Walks `parent_id` so a city/county inherits state + ancestor codes. DB surface is a tiny injectable `ComplianceDataSource` interface (default = `createSupabaseDataSource()` on the anon client, same RLS path as `code-sources/rag.ts` + `/api/v1/search`).
+- **`src/app/api/v1/compliance/lookup/route.ts`** — `GET` (`?q=&jurisdiction=&discipline=&limit=`) + `POST` (JSON). 200 with explicit `status` for any real answer; 400 missing input; **503 fail-closed** when the data source is unconfigured/unavailable (never a placeholder/mock answer); 500 unexpected. Emits `compliance.check` (RSI Loop 4), best-effort.
+- **`src/lib/__tests__/compliance-lookup.test.ts`** — 42 tests, hermetic via a fake data source.
+
+**LIABILITY design (the whole point):**
+- **No LLM anywhere on this path.** Every citation is a real `knowledge_entities` row carrying `entityId` (audit anchor), `sourceUrls` (verbatim), matched `jurisdiction` + `scope` (`jurisdiction`/`ancestor`/`global`), and `verification` level. The `citation` label is *derived* from stored fields; absent fields → `null`, never a placeholder.
+- **3-state honest coverage:** `covered` (resolves + has scoped data + query matches) · `no_results` (covered jurisdiction, query matched nothing — still no guess) · `not_covered` → exact phrase **"not yet covered for {jurisdiction}"** for both unknown jurisdictions (`reason: unknown_jurisdiction`) and known-but-no-data ones like Texas (`reason: no_code_data_for_jurisdiction`).
+- **Fail closed:** data-source errors throw `ComplianceDataError` (route → 503) rather than degrade to a misleading "not covered".
+- Coverage is established by **scoped** data only; global model codes are returned (labelled `scope:global`) but don't by themselves make a jurisdiction "covered". National model-code jurisdictions (IBC-2024) are NOT auto-applied to a state query unless the parent chain links them — including them would be inference, which is forbidden.
+
+**Verified:**
+- `vitest`: **42/42 pass**. `tsc --noEmit`: 0 errors in the new files (123 pre-existing project-wide errors are unrelated tech debt). eslint: clean (test dir is outside eslint scope by config).
+- **Live run against prod** (real `createSupabaseDataSource`): CA + "egress windows" → `covered`, `IBC §1027 (2021)` scoped to ca-marin (auto-verified, ICC source) ranked above global model codes. CA + "fire sprinkler" → IFC 903 / NFPA 13 (global, sourced). **Texas → "not yet covered for Texas"** (known, no data, resolved tx-state/tx-aus). **Oregon → "not yet covered for Oregon"** (unknown).
+
+**Issues / flags:**
+- **RLS advisory (pre-existing, NOT mine, schema untouched):** `knowledge_entities` + `jurisdictions` both have RLS enabled (good). The advisory flags other tables (toxicology `substances*`, `specialist_runs`, etc.) with RLS disabled — out of scope here; surfacing per policy, not acting.
+- The OR-of-ilike FTS fallback can surface weakly-relevant rows (relevance `0.1`, `matchedOn:["full-text"]`) when `plainto_tsquery` returns nothing — identical behavior to the existing `/api/v1/search` route + `rag.ts`. Not fabrication (every row real + sourced); Stage-2 UI can threshold on `relevance`.
+- This service is intentionally narrower than `src/lib/code-sources` (the 6-source RAG orchestrator that blends external citation-only publishers + vector recall) — structured-data-only is the right trust posture for an actionable compliance answer.
+- Session-log appended **in-branch** (part of the PR), not pushed to `main`, per "PR only; don't merge." `tasks.todo.md` / `tasks.lessons.md` left untouched (out of the stated file scope).
+
+---
+
+## 2026-05-31 — Integration pass: shared App Shell (Stage 2) + RSI heartbeat + compliance → main → PROD
+
+Single-session integration onto the **clean base `origin/main` = `cc54ab9`** (NOT local main, which carried 2 held Owner-Lane commits). Sole writer to `main`; confirmed each merge with the founder.
+
+### Held Owner-Lane commits — EXCLUDED from main (per instruction), preserved
+- `03272c3` feat(owner): design parity · `398539e` docs(session): Owner Lane design-parity pass
+- These were local `main`'s 2-commit lead over `origin/main`. **Two of three feature branches were stacked on top of them**, so a plain "rebase on origin/main" would have shipped them. Dropped surgically (`git rebase --onto origin/main 398539e <branch>`).
+- Preserved on new branch **`owner-lane-held` = `398539e`** (+ reflog). Absent from `main`.
+
+### Merges (in order)
+1. **feat/shared-app-shell** — rebased `--onto origin/main 398539e` (dropped both held). Conflict in `src/app/killerapp/projects/[id]/owner/icons.tsx` → resolved to the app-shell thin re-export (`export { Ico, StageIco } from '@/components/app-shell/icons'`; centralized module verified self-contained). `npm run build` GREEN (124 routes). Merged ff → `caf32ed 3ec2396 25d2762 8fbb8e2 d1b63d4`.
+2. **feat/rsi-heartbeat** — clean single commit; rebased onto new main (no conflict) `9be83cc`→`35c461e`. `npm run build` GREEN. Merged ff → `35c461e`. (Adds a `vercel.json` cron entry.)
+3. **feat/compliance-service** — rebased `--onto main 398539e` (dropped both held; no conflict) `5e3f779`→`dc91eca`. **42/42** unit tests pass. Merged ff → `dc91eca`.
+
+**Final `main` = `dc91eca`** — 7 commits on `cc54ab9`, zero Owner-Lane commits.
+
+### Full e2e suite on main (Playwright harness from `test/e2e-consistency` @ `18e7e76`, run against `dc91eca`)
+- **data-consistency.e2e.ts (project-home `chrome === body === ledger`): 3/3 GREEN** — the regression net flipped **RED→GREEN** (chrome now bound to the viewed project: `$116K` remaining / `$340K` total / Build 62%, Willow Creek; zero Marin leakage). Required a 1-line `waitFor` added to `readDemoBody` **locally only** (defeats a post-Stage-2 hydration race); the test branch is untouched — flag for the test stream.
+- **mobile-chrome.e2e.ts: GREEN.**
+- **real-loop.e2e.ts: 1 RED** — harness flow mismatch (budget empty-state add-line selectors stale: expects `Materials` / `+ Add a line` buttons; live UI uses category cards + AI-estimate CTAs). **Not an app bug, not integration-caused** (`src/app/killerapp/**` + `app-shell/**` diff `d1b63d4`↔`dc91eca` is empty). Flag for the test stream to recalibrate.
+
+### Deploys (Vercel · the-knowledge-gardens/builders-knowledge-garden)
+- **Preview** (Stage 2): `builders-knowledge-garden-jc651lj4l-the-knowledge-gardens.vercel.app` (target=preview, READY; SSO-gated).
+- **Production** (`vercel --prod`, `dpl_37gsPtmc7P25NadPWZuodHPR2HAV`): **https://builders-knowledge-garden.vercel.app** — target=production, READY.
+
+### Explicitly NOT done (by design)
+- **RLS migration NOT deployed** (separate founder step). `supabase/migrations/20260531_rls_group_a_lockdown.sql` + its log note remain parked in the `bkg` worktree (untracked file + `git stash@{0}`); never added to `main`.
+- **2 held Owner-Lane commits NOT merged** (on `owner-lane-held`).
+- **`main` NOT pushed to origin** (local integration; `origin/main` still `cc54ab9`, fast-forwardable to `dc91eca`).
+- Rebased `feat/shared-app-shell` + `feat/compliance-service` now diverge from their `origin` counterparts (history rewritten to drop held commits) — force-push needed to update those PRs.
+
+---
+
+## 2026-05-31 — Reconcile repo ⇄ deployed prod (founder: leave prod live)
+
+Founder decision on the early CLI `vercel --prod`: **keep it** (integrated build is the intended direction; rollback would only restore the stale build). Reconciled the repo so the deployed state is git-sourced going forward.
+
+- **Pushed `main` → origin:** `origin/main` fast-forwarded `cc54ab9 → e841471` (no force; held Owner-Lane commits verified absent). `origin/main == e841471` confirmed. This is the normal prod path — Vercel git-integration should auto-deploy from it.
+- **Production domain:** `builders.theknowledgegardens.com` + `builders-knowledge-garden.vercel.app` both serve HTTP 200, and the SSR HTML carries the Stage-2 app-shell (`.bkg-shell`, `.gstrip`) with **no** Marin/old-chrome markers — the integrated build is live. *Caveat:* the `e841471` app bundle is byte-identical to the earlier CLI deploy (`dc91eca` + a docs-only commit), and with no Vercel dashboard access I could not independently confirm the git-integration deployment fired vs. the CLI one — **founder to verify a fresh git-sourced deployment in the Vercel dashboard** (2FA pending).
+- **RLS Group A:** already applied to the prod DB (`knowledge-gardens-prod`, founder's separate step). Committed the migration file (`supabase/migrations/20260531_rls_group_a_lockdown.sql`, `5050c83`) so the repo tracks what's live — inert to the Vercel build (Supabase migrations run out-of-band), idempotent. App talks to the 7 secured tables via the service-role client → app + secured DB consistent; no conflict from deploy order.
+- **NOT done:** held Owner-Lane commits still unmerged (`owner-lane-held`). The RLS-file + this session-log commit are **local only** — `origin/main` deliberately left at `e841471` pending founder go to push them.
+
+---
+
+## 2026-06-01 — Public marketing homepage rebuild ("/")
+
+Rebuilt the logged-out marketing homepage on the **herbarium design system**, on a clean sibling worktree (`/Users/chilly/Developer/bkg-homepage`, branch **`feat/homepage-rebuild`** off `origin/main = ef54dd3`). **PR only — not merged.** Verified on a local preview (`:3300`) before handoff.
+
+### Files
+- `src/app/page.tsx` — now a **server shell**: loads scoped marketing fonts, fetches live capability counts (with fallback), exports GC-clarity `metadata`, renders `<HomeClient/>`.
+- `src/components/marketing/HomeClient.tsx` — **new** client page (all UI/motion), herbarium tokens used directly.
+- `src/components/GlobalChromeGate.tsx` — suppress the bloom compass on `/` (keep the ask-the-garden fab).
+
+### Diagnosis — why the stat counters rendered `$0T/0/0/0`
+Not a broken fetch. `STATS` were **hardcoded constants** gated behind an IntersectionObserver with an SSR fallback of `` `${prefix}0${suffix}` `` — so the initial HTML (and any state where the observer never fired) showed zeros, and `AnimCounter` itself starts at 0. **Fix:** the server component fetches the real counts and the new `CountUp` initializes to the real value (SSR + no-JS show the true number; the count-up is pure enhancement and never rests at 0).
+
+### Real numbers now shown (live, with verified fallback)
+- **$17T** global construction economy (constant) · **2,256** published `knowledge_entities` · **44** `jurisdictions` (California-first) · **7** lifecycle stages.
+- Counts pulled at request time from the same Supabase source `/api/v1/mcp` uses; if Supabase is unconfigured/fails, falls back to the verified `2,256 / 44` (never 0). ISR `revalidate = 3600`.
+
+### Token gotcha (load-bearing)
+`globals.css` is imported **after** `tokens.css` and its `:root` re-overrides the semantic tokens back to the legacy palette (`--bg:#ffffff`, `--accent:#1D9E75`, `--fg:#111`). That is why the old page was white/green despite the herbarium tokens existing. **Built the page against the herbarium tokens directly** (`--paper-*`, `--ink-*`, `--specimen-*`, which `globals.css` does NOT override). Did **not** flip the global `--bg`/`--accent` (that would restyle every surface — out of scope).
+
+### Verification (preview :3300, webpack)
+`GET / 200`, no console errors, no failed asset requests. Herbarium audit clean: root bg `#F2E9D2`; **0** pure-white blocks, **0** dark blocks, **0** `#E8443A`; no "coming soon" / "CRM" / "AI COO" / "MVP" / "Procore" anywhere. Fonts resolve to Archivo Black + Cormorant Garamond + Space Mono. 9 lanes + 7 stages render in canonical order; final CTA bg = `#234C5A` (teal-deep, not dark). Mobile 375px: no horizontal overflow, grids collapse cleanly, wordmark hides. `tsc --noEmit` and `eslint` clean for the 3 changed files (the 121 repo-wide tsc errors are pre-existing test-tooling types, not mine).
+
+### DECISIONS FLAGGED FOR FOUNDER (every messaging/pricing/brand fork)
+1. **Seal — used the local hammer-roots specimen; the canonical Viver seal landed mid-session.** At build time there was no BKG seal (the old `public/brand/bkg-mark.png` is byte-identical to the "B" `b_transparent_512.png`), so the mark is **`public/plates/builders-hammer.png`** — the designated BKG master plate, literally a hammer whose handle becomes roots on aged cream. **Update (same day, verified by live query):** the parallel `feat/viver-seal` stream (PR #13) inserted the real seal into `brand_assets` while this PR was in flight — `bkg-hammer-roots-emblem` (PNG, `assets/bkg/hammer-roots-emblem.png`) + `bkg-hammer-roots-motion` (MP4). I inspected the emblem: it is the **same hammer-roots Viver specimen on cream** that the local plate already renders (visually identical, 1024px vs 800px), so the page already shows the right mark. **Kept the committed local plate** rather than hardcode a remote Supabase URL on a public page (robust, zero runtime dependency, same image). **ACTION (clean swap):** once `feat/viver-seal` merges to `main`, adopt the shared `<Seal/>` component / `BKG_SEAL_SRC` (which it adds to `src/components/app-shell/config.ts`, with the `assets/` prefix handled) in the nav/hero/footer instead of the three `/plates/builders-hammer.png` references — and decide whether the hero uses the static emblem (calm, current) or the motion MP4.
+2. **Lanes — implemented 9, not the brief's 8.** Canonical `LANE_SLUGS` (`src/lib/lens/types.ts` + the 2026-05-28 migration) = Owner / GC / DIY-Builder / Sub / Worker / Supplier / Equipment-Provider / Service-Provider / Robot-AI. The brief's "Architect / Lender" are **subtypes of Service-Provider** (with engineer/inspector/lawyer/future-buyer), not top-level lanes. Shown GC-first. **CONFIRM:** 9 vs 8, and the Service-Provider subtype framing.
+3. **Lifecycle — replaced 6→7.** Old DREAM→DESIGN→PLAN→BUILD→DELIVER→GROW → canonical 7 (`src/lib/lifecycle-stages.ts`): **Size up → Lock it in → Plan it out → Build → Adapt → Collect → Reflect**. Rendered as numbered nodes (no emoji — constitution bans emoji in chrome).
+4. **Title — dropped "The AI COO for Construction."** Page now leads with GC clarity ("Run the whole build from one place"); page-level `metadata.title` overrides the layout default. **FLAG:** the global default in `src/app/layout.tsx` (and `docs/design-constitution.md:279`) still says "AI COO for construction" — left unchanged (affects every route). Decide whether to retire "AI COO" platform-wide.
+5. **Type stack — honored the brief literally, scoped + flagged.** Brief asked Archivo + **Cormorant Garamond + Space Mono**; canonical BKG (`tokens.css`) is Archivo + **EB Garamond + JetBrains Mono**, and Cormorant/Space-Mono is the constitution's **Orchids** treatment. Implemented the requested stack via `next/font`, scoped to this page only (global tokens untouched). **FLAG:** this makes the public homepage read more field-guide/Orchids-flavored than other BKG surfaces — confirm, or revert to the canonical BKG stack (≈2-min change).
+6. **"System of record" — softened (it's aspirational).** Docs flag it as not-yet-earned, gated on the dogfood loop (`tasks.todo.md:2303`). The brief said to lead with it; phrased as "…and **grows into** the system of record for everyone on the build" (direction, not a live claim). **CONFIRM** how boldly to assert it.
+7. **GC-California / MLP sequencing.** "GC-California" is not a literal repo term; positioning assembled from `docs/multi-lane-strategy-brief.md` (GC = command center · margin · pipeline · risk; everyone-else-joins-free; California-first code coverage). **NOTE:** the locked MLP *ship order* is **Owner-first** (MLP-Owner ships first; the GC command center is the incumbent base). The page leads with GC clarity per the brief (consistent with "the GC carries the plan") — flag if the public narrative should instead foreground the Owner-lane MLP.
+8. **Pricing — did NOT set prices.** Old page published stale **$49 / $199 / $499**. Replaced the price grid with a **number-free** teaser → `/pricing` ("Start free. The GC carries the plan." / "See plans"). No new prices invented; no known-stale prices republished. **ACTION:** provide the current canonical prices to reinsert, or confirm number-free is fine.
+9. **Stats accuracy.** Used the precise live **2,256** (brief said "2,200+"). Separately, `src/lib/rag.ts:154` tells the copilot the KB has **"40,000+ entities"** — inconsistent with reality (2,256) and with the homepage; **flag for separate cleanup** (not touched here).
+10. **Compass / ask.** Removed the **bloom compass** (`CompassBloom`, in-app Killer-App chrome, globally mounted) from `/` via `GlobalChromeGate`; **kept** the global **"ask the garden"** fab (`GlobalAiFab`). Dropped the duplicate page-level `CopilotPanel`. (The ask-fab + copilot retain their legacy-green styling — shared components, left out of scope; candidate for a herbarium follow-up.)
+11. **Removed (stale/off-brand):** Marketplace "COMING SOON" card; "Six killer products" framing; the dark gradient-orb hero; hero scroll-parallax (animation register bans constant scroll-triggered motion); the fabricated testimonials (fake names/quotes — dishonest on a public page; not replaced — flag if real social proof is wanted).
+
+### Not done (by design)
+PR not merged (PR only). Global `layout.tsx` title + constitution "AI COO" left for the founder. Pricing numbers pending. Shared `GlobalAiFab`/`CopilotPanel` styling untouched. Seal swap pending the `viver-seal` stream landing in `brand_assets`.
+
+### Addendum 2026-06-01 — independent verification + PR (integration session)
+
+The founder's homepage-rebuild brief arrived after this branch landed; verified the branch satisfies it end-to-end instead of rebuilding.
+
+- **Production build now verified** — `next build` ✓ (`/` route = ƒ). The worktree's `node_modules` was a **symlink** (fine for the webpack dev preview above, fatal for Turbopack: "Symlink [project]/node_modules is invalid"); replaced with a real clone (`cp -Rc`). Environment-only — no code change. Note for sibling streams: Turbopack needs a real `node_modules` per worktree.
+- **Rendered audit (prod server :3301)**: GC-clarity `<title>`; counters render **$17T / 2,256 / 44 / 7** with no zeros anywhere; hammer-roots plate in nav/hero/footer via `next/image`; **0** banned markers (`#E8443A`, dark/pure-white blocks, "CRM", "COMING SOON", "AI COO", "Six killer products"); herbarium tokens in use; 9 lanes GC-first with the "Architect, engineer, inspector, lender…" Service-Provider subtype line; 7 stages Size up→Reflect; ask-the-garden fab present, bloom compass absent. Desktop + 375 px screenshots clean (wordmark hides, no overflow); browser console clean.
+- **Flag #5 (type stack) RESOLVED by the founder's brief** — Archivo + Cormorant Garamond + Space Mono explicitly confirmed; the scoped implementation stands.
+- **Still open for the founder**: #2 lanes (brief says 8 with Architect/Lender top-level; repo canon `LANE_SLUGS` = 9 with them as Service-Provider subtypes — page keeps the 9 until called) · #8 pricing numbers (page stays number-free → `/pricing`) · #4 global `layout.tsx` "AI COO" default title · #1 clean seal swap to the shared `<Seal/>`/`BKG_SEAL_SRC` once `feat/viver-seal` (PR #13) merges · #6 "system of record" boldness · #7 GC-vs-Owner public narrative · #11 real social proof.
+- PR opened against `main` (`ef54dd3`). **PR only — do not merge** before the founder's preview pass (Vercel previews are SSO-gated; screenshots + audit above stand in).
+
+---
+
+## 2026-06-01 — Preview sign-in fix: Vercel env store found EMPTY, baseline restored (no secret values in this log)
+
+**Diagnosis.** "Auth service is not configured on this deployment" comes from `src/app/api/auth/signup-beta/route.ts` (guards `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`). The sign-IN path (`src/lib/supabase-browser.ts`, used by `/login` + `AuthModal`) needs `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (falls back to a placeholder host when absent). `/knowledge` queries PostgREST directly from the browser with the same public pair. No app-side Google/Clerk env exists (`signInWithOAuth` → provider config lives in Supabase).
+
+**Audit (the hypothesis was wrong in an important way).** Not Production-only scoping: `vercel env ls` + the API showed the project env store **completely EMPTY** — zero vars in any environment. Live production works only because its deployment snapshotted env at build time; every build since (all branch previews) was keyless. Who/what wiped it is unknown — needs the dashboard audit log once 2FA works.
+
+**Fix.** Set via API (upsert) for **Production + Preview + Development**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL` — values sourced authoritatively from the Supabase MCP (`get_project_url`, `get_publishable_keys`, project `vlezoyalutexenbnzzui`), not guessed. **NOT set: `SUPABASE_SERVICE_ROLE_KEY`** (secret; cannot be pulled — the store was empty; founder to supply). **⚠️ PROD-DEPLOY FREEZE: do not push `main`/deploy production until the service key is restored**, or signup + ~57 service-role server routes break on the new prod deployment.
+
+**Redeploy + verify** (old `edveg5jj3` preview left frozen, not tested): empty commit `715f6b9` → new preview `…-5dao4o1k2-…` READY. Verified: compliance API (anon path) **503 → 200** on the new preview; locally with the pulled Preview env (`.env.local`, gitignored, deleted after): `/login` dummy submit → **"Invalid login credentials"** via `POST …supabase.co/auth/v1/token` (real Supabase round-trip; config banner gone) [screenshot]; `/knowledge` renders entities + live category counts [screenshot]; production re-probed unaffected (signup-beta returns validation 400; domain 200).
+
+**Flagged, not fixed (out of scope):**
+1. **Google OAuth provider not enabled on the Supabase project** — `…/auth/v1/authorize?provider=google` → `"provider is not enabled"`. "Continue with Google" is broken everywhere incl. prod, and predates this; needs a Google OAuth client + Supabase auth settings (dashboard), not a Vercel var.
+2. **`/knowledge` hardcodes `limit=500`** and derives its header from fetched rows → shows "500 ENTITIES · 2 TYPES", can never show the true ~2,256/all types. Suggest a `count=exact` head query (or server count) + paging.
+3. Email/password **sign-UP** (beta route) stays 500 until `SUPABASE_SERVICE_ROLE_KEY` lands.
+4. Step-6 RLS fallback **not triggered**: prod anon reads verified working (homepage live stats, compliance API on prod) — no policy changes made.
+
+### Addendum — service key restored, prod-deploy freeze LIFTED (names only)
+
+Founder supplied the modern **`sb_secret_…`** Supabase secret key; set as `SUPABASE_SERVICE_ROLE_KEY` (type *sensitive*) for **Production + Preview** (Vercel rejects sensitive vars on the development target — local dev uses `.env.local`). Works drop-in for the legacy var name: redeployed the verified preview build (`…-79ee4b98c-…`) and the signup-beta probe flipped **500 "not configured" → 400 "A valid email is required."** — admin client constructs, sign-UP path configured. Anon path re-confirmed 200; production untouched and healthy. **Env store is now complete → the prod-deploy freeze is lifted; pushes to `main` are safe again.** Outstanding (unchanged): enable the Google provider in Supabase (broken everywhere, pre-existing); `/knowledge` `limit=500` header bug; rotate the `sb_secret` key post-crunch (it transited chat).
+## 2026-06-01 — Viver seal becomes the canonical BKG mark (feat/viver-seal)
+
+Replaced the umbrella "tree" motion mark in the shared App Shell with the **BKG "Viver" hammer-roots mark** (a hammer whose handle becomes roots — herbarium plate, self-animating). Branched `feat/viver-seal` off `origin/main` (`ef54dd3`). **PR only — not merged, not deployed.**
+
+**Asset reality (diagnosis stopped + asked first):** there is no `bkg-seal.svg` anywhere — not on disk, not in git history (any branch), not in the `brand-assets` bucket, not in any session transcript; the prior run of this task was cut off at the same point. The real mark the founder wants "living everywhere" is a **motion MP4 + static PNG emblem**, not an SVG: `BKG hammer roots animated logo.mp4` (960×960, 5.08s) + `BKG emblem (hammer + roots).png` (1024×1024) from `~/Downloads`. This fits the existing video-based `Seal` cleanly (asset swap, no SVG refactor).
+
+**brand_assets is now the source of truth for BKG** (none existed before — only `umbrella`/`hkg`/`tkg`/`cross-cutting`). Uploaded to the public `brand-assets` bucket and inserted 2 rows (`garden_scope='bkg'`), mirroring the `assets/`-prefix-stripped `storage_path` convention:
+- `bkg/hammer-roots-mark-motion.mp4` → public at `…/brand-assets/assets/bkg/hammer-roots-mark-motion.mp4` (`asset_type='motion'`, slug `bkg-hammer-roots-motion`, id `92975b90…`).
+- `bkg/hammer-roots-emblem.png` (`asset_type='plate'`, slug `bkg-hammer-roots-emblem`, id `1bebcfe8…`; parent of the motion row).
+
+**Wiring** (`src/components/app-shell/`, 3 files):
+- `config.ts` — added `BKG_SEAL_SRC` (motion) + `BKG_SEAL_POSTER` (emblem) + `UMBRELLA_SEAL_SRC`. The umbrella is **kept as the parent Knowledge Gardens / garden-switcher mark** (not deleted). `SEAL_SRC` is now a back-compat alias → `BKG_SEAL_SRC`.
+- `Seal.tsx` — defaults to the BKG mark; `<video>` gets the emblem `poster`; **prefers-reduced-motion** renders the static emblem via a non-playing `<video preload="none" poster>` (no entrance, no breathe, no video fetch). Framer spring + 6.5s breathe preserved for normal motion. `types.ts` doc updated.
+- Swapping the `Seal` default flips every render site — killerapp shell `ShellStrips` (52px) + Owner hero (76px) — with **no layout change**. `parts.tsx` `GlobalStrips`/`SealMark`/`BkgMark` left untouched (dead/legacy, not rendered; its local `/owner-lane/bkg-logo.mp4` is byte-identical to the canonical MP4).
+
+**Verify (preview, `:3210`, `--webpack` — Turbopack rejects the symlinked `node_modules`):** killerapp shell + Owner home both resolve the seal to `…/assets/bkg/hammer-roots-mark-motion.mp4` + emblem poster (all instances); container bg `#F2E9D2` paper-cream (no pure white), no red, no console errors; video loads `readyState 4`. Animation = the umbrella's proven `autoPlay loop muted` mechanism (the headless compositor won't advance the media clock, so frame-advance is verified by code, not pixels). Reduced-motion verified by code path + poster reachability (the preview env can't emulate the media query). Owner home otherwise unchanged.
+
+**NOT done (by design):** not merged, not deployed (PR only). Dev `.env.local` (same-project anon key, sourced from the EWG `.env` on the shared `vlezoyalutexenbnzzui` instance) is gitignored and not committed.
+
+---
+
+## 2026-06-01 — Logo rollout: old "B" → Viver seal everywhere (feat/seal-rollout)
+
+Founder go on the rollout plan. PR #13 (app-shell seal) was rebased onto main (clean; the worktree's symlinked `node_modules` had to become a real clone — third worktree with that trap) and ff-merged (`e270541`). This branch then kills the remaining "B"s:
+- **`brand/Logo.tsx` repointed by file-swap:** all four `public/brand/bkg-mark{,-light,-dark,-wood}.png` regenerated as **512×512 squares** from the canonical `brand_assets` emblem (old files were 327×512 portrait; square call-sites would distort a portrait file — and a cover-crop clipped the hammer, caught + fixed before commit). Variant API untouched; **single plate serves all four variants for now** (the emblem carries its own cream ground; bespoke light/dark/wood renders are a later file-drop, founder's earlier open question resolved pragmatically).
+- **7 direct refs in 5 files** (`/launch`, `/profile`, `/knowledge`, `/presentation` ×2, `SplashIntro` ×2) repointed `/logo/b_transparent_512.png` → `/brand/bkg-mark.png`; zero `b_transparent_512` refs remain in `src/`.
+- **Defensive:** `public/logo/b_transparent_512.png` itself also seal-swapped (square) for anything unswept (e.g. archived HTML).
+- Build ✓. Social cards/favicons are PR #15 (separate, pending).
+
+---
+
+## 2026-06-01 — Social cards + favicons: old "B" → Viver seal (fix/social-card-seal)
+
+Founder shared the live link in iMessage — the preview card showed the old "B": `og:image` (layout + homepage metadata) points at `public/og/og-light.png`, and the corner icon at `/logo/b_icon_*.png` / `favicon.ico` — all still the old mark. Fix is asset-only (paths unchanged → zero code edits): regenerated `og/og-light.png` (1200×630, emblem on corner-sampled plate-cream canvas, 172KB) + all 8 icon PNGs at their native dims + `favicon.ico` (PNG-in-ICO, 48px) from the canonical `brand_assets` emblem (`bkg-hammer-roots-emblem`, bucket `brand-assets`, `assets/bkg/hammer-roots-emblem.png` — `intended_use` includes `favicon-source`, approved_for_production). Build ✓. Note: iMessage/socials cache link previews — old threads keep the stale card; fresh shares pick up the seal after deploy.
+
+
+---
+
+## 2026-06-05 — [Cowork] Session: Demo polish — AI COO title, code-lookup jurisdiction, Reflect copy
+**Agent:** Cowork (claude-opus-4-8)
+
+**What was built (branch `fix/demo-polish-0603`, off main; merged → `main` as `0c78d87`):**
+- **FIX 1 — retired "AI COO" title.** `src/app/layout.tsx` `metadata.title.default`: "The AI COO for Construction" → "run the whole build from one place". Fixes the default `<title>` on `/intro` + the 7 `/killerapp/stages/*` pages (homepage already overrode it). Titles/meta only — body copy and system prompts left intact per scope.
+- **FIX 2 — code lookup jurisdiction now derives from the active project.** `CodeLookup` gained a `jurisdiction` prop; the `plan` + `build` pages pass `MARIN_PROJECT.jurisdiction` ("Marin County, CA"), replacing the hardcoded `SF_JURISDICTION_LABEL` for the pin, idle text, and the specialist `jurisdiction` arg. Coherent because the wired UpCodes rows are CA-statewide code (CRC / Title 24 / CALGreen) that apply in Marin (one topic already cites "Marin's expansive clays"). Softened one SF-specific CALGreen phrase to Bay-Area framing; verify-with-AHJ note retained; curated fallback unchanged so the lookup never empties.
+- **FIX 3 — removed false Reflect completion.** `reflect/page.tsx`: dropped "Project complete · 9 mo total · final variance −$8,300" (Build is at 42%) → "Close-out summary lands here when the build wraps"; kept the "alpha — coming soon" framing.
+
+**Verification:**
+- Local prod server (`next start` on :4322) checked: `/intro` `<title>` clean (0 "AI COO"); plan + build render "Marin County, CA" and 0 "San Francisco, CA"; reflect has 0 "Project complete"/"final variance"; `/`, `/intro`, `/killerapp`, plan/build/reflect/size-up all return 200.
+- `npm run build` (local) and the Vercel build both green — 0 TS errors.
+
+**Deploy:**
+- Preview: https://builders-knowledge-garden-qji5tt9gh-the-knowledge-gardens.vercel.app (Vercel login-walled; verified via the local server instead).
+- Prod (CLI `vercel --prod`): `0c78d87` → https://builders-knowledge-garden.vercel.app.
+
+**Key decisions / notes:**
+- FIX 2 direction = "derive from active project" (founder's choice over my initial "California" suggestion); validated against the seed data before implementing.
+- Worked in the isolated worktree `bkg-demo-polish`; did NOT touch the dirty `feat/shared-app-shell` clone.
+- `origin/main` had advanced by one commit (`f2fc9cf`, a GitHub web "Add files via upload") after branching; rebased onto it (no file overlap), `--force-with-lease`'d the branch, then FF-merged → `main`. My first manual `--prod` (pre-merge) briefly put prod behind `f2fc9cf`; the post-merge `--prod` of `0c78d87` restored the complete state.
+- Cleared stale `__locktest` / `*.lock.stale.*` junk in `.git` that was breaking `git fetch`.
+
+**Follow-up (not done):**
+- `MARIN_CODE_JURISDICTION` seed constant is still `'San Francisco, CA'` (now unused by `CodeLookup`; harmless, left as cleanup).
+
+---
+
+## 2026-06-07 — [Code] Session: tasks reset to Phase 1 revenue + archive May batches
+**Agent:** Claude Code (claude-opus-4-8)
+
+**What changed (committed directly on `main`):**
+- **`tasks.todo.md` reset to the Phase 1 revenue focus** — pared down to the current NOW (Vision / Guiding-Principles preamble retained at top); **2,605 lines** of superseded May batches removed from the live file (now ~69 lines).
+- **`tasks.todo.archive.md`** — those May batches moved here under a dated archive note (archived, not deleted; +2,614 lines).
+- **`tasks.lessons.md`** — appended the "Don't assume a file's structure from memory or stale docs" lesson (2026-06-07).
+- **Single-source = bkg-main:** `tasks.todo.md` / `tasks.lessons.md` are canonical in `~/Developer/bkg-main`; the ~12 other worktree copies are stale and were left untouched.
+
+**Commit:** `docs: reset tasks to Phase 1 revenue + archive May batches` (tasks.todo.md, tasks.todo.archive.md, docs/session-log.md, tasks.lessons.md).
+
+
+
+---
+
+## 2026-06-07 — [Cowork] Single source of project context → multi-tenant-ready stages (fix/context-routing)
+**Agent:** Cowork (claude-opus-4-8) · worktree `bkg-context-routing` off `origin/main`
+
+**Problem:** the 7 lifecycle stage pages (`/killerapp/stages/*`) mounted Marin-bound. Each imported `MARIN_*` constants directly and called `ensureMarinActive()` on mount (force-writing `localStorage['bkg-active-project'] = MARIN_PROJECT_ID`), so building-type, jurisdiction, lane, budget, identity, and every tool (CodeLookup, VoiceFieldReport, TeamRoster, MaterialsCSI, PermitsList) were pinned to Marin regardless of the open project — and self-contradictory. The `2026-06-05` FIX 2 made CodeLookup's jurisdiction a prop, but the *callers* still hardcoded Marin. A `ProjectProvider` already existed + was mounted in `/killerapp/layout.tsx` — the stages just bypassed it.
+
+**What was built (a *wiring* job, not a rebuild):**
+- **`src/lib/hooks/useStageProject.ts` (NEW)** — the single normalized accessor every stage + tool reads. Composes the existing `useProjectContext()` with a canonical-Marin fallback. Precedence: (1) no active project → canonical Marin (display only, **never writes localStorage** — the anti-`ensureMarinActive`); (2) Marin id → canonical fixtures (so the DB row "Marin Farmhouse" can't override the canonical "Modern Farmhouse in Marin" — demo pixel-stable); (3) other id loaded → derive from the live `ProjectRecord`; (4) other id loading/404 → honest `loading`/`notFound`, **never Marin**. Exposes the 4 dimensions (`buildingType`/`buildingKind`, `jurisdiction`, `lane` = projectRole, `projectId`) + name/client/meta/sqft/budget/`isCanonicalDemo`.
+- **`src/lib/projects/projectToolData.ts` (NEW)** — `teamForProject`/`permitsForProject`/`materialsForProject`: canonical Marin → its real cast/permits/CSI-costs (derived from `MARIN_TEAM`/`MARIN_BUDGET_LINES`, no mirror constants); any other project → `undefined` → the component's generic default. A 2nd project never shows Marin's data (the routing proof).
+- **`src/lib/projects/buildingType.ts` (NEW)** — lifted `inferBuildingType` out of size-up so the hook + page share one copy.
+- **`src/contexts/ProjectContext.tsx`** — added `budget_amount` to `ProjectRecord` + mapping, **coerced via `coerceNum()`** (PostgREST serializes `numeric` as a JSON string → a raw `typeof === 'number'` check read every DB budget as unset; caught during the GATE).
+- **All 7 stage pages rewired** — dropped `MARIN_*` context imports + `ensureMarinActive()`; read `useStageProject()`; feed `StageShell` + tools from it. `seedMarinBudget()` gated on `isCanonicalDemo`. size-up + lock lost their bespoke `readActiveProjectId()` + fetch (duplicated ProjectProvider) and remount on project change via a `key`. `MARIN_PLAN_PHASES` kept as the shared demo sequencing seed.
+- **Out of scope (left intact):** ProjectProvider logic, the API, RLS, specialists, vestigial `MARIN_CODE_JURISDICTION`, lock's `MATERIAL_CHIPS`.
+
+**Verification (real browser, preview `ctx-routing` :3330, `--webpack`; signed in as `gc-trial-03`):**
+- **Marin (canonical, full real path):** header "Modern Farmhouse in Marin · 4,000 sqft · Marin County, CA", budget $312K/$1.65M, CodeLookup "📍 Marin County, CA · live", Permits = Marin set. Default (`/stages/plan` w/o `?project=`) also resolves to Marin. Screenshots captured.
+- **SoMa (non-canonical):** the **same** plan code rendered "Commercial TI in SoMa · 4,200 sqft · San Francisco, CA", budget $0/**$1.25M** (SoMa's, not Marin's), CodeLookup "📍 San Francisco, CA · live", Permits = **generic** (no Marin bleed). `window.__bkg_project__` hydrated with the real SoMa row. Switching the active project flips every dimension.
+- `tsc --noEmit` + `eslint` clean on all changed files. The only tsc/vitest failures are pre-existing (`__tests__` needing `jsdom` — missing dev-dep in worktree — + AI-specialist tests); none import the changed modules.
+
+**⚠️ Pre-existing infra blocker found (NOT this change):** the dev `.env.local` (copied from `bkg-bugfixes`) has a `SUPABASE_SERVICE_ROLE_KEY` **invalid for `vlezoyalutexenbnzzui`** → `GET /api/v1/projects?id=<uuid>` returns **404** for *every* real project (after a ~200–550 ms failed round-trip); `demo-`prefixed ids bypass the DB and 200. So the server can't read any project locally — Marin only renders via canonical fixtures. To finish the SoMa GATE I stubbed *only* that broken call with SoMa's actual DB row + dispatched the app's own `bkg:project:changed` event, exercising the real ProjectContext→useStageProject→components pipeline. **Founder action: drop a valid `vlezoyalutexenbnzzui` service-role key into the env** (env-store-wipe / sb_secret-rotation saga) — then the live 2nd-project path works with zero code change.
+
+**Data change (shared DB `vlezoyalutexenbnzzui`):** SoMa demo row (`bb22c33d…`) `budget_amount` was `NULL` → set to **1,250,000** (idempotent UPDATE, BKG's own `command_center_projects`) so the GATE shows a per-project budget. Captured as `supabase/migrations/20260607_demo_soma_budget.sql`.
+
+**Key decisions:** canonical-Marin-wins keeps the demo pixel-stable while the same code goes multi-tenant; broad scope (Team/Materials/Permits bound per-project, founder's call); no-project → Marin fallback. Hook name `useStageProject` is adjustable.
+
+**Follow-ups (not done):** per-project **team** beyond generic fallback (no `project_members`→roster fetch); permits from the GET `compliance` subobject; stub stages still stubs; the env service-key fix above.
+
+
+---
+
+## 2026-06-07 — [Cowork] Resolution: service-role key fixed → context-routing GATE passed live (fix/context-routing)
+**Agent:** Cowork (claude-opus-4-8) · addendum to the entry above (commit `5b13c70`, not amended)
+
+The `⚠️` infra blocker from the entry above is **resolved**. Root cause confirmed read-only: the server (auth + service client, [auth-server.ts](src/lib/auth-server.ts)) and the browser both resolve to `NEXT_PUBLIC_SUPABASE_URL` = **vlezoyalutexenbnzzui** — one unified DB, no fork. The 404s were purely a bad `SUPABASE_SERVICE_ROLE_KEY` (wrong project / wrong key-type — an anon-in-the-service-slot or rotated value; the copies in `bkg-bugfixes` *and* `bkg-sor-gate` were both stale). Founder supplied the correct `vlezoyalutexenbnzzui` `service_role` secret; set in `bkg-context-routing/.env.local` (in place, one line), dev server restarted.
+
+**GATE re-run LIVE through the real API (no stub):**
+- `GET /api/v1/projects?id=…` → **200** for Marin (`55730cd3`) and SoMa (`bb22c33d`) (was 404/404).
+- **SoMa (non-canonical) — real data from the API:** "Commercial TI in SoMa · 4,200 sqft · San Francisco, CA", budget **$0 / $1.25M**, CodeLookup 📍 **San Francisco, CA** (from the hydrated jurisdiction, not the fallback), generic permits — **no Marin bleed**.
+- **Marin (canonical) — fixtures win over a now-readable STALE DB row:** the API returns the diverged row (`__bkg_project__` = "Modern farmhouse in Marin" / **4,950 sqft** / **$2.32M** / "residential"), but the stage **displays** the canonical fixture: "Modern Farmhouse in Marin · **4,000 sqft** · Marin County, CA", **$312K / $1.65M**. `useStageProject`'s canonical-wins precedence actively shields the demo from the drift. Switching the active project flips every dimension. Screenshots captured.
+
+So the multi-tenant context routing is verified end-to-end against the real backend. (Side note for later: the prod Marin DB row at `55730cd3` is stale vs the canonical seed — harmless today because the canonical id is fixture-served, but a candidate for reconciliation.)
+
+**Follow-ups (logged, NOT fixed here — out of this PR's scope):**
+1. **ProjectContext re-hydrate-on-auth.** A *cold deep-link* to a non-canonical project (`/killerapp/stages/<stage>?project=<uuid>` as the first load) doesn't auto-hydrate: the hydrate effect fires on mount and races the Supabase session restore (amplified by dev StrictMode's double-invoke + fetch/cancel), and never re-fetches once auth warms (deps are `[projectId, fetchKey]`, not the session). Worked around in the GATE by driving the app's own `bkg:project:changed` event from a warm neutral page. Pre-existing in `ProjectContext` (this PR left it untouched). Candidate fix: re-trigger hydrate on `onAuthStateChange`/session-ready.
+2. **Prod sanity-check:** does a cold deep-link to a non-canonical project hydrate correctly in a **production build** (no StrictMode double-invoke)? Confirm whether #1 is dev-only or a real prod UX gap before investing in the fix.
+
+**State:** env one-line key fix + restart + live re-test done. **No DB writes; no merge** (founder merges). Stage-routing changes unchanged at `5b13c70`.
+
+---
+
+## 2026-06-02 — Prod-verification quartet (fix/killerapp-quartet, PR only)
+
+Four decision-free fixes off `main = 4fa7839`; verified in a real browser (webpack dev :3310, anon) + `next build` ✓.
+
+1. **React #418 on /killerapp** — root cause: `KillerappProjectShell:440` formatted sqft with **bare `toLocaleString()`** inside SSR'd HTML; Vercel's server ICU vs the visitor's browser can disagree ("4,950" vs "4.950") → text mismatch → #418 **in prod only** (dev server shares the laptop's locale/TZ, which is why dev shows no error — verified clean console). Before: `toLocaleString()` · After: `toLocaleString('en-US')` (matches `app-shell/config.ts` fmtUsd). Only un-pinned formatter in the route's SSR path (audited).
+2. **Anon /killerapp infinite "Running the numbers…"** — TWO roots: (a) the copilot 401 path set an `error` that only renders when `!project`; (b) worse, for anon the auto-trigger never fires at all (conversations 401 + ledger gating), so no failure state was ever set. Fix: `aiUnavailable: 'auth'|'error'` state — set on 401/403, stream errors, AND a mount-time session check that short-circuits signed-out viewers. Before: eternal pulse · After: "**Sign in** to see the AI take for this project." (browser-verified anon). Public `ai_summary` still wins when present.
+3. **Two completion %s on the demo page** — HeroBand "Status" showed spent/approved (55%) while the chrome's journey showed `stageProgress[currentStage]` (62%). Single-sourced IN CODE: `ProjectCompass.percentageThrough` now reads `demoProject.stageProgress[currentStageId]` — the same field the chrome reads via `useProjectLedger`. No data touched. Browser-verified: chrome 62% == body Status 62%.
+4. **"40,000+" claims** — extracted the homepage's count source to `src/lib/capability-stats.ts` (live query + verified fallback 2,256/44, never 0) and pointed FOUR surfaces at it: homepage (moved), `rag.ts` prompt (sync → fallback constants: "2,256+ … 44 jurisdictions (California-first)"), `/api/v1/health` (live; also **dropped** the invented `domains: 8` / `code_sections: 2847` — unverifiable, no test pinned them), `/api/v1/openapi` (live). Verified: health returns `2256/44`.
+
+**Left + noted (not decision-free):** `pricing/page.tsx` ("Browse 40,000+ …" ×2 — page is pending the founder's pricing redesign) and `install-mcp/page.tsx` marketing copy; `rag.buildSystemPrompt` appears dead (route imports but never calls — uses its own `buildStageAwareSystemPrompt`); founder may want live counts threaded into the prompt path later.
+
+---
+
+## 2026-06-07 — Killerapp header seal (extends fix/killerapp-quartet) + GATE re-verification
+
+Task: clear the React #418 hydration error on `/killerapp`, the anon AI-take 401 hang, and swap the old "B" header → Viver seal. Reviewed the two existing branches first and **extended rather than redid**: `feat/viver-seal` is already merged to `main` (`e270541`); the **quartet (this branch) already fixes goals 1 & 2** — so the only real gap was the header mark.
+
+**Re-verified the quartet's two fixes (pure quartet, webpack dev `:3310`, anon, real `.env.local`):**
+- **#418 / hydration** — `/killerapp` (both the picker and the `?project=` dashboard) loads with a **clean console** — no #418, no hydration mismatch. ✓
+- **Anon AI-take** — the demo dashboard shows "**Sign in** to see the AI take for this project." instead of the eternal "Running the numbers…" pulse. The quartet's mount-time `getSession()` short-circuit **does** fire in this runtime (confirmed by stashing my changes and re-testing the untouched quartet commit). ✓
+
+**Goal 3 — old "B" header → Viver seal (the actual gap, fixed here).** Root cause: the seal rollout (PRs #15/#16) repointed `brand/Logo.tsx` (4 variants) + the favicons + `src/app/icon.png`, but **never touched `public/icon.png`** — and the Killer-App header is `KillerAppNav` → the **separate** `Logomark.tsx` component, which hardcoded `<Image src="/icon.png">`. So the header (and `error.tsx` + `CompassNav`, which also use `Logomark`) was still rendering the old "B". Fix = one line: `Logomark` `src` `/icon.png` → `/brand/bkg-mark.png` (the same canonical 512² plate `Logo.tsx` already uses); stale comment in `KillerAppNav` corrected. Before: old B · After: Viver seal — **browser-verified** on both the picker and the dashboard (header `<img>` resolves to `/brand/bkg-mark.png`). The picker's large hero tree (`/logos/gardens/knowledge-gardens-tree.png`) is a deliberate page illustration, left as-is.
+
+**Deliberately NOT shipped (kept it minimal per "extend, don't redo"):** prototyped a reliable conversations-401 → `auth` path + a universal timeout backstop for the AI-take pulse, then **dropped both** once pure-quartet verification proved the existing `getSession` fix already works — they were redundant for the named anon bug. Residual out-of-scope edge: a *logged-in* user on a project with no `raw_input`/`ai_summary`/conversations would still see the pulse (auto-trigger early-returns, `getSession` returns a session, so neither path fires); a timeout backstop would close it if the founder wants the "never spin" guarantee made universal.
+
+**Process gotcha (cost real time — recording it):** the preview launcher's `bkg-dev` config runs `npm run dev` in **`/Users/chilly/Developer/bkg` (the main repo, `feat/shared-app-shell` = `d1b63d4`, pre-seal-rollout)**, NOT this worktree — so every early browser check silently tested the wrong code (old umbrella seal in the network trace + a `console.log` probe that never appeared gave it away). The correct per-worktree config is **`bkg-bugfixes`** (`:3310`, `--webpack`, cwd forced) in the central `~/Documents/The Builder Garden/.claude/launch.json`. Lesson: confirm the `next dev` process cwd (`lsof -iTCP:<port>`) before trusting a preview across sibling worktrees.
+
+**Verification:** all three GATE conditions confirmed in a real browser on `:3310` (pure quartet + seal): clean console, anon "Sign in" state, header Viver seal. `next build` ✓ (`/killerapp` builds). Rebased onto `origin/main` (`e9e0658`) for a clean PR — only `docs/session-log.md` overlapped and merged automatically. `.env.local` (public anon URL+key, gitignored) not committed.
+
+---
+
+## 2026-06-07 — [Code] Phase 0 closed: committed canonical doc set
+
+---
+
+## 2026-06-07 — [Code] System-of-Record gate verified on shared prod (feat/system-of-record-gate)
+
+Task: land the uncommitted System-of-Record work on the three field surfaces and prove it persists in a real browser without polluting shared prod. Plan-mode first; founder-merge PR at the end.
+
+**Surfaces (the SoR commit `7880f62`, only 3 files):**
+- **FieldOps (`/field`)** — copilot stream + photo→`project-evidence` bucket + `/api/v1/projects/[id]/attachments` + daily-log **read-merge-write** on `command_center_projects.daily_log_state`; all rehydrated on mount, keyed to `localStorage['bkg-active-project']`.
+- **VoiceFieldReport (Build stage)** — field notes → `daily_log_state` `field-report-*` keys via read-merge-write (fixes the prior whole-column clobber). `projectId` arrives as a prop.
+- **GlobalAiFab** — copilot Q&A → `project_conversations`; magic-button answer rehydrated on open from `/api/v1/projects/[id]/conversations`; authed POST.
+
+**Step 0 — env.** The sor-gate `SUPABASE_SERVICE_ROLE_KEY` was a `__PASTE_…` placeholder; synced the working `sb_secret_…` key from `bkg-context-routing/.env.local` (byte-identical, sha `80a0fe10…`). `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_URL` already both `vlezoyalutexenbnzzui`. Set a real `ANTHROPIC_API_KEY` locally for the copilot test, **scrubbed back to placeholder afterward** (rotate it + the sb_secret key — both transited chat). `.env.local` is gitignored; nothing committed.
+
+**Step 1 — rebase.** The SoR work was **uncommitted** (3 modified files, no new files), so committed as one commit, then `git rebase origin/main`. `origin/main` now includes **#18 (context-routing, `2669ec7`)**. **Zero conflicts** — SoR touches only the 3 components; #18 touches the stage pages + `useStageProject`/`ProjectContext` → disjoint files. "Keep both" is satisfied by construction: #18's `build/page.tsx` does `<VoiceFieldReport projectId={sp.projectId} …/>` (per-tenant), SoR consumes the prop; both sides key off the same `bkg-active-project`. No reconciliation edits needed.
+
+**Step 2 — real-browser verification** (launcher `sor-gate` config, `:3320`, **cwd confirmed = bkg-sor-gate** via `lsof` before trusting the preview). Self-provisioned a throwaway user `zz-test-sor-…@example.com` + a per-tenant project, injected the supabase-js session. All authed routes 200 for the test user. Verified against `vlezoyalutexenbnzzui`:
+- Daily log → `daily_log_state.field-ops-daily-log` persisted; **rehydrated after full reload** (form pre-filled — screenshot, "signed in · zz-test-sor-…"). ✓
+- Copilot → `project_conversations` with a **real** Claude answer (`model claude-sonnet-4`, 8.8 s — not the no-key mock); rehydrated via the FAB **"Last answer · saved to this project"** pane. ✓
+- Photo → `project-evidence` storage (200) + `project_attachments` (201); storage RLS accepts the authenticated user's own-folder write; rehydrates (count 1). ✓
+- VoiceFieldReport → `daily_log_state.field-report-*` **coexists** with `field-ops-daily-log` (read-merge-write **clobber fix proven**: `field_ops_log_survived = true`). ✓
+- **Cleanup:** deleted the test user (cascaded identities) + all rows + the storage object; **baselines restored exactly** — `project_conversations` 206 / `project_attachments` 1 / `command_center_projects` 42; **zero residue** (incl. no `zz-test-sor-%` project). The failed onboard left no orphans.
+
+**Found / flagged (NOT in scope, NOT my files):**
+- `POST /api/v1/onboard-new-user` **500s on this shared DB** — `PGRST204: Could not find the 'metadata' column of 'command_center_projects'` (schema drift; that column doesn't exist here). New signups can't auto-create their first project until reconciled. Worked around by inserting the test project directly.
+- Supabase advisor: **14 tables have RLS disabled** — all co-tenant **Toxicology/EWG** tables (`substances`, `water_data`, …), **not** BKG. Flagged only.
+
+**Process note:** dev-server **Fast Refresh churn** repeatedly reset controlled-input React state, so two UI submits (copilot textarea, VoiceFieldReport "Save to daily log") were exercised via their **exact** endpoints/persist paths instead (`/api/v1/copilot` with `projectId`; the `field-report-*` read-merge-write) — faithful to the component code. The daily-log, photo, and FAB UI paths worked directly.
+
+**Verification:** HEAD = SoR commit `7880f62` on top of `origin/main` (#18); PR opened for founder merge (3 SoR files + this log + tasks). Tight scope held — only the SoR surfaces + the rebase.
+
+---
+
+## 2026-06-07 — [Code] onboard-new-user 500 fixed: dropped vestigial `metadata` insert (fix/onboard-new-user)
+
+Task: fix `POST /api/v1/onboard-new-user` 500ing on shared prod with **PGRST204 "Could not find the 'metadata' column of 'command_center_projects'"** — the exact item flagged from the SoR session above. New signups couldn't auto-create their first project. Plan-mode first; founder-merge PR. Tight scope: the onboard route (+ migration only if needed).
+
+**Root cause (verified against live `vlezoyalutexenbnzzui`):** the route's first-project insert wrote a `metadata` key, but `command_center_projects` has **no `metadata` column** on this DB. Migration `supabase/migrations/20260522f_ccp_metadata.sql` *would* add it, but it was **never applied to shared prod** — absent from `list_migrations` while its `a`–`e` siblings all applied (the known "migrations don't reliably reach shared prod" issue). The generated `src/types/database.ts` correctly omits `metadata` — it is **not** stale, it matches the live DB. A full `src/**` sweep found **no reader** of project `metadata`: the first-run banner is driven by the `?first_run=1` redirect param (→ `OnboardingModal`), not a DB column; `plg_source`/`plg_org_id` are read nowhere. Every other column the route inserts (into `command_center_projects`, `organizations`, `org_members`, `project_members`, `project_budget_lines`, `audit_log`) exists on prod — `metadata` was the sole drift.
+
+**Decision — drop the vestigial write (smallest change, no shared-prod DDL),** per the brief's decision tree ("if vestigial/unread → drop it"). Behavior-preserving (first-run UX never depended on the column), reversible, avoids DDL on a DB co-hosting Toxicology/EWG. Did **not** apply migration `f` — the column is unread, so adding it would just create an unused column+index on prod.
+
+**Changes (3 edits, 2 files):** `onboard-new-user/route.ts` — removed the `metadata: {…}` key from the `command_center_projects` insert + corrected the header JSDoc and inline comment to state why it's omitted. `__tests__/onboard.test.ts` — replaced the now-false `metadata.is_first_run` assertion with `expect(projRow.metadata).toBeUndefined()` (regression guard), and **added `vi.mock('@/lib/posthog')`** — the suite had been failing on import because `@/lib/posthog` (added to the route after the test was written) wasn't mocked and vitest has no `@/` alias; mocking it makes all 10 tests runnable again. No `database.ts` change; no migration applied.
+
+**Verification.**
+- **Unit:** `vitest run …/onboard-new-user` → **10/10 green** (was 10/10 *failing* on the unmocked `@/lib/posthog` import — pre-existing, that import line is untouched by this fix).
+- **Real browser** (launcher `onboard-fix`, `:3350`, **cwd confirmed = bkg-onboard-fix**, `--webpack`): self-provisioned a throwaway `zz-test-onboard-…@example.com` via the real `signup-beta` route, obtained a real session, invoked the **fixed** `onboard-new-user` → **HTTP 200** `{ ok, org_id, project_id }` (no PGRST204). Loaded `/killerapp?project=…&first_run=1` → cockpit rendered **on the new project** ("My first project", budget card **"$0 LEFT OF $304K"** = the 10 seeded CSI lines, phase PLAN) with the **first-run onboarding modal**. DB assertions: org + owner `org_member` + `gc` `project_member` + 10 budget lines ($304K) + 1 audit row, all correct, project row metadata-free.
+- **Cleanup:** deleted the user (cascaded identities) + all rows + the 24 audit-trigger trail rows (orgs/org_members/budget insert+delete pairs); **baselines restored exactly** — orgs 1 / org_members 3 / projects 42 / project_members 9 / budget_lines 54 / audit_log 2301 / users 13; zero `zz-test-onboard-%` residue. (Gotcha: a data-modifying CTE's deletes aren't visible to a `count(*)` in the *same* statement — same snapshot — so an in-statement count read stale 2325; a fresh query confirmed 2301.)
+
+**Env note:** `vercel env pull --environment=preview` left `SUPABASE_SERVICE_ROLE_KEY` **empty** (Vercel *sensitive* var — write-only, not retrievable by pull). Injected the founder-provided `sb_secret_…` into the dev server's process env via the launcher config (Next.js doesn't override already-set process env), then **removed that config afterward** — the key never landed in any committed/persisted file. Rotate it (transited chat).
+
+**FLAGGED — this fix is necessary but NOT sufficient for the paid loop (out of tight scope):**
+- **`onboard-new-user` is not wired to the live signup UI on `origin/main`.** `next.config.ts` redirects **`/signup` → `/login?signup=1`**, and the `/login` signup branch calls `signup-beta` + `signInWithPassword` then routes new users to **`/welcome`** — it **never calls `onboard-new-user`**. The *only* caller is `src/app/signup/page.tsx`, which the redirect makes unreachable. So even with the 500 fixed, a real-browser signup via the live UI won't auto-onboard. (Prod still 500s today because it serves an **older build** where `/signup` wasn't yet redirected and *did* call onboard.) **Recommend: wire the onboard call into `/login`'s signup branch (or `/welcome`), or reconsider the `/signup` redirect** — this is the real gap to close the contractor onboarding loop.
+- **Orphaned migrations:** `20260522f_ccp_metadata.sql` now contradicts prod reality (recommend delete, or apply intentionally if a per-project metadata bag is wanted — then revert this change); `20260522g_onboarding_reminders_cron.sql` is also unapplied on prod. Migration-drift audit suggested.
+
+**Verification:** HEAD = one commit on `origin/main` (`43db7f6`); PR opened for founder merge (2 source files + this log). `package-lock.json` churn from `npm install` reverted — not committed. `.env.local`/`.vercel` gitignored, not committed.
+
+---
+
+## 2026-06-08 — [Code] Google OAuth fixed: shared client → PKCE (fix/oauth-pkce-flow)
+
+Task: founder dogfood — "Continue with Google" on prod succeeded at Google then bounced to `builders.theknowledgegardens.com/login?error=missing_code`, never entering the app. Reproducible in fresh incognito. Plan-mode read-only diagnosis first; founder-merge PR. Tight scope: the OAuth client.
+
+**Root cause (read-only, verified against `origin/main`):** flow-type mismatch. `src/lib/supabase.ts:10` creates the shared browser client as `createClient(url, anon)` with **no `auth` options** → `@supabase/auth-js@2.106.2` default **`flowType: 'implicit'`** (`GoTrueClient.js:21`). Every Google OAuth path uses this one singleton — initiation (`login/page.tsx:146`, `AuthModal.tsx:85` `signInWithOAuth`) and exchange (`auth/callback/page.tsx:68` `exchangeCodeForSession`). Implicit returns the session in the URL **hash**, so Google/Supabase redirect back to `/auth/callback` with **no `?code=` query param**; the callback (`page.tsx:60-63`) does `params.get('code')` → null → `router.replace('/login?error=missing_code')`. The callback was written for PKCE but the client was never switched to it → bounces 100%.
+
+**Not a regression.** `src/lib/supabase.ts` has one commit ever (`a7082e3`, v0.1) and never contained `flowType` — Google OAuth's return leg never worked (only the outbound `302 → accounts.google.com` was ever verified, 2026-06-02). Ruled out: `next.config.ts` redirects (none touch `/auth/callback`, none strip the query) and `middleware.ts` (matches `/killerapp/*` only). `safeCallbackRedirect` (`safe-url.ts:64-67`) correctly targets `${origin}/auth/callback?redirectTo=…`.
+
+**Fix (CODE, one file):** `src/lib/supabase.ts` — added `auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }` to the `createClient`. Both OAuth legs share this singleton (same origin → same localStorage), so the PKCE `code_verifier` stored at sign-in is read back at the callback. **No provider-console / secret / env change** — PKCE is client-driven; `redirect_uri` and the Supabase redirect allow-list are unchanged. (The flagged `site_url = localhost:3000` is a separate latent issue, not this bug — the user returns to prod.)
+
+**Verification (local, no Google login required):** launcher `oauth-pkce` (`:3360`, cwd-confirmed = bkg-oauth-pkce, public URL+anon injected — no service key). On `/login`, clicked the real **Continue with Google**; the app's `signInWithOAuth` wrote **`sb-vlezoyalutexenbnzzui-auth-token-code-verifier`** to localStorage — the **PKCE artifact that implicit flow never creates** → PKCE initiation confirmed. No Google consent completed → zero prod side-effects (no user/rows created). **GATE (post-merge + deploy, founder):** fresh incognito → `/login` → Continue with Google → lands in the app signed in, **not** `/login?error=missing_code`.
+
+**Risk:** low. `flowType: 'pkce'` is Supabase-recommended; password sign-in (`signInWithPassword`) unaffected; existing sessions unaffected (PKCE governs new initiations only); `detectSessionInUrl`/`persistSession`/`autoRefreshToken` are already defaults. Out of scope (flagged, untouched): `supabase-browser.ts` + budget widgets are also implicit but never call `signInWithOAuth`/`exchangeCodeForSession`.
+
+**Verification:** HEAD = one commit on `origin/main` (`7181963`); PR opened for founder merge (`src/lib/supabase.ts` + this log + `tasks.todo.md` + `tasks.lessons.md`). No prod SQL. `package-lock.json` churn from `npm install` reverted.
+
+---
+
+## 2026-06-08 — [Code] Safari OAuth: PKCE verifier → cookie (fix/oauth-pkce-cookie-storage)
+
+Task: after PKCE shipped (#22 `5a62915`, live), founder dogfood — Google sign-in **works in Chrome** (incl. incognito) but **fails in Safari** at the exchange: `/auth/callback` shows *"PKCE code verifier not found in storage."* Plan-mode read-only first; founder-merge PR. Tight scope: the OAuth client.
+
+**Root cause:** the PKCE `code_verifier` is written to **localStorage** at sign-in, then we immediately `window.location` to the IdP. Safari doesn't reliably persist that just-before-unload localStorage write across the cross-site OAuth bounce (builders → supabase.co → Google → supabase.co → builders), so the callback's `exchangeCodeForSession` finds no verifier. Chrome persists it (Chrome works). `document.cookie` writes are synchronous + committed before navigation and survive as a first-party cookie — exactly what Supabase's error message recommends.
+
+**Fix (CODE, one file):** `src/lib/supabase.ts` — added a small SSR-safe hybrid `auth.storage` adapter that routes **only** the `*-code-verifier` key to a first-party cookie (`SameSite=Lax`, `Secure` on https, `Max-Age=600`) and leaves everything else (the session) in localStorage. Session storage unchanged → the **87 importers** of the singleton + the other localStorage clients (`supabase-browser.ts`, budget widgets) keep sharing the same `sb-<ref>-auth-token` session (no divergence, no app-wide migration, no `@supabase/ssr` dependency).
+
+**Verification (local, Chrome — mechanism proof):** launcher `oauth-cookie` (`:3370`, cwd = bkg-oauth-cookie, public URL+anon). On `/login`, clicked **Continue with Google** from a cleaned state → the verifier landed in a **cookie** (`sb-vlezoyalutexenbnzzui-auth-token-code-verifier`) and **not** localStorage, and **survived the navigation to the IdP and back** (persisted first-party cookie). `supabase.ts` compiles clean. No Google consent completed → zero prod side-effects. Can't drive Safari in-harness (Chrome preview) → **GATE (founder, post-deploy): Safari on prod** → Continue with Google → completes sign-in (no "verifier not found"); Chrome still works.
+
+**Why not full `@supabase/ssr`:** blessed but high-blast-radius (dependency + migrate session storage for 87 importers + 4 client sites + server client/middleware/server-callback) → too risky for a dogfood hotfix. **Escalation if Safari still fails** (client-set cookie purged): `@supabase/ssr` server-set cookies. Flagged.
+
+**Verification:** HEAD = one commit on `origin/main` (`5a62915`); PR opened for founder merge (`src/lib/supabase.ts` + this log + `tasks.todo.md` + `tasks.lessons.md`). No prod SQL / no provider/secret/env change. `package-lock.json` churn reverted.
+
+---
+
+## 2026-06-08 — [Code] Safari OAuth: migrate to @supabase/ssr (cookie sessions + server callback) (fix/oauth-supabase-ssr)
+
+Task: the #23 hybrid client-set verifier cookie shipped (merged + deployed) and **still failed in Safari**. Founder approved the escalation: the canonical `@supabase/ssr` migration. Plan-mode read-only first; founder-merge PR.
+
+**Why #23 failed / why this works:** #23 set the verifier cookie client-side and did the exchange **client-side** (`document.cookie` read on the post-bounce page) — Safari partitions/hides that from client JS. The fix is a **server-side exchange**: `createBrowserClient` (cookie session) initiates PKCE; a **server** `/auth/callback` route reads the verifier cookie from the **request** (sent on the top-level Lax navigation — server-readable even when client JS can't see it) and writes the session via `Set-Cookie`. This is the path the whole Supabase+Next ecosystem uses in Safari.
+
+**Discovery that shaped scope:** `@/lib/supabase`'s `supabase` is **dual-use** — ~87 client files (auth) + **7 server API routes** import it for anon RLS queries. So the singleton is **env-aware**: `createBrowserClient` in the browser (cookie session), plain anon `createClient` on the server (no session — identical to prior server behavior). Server auth stays Bearer-header based (client sources the token from the cookie session), so API routes are unchanged.
+
+**Changes (≈11 files):** add `@supabase/ssr@0.10.3`; `supabase.ts` env-aware (drop the #23 hybrid adapter); new `supabase-server.ts` (`createServerClient`); **new server `app/auth/callback/route.ts`** (deletes the client `page.tsx`) — server exchange, sets session + `bkg-lane` cookies, redirects, missing/error → `/login?error=…`; `middleware.ts` adds `@supabase/ssr` session refresh (matcher kept at `/killerapp/*` — /api is Bearer-authed, no getUser latency added) preserving the lane logic; migrate the other browser clients (`supabase-browser.ts` + inline clients in BudgetWidget/GlobalBudgetWidget/pricing) to `createBrowserClient` so they share the cookie session (no divergence).
+
+**Verification (local, Chrome — Safari is the founder gate):** `next build` ✓ and `tsc --noEmit` clean on all migrated files (only pre-existing test-tooling errors remain). Launcher `oauth-ssr` (`:3380`): created a throwaway `zz-test-ssr-` user, **password sign-in via the real UI** → session landed in the **`sb-…-auth-token` cookie**, **not** localStorage; redirected to `/welcome` (not bounced); **`/killerapp` rendered fully authed** under the cookie session + new middleware (no errors); **server `/auth/callback` (no code) → `/login?error=missing_code`** ✓. Deleted the test user; **baseline restored** (13 users, 0 `zz-test-%`). No Safari in-harness (Chrome preview) → **GATE (founder, post-deploy): Safari on prod** → Continue with Google → completes sign-in; Chrome + email/password still work.
+
+**Risks flagged:** **one-time re-login** for current users (localStorage→cookie session; ~13 mostly-test users). `package-lock.json` regenerated (the repo's thin lockfile normalized by npm: +`@supabase/ssr`+`cookie`, +215 optional platform deps, and the stale `@supabase/*` pin 2.99.3→2.108.0 which `npm install` already resolves on prod) — build-verified. No prod SQL / no provider/secret/env change. If Safari STILL fails, the remaining lever is provider/cookie config (custom cookie domain), founder-gated.
+
+**Verification:** HEAD = one commit on `origin/main` (`7cba39c`, has #22+#23); PR opened for founder merge (the ≈11 migration files + `package.json`/lock + this log + `tasks.todo.md` + `tasks.lessons.md`).
+

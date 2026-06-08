@@ -19,6 +19,13 @@ After `flowType:'pkce'` shipped (#22), Chrome signed in fine but **Safari** fail
 - For client-side PKCE that must work in **Safari**, store the `code_verifier` in a **cookie**, not localStorage. Minimal fix: a hybrid `auth.storage` adapter routing only the `*-code-verifier` key to a first-party cookie (`SameSite=Lax`, `Secure` on https, short `Max-Age`) while the session stays in localStorage — avoids a full `@supabase/ssr` migration and keeps every other localStorage client sharing the same session.
 - **A passing Chrome test does NOT prove Safari.** Chrome persists localStorage across the OAuth redirect; Safari doesn't. Verify OAuth in Safari specifically (or use cookies from the start). The blessed robust path is `@supabase/ssr` (server-set cookies); the hybrid cookie adapter is the lower-risk hotfix.
 
+### Safari addendum #2 (2026-06-08): the *client-set* cookie ALSO failed — the exchange must be SERVER-SIDE
+The #23 hybrid client-set verifier cookie shipped and **still failed in Safari**. Lesson: it's not just *where* the verifier is stored, it's *who reads it*. A client-set (`document.cookie`) verifier + a **client-side** `exchangeCodeForSession` is what Safari breaks — Safari partitions/hides the cookie from client JS on the post-bounce page. What works is the canonical `@supabase/ssr` pattern: `createBrowserClient` (cookie session) initiates PKCE, and a **server** `/auth/callback` route does the exchange, reading the verifier cookie from the **request** (it's sent on the top-level Lax navigation and is server-readable even when client JS can't see it) and writing the session via `Set-Cookie`.
+**Rules:**
+- For Safari OAuth, do the PKCE **exchange server-side** (`@supabase/ssr` `createServerClient` in a route handler) reading the verifier from request cookies. Three escalations needed before it worked: localStorage (#22, Chrome-only) → client-set cookie + client exchange (#23, still Safari-broke) → **server-side exchange (works)**. Don't stop at "cookie instead of localStorage" — the *server read* is the load-bearing part.
+- When the auth client is a **dual-use singleton** (browser auth + server-imported for queries), make it **env-aware** (`createBrowserClient` in browser, plain anon `createClient` on server) so the cookie migration doesn't break the server importers. Keep server auth on the Bearer header (client sources the token from the cookie session) so API routes need no change.
+- Cost to flag up front: cookie sessions force a **one-time re-login** for users with existing localStorage sessions.
+
 ---
 
 ## Owner Lane — the seed is canon, the export is a placeholder (2026-05-29, Claude Code / Opus 4.8)
