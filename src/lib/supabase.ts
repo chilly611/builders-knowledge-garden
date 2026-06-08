@@ -7,7 +7,22 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
 
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+// Browser auth singleton (also used for plain queries). Google OAuth sign-in
+// (signInWithOAuth in login/page.tsx + AuthModal.tsx) and the callback's
+// exchangeCodeForSession share THIS client, so flowType MUST be 'pkce'. The
+// auth-js default ('implicit') returns the session in the URL hash, so the
+// callback (auth/callback/page.tsx) never sees a `?code=` query param and
+// bounces to /login?error=missing_code. PKCE returns `?code=` for the
+// explicit exchange. The code_verifier is stored at sign-in and read back at
+// the callback (same origin → same localStorage).
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
 // Check if Supabase is actually configured (not placeholder)
 export function isSupabaseConfigured(): boolean {

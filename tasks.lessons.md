@@ -1,6 +1,17 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-05-29
+## Updated: 2026-06-08
+
+---
+
+## OAuth client flowType must match the callback's exchange method (2026-06-08, Claude Code / Opus 4.8)
+
+### Google sign-in bounced to `/login?error=missing_code` — implicit client vs PKCE callback
+"Continue with Google" succeeded at Google but returned to `/login?error=missing_code`, never entering the app (prod, fresh incognito). Root cause was a **flow-type mismatch**, NOT a routing/redirect regression: the shared browser client (`src/lib/supabase.ts`) was `createClient(url, anon)` with no `auth` options, so `@supabase/auth-js` defaulted to `flowType: 'implicit'` — which returns the session in the URL **hash**, so the OAuth callback never received a `?code=` query param. But the callback (`auth/callback/page.tsx`) was written for **PKCE** (`exchangeCodeForSession(params.get('code'))`), so it always saw no code and bounced. Fix: set `flowType: 'pkce'` on the client (one line). This had **never worked** end-to-end (the client lacked `flowType` since v0.1); only the outbound `302 → accounts.google.com` had ever been verified.
+**Rules:**
+- The OAuth **client `flowType` must match the callback's exchange method**: a PKCE callback (`exchangeCodeForSession` + `?code=`) requires `flowType: 'pkce'` on the *same* client that calls `signInWithOAuth`. `@supabase/auth-js` defaults to `implicit` (session in the URL hash, no `?code=`).
+- **Verify the full OAuth round-trip, not just the outbound leg.** "Verified 302 → Google" only proves initiation; the return leg (provider → `?code=` → exchange → signed in) is where flow-type / redirect-uri / cookie bugs surface. A latent bug sits unnoticed if only the outbound redirect was ever checked.
+- **Fast local check without completing Google:** click "Continue with Google" and confirm a `sb-<ref>-auth-token-code-verifier` appears in localStorage — that artifact is written only under PKCE (implicit creates none), proving the client's flow type without needing IdP consent or a redirect-allow-list entry.
 
 ---
 
