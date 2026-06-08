@@ -3922,3 +3922,92 @@ Task: founder dogfood — "Continue with Google" on prod succeeded at Google the
 
 **Verification:** HEAD = one commit on `origin/main` (`7181963`); PR opened for founder merge (`src/lib/supabase.ts` + this log + `tasks.todo.md` + `tasks.lessons.md`). No prod SQL. `package-lock.json` churn from `npm install` reverted.
 
+
+---
+
+## 2026-06-07 — [Claude Code] Session: canonical demo polish — cold `?project=` deep-link renders fixture-clean (metadata + AI-take)
+**Agent:** Claude Code (Opus) · worktree `bkg-canonical-demo-polish` on `fix/canonical-demo-polish` off `origin/main` (`43db7f6`, includes #18 + #19).
+**Commit:** this entry's commit on `fix/canonical-demo-polish`; PR for founder merge (4 source files + this log). **No DB writes.**
+
+**Problem (investor-facing):** Opening the canonical demo cold — `/killerapp?project=55730cd3-…` ("Modern Farmhouse in Marin") — rendered the **stale DB row** (sqft 4,950 / phase PLAN 15% / "1,800 sf" in the description) and a **stale, off-topic AI-take** (a "solar codes this week" answer), instead of the canonical spec (4,000 sqft / $1.65M total / $312K spent / Build 42%).
+
+**Root cause:** #18's canonical-wins (`useStageProject()`, keyed on `isCanonicalProjectId`) was wired only into the 7 stage pages. The main cockpit + chrome read raw sources directly, so the demo id got **no** override on the `/killerapp?project=` view:
+- chrome budget/journey strip ← `useProjectLedger(uuid)` → `GET /api/v1/budget` (drifted `project_budget_lines`);
+- shell header sqft/cost/description ← `useProject().project` = the drifted `command_center_projects` row;
+- AI-take ← latest `project_conversations` assistant row (the solar answer).
+Confirmed live (read-only) on `vlezoyalutexenbnzzui`: row last edited 2026-06-04 → name "Modern farmhouse in Marin", sqft "4950", budget_amount 2320300, phase PLAN/15, raw_input "1,800 sf…", ai_summary "2,800 sf…"; 12 conversation rows, newest assistant = solar. The cold-deep-link non-hydration follow-up flagged in #18 is this wiring gap (not a true hydration race — `projectId` is set from the URL on first render).
+
+**Fix (fixture-driven, 3 seams, all gated on `isCanonicalProjectId`, zero DB writes):**
+- **Seed** `src/lib/seed-data/marin-farmhouse.ts`: new `MARIN_RAW_INPUT`, `MARIN_AI_SUMMARY`, `MARIN_AI_TAKE` (canonical, investor-clean copilot take in the copilot voice; no trailing "**What next?**" block — the static CTA row renders the next steps).
+- **`src/contexts/ProjectContext.tsx`**: in the hydrate effect, short-circuit the canonical id to a canonical `ProjectRecord` built from the seed — **no** `/api/v1/projects` fetch. Fixes the shell header + description + `ShellConfig` name; works cold or warm, signed-in or anon.
+- **`src/components/app-shell/useProjectLedger.ts`**: canonical branch (mirrors the existing `isDemo` branch) returns `getCanonicalProject()` budget + journey (currentStage 4 / 42%), not `/api/v1/budget`.
+- **`src/app/killerapp/KillerappProjectShell.tsx`**: `rawAiText = MARIN_AI_TAKE` for the demo; skip the conversations fetch and the copilot auto-fire for the demo id.
+
+**Verification (GATE — real browser, launcher `canonical-demo` `:3340`, cwd confirmed = bkg-canonical-demo-polish):**
+- **Canonical cold deep-link, anon AND signed-in (`gc-trial-01`):** 4,000 sq ft · strip "$1.15M LEFT OF $1.65M" · journey "Build / 42%" · canonical description · canonical AI-take (ends clean — no "Location not specified"). No stale tokens (4,950 / 1,800 / 2,800 / 2,320,300 / solar). Zero console errors (no React #418). `window.__bkg_project__` = canonical values (`sqft "4000"`, `budget_amount 1650000`) — **proves the overlay fired**, not the DB row.
+- **Non-canonical control (SoMa `bb22c33d-…`, signed-in):** renders its OWN real data — "Commercial TI in SoMa" / San Francisco, CA / $1.13M ledger / 16% Plan / its own SoMa AI-take — with **zero Marin bleed**. Confirms the special-case is id-scoped only. (SoMa's live AI-take is clean because *its* conversations never drifted — which is exactly why only Marin needs the fixture.)
+- `npx tsc --noEmit`: **0 errors in changed files** (the 121-line pre-existing baseline in `__tests__/*` is unchanged). Vercel builds the branch on push.
+
+**Notes / out of scope:** Left the drifted DB row + conversations **untouched** (brief: do NOT fix via DB edit; the fixture path makes the demo resilient to whatever is in the DB). The row is still the documented source-of-truth — recommend the founder later reconcile `command_center_projects[55730cd3]` to canonical (sqft 4000 / budget 1650000 / phase BUILD / progress 42) so non-cockpit surfaces (e.g. the project-picker name, currently lowercase "Modern farmhouse in Marin") also match — separate, optional. The anon canonical render shows the nav "Project Name" pill as "Untitled project" (a nav-local draft field, not the cockpit) — pre-existing, out of scope. Added an additive `canonical-demo` (`:3340`) config to the central launcher (`~/Documents/The Builder Garden/.claude/launch.json`).
+
+---
+
+## 2026-06-07 — [Claude Code] Session: canonical demo row reconciled in the DB (picker/list stale-data fix)
+**Agent:** Claude Code (Opus) · worktree `bkg-canonical-demo-polish` on `fix/canonical-demo-polish`.
+**DB write:** **DATA-ONLY SQL on SHARED prod** `knowledge-gardens-prod` (`vlezoyalutexenbnzzui`, confirmed `ACTIVE_HEALTHY`) — founder-gated, executed only after explicit "yes" (exec ~2026-06-08T05:59Z). This is the **recommended follow-up** flagged in the cockpit-fixture entry above. No code, no DDL, **one row**, `project_conversations` untouched.
+
+**Problem:** the project picker/list (`/killerapp/projects`, `ProjectsDashboardClient`) reads the DB row directly (cockpit is already fixture-clean), so it showed the old demo: lowercase "Modern farmhouse in Marin", sqft 4950, budget 2,320,300, phase PLAN/15, "1,800 sf" raw_input, off-topic "2,800 sf" ai_summary.
+
+**Backup (before any write)** — `docs/backups/`:
+- `command_center_projects_55730cd3_20260608T055523Z.json` — lossless full-row `to_jsonb` snapshot.
+- `command_center_projects_55730cd3_20260608T055523Z.rollback.sql` — DB-generated `format(%L/%s)` revert of the 8 columns (restores `client_name=NULL`, numerics unquoted, sqft as text).
+
+**Write (single `UPDATE … WHERE id='55730cd3-…' RETURNING`, 8 columns, dollar-quoted text):**
+
+| column | before → after |
+|---|---|
+| name | `Modern farmhouse in Marin` → `Modern Farmhouse in Marin` |
+| sqft (text) | `4950` → `4000` |
+| budget_amount (numeric) | `2320300` → `1650000` |
+| phase | `PLAN` → `BUILD` |
+| progress (int) | `15` → `42` |
+| client_name | `NULL` → `The Harwell Family` |
+| raw_input | "1,800 sf…late summer 2026." → `MARIN_RAW_INPUT` (285 ch) |
+| ai_summary | "Alright…2,800 sf…" (745 ch) → `MARIN_AI_SUMMARY` (188 ch) |
+
+Values verbatim from `src/lib/seed-data/marin-farmhouse.ts` (canonical seed; this worktree's copy md5 `cda474…` == `bkg-main`; the other ~15 worktrees carry an older `f98ad0…` copy). `RETURNING` confirmed exactly one row at canonical values.
+
+**Verification (GATE — real browser, launcher `canonical-demo` `:3340`, cwd = bkg-canonical-demo-polish):** `/killerapp/projects` Marin card now renders **"Modern Farmhouse in Marin"** + canonical summary ("A 4,000 sq ft … Harwell family — $1.65M … Build phase (~42%)…"); card links to `/killerapp?project=55730cd3-…`; old lowercase title/summary **gone** (`hasOldLower=false`); **zero console errors**. List is prod-connected (sibling live projects render — SoMa, Sausalito ADU).
+
+**Still stale — OUT OF SCOPE (flagged, not touched):** the picker card's cost badge still reads **`$900K–$1,200K`** = `estimated_cost_low/high` (900000/1200000; seed says 1,550,000–1,780,000). Also untouched in-row: `estimating_state` / `code_compliance_state` / `contracts_state` JSON ("1,800 sf", lowercased `projectName`) and `next_milestone` ("Land Marin County building permit"). None are in the 8-column brief → recommend an optional follow-up lane to reconcile them. **`project_conversations` left alone** (fixture overrides the AI-take). Rollback ready if a revert is needed.
+
+---
+
+## 2026-06-07 — [Claude Code] Session: canonical demo row reconciled — PHASE 2 (estimate range, milestone, workflow JSON)
+**Agent:** Claude Code (Opus) · worktree `bkg-canonical-demo-polish` on `fix/canonical-demo-polish`.
+**DB write:** **DATA-ONLY SQL on SHARED prod** `knowledge-gardens-prod` (`vlezoyalutexenbnzzui`) — founder-gated, executed only after explicit per-field "yes". This is the exact follow-up the phase-1 entry above flagged. No code, no DDL, **one row**, `project_conversations` untouched.
+
+**Backup:** the **same lossless full-row snapshot** covers this write — `docs/backups/command_center_projects_55730cd3_20260608T055523Z.json` (captured pre-ANY-write, so it holds the pre-phase-2 values too). New companion rollback for these 7 columns: `…20260608T055523Z.rollback.phase2.sql`, generated **from the .json** (no hand-transcription of the 2,060-char blob). Full lane revert = phase-1 rollback **+** phase-2 rollback.
+
+**Write (single `UPDATE … WHERE id='55730cd3-…' RETURNING`, 7 columns):**
+
+| column | before → after | source |
+|---|---|---|
+| estimated_cost_low (int) | `900000` → `1550000` | seed `MARIN_PROJECT.estimated_cost_low` |
+| estimated_cost_high (int) | `1200000` → `1780000` | seed `MARIN_PROJECT.estimated_cost_high` |
+| next_milestone (text) | `Land Marin County building permit` → `Framing inspection` | seed (next upcoming permit/marker) |
+| milestone_date (date) | `NULL` → `2026-07-08` | seed `MARIN_PERMITS` framing deadline / timeline |
+| estimating_state (jsonb) | drifted ("1,800 sf / 1800 / 3 bed 2 bath / mid-grade") → `{}` | reset (see flag) |
+| code_compliance_state (jsonb) | drifted (7 steps repeating the "1,800 sf…" prompt) → `{}` | reset (see flag) |
+| contracts_state (jsonb) | `fields.projectName` "Modern farmhouse in Marin" → "Modern Farmhouse in Marin" | surgical `jsonb_set`; address + `selectedIds` preserved |
+
+**Flag — why some fields aren't a literal seed copy (founder chose, not guessed):**
+- The seed has **no `next_milestone` constant.** "Framing inspection" / 2026-07-08 is the next upcoming item in the seed's own permit set (`MARIN_PERMITS`: building permit *approved*, framing inspection *in_progress* @ 2026-07-08) + the `getCanonicalProject` timeline marker. Founder approved over the alt ("Substantial completion" / 2026-12-04).
+- The three `*_state` blobs are **per-workflow interaction state** (`Record<string,StepPayload>` from `useProjectWorkflowState`), **not** seed data — the seed defines no canonical shape, and `estimating_state` even carried `"mid-grade"` (no seed equivalent). So rather than guess, founder approved **reset to `{}`** for `estimating_state` + `code_compliance_state` (matches the ~20 other already-empty `*_state` columns; workflows rehydrate fresh from the now-canonical row). Only `contracts_state` had a single clean drift (the lowercased name) → fixed surgically.
+
+**Verification (GATE — real browser, launcher `canonical-demo` `:3340`, signed-in `gc-trial-01`, cwd confirmed = bkg-canonical-demo-polish):**
+- `/killerapp/projects` Marin card badge now reads **`$1,550K–$1,780K`** (was `$900K–$1,200K`), title proper-case, canonical summary; **no `1,800`, no lowercase title**; sibling projects (SoMa, Sausalito ADU) render their own ranges. Zero console errors.
+- The now-empty **estimating** + **code-compliance** stages open as **clean fresh-state, not broken** (no error boundary): canonical context banner (`4,000 sq ft · $1,550,000–$1,780,000`, cost-per-sf `$388–$445/sf`), upload/step UI present, no `1,800`/lowercase, zero console errors.
+
+**Lane delivery:** this PR (`fix/canonical-demo-polish` → main) lands the `docs/backups/` artifacts (snapshot + phase-1 & phase-2 rollbacks) and both session-log entries, so the whole DB-reconciliation lane is captured on main (source of truth) rather than stranded in the worktree. The DB writes are already live on shared prod; the row now fully matches the seed. `project_conversations` untouched (the cockpit AI-take is fixture-driven).
+
