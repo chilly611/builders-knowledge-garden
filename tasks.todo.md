@@ -28,6 +28,8 @@
 
 **↳ In review (PR open · 2026-06-07 · feat/system-of-record-gate):** System-of-Record gate for the field surfaces — **FieldOps `/field`, VoiceFieldReport (Build), GlobalAiFab**. Verified in a real browser on shared prod (`vlezoyalutexenbnzzui`) with a throwaway user, then cleaned to baseline: daily-log + `field-report-*` read-merge-write (**clobber fix**), photo→`project-evidence`+`project_attachments`, copilot→`project_conversations` (real Claude), all **rehydrate across reload / leave→return**. Rebased clean onto #18 (zero conflicts). ⚠️ Found: `POST /api/v1/onboard-new-user` **500s** (`metadata` column missing on `command_center_projects` — schema drift) → blocks new-signup auto-project; not in this PR's scope.
 
+**↳ In review (PR open · 2026-06-08 · fix/oauth-pkce-flow · dogfood blocker):** Google sign-in bounced to `/login?error=missing_code` (founder incognito dogfood) — never entered the app. Root cause: the shared `@/lib/supabase` client used auth-js's default `flowType:'implicit'` (session in URL hash → no `?code=`), but `/auth/callback` is PKCE (`exchangeCodeForSession`). Fix = set `flowType:'pkce'` on the client (one file, no config/secret change). Local-verified PKCE initiation (code-verifier written to localStorage). **GATE after merge+deploy:** fresh incognito → Continue with Google → lands in app signed in.
+
 ### Lane 0 — Recon (read-only, no writes) [BLOCKS precise scoping of Lanes 1–2]
 - [ ] Merge state of feat/shared-app-shell, feat/rsi-heartbeat, feat/compliance-service vs main
 - [ ] Stripe routes + mock-vs-real + whether the access gate reads real subscription status

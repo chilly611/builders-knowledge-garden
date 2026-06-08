@@ -3904,3 +3904,21 @@ Task: fix `POST /api/v1/onboard-new-user` 500ing on shared prod with **PGRST204 
 
 **Verification:** HEAD = one commit on `origin/main` (`43db7f6`); PR opened for founder merge (2 source files + this log). `package-lock.json` churn from `npm install` reverted — not committed. `.env.local`/`.vercel` gitignored, not committed.
 
+---
+
+## 2026-06-08 — [Code] Google OAuth fixed: shared client → PKCE (fix/oauth-pkce-flow)
+
+Task: founder dogfood — "Continue with Google" on prod succeeded at Google then bounced to `builders.theknowledgegardens.com/login?error=missing_code`, never entering the app. Reproducible in fresh incognito. Plan-mode read-only diagnosis first; founder-merge PR. Tight scope: the OAuth client.
+
+**Root cause (read-only, verified against `origin/main`):** flow-type mismatch. `src/lib/supabase.ts:10` creates the shared browser client as `createClient(url, anon)` with **no `auth` options** → `@supabase/auth-js@2.106.2` default **`flowType: 'implicit'`** (`GoTrueClient.js:21`). Every Google OAuth path uses this one singleton — initiation (`login/page.tsx:146`, `AuthModal.tsx:85` `signInWithOAuth`) and exchange (`auth/callback/page.tsx:68` `exchangeCodeForSession`). Implicit returns the session in the URL **hash**, so Google/Supabase redirect back to `/auth/callback` with **no `?code=` query param**; the callback (`page.tsx:60-63`) does `params.get('code')` → null → `router.replace('/login?error=missing_code')`. The callback was written for PKCE but the client was never switched to it → bounces 100%.
+
+**Not a regression.** `src/lib/supabase.ts` has one commit ever (`a7082e3`, v0.1) and never contained `flowType` — Google OAuth's return leg never worked (only the outbound `302 → accounts.google.com` was ever verified, 2026-06-02). Ruled out: `next.config.ts` redirects (none touch `/auth/callback`, none strip the query) and `middleware.ts` (matches `/killerapp/*` only). `safeCallbackRedirect` (`safe-url.ts:64-67`) correctly targets `${origin}/auth/callback?redirectTo=…`.
+
+**Fix (CODE, one file):** `src/lib/supabase.ts` — added `auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }` to the `createClient`. Both OAuth legs share this singleton (same origin → same localStorage), so the PKCE `code_verifier` stored at sign-in is read back at the callback. **No provider-console / secret / env change** — PKCE is client-driven; `redirect_uri` and the Supabase redirect allow-list are unchanged. (The flagged `site_url = localhost:3000` is a separate latent issue, not this bug — the user returns to prod.)
+
+**Verification (local, no Google login required):** launcher `oauth-pkce` (`:3360`, cwd-confirmed = bkg-oauth-pkce, public URL+anon injected — no service key). On `/login`, clicked the real **Continue with Google**; the app's `signInWithOAuth` wrote **`sb-vlezoyalutexenbnzzui-auth-token-code-verifier`** to localStorage — the **PKCE artifact that implicit flow never creates** → PKCE initiation confirmed. No Google consent completed → zero prod side-effects (no user/rows created). **GATE (post-merge + deploy, founder):** fresh incognito → `/login` → Continue with Google → lands in the app signed in, **not** `/login?error=missing_code`.
+
+**Risk:** low. `flowType: 'pkce'` is Supabase-recommended; password sign-in (`signInWithPassword`) unaffected; existing sessions unaffected (PKCE governs new initiations only); `detectSessionInUrl`/`persistSession`/`autoRefreshToken` are already defaults. Out of scope (flagged, untouched): `supabase-browser.ts` + budget widgets are also implicit but never call `signInWithOAuth`/`exchangeCodeForSession`.
+
+**Verification:** HEAD = one commit on `origin/main` (`7181963`); PR opened for founder merge (`src/lib/supabase.ts` + this log + `tasks.todo.md` + `tasks.lessons.md`). No prod SQL. `package-lock.json` churn from `npm install` reverted.
+
