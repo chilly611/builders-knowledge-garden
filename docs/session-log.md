@@ -3922,3 +3922,19 @@ Task: founder dogfood — "Continue with Google" on prod succeeded at Google the
 
 **Verification:** HEAD = one commit on `origin/main` (`7181963`); PR opened for founder merge (`src/lib/supabase.ts` + this log + `tasks.todo.md` + `tasks.lessons.md`). No prod SQL. `package-lock.json` churn from `npm install` reverted.
 
+---
+
+## 2026-06-08 — [Code] Safari OAuth: PKCE verifier → cookie (fix/oauth-pkce-cookie-storage)
+
+Task: after PKCE shipped (#22 `5a62915`, live), founder dogfood — Google sign-in **works in Chrome** (incl. incognito) but **fails in Safari** at the exchange: `/auth/callback` shows *"PKCE code verifier not found in storage."* Plan-mode read-only first; founder-merge PR. Tight scope: the OAuth client.
+
+**Root cause:** the PKCE `code_verifier` is written to **localStorage** at sign-in, then we immediately `window.location` to the IdP. Safari doesn't reliably persist that just-before-unload localStorage write across the cross-site OAuth bounce (builders → supabase.co → Google → supabase.co → builders), so the callback's `exchangeCodeForSession` finds no verifier. Chrome persists it (Chrome works). `document.cookie` writes are synchronous + committed before navigation and survive as a first-party cookie — exactly what Supabase's error message recommends.
+
+**Fix (CODE, one file):** `src/lib/supabase.ts` — added a small SSR-safe hybrid `auth.storage` adapter that routes **only** the `*-code-verifier` key to a first-party cookie (`SameSite=Lax`, `Secure` on https, `Max-Age=600`) and leaves everything else (the session) in localStorage. Session storage unchanged → the **87 importers** of the singleton + the other localStorage clients (`supabase-browser.ts`, budget widgets) keep sharing the same `sb-<ref>-auth-token` session (no divergence, no app-wide migration, no `@supabase/ssr` dependency).
+
+**Verification (local, Chrome — mechanism proof):** launcher `oauth-cookie` (`:3370`, cwd = bkg-oauth-cookie, public URL+anon). On `/login`, clicked **Continue with Google** from a cleaned state → the verifier landed in a **cookie** (`sb-vlezoyalutexenbnzzui-auth-token-code-verifier`) and **not** localStorage, and **survived the navigation to the IdP and back** (persisted first-party cookie). `supabase.ts` compiles clean. No Google consent completed → zero prod side-effects. Can't drive Safari in-harness (Chrome preview) → **GATE (founder, post-deploy): Safari on prod** → Continue with Google → completes sign-in (no "verifier not found"); Chrome still works.
+
+**Why not full `@supabase/ssr`:** blessed but high-blast-radius (dependency + migrate session storage for 87 importers + 4 client sites + server client/middleware/server-callback) → too risky for a dogfood hotfix. **Escalation if Safari still fails** (client-set cookie purged): `@supabase/ssr` server-set cookies. Flagged.
+
+**Verification:** HEAD = one commit on `origin/main` (`5a62915`); PR opened for founder merge (`src/lib/supabase.ts` + this log + `tasks.todo.md` + `tasks.lessons.md`). No prod SQL / no provider/secret/env change. `package-lock.json` churn reverted.
+

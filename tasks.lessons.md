@@ -11,7 +11,13 @@
 **Rules:**
 - The OAuth **client `flowType` must match the callback's exchange method**: a PKCE callback (`exchangeCodeForSession` + `?code=`) requires `flowType: 'pkce'` on the *same* client that calls `signInWithOAuth`. `@supabase/auth-js` defaults to `implicit` (session in the URL hash, no `?code=`).
 - **Verify the full OAuth round-trip, not just the outbound leg.** "Verified 302 → Google" only proves initiation; the return leg (provider → `?code=` → exchange → signed in) is where flow-type / redirect-uri / cookie bugs surface. A latent bug sits unnoticed if only the outbound redirect was ever checked.
-- **Fast local check without completing Google:** click "Continue with Google" and confirm a `sb-<ref>-auth-token-code-verifier` appears in localStorage — that artifact is written only under PKCE (implicit creates none), proving the client's flow type without needing IdP consent or a redirect-allow-list entry.
+- **Fast local check without completing Google:** click "Continue with Google" and confirm a `sb-<ref>-auth-token-code-verifier` appears in storage — that artifact is written only under PKCE (implicit creates none), proving the client's flow type without needing IdP consent or a redirect-allow-list entry.
+
+### Safari addendum (2026-06-08): the localStorage PKCE verifier doesn't survive the redirect — route it to a cookie
+After `flowType:'pkce'` shipped (#22), Chrome signed in fine but **Safari** failed at the exchange: *"PKCE code verifier not found in storage."* supabase-js writes the verifier to localStorage and then we immediately navigate to the IdP; Safari doesn't reliably persist that just-before-unload localStorage write across the cross-site OAuth bounce (ITP + write-not-flushed-before-unload). `document.cookie` writes are synchronous and committed before navigation and survive as a first-party cookie.
+**Rules:**
+- For client-side PKCE that must work in **Safari**, store the `code_verifier` in a **cookie**, not localStorage. Minimal fix: a hybrid `auth.storage` adapter routing only the `*-code-verifier` key to a first-party cookie (`SameSite=Lax`, `Secure` on https, short `Max-Age`) while the session stays in localStorage — avoids a full `@supabase/ssr` migration and keeps every other localStorage client sharing the same session.
+- **A passing Chrome test does NOT prove Safari.** Chrome persists localStorage across the OAuth redirect; Safari doesn't. Verify OAuth in Safari specifically (or use cookies from the start). The blessed robust path is `@supabase/ssr` (server-set cookies); the hybrid cookie adapter is the lower-risk hotfix.
 
 ---
 
