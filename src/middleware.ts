@@ -1,35 +1,32 @@
 /**
- * Next middleware — COCKPIT-PERSONALIZATION (2026-05-22).
+ * Next middleware — COCKPIT-PERSONALIZATION (2026-05-22) + AUTH SESSION REFRESH.
  *
- * The only job today: surface the user's effective lane to the server
- * render path for /killerapp/* routes so the killerapp layout can set
- * `<body data-diy-cockpit="1">` on the very first byte. That kills the
- * "pro picker flashes before DIY overlay hydrates" jank Chilly flagged.
+ * Two jobs, both scoped to /killerapp/* (the authed app surface):
  *
- * Truth-source: a `bkg-lane` cookie written by the client when the
- * effective lane is resolved (see ProjectContext + DiyCockpitOverlay).
- * The cookie is non-HttpOnly so the same client code that wrote it can
- * read+update it as the user signs in/out or switches projects.
+ * 1. Lane hint: surface the user's effective lane to the server render path so
+ *    the killerapp layout can set `<body data-diy-cockpit="1">` on the first byte
+ *    (kills the "pro picker flash"). Truth-source: the client-writable `bkg-lane`
+ *    cookie; forwarded as an `x-bkg-lane` request header. UI gating only — RLS on
+ *    `project_members` is the real authorization source.
  *
- * Absent cookie -> treat as `gc` default. The layout's data attribute
- * defaults to '0' (== "not DIY"), so the pro picker renders as it does
- * today. No middleware-side projection of lane to anonymous users.
- *
- * We append an `x-bkg-lane` request header so server components can read
- * the lane via `headers()` without re-parsing cookies. The header is
- * trustworthy for UI gating only — the cookie is client-writable and
- * MUST NOT be used as an authorization decision anywhere. RLS on
- * `project_members` is still the source of truth for actual access.
+ * 2. @supabase/ssr session refresh (2026-06-08, Safari OAuth migration): keep the
+ *    cookie session fresh so server renders see a current session and the cookie
+ *    doesn't expire mid-session. Matcher stays /killerapp/* — /api routes use the
+ *    client-sent Bearer token (not the cookie), so we don't add getUser() latency
+ *    there. Do NOT insert logic between createServerClient() and getUser().
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 const KILLERAPP_PATH_RE = /^\/killerapp(\/|$)/;
 const VALID_LANES = new Set([
   'owner', 'gc', 'contractor', 'teammate', 'day_hire', 'specialist', 'diy',
 ]);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (!KILLERAPP_PATH_RE.test(pathname)) {
     return NextResponse.next();
@@ -39,21 +36,34 @@ export function middleware(req: NextRequest) {
   const lane = VALID_LANES.has(rawLane) ? rawLane : 'gc';
 
   // Forward the resolved lane to server components via a request header.
-  // Mutate the existing request headers so downstream Server Components
-  // can read it via `headers()` without us materialising a new request.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-bkg-lane', lane);
 
-  const res = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  let res = NextResponse.next({ request: { headers: requestHeaders } });
 
-  // Echo the resolved lane back on the response so client JS that needs
-  // to bootstrap before the next render (e.g. analytics) has it without
-  // a second round-trip. Same cookie, same value — no overwriting the
-  // user's explicit choice when present.
+  // @supabase/ssr session refresh. Skipped when env isn't configured (build/dev
+  // without Supabase) so the bundle/build never hits the network.
+  if (!supabaseUrl.includes('placeholder')) {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          res = NextResponse.next({ request: { headers: requestHeaders } });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options),
+          );
+        },
+      },
+    });
+    // Refreshes the session + rotates the cookie when needed.
+    await supabase.auth.getUser();
+  }
+
+  // Clear a junk lane cookie so the client re-writes a valid one.
   if (rawLane && rawLane !== lane) {
-    // Cookie value was junk — clear it so the client re-writes a valid one.
     res.cookies.delete('bkg-lane');
   }
 
@@ -61,8 +71,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Match every /killerapp route, including the landing page. Excluding
-  // _next/static and image optimisation paths is implicit — those don't
-  // match the path prefix.
   matcher: ['/killerapp/:path*'],
 };

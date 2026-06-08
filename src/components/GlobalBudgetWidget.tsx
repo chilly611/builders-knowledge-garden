@@ -32,6 +32,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { useActiveProject } from '@/lib/hooks/use-active-project';
 
@@ -74,9 +75,7 @@ function getSupabaseBrowser(): SupabaseClient {
   if (!url || !anonKey || url.includes('placeholder')) {
     return createClient('https://placeholder.supabase.co', 'placeholder-anon-key');
   }
-  browserClient = createClient(url, anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  });
+  browserClient = createBrowserClient(url, anonKey) as unknown as SupabaseClient;
   return browserClient;
 }
 

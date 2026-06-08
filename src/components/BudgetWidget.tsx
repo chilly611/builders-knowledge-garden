@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { createBrowserClient } from '@supabase/ssr';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /* ─── Supabase Browser Client ─── */
@@ -17,9 +18,7 @@ function getSupabaseBrowser(): SupabaseClient {
   if (!url || !anonKey || url.includes('placeholder')) {
     return createClient('https://placeholder.supabase.co', 'placeholder-anon-key');
   }
-  browserClient = createClient(url, anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  });
+  browserClient = createBrowserClient(url, anonKey) as unknown as SupabaseClient;
   return browserClient;
 }
 
