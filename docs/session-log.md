@@ -3507,48 +3507,30 @@ API; resolved by awaiting `params`.
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
 
 ---
-## 2026-05-31 — Claude Code: Playwright e2e + data-consistency harness (the regression net)
-**Agent:** Claude Code (claude-opus-4-8)
-**Branch:** `test/e2e-consistency` (PR only, no merge)
 
-**What was built (tests/ only — zero app-code changes under `src/`):**
-- `playwright.config.ts` — drives the real `next dev` (Turbopack) on a dedicated port (3210, override `BKG_E2E_PORT`) so it never collides with a `:3000` server in another worktree; `testMatch: **/*.e2e.ts` so the app's `vitest` (`npm test`) never executes these; artifacts under `tests/.artifacts/` (gitignored). Added `@playwright/test` to devDependencies + Chromium.
-- `tests/e2e/fixtures/bkg.ts` — chrome-agnostic readers (`readChromeBudget`/`readChromeJourney`/`readDemoBody`, `chromeRegion`) that match BOTH today's `killerapp-chrome` (ARIA accessible names — it ships no `data-*`) and the post-fix `app-shell` (`.bkg-shell .gstrip-*`); `parseMoney`; deterministic setup (`pinAnonymous`, `dismissStageWelcome`, `seedBudgetLedger`).
-- `tests/e2e/data-consistency.e2e.ts` — the **Marin-over-other-project** regression net.
-- `tests/e2e/real-loop.e2e.ts` — sign-in surface → open a project → budget editor → save → leave → return → resume.
-- `tests/e2e/mobile-chrome.e2e.ts` — chrome ribbon at 375px: no horizontal page overflow + no KPI-block collision.
+## 2026-06-01 — Claude Code: Stage 5 — tamper-evident signing chain (contracts legal gate, engineering half)
+**Agent:** Claude Code (claude-opus-4-8) · stream = backend/lib + API
+**Branch:** `feat/contracts-signing` (worktree `bkg-contracts-signing`, off local `main`, rebased `--onto origin/main` for a clean PR). **PR only — NOT merged.** New code only; no UI re-roll, no other stage. This is the *engineering* half of founder-locked gate **#11**; it does **not** replace the lawyer's review of the contract templates.
 
-**Key decisions:**
-- **No auth needed.** Clerk is unwired and no route is gated; the app boots/renders fully unauthenticated with placeholder Supabase env. Tests assert the client-side path (per brief: don't block on auth-gated surfaces).
-- **Consistency target = `demo-project`** — the one project whose body + ledger resolve with NO backend (`ProjectDashboardClient → getDemoProject() → docs/demo-data/demo-project.json`, "Willow Creek ADU"). Real UUIDs are backend-gated (`GET /api/v1/budget` → 401), so they can't anchor an anonymous net.
-- **The net flips RED→GREEN with no test edits:** readers prefer the app-shell hooks when present. Today the old chrome renders Marin; after Stage 2 the app-shell reads the same demo fixture, so chrome === body === ledger.
-- **Real-loop persistence = budget-editor localStorage** (`bkg-budget-anonymous`) — the verified backend-free happy-path. On return a non-empty ledger renders the saved line as a collapsed grid row, so resume is asserted as the description visible as text (not as an input value) plus the rehydrated `.bkg-budget-grid`.
+**Context / diagnosis (read first):** Confirmed prod = `knowledge-gardens-prod` `vlezoyalutexenbnzzui` (Postgres 17, shared — co-hosts Toxicology/EWG). The two target tables pre-exist (`20260522b_ship_round3_schema.sql`): `signed_documents` (id, project_id, document_type, document_id, **document_hash NOT NULL**, pdf_url, title, status, required_signers jsonb, created_by, created_at, finalized_at; + documenso_* from `20260524_…`) and `signature_events` (id, signed_document_id→cascade, signer_user_id, signer_role/name/email, signature_method CHECK typed|drawn|docusign|dropbox_sign|documenso, signature_data, ip_address, user_agent, signed_at). Both RLS-critical (healthcheck guards all 17 tables). Three writers insert events today: `[id]/sign/route.ts` (main), `[id]/reject/route.ts`, `lib/documenso-sync.ts`.
+- **Load-bearing finding:** `document_hash` is **not** the document bytes. Both `POST /signatures` (`route.ts:177`) and `PATCH …/sign` (`sign/route.ts:120`) set it to SHA-256 of a **metadata JSON snapshot** (id/project/type/title/signers) — the code comment even admits "we'd ideally fetch and SHA-256 the bytes." The migration's own column comment intends "SHA-256 of the rendered PDF; immutable provenance." So byte-hashing is the *intended* semantics, never implemented. Stage 5 implements it.
+- **Founder-locked #11 → did NOT rewire the live signing path.** Built the engine as isolated new code the founder wires when opening the gate.
 
-**Verified (live suite, `npx playwright test`): 3 passed / 2 RED-by-design.**
-- GREEN: consistency *control* (body === ledger: Willow Creek $116k remaining / $340k total), mobile 375px (no overflow, no KPI collision), real-loop (line survives leave→return + rehydrates).
-- RED (the net, expected on `main`): the persistent chrome shows Marin **$1.15M remaining / $1.65M total / "Plan" 85%** while the open project's body+ledger are **$116k / $340k / "Build" 62%**; and the chrome still shows Marin `$312K`/`$1.65M` over a deliberately-seeded demo ledger. Root cause confirmed live: `src/app/killerapp/layout.tsx` mounts `<KillerAppChrome />` with no `project` prop → `marinKacProject()` → `getCanonicalProject()` (hardcoded Marin). Turns GREEN once Stage 2 binds the chrome to the viewed project.
+**What was built (new code only):**
+- **`src/lib/signing-chain.ts`** — the engine, all derivable from stored columns:
+  - anchor = `signed_documents.document_hash` = `SHA-256(exact document bytes)` (PDF bytes via `pdf_url`, else a deterministic canonical-JSON fallback for byte-less in-app docs).
+  - `event[0].prev = anchor`; `event[i].prev = event[i-1].event_hash`; `event_hash = SHA-256( canonical(content) ‖ prev )`; `sequence_number = i` (0-based contiguous).
+  - `appendSignatureEvent()` — "on signing": loads doc, **re-anchors `document_hash` to the byte hash**, finds the chain tip, computes prev/seq/hash, inserts ONE row with signer identity + timestamp + IP + UA + chain fields. Refuses to extend a chain with an unchained predecessor.
+  - `buildSigningPacket()` — packages document row + **exact bytes (base64)** + ordered events + `chain_anchor` + a `packet_hash`, **from stored data only**.
+  - `verifySigningPacket()` (offline) + `verifyStoredDocument()` (live re-hash) — re-hash the bytes vs `document_hash`, walk the chain recomputing every `event_hash` and checking each prev-link + sequence.
+  - `normalizeTimestamp()` collapses app-written ms-ISO ("…Z") and PG read-back ("+00:00") to one instant so hashes survive the DB round-trip (tested).
+- **`src/lib/signing-access.ts`** — `callerCanAccessDocument()` (service client bypasses RLS → app-level gate): creator OR required-signer OR has a recorded event.
+- **`src/app/api/v1/signatures/[id]/packet/route.ts`** — `GET` export packet (`?download=1` → attachment).
+- **`src/app/api/v1/signatures/[id]/verify/route.ts`** — `GET` verify stored doc; `POST` verify an uploaded packet (path id must match `packet.signed_document_id`).
+- **`supabase/migrations/20260601_signature_event_chain.sql`** — the ONE allowed schema change: adds `sequence_number`/`prev_event_hash`/`event_hash` to `signature_events` (nullable → legacy writers keep working) + partial-unique `uq_signature_events_doc_seq(signed_document_id, sequence_number)` **fork guard** + `idx_signature_events_chain_tip`. Tables otherwise reused as-is.
+- **Tests (41, all green):** `src/lib/__tests__/signing-chain.test.ts` + `signing-access.test.ts` + route tests under each `[id]/{packet,verify}/__tests__/`.
 
-**Notes:**
-- Co-developed with a parallel stream (fixtures/config/spec scaffolding referencing dogfood pass-01). This session reconciled the suite (removed a duplicate mobile spec), corrected the real-loop resume assertion (input→visible-text on return), added the Playwright `.gitignore` block, and verified the suite end-to-end against the live dev server.
-- Pre-existing harmless dev-server noise unchanged: `globals.css` `:global(...)` PostCSS warning, image `qualities` warning, `middleware`→`proxy` deprecation.
-**Branch:** `feat/compliance-service` — **PR only, NOT merged** (per task). Worktree: `/Users/chilly/Developer/bkg-compliance`.
-**Scope:** Service layer ONLY. No UI (waits behind Stage 2), no shell, no schema changes.
-
-**Diagnosis (the load-bearing finding):**
-- The `jurisdictions` (44) + `knowledge_entities` (2256) tables named in the task live in the **`knowledge-gardens-prod`** Supabase project (`vlezoyalutexenbnzzui`) — the DB the app actually uses — **NOT** the similarly-named `builders-knowledge-garden` project (`gtmjcslcerakkgftozfy`), which has `kg_`-prefixed tables at 26/35 rows. Building against the latter would have been wrong; row counts (2256/44) were the tell.
-- **Code sections are modeled as `knowledge_entities` rows**: `entity_type IN (building_code[569], code_section, safety_regulation, standard, code)`, linked to `jurisdictions` via `jurisdiction_ids uuid[]` (or flagged `applies_globally`). `title`/`summary` are jsonb `{en}`. Section + code system live in `metadata` under **inconsistent keys** (`{section, code_body}` vs `{code_section, code_system}`) — the service handles both. Provenance = `source_urls[]`; attestation = `manually_verified_at` / `auto_verified_at` (+`auto_verification_flagged`).
-- Coverage is uneven: CA richly covered (~88 scoped, e.g. ca-marin 29, ca-sf 12); NV/AZ partial; national model codes are their own jurisdictions (ibc-2024=57). FL/TX/CO/NY/NC/WA jurisdictions EXIST but hold **zero** scoped codes.
-
-**What was built (3 new files):**
-- **`src/lib/compliance-lookup.ts`** — the service. `lookupCodeCitations({query, jurisdiction, discipline?, limit?})` returns code citations drawn ONLY from structured data. Jurisdiction resolution done in TS over the 44-row table (handles the `CA` vs `California` casing split + a US state code↔name alias map). Walks `parent_id` so a city/county inherits state + ancestor codes. DB surface is a tiny injectable `ComplianceDataSource` interface (default = `createSupabaseDataSource()` on the anon client, same RLS path as `code-sources/rag.ts` + `/api/v1/search`).
-- **`src/app/api/v1/compliance/lookup/route.ts`** — `GET` (`?q=&jurisdiction=&discipline=&limit=`) + `POST` (JSON). 200 with explicit `status` for any real answer; 400 missing input; **503 fail-closed** when the data source is unconfigured/unavailable (never a placeholder/mock answer); 500 unexpected. Emits `compliance.check` (RSI Loop 4), best-effort.
-- **`src/lib/__tests__/compliance-lookup.test.ts`** — 42 tests, hermetic via a fake data source.
-
-**LIABILITY design (the whole point):**
-- **No LLM anywhere on this path.** Every citation is a real `knowledge_entities` row carrying `entityId` (audit anchor), `sourceUrls` (verbatim), matched `jurisdiction` + `scope` (`jurisdiction`/`ancestor`/`global`), and `verification` level. The `citation` label is *derived* from stored fields; absent fields → `null`, never a placeholder.
-- **3-state honest coverage:** `covered` (resolves + has scoped data + query matches) · `no_results` (covered jurisdiction, query matched nothing — still no guess) · `not_covered` → exact phrase **"not yet covered for {jurisdiction}"** for both unknown jurisdictions (`reason: unknown_jurisdiction`) and known-but-no-data ones like Texas (`reason: no_code_data_for_jurisdiction`).
-- **Fail closed:** data-source errors throw `ComplianceDataError` (route → 503) rather than degrade to a misleading "not covered".
-- Coverage is established by **scoped** data only; global model codes are returned (labelled `scope:global`) but don't by themselves make a jurisdiction "covered". National model-code jurisdictions (IBC-2024) are NOT auto-applied to a state query unless the parent chain links them — including them would be inference, which is forbidden.
+**Trust posture:** keyless ⇒ **tamper-EVIDENT, not tamper-PROOF.** A naive byte edit, a reorder, or a field mutation is caught; mutating a *middle* event cascades (breaks later prev-links). A full chain re-forge by someone with write access is out of scope (needs a signing key / external TSA) — documented in the lib header. Records are **only** stored data, never fabricated.
 
 **Verified:**
 - `vitest`: **42/42 pass**. `tsc --noEmit`: 0 errors in the new files (123 pre-existing project-wide errors are unrelated tech debt). eslint: clean (test dir is outside eslint scope by config).
