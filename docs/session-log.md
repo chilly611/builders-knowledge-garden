@@ -3944,3 +3944,28 @@ Task: the #23 hybrid client-set verifier cookie shipped (merged + deployed) and 
 
 **Verification:** HEAD = one commit on `origin/main` (`7cba39c`, has #22+#23); PR opened for founder merge (the ≈11 migration files + `package.json`/lock + this log + `tasks.todo.md` + `tasks.lessons.md`).
 
+
+---
+
+SD holds BKG write-lane — docs: constitution 18/19 + visual-first doc, 2026-06-08 23:57 PDT (docs-only, separate files from the crash-fix branch — no collision).
+
+---
+
+## 2026-06-09 — [Cowork] Session: Constitution decisions 18 & 19 + visual-first practice doc (docs-only, PR)
+**Agent:** Cowork (Opus) · **Branch:** `docs/constitution-visual-first-flags` off `origin/main` (`cdc8c66`), PR-only — founder merges, I do not.
+
+**Goal:** Land platform-constitution decisions **18 (visual-first, within the brand lock)** & **19 (the engine's judgment is legible — green/red flags + go-deeper)** verbatim immediately after decision 17, plus a Tier 2/3 practice reference. Docs-only: no code, no deploy, no merge.
+
+**Shipped (commit `c443ee7`):**
+- `docs/PLATFORM-CONSTITUTION.md` — decisions 18 & 19 inserted verbatim right after 17; numbering 1->19 intact, the "How we work" section and the rest untouched (50->52 lines, +2).
+- `docs/visual-first-and-flags.md` — new practice ref: header + 4 body paragraphs verbatim (tier options are visual; green/red flags as the required structured output; "Go deeper" next-step box; generation contract — generate once per project × tier × style, persist, progressive stream behind a branded placeholder, fallback).
+- **Secrets/vuln gate (public repo)** run on the changed content only -> **CLEAN** (no token/key/private-key/RLS-table enumeration). `gh` unavailable -> founder opens the PR from the compare URL.
+
+**Open:**
+- PR awaiting founder review + merge — compare: https://github.com/chilly611/builders-knowledge-garden/compare/main...docs/constitution-visual-first-flags?expand=1
+- After merge, prune the worktree: `git -C ~/Developer/bkg-main worktree remove ../bkg-docs`.
+- `docs/project-instructions/killer-app.md` not present yet; the practice ref folds into it when per-product instructions land.
+
+**Next:** founder merges; killer-app per-product instructions + design system absorb the generation-contract / flag-set practice.
+
+**Write-lane:** SD **releases** the BKG docs write-lane — constitution 18/19 + visual-first doc shipped to `docs/constitution-visual-first-flags` (PR pending). No collision with the crash-fix branch (disjoint files).
