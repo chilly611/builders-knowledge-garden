@@ -3969,3 +3969,20 @@ SD holds BKG write-lane — docs: constitution 18/19 + visual-first doc, 2026-06
 **Next:** founder merges; killer-app per-product instructions + design system absorb the generation-contract / flag-set practice.
 
 **Write-lane:** SD **releases** the BKG docs write-lane — constitution 18/19 + visual-first doc shipped to `docs/constitution-visual-first-flags` (PR pending). No collision with the crash-fix branch (disjoint files).
+
+---
+
+SD holds BKG write-lane — docs: first-run pivot capture, 2026-06-09 03:06 PDT (docs-only).
+
+---
+
+## 2026-06-08 — Dogfood pivot: first-run experience (SD + John + Mike)
+- Result: the gate did its job — surfaced the real punch list. Engine confirmed working (auth holds on
+  Mike's machine; context-routing generalized to a 2nd project/jurisdiction — SF condo grounded right;
+  AI take strong on Marin + SF; voice → pipeline persists). First five minutes failing: no clear first
+  move, garden-speak in the work surface, visual mud, no role/lane read, money not surfaced first; a hard
+  localhost crash via back/continue; LLM re-run degrades + burns tokens.
+- Decision: MLP bar biting. Phase 1's gate expands to include the first-run experience. Pivot the surface,
+  keep the engine (re-house, not rebuild). Principles → docs/first-run-and-onboarding.md; visual-first +
+  green/red flags locked as constitution decisions 18 & 19 + docs/visual-first-and-flags.md.
+- Next: P0 localhost crash-fix (Code, write-lane); first-run Design brief (parallel). Write-lane released.

@@ -19,55 +19,21 @@
 
 > **Live backlog resets here (2026-06-07).** Completed/superseded batches through 2026-05-31 moved to [tasks.todo.archive.md](tasks.todo.archive.md).
 
-## ═══ NOW — Phase 1: First-Paying-Contractor Path ($99/mo) (2026-06-07, Claude Code / Opus) ═══
-
-> Slice: Code Compliance Lookup + Contract Templates, wired to Claude API, behind the paywall.
-> THE BAR: bulletproof revenue loop · grounded+cited compliance · #11 legal gate on contracts.
-> One UI-editing lane at a time, PR-only, founder merges. Recon + Legal parallelize.
-> Shipping gate = real human dogfood of the paid loop (smoke-green ≠ works).
-
-**↳ In review (PR open · 2026-06-07 · feat/system-of-record-gate):** System-of-Record gate for the field surfaces — **FieldOps `/field`, VoiceFieldReport (Build), GlobalAiFab**. Verified in a real browser on shared prod (`vlezoyalutexenbnzzui`) with a throwaway user, then cleaned to baseline: daily-log + `field-report-*` read-merge-write (**clobber fix**), photo→`project-evidence`+`project_attachments`, copilot→`project_conversations` (real Claude), all **rehydrate across reload / leave→return**. Rebased clean onto #18 (zero conflicts). ⚠️ Found: `POST /api/v1/onboard-new-user` **500s** (`metadata` column missing on `command_center_projects` — schema drift) → blocks new-signup auto-project; not in this PR's scope.
-
-**↳ Google OAuth (dogfood blocker):** (1) implicit→`missing_code` — FIXED #22 (`flowType:'pkce'`; Chrome works incl. incognito). (2) Safari exchange failed (*"verifier not found"*) — client-cookie hotfix #23 MERGED but **still failed Safari** (client-side exchange is what Safari breaks). (3) Root fix **in review (PR · 2026-06-08 · fix/oauth-supabase-ssr):** migrate to `@supabase/ssr` — cookie sessions (`createBrowserClient`, **env-aware** so the 7 server-route importers still work), **server-side** `/auth/callback` exchange (reads the verifier cookie from the request → survives Safari), middleware session refresh; other browser clients moved to cookies too. Build + `tsc` clean; Chrome cookie-session smoke verified (sign-in→cookie, /killerapp authed, callback no-code→/login); **one-time re-login** for current users. **GATE after merge+deploy: Safari on prod** → Continue with Google → lands in app. If it STILL fails: provider/cookie config (custom cookie domain), founder-gated.
-
-### Lane 0 — Recon (read-only, no writes) [BLOCKS precise scoping of Lanes 1–2]
-- [ ] Merge state of feat/shared-app-shell, feat/rsi-heartbeat, feat/compliance-service vs main
-- [ ] Stripe routes + mock-vs-real + whether the access gate reads real subscription status
-- [ ] Compliance entity schema (source_url, jurisdiction, code_version, verified_date, status) + counts by jurisdiction and by status
-- [ ] What feat/compliance-service exposes + whether it cites retrieved entities
-- [ ] ANTHROPIC_API_KEY state on preview/prod + copilot mock-vs-live
-- [ ] Contract-template + e-sig surface state
-
-### Lane 1 — Billing: real $99/mo revenue loop (Code, PR-only)
-- [ ] Stripe checkout creates a real $99/mo session (not stub)
-- [ ] Webhook updates subscription status in DB (active / past_due / canceled)
-- [ ] Access gate reads REAL subscription status, not a mock boolean
-- [ ] Customer portal: manage / cancel works
-- [ ] /pricing surface: $99/mo, herbarium + light, no "CRM", correct copy
-- [ ] Loop survives leave→return: sign out → sign in → still subscribed, access intact
-
-### Lane 2 — Compliance product: grounded + cited Lookup (Code, PR-only, files disjoint from Lane 1)
-- [ ] Query (jurisdiction + project params) → retrieve authoritative entity → AI plain-language applicability
-- [ ] EVERY code claim cited to {jurisdiction · section · code_version · verified_date}; verified_date shown explicitly ("not yet verified" when blank)
-- [ ] Source attribution + link where available
-- [ ] HARD RULE: no matching entity → say so + offer to flag for ingestion; NEVER hallucinate a code answer
-- [ ] Standing disclaimer: "AI helps you find/understand the code; you/your AHJ/engineer verify. Not legal or engineering advice."
-- [ ] Copilot out of mock mode (real ANTHROPIC_API_KEY on preview/prod)
-
-### Lane 3 — Contract Templates: built, flagged OFF for sale (Code, PR-only, separate surface)
-- [ ] Template surface + AI-assisted fill renders
-- [ ] Single feature flag gates SALE/availability — OFF until Lane 5 clears
-- [ ] Not exposed for purchase; not usable for a real paid contract pre-sign-off
-
-### Lane 4 — Compliance verified-date fast-follow (ops/non-code) [D2(ii)]
-- [ ] Human verified-date pass for FIRST-SOLD jurisdictions only (CA + SF)
-- [ ] On-ramp to the full governed-ingestion review queue (review → approve → published + audit)
-
-### Lane 5 — Legal gate #11 (Cowork/non-code, parallel) [unblocks selling Lane 3]
-- [ ] Deliver the counsel brief (decision: counsel + delivery target — founder)
-- [ ] Counsel reviews contract templates + e-sig enforceability (CA first)
-- [ ] Sign-off flips the Lane 3 feature flag ON for sale
-
-### Lane 6 — Verification gate: paid-loop dogfood (founder + Chat) [SHIPPING GATE]
-- [ ] New account → paywall → subscribe (test → live) → real CA/SF query → cited+versioned+verified-date answer → leave → return → still subscribed, history persists → cancel via portal works
-- [ ] Logged to docs/dogfood/<date>-paid-loop.md
+# NOW — 2026-06-08 (post-dogfood pivot)
+Phase 1 gate now includes the first-run experience (MLP = lovable). Two tracks, non-colliding:
+TRACK A — plumbing (one write-lane at a time):
+- [ ] P0: localhost crash — prod links to localhost (ERR_CONNECTION_REFUSED) via back/continue. Find +
+  kill the hardcoded localhost; verify on prod, real browser.
+- [ ] Persistence gap — some flows drop state ("Who's asking") though pipeline-add persists. Route to the
+  working Supabase write path.
+- [ ] LLM determinism — cache the first good AI take (+ generated images); stop recomputing on render/
+  re-run; pin the prompt; gate "Run it again."
+TRACK B — first-run rebuild (design-led, parallel; non-write until Code picks it up):
+- [ ] Design: first-run spec — one door (one high-contrast field + example chips), plain words, money-
+  forward Budget/Business/First-Class visual tiers, green/red flags surfaced visually, "go deeper" box
+  next to upload/browse/generate-image, role read (infer→one-tap-confirm). Per docs/first-run-and-
+  onboarding.md + docs/visual-first-and-flags.md + the brand lock.
+- [ ] Code: build the first-run as the next write-lane after the crash fix merges.
+Queued (not the gate): globals.css pure-white one-liner · 21-RLS careful pass (P0 security, branch-tested,
+NOT public repo) · Vercel token rotation · image-gen subsystem scoping (parallel) · per-product
+instructions landing.
