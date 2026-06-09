@@ -20,14 +20,10 @@ import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
 import { AutoFillButton } from '@/components/stage-kit';
 import { TeamRoster } from '@/components/TeamRoster';
-import {
-  MARIN_PROJECT,
-  MARIN_PROJECT_ID,
-  MARIN_BUDGET_TOTAL,
-  MARIN_BUDGET_SPENT,
-  ensureMarinActive,
-  seedMarinBudget,
-} from '@/lib/demo/marin-4000';
+import { seedMarinBudget } from '@/lib/demo/marin-4000';
+import { useStageProject } from '@/lib/hooks/useStageProject';
+import { teamForProject } from '@/lib/projects/projectToolData';
+import { inferBuildingType } from '@/lib/projects/buildingType';
 import { colors, fonts } from '@/design-system/tokens';
 import { runSizeUpEstimate, emitSizeUpWrite } from '@/lib/specialists/size-up';
 import type { BuildingType, SizeUpResult } from '@/lib/specialists/size-up';
@@ -44,20 +40,9 @@ const C = {
   accent: '#C9913F', // stage-1 ochre
 };
 const FONT = fonts.body;
-const ACTIVE_PROJECT_KEY = 'bkg-active-project';
 
 // ─── utilities ──────────────────────────────────────────────────────────────
 
-function readActiveProjectId(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const fromUrl = new URL(window.location.href).searchParams.get('project');
-    if (fromUrl) return fromUrl;
-    return window.localStorage.getItem(ACTIVE_PROJECT_KEY);
-  } catch {
-    return null;
-  }
-}
 async function authedFetch(input: string, init: RequestInit = {}) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -70,13 +55,6 @@ const SQFT_RE = /([\d,]+)\s*(?:sf|sqft|sq\s?ft|square\s?(?:feet|foot|ft))/i;
 function parseSqft(text: string): string | null {
   const m = text.match(SQFT_RE);
   return m ? m[1].replace(/,/g, '') : null;
-}
-function inferBuildingType(s: string): BuildingType | null {
-  const l = s.toLowerCase();
-  if (/(office|retail|warehouse|commercial|\bti\b|tenant improvement|restaurant|shop)/.test(l)) return 'commercial';
-  if (/(mixed[- ]?use|live[- ]?work)/.test(l)) return 'mixed';
-  if (/(home|house|farmhouse|adu|residence|residential|dwelling|cabin|bedroom|bath)/.test(l)) return 'residential';
-  return null;
 }
 function money(n: number): string {
   return `$${Math.round(n).toLocaleString()}`;
@@ -263,52 +241,28 @@ interface Prefill {
 // ─── outer ────────────────────────────────────────────────────────────────────
 
 export default function SizeUpPage() {
-  const [ctx, setCtx] = useState<{ projectId: string | null; name: string; meta: string; initialBudget: number; prefill: Prefill }>(() => ({
-    projectId: null,
-    name: MARIN_PROJECT.name,
-    meta: `${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`,
-    initialBudget: MARIN_BUDGET_TOTAL,
-    prefill: { buildingType: 'residential', address: MARIN_PROJECT.jurisdiction, jurisdiction: MARIN_PROJECT.jurisdiction, sqft: 4000, scopeText: MARIN_PROJECT.project_type },
-  }));
+  const sp = useStageProject();
 
   useEffect(() => {
-    ensureMarinActive();
-    seedMarinBudget();
-    let cancelled = false;
-    (async () => {
-      const id = readActiveProjectId() ?? MARIN_PROJECT_ID;
-      if (!cancelled) setCtx((c) => ({ ...c, projectId: id }));
-      try {
-        const res = await authedFetch(`/api/v1/projects?id=${encodeURIComponent(id)}`);
-        if (!res.ok) return;
-        const j = (await res.json()) as Record<string, unknown>;
-        if (cancelled || !j || !j.id) return;
-        const sqftNum = parseInt(String(j.sqft ?? '').replace(/[^\d]/g, ''), 10);
-        const scope = [j.notes, j.ai_summary, j.raw_input].filter(Boolean).join(' ') || MARIN_PROJECT.project_type;
-        setCtx((c) => ({
-          ...c,
-          name: (j.name as string) || c.name,
-          meta: `${j.sqft ?? MARIN_PROJECT.sqft} sqft · ${(j.jurisdiction as string) || MARIN_PROJECT.jurisdiction}`,
-          prefill: {
-            buildingType: inferBuildingType(String(j.project_type ?? '')) ?? c.prefill.buildingType,
-            address: (j.location as string) || (j.jurisdiction as string) || c.prefill.address,
-            jurisdiction: (j.jurisdiction as string) || c.prefill.jurisdiction,
-            sqft: Number.isFinite(sqftNum) && sqftNum > 0 ? sqftNum : c.prefill.sqft,
-            scopeText: scope,
-          },
-        }));
-      } catch {
-        /* offline / unauth — fixture serves the demo */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (sp.isCanonicalDemo) seedMarinBudget();
+  }, [sp.isCanonicalDemo]);
+
+  // Prefill the Size Up wizard from the active project's context. Replaces a
+  // bespoke readActiveProjectId() + /api/v1/projects fetch that duplicated
+  // ProjectProvider — useStageProject() is the single source now.
+  const prefill: Prefill = {
+    buildingType: sp.buildingKind ?? 'residential',
+    address: sp.jurisdiction,
+    jurisdiction: sp.jurisdiction,
+    sqft: parseInt(sp.sqftDisplay.replace(/[^\d]/g, ''), 10) || 0,
+    scopeText: sp.buildingType,
+  };
 
   return (
-    <StageShell stageId={1} stageTitle="Size Up" projectId={ctx.projectId} projectName={ctx.name} projectMeta={ctx.meta} initialBudget={ctx.initialBudget} budgetSpent={MARIN_BUDGET_SPENT}>
-      <SizeUpBody projectId={ctx.projectId} prefill={ctx.prefill} />
+    <StageShell stageId={1} stageTitle="Size Up" projectId={sp.projectId} projectName={sp.projectName} projectMeta={sp.projectMeta} initialBudget={sp.budgetTotal} budgetSpent={sp.budgetSpent}>
+      {/* Remount the wizard when the project (or its loaded-ness) changes so the
+          prefill re-seeds from the correct project instead of sticking at first paint. */}
+      <SizeUpBody key={`${sp.projectId}:${sp.loading ? 'loading' : 'ready'}`} projectId={sp.projectId} prefill={prefill} />
     </StageShell>
   );
 }
@@ -321,6 +275,7 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
   // ($312K / $1.65M) for zero cross-screen mismatches; the estimate shows in
   // the body, not the chrome ribbon.
   const { proMode } = useStageChrome();
+  const sp = useStageProject();
 
   const [stepIdx, setStepIdx] = useState(0);
   const step: StepId = STEPS[stepIdx];
@@ -410,7 +365,7 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
         }
       })();
       try {
-        const handoff = { buildingType, address: address || jurisdiction, sqft, trades, jurisdiction: result.jurisdiction.name, low: result.low, mid: result.mid, high: result.high, budget, sketch, scopeText, projectName: MARIN_PROJECT.name };
+        const handoff = { buildingType, address: address || jurisdiction, sqft, trades, jurisdiction: result.jurisdiction.name, low: result.low, mid: result.mid, high: result.high, budget, sketch, scopeText, projectName: sp.projectName };
         window.localStorage.setItem(`bkg:sizeup:${projectId}`, JSON.stringify(handoff));
       } catch {
         /* ignore */
@@ -564,7 +519,7 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                   ▸ Assemble the team
                 </summary>
                 <div style={{ marginTop: 10 }}>
-                  <TeamRoster heading="Crew & trade partners" />
+                  <TeamRoster heading="Crew & trade partners" team={teamForProject(sp)} />
                 </div>
               </details>
             </section>

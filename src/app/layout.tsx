@@ -56,7 +56,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Builder's Knowledge Garden — The AI COO for Construction",
+    default: "Builder's Knowledge Garden — run the whole build from one place",
     template: "%s — Builder's Knowledge Garden",
   },
   description: "The operating system for construction. Every phase from dream to delivery, all in one platform.",

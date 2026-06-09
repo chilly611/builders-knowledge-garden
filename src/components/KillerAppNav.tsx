@@ -116,9 +116,9 @@ export default function KillerAppNav() {
           flexShrink: 0,
         }}
       >
-        {/* Canonical B mark — 40px on desktop, 32px on mobile.
-            One mark, every page. The tree drawing is a hero/illustration
-            asset only; it never appears as the brand mark. */}
+        {/* Canonical Viver seal (hammer-roots mark) — 40px desktop, 32px
+            mobile. One mark, every page: Logomark now points at
+            /brand/bkg-mark.png (see Logomark.tsx, SEAL 2026-06-07). */}
         <Logomark size={isMobile ? 32 : 40} alt="Builder's Knowledge Garden" />
 
         {/* Wordmark: hidden on mobile (<640px), visible above */}

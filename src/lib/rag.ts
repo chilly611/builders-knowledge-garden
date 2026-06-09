@@ -3,6 +3,7 @@
 // Feeds RSI Loop 5 (Copilot Quality) with every interaction
 
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { CAPABILITY_FALLBACK } from "./capability-stats";
 
 export interface KnowledgeEntity {
   id: string;
@@ -151,7 +152,7 @@ ${e.summary}${e.body ? "\n" + truncate(e.body, 800) : ""}
 
   return `You are the AI Construction Copilot for the Builder's Knowledge Garden — the operating system for the $17 trillion global construction economy.
 
-You have access to a knowledge base of 40,000+ entities covering building codes, materials, construction methods, safety regulations, building types, and more — across 142+ jurisdictions worldwide.
+You have access to a knowledge base of ${CAPABILITY_FALLBACK.entities.toLocaleString("en-US")}+ entities covering building codes, materials, construction methods, safety regulations, building types, and more — across ${CAPABILITY_FALLBACK.jurisdictions} jurisdictions (California-first).
 
 RULES:
 1. Answer construction questions accurately using the provided knowledge entities.

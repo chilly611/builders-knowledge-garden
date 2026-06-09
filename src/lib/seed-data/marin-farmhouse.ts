@@ -154,6 +154,45 @@ export const MARIN_PROJECT: MarinProjectRecord = {
   estimated_cost_high: 1_780_000,
 };
 
+// ─── Cockpit narrative (canonical deep-link) ─────────────────────────────────
+//
+// Free-text the /killerapp?project= cockpit shows for the demo: the homeowner's
+// original prompt, a one-line summary, and the canonical AI "take". These keep
+// the deep-link investor-clean regardless of what has drifted into the DB row
+// or project_conversations. Rendered fixture-first by ProjectContext (metadata)
+// + KillerappProjectShell (AI take) when isCanonicalProjectId() is true.
+
+/** The homeowner's original ask — shown as the project query on the cockpit. */
+export const MARIN_RAW_INPUT =
+  '4,000 sf custom modern farmhouse in Marin County, CA. 4 bed, 3 bath, 2 stories. ' +
+  'Slab-on-grade foundation, standing-seam metal roof, black-frame windows. New ' +
+  'construction on an existing lot for the Harwell family. Budget around $1.65M, ' +
+  'targeting substantial completion in December 2026.';
+
+/** One-line canonical summary (used as ProjectRecord.ai_summary). */
+export const MARIN_AI_SUMMARY =
+  'A 4,000 sq ft custom modern farmhouse in Marin County for the Harwell family — ' +
+  '$1.65M contract, currently in the Build phase (~42%) with the foundation complete ' +
+  'and framing about to start.';
+
+/**
+ * Canonical, investor-clean AI take rendered on the cockpit deep-link. A stable
+ * fixture — never the last project_conversations row (which can drift to stale,
+ * off-topic answers). Voice matches the copilot. No trailing "**What next?**"
+ * block — the static CTA row renders the next steps below this text.
+ */
+export const MARIN_AI_TAKE =
+  "Alright, here's how I'd read it: the Modern Farmhouse in Marin is a 4,000 sq ft, " +
+  "4-bed / 3-bath custom build for the Harwell family on a $1.65M contract — and it's " +
+  "in good shape. You're in the Build phase, about 42% complete: the foundation is " +
+  "poured and signed off, and framing is staged to start. Roughly $312K is spent against " +
+  "the $1.65M budget, with about $1.15M still remaining, so the numbers are holding.\n\n" +
+  "Two things I'd watch this week: release the framing lumber package — the 4–6 week " +
+  "lead time is the gate on the July framing start — and get the Marin County foundation " +
+  "inspection on the calendar before the crew mobilizes. Marin's Title-24 energy and " +
+  "seismic detailing are strict, so keep the structural and envelope specs locked as you " +
+  "move. Lock the framing date and the rest of the schedule falls in line.";
+
 // ─── Team (replaces the John Doe / Jane Smith mocks elsewhere) ──────────────
 
 export interface MarinTeamMember {

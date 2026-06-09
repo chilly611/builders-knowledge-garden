@@ -11,25 +11,22 @@
 import { useEffect } from 'react';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
 import {
-  MARIN_PROJECT,
-  MARIN_PROJECT_ID,
-  MARIN_BUDGET_TOTAL,
-  MARIN_BUDGET_SPENT,
   MARIN_PLAN_PHASES,
   computeSchedule,
-  ensureMarinActive,
   seedMarinBudget,
 } from '@/lib/demo/marin-4000';
+import { useStageProject } from '@/lib/hooks/useStageProject';
 import { colors, fonts } from '@/design-system/tokens';
 
 const ACCENT = '#B23A7F'; // stage 5 (magenta)
 
 function AdaptBody() {
   const { setBudget } = useStageChrome();
+  const sp = useStageProject();
   useEffect(() => {
     const s = computeSchedule(MARIN_PLAN_PHASES);
-    setBudget({ total: MARIN_BUDGET_TOTAL, timelineWeeks: s.totalWeeks });
-  }, [setBudget]);
+    setBudget({ total: sp.budgetTotal ?? 0, timelineWeeks: s.totalWeeks });
+  }, [setBudget, sp.budgetTotal]);
 
   return (
     <div style={{ flex: 1, minHeight: 0, width: '100%', overflowY: 'auto', padding: 'clamp(12px, 2vw, 20px)', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -52,20 +49,20 @@ function AdaptBody() {
 }
 
 export default function AdaptStagePage() {
+  const sp = useStageProject();
   useEffect(() => {
-    ensureMarinActive();
-    seedMarinBudget();
-  }, []);
+    if (sp.isCanonicalDemo) seedMarinBudget();
+  }, [sp.isCanonicalDemo]);
 
   return (
     <StageShell
       stageId={5}
       stageTitle="Adapt"
-      projectId={MARIN_PROJECT_ID}
-      projectName={MARIN_PROJECT.name}
-      projectMeta={`${MARIN_PROJECT.sqft} sqft · ${MARIN_PROJECT.jurisdiction}`}
-      initialBudget={MARIN_BUDGET_TOTAL}
-      budgetSpent={MARIN_BUDGET_SPENT}
+      projectId={sp.projectId}
+      projectName={sp.projectName}
+      projectMeta={sp.projectMeta}
+      initialBudget={sp.budgetTotal}
+      budgetSpent={sp.budgetSpent}
       primaryAction={{}}
     >
       <AdaptBody />
