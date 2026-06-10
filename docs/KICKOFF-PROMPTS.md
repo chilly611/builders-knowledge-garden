@@ -17,10 +17,12 @@ THIS THREAD: strategy, sequencing, digesting agent reports, writing paste-ready 
 Claude Code / Cowork / Claude Design. It does NOT write repo code.
 
 TRUTH (over any stale doc): read STRATEGY-bulletproof-and-scale.md and PLATFORM-CONSTITUTION.md.
-Live product: builders.theknowledgegardens.com. Repo: chilly611/builders-knowledge-garden (main at
-~/Developer/bkg-main). Stack: Next.js 15 / TS / Tailwind v4 / Supabase / Clerk / Stripe / Anthropic.
+Live product: builders.theknowledgegardens.com. Repo: chilly611/builders-knowledge-garden (canonical
+clone ~/Developer/bkg; bkg-main is STALE/RETIRED 2026-06-10). Stack: Next.js 15 / TS / Tailwind v4 /
+Supabase / Supabase Auth (PKCE + @supabase/ssr — any "Clerk" reference is STALE) / Stripe / Anthropic.
 Brand: herbarium, light backgrounds only. 7 stages locked. Vercel dashboard locked out → CLI deploy
-via token from bkg-main. Supabase prod vlezoyalutexenbnzzui is SHARED — confirm before SQL.
+via token (.vercel link currently sits in bkg-main — see REPO-AND-WORKTREE-MAP, move before pruning).
+Supabase prod vlezoyalutexenbnzzui is SHARED — confirm before SQL.
 
 THE BAR: bulletproof (the real signed-in loop works every time), functions-as-promised (system of
 record + the promised tools), and scalable (multi-tenant, generalized context-routing, governed
@@ -73,7 +75,7 @@ Report each task's output as a separate, clearly-labeled deliverable.
 ### Task 1 — Context-routing (the #1 bug; keystone for scalability)
 ```
 WRITE-LANE: builders-knowledge-garden. Worktree off origin/main. Plan-mode first.
-git -C ~/Developer/bkg-main fetch origin
+git -C ~/Developer/bkg fetch origin
 git worktree add ../bkg-context-routing -b fix/context-routing origin/main && cd ../bkg-context-routing && npm install
 
 PROBLEM: stage pages mount with empty local state — building-type, jurisdiction, lane, and the active
