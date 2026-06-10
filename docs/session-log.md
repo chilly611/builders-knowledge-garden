@@ -4034,3 +4034,21 @@ CC holds BKG write-lane — docs: canon reconciliation (decisions 20/21 + amendm
 ---
 
 CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restore · Ask/Tell merge · ribbon+journey navigation), 2026-06-10, branch fix/nav-chrome-demo-blockers off 7386e3b. Demo tomorrow; scope locked to these three.
+
+---
+
+## 2026-06-10 — [Code] Nav-chrome demo blockers: compass bloom restored · Ask/Tell merged · chrome navigates (fix/nav-chrome-demo-blockers)
+**Agent:** Claude Code · **Branch:** `fix/nav-chrome-demo-blockers` off `origin/main` (`7386e3b`), PR-only — founder merges. Contractor demo 2026-06-11; scope locked to the three founder items.
+
+**Root cause (discovery, read-only first):** the app-shell promotion (2026-05-31) mounted ShellNav/ShellStrips on /killerapp but (a) never suppressed the legacy root-layout chrome there — CompassBloom (stale radial, z-9999) + GlobalAiFab (z-9997) painted OVER the shell cluster (z-60), burying the rectangular bloom and producing two ask-buttons — and (b) shipped ShellNav's panel with only picker + budget + 7 stages, dropping CompassWorkflowNav's full workflow catalog. The strips' budget cells had cursor:pointer but no handler (dead affordance). NOT the seal rollout (#15/#16) and NOT a localhost-fix side effect (no localhost fix exists yet — that lane is still open).
+
+**Fixes (6 files + 2 new, all inside the named components; zero changes elsewhere):**
+1. **Compass bloom restored** — GlobalChromeGate now suppresses the legacy pair on /killerapp/* when the shell is on (same NEXT_PUBLIC_APP_SHELL=0 rollback flag as the layout); ShellNav's panel resurrects the exact CompassWorkflowNav catalog (WORKFLOWS export reused — single source, no copy) lane-gated by the central WORKFLOW_ROLES map: Money · Journey (7 stages) · Size up · Lock it in · Plan it out. Esc + click-away already worked; verified.
+2. **One button** — ShellNav's existing "Ask or tell the garden" pill is now the single entry point with Ask | Tell tabs: Ask = new minimal AskAnswer composer speaking the exact GlobalAiFab /api/v1/copilot contract (Bearer + SSE, persists to project_conversations); Tell = the existing AskTheGarden capture, unchanged. GlobalAiFab/CompassBloom keep serving non-killerapp routes (verified on /knowledge).
+3. **Chrome is navigation** — ShellStrips budget cells + end figure → /killerapp/budget; each journey node → /killerapp/stages/<slug>; ?project= carried like ShellNav.go. Real <button>s (keyboard-focusable), hover/focus affordance via existing tokens (--specimen-teal / --shadow-page-2 / focus-visible outline). Interactive ONLY on the context-driven layout mount — the Owner home's explicit lens-gated config mount keeps static strips (owner surface untouched).
+
+**Verification:** tsc 0 new errors (121 = baseline) · next build clean · vitest 4/4 (new config.test.ts: catalog join + lane gating + neutral state + all 19 real catalog hrefs resolve to existing routes) · Playwright e2e 5/5 (incl. real-loop persistence) · real-browser click-test on :3390 (launcher `nav-demo`, cwd-confirmed) against canonical Marin: strips $1.15M/$1.65M correct and reconciling with the AI-take body copy; legacy FABs gone on /killerapp, present on /knowledge; panel item → /killerapp/workflows/...?project=55730cd3…; Esc + click-away close; Ask/Tell tabs switch; jnode → stages/plan; bcell → budget; zero console errors. **Marin numbers check (founder ask): data correct** ($1.65M/$312.4K/$186.2K/$1.151M/$347K constants intact) — note the shell strip DISPLAYS only "remaining / total"; the old BudgetRibbon's spent/committed/headroom readout didn't carry into the shell. Reported, not expanded (scope).
+
+**Label for founder review (fix 2):** pill keeps the existing "Ask or tell the garden"; tabs are "Ask" / "Tell".
+
+**Write-lane:** Code **releases** the BKG write-lane — nav-chrome demo blockers shipped to `fix/nav-chrome-demo-blockers` (PR pending founder merge).

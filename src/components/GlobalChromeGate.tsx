@@ -17,6 +17,10 @@ import GlobalAiFab from '@/components/GlobalAiFab';
  * Kept as a tiny client component so the root layout stays server-rendered
  * for the rest of the tree.
  */
+// Same rollback flag as /killerapp/layout.tsx: when the shared app shell is
+// active, ShellNav owns the bottom-right corner on every /killerapp surface.
+const USE_APP_SHELL = process.env.NEXT_PUBLIC_APP_SHELL !== '0';
+
 function GlobalChromeGateInner() {
   const pathname = usePathname() ?? '';
   const searchParams = useSearchParams();
@@ -28,6 +32,14 @@ function GlobalChromeGateInner() {
   // primary-action bar at the bottom; the floating bloom + AI fab just hover
   // over that action button. Hide them on /killerapp/stages/* the same way.
   if (/^\/killerapp\/stages(\/|$)/.test(pathname)) return null;
+  // With the shared app shell on, ShellNav provides the compass bloom and the
+  // single "Ask or tell the garden" entry on every /killerapp route. The
+  // legacy pair (CompassBloom z-9999 + GlobalAiFab z-9997) was never
+  // suppressed here when the shell shipped, so it painted over the shell
+  // cluster (z-60) and buried the rectangular bloom panel. One corner, one
+  // chrome. NEXT_PUBLIC_APP_SHELL=0 restores the legacy pair with the rest
+  // of the old chrome.
+  if (USE_APP_SHELL && /^\/killerapp(\/|$)/.test(pathname)) return null;
 
   // The logged-out marketing homepage ("/") is a clean landing surface, not
   // the Killer App shell. The bloom compass (CompassBloom) is in-app chrome —

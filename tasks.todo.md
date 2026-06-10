@@ -21,6 +21,8 @@
 
 ## NOW (2026-06-10 — serial unless marked parallel; one BKG write-lane at a time)
 
+- [x] **Nav-chrome demo blockers (2026-06-10, PR pending founder merge):** compass bloom restored (legacy FABs suppressed on /killerapp + full workflow catalog back in the shell panel) · Ask/Tell merged into the one pill (Ask|Tell tabs, real copilot) · strips navigate (budget cells→budget, journey nodes→stage pages). Branch fix/nav-chrome-demo-blockers.
+
 - [ ] **P0 — prod localhost-link crash fix** (open write-lane) → merge → real-browser verify Chrome+Safari on prod
 - [ ] **Canon reconciliation PR** (docs-only, behind P0): verify decision numbering (existing "Decision 18" collision — take next free numbers), append Visual-First + Legible-Judgment from `PLATFORM-CONSTITUTION-APPEND.md`, commit `docs/visual-first-and-flags.md` + `docs/first-run-and-onboarding.md`, retire `bkg-main` path, nine-lane reconcile note in design-constitution
 - [ ] **Logo unification ticket** (behind canon PR): kill Owner-lane twin, 4 surfaces → `<Seal>`, variant-aware header poster + breathe; do NOT touch /intro

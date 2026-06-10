@@ -176,3 +176,37 @@
    compass) is NOT suppressed — it serves every lane. Owner sets the body
    class on mount (see OwnerHomeClient). ─────────────────────────────────── */
 body.bkg-lane-owner [data-shell-mount="layout"] .gstrips { display: none !important; }
+
+/* ── Chrome is navigation (2026-06-10) ──────────────────────────────────────
+   Strip cells / journey nodes / the end figure render as real <button>s on
+   the interactive (layout) mount, so the chrome navigates: budget → budget
+   view, stage → stage page. Resets keep them pixel-equal to the prior divs;
+   the affordance uses existing herbarium tokens only. */
+.bkg-shell button.bcell { font: inherit; color: inherit; text-align: center; appearance: none; }
+.bkg-shell button.jnode { font: inherit; color: inherit; text-align: center; appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; }
+.bkg-shell button.gstrip-end { font: inherit; color: inherit; appearance: none; background: transparent; border: 0; text-align: right; padding-left: 16px; cursor: pointer; }
+.bkg-shell .bcell.is-nav:hover { border-color: var(--specimen-teal); box-shadow: var(--shadow-page-2); }
+.bkg-shell .jnode.is-nav:hover { transform: translateY(-2px); }
+.bkg-shell .jnode.is-nav:hover .jname { color: var(--specimen-teal-deep); }
+.bkg-shell .gstrip-end.is-nav:hover .gstrip-end-big { color: var(--specimen-teal-deep); }
+.bkg-shell .bcell.is-nav:focus-visible,
+.bkg-shell .jnode.is-nav:focus-visible,
+.bkg-shell .gstrip-end.is-nav:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 2px; border-radius: var(--radius-xs); }
+
+/* Ask / Tell mode tabs — the single "Ask or tell the garden" entry point's
+   two functions (2026-06-10 merge). */
+.bkg-shell .pnav-mode { display: flex; gap: 6px; margin-bottom: 10px; }
+.bkg-shell .pnav-mode-tab { flex: 1; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); background: transparent; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); padding: 7px 0; cursor: pointer; transition: all 140ms var(--ease-out-paper); }
+.bkg-shell .pnav-mode-tab.is-on { color: var(--specimen-teal-deep); border-color: var(--specimen-teal); background: var(--paper-cream); }
+.bkg-shell .pnav-mode-tab:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 1px; }
+
+/* AskAnswer — the minimal in-panel question → answer composer. */
+.bkg-shell .pnav-aa-input { width: 100%; font-family: var(--font-ui); font-size: 13px; color: var(--ink-graphite); background: var(--paper-cream); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); padding: 8px 10px; resize: vertical; }
+.bkg-shell .pnav-aa-input:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 1px; }
+.bkg-shell .pnav-aa-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.bkg-shell .pnav-aa-send { font-family: var(--font-ui); font-weight: 600; font-size: 12px; color: var(--paper-cream); background: var(--ink-graphite); border: 1.5px solid var(--ink-graphite); border-radius: var(--radius-pill); padding: 7px 16px; cursor: pointer; transition: background-color 160ms var(--ease-out-paper); }
+.bkg-shell .pnav-aa-send:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
+.bkg-shell .pnav-aa-send:disabled { opacity: 0.45; cursor: default; }
+.bkg-shell .pnav-aa-status { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faded); }
+.bkg-shell .pnav-aa-error { margin-top: 8px; font-size: 12px; color: var(--specimen-rust); }
+.bkg-shell .pnav-aa-answer { margin-top: 10px; font-size: 13px; line-height: 1.5; color: var(--ink-graphite); white-space: pre-wrap; border-top: 1px solid var(--paper-edge); padding-top: 10px; max-height: 280px; overflow-y: auto; }

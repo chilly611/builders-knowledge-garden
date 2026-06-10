@@ -13,7 +13,8 @@
  * (KAC_STAGES): Size Up → Lock → Plan → Build → Adapt → Collect → Reflect.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 import './app-shell.css';
@@ -37,6 +38,19 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
   const cfg = config ?? ctx;
   const { budget, journey } = cfg;
   const reduce = useReducedMotion();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Chrome is navigation (2026-06-10): budget cells + end figure go to the
+  // budget view; each journey stage goes to its stage page. Only on the
+  // context-driven mount (the killerapp layout) — a surface that passes an
+  // explicit lens-gated `config` (the Owner home) keeps its static strips,
+  // unchanged.
+  const interactive = !config;
+  const go = useCallback((href: string) => {
+    const pid = searchParams?.get('project') ?? cfg.projectId;
+    router.push(pid ? `${href}?project=${encodeURIComponent(pid)}` : href);
+  }, [router, searchParams, cfg.projectId]);
 
   // Stagger the strip cells/glyphs in on mount via the `is-lit` class (the CSS
   // bkgshell-fadeUp keyframe is stripped under prefers-reduced-motion).
@@ -63,19 +77,46 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
             <div className="gstrip-track btrack">
               {budget.cells.map((c) => {
                 const Icon = StageIco[c.stage];
-                return (
-                  <div key={c.stage} className={`bcell st-${c.state} ${c.stage === budget.activeStage ? 'is-cur' : ''}`} title={c.stage}>
+                const cls = `bcell st-${c.state} ${c.stage === budget.activeStage ? 'is-cur' : ''}`;
+                const body = (
+                  <>
                     <span className="bcell-ico">{Icon && <Icon />}</span>
                     <span className="bcell-amt">{c.amountLabel}</span>
                     {c.tick && <span className="bcell-tick" />}
-                  </div>
+                  </>
+                );
+                return interactive ? (
+                  <button
+                    key={c.stage}
+                    type="button"
+                    className={`${cls} is-nav`}
+                    title={c.stage}
+                    aria-label={`${c.stage} — open the budget`}
+                    onClick={() => go('/killerapp/budget')}
+                  >
+                    {body}
+                  </button>
+                ) : (
+                  <div key={c.stage} className={cls} title={c.stage}>{body}</div>
                 );
               })}
             </div>
-            <div className="gstrip-end">
-              <div className="gstrip-end-big">{budget.endBig}</div>
-              <div className="gstrip-end-sub">{budget.endSub}</div>
-            </div>
+            {interactive ? (
+              <button
+                type="button"
+                className="gstrip-end is-nav"
+                aria-label={`${budget.endBig} ${budget.endSub} — open the budget`}
+                onClick={() => go('/killerapp/budget')}
+              >
+                <div className="gstrip-end-big">{budget.endBig}</div>
+                <div className="gstrip-end-sub">{budget.endSub}</div>
+              </button>
+            ) : (
+              <div className="gstrip-end">
+                <div className="gstrip-end-big">{budget.endBig}</div>
+                <div className="gstrip-end-sub">{budget.endSub}</div>
+              </div>
+            )}
           </>
         ) : (
           <div className="gstrip-track"><Redacted label="Budget" /></div>
@@ -93,13 +134,28 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
               <div className="jline"><motion.div className="jline-fill" initial={reduce ? false : { width: 0 }} animate={{ width: cur + '%' }} transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }} /></div>
               {KAC_STAGES.map((s, i) => {
                 const Icon = StageIco[s.slug];
-                return (
-                  <div key={s.slug} className={`jnode ${ai > i ? 'is-done' : ''} ${s.slug === journey.activeStage ? 'is-cur' : ''}`}>
+                const cls = `jnode ${ai > i ? 'is-done' : ''} ${s.slug === journey.activeStage ? 'is-cur' : ''}`;
+                const body = (
+                  <>
                     <span className="jdot" />
                     <span className="jico">{Icon && <Icon />}</span>
                     <span className="jname">{s.short}</span>
                     <span className="jplain">{STAGE_PLAIN[s.slug]}</span>
-                  </div>
+                  </>
+                );
+                return interactive ? (
+                  <button
+                    key={s.slug}
+                    type="button"
+                    className={`${cls} is-nav`}
+                    aria-label={`${s.short} — go to this stage`}
+                    aria-current={s.slug === journey.activeStage ? 'page' : undefined}
+                    onClick={() => go(`/killerapp/stages/${s.slug}`)}
+                  >
+                    {body}
+                  </button>
+                ) : (
+                  <div key={s.slug} className={cls}>{body}</div>
                 );
               })}
               {journey.weeksTotal > 0 && (
