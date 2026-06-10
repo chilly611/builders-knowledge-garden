@@ -3975,6 +3975,34 @@ CC holds BKG write-lane — docs: canon reconciliation (decisions 20/21 + amendm
 
 ---
 
+## 2026-06-09/10 — Chat (CTO thread) + Cowork + Design — Doctrine night: Seed Bank, Portals, First Run
+
+**Type:** Strategic / doctrine / orchestration (no app code from this thread; one staged migration + two Design specs produced by parallel lanes)
+**Write-lane state:** P0 localhost crash fix is the open BKG write-lane. Canon-reconciliation PR queued behind it (docs-only).
+
+### Landed / produced
+
+- **Safari OAuth:** resolved via full `@supabase/ssr` migration, confirmed Chrome + Safari on an independent machine. The cookie-hack PR is superseded.
+- **Doctrine authored (Tier 0 + Tier 1):** Visual-First decision + two amendments (Generation Flywheel; Seed Bank & Portals) and Legible-Judgment decision (flags + per-fact `{value, source_url, source_type, confidence, tier, as_of}` contract with three-tier gate). Files: `PLATFORM-CONSTITUTION-APPEND.md`, `docs/visual-first-and-flags.md`, `docs/first-run-and-onboarding.md` — land via the canon PR.
+- **Founder rulings:** lane canon = NINE lanes (Tier 0 wins; design-constitution gets a dated reconcile note). Canonical clone = `~/Developer/bkg`; `bkg-main` retired (two independent sessions confirmed).
+- **Design lane:** two handoff-grade interactive specs shipped — *First Run — The First Five Minutes* (5 screens, ACs, motion, brand-lock chips; needs one dreamer chip + machine-twin section) and *The Seed Bank & The Portals* (team brief; 7 named/prompted/fillable asset slots, working portal demo, coverage meter).
+- **Cowork outputs digested:** GCP cost eval → verdict: stay Vercel+Supabase; GCP is Later with named triggers; do NOW: image caching (Supabase Storage+CDN, 500–1,500× cheaper than regen) + Claude prompt caching (~90% off) — folded into build-train item C. VA jurisdiction dossiers (VB + Richmond) → developer-grade, banked; § 36-98 statewide preemption makes VA "one state model + two thin overlays"; HITL three-tier gate adopted platform-wide, CA honesty applies first. Consolidation report → SCHEMA.md + two meeting transcripts confirmed pushed to public main (git rm queued, after private copies secured; no secrets found; history rewrite deferred).
+- **Brand-asset catalog:** `20260609_brand_assets.sql` staged (catalog + events, provenance/lineage/QA workflow). **RLS patch required before apply:** creators draft-only; promotion service-role-only; user events restricted to referenced/rendered/user_created. Founder applies, supervised.
+- **Logo unification:** Viver-seal rollout already on main (PRs #15/#16); local branch was 33 behind — sync restores 90%. Remaining ~3-file ticket prompt issued (kill Owner-lane twin, variant-aware Seal, poster-in-header).
+
+### Decisions / steers
+
+- One write-lane discipline held all night: crash fix → canon PR → logo ticket → item C → E → F.
+- Two visual systems, one frame: chrome herbarium-locked; user project imagery free inside branded frames.
+- Three data layers (Vision/Craft/Commons); promotion is the consent moment.
+- Seed Bank brief presents to team with 6/7 slots filled; the 7th fills live in the meeting.
+
+### Open
+
+- Canon PR to report verified decision numbers (a prior "Decision 18" exists — take next free numbers).
+- Architecture.md / rsi-architecture.md canonical-version ruling (uploaded copies are stale: Clerk, old counts).
+- Private repo populate from the Mac, then the git-rm branch.
+
 ## 2026-06-10 — [Code] Canon reconciliation: decisions 20/21 + amendments, practice addenda, path + lane canon (docs/canon-reconciliation)
 **Agent:** Claude Code · **Branch:** `docs/canon-reconciliation` off `origin/main` (`ffa7984`), PR-only — founder merges. **Docs-only: zero changes under `src/`.**
 
@@ -3993,3 +4021,12 @@ CC holds BKG write-lane — docs: canon reconciliation (decisions 20/21 + amendm
 **Verification:** every decision number checked against origin/main before writing; `git diff --stat` confirms docs/* + tasks.todo.md only, zero `src/` changes; secrets gate on changed content clean (no tokens/keys/RLS enumeration).
 
 **Write-lane:** Code **releases** the BKG docs write-lane — canon reconciliation shipped to `docs/canon-reconciliation` (PR pending founder merge).
+
+## 2026-06-10 — [Cowork·Mac] Canon completion + context SSOT (docs/canon-reconciliation, continuation)
+
+**Type:** Docs-only. **Write-lane:** claimed BKG docs lane (released by the prior canon session), released at push.
+
+- **2026-06-10 doc-drop landed verbatim** per COMMIT-AND-ROUTING-INSTRUCTIONS: `docs/visual-first-and-flags.md` and `docs/first-run-and-onboarding.md` REPLACED with the founder-locked Tier 1 doctrine versions (the prior practice-reference versions were the PR #25 era files; headers now cite decisions 20/21 as canonical, 18/19 predecessors). `docs/PROJECT-INSTRUCTIONS.md` v2.0 committed (new file — supersedes v1.0, which contains now-forbidden canon: white grounds, #E8443A, Clerk, eight lanes).
+- **Tracking appends:** doctrine-night entry (2026-06-09/10) inserted into this log; NOW (2026-06-10) block into `tasks.todo.md`; 2026-06-09/10 lessons into `tasks.lessons.md` (newest-first).
+- **SSOT contract:** `docs/CONTEXT-MANIFEST.md` (GitHub canonical; Supabase Storage `platform-context` + Drive "BKG Context" are mirrors) + `scripts/sync-context.mjs` (one-command mirror refresh, service-role env on the Mac only).
+- Constitution untouched this session — decisions 20/21 + Amendments A/B already verbatim on this branch; **verified numbers: Visual-First = 20, Legible Judgment = 21** (18/19 keep their text; 20/21 govern).

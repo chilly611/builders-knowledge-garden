@@ -1,44 +1,86 @@
-# Visual-first & green/red flags — practice reference
-Tier 2/3 practice for PLATFORM-CONSTITUTION.md decisions 18 & 19. Folds into docs/project-instructions/killer-app.md when the per-product instructions land.
+# Visual-First & The Flags — Doctrine and Practice
 
-The tier options are visual. Budget / Business Class / First-Class Luxury each render as a real architectural option in a distinct style, with a context-generated image (seeded from what the user told us + brand pre-seeds), and money + timeline + green/red signals on the face of each. Differentiated and compartmentalized — never three equal-weight text cards.
+*Tier 1 doctrine · 2026-06-10 · Implements the Visual-First and Legible-Judgment decisions in PLATFORM-CONSTITUTION.md (decisions 20 & 21, canonical 2026-06-10; predecessors 18 & 19 — 20/21 govern) · Public-cleared*
 
-Green/red flags (the structured output). Every AI read emits a scannable flag set. Each flag = color + plain headline + one-line why. The model is directed to always produce this shape (system-prompt contract) — this is how we tame run-to-run variability and capture what made the strong responses strong. Code/permit/cost flags are cited or hedged; market/opportunity flags are labeled the engine's read.
-
-"Go deeper" is a next-step box. Under the one input field, the next-step row includes upload / browse / generate-an-image AND "Go deeper — surface more green & red flags." The deeper dive runs a fuller pass.
-
-Generation contract (cost + speed + quality). Generate once per project × tier × style, persist it, offer manual regenerate — never regenerate on view (the same lesson as the double-generated SF response; one caching fix covers AI takes AND images). Stream visuals in progressively behind a clean branded placeholder — never block the next step on a render. If a generation is weak or uncanny, fall back to a branded placeholder; never ship an ugly render. All within the herbarium lock, labeled concept/inspiration.
+The decisions and amendments are quoted verbatim in `PLATFORM-CONSTITUTION.md`. This document is the practice layer: how they are built.
 
 ---
 
-## 2026-06-10 addendum — canon reconciliation (decisions 20 & 21)
+## 1. Two visual systems, one frame
 
-PLATFORM-CONSTITUTION.md now carries the founder-locked canonical statements as **decision 20** (visual-first within the brand lock, + Amendment A "the generation flywheel" + Amendment B "the Seed Bank and portals") and **decision 21** (legible judgment — the flags). The verbatim doctrine lives there; where wording differs from decisions 18/19, 20/21 govern. This addendum extends the practice reference to match.
+| | Platform chrome | User project imagery |
+|---|---|---|
+| Examples | Viver seal, stage emblems, plates, crests, flags, placeholders | Tier renders, dream imagery, derivations, portal faces |
+| Style | Herbarium-locked (sepia ink, parchment, one accent) | **Free** — any style, era, color, light, motion, perspective |
+| Governance | Brand-QA gate, locked `--sref` | The user's taste profile + sensibility packs |
+| The constant | The **frame**: parchment plate, brass corner ticks, mono caption, branded placeholder | Same frame around every render |
 
-### Tier visuals
-Budget / Business Class / First-Class Luxury render as distinct architectural options (above). Under decision 20: the imagery is AI-generated from the user's context, and the user's project imagery is aesthetically free — style, era, color, composition, light, motion, perspective follow the user's vision — inside brand-locked frames. Platform chrome stays herbarium-locked. Two visual systems, one frame.
+*The frame is ours. The dream is theirs.* Never render a user's house as a botanical engraving; never let chrome drift off the herbarium.
 
-### Flag taxonomy
-- **Green flags:** ease, upside, location-inherent advantage.
-- **Watch/risk flags:** schedule, cost, code/permit, difficulty.
-- Every flag renders **color-first — sage / amber / rust only, never #E8443A** — plus a plain-language headline and a one-line why.
-- Code, permit, and cost flags carry a citation or "verify with your AHJ"; market and opportunity flags are labeled as the engine's read.
-- **Per-fact contract:** `{value, source_url, source_type, confidence, tier, as_of}` with a three-tier serving gate — **Tier A** auto-servable, **Tier B** served with mandatory disclaimer, **Tier C** human-in-the-loop required.
+## 2. The generation contract (binding for every image slot)
 
-### Generation contract
-As above, now constitutional (decision 20): generate once, persist, manual regenerate only ("run it again" is gated), stream in behind a branded placeholder, branded static fallback — never ship an ugly render, never block the screen.
+1. **Generate once.** First good result is persisted (a `brand_assets` row with provenance: generator, model, prompt, params).
+2. **Manual regenerate only.** Re-runs are a user act (and a taste signal), never an automatic side effect of render/reload. "Run it again" is gated.
+3. **Placeholder first, always.** Branded placeholder (cream panel, brass ticks, mono caption) renders at 0ms; the render streams in over it; the screen never blocks on an image.
+4. **Branded fallback.** Generation failure shows the placeholder/poster, never an error state or an ugly render.
+5. **Reduced motion:** static placeholder, then hard swap.
+6. **Cache the output** in Supabase Storage behind the CDN — serving a cached image is ~500–1,500× cheaper than regenerating. Enable Claude prompt/context caching on the large specialist system prompts (~90% off cached input).
 
-### The three rights layers
-- **VISION** — the user's own: private, never reused identifiably without an explicit share.
-- **CRAFT** — de-identified process intelligence (prompts, parameters, win-rates): always feeds platform learning.
-- **COMMONS** — assets users choose to share: credited, browsable, remixable.
-Promotion is the consent moment.
+Cache key: (slot × context-version). A material taste-profile update or explicit user regeneration is a new context version — agency and economy don't fight.
 
-### Sensibility packs
-A curated architectural sensibility = sref + exemplars + prompt template. The platform proposes packs to the user, ranked by win-rate; wins are mined from asset events and promoted through the QA gate (decision 20, Amendment A). Every act of user agency — choice, regeneration, nudging, uploads — is recorded as a taste signal.
+## 3. The flag taxonomy (Legible Judgment in practice)
 
-### Portals
-Every catalog row is deep-linkable via `project_id` + slot. Every rendered image is a portal: an entrance to its project, and when shared, an entrance to the platform — a shared portal is the acquisition loop (decision 20, Amendment B).
+| Kind | Color | Examples | Grounding requirement |
+|---|---|---|---|
+| Green | sage `#5E7A56` | ease, upside, location-inherent advantage | labeled as the engine's read |
+| Watch | amber `#C68A3D` | schedule pressure, soft costs, published-goal timelines | source or "published goal — verify" |
+| Risk | rust `#A53A2D` | cost overrun, code/permit, difficulty | **citation or "verify with your AHJ"** |
 
-### Dream Machine ports
-**Browse** is the Commons front door; **Inspire**, **Genome**, and **Alchemist** become verbs available wherever an image slot exists.
+Rendering: color bar first, plain-language headline, one-line why — readable at a glance without prose. Flags resolve one at a time (staggered), so the read feels like a person thinking, not a page dump. Honesty rule: where a real trade-off exists, at least one risk flag shows; no option is all-green. "Go deeper" yields more flags on demand and is the only door to the expert cockpit.
+
+## 4. The per-fact contract and the three-tier gate
+
+Every served fact carries `{value, source_url, source_type (official|secondary), confidence, tier, as_of}`.
+
+- **Tier A — auto-servable:** primary-source-verified, stable citation, served with inline citation + as-of date.
+- **Tier B — mandatory disclaimer:** official but soft/time-sensitive (review-time goals, fee schedules) — always rendered with "published goal/figure — verify current status with [AHJ link]."
+- **Tier C — human-in-the-loop:** parcel-specific determinations (flood, historic), legal/contract language, conflicting figures. Surface the question + the official source link; never auto-assert.
+
+Application order: **CA honesty first** (the 2,256 unverified compliance rows; check AB 2622 — license floor $500→$1,000 eff. 2025-01-01), then Virginia (VB + Richmond) drops into the same schema as the generalization proof. A code-cycle watch re-verifies adopted editions (e.g., the 2024 USBC cycle) before each serving cycle.
+
+## 5. The Seed Bank — three layers, one consent moment
+
+- **The Vision (theirs):** project imagery, uploads, the dream as rendered. Private/project-scoped by default; never reused identifiably without an explicit share.
+- **The Craft (ours, always):** de-identified process intelligence — prompts, parameters, style descriptors, keep/regenerate win-rates by region and tier. Feeds the flywheel continuously.
+- **The Commons (shared by choice):** published assets — credited, browsable, remixable. **Promotion is the consent moment** (status/visibility change in the catalog, service-role-only past the QA gate; contributor recorded).
+
+Posture: aggressive with the Craft, generous with the Commons, never touch the Vision.
+
+## 6. Sensibility packs and derivation-by-default
+
+- A **sensibility pack** = a curated set of exemplar specimens + a locked style reference + a prompt template (e.g., Modern Farmhouse, Spanish Revival, Japandi, FLW-modernist, Coastal). Packs are catalog rows; they are ranked and rotated by win-rate per region/segment, and exceptional generations are promoted into new style parents.
+- **Derivation-by-default:** a kept design auto-spawns its tier siblings — Budget / Business Class / First-Class Luxury renditions of the *same design DNA* (scaled, re-materialized) — before anyone asks. Elements can be lifted (Genome) and grafted across projects. Lineage (`style_ref_id`, `parent_asset_id`) records all of it.
+- Taste profiles store **style language** ("warm wood, big glass, low rooflines"), exemplar asset IDs, and region — never demographic boxes. The user can always see why they're being shown what they're shown.
+
+## 7. Portals
+
+No rendered image is a dead pixel — **every image is an entrance.** Every catalog row knows its `project_id`, slot, and context; tapping a render opens its project at the right stage. A **shared portal is the acquisition loop**: better images → more sharing → more users → more taste signal → better images. Every shared render is an ad the user wanted to send, wearing the brand frame.
+
+## 8. Ways to Dream (ports from the Dream Machine)
+
+Available as verbs wherever an image slot exists, in this build order:
+1. **Browse** — the Commons front door: filter by sensibility, region, budget tier.
+2. **Inspire** — serendipity over the same rows.
+3. **Genome** — decompose a loved design into elements (roofline, material, glazing, massing) so any element can carry into a new generation.
+4. **Alchemist** — remix: this design × that sensibility (two lineage parents, one generation).
+
+## 9. The road to critical mass
+
+1. **Seed it ourselves (now):** stage emblems, sensibility packs, the ~25-slot asset program — fill the first shelves by hand, to our own lock.
+2. **Every generation multiplies (item F):** derivation-by-default.
+3. **Open the portals (ships with first-run):** shareable dream views.
+4. **Lift the umbrella (eventually):** the engine is garden-agnostic; every Knowledge Garden inherits it.
+
+## 10. Substrate
+
+`public.brand_assets` (catalog: key-resolved, provenance, lineage, renditions, status workflow, visibility) + `public.brand_asset_events` (the RSI/taste feed). RLS posture: creators are draft-only; **promotion past the QA gate is service-role-only** (no self-publish); users may log usage events (`referenced`/`rendered`/`user_created`) only. The `generator` column keeps the system engine-agnostic — engines are swappable, the taste data is not.

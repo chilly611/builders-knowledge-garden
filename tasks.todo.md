@@ -19,6 +19,28 @@
 
 > **Live backlog resets here (2026-06-07).** Completed/superseded batches through 2026-05-31 moved to [tasks.todo.archive.md](tasks.todo.archive.md).
 
+## NOW (2026-06-10 — serial unless marked parallel; one BKG write-lane at a time)
+
+- [ ] **P0 — prod localhost-link crash fix** (open write-lane) → merge → real-browser verify Chrome+Safari on prod
+- [ ] **Canon reconciliation PR** (docs-only, behind P0): verify decision numbering (existing "Decision 18" collision — take next free numbers), append Visual-First + Legible-Judgment from `PLATFORM-CONSTITUTION-APPEND.md`, commit `docs/visual-first-and-flags.md` + `docs/first-run-and-onboarding.md`, retire `bkg-main` path, nine-lane reconcile note in design-constitution
+- [ ] **Logo unification ticket** (behind canon PR): kill Owner-lane twin, 4 surfaces → `<Seal>`, variant-aware header poster + breathe; do NOT touch /intro
+- [ ] **Apply `20260609_brand_assets.sql` WITH the patched RLS** (creators draft-only; promotion service-role-only) — founder-supervised on shared prod
+- [ ] *(parallel, founder)* **Fill the Seed Bank brief's 7 slots** in Midjourney (per-slot prompts in the doc's registry; herbarium slots use the locked sref) — fill 6, present, fill the 7th live
+- [ ] *(parallel, founder)* **Private repo populate** (`knowledge-gardens-docs`) from the Mac, then the `chore/remove-confidential-docs` git-rm branch + PR
+- [ ] **Item C — flags/code-serving backend:** per-fact schema + three-tier gate; CA honesty pass first (verify AB 2622 $1,000 floor in live data); image caching into `brand_assets` + CDN; enable Claude prompt caching on specialist prompts
+- [ ] **Item E — first-run rebuild** per the First Run spec (pre-req: one dreamer chip swap + machine-twin section appended to the spec)
+- [ ] **Item F — Seed Bank engine:** taste_profiles, sensibility packs, derivation-by-default, Browse port, portal deep-links
+- [ ] **Design spec follow-ups:** dreamer chip; machine-twin sections (First Run + Seed Bank brief)
+- [ ] **Contract template legal review** before first paid sale (non-negotiable) · **first paying contractor** at $99/mo
+
+### Banked (do not open early)
+- Virginia wiring (VB + Richmond dossiers, HITL readiness note) — after CA honesty pass; same per-fact schema
+- RLS remediation apply (21 open-RLS tables) — plan exists; quiet supervised window only
+- GCP — Later, with triggers (~10k+ MAU / multi-TB egress / vector-analytics wall); AlloyDB = capability lever
+- History rewrite for removed public docs — quiet window, no in-flight branches
+
+---
+
 # NOW — 2026-06-08 (post-dogfood pivot)
 Phase 1 gate now includes the first-run experience (MLP = lovable). Two tracks, non-colliding:
 TRACK A — plumbing (one write-lane at a time):

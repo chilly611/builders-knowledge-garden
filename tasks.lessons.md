@@ -1,6 +1,19 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-06-08
+## Updated: 2026-06-10
+
+---
+
+## 2026-06-09/10 — Lessons
+
+- **In-thread doctrine must land in the repo same-day, or agents contradict each other.** Decisions authored in chat ("#18/#19") were cited by one lane and declared "phantom" by another, while a third found a *different* existing #18. Rule: doctrine is referred to by NAME until a canon PR verifies its number; numbering is discovered from origin/main, never assumed; never overwrite an existing decision.
+- **Sandboxed Cowork is read-only/research/staging ONLY.** Two sessions confirmed: no token, no private-repo reach, possibly a different clone mounted. Repo-writes, deploys, migrations, and private-repo ops run on the Mac (Code CLI or Mac-Cowork). Staging folders in a sandbox are ephemeral — originals live on the Mac.
+- **Path canon is settled by evidence, not docs.** Two independent sessions found `~/Developer/bkg` as the only clone; the worktree map's `bkg-main` was stale and silently broke every prompt that hardcoded it. Rule: confirm the canonical path at session start; fix the map the moment drift is found.
+- **Every new table ships with an RLS privilege-escalation review.** The brand-assets draft let creators self-publish to the global library (FOR ALL on `created_by`), bypassing the QA gate. Pattern: split creator policies (draft-only inserts/updates, pinned status/visibility columns); lifecycle transitions are service-role-only; user-writable event types are whitelisted.
+- **"Done" for a visual artifact includes the art.** The Seed Bank brief shipped verified and interactive at 0/7 slots filled — technically complete, not presentable. A doctrine-about-images with no images doesn't land. Slots are part of acceptance; partial coverage is presentable only when the coverage meter frames it.
+- **A stale branch can masquerade as missing work.** "The logo is missing" was actually `feat/shared-app-shell` sitting 33 commits behind main — the rollout had already shipped. Rule: before building "missing" features, `git fetch && git rev-list --left-right --count origin/main...HEAD`.
+- **Independent convergence is an architecture signal.** Design (named fillable slots), Cowork (catalog rows + lineage), and the prompt library (locked sref + promotion) invented the same asset system without coordination — that convergence justified locking it as doctrine (Seed Bank).
+- **Auth migrations invalidate downstream analyses.** The GCP eval modeled Clerk↔RLS as the big migration cost the same week auth moved to Supabase — which *strengthened* the stay-on-Supabase verdict, but only because we caught it. Rule: when a foundation changes (auth, DB, hosting), sweep in-flight analyses and docs for the stale assumption.
 
 ---
 
