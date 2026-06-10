@@ -3505,3 +3505,125 @@ API; resolved by awaiting `params`.
 - Animation polish + FINAL logo await the CORRECTED export (precondition still unmet). A new, different `specs/bkg/Owner Lane _standalone_ (3).html` (5.2MB, today) appeared and MAY be the corrected export — render to confirm before acting.
 - Pay-app approval = **needs legal review before wiring live payments** (no Stripe; demo-wrapped). Tracked in tasks.todo (counsel item).
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
+
+---
+## 2026-06-01 — Claude Code: RLS Group A lockdown applied to PRODUCTION
+**Agent:** Claude Code (claude-opus-4-8)
+
+**Migration applied:** `supabase/migrations/20260531_rls_group_a_lockdown.sql`
+— applied directly to prod via the Supabase `apply_migration` action (migration
+name `rls_group_a_lockdown`). NOT branch-replay: the repo's migration history
+won't replay cleanly (known, separate issue), so this was a single targeted apply.
+Returned `{"success":true}`.
+
+**Target confirmed before apply:** `knowledge-gardens-prod`
+(project `vlezoyalutexenbnzzui`), status `ACTIVE_HEALTHY`.
+
+**Security advisor `rls_disabled_in_public`: 21 → 14.**
+- Before: 21 flagged tables = 7 Group A (BKG-owned) + 14 Group B (other gardens).
+- After: 14 flagged — **exactly** the Group B set, byte-for-byte unchanged
+  (substances, substance_aliases, substance_classifications, substance_exposures,
+  substance_health_effects, substance_sources, exposure_routes, health_effects,
+  regulatory_limits, classifications, source_documents, water_data [Toxicology/EWG],
+  knex_migrations, knex_migrations_lock). These await their owning gardens' sign-off.
+- All 7 Group A tables now RLS-enabled WITH policies (service_role ALL on all 7;
+  owner SELECT on user_achievements / user_progress / daily_briefings /
+  crm_voice_fingerprint; project-scoped SELECT on crm_contact_activities;
+  specialist_runs + improvement_ledger are service-role-only).
+- Cross-check: `rls_enabled_no_policy` held at 21 (did NOT increase) → no table
+  left RLS-on-but-policy-less. Matches the throwaway-branch role test.
+
+**Scope guard:** No Group B table altered. Only the 7 Group A tables touched.
+
+**Timestamp:** 2026-06-01 16:03:26 PDT (-0700)
+
+---
+## 2026-06-01 — Claude Code: PROD visual verification before contractor demo (observe-only, NOTHING fixed)
+**Agent:** Claude Code (claude-opus-4-8)
+
+**Method:** Live https://builders.theknowledgegardens.com driven by real Chromium (Playwright,
+fresh context = fully anonymous, no credentials entered). Every surface screenshotted and judged
+from pixels — NOT SSR-HTML greps. Desktop 1440×900 + mobile 375×812. Homepage `/` skipped per brief
+(old page, rebuild in flight — PR #14). Evidence: 44 screenshots + findings.json in
+`/Users/chilly/Documents/The Builder Garden/prod-verify-2026-06-01/` (script `verify-prod.mjs` alongside, rerunnable).
+
+**Surface verdicts:**
+| Surface | Verdict | Evidence |
+|---|---|---|
+| `/john` | **FAIL — HTTP 404**, bare Next.js 404 page. Route exists in NO worktree (bkg, bkg-main, bkg-homepage) and no docs reference — never built, not a deploy glitch. | 01-john-s0.png |
+| `/killerapp` | **PASS w/ notes** — new light/herbarium shell, all four strips (identity / Willow Creek project / $116K-of-$340K budget / journey·time-machine 62%). Compass = NEW rectangle next-move cards grouped by stage; NO radial-emoji wheel anywhere on the 7,678px page. Notes: header mark is the ornate "B" monogram (Viver-style dark/gold seal appears only as small floating circular button); anon "AI TAKE" hangs at "Running the numbers…" (401s); React #418 hydration error in console; URL auto-gains `?project=demo-san-diego-adu` while chrome says Willow Creek and the top-right chip says "Untitled project" (3 identity signals disagree); below-fold sections only fade in on scroll. | 02-killerapp-s0–s5.png |
+| `/killerapp/projects/demo-project` | **PASS w/ 2 flags** — chrome AND body both Willow Creek ADU; chrome $116K LEFT OF $340K; budget river Spent $187k / Committed $224k / Remaining $116k (sums to $340K ✓). NOT Marin. Flags: chrome says **62% IN PROGRESS** while body Status says **55%** on the same screen; AI Attention item #2 cites "**Marin County DPW**" on this Napa project (Marin bleed in body copy). | 03-demo-s0.png, 03-demo-s1.png |
+| same @ 375px | **PASS** — budget ribbon stacks clean, no overflow/collision. Floating FAB cluster hovers over body content (cosmetic only). | 04-demo-mobile-s0.png |
+| Magic button | **PASS (functional) w/ caveat** — ONE launcher (`aria-label="Open AI composer"`); opens on a SINGLE real click; context line shows `/killerapp/projects/demo-project` (NOT "Landing"); submit "Ask (⌘↵)" geometrically clear of every other button (overlap check = none) — the two-overlapping-buttons bug NOT present here, though THREE floating controls coexist bottom-right (green ✨ FAB + dark "Ask or tell the garden" pill + seal/compass circle = visually busy). Submitted a real question → **genuine streamed Claude answer** (construction-specific reasoning, follow-up questions, workflow suggestions) → ANTHROPIC_API_KEY live in prod. **Caveat:** the anonymous answer explicitly says it has NO project data ("I don't have your project details in front of me") — project-aware answers UNVERIFIED signed-in. | 05-fab-1-after-one-click.png, 05-fab-3-response.png |
+| `/killerapp/stages/*` (all 7) | **FAIL for demo (known #14)** — every stage is Marin-bound: "Modern Farmhouse in Marin · 4,000 sqft · Marin County, CA · $312K / $1.65M · 37wk" chrome, directly contradicting the Willow Creek shell. Old stage shell (emoji journey badges), not the new app-shell chrome. Reflect banners "**Project complete** · 9 mo · final variance −$8,300" while Build presents mid-flight and the project page says 62%/55% in-progress; Collect says "$0 collected · 12 draws pending"; Adapt/Collect/Reflect are ALPHA—COMING-SOON placeholders with fake KPI banners; Lock prefills $1,650,000 + "The Harwell Family"; Plan/Build code lookup pinned "San Francisco, CA" (third location). Floating Ask-pill + compass button visually sit ON the right edge of the primary CTAs (Next / "Send the agreement →" / "Approve the plan…" / etc.) at 1440×900. | 06-stage-*-s0.png |
+
+**DO NOT show in tomorrow's demo:** (1) `/john` — 404; route the walkthrough through
+`/killerapp` → `/killerapp/projects/demo-project` instead, or ship the route first. (2) ALL seven
+`/killerapp/stages/*` pages — Marin data + "complete vs in-progress" contradictions + COMING-SOON
+placeholders. (3) On the project page, don't dwell on body "Status 55%" next to chrome "62%", and
+don't scroll to AI Attention item #2 ("Marin County DPW" on a Napa project). (4) Don't promise
+project-aware magic-button answers until signed-in behavior is confirmed (anon answers are real LLM
+but explicitly context-blind). (5) Homepage `/` (separately known-old). Also: sign in before
+demoing — chrome shows a "Not signed in" pill, and anon `/killerapp` AI-TAKE hangs.
+
+**Rule-#7 gate — founder must run signed-in by hand (agent stayed anonymous by design):**
+sign in → open Willow Creek → run one workflow → save → navigate away → return → confirm it RESUMES
+(state intact) → magic button: send a TEXT question → confirm project-aware answer + entry logged to
+project record → send a PHOTO → confirm it attaches to the project record → hard-reload → confirm
+both survive.
+
+**Fixed: nothing** (per brief). No logins, no credentials, no writes to prod.
+
+**Timestamp:** 2026-06-01 23:14:36 PDT (-0700)
+
+---
+
+## 2026-06-09 — [Cowork] Session: "First Light" first-run prompt refinement (user-research pass)
+**Agent:** Cowork (claude-opus-4-8)
+
+**What was built:**
+- `First-Light-first-run-prompt-refined.md` (delivered to Cowork outputs; NOT committed to repo per founder default "chat + outputs") — a user-research refinement of the CLAUDE DESIGN first-run brief: paste-ready refined prompt + rationale. Refined the *prompt*, not the design (no mockups, no repo code produced).
+
+**Key decisions:**
+- Mapped the brief's "seven principles" -> the seven PRIMITIVES (Invitation Card, Emotional Arc, Whisper, Time Machine, Ask Anything, Pro Toggle, Progressive Reveal). Flagged as an assumption to confirm.
+- Reconciled the founder goal "gamify like a video-game rules framework" with constitution Goal 4 (no tutorials/wizards/modal tours): gamification routed through Progressive Reveal (= leveling), the close-out ritual (= reward), and Whispers (= rule-tips). Explicitly banned XP bars / points / streaks / badges / achievement-popups / confetti.
+- Elevated machines to a first-class user: every screen gets a structured-data twin; acceptance = an AI agent completes the first-run headless to identical state (decision 16 + Goal 8).
+- Trust guardrails from dogfood findings: no over-confident lane guess (screen 2), no hallucinated money / false precision (screen 3).
+- Personas designed to the extremes (most-constrained per Goal 6 + pro per decision 13); the owner/contractor split reframed as a reversible Pro Toggle setting, not a one-way fork.
+
+**Issues/bugs found (in the brief + repo):**
+- Brief's four `Read:` paths: 3 wrong; `docs/first-run-and-onboarding.md` and `docs/visual-first-and-flags.md` DO NOT EXIST. Constitution lives at `_phase-kickoff-drafts/PLATFORM-CONSTITUTION.md`; asset inventory under `_phase-kickoff-drafts/docs/`.
+- Brief cited constitution "decisions 18, 19" — phantom; the locked list ends at 17. Substituted 16 (nine lanes incl. the Robots/AI-Agents lane) + 17 (#aikidotheAI).
+- Brief's "green/red signals" violate the brand lock (red #E8443A banned; literal green = old chrome). Remap -> sage/amber/rust + headline + one-line why.
+- Live `globals.css` token bug: `--bg:#ffffff` / `--accent:#1D9E75` win at `<body>` — first-run inherits a brand violation until fixed (plumbing blocker, not design).
+- Lane-count canon mismatch: Platform Constitution (9) vs Design Constitution (8).
+
+**Handoff:**
+- Deliverable lives in Cowork outputs, not the repo. Offered to drop into `docs/` or `docs/ai-prompts/` on request.
+- This session-log entry + tasks.todo.md + tasks.lessons.md were appended LOCALLY only — no PAT in the Cowork env and SSH push is broken on this mount. Founder: commit + push from the Mac terminal (branch `feat/shared-app-shell`).
+**Timestamp:** 2026-06-09 10:53:07 UTC (+0000)
+
+---
+
+## 2026-06-09 — [Cowork] Session: Brand-logo unification + Viver prompt library + compounding asset system
+**Agent:** Cowork (claude-opus-4-8)
+
+**What was built (delivered to Cowork outputs — NOT yet filed in repo):**
+- `Logo-unification-handoff.md` — the finding + Mac git-sync steps + remaining-unification spec.
+- `Viver-generator-prompt-library.md` — Midjourney-first, style-matched prompt system (locked --sref strategy, templates for plates/stage-marks/lane-crests/empty-states/textures, image-to-video motion prompts, brand-lock --no list, current-syntax cheat sheet).
+- `Compounding-brand-asset-system.md` — assets-as-data system design (catalog, lineage, QA gate, status/visibility workflow, RSI events, user-generated path, machine-legible catalog).
+- `20260609_brand_assets.sql` — ready-to-apply migration (brand_assets + brand_asset_events). Parses clean via pglast (real PG parser), 33 statements; matches repo conventions (public schema, text+CHECK, auth.users refs, project_id text no-FK, idempotent, RLS + service-role + member-scoped policies, self-healing seed of seal.hero/poster/umbrella).
+
+**Key findings:**
+- Uploaded `bkg-logo.mp4` is byte-identical (md5 ad2d28b8…) to `public/owner-lane/bkg-logo.mp4` already in the repo — the Viver hammer-roots mark (960x960 h264, 5.08s, light parchment ground).
+- "Logo everywhere" ALREADY shipped on origin/main (PRs #15/#16). `feat/shared-app-shell` is 0 ahead / 33 behind → the inconsistency is BRANCH STALENESS, not missing code. Stale `.git/index.lock` present.
+- The "dark/gold floating seal" from the 06-01 prod check = the CompassBloom nav launcher, NOT the brand logo.
+- `brand_assets` is NOT a DB table — only a storage bucket + manual drops + hardcoded URLs in `config.ts` (the drift root cause). No upload/generation tooling exists.
+
+**Key decisions (founder, via AskUserQuestion):**
+- Generators: Midjourney. System depth: design + ready-to-apply migration. Header mark: animate the seal everywhere (implemented responsibly — poster + CSS breathe in header, full video only in hero, to dodge 4.7MB/page + the prod black-square autoplay bug).
+
+**Handoff / next:**
+- Sync branch → main on the Mac (clear lock; commit/stash local doc appends; fetch; merge --ff-only). Then reconcile the Owner-lane twin, make Seal variant-aware, file the 4 deliverables (docs/brand/ + supabase/migrations/), apply the migration, refactor config.ts to resolve by `key`.
+- Appended locally only (no PAT in Cowork env; SSH push broken on this mount) — commit + push from Mac.
+**Timestamp:** 2026-06-09 23:33:30 UTC (+0000)

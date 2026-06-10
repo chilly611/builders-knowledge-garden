@@ -2425,3 +2425,27 @@ Origin/main contained a delete-files commit (`b7fe2a4` "demolish legacy /project
 **The pattern:** The lane-specific client (`OwnerHomeClient`) toggles a body class on mount/unmount (`document.body.classList.add('bkg-lane-owner')`), and the lane's own scoped CSS hides the shared elements via **stable `aria-label` selectors** (`[aria-label="Project chrome"]`, `[aria-label="Open workflow navigator"]`) gated on that body class. Zero edits to the shared components, zero impact on other lanes, race-free enough (hides as the lane mounts). Brief flash of generic chrome during async lane-resolution is acceptable for an MLP.
 
 **The rule:** To scope-suppress shared, layout-level chrome for a single client surface, prefer a body-class + CSS-on-stable-selectors hook over prop-drilling/context through the layout or editing the shared component. Verify the target elements expose stable `aria-label`/`role` first (they did) so the selector can't silently rot.
+
+## 2026-06-09 — Design-brief refs rot: verify doc paths, decision numbers, and named lists before trusting a prompt
+
+**Context:** Cowork, refining the "First Light" first-run design prompt. It told Claude Design to `Read:` four docs and apply "the seven principles" + constitution "decisions 1,2,4,5,7,13,18,19."
+
+**The mistakes found (in the brief, not the output):**
+- 3 of 4 `Read:` paths were wrong; 2 of those docs do not exist at all. A prompt that opens with broken reads fails at step 1.
+- "decisions 18, 19" do not exist — the locked list ends at 17.
+- "the seven principles" is not a named list anywhere; the canonical seven are the seven PRIMITIVES.
+- "green/red signals" silently violates the brand lock (#E8443A banned; literal green = the old chrome).
+
+**The rule:** Before refining or executing any design/spec prompt that cites repo docs, decision numbers, or named frameworks, VERIFY each reference exists — grep/ls the actual path, count the actual decision list, find the actual named list. Brief-writers paraphrase from memory and drift. Substitute the real referent and flag the drift explicitly instead of propagating it; a confident wrong reference in a prompt propagates straight into the build.
+
+**Corollary:** When a founder goal collides with a locked constitution rule (here: "gamify like a video game" vs Goal 4 "no tutorials/wizards/modals"), don't pick a side — find the reframe that honors both (great games teach via designed first encounters, not tutorials -> route gamification through existing primitives). The collision is usually a vocabulary mismatch, not a real contradiction.
+
+## 2026-06-09 — "Missing branding" was branch staleness, not missing code; and assets must be data
+
+**Context:** Founder reported branding was "missing" and uploaded the logo to get it "on all pages."
+
+**What was actually true:** The logo rollout had already shipped to `origin/main`; the working branch was 0 ahead / 33 behind. The uploaded mp4 was byte-identical (md5) to a file already in the repo. The perceived problem was a stale checkout + a stale `.git/index.lock`, not absent work.
+
+**The rule:** When a founder reports something "missing"/"broken" in the product, FIRST reconcile the working copy against origin (`git fetch`; `git rev-list --left-right --count origin/main...HEAD`) and checksum any "new" upload against the repo (`md5sum` + `find`) BEFORE building. A 30-second comparison can show the fix is "git pull" — saving a redundant build session that would also conflict with main. Reinforces CLAUDE.md's "begin every session with git pull", which the append-only Cowork mount silently cannot do, so staleness compounds across sessions.
+
+**Corollary — brand assets must be DATA, not hardcoded URLs:** the logo drifted across three surfaces precisely because each referenced a different hardcoded URL in a different file (header `/icon.png`, shell Supabase URL, Owner lane local mp4). The durable fix is a `brand_assets` catalog referenced by a stable `key`. Hardcoded asset URLs in code are a drift generator; route them through a table.

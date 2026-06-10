@@ -2596,3 +2596,28 @@ Items for the founder to handle from the Mac terminal (Cowork mount can't do the
       build 42%, week 17/37, framer "Ridgeline Framing" (seed `t-framing`;
       corrected 2026-05-29 from the export's "Tahoe Carpentry Co."), owners
       "Cody & Sara Harwell".
+
+## ═══ 2026-06-09 — [Cowork] "First Light" first-run prompt refinement ═══
+
+Delivered `First-Light-first-run-prompt-refined.md` (Cowork outputs). Refined the CLAUDE DESIGN first-run *prompt* from a user-research lens — not the design itself.
+
+- [x] Refine the first-run prompt: fix broken doc refs, name the seven primitives, correct decision refs, remap green/red -> sage/amber/rust, add personas + JTBD + trust guardrails + machine twins + per-screen acceptance criteria.
+- [ ] **FOUNDER DECISION — lane canon: 9 (Platform Constitution, Tier 0) or 8 (Design Constitution)?** Screen-2 lane inference needs one canonical list.
+- [ ] **FOUNDER DECISION — confirm "seven principles" = the seven primitives** (assumed in the refinement). If a different seven was meant, re-map.
+- [ ] **PLUMBING BLOCKER (Code) — fix `globals.css`**: `--bg:#ffffff` / `--accent:#1D9E75` win at `<body>`; first-run inherits a brand violation until resolved. Pre-req before Code's write-lane opens.
+- [ ] **DOCS — create or retire** `docs/first-run-and-onboarding.md` + `docs/visual-first-and-flags.md` (referenced but nonexistent), or fold their intent into the First Light spec.
+- [ ] Optional next step — have Claude Design produce the named spec + mockups from the refined prompt (the "full spec" path the founder skipped).
+- [ ] Push these local doc appends (session-log / todo / lessons) from the Mac — no PAT in Cowork env.
+
+## ═══ 2026-06-09 — [Cowork] Brand logo unification + Viver asset system ═══
+
+Deliverables in Cowork outputs (Logo-unification-handoff.md, Viver-generator-prompt-library.md, Compounding-brand-asset-system.md, 20260609_brand_assets.sql).
+
+- [ ] **Mac: sync `feat/shared-app-shell` → `origin/main`** — clear `.git/index.lock`; commit/stash local doc appends; `git fetch`; `git merge --ff-only origin/main`. Restores the Viver seal in shell/headers/favicon/OG (0 ahead, 33 behind). Does ~90% of "logo everywhere".
+- [ ] **Reconcile Owner-lane twin** — delete `BkgMark`/`SealMark` in `owner/parts.tsx`, render the shared `Seal`; retire local `/owner-lane/bkg-logo.mp4`.
+- [ ] **Make `Seal` variant-aware** — hero = full video (poster + reduced-motion); header/nav = poster PNG + CSS breathe (or ≤300KB webm). Convert KillerAppNav:122, CompassNav:97, error:29, killerapp/page:300.
+- [ ] **Apply `20260609_brand_assets.sql`** (supabase db push / MCP apply_migration) — brand_assets + brand_asset_events catalog. Parses clean.
+- [ ] **Refactor `config.ts` to resolve assets by `key`** from brand_assets (one URL helper, honor the `assets/` prefix) — kills logo drift at the root.
+- [ ] **Generate the 7 stage marks** (currently emoji placeholders — documented antipattern) via the Viver prompt library; register in the catalog.
+- [ ] File the 4 deliverables into the repo: `docs/brand/` (3 md) + `supabase/migrations/` (sql).
+- [ ] Push local doc appends from the Mac (no PAT in Cowork).
