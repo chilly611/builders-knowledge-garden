@@ -3972,3 +3972,24 @@ SD holds BKG write-lane — docs: first-run pivot capture, 2026-06-09 03:06 PDT 
 ---
 
 CC holds BKG write-lane — docs: canon reconciliation (decisions 20/21 + amendments, practice addenda, path + lane canon), 2026-06-10 (docs-only, branch docs/canon-reconciliation — no collision: no other lane open per this log; #25 merged).
+
+---
+
+## 2026-06-10 — [Code] Canon reconciliation: decisions 20/21 + amendments, practice addenda, path + lane canon (docs/canon-reconciliation)
+**Agent:** Claude Code · **Branch:** `docs/canon-reconciliation` off `origin/main` (`ffa7984`), PR-only — founder merges. **Docs-only: zero changes under `src/`.**
+
+**Lane check (before anything):** all prior write-lane claims on origin/main released (constitution-18/19 lane released after #25 shipped; first-run capture lane released 2026-06-09); **PR #25 merged at HEAD** — no open docs lane, no crash-fix branch/claim yet. Lane claimed on this branch.
+
+**Numbering verification (Task 1):** tracked, current constitution = `docs/PLATFORM-CONSTITUTION.md` on origin/main (`_phase-kickoff-drafts/PLATFORM-CONSTITUTION.md` exists but is UNTRACKED — a draft, not canon). TRUE highest decision number on origin/main = **19** (18 = visual-first short form, 19 = legible flags, both landed via #25 on 2026-06-09 — *not* the rumored "#18 = Intelligence B2B API", which appears nowhere on origin/main; the drafts' "#18" reference is a PR/task number, context-routing). Nothing overwritten or renumbered → the two new founder-locked decisions took the next free numbers: **20 and 21**.
+
+**Shipped:**
+- `docs/PLATFORM-CONSTITUTION.md` — **decision 20** (Visual-first within the brand lock — canonical verbatim text + Amendment A "the generation flywheel" + Amendment B "the Seed Bank and portals") and **decision 21** (Legible judgment — the flags: sage/amber/rust only, per-fact contract {value, source_url, source_type, confidence, tier, as_of}, three-tier serving gate) appended after 19, doctrine verbatim in quotes; dated reconciliation note: 18/19 retained untouched, **20/21 govern where wording differs**.
+- `docs/visual-first-and-flags.md` — existed (per #25) → NOT recreated; dated addendum appended: tier visuals under the two-systems frame, flag taxonomy (green vs watch/risk, color-first sage/amber/rust, per-fact contract + serving gate), generation contract now constitutional, the three rights layers (VISION/CRAFT/COMMONS, promotion = consent), sensibility packs (sref + exemplars + prompt template, win-rate ranked), portals (catalog rows deep-linkable via project_id + slot; shared portal = acquisition loop), Dream Machine ports (Browse = Commons front door; Inspire/Genome/Alchemist as verbs at any image slot).
+- `docs/first-run-and-onboarding.md` — existed (all seven principles already present) → NOT recreated; added the implementing-design reference (Claude Design spec **"First Run — The First Five Minutes"**) + header now cites 18/20 · 19/21.
+- `docs/REPO-AND-WORKTREE-MAP.md` (tracked → fixed here, no CLAUDE.md change): **path canon corrected — canonical clone = `~/Developer/bkg`** (the main repo; common `.git`; not bare), **`~/Developer/bkg-main` STALE/RETIRED** (the map previously said the reverse); git snippets repointed; `.vercel` flagged as still physically in bkg-main — move before pruning.
+- `docs/design-constitution.md` — Goal 10 **"All Eight Lanes" → "All Nine Lanes"** per founder ruling (Tier 0 wins): list aligned to decision 16's nine (Owner, GC, Specialty, Architect/Designer, Lender, Supplier, Equipment/Service Provider, Worker, Robots/AI Agents), dated note, no lane descriptions invented, rest of the goal untouched.
+- `tasks.todo.md` — DOCS block appended.
+
+**Verification:** every decision number checked against origin/main before writing; `git diff --stat` confirms docs/* + tasks.todo.md only, zero `src/` changes; secrets gate on changed content clean (no tokens/keys/RLS enumeration).
+
+**Write-lane:** Code **releases** the BKG docs write-lane — canon reconciliation shipped to `docs/canon-reconciliation` (PR pending founder merge).

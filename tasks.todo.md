@@ -37,3 +37,13 @@ TRACK B — first-run rebuild (design-led, parallel; non-write until Code picks 
 Queued (not the gate): globals.css pure-white one-liner · 21-RLS careful pass (P0 security, branch-tested,
 NOT public repo) · Vercel token rotation · image-gen subsystem scoping (parallel) · per-product
 instructions landing.
+
+DOCS — canon reconciliation (2026-06-10, branch docs/canon-reconciliation, PR pending founder merge):
+- [x] Constitution decisions **20** (visual-first canonical + Amendments A flywheel / B Seed Bank & portals)
+  + **21** (legible judgment — flags, per-fact contract, three-tier gate) appended verbatim; 18/19 kept
+  unrenumbered, reconciliation note says 20/21 govern where wording differs.
+- [x] visual-first-and-flags.md addendum (flag taxonomy, rights layers, sensibility packs, portals,
+  Dream Machine ports) · first-run doc references the Claude Design spec "First Run — The First Five Minutes".
+- [x] Path canon: ~/Developer/bkg canonical, bkg-main STALE/RETIRED (REPO-AND-WORKTREE-MAP.md) — move
+  .vercel out of bkg-main before pruning it.
+- [x] design-constitution Goal 10: eight → NINE lanes (decision 16 list, Tier 0 wins), dated note.

@@ -134,17 +134,20 @@ The voice expression of an Invitation Card is: the card's human label is speakab
 
 ---
 
-### Goal 10 — All Eight Lanes, Always
+### Goal 10 — All Nine Lanes, Always
+
+*(Reconciled 2026-06-10, founder ruling: the lane canon is NINE — PLATFORM-CONSTITUTION.md decision 16, Tier 0 wins. This goal previously said "Eight" with a differing list; only the count/list is aligned here, nothing else in this goal changed.)*
 
 Every surface welcomes every user type simultaneously:
 
-- General Contractors
-- DIY Builders
-- Specialty Contractors
-- Suppliers
-- Equipment
-- Service Providers
-- Workers
+- Owner
+- General Contractor
+- Specialty Contractor
+- Architect/Designer
+- Lender
+- Supplier
+- Equipment/Service Provider
+- Worker
 - Robots / AI Agents
 
 A GC and a worker looking at the same surface should both feel welcomed, even if the details each sees differ. Lane-specific information is surfaced through progressive reveal — not through locked-out sections.

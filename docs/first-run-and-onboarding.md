@@ -1,7 +1,8 @@
 # First-run & onboarding — the OS pattern
 Tier 2/3 practice for the first five minutes, reusable across gardens. Governed by
 PLATFORM-CONSTITUTION.md (decisions 1 MLP · 2 the loop · 7 plain language · 13 convenience+control ·
-18 visual-first · 19 flags). Pairs with docs/visual-first-and-flags.md.
+18/20 visual-first · 19/21 flags — 20/21 are the canonical statements, 2026-06-10). Pairs with
+docs/visual-first-and-flags.md.
 ## Why this exists
 The 2026-06-08 founder dogfood pass confirmed the engine works — auth, context-routing across projects
 and jurisdictions, the grounded AI take, persistence — and that the first five minutes did not yet earn
@@ -32,5 +33,7 @@ The MLP bar (decision 1) biting: the loop runs but isn't lovable yet, so Phase 1
 the first-run experience. Two tracks, non-colliding — (A) plumbing: the localhost crash (P0), the
 persistence gap, LLM determinism + generated-image caching; (B) the design-led first-run rebuild, Design →
 Code as the next write-lane.
+Implementing design (added 2026-06-10): the Claude Design spec **"First Run — The First Five Minutes"**
+is the implementing design for these seven principles.
 Cross-references: docs/PLATFORM-CONSTITUTION.md · docs/visual-first-and-flags.md ·
 docs/project-instructions/killer-app.md · docs/project-instructions/kg-umbrella.md

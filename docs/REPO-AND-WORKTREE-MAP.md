@@ -13,17 +13,17 @@
 | `chilly611/succulens-app`, `knowledge-orchid-1.1`, `XRWorkers/TheBloom`, `XRWorkers/the-bloom-ledger` | Misc / Bloom documentary | — | Low priority |
 
 ## Worktree layout (MacBook Air, `~/Developer/`)
-**`main` is checked out at `~/Developer/bkg-main` — never at the bare `~/Developer/bkg`.** All main operations use `git -C ~/Developer/bkg-main …` or `origin/main` refs.
+**PATH CANON (founder ruling, 2026-06-10): the canonical clone is `~/Developer/bkg`.** It is the main repository (its `.git` is the common dir for every linked worktree) — it is *not* bare; it carries whatever branch is checked out there. **`~/Developer/bkg-main` is STALE / RETIRED** — do not source tasks, docs, or main operations from it; prune it once nothing depends on it. All main operations use `git -C ~/Developer/bkg …` with `origin/main` refs. *(This paragraph previously said the reverse — that was wrong.)*
 
 Current worktrees (live as of this map):
-- `bkg` → `feat/shared-app-shell`
+- `bkg` → **canonical clone / main repo** (checked-out branch varies)
 - `bkg-bugfixes` → `fix/killerapp-quartet`
 - `bkg-compliance` → `feat/compliance-service`
 - `bkg-contracts-signing` → `feat/contracts-signing`
 - `bkg-heartbeat` → `feat/rsi-heartbeat`
 - `bkg-homepage` → `feat/homepage-rebuild` *(merged — prune)*
 - `bkg-jurisdictions` → `docs/jurisdiction-dossiers` *(locked)*
-- `bkg-main` → `main`
+- `bkg-main` → `main` *(STALE / RETIRED 2026-06-10 — see path canon above; prune)*
 - `bkg-rollout` → `feat/seal-rollout`
 - `bkg-social` → `fix/social-card-seal` *(merged — prune)*
 - `bkg-tests` → `test/e2e-consistency`
@@ -31,7 +31,7 @@ Current worktrees (live as of this map):
 
 ### Create a new worktree off latest main (worktree-safe)
 ```
-git -C ~/Developer/bkg-main fetch origin
+git -C ~/Developer/bkg fetch origin
 git worktree add ../bkg-<name> -b <branch> origin/main
 cd ~/Developer/bkg-<name>
 npm install
@@ -48,12 +48,12 @@ cd ~/Developer/bkg-main
 npx vercel --token=$VERCEL_TOKEN            # preview URL — verify before promoting
 npx vercel --prod --token=$VERCEL_TOKEN --yes
 ```
-- **Confirm `.vercel/project.json` points at the TEAM project** (`the-knowledge-gardens`), not a personal one — this is the **domain-drift footgun.** Copy `.vercel` from `bkg-main` into any new worktree before deploying.
+- **Confirm `.vercel/project.json` points at the TEAM project** (`the-knowledge-gardens`), not a personal one — this is the **domain-drift footgun.** Copy `.vercel` from `bkg-main` into any new worktree before deploying. *(2026-06-10: `.vercel` is gitignored and still physically lives in `bkg-main` — move it to the canonical `~/Developer/bkg` before pruning `bkg-main`, then deploy from there.)*
 - Fresh worktrees don't inherit `.vercel` (it's gitignored) — copy it or `vercel link` to the team project first.
 
 ## Backups & rollback (no dashboard = git + CLI)
 ```
-git -C ~/Developer/bkg-main fetch origin
+git -C ~/Developer/bkg fetch origin
 git tag -f demo-good-<date> origin/main
 git push -f origin demo-good-<date>
 ```
