@@ -4030,3 +4030,7 @@ CC holds BKG write-lane — docs: canon reconciliation (decisions 20/21 + amendm
 - **Tracking appends:** doctrine-night entry (2026-06-09/10) inserted into this log; NOW (2026-06-10) block into `tasks.todo.md`; 2026-06-09/10 lessons into `tasks.lessons.md` (newest-first).
 - **SSOT contract:** `docs/CONTEXT-MANIFEST.md` (GitHub canonical; Supabase Storage `platform-context` + Drive "BKG Context" are mirrors) + `scripts/sync-context.mjs` (one-command mirror refresh, service-role env on the Mac only).
 - Constitution untouched this session — decisions 20/21 + Amendments A/B already verbatim on this branch; **verified numbers: Visual-First = 20, Legible Judgment = 21** (18/19 keep their text; 20/21 govern).
+
+---
+
+CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restore · Ask/Tell merge · ribbon+journey navigation), 2026-06-10, branch fix/nav-chrome-demo-blockers off 7386e3b. Demo tomorrow; scope locked to these three.
