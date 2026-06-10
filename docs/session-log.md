@@ -3968,3 +3968,7 @@ SD holds BKG write-lane — docs: first-run pivot capture, 2026-06-09 03:06 PDT 
   keep the engine (re-house, not rebuild). Principles → docs/first-run-and-onboarding.md; visual-first +
   green/red flags locked as constitution decisions 18 & 19 + docs/visual-first-and-flags.md.
 - Next: P0 localhost crash-fix (Code, write-lane); first-run Design brief (parallel). Write-lane released.
+
+---
+
+CC holds BKG write-lane — docs: canon reconciliation (decisions 20/21 + amendments, practice addenda, path + lane canon), 2026-06-10 (docs-only, branch docs/canon-reconciliation — no collision: no other lane open per this log; #25 merged).
