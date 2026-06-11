@@ -17,6 +17,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useShellConfig } from './ShellConfigContext';
 import './app-shell.css';
 import { AskTheGarden } from './AskTheGarden';
+import { AskAnswer } from './AskAnswer';
 import type { ShellNavItem } from './types';
 
 function CompassRose({ open }: { open: boolean }) {
@@ -40,6 +41,10 @@ export function ShellNav() {
   const searchParams = useSearchParams();
   const [nav, setNav] = useState(false);
   const [ask, setAsk] = useState(false);
+  // The single entry point reaches both functions (2026-06-10 merge):
+  // "Ask" = question → answer (the legacy GlobalAiFab copilot, now in-panel);
+  // "Tell" = the multimodal capture (AskTheGarden). Ask is the default tab.
+  const [askMode, setAskMode] = useState<'ask' | 'tell'>('ask');
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Close panels on route change.
@@ -84,7 +89,27 @@ export function ShellNav() {
               <span className="pnav-lane">{config.laneLabel}</span>
               <button className="pnav-x" aria-label="Close" onClick={() => setAsk(false)}>✕</button>
             </div>
-            <AskTheGarden config={config} />
+            <div className="pnav-mode" role="tablist" aria-label="Ask or tell">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={askMode === 'ask'}
+                className={`pnav-mode-tab ${askMode === 'ask' ? 'is-on' : ''}`}
+                onClick={() => setAskMode('ask')}
+              >
+                Ask
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={askMode === 'tell'}
+                className={`pnav-mode-tab ${askMode === 'tell' ? 'is-on' : ''}`}
+                onClick={() => setAskMode('tell')}
+              >
+                Tell
+              </button>
+            </div>
+            {askMode === 'ask' ? <AskAnswer config={config} /> : <AskTheGarden config={config} />}
           </div>
         )}
 

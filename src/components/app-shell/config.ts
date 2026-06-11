@@ -6,6 +6,8 @@
  */
 
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
+import { WORKFLOWS } from '@/components/CompassWorkflowNav';
+import { isWorkflowAllowedForLane } from '@/lib/workflow-roles';
 import type { ProjectRole } from '@/lib/use-user-lane';
 import type { ShellConfig, ShellNavItem, ShellBudgetCell, MoneyState } from './types';
 import type { LedgerResult } from './useProjectLedger';
@@ -79,6 +81,32 @@ const STAGE_NAV = (activeSlug: string): ShellNavItem[] =>
     flag: s.slug === activeSlug,
   }));
 
+/** Group headings for the restored workflow catalog (matches the old panel). */
+const CATALOG_GROUPS: Record<number, string> = {
+  1: 'Size up',
+  2: 'Lock it in',
+  3: 'Plan it out',
+};
+
+/**
+ * The go-anywhere catalog (restored 2026-06-10): every live workflow the old
+ * CompassWorkflowNav panel offered, lane-gated by the same central
+ * WORKFLOW_ROLES map. The app-shell promotion (2026-05-31) shipped ShellNav
+ * with only picker + budget + stages, dropping this list — that was the
+ * "compass bloom degraded" regression. Stage-0 (Budget) is skipped here
+ * because it's already the Money group entry above.
+ */
+const CATALOG_NAV = (lane: ProjectRole): ShellNavItem[] =>
+  WORKFLOWS
+    .filter((w) => w.stage !== 0 && isWorkflowAllowedForLane(w.id, lane))
+    .map((w) => ({
+      id: w.id,
+      label: w.label,
+      sub: w.sublabel,
+      href: w.href,
+      group: CATALOG_GROUPS[w.stage],
+    }));
+
 /**
  * Build the default shell config from the project's real ledger + the user's
  * RESOLVED lane. Lane is never silently defaulted to GC: when unknown the
@@ -116,12 +144,13 @@ export function buildDefaultConfig(opts: {
 
   const pct = j ? (j.stageProgress[currentStage] ?? 0) : 0;
 
-  // Universal journey nav only once the lane is known; neutral state keeps it
-  // to the essentials (no lane-specific tool firehose).
+  // Universal journey nav + the full workflow catalog only once the lane is
+  // known; neutral state keeps it to the essentials (no lane-specific tool
+  // firehose for an unresolved visitor).
   const nav: ShellNavItem[] = [
     { id: 'picker', label: 'Pick a project', sub: 'Your projects & tools', href: '/killerapp' },
     { id: 'budget', label: 'Budget', sub: 'Money & estimating', href: '/killerapp/budget', group: 'Money' },
-    ...(laneKnown ? STAGE_NAV(activeSlug) : []),
+    ...(laneKnown && lane ? [...STAGE_NAV(activeSlug), ...CATALOG_NAV(lane)] : []),
   ];
 
   return {

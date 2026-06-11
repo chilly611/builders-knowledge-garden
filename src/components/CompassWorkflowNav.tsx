@@ -60,7 +60,9 @@ interface WorkflowEntry {
   roles?: ProjectRole[];
 }
 
-const WORKFLOWS: WorkflowEntry[] = [
+// Exported (2026-06-10): the app-shell ShellNav panel resurrects this exact
+// catalog as its "go anywhere" list — single source, no second copy to drift.
+export const WORKFLOWS: WorkflowEntry[] = [
   // Stage 0 — Money (always-on, sits at the top of the panel)
   { id: 'budget',          href: '/killerapp/budget',                         stage: 0, emoji: '\u{1F4B0}', label: "What's the budget?",                  sublabel: 'Budget & estimating' },
   // Stage 1 — Size up
