@@ -34,6 +34,54 @@ const eslintConfig = defineConfig([
       "react-hooks/exhaustive-deps": "warn",
     },
   },
+  // Garden-engine extraction guardrail (CODE-2, Phase 0).
+  //
+  // The generic engine layers — design-system and the app-shell — must NOT
+  // import builders-specific modules directly. They should receive the
+  // lifecycle, specialists, code-sources, etc. via the L2 config contracts in
+  // src/garden/contracts (e.g. useLifecycle()). See
+  // docs/garden-engine/01-DEPENDENCY-GRAPH.md §4 for the full edge list.
+  //
+  // Shipped as "warn" on purpose: it surfaces today's ~13 violations as the
+  // Phase-2 worklist WITHOUT failing `npm run lint` / the push gate. Flip to
+  // "error" once Phase 2 has cut the edges (then this boundary can't regress).
+  {
+    files: [
+      "src/design-system/**/*.{ts,tsx}",
+      "src/components/app-shell/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "warn",
+        {
+          patterns: [
+            {
+              group: [
+                "@/lib/lifecycle-stages",
+                "**/lib/lifecycle-stages",
+                "@/lib/specialists",
+                "@/lib/specialists.client",
+                "**/lib/specialists",
+                "**/lib/specialists.client",
+                "@/lib/code-sources",
+                "@/lib/code-sources/*",
+                "**/lib/code-sources",
+                "**/lib/code-sources/*",
+                "@/lib/knowledge-data",
+                "**/lib/knowledge-data",
+                "@/lib/stage-welcome-copy",
+                "**/lib/stage-welcome-copy",
+                "@/lib/stage-from-pathname",
+                "**/lib/stage-from-pathname",
+              ],
+              message:
+                "Garden-engine layers (design-system, app-shell) must not import builders-specific modules directly. Inject via the L2 config contracts in src/garden/contracts (useLifecycle(), a SpecialistRunner, GardenConfig). See docs/garden-engine/01-DEPENDENCY-GRAPH.md §4.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
