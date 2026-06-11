@@ -2517,3 +2517,49 @@ the source of truth; memory and project-knowledge uploads lag it.
 - Shape: Vision/Principles preamble (top, untouched) → dated `## ═══ NOW ═══` batches, newest-first.
   On reset, old batches move to tasks.todo.archive.md under a dated `> **Archived YYYY-MM-DD**` note —
   archived, not deleted.
+
+---
+
+## Lesson — "Verified" ≠ closed: P0 collaborator-save had three hidden tails (2026-06-11)
+
+### The miss
+The owner save path was verified (PATCH /api/v1/projects → 200, survives reload) and P0 got
+treated as closed. The ORIGINAL bug was never about owners — it was non-owner invited
+collaborators. Three distinct defects were still live behind the green check:
+1. **Authz tier missing**: the PATCH ownership check granted owner + demo only. An invited
+   collaborator (`project_members` row — the thing the UI itself calls "the real authorization
+   source") got 403, and every killerapp save path swallows non-OK responses → edits silently
+   vanished on reload. Same gap in RLS (`ccp_owner_all` only) silently no-ops the sub-bid
+   clients' direct writes.
+2. **Unauthenticated internal call**: ProjectContextBanner fired POST /api/v1/projects/summarize
+   with bare fetch() — no Bearer header → guaranteed 401, `.catch(() => {})` ate it, and the
+   AI take quietly described the pre-save project ("field=X, narrative=Y"). It LOOKED
+   intermittent only because the call fires on a staleness heuristic. The route was also
+   owner-only, so even authenticated collaborators could never refresh the take they staled.
+3. **Second GoTrueClient**: budget-spine kept its own supabase-js localStorage client after the
+   #24 cookie-session migration — dead storage, autoRefreshToken racing the real client,
+   leftover pre-migration tokens = genuinely intermittent 401s, plus the console warning that
+   was the tell all along.
+
+### The rules
+- A P0 is closed when the ORIGINAL reporter's path is tested, not when an adjacent happy path
+  passes. Re-read the original repro before declaring victory.
+- Every silent failure handler (`.catch(() => {})`, ignored `res.ok`, unchecked `update()` error)
+  is a future "intermittent" bug. Saves and AI refreshes must persist-or-show-error, never
+  fail dark. The summarize route now 500s instead of fake-200 when the persist fails.
+- One auth client per browser context, full stop. After an auth-storage migration, grep for every
+  `createClient(` in client code — each survivor holds the OLD storage and produces
+  intermittent auth failures that look random. The "Multiple GoTrueClient instances" warning is
+  a P1 in disguise, not console noise.
+- Authorization grants must live in ONE shared helper (projectOwnership.ts). The PATCH route's
+  inline copy is what let it drift from the sub-routes and from project_members.
+
+### Closed how (fix/p0-collab-save-close)
+PATCH + summarize now use assertProjectWriteAccess (owner | demo | project_members | token-demo);
+banner sends auth via shared src/lib/authed-fetch.ts and shows a visible "refresh failed — Retry"
+state; budget-spine/supabase-browser/pricing/Budget widgets all delegate to the single
+src/lib/supabase.ts client. Route-level integration tests: non-owner collaborator PATCH persists
+(+403 visible for non-members), summarize 200s and persists the fresh take for owner AND
+collaborator (401/403/502/500 covered). RLS backstop policies drafted in
+supabase/migrations/20260611_ccp_member_write_rls.sql — NOT yet applied to prod (shared
+instance, founder-gated).

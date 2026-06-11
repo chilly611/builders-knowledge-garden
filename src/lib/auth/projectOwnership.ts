@@ -11,11 +11,20 @@
  *   - and the parent /api/v1/projects route had already special-cased the
  *     same project id on its own GET path.
  *
- * This module centralizes the same three-tier grant the parent route uses so
+ * This module centralizes the same grant tiers the parent route uses so
  * every sub-route stays consistent:
  *   1. Owner: `command_center_projects.user_id === requesterUserId`
  *   2. Demo allowlist: project id is one of the three seeded demos
- *   3. Token-scoped demo: caller's `user_metadata.demo_project_id` matches
+ *   3. Invited collaborator: a `project_members` row exists for
+ *      (project_id, requesterUserId) — any role. This matches the live UI
+ *      (ProjectContext.tsx / LaneRouter.tsx), which treats ANY
+ *      project_members row as membership; we deliberately do not filter on
+ *      accepted_at because seeded owner-memberships and onboard-created rows
+ *      never set it. (P0 close, 2026-06-11: invited collaborators were
+ *      403'd on PATCH because only tiers 1/2/4 existed, and the killerapp
+ *      save paths swallow non-OK responses — so their edits silently
+ *      vanished on reload.)
+ *   4. Token-scoped demo: caller's `user_metadata.demo_project_id` matches
  *
  * Reads (assertProjectReadAccess) honor all three. Writes (assertProjectWriteAccess)
  * also honor all three; we intentionally do NOT enforce a stricter rule for
@@ -73,8 +82,9 @@ async function getCallerDemoProjectId(request: NextRequest): Promise<string | nu
 }
 
 /**
- * Returns { ok: true } if the caller may read this project. Three accepted
- * grants: owner, demo allowlist, or token-scoped demo_project_id.
+ * Returns { ok: true } if the caller may read this project. Four accepted
+ * grants: owner, demo allowlist, invited collaborator (project_members),
+ * or token-scoped demo_project_id.
  *
  * Returns 404 (not 403) when the project doesn't exist so we don't leak
  * existence to unrelated callers.
@@ -103,6 +113,20 @@ export async function assertProjectReadAccess(
 
   if (data.user_id === userId) return { ok: true };
 
+  // Invited collaborator: any project_members row for this (project, user).
+  // One indexed DB query (idx_project_members_project / _user), checked
+  // before the token-scoped demo grant because that one costs a network
+  // round-trip to Supabase auth.
+  const { data: memberRows, error: memberError } = await getServiceClient()
+    .from('project_members')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('user_id', userId)
+    .limit(1);
+  if (!memberError && memberRows && memberRows.length > 0) {
+    return { ok: true };
+  }
+
   const callerDemoProjectId = await getCallerDemoProjectId(request);
   if (callerDemoProjectId && callerDemoProjectId === projectId) {
     return { ok: true };
@@ -116,9 +140,11 @@ export async function assertProjectReadAccess(
 }
 
 /**
- * Write access uses the same three grants as read. The parent
- * /api/v1/projects PATCH path established this precedent (Sec+Auth Burn 6,
- * 2026-05-22) so trial accounts can edit their seeded demo project.
+ * Write access uses the same grants as read (owner, demo allowlist,
+ * invited collaborator, token-scoped demo). The parent /api/v1/projects
+ * PATCH path established this precedent (Sec+Auth Burn 6, 2026-05-22) so
+ * trial accounts can edit their seeded demo project; the collaborator
+ * grant (2026-06-11) extends it so invited project_members can save too.
  *
  * If you need a stricter rule (e.g. DELETE intentionally disallows demo
  * writes — see projects/route.ts DELETE), call assertProjectOwnerStrict

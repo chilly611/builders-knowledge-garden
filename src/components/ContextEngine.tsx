@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createClient } from '@supabase/supabase-js';
 import { ChevronDown, ChevronUp, Shield, AlertCircle, CheckCircle, Download, Filter } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// (P0 close, 2026-06-11) This component used to create its own module-level
+// supabase-js client that nothing in the file referenced — a stray
+// GoTrueClient (and an env! crash hazard) created on import. If this
+// component ever needs Supabase, import { supabase } from '@/lib/supabase'.
 
 // ============================================================================
 // Type Definitions

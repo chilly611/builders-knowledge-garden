@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
+import { assertProjectWriteAccess } from '@/lib/auth/projectOwnership';
 
 const SYSTEM_PROMPT = `You're a foreman giving a project orientation. When given a project description, respond with a SUBSTANTIVE, SPECIFIC contractor take.
 
@@ -36,19 +37,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  // P0 close (2026-06-11): was a strict `user_id !== user.id → 403`, which
+  // locked invited collaborators (project_members) and demo users out of
+  // re-summarizing — the AI take stayed stale after THEIR perfectly valid
+  // field saves. Use the same shared write-access grants as the PATCH path
+  // that triggers re-summaries in the first place.
+  const access = await assertProjectWriteAccess(request, projectId, user.id);
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
   const supabase = getServiceClient();
 
   const { data: project, error } = await supabase
     .from('command_center_projects')
-    .select('raw_input, jurisdiction, user_id')
+    .select('raw_input, jurisdiction')
     .eq('id', projectId)
     .single();
 
   if (error || !project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-  }
-  if (project.user_id !== user.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   const rawInput = project.raw_input?.trim();
@@ -91,10 +99,16 @@ export async function POST(request: NextRequest) {
     ? `${fullText.slice(0, 597).trimEnd()}…`
     : fullText;
 
-  await supabase
+  // Don't report success if the persist failed — a 200 with a stale row is
+  // exactly the silent-staleness P0 symptom (field saves, AI take doesn't).
+  const { error: updateError } = await supabase
     .from('command_center_projects')
     .update({ ai_summary, updated_at: new Date().toISOString() })
     .eq('id', projectId);
+  if (updateError) {
+    console.error('[summarize] persist error:', updateError);
+    return NextResponse.json({ error: 'Failed to save summary' }, { status: 500 });
+  }
 
   return NextResponse.json({ ai_summary });
 }

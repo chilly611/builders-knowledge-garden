@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { getAuthUser, getServiceClient, unauthorizedResponse } from '@/lib/auth-server';
+import { assertProjectWriteAccess } from '@/lib/auth/projectOwnership';
 
 function getSupabase() {
   return getServiceClient();
@@ -10,9 +10,11 @@ function getSupabase() {
  * Demo project allowlist (2026-05-20):
  * The three seeded demo projects are readable by ANY authenticated user, so
  * trial-contractor accounts (and any signed-in observer) can run the demo
- * without account-juggling. Writes (PATCH/DELETE) remain owner-only — trial
- * users can explore but cannot pollute demo data. Tracked in tasks.todo.md
- * (Burn 5 follow-ups) as the lowest-risk handover-week pattern; the long-term
+ * without account-juggling. PATCH now goes through assertProjectWriteAccess
+ * (2026-06-11), which honors this allowlist the same way every write
+ * sub-route (attachments, conversations, …) already did — so demo writes
+ * follow one consistent rule instead of two. DELETE remains strictly
+ * owner-only. Tracked in tasks.todo.md (Burn 5 follow-ups); the long-term
  * fix is the `is_demo_project boolean` column scoped post-handover.
  */
 const DEMO_PROJECT_IDS = new Set<string>([
@@ -21,33 +23,10 @@ const DEMO_PROJECT_IDS = new Set<string>([
   'bb22c33d-2222-4d78-bbbb-ccddee223344', // Commercial TI in SoMa
 ]);
 
-/**
- * 2026-05-22 (Sec+Auth Burn 6): trial-contractor accounts (5 of them) carry
- * their seeded demo project in user_metadata.demo_project_id. They were
- * getting "Unauthorized: you do not own this project" on PATCH because the
- * ownership check only compared user_id and the demo allowlist. Pull
- * demo_project_id from the bearer-token user_metadata and treat it as
- * an additional ownership grant for write paths. The token-side metadata
- * is signed by Supabase so the client can't forge it.
- */
-async function getCallerDemoProjectId(request: NextRequest): Promise<string | null> {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) return null;
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) return null;
-    const sb = createClient(supabaseUrl, supabaseAnonKey);
-    const { data, error } = await sb.auth.getUser(token);
-    if (error || !data.user) return null;
-    const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
-    const v = meta.demo_project_id;
-    return typeof v === 'string' && v.length > 0 ? v : null;
-  } catch {
-    return null;
-  }
-}
+// The Burn 6 (2026-05-22) user_metadata.demo_project_id write grant now
+// lives in assertProjectWriteAccess (src/lib/auth/projectOwnership.ts) —
+// the inline copy that used to sit here was removed when PATCH switched to
+// the shared helper (2026-06-11).
 
 export async function GET(request: NextRequest) {
   try {
@@ -181,26 +160,15 @@ export async function PATCH(request: NextRequest) {
     const { id, ...updates } = body;
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-    // Verify ownership via auth token (not client-passed user_id)
-    const { data: existingProject, error: fetchError } = await getSupabase()
-      .from('command_center_projects')
-      .select('user_id')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !existingProject) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // 2026-05-22 (Sec+Auth Burn 6): ownership = own the row OR the project
-    // is the caller's seeded demo (user_metadata.demo_project_id). Trial
-    // contractors were hitting 403 here on every PATCH because their demo
-    // project's user_id is the seed account, not theirs.
-    const callerDemoProjectId = await getCallerDemoProjectId(request);
-    const isOwner = existingProject.user_id === user.id;
-    const isDemoOwner = callerDemoProjectId && callerDemoProjectId === id;
-    if (!isOwner && !isDemoOwner) {
-      return NextResponse.json({ error: 'Unauthorized: you do not own this project' }, { status: 403 });
+    // Verify write access via auth token (not client-passed user_id).
+    // P0 close (2026-06-11): the inline owner+demo check predated the shared
+    // helper and silently excluded invited collaborators — a project_members
+    // user PATCHing got 403, which every killerapp save path swallows, so
+    // their edits vanished on reload. assertProjectWriteAccess grants owner,
+    // demo allowlist, project_members collaborator, and token-scoped demo.
+    const access = await assertProjectWriteAccess(request, id, user.id);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
     // Remove user_id from updates to prevent ownership transfer
