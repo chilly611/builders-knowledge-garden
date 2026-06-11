@@ -4052,3 +4052,17 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Label for founder review (fix 2):** pill keeps the existing "Ask or tell the garden"; tabs are "Ask" / "Tell".
 
 **Write-lane:** Code **releases** the BKG write-lane — nav-chrome demo blockers shipped to `fix/nav-chrome-demo-blockers` (PR pending founder merge).
+
+---
+
+## 2026-06-11 — [Claude Code] Session: authedFetch dedupe leftovers (2 fixes)
+**Agent:** Claude Code (Fable)
+**Branch:** `chore/authed-fetch-leftovers` (worktree `bkg-authed-fetch-leftovers`, off `origin/main` @ `7076363`)
+
+**What was fixed:**
+- `src/components/dream/MakeThisRealButton.tsx` — removed the private copy-pasted `authedFetch` (and its now-unused `@/lib/supabase` import); now imports the shared `@/lib/authed-fetch`.
+- `src/app/billing/page.tsx` (`loadState`) — the Stripe test/live-mode healthcheck read `authorization` off a fetch RESPONSE's headers (always null), so `/api/v1/healthcheck?detailed=1` was always unauthenticated and the mode banner silently never resolved. Now calls `authedFetch('/api/v1/healthcheck?detailed=1')` directly so the Bearer header is attached; the surrounding best-effort try/catch is kept.
+
+**Note on sequencing:** `refactor/authed-fetch-dedupe` (lane `bkg-authed-fetch`, tip `2781737`) is NOT merged yet — no PR open for it. Verified no overlap before proceeding off `origin/main`: the dedupe branch doesn't touch `MakeThisRealButton.tsx`, and in `billing/page.tsx` it only changes the import/useCallback region, not the healthcheck lines. Replacing billing's local `authedFetch` useCallback with the shared import stays the dedupe PR's job (tight scope); this fix works identically before and after that merge.
+
+**Verification:** `tsc --noEmit` → 121 errors before AND after (diff byte-identical, 0 in changed files) · `next build` → exit 0 · `vitest run` → 26 failed / 750 passed = exact pre-existing baseline on clean main.
