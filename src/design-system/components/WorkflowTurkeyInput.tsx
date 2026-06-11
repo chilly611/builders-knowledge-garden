@@ -23,7 +23,7 @@ import { useCallback, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii, shadows } from '@/design-system/tokens';
 import { toFriendlyMessage } from '@/lib/error-messages';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { useStageResolver } from '@/garden/runtime/LifecycleProvider';
 import { markdownToJsx } from './utils/markdownToJsx';
 
 interface MinimalSpeechRecognition {
@@ -64,7 +64,8 @@ export default function WorkflowTurkeyInput({
   stageId,
 }: WorkflowTurkeyInputProps) {
   const pathname = usePathname();
-  const computedStageId = stageFromPathname(pathname);
+  const resolveStage = useStageResolver();
+  const computedStageId = resolveStage(pathname ?? '');
 
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');

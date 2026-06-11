@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LIFECYCLE_STAGES, STAGE_WORKFLOWS, WORKFLOW_TO_STAGE } from '@/lib/lifecycle-stages';
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
 import { useUserLane } from '@/lib/use-user-lane';
 import { isWorkflowAllowedForLane } from '@/lib/workflow-roles';
 import { colors, fonts, fontSizes, fontWeights, spacing, radii } from '../tokens';
@@ -158,11 +158,16 @@ export default function NextWorkflowCard({
 }: NextWorkflowCardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const stages = useLifecycle();
   const projectId = searchParams.get('project');
   const [showStagePicker, setShowStagePicker] = useState(false);
   const accent = stageAccent(currentStageId);
   const currentWorkflowLabel = WORKFLOW_LABELS[currentWorkflowId] || 'This workflow';
-  const currentStageName = LIFECYCLE_STAGES.find((s) => s.id === currentStageId)?.name || 'the current stage';
+  const currentStageName = stages.find((s) => s.id === currentStageId)?.name || 'the current stage';
+  // Workflows belonging to a stage — was STAGE_WORKFLOWS[stageId]; now read
+  // from the injected lifecycle (identical data, no builders import).
+  const workflowsForStage = (id: number): string[] =>
+    stages.find((s) => s.id === id)?.workflowIds ?? [];
 
   // WORKFLOW-ROLES-NAV (2026-05-22): consult the shared role map so we
   // never suggest a workflow that would LaneGate-redirect the user the
@@ -175,7 +180,7 @@ export default function NextWorkflowCard({
 
   // Determine next workflow in current stage — skip past any IDs the
   // current lane isn't allowed to discover.
-  const currentStageWorkflows = STAGE_WORKFLOWS[currentStageId] || [];
+  const currentStageWorkflows = workflowsForStage(currentStageId);
   const currentIndex = currentStageWorkflows.indexOf(currentWorkflowId);
 
   // Walk forward from the current index to find the next allowed workflow.
@@ -197,8 +202,8 @@ export default function NextWorkflowCard({
     // Move to next stage — find its first allowed workflow.
     nextStageId = currentStageId < 7 ? currentStageId + 1 : null;
     if (nextStageId) {
-      const nextStageName = LIFECYCLE_STAGES.find((s) => s.id === nextStageId)?.name || `Stage ${nextStageId}`;
-      const nextStageWorkflows = STAGE_WORKFLOWS[nextStageId] || [];
+      const nextStageName = stages.find((s) => s.id === nextStageId)?.name || `Stage ${nextStageId}`;
+      const nextStageWorkflows = workflowsForStage(nextStageId);
       nextWorkflowId =
         nextStageWorkflows.find((id) => allowedForLane(id)) ?? null;
       const nextWorkflowLabel = nextWorkflowId
@@ -249,7 +254,7 @@ export default function NextWorkflowCard({
 
   const handleStageSelect = (selectedStageId: number) => {
     setShowStagePicker(false);
-    const workflows = STAGE_WORKFLOWS[selectedStageId] || [];
+    const workflows = workflowsForStage(selectedStageId);
     // Pick the first workflow in that stage that the user's lane is
     // allowed to discover (WORKFLOW-ROLES-NAV, 2026-05-22). Falls back to
     // workflows[0] if none match, which then falls back to /killerapp.
@@ -399,7 +404,7 @@ export default function NextWorkflowCard({
                 gap: spacing[3],
               }}
             >
-              {LIFECYCLE_STAGES.map((stage) => {
+              {stages.map((stage) => {
                 const isCurrentStage = stage.id === currentStageId;
                 const stageAccentColor = stageAccent(stage.id as 1 | 2 | 3 | 4 | 5 | 6 | 7);
                 return (
@@ -432,7 +437,7 @@ export default function NextWorkflowCard({
                       }
                     }}
                   >
-                    <div style={{ marginBottom: spacing[1] }}>{stage.emoji}</div>
+                    <div style={{ marginBottom: spacing[1] }}>{stage.icon}</div>
                     <div>{stage.name}</div>
                   </button>
                 );

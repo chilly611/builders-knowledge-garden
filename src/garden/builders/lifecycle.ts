@@ -19,7 +19,12 @@ import {
   LIFECYCLE_STAGES,
   STAGE_WORKFLOWS,
 } from '@/lib/lifecycle-stages';
-import type { Lifecycle, LifecycleStageDef } from '@/garden/contracts/lifecycle';
+import { stageFromPathname } from '@/lib/stage-from-pathname';
+import type {
+  Lifecycle,
+  LifecycleStageDef,
+  StageFromPath,
+} from '@/garden/contracts/lifecycle';
 
 /** Stable slugs per stage id — mirror `/killerapp/stages/<slug>` routes. */
 const STAGE_SLUGS: Record<number, string> = {
@@ -47,3 +52,11 @@ export const buildersLifecycle: Lifecycle = LIFECYCLE_STAGES.map(
     workflowIds: STAGE_WORKFLOWS[stage.id] ?? [],
   }),
 );
+
+/**
+ * The garden's pathname→stage-id resolver. Wraps the canonical BKG
+ * `stageFromPathname` (route map lives in `src/lib/stage-from-pathname.ts`) so
+ * the engine can resolve the current stage without importing it directly.
+ */
+export const buildersStageFromPath: StageFromPath = (pathname) =>
+  stageFromPathname(pathname);
