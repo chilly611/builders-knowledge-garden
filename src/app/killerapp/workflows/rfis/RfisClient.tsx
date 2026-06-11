@@ -33,7 +33,7 @@ import {
 } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
 import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 import AttachmentSection from '@/components/AttachmentSection';
@@ -62,14 +62,6 @@ const DEFAULT_PROJECT_ID = '55730cd3-5225-493d-8b5c-49086d942565';
 
 // Open + responded both count as "in flight" for the days-open ticker.
 const OPEN_STATUSES = new Set(['draft', 'open', 'responded']);
-
-async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  return fetch(input, { ...init, headers });
-}
 
 function daysOpen(createdAt: string | null): number {
   if (!createdAt) return 0;

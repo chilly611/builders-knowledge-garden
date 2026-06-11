@@ -39,7 +39,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { useProject } from '@/lib/hooks/useProject';
-import { supabase } from '@/lib/supabase';
+import { authedFetch as authedFetchJSON } from '@/lib/authed-fetch';
 import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 import { normalizeStoredLines } from './budget-storage';
 import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
@@ -302,19 +302,8 @@ function writeLines(projectId: string | null, lines: BudgetLine[]): void {
 // JSONB column has been DROPPED. Canonical store is `project_budget_lines`,
 // accessed through `GET /api/v1/budget?project_id=…` (read) and
 // `PATCH /api/v1/budget` (upsert keyed by `(project_id, csi_division)`).
-// localStorage stays as the offline / anonymous fallback. Same authedFetch
-// pattern as useProjectWorkflowState — bearer token from the Supabase session.
-
-async function authedFetchJSON(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!headers.has('Content-Type') && init.body) {
-    headers.set('Content-Type', 'application/json');
-  }
-  return fetch(input, { ...init, headers });
-}
+// localStorage stays as the offline / anonymous fallback. Bearer token comes
+// from the shared @/lib/authed-fetch helper (imported as authedFetchJSON).
 
 /**
  * Fetch the persisted budget lines for a project. Returns:

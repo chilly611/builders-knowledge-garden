@@ -4052,3 +4052,23 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Label for founder review (fix 2):** pill keeps the existing "Ask or tell the garden"; tabs are "Ask" / "Tell".
 
 **Write-lane:** Code **releases** the BKG write-lane — nav-chrome demo blockers shipped to `fix/nav-chrome-demo-blockers` (PR pending founder merge).
+
+---
+
+## 2026-06-11 — [Code] authedFetch dedupe: 11 callers → shared `@/lib/authed-fetch` (refactor/authed-fetch-dedupe)
+
+**Agent:** Claude Code (Fable 5)
+**Worktree/branch:** `~/Developer/bkg-authed-fetch` · `refactor/authed-fetch-dedupe`, based on `fix/p0-collab-save-close` (36faae4) because the shared helper ships in that branch — once that PR merges this becomes a plain branch off main.
+
+**What:** Deleted all 11 private copy-pasted `authedFetch` implementations and pointed every caller at the canonical `src/lib/authed-fetch.ts`: ProjectContext, AuthAndProjectIndicator, KillerappProjectShell, stages/lock, stages/size-up, RfisClient, BudgetClient (`authedFetchJSON` → `import { authedFetch as authedFetchJSON }` — despite the name it never parsed JSON, body identical to the shared helper), billing/page (useCallback variant removed; `loadState` deps `[authedFetch]` → `[]` since the import is module-stable), AttachmentSection, VoiceFieldReport, useProjectWorkflowState. Unused `supabase` / `getSupabaseBrowser` imports dropped where the deleted copy was the only consumer. Net **+14/−114**, mechanical.
+
+**Per-call-site behavior review (the three copies that did NOT auto-set Content-Type):**
+- AuthAndProjectIndicator / RfisClient / AttachmentSection: every body-bearing call site already passes explicit `Content-Type: application/json`, so the shared helper's conditional auto-add is a no-op. No FormData ever flows through `authedFetch` (uploads live in AttachmentUploader) — no risk of mislabeling multipart bodies.
+- billing forced `content-type: application/json` on ALL requests including bodiless GET/POST; the shared helper only sets it when a body exists. Verified `/api/v1/stripe/portal` tolerates the missing header (its `req.json()` is try/catch'd, "no body" path). Checkout POST has a body → header still set.
+- billing's `/__noop` healthcheck hack kept verbatim — it reads `authorization` off a **response** header so it has always returned `''` (pre-existing bug, mode-banner silently degrades); flagged for follow-up, not fixed (tight scope).
+
+**Out of scope, flagged not done:** `src/components/dream/MakeThisRealButton.tsx` carries a 12th identical private copy (not in the task list) — left untouched per tight-scope; one-line follow-up.
+
+**Verification:** `tsc --noEmit` output byte-identical to untouched p0 baseline (0 errors in changed files) · `next build` exit 0 · `vitest run` 26 failed / 750 passed with the failing-file set identical to the clean p0 baseline (the 26 are pre-existing). Browser dogfood not run — no UI/behavior surface changed; helper itself was browser-verified in the p0 session.
+
+**Write-lane:** taken for this session, **released** on push — `refactor/authed-fetch-dedupe` PR pending founder merge (stacked on `fix/p0-collab-save-close`).

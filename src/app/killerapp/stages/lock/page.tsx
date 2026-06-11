@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { recordMaterialCost } from '@/lib/budget-spine';
 import { emitJourneyEvent } from '@/lib/journey-progress';
 import { StageShell, useStageChrome } from '@/components/stage-shell';
@@ -50,14 +50,6 @@ const MATERIAL_CHIPS = [
   'Tankless water heater',
 ];
 
-async function authedFetch(input: string, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json');
-  return fetch(input, { ...init, headers });
-}
 function money(n: number): string {
   return `$${Math.round(n).toLocaleString()}`;
 }
