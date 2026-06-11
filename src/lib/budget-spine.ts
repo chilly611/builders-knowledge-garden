@@ -31,7 +31,7 @@
  * unchanged; underlying storage now actually persists.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -87,33 +87,19 @@ export interface BaseWriteInput {
   projectId?: string;
 }
 
-// ─── Supabase browser client (mirrors BudgetWidget.tsx) ───────────────────
-
-let browserClient: SupabaseClient | null = null;
-function getBrowserClient(): SupabaseClient {
-  if (browserClient) return browserClient;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey || url.includes('placeholder')) {
-    browserClient = createClient(
-      'https://placeholder.supabase.co',
-      'placeholder-anon-key'
-    );
-  } else {
-    browserClient = createClient(url, anonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    });
-  }
-  return browserClient;
-}
+// ─── Session token (shared auth client) ───────────────────────────────────
+//
+// P0 close (2026-06-11): this module used to create its OWN supabase-js
+// client (localStorage sessions, autoRefreshToken on). After the #24
+// cookie-session migration that client was a second GoTrueClient pointed at
+// dead localStorage state — it triggered the "Multiple GoTrueClient
+// instances" console warning, returned null/stale tokens for users whose
+// pre-migration localStorage session still lingered (→ intermittent 401s on
+// spine-driven API calls), and could race the real client's token refresh.
+// Use the single shared cookie-backed client instead.
 
 async function getSessionToken(): Promise<string | null> {
   try {
-    const supabase = getBrowserClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

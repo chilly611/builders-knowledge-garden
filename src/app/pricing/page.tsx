@@ -2,21 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { createBrowserClient } from '@supabase/ssr';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-
-/* ─── Supabase Browser Setup ─── */
-let browserClient: SupabaseClient | null = null;
-function getSupabaseBrowser(): SupabaseClient {
-  if (browserClient) return browserClient;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey || url.includes('placeholder')) {
-    return createClient('https://placeholder.supabase.co', 'placeholder-anon-key');
-  }
-  browserClient = createBrowserClient(url, anonKey) as unknown as SupabaseClient;
-  return browserClient;
-}
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 /* ─── Tier Data (inline, self-contained) ─── */
 interface TierInfo {

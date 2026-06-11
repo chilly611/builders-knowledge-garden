@@ -32,8 +32,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { useActiveProject } from '@/lib/hooks/use-active-project';
 
 // ─── Types — mirror src/app/api/v1/budget/route.ts ────────────────────────
@@ -64,19 +63,6 @@ interface BudgetSummary {
   clientPaymentsReceived?: number;
   plAfterPayments?: number;
   next7DaysScheduled?: ScheduledPayment[];
-}
-
-// ─── Supabase browser client (shared pattern across the app) ──────────────
-let browserClient: SupabaseClient | null = null;
-function getSupabaseBrowser(): SupabaseClient {
-  if (browserClient) return browserClient;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey || url.includes('placeholder')) {
-    return createClient('https://placeholder.supabase.co', 'placeholder-anon-key');
-  }
-  browserClient = createBrowserClient(url, anonKey) as unknown as SupabaseClient;
-  return browserClient;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────

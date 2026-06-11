@@ -11,13 +11,17 @@
  *
  * Staleness handling: when project.ai_summary was generated for a
  * different location than the current project.jurisdiction, the banner
- * silently fires POST /api/v1/projects/summarize to regenerate it. The
- * stale text is shown while the request is in-flight, then swapped for
- * the fresh summary — no visible loading state, no user action required.
+ * fires POST /api/v1/projects/summarize (authenticated — the route 401s
+ * without a Bearer token) to regenerate it. The stale text is shown while
+ * the request is in-flight, then swapped for the fresh summary. If the
+ * refresh FAILS we say so inline with a Retry button instead of silently
+ * leaving the stale take up — the silent version was P0 symptom (b):
+ * users saved field=X and kept reading an AI narrative describing Y.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { authedFetch } from '@/lib/authed-fetch';
 import type { ProjectContext } from '@/lib/hooks/useProjectWorkflowState';
 import { applyJurisdictionOverride } from '@/lib/project-display';
 import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
@@ -90,6 +94,8 @@ const PEER_LINKS: Array<{
 
 export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Props) {
   const [liveSummary, setLiveSummary] = useState<string | null>(null);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const regeneratedRef = useRef(false);
   // DIY-LANE (2026-05-22): when the active lane is `diy`, the AI Take and
   // raw_input paragraphs run through wrapGlossaryTerms so jargon ("CSI",
@@ -114,26 +120,43 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
       ? `${displaySummary.slice(0, 217).trimEnd()}…`
       : displaySummary;
 
-  // Silently regenerate when the stored AI Take doesn't mention the current
+  // Regenerate when the stored AI Take doesn't mention the current
   // jurisdiction city. Shows the stale text while the request is in-flight,
-  // then swaps it for the fresh summary with no visible loading state.
+  // then swaps it for the fresh summary. On ANY failure (401/403/5xx/network)
+  // we flip refreshFailed so the user sees the take is out of date — the
+  // earlier silent-ignore version is what let saves look successful while
+  // the AI narrative quietly described the old project.
   const aiTakeIsStale =
     !!jCity && !!storedSummary && !storedSummary.toLowerCase().includes(jCity);
 
+  const projectId = project?.id;
+  const regenerate = useCallback(async () => {
+    if (!projectId) return;
+    setRefreshing(true);
+    setRefreshFailed(false);
+    try {
+      const res = await authedFetch('/api/v1/projects/summarize', {
+        method: 'POST',
+        body: JSON.stringify({ project_id: projectId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ai_summary?: string };
+      if (res.ok && data.ai_summary) {
+        setLiveSummary(data.ai_summary);
+      } else {
+        setRefreshFailed(true);
+      }
+    } catch {
+      setRefreshFailed(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [projectId]);
+
   useEffect(() => {
-    if (!aiTakeIsStale || !project?.id || regeneratedRef.current) return;
+    if (!aiTakeIsStale || !projectId || regeneratedRef.current) return;
     regeneratedRef.current = true;
-    fetch('/api/v1/projects/summarize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_id: project.id }),
-    })
-      .then((r) => r.json())
-      .then((data: { ai_summary?: string }) => {
-        if (data.ai_summary) setLiveSummary(data.ai_summary);
-      })
-      .catch(() => {/* silently ignore — stale summary is still shown */});
-  }, [aiTakeIsStale, project?.id]);
+    void regenerate();
+  }, [aiTakeIsStale, projectId, regenerate]);
 
   if (!project) return null;
 
@@ -252,6 +275,36 @@ export default function ProjectContextBanner({ project, selfWorkflow, sqft }: Pr
             AI take
           </span>
           {wrapGlossaryTerms(summaryPreview, effectiveLane)}
+          {refreshFailed && (
+            <span
+              data-testid="ai-take-refresh-failed"
+              role="status"
+              style={{
+                display: 'block',
+                marginTop: 6,
+                fontSize: 12,
+                color: 'var(--redline, #A53A2D)',
+              }}
+            >
+              This AI take may be out of date — refresh failed.{' '}
+              <button
+                type="button"
+                onClick={() => void regenerate()}
+                disabled={refreshing}
+                style={{
+                  font: 'inherit',
+                  color: 'inherit',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  textDecoration: 'underline',
+                  cursor: refreshing ? 'wait' : 'pointer',
+                }}
+              >
+                {refreshing ? 'Retrying…' : 'Retry'}
+              </button>
+            </span>
+          )}
         </p>
       )}
 
