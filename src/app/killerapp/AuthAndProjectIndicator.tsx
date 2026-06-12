@@ -35,6 +35,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 
 // 2026-05-19 (Ship 18): mobile breakpoint — < 640px collapses the two
 // pills into a single hamburger + slide-out drawer to stop the project
@@ -68,14 +69,6 @@ interface ProjectSummary {
   id: string;
   name: string | null;
   raw_input: string | null;
-}
-
-async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  return fetch(input, { ...init, headers });
 }
 
 interface AuthAndProjectIndicatorProps {

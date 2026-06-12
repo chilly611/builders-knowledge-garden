@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { useSpeechRecognition } from '@/lib/hooks/useSpeechRecognition';
 import { structureFieldReport } from '@/lib/specialists/build';
 import AutoFillButton from './AutoFillButton';
@@ -57,15 +57,6 @@ function writeMirror(projectId: string | null, entries: FieldEntry[]): void {
   } catch {
     /* ignore */
   }
-}
-
-async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json');
-  return fetch(input, { ...init, headers });
 }
 
 /**

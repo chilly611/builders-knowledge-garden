@@ -4055,35 +4055,20 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 ---
 
-## 2026-06-12 — [Claude Code] Session: authedFetch dedupe leftovers (2 fixes)
-**Agent:** Claude Code (Fable)
-**Branch:** `chore/authed-fetch-leftovers` (worktree `bkg-authed-fetch-leftovers`, off `origin/main` @ `7076363`)
+## 2026-06-11 — [Code] authedFetch dedupe: 11 callers → shared `@/lib/authed-fetch` (refactor/authed-fetch-dedupe)
 
-**What was fixed:**
-- `src/components/dream/MakeThisRealButton.tsx` — removed the private copy-pasted `authedFetch` (and its now-unused `@/lib/supabase` import); now imports the shared `@/lib/authed-fetch`.
-- `src/app/billing/page.tsx` (`loadState`) — the Stripe test/live-mode healthcheck read `authorization` off a fetch RESPONSE's headers (always null), so `/api/v1/healthcheck?detailed=1` was always unauthenticated and the mode banner silently never resolved. Now calls `authedFetch('/api/v1/healthcheck?detailed=1')` directly so the Bearer header is attached; the surrounding best-effort try/catch is kept.
+**Agent:** Claude Code (Fable 5)
+**Worktree/branch:** `~/Developer/bkg-authed-fetch` · `refactor/authed-fetch-dedupe`, based on `fix/p0-collab-save-close` (36faae4) because the shared helper ships in that branch — once that PR merges this becomes a plain branch off main.
 
-**Note on sequencing:** `refactor/authed-fetch-dedupe` (lane `bkg-authed-fetch`, tip `2781737`) is NOT merged yet — no PR open for it. Verified no overlap before proceeding off `origin/main`: the dedupe branch doesn't touch `MakeThisRealButton.tsx`, and in `billing/page.tsx` it only changes the import/useCallback region, not the healthcheck lines. Replacing billing's local `authedFetch` useCallback with the shared import stays the dedupe PR's job (tight scope); this fix works identically before and after that merge.
+**What:** Deleted all 11 private copy-pasted `authedFetch` implementations and pointed every caller at the canonical `src/lib/authed-fetch.ts`: ProjectContext, AuthAndProjectIndicator, KillerappProjectShell, stages/lock, stages/size-up, RfisClient, BudgetClient (`authedFetchJSON` → `import { authedFetch as authedFetchJSON }` — despite the name it never parsed JSON, body identical to the shared helper), billing/page (useCallback variant removed; `loadState` deps `[authedFetch]` → `[]` since the import is module-stable), AttachmentSection, VoiceFieldReport, useProjectWorkflowState. Unused `supabase` / `getSupabaseBrowser` imports dropped where the deleted copy was the only consumer. Net **+14/−114**, mechanical.
 
-**Verification:** `tsc --noEmit` → 121 errors before AND after (diff byte-identical, 0 in changed files) · `next build` → exit 0 · `vitest run` → 26 failed / 750 passed = exact pre-existing baseline on clean main.
+**Per-call-site behavior review (the three copies that did NOT auto-set Content-Type):**
+- AuthAndProjectIndicator / RfisClient / AttachmentSection: every body-bearing call site already passes explicit `Content-Type: application/json`, so the shared helper's conditional auto-add is a no-op. No FormData ever flows through `authedFetch` (uploads live in AttachmentUploader) — no risk of mislabeling multipart bodies.
+- billing forced `content-type: application/json` on ALL requests including bodiless GET/POST; the shared helper only sets it when a body exists. Verified `/api/v1/stripe/portal` tolerates the missing header (its `req.json()` is try/catch'd, "no body" path). Checkout POST has a body → header still set.
+- billing's `/__noop` healthcheck hack kept verbatim — it reads `authorization` off a **response** header so it has always returned `''` (pre-existing bug, mode-banner silently degrades); flagged for follow-up, not fixed (tight scope).
 
----
+**Out of scope, flagged not done:** `src/components/dream/MakeThisRealButton.tsx` carries a 12th identical private copy (not in the task list) — left untouched per tight-scope; one-line follow-up.
 
-## 2026-06-12 — [Claude Code] Catch-up entries: #28 / #29 / #30 (founder-merged to main)
+**Verification:** `tsc --noEmit` output byte-identical to untouched p0 baseline (0 errors in changed files) · `next build` exit 0 · `vitest run` 26 failed / 750 passed with the failing-file set identical to the clean p0 baseline (the 26 are pre-existing). Browser dogfood not run — no UI/behavior surface changed; helper itself was browser-verified in the p0 session.
 
-Backfilled per the 2026-06-12 NOW block — entries were owed for three merged PRs. Facts below are from the merged commits.
-
-**#28 — docs(garden-engine): CODE-2 extraction plan, dependency graph, repo layout (`340e3cd`)**
-Analysis-only deliverable on a fresh worktree off origin/main. Maps the garden-generic vs builders-specific boundary, the coupling edges to cut (`lib/lifecycle-stages` imported by 20 files incl. 4 design-system components), the config contracts a new garden supplies, and a 6-phase refactor-in-place plan with zero regression risk to the live BKG demo. Four docs under `docs/garden-engine/` (+560 lines).
-
-**#29 — fix(p0): close collaborator-save P0 (`fba8c67`)**
-Three tails the 2026-06-11 outside review flagged on the "verified" P0:
-(a) **Member write grants** — PATCH `/api/v1/projects` (and summarize) only granted owner+demo, so invited `project_members` collaborators 403'd on every save path (and the failure was swallowed). Both now use `assertProjectWriteAccess`, matching the UI's own authorization source. RLS backstop drafted in `20260611_ccp_member_write_rls.sql` — **NOT yet applied to shared prod; founder-gated.**
-(b) **Summarize honesty** — `ProjectContextBanner` POSTed with no Authorization header (guaranteed 401, swallowed; AI take went silently stale). Now sends Bearer via the new shared `src/lib/authed-fetch.ts`, shows a visible "refresh failed — Retry" state; the route 500s on persist failure instead of fake-200ing.
-(c) **Single GoTrueClient** — budget-spine kept a localStorage supabase-js client (dead storage post-#24 cookie migration; stale tokens = the intermittent 401s). budget-spine, supabase-browser, pricing, BudgetWidget, GlobalBudgetWidget, ContextEngine all resolve to the ONE client in `src/lib/supabase.ts`.
-Route-level tests added (patch-collaborator · summarize · authed-fetch): suite 765 passing, 26 pre-existing failures unchanged. **Founder gate still open:** real-browser prod verify (fresh acct + collaborator), Chrome+Safari.
-
-**#30 — feat(garden-engine): Phase 0-1 — architecture lint + L2 config contracts (`7076363`)**
-CODE-2 refactor-in-place step 1, additive only (nothing consumes the contracts yet; runtime unchanged). Phase 0: eslint architecture ratchet — generic engine layers (design-system, app-shell) forbidden from importing builders-specific modules; shipped as `warn` to surface today's coupling edges as the Phase-2 worklist, flips to `error` after Phase 2. Phase 1: `src/garden/` L2 config contracts (theme · lifecycle · workflows · roles · knowledge-source · mcp · onboarding · GardenConfig), a LifecycleProvider/useLifecycle runtime, and the two hottest builders adapters derived from the existing canonical constants. Verified tsc 121→121, eslint 492→492 (identical to clean origin/main). **Status since merge: garden-engine extraction PAUSED behind Loops 1–2 (founder ruling 2026-06-12).**
-
-Also this session: `tasks.todo.md` NOW block refreshed to the founder's 2026-06-12 canon (Loops 1–4 sequencing, garden-engine pause, founder-parallel items); the 2026-06-10 block is marked superseded in place.
+**Write-lane:** taken for this session, **released** on push — `refactor/authed-fetch-dedupe` PR pending founder merge (stacked on `fix/p0-collab-save-close`).

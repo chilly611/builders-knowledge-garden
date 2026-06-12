@@ -8,7 +8,7 @@
 // don't confuse a sandbox session with a real one.
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { authedFetch } from '@/lib/authed-fetch';
 
 interface SubscriptionState {
   tier: string;
@@ -46,16 +46,6 @@ export default function BillingPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'test' | 'live' | 'unconfigured' | 'unknown'>('unknown');
 
-  const authedFetch = useCallback(async (input: string, init?: RequestInit) => {
-    const supa = getSupabaseBrowser();
-    const { data } = await supa.auth.getSession();
-    const token = data.session?.access_token;
-    const headers = new Headers(init?.headers);
-    headers.set('content-type', 'application/json');
-    if (token) headers.set('authorization', `Bearer ${token}`);
-    return fetch(input, { ...init, headers });
-  }, []);
-
   const loadState = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -81,7 +71,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  }, [authedFetch]);
+  }, []);
 
   useEffect(() => {
     loadState();

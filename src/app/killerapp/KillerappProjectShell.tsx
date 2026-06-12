@@ -23,6 +23,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { useProject } from '@/lib/hooks/useProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import { applyJurisdictionOverride } from '@/lib/project-display';
@@ -51,17 +52,6 @@ interface ConversationRow {
 }
 
 const ACTIVE_PROJECT_KEY = 'bkg-active-project';
-
-async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!headers.has('Content-Type') && init.body) {
-    headers.set('Content-Type', 'application/json');
-  }
-  return fetch(input, { ...init, headers });
-}
 
 function setActiveProjectInLocalStorage(id: string) {
   try {

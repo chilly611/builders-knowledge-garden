@@ -39,6 +39,7 @@ import {
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
 import {
   MARIN_PROJECT_NAME,
@@ -148,17 +149,6 @@ function readActiveProjectFromStorage(): string | null {
   } catch {
     return null;
   }
-}
-
-async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!headers.has('Content-Type') && init.body) {
-    headers.set('Content-Type', 'application/json');
-  }
-  return fetch(input, { ...init, headers });
 }
 
 interface ProjectProviderProps {
