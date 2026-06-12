@@ -14,7 +14,7 @@ export type {
   LifecycleStageDef,
   Lifecycle,
 } from './lifecycle';
-export { stageForWorkflow } from './lifecycle';
+export { stageForWorkflow, workflowsByStage } from './lifecycle';
 
 export type {
   ThemeColorTokens,
@@ -32,6 +32,15 @@ export type {
 } from './workflows';
 
 export type { PermissionRule, RoleModel } from './roles';
+
+export type {
+  SpecialistContext,
+  SpecialistCitation,
+  DisciplineHandoff,
+  SupersededNotice,
+  SpecialistResult,
+  SpecialistRunner,
+} from './specialists';
 
 export type {
   KnowledgeQuery,

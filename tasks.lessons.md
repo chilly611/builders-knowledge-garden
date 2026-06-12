@@ -2563,3 +2563,28 @@ src/lib/supabase.ts client. Route-level integration tests: non-owner collaborato
 collaborator (401/403/502/500 covered). RLS backstop policies drafted in
 supabase/migrations/20260611_ccp_member_write_rls.sql — NOT yet applied to prod (shared
 instance, founder-gated).
+
+## 2026-06-11 — Inverting a coupling edge: inventory EVERY call site's semantics first (garden-engine Phase 2 remainder)
+
+**The trap:** the codebase had TWO path→stage resolvers with different contracts living in different
+modules: `stageFromPathname` (stage slugs + a few routes, returns 0 for "none") and `stageIdForPath`
+(ALL live workflow routes via ROUTE_TO_WORKFLOW_ID, returns null for "none"). The engine seam carries
+exactly one (`useStageResolver()` wraps the former). Mechanically converting GlobalJourneyMapHeader
+onto the context resolver would have compiled, linted clean, AND silently broken compass highlighting
+on every workflow route — 0 vs null also flips downstream `!= null` guards.
+
+### The rules
+- Before cutting an import edge, list every symbol the consumer takes from the module and check each
+  one's SEMANTICS against what the contract offers. Same-shaped names are not same-behaved functions.
+- When the contract can't carry a consumer's exact semantics, don't bend the consumer — relocate the
+  data to its honest home (route→workflow table belongs in live-workflows.ts, not lifecycle-stages.ts)
+  and compose contract primitives (`stageForWorkflow`) to reproduce the old function exactly.
+- Prove behavior equivalence with a probe diff, not eyeballs: a 20-line tsx script ran old vs new over
+  all 42 routes × {exact, /sub, prefix-miss} + sentinels — 0 mismatches. Same trick for the welcome
+  copy and the stage rollup maps (JSON.stringify equality). Minutes of work, closes the argument.
+- Multi-worktree repos: preview/dev-server tooling launches from the SESSION's primary cwd, not your
+  worktree — preview_start here silently booted the wrong worktree's server on the wrong port. Always
+  verify the server PID's cwd (`lsof -p <pid> | awk '$4=="cwd"'`) before trusting any browser proof.
+- A ratchet flip is only honest at the scope you actually cleaned. components/ got its own error block
+  listing ONLY the three converted patterns; the not-yet-cut edges (knowledge-data, specialists in
+  stage-kit) stay out of the rule with a comment naming them — flagged, not faked.

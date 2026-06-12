@@ -54,7 +54,9 @@ import {
   type StageId,
   type StageProgress,
 } from '@/components/navigator/types';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
+// Garden-engine seam (CODE-2): stages come from the lifecycle context instead
+// of the builders-specific lifecycle-stages module (icon ≙ legacy emoji).
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -92,7 +94,7 @@ const FADED = '#C9C3B3';
 
 /**
  * Ship 30 — compact-mode 1-3 letter abbreviations for the < 640px pill strip.
- * Keys match StageId (1..7) in STAGE_REGISTRY / LIFECYCLE_STAGES.
+ * Keys match StageId (1..7) in STAGE_REGISTRY / the garden lifecycle.
  *   1 Size up    → SU
  *   2 Lock it in → LK
  *   3 Plan it out→ PL
@@ -169,6 +171,7 @@ export default function JourneyTimeline({
   onPreviewFuture,
   onReturnToLive,
 }: JourneyTimelineProps) {
+  const lifecycleStages = useLifecycle();
   const [isMobile, setIsMobile] = useState(false);
   // Ship 30: lazy initializer ensures we read the compact breakpoint on
   // first paint without scheduling a setState inside the effect body.
@@ -658,7 +661,7 @@ export default function JourneyTimeline({
     // StageProgress so the investor demo reads naturally on mobile.
     const activeMeta =
       activeStageId != null
-        ? LIFECYCLE_STAGES.find((s) => s.id === activeStageId)
+        ? lifecycleStages.find((s) => s.id === activeStageId)
         : null;
     const activeProgress =
       activeStageId != null
@@ -684,7 +687,7 @@ export default function JourneyTimeline({
     // Future-zone preview banner — shown when scrubbed right of "Now".
     const futurePreviewStage =
       previewStageId != null
-        ? LIFECYCLE_STAGES.find((s) => s.id === previewStageId)
+        ? lifecycleStages.find((s) => s.id === previewStageId)
         : null;
 
     return (
@@ -781,7 +784,7 @@ export default function JourneyTimeline({
             width: '100%',
           }}
         >
-          {LIFECYCLE_STAGES.map((stage) => {
+          {lifecycleStages.map((stage) => {
             const sid = stage.id as StageId;
             const accent = STAGE_ACCENTS[sid];
             const accentHex = accent.hex;
@@ -945,7 +948,7 @@ export default function JourneyTimeline({
                 ? 'Now (live)'
                 : `Coming next: ${
                     unvisitedStages[sliderValue - nowIndex - 1]
-                      ? LIFECYCLE_STAGES.find(
+                      ? lifecycleStages.find(
                           (s) =>
                             s.id ===
                             unvisitedStages[sliderValue - nowIndex - 1].id
@@ -1064,11 +1067,11 @@ export default function JourneyTimeline({
           width: '100%',
         }}
       >
-        {LIFECYCLE_STAGES.map((stage) =>
+        {lifecycleStages.map((stage) =>
           renderStageSegment(
             stage.id as StageId,
             stage.name,
-            stage.emoji
+            stage.icon ?? ''
           )
         )}
       </div>

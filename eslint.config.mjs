@@ -42,9 +42,10 @@ const eslintConfig = defineConfig([
   // src/garden/contracts (e.g. useLifecycle()). See
   // docs/garden-engine/01-DEPENDENCY-GRAPH.md §4 for the full edge list.
   //
-  // Shipped as "warn" on purpose: it surfaces today's ~13 violations as the
-  // Phase-2 worklist WITHOUT failing `npm run lint` / the push gate. Flip to
-  // "error" once Phase 2 has cut the edges (then this boundary can't regress).
+  // Phase 0 shipped this as "warn" to surface the Phase-2 worklist. Phase 2
+  // cut the edges (lifecycle, stage-from-pathname, stage-welcome-copy,
+  // specialists via SpecialistRunner) — now "error" so the boundary can never
+  // regress.
   {
     files: [
       "src/design-system/**/*.{ts,tsx}",
@@ -52,7 +53,7 @@ const eslintConfig = defineConfig([
     ],
     rules: {
       "no-restricted-imports": [
-        "warn",
+        "error",
         {
           patterns: [
             {
@@ -76,6 +77,43 @@ const eslintConfig = defineConfig([
               ],
               message:
                 "Garden-engine layers (design-system, app-shell) must not import builders-specific modules directly. Inject via the L2 config contracts in src/garden/contracts (useLifecycle(), a SpecialistRunner, GardenConfig). See docs/garden-engine/01-DEPENDENCY-GRAPH.md §4.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Garden-engine guardrail — components/ (Phase 2 remainder).
+  //
+  // The shared chrome under src/components/ is also converted off the
+  // lifecycle trio (lifecycle-stages, stage-from-pathname,
+  // stage-welcome-copy) — everything reads useLifecycle()/useStageResolver()
+  // now, so those three patterns are ratcheted at "error" here too.
+  //
+  // Scoped narrower than the engine block ON PURPOSE: components/ still has
+  // Phase-3 edges we have NOT cut — JurisdictionPicker → knowledge-data,
+  // stage-kit (CodeLookup, VoiceFieldReport) → specialists/* — so those
+  // patterns are not listed yet. Add them as each subsystem is inverted.
+  // `_archive/` snapshots are frozen dead code and exempt.
+  {
+    files: ["src/components/**/*.{ts,tsx}"],
+    ignores: ["src/components/_archive/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/lib/lifecycle-stages",
+                "**/lib/lifecycle-stages",
+                "@/lib/stage-welcome-copy",
+                "**/lib/stage-welcome-copy",
+                "@/lib/stage-from-pathname",
+                "**/lib/stage-from-pathname",
+              ],
+              message:
+                "Shared chrome (src/components/) must not import the builders lifecycle modules directly. Read stages via useLifecycle()/useStageResolver() from src/garden/runtime/LifecycleProvider. See docs/garden-engine/01-DEPENDENCY-GRAPH.md §4.",
             },
           ],
         },

@@ -18,12 +18,15 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { colors, fonts, fontSizes, fontWeights, spacing, borders, radii } from '../tokens';
-import { runSpecialist } from '../../lib/specialists.client';
+// Garden-engine seam (CODE-2, edge 5): the specialist runner is injected via
+// context — this engine component must not import the builders-specific
+// specialists modules. See src/garden/contracts/specialists.ts.
+import { useSpecialistRunner } from '@/garden/runtime/SpecialistRunnerProvider';
 import RSIBadge from './RSIBadge';
 import SourceCountBadge from './SourceCountBadge';
 import { sanitizeNarrative } from './utils/sanitizeNarrative';
 import { markdownToJsx } from './utils/markdownToJsx';
-import type { SpecialistResult, SpecialistContext } from '../../lib/specialists';
+import type { SpecialistResult, SpecialistContext } from '@/garden/contracts/specialists';
 
 interface AnalysisPaneProps {
   specialistId: string;
@@ -85,6 +88,7 @@ export default function AnalysisPane({
   onError,
   specialistLabel,
 }: AnalysisPaneProps) {
+  const runSpecialist = useSpecialistRunner();
   const [state, setState] = useState<PaneState>({ kind: 'idle' });
   const latestInputRef = useRef<string>('');
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

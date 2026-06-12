@@ -27,11 +27,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import ProjectCompass from '@/components/ProjectCompass';
-import {
-  LIFECYCLE_STAGES,
-  STAGE_WORKFLOWS,
-  stageIdForPath,
-} from '@/lib/lifecycle-stages';
+// Garden-engine seam (CODE-2): stages + per-stage workflow ids come from the
+// lifecycle context; pathname → stage runs through the routing table in
+// live-workflows.ts (`workflowIdForPath`) + the contract's `stageForWorkflow`
+// — same semantics as the old `stageIdForPath` (null when not a live route).
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
+import { stageForWorkflow, workflowsByStage } from '@/garden/contracts/lifecycle';
+import { workflowIdForPath } from '@/lib/live-workflows';
 import {
   subscribeJourney,
   rollupByStage,
@@ -53,6 +55,7 @@ import { getProjectBudget } from '@/lib/budget-spine';
 export default function GlobalJourneyMapHeader() {
   const pathname = usePathname() ?? '';
   const router = useRouter();
+  const lifecycle = useLifecycle();
   const [activeId] = useActiveProject();
   // Fall back to 'default' so anonymous users still see a coherent
   // compass (keyed to the journey-progress anonymous bucket).
@@ -75,7 +78,11 @@ export default function GlobalJourneyMapHeader() {
     return unsubscribe;
   }, [projectId]);
 
-  const currentStageId = useMemo(() => stageIdForPath(pathname), [pathname]);
+  const currentStageId = useMemo(() => {
+    const workflowId = workflowIdForPath(pathname);
+    if (!workflowId) return null;
+    return stageForWorkflow(lifecycle, workflowId)?.id ?? null;
+  }, [pathname, lifecycle]);
 
   // Mark the current stage as visited on every route change.
   useEffect(() => {
@@ -127,8 +134,15 @@ export default function GlobalJourneyMapHeader() {
   }, [projectId, hasRealProject]);
 
   const progressByStage = useMemo(
-    () => rollupByStage(state, STAGE_WORKFLOWS),
-    [state]
+    () => rollupByStage(state, workflowsByStage(lifecycle)),
+    [state, lifecycle]
+  );
+
+  // ProjectCompass keeps the legacy `LifecycleStage` prop shape
+  // ({ id, name, emoji }); map from the contract's stage defs (icon ≙ emoji).
+  const compassStages = useMemo(
+    () => lifecycle.map((s) => ({ id: s.id, name: s.name, emoji: s.icon ?? '' })),
+    [lifecycle]
   );
 
   // Don't render on non-killerapp routes (defensive — the mount point is
@@ -137,7 +151,7 @@ export default function GlobalJourneyMapHeader() {
 
   return (
     <ProjectCompass
-      stages={LIFECYCLE_STAGES}
+      stages={compassStages}
       currentStageId={currentStageId}
       progressByStage={progressByStage}
       visitedStageIds={visited}

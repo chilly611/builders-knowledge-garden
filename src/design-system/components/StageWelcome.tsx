@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { STAGE_WELCOME } from '@/lib/stage-welcome-copy';
+// Garden-engine seam (CODE-2): welcome copy rides on the lifecycle contract's
+// `welcome` field — this engine component must not import the builders-specific
+// stage-welcome-copy module. See src/garden/contracts/lifecycle.ts.
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
 import { colors, fonts, fontSizes, fontWeights, spacing, lineHeights } from '../tokens';
 
 export interface StageWelcomeProps {
@@ -33,8 +36,13 @@ export default function StageWelcome({ stageId, projectId, workflows, onDismiss 
   const dialogRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
 
+  const stages = useLifecycle();
+
   const localStorageKey = `bkg:stage-welcome:${projectId}:${stageId}`;
-  const copy = STAGE_WELCOME[stageId];
+  // Welcome copy rides on the garden's lifecycle definition. A garden may
+  // omit `welcome` for a stage — then there is nothing to show (see the
+  // `!copy` guard below, after the hooks).
+  const copy = stages.find((s) => s.id === stageId)?.welcome;
 
   // Find first workflow with href. If none of this stage's workflows have
   // a live route yet (e.g. Adapt/Collect/Reflect on a stage-by-stage rollout),
@@ -46,7 +54,7 @@ export default function StageWelcome({ stageId, projectId, workflows, onDismiss 
     ? `/killerapp?project=${encodeURIComponent(projectId)}`
     : '/killerapp';
   const ctaHref = firstLiveWorkflow?.href ?? cockpitFallbackHref;
-  const ctaLabel = firstLiveWorkflow
+  const ctaLabel = firstLiveWorkflow && copy
     ? `${copy.ctaPrefix} ${firstLiveWorkflow.label}`
     : 'See all workflows';
 
@@ -84,7 +92,7 @@ export default function StageWelcome({ stageId, projectId, workflows, onDismiss 
     }
   };
 
-  if (!isClient || isDismissed) {
+  if (!isClient || isDismissed || !copy) {
     return null;
   }
 
@@ -138,7 +146,7 @@ export default function StageWelcome({ stageId, projectId, workflows, onDismiss 
             lineHeight: lineHeights.tight,
           }}
         >
-          {copy.title}
+          {copy.headline}
         </h1>
 
         <p
@@ -150,7 +158,7 @@ export default function StageWelcome({ stageId, projectId, workflows, onDismiss 
             margin: `0 0 ${spacing[4]} 0`,
           }}
         >
-          {copy.description}
+          {copy.body}
         </p>
 
         <div

@@ -10,7 +10,12 @@ import { PostHogProvider } from "@/components/PostHogProvider";
 // modules directly. This file is the app's garden-wiring point — allowed to
 // know the garden; the design-system layer is not. See docs/garden-engine/.
 import { LifecycleProvider } from "@/garden/runtime/LifecycleProvider";
-import { buildersLifecycle, buildersStageFromPath } from "@/garden/builders";
+import { SpecialistRunnerProvider } from "@/garden/runtime/SpecialistRunnerProvider";
+import {
+  buildersLifecycle,
+  buildersStageFromPath,
+  buildersSpecialistRunner,
+} from "@/garden/builders";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // PostHogProvider lives INSIDE AuthProvider so it can call useAuth().
@@ -25,11 +30,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         lifecycle={buildersLifecycle}
         resolveStageFromPath={buildersStageFromPath}
       >
-        <AuthModalProvider>
-          <Suspense fallback={null}>
-            <PostHogProvider>{children}</PostHogProvider>
-          </Suspense>
-        </AuthModalProvider>
+        <SpecialistRunnerProvider runner={buildersSpecialistRunner}>
+          <AuthModalProvider>
+            <Suspense fallback={null}>
+              <PostHogProvider>{children}</PostHogProvider>
+            </Suspense>
+          </AuthModalProvider>
+        </SpecialistRunnerProvider>
       </LifecycleProvider>
     </AuthProvider>
   );

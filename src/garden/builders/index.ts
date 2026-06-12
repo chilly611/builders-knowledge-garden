@@ -12,3 +12,4 @@
 
 export { buildersLifecycle, buildersStageFromPath } from './lifecycle';
 export { buildersRoles } from './roles';
+export { buildersSpecialistRunner } from './specialists';

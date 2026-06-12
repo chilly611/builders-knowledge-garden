@@ -13,7 +13,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
+// Garden-engine seam (CODE-2): stages come from the lifecycle context instead
+// of the builders-specific lifecycle-stages module (icon ≙ legacy emoji).
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
 import { type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, fonts } from '@/design-system/tokens';
 import { readCompletedStages, STAGE_COMPLETE_EVENT, STAGE_SLUG } from './StageActionBar';
@@ -36,6 +38,7 @@ export default function JourneyRow({
   currentStage: StageId;
   projectId: string | null;
 }) {
+  const lifecycleStages = useLifecycle();
   const [completed, setCompleted] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function JourneyRow({
         paddingBottom: 2,
       }}
     >
-      {LIFECYCLE_STAGES.map((stage, idx) => {
+      {lifecycleStages.map((stage, idx) => {
         const id = stage.id as StageId;
         const isCurrent = id === currentStage;
         const isComplete = completed.has(id) || id < currentStage;
@@ -116,7 +119,7 @@ export default function JourneyRow({
                   border: `1.5px solid ${isComplete ? SAGE : isCurrent ? RUST : colors.paper.border}`,
                 }}
               >
-                {isComplete ? '✓' : stage.emoji}
+                {isComplete ? '✓' : stage.icon}
               </span>
               <span
                 style={{

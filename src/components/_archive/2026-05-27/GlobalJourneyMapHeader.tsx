@@ -30,8 +30,11 @@ import ProjectCompass from '@/components/ProjectCompass';
 import {
   LIFECYCLE_STAGES,
   STAGE_WORKFLOWS,
-  stageIdForPath,
 } from '@/lib/lifecycle-stages';
+// 2026-06-11 (garden-engine CODE-2): `stageIdForPath` left lifecycle-stages
+// when the live header moved onto the lifecycle context. This frozen snapshot
+// keeps compiling via the relocated routing lookup + a local stage map.
+import { workflowIdForPath } from '@/lib/live-workflows';
 import {
   subscribeJourney,
   rollupByStage,
@@ -75,7 +78,12 @@ export default function GlobalJourneyMapHeader() {
     return unsubscribe;
   }, [projectId]);
 
-  const currentStageId = useMemo(() => stageIdForPath(pathname), [pathname]);
+  const currentStageId = useMemo(() => {
+    const wid = workflowIdForPath(pathname);
+    if (!wid) return null;
+    const entry = Object.entries(STAGE_WORKFLOWS).find(([, ids]) => ids.includes(wid));
+    return entry ? Number(entry[0]) : null;
+  }, [pathname]);
 
   // Mark the current stage as visited on every route change.
   useEffect(() => {

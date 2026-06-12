@@ -37,10 +37,16 @@ export interface LifecycleStageDef {
   accentIndex: number;
   /** Workflow ids that live in this stage (ids match the WorkflowRegistry). */
   workflowIds: string[];
-  /** Optional welcome copy + the workflows to surface as entry CTAs. */
+  /**
+   * Optional welcome copy + the workflows to surface as entry CTAs.
+   * `ctaWorkflowIds` is ordered by preference — the first id with a live
+   * route wins the CTA slot. `ctaPrefix` prefixes the winning workflow's
+   * label (BKG: "Start with").
+   */
   welcome?: {
     headline: string;
     body: string;
+    ctaPrefix: string;
     ctaWorkflowIds: string[];
   };
 }
@@ -62,4 +68,16 @@ export function stageForWorkflow(
   workflowId: string,
 ): LifecycleStageDef | null {
   return lifecycle.find((s) => s.workflowIds.includes(workflowId)) ?? null;
+}
+
+/**
+ * The lifecycle's workflow ids keyed by stage id — the rollup shape the
+ * progress surfaces (journey header, navigator, cockpit) consume. Pure
+ * derivation; equals the legacy builders `STAGE_WORKFLOWS` table when fed
+ * `buildersLifecycle`.
+ */
+export function workflowsByStage(lifecycle: Lifecycle): Record<number, string[]> {
+  const byStage: Record<number, string[]> = {};
+  for (const stage of lifecycle) byStage[stage.id] = stage.workflowIds;
+  return byStage;
 }

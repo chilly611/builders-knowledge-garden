@@ -20,6 +20,7 @@ import {
   STAGE_WORKFLOWS,
 } from '@/lib/lifecycle-stages';
 import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { STAGE_WELCOME } from '@/lib/stage-welcome-copy';
 import type {
   Lifecycle,
   LifecycleStageDef,
@@ -43,14 +44,29 @@ const STAGE_SLUGS: Record<number, string> = {
  * way the legacy STAGE_ACCENTS were — see design-system/tokens/stage-accents).
  */
 export const buildersLifecycle: Lifecycle = LIFECYCLE_STAGES.map(
-  (stage): LifecycleStageDef => ({
-    id: stage.id,
-    slug: STAGE_SLUGS[stage.id] ?? `stage-${stage.id}`,
-    name: stage.name,
-    icon: stage.emoji,
-    accentIndex: stage.id,
-    workflowIds: STAGE_WORKFLOWS[stage.id] ?? [],
-  }),
+  (stage): LifecycleStageDef => {
+    // Foreman-voice welcome copy folded onto the contract's `welcome` field
+    // (Phase 2 remainder) — the canonical copy stays in
+    // `src/lib/stage-welcome-copy.ts`; StageWelcome reads it via useLifecycle().
+    const welcomeCopy =
+      STAGE_WELCOME[stage.id as keyof typeof STAGE_WELCOME];
+    return {
+      id: stage.id,
+      slug: STAGE_SLUGS[stage.id] ?? `stage-${stage.id}`,
+      name: stage.name,
+      icon: stage.emoji,
+      accentIndex: stage.id,
+      workflowIds: STAGE_WORKFLOWS[stage.id] ?? [],
+      welcome: welcomeCopy
+        ? {
+            headline: welcomeCopy.title,
+            body: welcomeCopy.description,
+            ctaPrefix: welcomeCopy.ctaPrefix,
+            ctaWorkflowIds: [welcomeCopy.suggestedWorkflowId],
+          }
+        : undefined,
+    };
+  },
 );
 
 /**

@@ -35,7 +35,10 @@ import type {
 import { STAGE_REGISTRY } from './navigator/types';
 import { getProjectBudget, getActiveProjectId } from '@/lib/budget-spine';
 import { subscribeJourney } from '@/lib/journey-progress';
-import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
+// Garden-engine seam (CODE-2): per-stage workflow ids come from the lifecycle
+// context instead of the builders-specific lifecycle-stages module.
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
+import { workflowsByStage } from '@/garden/contracts/lifecycle';
 import { subscribeSnapshots, createWelcomeSnapshot } from '@/lib/time-machine';
 
 export interface IntegratedNavigatorProps {
@@ -61,12 +64,15 @@ const STAGE_TO_PHASE: Record<StageId, string> = {
  * Derive per-stage progress from journey state.
  * Returns an array of 7 StageProgress objects, one per stage (id 1-7).
  */
-function deriveStageProgress(journeyState: Record<string, any>): StageProgress[] {
+function deriveStageProgress(
+  journeyState: Record<string, any>,
+  stageWorkflows: Record<number, string[]>
+): StageProgress[] {
   const progress: StageProgress[] = [];
 
   for (const stageMeta of STAGE_REGISTRY) {
     const stageId = stageMeta.id;
-    const workflowIds = STAGE_WORKFLOWS[stageId] || [];
+    const workflowIds = stageWorkflows[stageId] || [];
 
     let doneCount = 0;
     let hasInProgress = false;
@@ -165,6 +171,7 @@ export default function IntegratedNavigator(
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { state: navState, cycleCollapseState } = useNavigator();
+  const lifecycle = useLifecycle();
 
   // Resolve project ID from props or active project
   const effectiveProjectId = props.projectId ?? getActiveProjectId() ?? null;
@@ -289,8 +296,8 @@ export default function IntegratedNavigator(
 
   // ─── Derived data ───────────────────────────────────────────────────────
   const stageProgress = useMemo(
-    () => deriveStageProgress(journeyState),
-    [journeyState]
+    () => deriveStageProgress(journeyState, workflowsByStage(lifecycle)),
+    [journeyState, lifecycle]
   );
 
   // Time Machine data with live snapshots

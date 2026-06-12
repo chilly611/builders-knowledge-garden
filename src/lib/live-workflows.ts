@@ -89,3 +89,71 @@ export function liveWorkflowHref(
     ? `${base}?project=${encodeURIComponent(projectId)}`
     : base;
 }
+
+/**
+ * ROUTE_TO_WORKFLOW_ID — live workflow routes currently wired in the killer
+ * app picker, keyed route → workflow q-id. Used (via `workflowIdForPath`) by
+ * the global journey header to map the current pathname → workflow → stage so
+ * the active stage highlights as the user walks into a workflow.
+ *
+ * Moved here from `src/lib/lifecycle-stages.ts` (garden-engine CODE-2): this
+ * is ROUTING data, not lifecycle data — it pairs with `LIVE_WORKFLOW_PATHS`
+ * above. Keep in sync with `LIVE_WORKFLOWS` in src/app/killerapp/page.tsx.
+ */
+export const ROUTE_TO_WORKFLOW_ID: Record<string, string> = {
+  '/killerapp/workflows/bid-risk': 'q1',
+  '/killerapp/workflows/estimating': 'q2',
+  '/killerapp/workflows/client-lookup': 'q3',
+  '/killerapp/workflows/contract-templates': 'q4',
+  '/killerapp/workflows/code-compliance': 'q5',
+  '/killerapp/workflows/job-sequencing': 'q6',
+  '/killerapp/workflows/worker-count': 'q7',
+  '/killerapp/workflows/permit-applications': 'q8',
+  '/killerapp/workflows/sub-management': 'q9',
+  '/killerapp/workflows/equipment': 'q10',
+  '/killerapp/workflows/supply-ordering': 'q11',
+  '/killerapp/workflows/services-todos': 'q12',
+  '/killerapp/workflows/hiring': 'q13',
+  '/killerapp/workflows/weather-scheduling': 'q14',
+  '/killerapp/workflows/daily-log': 'q15',
+  '/killerapp/workflows/osha-toolbox': 'q16',
+  '/killerapp/workflows/expenses': 'q17',
+  '/killerapp/workflows/outreach': 'q18',
+  '/killerapp/workflows/compass-nav': 'q19',
+  '/killerapp/workflows/change-orders': 'q20',
+  '/killerapp/workflows/approvals': 'q-approvals',
+  '/killerapp/workflows/draw-requests': 'q21',
+  '/killerapp/workflows/lien-waivers': 'q22',
+  '/killerapp/workflows/payroll-check': 'q23',
+  '/killerapp/workflows/final-walk-through': 'q24',
+  '/killerapp/workflows/retainage-tracker': 'q25',
+  '/killerapp/workflows/warranty-handoff': 'q26',
+  '/killerapp/workflows/project-review': 'q27',
+  '/killerapp/workflows/architect-of-record': 'q-aor',
+  '/killerapp/workflows/sub-bid-submit': 'q-sub-bid-submit',
+  '/killerapp/workflows/sub-bid-inbox': 'q-sub-bid-inbox',
+  '/killerapp/workflows/punch-list': 'q-punch',
+  '/killerapp/workflows/rfis': 'q-rfi',
+  // 2026-05-22 — MEP scheduling workflows.
+  '/killerapp/workflows/panel-schedule': 'q-panel-schedule',
+  '/killerapp/workflows/equipment-schedule': 'q-equipment-schedule',
+  // 2026-05-22 — bookkeeper / financial admin surfaces.
+  '/killerapp/workflows/vendor-master': 'q-vendors',
+  '/killerapp/workflows/ar-ap-ledger': 'q-ledger',
+  '/killerapp/workflows/quickbooks-export': 'q-qbexport',
+  '/killerapp/workflows/audit-trail': 'q-audit-trail',
+  // 2026-05-22 — DIY-LANE: GC matching concierge form + cost explainer.
+  '/killerapp/workflows/find-a-gc': 'q-find-gc',
+  '/killerapp/workflows/cost-explainer': 'q-cost-explainer',
+};
+
+/** Resolve the workflow id for a pathname (or null if not a known live route). */
+export function workflowIdForPath(pathname: string): string | null {
+  // Match exact or prefix (e.g. /killerapp/workflows/estimating/subpage).
+  for (const [route, wid] of Object.entries(ROUTE_TO_WORKFLOW_ID)) {
+    if (pathname === route || pathname.startsWith(`${route}/`)) {
+      return wid;
+    }
+  }
+  return null;
+}

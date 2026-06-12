@@ -17,7 +17,9 @@
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { StageId, StageProgress, STAGE_REGISTRY } from '@/components/navigator/types';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
+// Garden-engine seam (CODE-2): stages come from the lifecycle context instead
+// of the builders-specific lifecycle-stages module (icon ≙ legacy emoji).
+import { useLifecycle } from '@/garden/runtime/LifecycleProvider';
 import { STAGE_ACCENTS, stageAccent } from '@/design-system/tokens/stage-accents';
 
 interface JourneyArcProps {
@@ -31,6 +33,7 @@ export default function JourneyArc({
   activeStageId,
   onStageClick,
 }: JourneyArcProps) {
+  const lifecycleStages = useLifecycle();
   const [hoveredStageId, setHoveredStageId] = useState<StageId | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -84,7 +87,7 @@ export default function JourneyArc({
           padding: '4px 8px',
         }}
       >
-        {LIFECYCLE_STAGES.map((stage) => {
+        {lifecycleStages.map((stage) => {
           const stageId = stage.id as StageId;
           const isActive = activeStageId === stageId;
           const isCompleted = completedStageIds.includes(stageId);
@@ -112,9 +115,9 @@ export default function JourneyArc({
                 whiteSpace: 'nowrap',
                 transition: 'all 200ms ease',
               }}
-              title={`${stage.emoji} ${stage.name}${progress ? ` (${progress.doneCount}/${progress.totalCount})` : ''}`}
+              title={`${stage.icon ?? ''} ${stage.name}${progress ? ` (${progress.doneCount}/${progress.totalCount})` : ''}`}
             >
-              <span>{stage.emoji}</span>
+              <span>{stage.icon}</span>
               <span>{stage.name}</span>
               {isCompleted && <span style={{ fontSize: '11px' }}>✓</span>}
             </button>
@@ -164,7 +167,7 @@ export default function JourneyArc({
         />
 
         {/* Station marks and interactive zones */}
-        {LIFECYCLE_STAGES.map((stage, idx) => {
+        {lifecycleStages.map((stage, idx) => {
           const x = xPadding + idx * stationSpacing;
           const y = arcBaselineY;
           const isActive = activeStageId === stage.id;
@@ -250,7 +253,7 @@ export default function JourneyArc({
 
               {/* SVG title for accessibility */}
               <title>
-                {`${stage.emoji} ${stage.name}${progress ? ` (${progress.doneCount}/${progress.totalCount})` : ''}`}
+                {`${stage.icon ?? ''} ${stage.name}${progress ? ` (${progress.doneCount}/${progress.totalCount})` : ''}`}
               </title>
 
               {/* Invisible hit target for better click area */}
@@ -277,7 +280,7 @@ export default function JourneyArc({
                     transition: 'opacity 200ms ease',
                   }}
                 >
-                  {stage.emoji}
+                  {stage.icon}
                 </text>
                 <text
                   x={x}
@@ -302,7 +305,7 @@ export default function JourneyArc({
         {/* Compass needle pointing at current station */}
         {activeStageId && (
           (() => {
-            const idx = LIFECYCLE_STAGES.findIndex((s) => s.id === activeStageId);
+            const idx = lifecycleStages.findIndex((s) => s.id === activeStageId);
             if (idx === -1) return null;
             const x = xPadding + idx * stationSpacing;
             const y = arcBaselineY - 12;

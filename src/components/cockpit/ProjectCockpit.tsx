@@ -25,8 +25,11 @@ import {
   type StageProgress,
   type BudgetTimelineData,
 } from '@/components/navigator/types';
-import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
+// Garden-engine seam (CODE-2): per-stage workflow ids and the path→stage
+// resolver come from the lifecycle context instead of the builders-specific
+// lifecycle-stages / stage-from-pathname modules.
+import { useLifecycle, useStageResolver } from '@/garden/runtime/LifecycleProvider';
+import { workflowsByStage } from '@/garden/contracts/lifecycle';
 import { getActiveProjectId, getProjectBudget } from '@/lib/budget-spine';
 import { useActiveProject } from '@/lib/hooks/use-active-project';
 import { useProjectContext } from '@/contexts/ProjectContext';
@@ -46,9 +49,12 @@ const STAGE_TO_PHASE: Record<StageId, string> = {
   1: 'SIZE_UP', 2: 'LOCK', 3: 'PLAN', 4: 'BUILD', 5: 'ADAPT', 6: 'COLLECT', 7: 'REFLECT',
 };
 
-function deriveStageProgress(journeyState: Record<string, any>): StageProgress[] {
+function deriveStageProgress(
+  journeyState: Record<string, any>,
+  stageWorkflows: Record<number, string[]>
+): StageProgress[] {
   return STAGE_REGISTRY.map((stage) => {
-    const workflowIds = STAGE_WORKFLOWS[stage.id] || [];
+    const workflowIds = stageWorkflows[stage.id] || [];
     let doneCount = 0, hasInProgress = false, hasNeedsAttention = false;
 
     workflowIds.forEach((wid) => {
@@ -109,7 +115,9 @@ function deriveBudgetTimeline(summary: any): BudgetTimelineData {
 export default function ProjectCockpit({ projectId: propProjectId }: { projectId?: string | null }) {
   const router = useRouter();
   const pathname = usePathname() ?? '';
-  const stageId = stageFromPathname(pathname);
+  const lifecycle = useLifecycle();
+  const resolveStage = useStageResolver();
+  const stageId = resolveStage(pathname);
 
   // Hooks must run on every render — keep above any early returns.
   // 2026-05-18 (Wave 2): subscribe to useActiveProject so a project switch
@@ -261,7 +269,10 @@ export default function ProjectCockpit({ projectId: propProjectId }: { projectId
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const stageProgress = useMemo(() => deriveStageProgress(journeyState), [journeyState]);
+  const stageProgress = useMemo(
+    () => deriveStageProgress(journeyState, workflowsByStage(lifecycle)),
+    [journeyState, lifecycle]
+  );
   const activeStageId = stageId > 0 ? (stageId as StageId) : null;
 
   const handleStageClick = useCallback((stageIdArg: StageId) => {

@@ -42,7 +42,9 @@ import {
   type CSSProperties,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
+// Garden-engine seam (CODE-2): path→stage resolution comes from the lifecycle
+// context instead of the builders-specific stage-from-pathname module.
+import { useStageResolver } from '@/garden/runtime/LifecycleProvider';
 import { markdownToJsx } from '@/design-system/components/utils/markdownToJsx';
 import { supabase } from '@/lib/supabase';
 
@@ -132,6 +134,7 @@ export default function GlobalAiFab() {
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const pathname = usePathname() ?? '/';
+  const resolveStage = useStageResolver();
 
   // Avoid hydration mismatch — only render after mount.
   useEffect(() => setMounted(true), []);
@@ -224,7 +227,7 @@ export default function GlobalAiFab() {
 
     try {
       // Compute stage, workflowId, and projectId
-      const stage = stageFromPathname(pathname);
+      const stage = resolveStage(pathname);
 
       // Extract workflowId from URL if pathname matches /killerapp/workflows/(.+?)(/|$)
       let workflowId: string | null = null;
@@ -311,7 +314,7 @@ export default function GlobalAiFab() {
       setIsStreaming(false);
       abortRef.current = null;
     }
-  }, [isStreaming, pathname, prompt]);
+  }, [isStreaming, pathname, prompt, resolveStage]);
 
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();

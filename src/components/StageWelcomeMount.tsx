@@ -22,8 +22,9 @@
  *   - Per-stage dismissal is owned by `StageWelcome.tsx` itself
  *     (`bkg:stage-welcome:<projectId>:<stageId>` → 'dismissed'). This
  *     mount does not duplicate that logic.
- *   - The `workflows` array passed in is ordered so the
- *     `STAGE_WELCOME[stageId].suggestedWorkflowId` sits first — that's
+ *   - The `workflows` array passed in is ordered so the stage's
+ *     `welcome.ctaWorkflowIds` (from the lifecycle context; populated by the
+ *     builders adapter from `stage-welcome-copy.ts`) sit first — that's
  *     what `StageWelcome` picks for its CTA — and so the CTA aligns with
  *     the per-stage intent expressed in `stage-welcome-copy.ts`. The
  *     suggested workflow's `href` is looked up via the canonical
@@ -38,9 +39,11 @@
 
 import { usePathname } from 'next/navigation';
 import { useProject } from '@/lib/hooks/useProject';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
-import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
-import { STAGE_WELCOME } from '@/lib/stage-welcome-copy';
+// Garden-engine seam (CODE-2): stage list, welcome copy, and the path→stage
+// resolver all come from the lifecycle context now — no direct imports of the
+// builders lifecycle/welcome modules. See src/garden/contracts/lifecycle.ts.
+import { useLifecycle, useStageResolver } from '@/garden/runtime/LifecycleProvider';
+import type { LifecycleStageDef } from '@/garden/contracts/lifecycle';
 import { LIVE_WORKFLOW_PATHS, liveWorkflowHref } from '@/lib/live-workflows';
 import StageWelcome from '@/design-system/components/StageWelcome';
 
@@ -85,15 +88,15 @@ function isStage1to7(n: number): n is StageId1to7 {
 
 /**
  * Build the ordered workflow list for a given stage with the suggested
- * workflow at the head of the array. `StageWelcome` picks the first entry
- * with an `href` for its CTA, so the suggested one wins whenever it's live.
+ * workflow (the stage's `welcome.ctaWorkflowIds`, in order) at the head of
+ * the array. `StageWelcome` picks the first entry with an `href` for its
+ * CTA, so the suggested one wins whenever it's live.
  */
-function workflowsForStage(stageId: StageId1to7, projectId: string) {
-  const suggestedId = STAGE_WELCOME[stageId].suggestedWorkflowId;
-  const allInStage = STAGE_WORKFLOWS[stageId] ?? [];
+function workflowsForStage(stage: LifecycleStageDef, projectId: string) {
+  const suggestedIds = stage.welcome?.ctaWorkflowIds ?? [];
   const ordered = [
-    suggestedId,
-    ...allInStage.filter((id) => id !== suggestedId),
+    ...suggestedIds,
+    ...stage.workflowIds.filter((id) => !suggestedIds.includes(id)),
   ];
   return ordered.map((id) => ({
     id,
@@ -104,7 +107,9 @@ function workflowsForStage(stageId: StageId1to7, projectId: string) {
 
 export default function StageWelcomeMount() {
   const pathname = usePathname() ?? '';
-  const stageId = stageFromPathname(pathname);
+  const stages = useLifecycle();
+  const resolveStage = useStageResolver();
+  const stageId = resolveStage(pathname);
   // `useProject` is safe here — StageWelcomeMount is mounted inside the
   // <ProjectProvider> in the killerapp layout. Throws-on-missing-provider
   // would surface as a clear error in dev rather than a silent no-render.
@@ -119,7 +124,10 @@ export default function StageWelcomeMount() {
   if (!projectId) return null;
   if (!isStage1to7(stageId)) return null;
 
-  const workflows = workflowsForStage(stageId, projectId);
+  const stageDef = stages.find((s) => s.id === stageId);
+  if (!stageDef) return null;
+
+  const workflows = workflowsForStage(stageDef, projectId);
 
   // `key` forces a fresh component mount when project or stage flips,
   // which re-evaluates the per-(project,stage) localStorage dismissal.
