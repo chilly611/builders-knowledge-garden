@@ -19,7 +19,24 @@
 
 > **Live backlog resets here (2026-06-07).** Completed/superseded batches through 2026-05-31 moved to [tasks.todo.archive.md](tasks.todo.archive.md).
 
-## NOW (2026-06-10 — serial unless marked parallel; one BKG write-lane at a time)
+## NOW (2026-06-12 — serial write lane; one BKG lane at a time)
+- [x] P0 crash path — cured by #24 ssr migration, founder-verified on prod
+- [x] Canon reconciliation (#26) — Visual-First = D20, Legible Judgment = D21
+- [x] Nav-chrome demo blockers (#27) — bloom, one pill, strips navigate
+- [x] Collaborator-save P0 (#29) — member grants + visible failure
+- [ ] Founder gate on #29: real-browser prod verify (fresh acct + collaborator), Chrome+Safari
+- [ ] LOOP 1 — onboarding trust: wire onboard-new-user into live signup; consent-screen
+      branding; one $99 Stripe checkout E2E
+- [ ] LOOP 2 — honesty backend (Item C): per-fact contract + 3-tier gate + HITL queue;
+      CA honesty pass (AB 2622, 2025-edition currency); UPCODES_API_KEY flip;
+      image + prompt caching
+- [ ] LOOP 3 — first-run rebuild (Item E, needs demo feedback) · LOOP 4 — Seed Bank (Item F)
+- [ ] Garden-engine extraction: PAUSED behind Loops 1–2 (founder ruling 2026-06-12)
+- [ ] Parallel founder: attorney engagement letter · brand_assets migration window ·
+      private-docs git rm · Seed Bank slots · local clone: checkout main + pull
+- [x] Session-log catch-up entries for #28/#29/#30 — appended this lane (2026-06-12, `chore/authed-fetch-leftovers`)
+
+## NOW (2026-06-10 — superseded by 2026-06-12 block above)
 
 - [x] **Nav-chrome demo blockers (2026-06-10, PR pending founder merge):** compass bloom restored (legacy FABs suppressed on /killerapp + full workflow catalog back in the shell panel) · Ask/Tell merged into the one pill (Ask|Tell tabs, real copilot) · strips navigate (budget cells→budget, journey nodes→stage pages). Branch fix/nav-chrome-demo-blockers.
 
