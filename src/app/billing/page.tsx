@@ -67,9 +67,7 @@ export default function BillingPage() {
 
       // Healthcheck tells us if we're in test/live mode. Best-effort.
       try {
-        const hc = await fetch('/api/v1/healthcheck?detailed=1', {
-          headers: { authorization: (await authedFetch('/__noop')).headers.get('authorization') || '' },
-        });
+        const hc = await authedFetch('/api/v1/healthcheck?detailed=1');
         if (hc.ok) {
           const h = await hc.json();
           const m = h?.checks?.stripe?.value?.mode;

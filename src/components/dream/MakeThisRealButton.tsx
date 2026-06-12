@@ -15,7 +15,7 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { createSnapshot } from '@/lib/time-machine';
 
 interface MakeThisRealButtonProps {
@@ -34,17 +34,6 @@ interface MakeThisRealButtonProps {
 }
 
 const ACTIVE_PROJECT_KEY = 'bkg-active-project';
-
-async function authedFetch(input: RequestInfo, init: RequestInit = {}) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  const headers = new Headers(init.headers || {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!headers.has('Content-Type') && init.body) {
-    headers.set('Content-Type', 'application/json');
-  }
-  return fetch(input, { ...init, headers });
-}
 
 export default function MakeThisRealButton({
   rawInput,
