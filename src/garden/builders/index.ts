@@ -10,5 +10,5 @@
  * here: a partial-but-honest config beats a fake full one.
  */
 
-export { buildersLifecycle } from './lifecycle';
+export { buildersLifecycle, buildersStageFromPath } from './lifecycle';
 export { buildersRoles } from './roles';

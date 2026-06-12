@@ -23,11 +23,11 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { useLifecycle, useStageResolver } from '@/garden/runtime/LifecycleProvider';
+import type { Lifecycle } from '@/garden/contracts/lifecycle';
 import { STAGE_REGISTRY, type StageId } from '@/components/navigator/types';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
 import type { StageProgress, BudgetTimelineData } from '@/components/navigator/types';
-import { STAGE_WORKFLOWS } from '@/lib/lifecycle-stages';
 
 interface MiniStripData {
   stages: StageProgress[];
@@ -36,7 +36,7 @@ interface MiniStripData {
   currentStageId: StageId | null;
 }
 
-function getMiniStripData(): MiniStripData {
+function getMiniStripData(lifecycle: Lifecycle): MiniStripData {
   if (typeof window === 'undefined') {
     return {
       stages: [],
@@ -52,7 +52,7 @@ function getMiniStripData(): MiniStripData {
     const journey = window.localStorage.getItem('bkg:journey:default');
     if (journey) {
       const journeyState = JSON.parse(journey);
-      stages = deriveStageProgress(journeyState);
+      stages = deriveStageProgress(journeyState, lifecycle);
     }
   } catch {
     // Silently fail; stages remains empty
@@ -96,12 +96,16 @@ function getMiniStripData(): MiniStripData {
  * Derive per-stage progress from journey state.
  * Returns an array of 7 StageProgress objects, one per stage (id 1-7).
  */
-function deriveStageProgress(journeyState: Record<string, any>): StageProgress[] {
+function deriveStageProgress(
+  journeyState: Record<string, any>,
+  lifecycle: Lifecycle,
+): StageProgress[] {
   const progress: StageProgress[] = [];
 
   for (const stageMeta of STAGE_REGISTRY) {
     const stageId = stageMeta.id;
-    const workflowIds = STAGE_WORKFLOWS[stageId] || [];
+    const workflowIds =
+      lifecycle.find((s) => s.id === stageId)?.workflowIds ?? [];
 
     let doneCount = 0;
     let hasInProgress = false;
@@ -153,22 +157,24 @@ interface NavBarMiniStripProps {
 
 export default function NavigatorMiniStrip({}: NavBarMiniStripProps = {}) {
   const pathname = usePathname() ?? '';
-  const stageId = stageFromPathname(pathname);
+  const lifecycle = useLifecycle();
+  const resolveStage = useStageResolver();
+  const stageId = resolveStage(pathname);
 
   // Hooks must run on every render — keep above any early returns.
-  const [data, setData] = useState<MiniStripData>(getMiniStripData);
+  const [data, setData] = useState<MiniStripData>(() => getMiniStripData(lifecycle));
   const [isMobile, setIsMobile] = useState(false);
 
   // Derive current stage ID from pathname
   const currentStageId = useMemo(() => {
-    const id = stageFromPathname(pathname);
+    const id = resolveStage(pathname);
     return id > 0 ? (id as StageId) : null;
-  }, [pathname]);
+  }, [pathname, resolveStage]);
 
   // Hydrate on mount and subscribe to events
   useEffect(() => {
     // Initial fetch
-    const freshData = getMiniStripData();
+    const freshData = getMiniStripData(lifecycle);
     setData({ ...freshData, currentStageId });
 
     // Check window size
@@ -181,19 +187,19 @@ export default function NavigatorMiniStrip({}: NavBarMiniStripProps = {}) {
 
     // Subscribe to budget changes
     const handleBudgetChanged = () => {
-      const freshData = getMiniStripData();
+      const freshData = getMiniStripData(lifecycle);
       setData({ ...freshData, currentStageId });
     };
 
     // Subscribe to time machine changes
     const handleTimeMachineChanged = () => {
-      const freshData = getMiniStripData();
+      const freshData = getMiniStripData(lifecycle);
       setData({ ...freshData, currentStageId });
     };
 
     // Subscribe to journey changes
     const handleJourneyChanged = () => {
-      const freshData = getMiniStripData();
+      const freshData = getMiniStripData(lifecycle);
       setData({ ...freshData, currentStageId });
     };
 
@@ -207,7 +213,7 @@ export default function NavigatorMiniStrip({}: NavBarMiniStripProps = {}) {
       window.removeEventListener('bkg:time-machine:changed', handleTimeMachineChanged);
       window.removeEventListener('bkg:journey:changed', handleJourneyChanged);
     };
-  }, [currentStageId]);
+  }, [currentStageId, lifecycle]);
 
   // Get current stage label
   const currentStageMeta = useMemo(() => {

@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { useLifecycle, useStageResolver } from '@/garden/runtime/LifecycleProvider';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, spacing, radii, shadows, transitions } from '@/design-system/tokens';
 
@@ -38,7 +37,9 @@ export default function StageContextPill({
   stageId: overrideStageId,
 }: StageContextPillProps = {}): React.ReactElement | null {
   const pathname = usePathname() ?? '';
-  const stageId = overrideStageId !== undefined ? overrideStageId : stageFromPathname(pathname);
+  const stages = useLifecycle();
+  const resolveStage = useStageResolver();
+  const stageId = overrideStageId !== undefined ? overrideStageId : resolveStage(pathname);
 
   // Hooks must run on every render — keep above any early returns.
   const [showModal, setShowModal] = useState(false);
@@ -50,14 +51,14 @@ export default function StageContextPill({
   }
 
   // Get stage data
-  const currentStage = LIFECYCLE_STAGES.find(s => s.id === stageId);
+  const currentStage = stages.find(s => s.id === stageId);
   if (!currentStage) {
     return null;
   }
 
   // Get next stage (if it exists)
-  const nextStageIndex = LIFECYCLE_STAGES.findIndex(s => s.id === stageId) + 1;
-  const nextStage = nextStageIndex < LIFECYCLE_STAGES.length ? LIFECYCLE_STAGES[nextStageIndex] : null;
+  const nextStageIndex = stages.findIndex(s => s.id === stageId) + 1;
+  const nextStage = nextStageIndex < stages.length ? stages[nextStageIndex] : null;
 
   // Get stage accent
   const stageAccent = STAGE_ACCENTS[stageId as StageId];
@@ -126,7 +127,7 @@ export default function StageContextPill({
           maxWidth: '240px',
         } as React.CSSProperties}
       >
-        <span style={{ fontSize: '16px', flexShrink: 0 }}>{currentStage.emoji}</span>
+        <span style={{ fontSize: '16px', flexShrink: 0 }}>{currentStage.icon}</span>
         <span style={{ flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {currentStage.name}
         </span>
@@ -189,7 +190,7 @@ export default function StageContextPill({
                   marginBottom: spacing[1],
                 }}
               >
-                {currentStage.emoji} You're in stage {stageId}
+                {currentStage.icon} You're in stage {stageId}
               </p>
               <p
                 style={{
@@ -231,7 +232,7 @@ export default function StageContextPill({
                     opacity: 0.75,
                   }}
                 >
-                  {nextStage.emoji} {nextStage.name}
+                  {nextStage.icon} {nextStage.name}
                 </p>
               </div>
             )}
@@ -265,7 +266,7 @@ export default function StageContextPill({
                   gap: spacing[1],
                 }}
               >
-                {LIFECYCLE_STAGES.map(stage => (
+                {stages.map(stage => (
                   <button
                     key={stage.id}
                     type="button"
@@ -293,7 +294,7 @@ export default function StageContextPill({
                       },
                     } as React.CSSProperties}
                   >
-                    {stage.emoji}
+                    {stage.icon}
                   </button>
                 ))}
               </div>

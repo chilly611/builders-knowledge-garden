@@ -2,8 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
-import { stageFromPathname } from '@/lib/stage-from-pathname';
+import { useLifecycle, useStageResolver } from '@/garden/runtime/LifecycleProvider';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, spacing, radii, transitions } from '@/design-system/tokens';
 
@@ -42,11 +41,13 @@ export default function StageBreadcrumb({
 }: StageBreadcrumbProps = {}): React.ReactElement | null {
   const pathname = usePathname() ?? '';
   const router = useRouter();
+  const stages = useLifecycle();
+  const resolveStage = useStageResolver();
 
   const stageId = useMemo(() => {
     if (overrideStage !== undefined) return overrideStage;
-    return stageFromPathname(pathname);
-  }, [overrideStage, pathname]);
+    return resolveStage(pathname);
+  }, [overrideStage, pathname, resolveStage]);
 
   // Hide on stage 0 (landing/picker)
   if (stageId === 0) {
@@ -87,7 +88,7 @@ export default function StageBreadcrumb({
           flexWrap: 'wrap',
         } as React.CSSProperties}
       >
-        {LIFECYCLE_STAGES.map((stage, index) => {
+        {stages.map((stage, index) => {
           const isCurrentStage = stage.id === stageId;
           const isCompletedStage = stage.id < stageId;
           const isUpcomingStage = stage.id > stageId;
@@ -126,7 +127,7 @@ export default function StageBreadcrumb({
                       whiteSpace: 'nowrap',
                     } as React.CSSProperties}
                   >
-                    <span style={{ fontSize: '14px' }}>{stage.emoji}</span>
+                    <span style={{ fontSize: '14px' }}>{stage.icon}</span>
                     <span style={{ display: 'inline' }} className="stage-name-desktop">
                       {stage.name}
                     </span>
@@ -176,7 +177,7 @@ export default function StageBreadcrumb({
                   <span style={{ display: 'inline' }} className="stage-name-desktop">
                     {stage.name}
                   </span>
-                  <span style={{ fontSize: '14px' }}>{stage.emoji}</span>
+                  <span style={{ fontSize: '14px' }}>{stage.icon}</span>
                 </button>
               ) : (
                 // Upcoming stage: faded, not-allowed cursor on hover
@@ -209,7 +210,7 @@ export default function StageBreadcrumb({
                     (e.currentTarget as HTMLButtonElement).style.opacity = '0.6';
                   }}
                 >
-                  <span style={{ fontSize: '14px' }}>{stage.emoji}</span>
+                  <span style={{ fontSize: '14px' }}>{stage.icon}</span>
                   <span style={{ display: 'inline' }} className="stage-name-desktop">
                     {stage.name}
                   </span>
@@ -217,7 +218,7 @@ export default function StageBreadcrumb({
               )}
 
               {/* Arrow separator (not after last stage) */}
-              {index < LIFECYCLE_STAGES.length - 1 && (
+              {index < stages.length - 1 && (
                 <div
                   style={{
                     color: isCompletedStage ? colors.brass : colors.fadedRule,

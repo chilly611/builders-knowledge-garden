@@ -48,6 +48,14 @@ export interface LifecycleStageDef {
 /** An ordered, immutable set of lifecycle stages for one garden. */
 export type Lifecycle = ReadonlyArray<LifecycleStageDef>;
 
+/**
+ * Resolves a pathname to a stage id (0 = none / landing / picker). The
+ * route→stage mapping is garden-specific data, so the garden supplies this
+ * function; the engine consumes it via `useStageResolver()`. BKG wires
+ * `src/lib/stage-from-pathname.ts` here.
+ */
+export type StageFromPath = (pathname: string) => number;
+
 /** Resolve the stage that owns a given workflow id, or null. */
 export function stageForWorkflow(
   lifecycle: Lifecycle,
