@@ -4055,7 +4055,7 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 ---
 
-## 2026-06-11 — [Claude Code] Session: authedFetch dedupe leftovers (2 fixes)
+## 2026-06-12 — [Claude Code] Session: authedFetch dedupe leftovers (2 fixes)
 **Agent:** Claude Code (Fable)
 **Branch:** `chore/authed-fetch-leftovers` (worktree `bkg-authed-fetch-leftovers`, off `origin/main` @ `7076363`)
 
@@ -4066,3 +4066,24 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Note on sequencing:** `refactor/authed-fetch-dedupe` (lane `bkg-authed-fetch`, tip `2781737`) is NOT merged yet — no PR open for it. Verified no overlap before proceeding off `origin/main`: the dedupe branch doesn't touch `MakeThisRealButton.tsx`, and in `billing/page.tsx` it only changes the import/useCallback region, not the healthcheck lines. Replacing billing's local `authedFetch` useCallback with the shared import stays the dedupe PR's job (tight scope); this fix works identically before and after that merge.
 
 **Verification:** `tsc --noEmit` → 121 errors before AND after (diff byte-identical, 0 in changed files) · `next build` → exit 0 · `vitest run` → 26 failed / 750 passed = exact pre-existing baseline on clean main.
+
+---
+
+## 2026-06-12 — [Claude Code] Catch-up entries: #28 / #29 / #30 (founder-merged to main)
+
+Backfilled per the 2026-06-12 NOW block — entries were owed for three merged PRs. Facts below are from the merged commits.
+
+**#28 — docs(garden-engine): CODE-2 extraction plan, dependency graph, repo layout (`340e3cd`)**
+Analysis-only deliverable on a fresh worktree off origin/main. Maps the garden-generic vs builders-specific boundary, the coupling edges to cut (`lib/lifecycle-stages` imported by 20 files incl. 4 design-system components), the config contracts a new garden supplies, and a 6-phase refactor-in-place plan with zero regression risk to the live BKG demo. Four docs under `docs/garden-engine/` (+560 lines).
+
+**#29 — fix(p0): close collaborator-save P0 (`fba8c67`)**
+Three tails the 2026-06-11 outside review flagged on the "verified" P0:
+(a) **Member write grants** — PATCH `/api/v1/projects` (and summarize) only granted owner+demo, so invited `project_members` collaborators 403'd on every save path (and the failure was swallowed). Both now use `assertProjectWriteAccess`, matching the UI's own authorization source. RLS backstop drafted in `20260611_ccp_member_write_rls.sql` — **NOT yet applied to shared prod; founder-gated.**
+(b) **Summarize honesty** — `ProjectContextBanner` POSTed with no Authorization header (guaranteed 401, swallowed; AI take went silently stale). Now sends Bearer via the new shared `src/lib/authed-fetch.ts`, shows a visible "refresh failed — Retry" state; the route 500s on persist failure instead of fake-200ing.
+(c) **Single GoTrueClient** — budget-spine kept a localStorage supabase-js client (dead storage post-#24 cookie migration; stale tokens = the intermittent 401s). budget-spine, supabase-browser, pricing, BudgetWidget, GlobalBudgetWidget, ContextEngine all resolve to the ONE client in `src/lib/supabase.ts`.
+Route-level tests added (patch-collaborator · summarize · authed-fetch): suite 765 passing, 26 pre-existing failures unchanged. **Founder gate still open:** real-browser prod verify (fresh acct + collaborator), Chrome+Safari.
+
+**#30 — feat(garden-engine): Phase 0-1 — architecture lint + L2 config contracts (`7076363`)**
+CODE-2 refactor-in-place step 1, additive only (nothing consumes the contracts yet; runtime unchanged). Phase 0: eslint architecture ratchet — generic engine layers (design-system, app-shell) forbidden from importing builders-specific modules; shipped as `warn` to surface today's coupling edges as the Phase-2 worklist, flips to `error` after Phase 2. Phase 1: `src/garden/` L2 config contracts (theme · lifecycle · workflows · roles · knowledge-source · mcp · onboarding · GardenConfig), a LifecycleProvider/useLifecycle runtime, and the two hottest builders adapters derived from the existing canonical constants. Verified tsc 121→121, eslint 492→492 (identical to clean origin/main). **Status since merge: garden-engine extraction PAUSED behind Loops 1–2 (founder ruling 2026-06-12).**
+
+Also this session: `tasks.todo.md` NOW block refreshed to the founder's 2026-06-12 canon (Loops 1–4 sequencing, garden-engine pause, founder-parallel items); the 2026-06-10 block is marked superseded in place.
