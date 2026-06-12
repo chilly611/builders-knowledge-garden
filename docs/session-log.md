@@ -4071,3 +4071,6 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flagged (couldn't verify):** a live specialist run through the injected runner (AnalysisPane ready-state). The pane only mounts with a seeded analysis input, hydration is auth-gated (supabase session) and no `.env.local` exists in any worktree — needs a signed-in dogfood pass. The seam is proven by tsc + identical types + the provider mounting in the same tree as the verified LifecycleProvider. Also: `_archive/2026-05-27/GlobalJourneyMapHeader.tsx` needed a 2-line retarget to the moved helper (frozen snapshot, flagged in PR as forced out-of-scope touch).
 
 **Write-lane:** Code holds the lane on `feat/garden-engine-inversion-finish` (PR → base `feat/garden-engine-lifecycle-context`, founder merges).
+
+**Addendum (same session):** PR could NOT be opened from this environment — no `gh` CLI and no GitHub API credential anywhere (env, macOS keychain, ~/.netrc all empty; remote is SSH-only, which pushes but can't create PRs). Branch is pushed; founder creates the PR from
+`https://github.com/chilly611/builders-knowledge-garden/compare/feat/garden-engine-lifecycle-context...feat/garden-engine-inversion-finish?expand=1` — full prepared PR body saved at `/tmp/ge2-pr-body.md` (also reproduced in the session report). No token was persisted to disk (none existed to persist).
