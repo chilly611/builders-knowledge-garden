@@ -4187,3 +4187,22 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 - ‼️ **`claude-sonnet-4-20250514` retires 2026-06-15 (now ~1 day)** → 19 files 404. The migration chip is still waiting; this is the most time-sensitive item open.
 
 **Write-lane:** **RELEASED** on push. Branch `feat/honesty-hitl-api` → PR. Next: B2.1 (ingest, needs topology), B3 (badge gating, needs Q1), B4–B6.
+
+---
+
+## 2026-06-13 — [Claude Code] LANE: `feat/first-run-rebuild` — LOOP 3 PR1: The One Door (first-run Principle #1) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-first-run` off `origin/main` @ `61d4f90`. Founder pivoted here and flagged low focus for decisions — so this PR is **decision-light by design**: built straight from the locked doctrine (`docs/first-run-and-onboarding.md` + `docs/visual-first-and-flags.md`), inventing no new design, and the deliverable is a real screen the founder can react to (the "demo feedback" this loop wanted) rather than a list of questions.
+
+**What shipped — Principle #1, "The One Door":**
+- **`src/components/first-run/OneDoor.tsx` (new)** — the cold user's first move: one plain-language input ("What do you want to build — or get done?") + 5 lane-spanning example chips (dreamer "A treehouse for my kids" → owner "Add an ADU"/"kitchen remodel" → GC "Bid the Twin Peaks remodel"/"Price a new custom home"). No competing CTAs/sidebar; empty submit blocked silently (Start disabled); chips always valid; plain words; one-thing-brightest (the field is the only bright element, brass Start, brand whisper recessive); herbarium-locked (parchment cream ground, sepia ink, no #E8443A, no pure white, no emoji); reduced-motion aware. **Goal-8 machine twin** emitted as a JSON `<script>` + `data-machine-*` attributes so a headless agent can traverse the same door (the spec's binding requirement on every first-run screen).
+- **`src/app/start/page.tsx` (new)** — mounts the door; on submit hands the user's exact words to the existing `/dream` express flow via sessionStorage (Principle #7, re-house don't rebuild — no `useSearchParams`/Suspense coupling on the heavy `/dream` page).
+- **`src/app/dream/page.tsx`** — +4-line additive seed: on mount, if a One-Door handoff is present, prefill the existing `expressInput` with the user's words and clear the marker. The only change to an existing file; the dream flow is otherwise untouched.
+
+**Verification (real browser, dev server from THIS worktree on :3491, `lsof`-cwd-confirmed):** The One Door renders spec-faithfully; **tapping "Add an ADU in the backyard" routed to `/dream` with the express input seeded to those exact words** (the full re-house wire, end to end); empty submit disabled; zero console errors. Screenshot captured. Static: `tsc` 121→121 (0 in changed files) · `next build` exit 0 (`/start` + `/dream` build) · `vitest` 26 failed / 805 passed (identical to baseline — presentational change, no tests touched).
+
+**Flags / deferred (NOT done — flagged, not silently skipped):**
+- **Global FAB bleeds onto `/start`.** The app-shell GlobalAiFab + compass render bottom-right, violating Principle #1's "no floating buttons." The door component adds none; suppressing the global chrome on the first-run route is a small separate change (the owner-lane `body`-class + CSS precedent). **Follow-up PR.**
+- **Not yet the post-signup landing.** `/start` is reachable on its own for review; rewiring signup/onboarding to land here touches the Loop 1 routing — a deliberate separate PR (and a founder-visible behavior change).
+- **The rest of the first-run sequence** (Principle #4 infer-the-role one-tap-confirm, Principle #3 money/time tiers + flags per the flag taxonomy, Principle #5 progressive-reveal to the cockpit, and the headless-agent acceptance pass over the machine twins) are subsequent PRs that genuinely benefit from design/founder direction — deferred until you have focus.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/first-run-rebuild` → PR for founder review/merge. (Also still open elsewhere: the Sonnet 4.0 migration PR `chore/migrate-sonnet-4-6` — deadline 2026-06-15 — and the honesty Slice B tail B2.1/B3.)
