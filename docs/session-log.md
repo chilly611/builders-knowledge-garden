@@ -4130,3 +4130,33 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 - **Prompt-cache check:** after deploy, confirm `response.usage.cache_read_input_tokens > 0` on a repeated same-specialist call within 5 min.
 
 **Write-lane:** **RELEASED** on push. Branch `feat/honesty-backend` → PR for founder review/merge. Slices B/C/D queued; LOOP 3/4 after.
+
+---
+
+## 2026-06-12 — [Claude Code] LANE: `feat/honesty-hitl-gate` — LOOP 2 / Slice B **PR 1 of N** (HITL gate foundation) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-honesty-hitl` off `origin/main` @ `448706c` (Slice A merged as #35). The founder supplied the missing HITL spec (flagged absent in Slice A) and said "spin it up."
+
+**Slice B is multi-PR.** The spec (`docs/code-ingestion-hitl.md` §8) is a 6-step rollout with **9 founder-gating open questions** (§9), so Slice B is a sequence of reversible, founder-merged PRs — not one. This is **PR 1**: the foundation that's fully unblocked by every open question. The rest are sequenced below.
+
+**Ground truth (from the spec, verified 2026-06-08 against shared prod):** `knowledge_entities` = **2,256 rows, 100% `status='published'`, 0 with `manually_verified_at`, 1,998 (88.5%) `auto_verification_flagged=true`.** The Tier-0 gate ("ingest → review → approve with audit trail") was written into the constitution and never enforced; every row went straight to published. That's the gap Slice B closes.
+
+**What shipped in PR 1 (no shared-prod mutation, no code consuming an unmigrated table yet):**
+1. **`docs/code-ingestion-hitl.md`** — landed the founder's spec at its canonical path (CLAUDE.md's file map already points here). Header updated from "phase-kickoff draft" to "canonical spec; §9 questions still open." Body verbatim (copied, not retyped).
+2. **`supabase/migrations/20260612_knowledge_review_events.sql`** — the append-only semantic workflow-event table (§3): RLS service-role-only (mirrors `audit_log`), the three indexes, CHECK constraints on `action`/`actor_kind`, and a BEFORE UPDATE/DELETE trigger enforcing append-only at the DB. **NOT APPLIED** — founder applies in a supervised window (the #29 `20260611_ccp_member_write_rls.sql` pattern). The B2 endpoints are gated to ship with/after this.
+3. **`src/lib/honesty/review-workflow.ts`** — the pure state machine (§2): `ReviewStatus`/`ReviewAction`, the legal `TRANSITIONS` table, `canTransition`/`nextStatus`/`allowedActions`, `validateContext` (required fields per action), `columnEffects` (the `knowledge_entities` writes each transition makes), and `reviewEvent` (the `knowledge_review_events` row). **The load-bearing line: `approve` === attestation** — it sets the `manually_verified_*` trio + `published_at` + `last_verified`, folding in what `/attest` does today plus the status change, so a row cannot reach `published` without a human going on record. `SERVED_STATUSES` = {published} only. 36 unit tests cover every legal/illegal transition, the attestation effects, and the event shape.
+
+**Rollout sequencing (the remaining Slice B PRs, per §8):**
+- **B2 — transition API** (`approve`/`reject`/`request-changes` + `review-queue`/`history` reads, folding in `attest`; default new ingestion to `review` per §8 step 1). Consumes this PR's state machine. **Blocked on:** the founder applying the §3 migration; and **Q6** (who acts on `needs_changes` — pipeline re-run vs human author) shapes `request_changes`.
+- **B3 — trust-badge gating (Option B)** — published-but-unverified rows render honest provisional language, not a verified badge; reuses Slice A's publish gate. **Blocked on Q1** (the decision that gates everything: Option B vs A vs hybrid) and **Q5** (does a yellow/auto tick earn any treatment).
+- **B4 — domain↔entity_type guard + the 474-row re-bucket** (§4). Touches shared-prod rows → founder-supervised migration. **Blocked on Q2** (re-bucket in place vs route through review).
+- **B5 — queue UI upgrade** to `/admin/verify` (the page exists; add the `review` inbox, request-changes/reject, diff-vs-source, herbarium tokens — it currently uses the prohibited `#E8443A` + pure white).
+- **B6 — backfill Wave 1** (the 1,998 flagged rows, risk-first order). Operational. **Blocked on Q1, Q3** (SLA/reviewers), **Q4** (reviewer seats + licensed-source access).
+
+**Verification (PR 1):** `tsc --noEmit` 121→121 (byte-identical baseline, 0 in changed files) · `next build` exit 0 · `vitest run` **26 failed / 799 passed** — 26 = the exact pre-existing set, +36 = the new state-machine tests. The migration is a file (not executed); the lib is pure (no I/O); nothing here runs against shared prod.
+
+**FOUNDER ACTIONS:**
+- **Decide the §9 open questions** — at minimum **Q1** (corpus treatment; spec recommends Option B) and **Q6** (`needs_changes` ownership), which unblock B2/B3. The others gate B4/B6.
+- **Apply `20260612_knowledge_review_events.sql`** in a supervised window before B2 lands (or tell me to ship B2 with a feature-gate that no-ops the event write until then).
+- ‼️ **Still the top operational risk:** `claude-sonnet-4-20250514` retires **2026-06-15 (2 days)** → 19 files 404. The migration chip is waiting; I'd take that lane before B2 if you agree.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/honesty-hitl-gate` → PR for founder review/merge. Slice B PRs B2–B6 sequenced above; Slices C/D + garden-engine extraction remain queued behind the loops.
