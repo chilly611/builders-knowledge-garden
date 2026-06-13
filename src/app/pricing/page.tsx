@@ -324,7 +324,11 @@ export default function PricingPage() {
       const supabase = getSupabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('Please sign in to subscribe');
+        // LOOP-1 (2026-06-12): a signed-out buyer used to dead-end in a JS
+        // alert here. Send them through auth instead; /login honors ?next=
+        // and (new) preserves explicit destinations through signup
+        // onboarding, so they come straight back to finish checkout.
+        window.location.href = `/login?next=${encodeURIComponent('/pricing')}`;
         return;
       }
       const res = await fetch('/api/v1/stripe/checkout', {

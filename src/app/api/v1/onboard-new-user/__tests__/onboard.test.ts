@@ -51,8 +51,12 @@ const state: {
   // What .select() on org_members should return when the route checks
   // for existing membership. `null` = "no existing rows".
   existingOrgMembership: { org_id: string } | null;
-  // First-project lookup for already-onboarded users.
+  // First-project lookup for already-onboarded users. Also feeds the
+  // LOOP-1 owned-projects no-op guard (same select shape on the same table).
   existingFirstProject: { id: string } | null;
+  // LOOP-1: project_members lookup for the membership no-op guard
+  // (invited collaborators with no org and no owned projects).
+  existingProjectMembership: { project_id: string } | null;
   // Force the next .insert(...).select().single() on a given table to
   // return an error. Used to test rollback.
   failInsert: Record<string, { message: string }> | null;
@@ -64,6 +68,7 @@ const state: {
   deletes: [],
   existingOrgMembership: null,
   existingFirstProject: null,
+  existingProjectMembership: null,
   failInsert: null,
   newOrgId: '22222222-2222-4222-8222-222222222222',
   newProjectId: '33333333-3333-4333-8333-333333333333',
@@ -131,6 +136,14 @@ function makeServiceClient() {
           return resolve({
             data: state.existingFirstProject
               ? [state.existingFirstProject]
+              : [],
+            error: null,
+          });
+        }
+        if (table === 'project_members') {
+          return resolve({
+            data: state.existingProjectMembership
+              ? [state.existingProjectMembership]
               : [],
             error: null,
           });
@@ -246,6 +259,7 @@ beforeEach(() => {
   state.deletes = [];
   state.existingOrgMembership = null;
   state.existingFirstProject = null;
+  state.existingProjectMembership = null;
   state.failInsert = null;
   sendEmailMock.mockClear();
   vi.resetModules();
@@ -382,6 +396,42 @@ describe('POST /api/v1/onboard-new-user — idempotency', () => {
     // No inserts.
     expect(state.inserts).toHaveLength(0);
     // No email.
+    expect(sendEmailMock).not.toHaveBeenCalled();
+  });
+
+  // LOOP-1 (2026-06-12): the route is called on every auth landing, so
+  // accounts that predate the org system must ALSO no-op.
+
+  it('no-ops for a user with owned projects but no org (legacy / dream-builder account)', async () => {
+    state.existingOrgMembership = null;
+    state.existingFirstProject = { id: 'legacy-project-uuid' };
+
+    const { status, body } = await callRoute();
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.already_onboarded).toBe(true);
+    expect(body.project_id).toBe('legacy-project-uuid');
+    expect(body.org_id).toBeUndefined();
+
+    // ZERO writes — no retrofitted org, no duplicate starter project.
+    expect(state.inserts).toHaveLength(0);
+    expect(sendEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('no-ops for a user whose only tie is project_members (invited collaborator)', async () => {
+    state.existingOrgMembership = null;
+    state.existingFirstProject = null;
+    state.existingProjectMembership = { project_id: 'invited-project-id' };
+
+    const { status, body } = await callRoute();
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.already_onboarded).toBe(true);
+    expect(body.project_id).toBe('invited-project-id');
+
+    expect(state.inserts).toHaveLength(0);
     expect(sendEmailMock).not.toHaveBeenCalled();
   });
 });

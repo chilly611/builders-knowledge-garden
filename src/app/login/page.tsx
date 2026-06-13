@@ -4,6 +4,7 @@ import { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { safeNext, safeCallbackRedirect } from '@/lib/safe-url';
 
 function LoginPageContent() {
@@ -66,7 +67,7 @@ function LoginPageContent() {
           } else {
             setSuccessMessage('Signed in successfully!');
             void trackSignin();
-            const dest = await destinationAfterSignIn(nextParam);
+            const dest = await destinationAfterSignUp();
             setTimeout(() => router.push(dest), 500);
           }
         }
@@ -118,6 +119,52 @@ function LoginPageContent() {
     } catch {
       return safeNext(intended, '/killerapp');
     }
+  };
+
+  // LOOP-1 (2026-06-12) — brand-new signups get onboarded (org + first
+  // project + budget seed, POST /api/v1/onboard-new-user, idempotent)
+  // BEFORE they land anywhere, so the first page after auth has real work
+  // in it. This ports the contract of the retired /signup page (which
+  // redirects here and has no live caller) into the branch users actually
+  // reach. Two deliberate carve-outs:
+  //   - Invited collaborators (next=/accept-invite/<token>) skip the
+  //     onboard call entirely — they're joining an existing project; the
+  //     accept page claims the invite with the fresh session. (The route
+  //     would no-op on membership anyway, but only AFTER the invite is
+  //     claimed — at signup time it isn't yet, so we guard client-side
+  //     like the old /signup did.)
+  //   - Any onboarding failure falls back to the pre-LOOP-1 routing
+  //     (destinationAfterSignIn → /welcome for fresh accounts) — the
+  //     onboard call must never block a signup.
+  const destinationAfterSignUp = async (): Promise<string> => {
+    if (nextParam.startsWith('/accept-invite')) {
+      return destinationAfterSignIn(nextParam);
+    }
+    try {
+      const res = await authedFetch('/api/v1/onboard-new-user', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        project_id?: string;
+      };
+      if (res.ok && json.ok && json.project_id) {
+        // Explicit destinations (e.g. /pricing mid-checkout, a deep workflow
+        // link) survive signup: the account is onboarded either way, and a
+        // buyer should land back where they were heading. The first-run
+        // cockpit is for signups with no stated destination ('/killerapp'
+        // is safeNext's fallback default).
+        if (nextParam !== '/killerapp') {
+          return nextParam;
+        }
+        return `/killerapp?project=${encodeURIComponent(json.project_id)}&first_run=1`;
+      }
+      console.warn('[login] onboard-new-user returned no project_id:', json);
+    } catch (err) {
+      console.warn('[login] onboard-new-user threw (falling back):', err);
+    }
+    return destinationAfterSignIn(nextParam);
   };
 
   // 2026-05-20 — best-effort sign-in event log. Pulled into a helper so

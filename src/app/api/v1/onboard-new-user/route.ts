@@ -30,6 +30,15 @@
  *     org_id, project_id }` without writing anything new. This means a
  *     double-fire from the client (slow network, retry, React StrictMode
  *     in dev) is harmless.
+ *     LOOP-1 (2026-06-12): the route is now called on EVERY auth landing
+ *     (login signup branch + OAuth callback), so the no-op guard also
+ *     covers users with no org but pre-existing projects — either owned
+ *     (`command_center_projects.user_id`, e.g. legacy/dream-builder
+ *     accounts) or via membership (`project_members.user_id`, e.g.
+ *     invited collaborators whose first sign-in is Google OAuth). Those
+ *     users get `{ ok: true, already_onboarded: true, project_id }` and
+ *     ZERO writes — we never retrofit an org or seed a starter project
+ *     into an account that already has real work in it.
  *   - **Atomic-ish**: the four writes (org + member + project +
  *     project_member + budget) are sequenced with rollback-on-error so
  *     we never leave a half-onboarded user. We don't use a real PG
@@ -285,6 +294,51 @@ export async function POST(request: NextRequest): Promise<NextResponse<OnboardRe
     }
   } catch (e) {
     console.warn('[onboard-new-user] idempotency check threw (continuing):', e);
+  }
+
+  // ----- 1b. No org, but pre-existing projects? Still a no-op. --------------
+  // Owned projects (legacy accounts, dream-builder signups) or project
+  // membership (invited collaborators) mean the account has real work in
+  // it; creating an org + "My first project" here would pollute it. Unlike
+  // the soft-logged org check above, an error in THESE lookups aborts with
+  // 500 rather than falling through: the failure mode of a wrong answer is
+  // writing a duplicate project into a real account, which is worse than
+  // asking the caller to retry.
+  try {
+    const { data: owned, error: ownedErr } = await sb
+      .from('command_center_projects')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    if (ownedErr) throw ownedErr;
+    if (owned && owned.length > 0) {
+      return NextResponse.json({
+        ok: true,
+        already_onboarded: true,
+        project_id: owned[0].id,
+      });
+    }
+    const { data: member, error: memberErr } = await sb
+      .from('project_members')
+      .select('project_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    if (memberErr) throw memberErr;
+    if (member && member.length > 0) {
+      return NextResponse.json({
+        ok: true,
+        already_onboarded: true,
+        project_id: member[0].project_id,
+      });
+    }
+  } catch (e) {
+    console.error('[onboard-new-user] existing-projects check failed (aborting):', e);
+    return NextResponse.json(
+      { ok: false, error: 'Could not verify your account state. Please retry.' },
+      { status: 500 }
+    );
   }
 
   // ----- 2. Derive org name from email --------------------------------------
