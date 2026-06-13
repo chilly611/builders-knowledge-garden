@@ -244,7 +244,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 : 'low',
           raw_response: draft.rawResponse,
           model: process.env.ANTHROPIC_API_KEY
-            ? 'claude-sonnet-4-20250514'
+            ? 'claude-sonnet-4-6'
             : 'mock',
           latency_ms: latency,
           promptVersion: 'v1',

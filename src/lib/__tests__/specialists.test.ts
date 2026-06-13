@@ -92,7 +92,7 @@ Your job is to take the scope description and map it to IBC/IRC sections.`;
     expect(result).toBeDefined();
     expect(result.confidence).toBe("medium");
     expect(result.narrative).toContain("mock response");
-    expect(result.model).toBe("claude-sonnet-4-20250514");
+    expect(result.model).toBe("claude-sonnet-4-6");
     // Same invariant as schema test — mock work can finish within a single ms.
     expect(result.latency_ms).toBeGreaterThanOrEqual(0);
   });
