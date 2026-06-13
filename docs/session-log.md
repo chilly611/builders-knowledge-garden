@@ -4160,3 +4160,30 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 - ‼️ **Still the top operational risk:** `claude-sonnet-4-20250514` retires **2026-06-15 (2 days)** → 19 files 404. The migration chip is waiting; I'd take that lane before B2 if you agree.
 
 **Write-lane:** **RELEASED** on push. Branch `feat/honesty-hitl-gate` → PR for founder review/merge. Slice B PRs B2–B6 sequenced above; Slices C/D + garden-engine extraction remain queued behind the loops.
+
+---
+
+## 2026-06-12 — [Claude Code] LANE: `feat/honesty-hitl-api` — LOOP 2 / Slice B **PR 2** (the transition API) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-honesty-b2` off `origin/main` @ `1772f58` (B1 merged as #36). Builds on B1's state machine + the (drafted, not-yet-applied) `knowledge_review_events` migration.
+
+**What shipped — the reviewer-facing gate API (§7):**
+- **`src/lib/honesty/review-transition.ts` (new)** — the server executor. `resolveReviewer` (owner allowlist + admin role, mirroring the attest route) and `applyTransition`: load the row's status, validate the move against B1's `review-workflow` state machine, write the `knowledge_entities` UPDATE **as the user's JWT** (so `audit_log.changed_by = auth.uid()`, exactly like attest), then **best-effort** record the §3 `knowledge_review_events` row **via the service client** (that table's RLS is service-only) and emit the RSI signal. Two clients, on purpose.
+- **5 endpoints** (thin over the helper): `POST [id]/approve` (review→published — folds in attest: sets the `manually_verified_*` trio + `published_at` + `last_verified`; the load-bearing transition), `POST [id]/reject` (requires reason), `POST [id]/request-changes` (requires note), `GET [id]/history` (the append-only §3 timeline), `GET /review-queue` (the §6 inbox — status∈{review,needs_changes}, filters, Wave-1 sort: flagged-first then lowest-confidence).
+- **`src/lib/events.ts`** — added the `knowledge.review` event type + `emitKnowledgeReviewSignal` (§3 mandates emitting "from day one").
+- **10 helper tests** (mocked Supabase/auth, repo convention): approve writes the attestation columns + the §3 event + RSI signal; non-owner→403; illegal transition→409; missing reason→400; not-found→404; and the **event-log write degrades gracefully** (200 + `event_logged:false`) when the table is absent.
+
+**The two stated blockers, handled:**
+- **Migration not applied:** the endpoints don't require it. The status change + attestation commit regardless (and `audit_log` captures them); the `knowledge_review_events` insert is best-effort and returns `event_logged:false` + a note until the founder applies `20260612_knowledge_review_events.sql`. The day they apply it, the semantic log lights up with no code change.
+- **Q6 (`needs_changes` ownership):** the `request-changes` endpoint is agnostic to who acts on the note — it records the decision; `resubmit` (needs_changes→review) is already in the state machine for whoever (pipeline or human) acts. Q6 doesn't block this PR.
+
+**Deliberately DEFERRED — `POST /ingest` (§8 step 1, "default new ingestion to review"):** ingestion is **not** an in-`src/` path (only the RSI heartbeat inserts into `knowledge_entities`), so building a new `/ingest` route without knowing where the real pipeline writes — and without the row-field contract — would be either theater (the pipeline wouldn't call it, so new rows still skip the gate) or a malformed-row risk in the shared knowledge graph. **Founder input needed:** where does knowledge ingestion currently insert (a script? an edge function?), so B2.1 either routes it through a gated create endpoint or flips its default to `review` directly.
+
+**Verification:** `tsc --noEmit` 121→121 (byte-identical baseline, 0 in changed files) · `next build` exit 0 · `vitest run` **26 failed / 805 passed** (26 = pre-existing set; +6 = the new transition tests, on top of B1's 36). The endpoints' live behavior (a real approve against shared prod) is a founder dogfood step — it needs an owner JWT + the applied migration to exercise the event log end-to-end; the logic is proven by the helper tests + the state machine's 36.
+
+**FOUNDER ACTIONS:**
+- **Apply `20260612_knowledge_review_events.sql`** (supervised) — then approve/reject/request-changes write the semantic log automatically; until then they work but log `event_logged:false`.
+- **Tell me where ingestion inserts** → unblocks B2.1 (§8 step 1, the going-forward "new rows land at review" gate).
+- **Decide Q1** (corpus treatment; spec recommends Option B) → unblocks **B3** trust-badge gating.
+- ‼️ **`claude-sonnet-4-20250514` retires 2026-06-15 (now ~1 day)** → 19 files 404. The migration chip is still waiting; this is the most time-sensitive item open.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/honesty-hitl-api` → PR. Next: B2.1 (ingest, needs topology), B3 (badge gating, needs Q1), B4–B6.

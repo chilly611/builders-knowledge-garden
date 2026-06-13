@@ -45,6 +45,12 @@ export const EVENT_TYPES = {
   // Knowledge signals (RSI Loop 1)
   KNOWLEDGE_ENTITY_VIEWED: "knowledge.entity_viewed",
   KNOWLEDGE_GAP_DETECTED: "knowledge.gap_detected",
+  // HITL review-gate transitions (LOOP 2 Slice B, docs/code-ingestion-hitl.md §3).
+  // Every approve/reject/request-changes/etc. emits one — it both measures the
+  // gate (review→decision latency, where the queue stalls) and is labelled
+  // training signal for the auto-verifier (a human overturning/confirming an AI
+  // flag is a graded example).
+  KNOWLEDGE_REVIEW: "knowledge.review",
 
   // Compliance signals (RSI Loop 4)
   COMPLIANCE_CHECK: "compliance.check",
@@ -167,4 +173,15 @@ export function emitMCPSignal(data: {
   latency_ms: number;
 }) {
   return eventBus.emit(EVENT_TYPES.MCP_TOOL_CALLED, data, { source: "mcp-api" });
+}
+
+export function emitKnowledgeReviewSignal(data: {
+  entity_id: string;
+  action: string;
+  from_status: string | null;
+  to_status: string | null;
+  actor_kind: "human" | "machine";
+  auto_confidence_at_decision?: number | null;
+}) {
+  return eventBus.emit(EVENT_TYPES.KNOWLEDGE_REVIEW, data, { source: "review-gate" });
 }
