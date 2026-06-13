@@ -120,7 +120,7 @@ ${budget ? `- Budget Target: $${budget}` : ""}
 Return ONLY valid JSON. Include all CSI divisions relevant to this building type.`;
 
     const message = await getAnthropic().messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2000,
       system: systemPrompt,
       messages: [

@@ -108,7 +108,7 @@ export interface SpecialistResult {
 // CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 2500;
 
 // Specialists that default to v2 prompts; all others default to v1

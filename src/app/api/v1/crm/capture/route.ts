@@ -551,7 +551,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             citations: [],
             confidence: confidence > 0.7 ? 'high' : confidence > 0.3 ? 'medium' : 'low',
             raw_response: '',
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-6',
             latency_ms: latency,
             promptVersion: 'v1',
           },

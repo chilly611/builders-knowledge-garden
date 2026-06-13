@@ -130,7 +130,7 @@ Return ONLY valid JSON. Include realistic phases with tasks, dependencies, miles
 Calculate total duration based on building type and complexity. Include all critical path dependencies.`;
 
     const message = await getAnthropic().messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 3000,
       system: systemPrompt,
       messages: [
