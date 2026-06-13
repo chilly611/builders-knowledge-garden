@@ -4072,3 +4072,9 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Verification:** `tsc --noEmit` output byte-identical to untouched p0 baseline (0 errors in changed files) · `next build` exit 0 · `vitest run` 26 failed / 750 passed with the failing-file set identical to the clean p0 baseline (the 26 are pre-existing). Browser dogfood not run — no UI/behavior surface changed; helper itself was browser-verified in the p0 session.
 
 **Write-lane:** taken for this session, **released** on push — `refactor/authed-fetch-dedupe` PR pending founder merge (stacked on `fix/p0-collab-save-close`).
+
+---
+
+## 2026-06-12 — [Claude Code] LANE CLAIMED: `feat/onboarding-trust-loop` (LOOP 1 — onboarding trust)
+**Agent:** Claude Code (Fable) · worktree `bkg-onboarding-trust` off `origin/main` @ `b379a49`
+**Scope (exact):** idempotent `POST /api/v1/onboard-new-user` · wire onboarding into /login's signup branch + the server /auth/callback (Google OAuth) · Stripe $99 checkout audit in TEST mode · `docs/runbooks/oauth-consent-branding.md`. PR-only; founder merges. Release entry follows at session close.
