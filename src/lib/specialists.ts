@@ -476,10 +476,20 @@ export async function callSpecialist(
   try {
     const anthropic = new Anthropic({ apiKey });
 
+    // LOOP-2 Slice A (2026-06-12): prompt-cache the specialist system prompt.
+    // systemPrompt is byte-stable per (specialistId, version) — loadSpecialistPrompt
+    // reads a static prompt file with no per-request interpolation — so repeated
+    // calls to the same specialist within the 5-min TTL reuse the cached prefix
+    // (cache reads ~0.1x input cost). Per-request content stays in `messages`
+    // (userMessage), after the cached prefix, so it never invalidates the cache.
+    // cache_control is GA (no beta header); the system prefix clears Sonnet's
+    // 1024-token minimum easily. Verify hits via response.usage.cache_read_input_tokens.
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: systemPrompt,
+      system: [
+        { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+      ],
       messages: [{ role: "user", content: userMessage }],
     });
 
