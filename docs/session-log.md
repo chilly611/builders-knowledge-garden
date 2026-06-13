@@ -4206,3 +4206,22 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 - **The rest of the first-run sequence** (Principle #4 infer-the-role one-tap-confirm, Principle #3 money/time tiers + flags per the flag taxonomy, Principle #5 progressive-reveal to the cockpit, and the headless-agent acceptance pass over the machine twins) are subsequent PRs that genuinely benefit from design/founder direction — deferred until you have focus.
 
 **Write-lane:** **RELEASED** on push. Branch `feat/first-run-rebuild` → PR for founder review/merge. (Also still open elsewhere: the Sonnet 4.0 migration PR `chore/migrate-sonnet-4-6` — deadline 2026-06-15 — and the honesty Slice B tail B2.1/B3.)
+
+---
+
+## 2026-06-13 — [Claude Code] LANE: `feat/seed-gate-review` — LOOP 2 / Slice B "B2.1": gate the only live ingestion path → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-ingest-gate` off `origin/main` @ `a700438`.
+
+**Recon answer (founder asked "where does ingestion actually insert?"):** swept the whole repo. The **only** path that creates new `knowledge_entities` today is **`scripts/seed-code-entities.mjs`** — a hand-run bulk seed that inserted at `status:"published"` (line 58), straight past the gate. That's the source of the ~2,256 rows and the "expand jurisdictions" path. Corrected two assumptions: **heartbeat does NOT ingest** (`heartbeat.ts` is guard-railed "reads … but NEVER writes" — it sizes drift + enqueues review tasks), and **`backfill-embeddings` doesn't ingest** (it only fills the `embedding` column on existing rows). There is **no user-facing or jurisdiction-expansion insert API yet** — that's the future `POST /ingest` (deferred in B2), which lands at `review` by design.
+
+**What shipped (§8 step 1):** `scripts/seed-code-entities.mjs` now gates new knowledge.
+- New rows default to **`status:"review"`** (the gate); `--publish` is the opt-in bypass for a curated, vetted batch (logged as a deliberate act — founder chose this two-mode design over strict-always-review).
+- **Does NOT demote the live corpus:** the script upserts on `slug` with `merge-duplicates`, so naively setting `review` would have yanked the 2,256 published rows back to review on the next run. Fixed by partitioning — `fetchExistingSlugs()` checks which slugs exist, and existing rows are posted with `status` **omitted** (merge leaves their status untouched); only genuinely-new slugs carry `SEED_STATUS`.
+- `--dry-run` prints the plan and writes nothing (safe preview + the local verification path).
+- Header doc + mode logging updated.
+
+**Verification:** `node --check` OK · `node … --dry-run` → "Gate: NEW rows land at status='review' … 59 new → status='review'; 0 existing → status preserved" · `node … --dry-run --publish` → "NEW rows … 'published'". `tsc` 121→121 (unchanged — the script is outside the TS compile) · `vitest` 26 failed / 805 passed (identical baseline). `next build` skipped — a `.mjs` seed script is not part of the Next build, so build output is byte-identical (no app/route code touched). A real seed run writes to shared prod (founder-run); `--dry-run` is the safe local proof.
+
+**Now the gate is closed end-to-end going forward:** seed/expand → lands at `review` → appears in `/admin/review` (B5) → owner approves (= attest + publish, B2) → serves. The existing 2,256 backlog is still Option-B / the backfill wave (B6).
+
+**Write-lane:** **RELEASED** on push. Branch `feat/seed-gate-review` → PR. Honesty tail remaining: B3 (needs Q1 = Option B), B4 (re-bucket, shared prod), B6 (backfill).

@@ -8,7 +8,17 @@
 // USAGE:
 //   export SUPABASE_URL=https://<project>.supabase.co
 //   export SUPABASE_SERVICE_KEY=<service_role_key>
-//   node scripts/seed-code-entities.mjs
+//   node scripts/seed-code-entities.mjs            # NEW rows land at status='review' (the HITL gate)
+//   node scripts/seed-code-entities.mjs --publish  # curated/trusted batch: NEW rows land 'published'
+//   node scripts/seed-code-entities.mjs --dry-run  # print the plan, write nothing
+//
+// THE GATE (LOOP 2 / B2.1, docs/code-ingestion-hitl.md §8 step 1): this script is
+// the only path that creates new knowledge_entities today, so it is where the gate
+// lives. New / jurisdiction-expansion rows land as status='review' and must be
+// approved in /admin/review before they serve — approve is the only door to
+// 'published'. --publish bypasses the gate for a batch you've already vetted (a
+// deliberate, logged act). Rows that ALREADY exist (matched by slug) keep their
+// current status — re-running this script NEVER demotes the live published corpus.
 //
 // SECURITY: this script reads the service role key from env. Never commit it.
 // The older batch-entities.mjs files at repo root have a hardcoded key —
@@ -21,7 +31,13 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+// LOOP 2 / B2.1 — ingestion gate. New rows default to 'review'; --publish is the
+// opt-in bypass for a curated, trusted batch; --dry-run writes nothing.
+const PUBLISH = process.argv.includes("--publish");
+const DRY_RUN = process.argv.includes("--dry-run");
+const SEED_STATUS = PUBLISH ? "published" : "review";
+
+if (!DRY_RUN && (!SUPABASE_URL || !SUPABASE_SERVICE_KEY)) {
   console.error(
     "Missing SUPABASE_URL or SUPABASE_SERVICE_KEY. Export both before running this script."
   );
@@ -47,6 +63,27 @@ async function post(table, rows) {
   return true;
 }
 
+// Which of these slugs already exist in knowledge_entities? Used so a re-seed
+// NEVER demotes the live corpus: existing rows keep their current status (we
+// stamp SEED_STATUS only on genuinely-new slugs). Chunked to bound URL length.
+async function fetchExistingSlugs(slugs) {
+  const existing = new Set();
+  const CHUNK = 50;
+  for (let i = 0; i < slugs.length; i += CHUNK) {
+    const inList = slugs.slice(i, i + CHUNK).map((s) => encodeURIComponent(s)).join(",");
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/knowledge_entities?select=slug&slug=in.(${inList})`,
+      { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } }
+    );
+    if (!res.ok) {
+      console.error(`  WARN: existing-slug check failed (${res.status}); treating this batch as new.`);
+      continue;
+    }
+    for (const r of await res.json()) existing.add(r.slug);
+  }
+  return existing;
+}
+
 function entity(slug, title, summary, type, tags, metadata = {}, body = "") {
   return {
     slug,
@@ -55,7 +92,7 @@ function entity(slug, title, summary, type, tags, metadata = {}, body = "") {
     body: { en: body },
     entity_type: type,
     domain: "construction",
-    status: "published",
+    status: SEED_STATUS,
     tags,
     metadata: {
       ...metadata,
@@ -1101,16 +1138,38 @@ const STRUCTURAL_FIRE = [
 async function main() {
   const all = [...STRUCTURAL, ...ELECTRICAL, ...PLUMBING, ...MECHANICAL, ...STRUCTURAL_FIRE];
   console.log(`Seeding ${all.length} code entities (${STRUCTURAL.length} structural, ${ELECTRICAL.length} electrical, ${PLUMBING.length} plumbing, ${MECHANICAL.length} mechanical, ${STRUCTURAL_FIRE.length} fire/structural)…`);
+  console.log(
+    PUBLISH
+      ? "⚠  --publish: NEW rows land DIRECTLY at status='published', bypassing the review gate. Use only for a curated, trusted batch."
+      : "Gate: NEW rows land at status='review' — approve them in /admin/review before they serve (pass --publish to bypass for a vetted batch)."
+  );
+
+  // Don't demote the live corpus: existing rows (matched by slug) keep their
+  // current status; SEED_STATUS is stamped only on genuinely-new slugs.
+  const existing = DRY_RUN ? new Set() : await fetchExistingSlugs(all.map((r) => r.slug));
+  const prepared = all.map((r) => {
+    if (!existing.has(r.slug)) return r; // new slug → keeps status = SEED_STATUS
+    const rest = { ...r };
+    delete rest.status; // existing → omit status so the upsert leaves it untouched
+    return rest;
+  });
+  const newCount = prepared.filter((r) => "status" in r).length;
+  console.log(`  ${newCount} new → status='${SEED_STATUS}'; ${all.length - newCount} existing → status preserved.`);
+
+  if (DRY_RUN) {
+    console.log(`\n[dry-run] No rows written. ${newCount} would be created at '${SEED_STATUS}'; ${all.length - newCount} existing would update content with status untouched.`);
+    return;
+  }
 
   // Batch in chunks of 10 to avoid payload limits
   const CHUNK = 10;
   let ok = 0;
-  for (let i = 0; i < all.length; i += CHUNK) {
-    const chunk = all.slice(i, i + CHUNK);
+  for (let i = 0; i < prepared.length; i += CHUNK) {
+    const chunk = prepared.slice(i, i + CHUNK);
     const success = await post("knowledge_entities", chunk);
     if (success) {
       ok += chunk.length;
-      console.log(`  ✔ ${ok}/${all.length}`);
+      console.log(`  ✔ ${ok}/${prepared.length}`);
     } else {
       console.error(`  ✗ chunk starting at ${i}`);
     }
