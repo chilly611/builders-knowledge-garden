@@ -47,6 +47,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { gateCitation, type PublishTier } from "./honesty/publish-gate";
 
 // ─── Public types ──────────────────────────────────────────────────────────
 
@@ -102,6 +103,16 @@ export interface CodeCitation {
   sourceUrls: string[];
   sourceDocs: string[];
   verification: VerificationLevel;
+  /**
+   * Honesty publish-tier verdict (LOOP 2 Slice A) — what this fact may assert:
+   * "verified" (human-attested, authoritative), "labeled" (served with a
+   * mandatory caveat), or "withheld" (don't present as an assertion). Computed
+   * once by the central publish gate so every surface agrees. Derived from
+   * `verification` + provenance; no schema change.
+   */
+  publishTier: PublishTier;
+  /** Mandatory caveat to display for a "labeled" fact; null when verified/withheld. */
+  verificationLabel: string | null;
   /** Why this row surfaced (matched tokens / section / tags) — for transparency. */
   matchedOn: string[];
   relevance: number;
@@ -552,21 +563,33 @@ export function rowToCitation(
 
   const { score, matchedOn } = scoreRelevance(row, tokens, sections, discipline);
 
+  const citation = buildCitationLabel({ codeSystem, section, codeYear, title, slug: row.slug });
+  const sourceUrls = Array.isArray(row.source_urls) ? row.source_urls.filter(Boolean) : [];
+  const sourceDocs = Array.isArray(row.source_docs) ? row.source_docs.filter(Boolean) : [];
+  const verification = toVerification(row);
+
+  // Single honesty verdict, computed centrally so every surface agrees on
+  // what this fact may assert. (Edition-currency / supersession detection is
+  // Slice C; the gate defaults `superseded:false` until then.)
+  const verdict = gateCitation({ verification, citation, sourceUrls, sourceDocs });
+
   return {
     entityId: row.id,
     slug: row.slug,
     title,
     summary,
-    citation: buildCitationLabel({ codeSystem, section, codeYear, title, slug: row.slug }),
+    citation,
     codeSystem,
     codeYear,
     section,
     entityType: row.entity_type,
     appliesGlobally: row.applies_globally === true,
     jurisdiction,
-    sourceUrls: Array.isArray(row.source_urls) ? row.source_urls.filter(Boolean) : [],
-    sourceDocs: Array.isArray(row.source_docs) ? row.source_docs.filter(Boolean) : [],
-    verification: toVerification(row),
+    sourceUrls,
+    sourceDocs,
+    verification,
+    publishTier: verdict.tier,
+    verificationLabel: verdict.label,
     matchedOn,
     relevance: Number(score.toFixed(2)),
   };
