@@ -4187,3 +4187,21 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 - ‼️ **`claude-sonnet-4-20250514` retires 2026-06-15 (now ~1 day)** → 19 files 404. The migration chip is still waiting; this is the most time-sensitive item open.
 
 **Write-lane:** **RELEASED** on push. Branch `feat/honesty-hitl-api` → PR. Next: B2.1 (ingest, needs topology), B3 (badge gating, needs Q1), B4–B6.
+
+---
+
+## 2026-06-13 — [Claude Code] LANE: `chore/migrate-sonnet-4-6` — model retirement migration (deadline) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-sonnet46` off `origin/main` @ `61d4f90`. Founder picked this lane over more honesty work — correctly: it's the only deadline-bound item.
+
+**Why now:** `claude-sonnet-4-20250514` (Sonnet 4.0) **retires 2026-06-15** — after that every call using it 404s. It was in **19 files** spanning the entire AI surface (copilot, oracle, proposals, estimating, projects/{compliance,estimate,schedule}, the CRM/Pipeline suite — capture/attention/messages-draft/voice-extract/photo, briefing, dream-{narrate,vision}, quests, sub-bids/expand-scope, specialists, rsi/synth). Missing the date = the product's AI goes dark wholesale.
+
+**What shipped:** all 19 references swapped `claude-sonnet-4-20250514` → **`claude-sonnet-4-6`** (the migration guide's drop-in replacement). Per the guide this is NOT a blind swap, so each site was classified first:
+- **No BLOCKS anywhere** — audited all 19 for the 4.x-breaking patterns: no last-assistant-turn prefills, no `budget_tokens`/`thinking`, no `temperature`+`top_p` pairs, no retired tool versions. (The risk-scan hits were false positives: a CRM conversation-log `role:"assistant"` row, weather copy containing "temperature", and a CRM lead-`temperature:'warm'` field — none are API params.)
+- **Two label-only files stay in sync:** `crm/messages/draft` and `crm/photo` carry the model string only as a *response-metadata label*; their real AI call routes through `callSpecialist` → `specialists.ts` (also one of the 19), so swapping the label keeps it truthful as the real call moves to 4.6. **Every actual API path resolves to either a direct `model:`/`const MODEL` in these files or to `specialists.ts` — all migrate together; nothing is left on 4.0 and no label desyncs.**
+- **Test assertion** `specialists.test.ts:95` (`expect(result.model).toBe(...)`) moved with the const, so it still passes.
+
+**Verification:** `tsc --noEmit` 121→121 (byte-identical baseline) · `next build` exit 0 · `vitest run` **26 failed / 805 passed — identical to the pre-migration baseline** (the moved assertion still passes; zero new failures).
+
+**Deliberately deferred (TUNE, not BLOCKS):** Sonnet 4.6 defaults `effort` to `high` where Sonnet 4.0 had no effort knob, so latency/token-spend may rise on these routes. I did **not** add `effort`/`thinking` params — that's per-route judgment (e.g. `low` for the cheap CRM extraction routes, `medium` for most) and a behavior change beyond "stop the 404." **Recommended fast-follow:** a per-route `effort` pass once you can watch latency/cost on 4.6. The live AI dogfood (a real response on each route post-deploy) is a founder step — it needs `ANTHROPIC_API_KEY` in the env (env-file guardrail blocks me copying it); `claude-sonnet-4-6` is a current GA model so acceptance is guaranteed, but eyeball one specialist + one CRM draft after deploy.
+
+**Write-lane:** **RELEASED** on push. Branch `chore/migrate-sonnet-4-6` → PR. The spawned migration chip is withdrawn (executed here). Back to the honesty Slice B tail (B2.1/B3) or Loop 3 next — your call.

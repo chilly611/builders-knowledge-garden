@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAuthUser, unauthorizedResponse } from '@/lib/auth-server';
 
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-4-6';
 
 export async function POST(request: NextRequest) {
   const user = await getAuthUser(request);

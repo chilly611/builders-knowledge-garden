@@ -654,7 +654,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             model: isVideo
               ? 'gps-only'
               : process.env.ANTHROPIC_API_KEY
-                ? 'claude-sonnet-4-20250514'
+                ? 'claude-sonnet-4-6'
                 : 'mock',
             latency_ms: latency,
             promptVersion: 'v1',

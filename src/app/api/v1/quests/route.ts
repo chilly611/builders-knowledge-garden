@@ -123,7 +123,7 @@ Return ONLY a JSON array with 3 quest objects, each with: { title, description, 
 Do NOT include any markdown or explanation, just the JSON array.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 500,
       messages: [
         {

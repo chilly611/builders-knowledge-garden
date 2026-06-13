@@ -17,7 +17,7 @@ import {
 } from "@/lib/rag";
 import { getServiceClient } from "@/lib/auth-server";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 
 // 2026-05-19 (Ship 13): explicit dynamic + max-duration. Without these,
 // Vercel can (a) cache the route response (catastrophic for SSE) and
