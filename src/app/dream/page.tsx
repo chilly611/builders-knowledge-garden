@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import DiscoverFlow, { type DiscoverSelections } from './components/DiscoverFlow';
@@ -40,6 +40,21 @@ export default function DreamPage() {
   const [selections, setSelections] = useState<DiscoverSelections>({});
   const [expressInput, setExpressInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // First-run handoff (Loop 3): if the user arrived from The One Door (/start),
+  // seed the express input with their exact words and clear the marker so a
+  // refresh doesn't re-seed. Re-houses the door onto this proven flow.
+  useEffect(() => {
+    try {
+      const seed = window.sessionStorage.getItem('bkg-door-intent');
+      if (seed) {
+        setExpressInput(seed);
+        window.sessionStorage.removeItem('bkg-door-intent');
+      }
+    } catch {
+      // storage unavailable — no seed, the flow still works
+    }
+  }, []);
 
   // Read lane from localStorage (set during /onboarding)
   const lane = typeof window !== 'undefined' ? localStorage.getItem('bkg-lane') : null;
