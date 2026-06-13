@@ -324,7 +324,11 @@ export default function PricingPage() {
       const supabase = getSupabaseBrowser();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('Please sign in to subscribe');
+        // LOOP-1 (2026-06-12): a signed-out buyer used to dead-end in a JS
+        // alert here. Send them through auth instead; /login honors ?next=
+        // and (new) preserves explicit destinations through signup
+        // onboarding, so they come straight back to finish checkout.
+        window.location.href = `/login?next=${encodeURIComponent('/pricing')}`;
         return;
       }
       const res = await fetch('/api/v1/stripe/checkout', {
@@ -335,8 +339,20 @@ export default function PricingPage() {
         },
         body: JSON.stringify({ tier: tierSlug, interval }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const json = await res.json().catch(() => ({} as { url?: string; error?: string }));
+      if (res.ok && json.url) {
+        window.location.href = json.url;
+        return;
+      }
+      // LOOP-1 (2026-06-12): a non-OK response (e.g. 503 stripe_not_configured,
+      // 400 missing price) used to silently no-op — the button just did
+      // nothing. Surface it in the page's existing error idiom.
+      console.error('Checkout failed:', res.status, json);
+      alert(
+        json.error === 'stripe_not_configured'
+          ? 'Billing is not set up on this environment yet — no charge was made.'
+          : 'Checkout failed. Please try again.',
+      );
     } catch (err) {
       console.error('Checkout error:', err);
       alert('An error occurred. Please try again.');

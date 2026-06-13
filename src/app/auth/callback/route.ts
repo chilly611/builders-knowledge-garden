@@ -8,7 +8,7 @@
 // session as `Set-Cookie` on the redirect response (browsers honor Set-Cookie on
 // 3xx). On error/missing code we preserve the prior contract: redirect to /login.
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { safeNext } from '@/lib/safe-url';
 import { LEGACY_LANE_TO_PROJECT_ROLE } from '@/lib/use-user-lane';
 
@@ -32,8 +32,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`);
   }
 
-  // The redirect response is what we attach session cookies to.
-  const response = NextResponse.redirect(`${origin}${redirectTo}`);
+  // Session cookies land on whichever redirect we ultimately issue. LOOP-1
+  // (2026-06-12): the destination now depends on the onboarding result, so
+  // buffer the cookies the exchange emits and apply them to the final
+  // response below (no behavior change — they were only ever flushed on
+  // return).
+  const pendingCookies: Array<{ name: string; value: string; options?: CookieOptions }> = [];
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
@@ -41,7 +45,7 @@ export async function GET(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
+          pendingCookies.push({ name, value, options }),
         );
       },
     },
@@ -51,6 +55,52 @@ export async function GET(request: NextRequest) {
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`);
   }
+
+  // LOOP-1 (2026-06-12): onboard on every OAuth landing. The route is
+  // idempotent — first-timers get an org + seeded first project and land in
+  // the first-run cockpit; returning users no-op (already_onboarded) and go
+  // to their prior destination. Invited collaborators
+  // (redirectTo=/accept-invite/<token>) skip the call: they're joining an
+  // existing project and the accept page claims the invite with this fresh
+  // session — onboarding must not race it. Failures fall through to the
+  // prior destination; onboarding never blocks a sign-in.
+  let destination = redirectTo;
+  if (!redirectTo.startsWith('/accept-invite')) {
+    try {
+      const token = data.session?.access_token;
+      if (token) {
+        const onboardRes = await fetch(`${origin}/api/v1/onboard-new-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({}),
+        });
+        const onboardJson = (await onboardRes.json().catch(() => ({}))) as {
+          ok?: boolean;
+          already_onboarded?: boolean;
+          project_id?: string;
+        };
+        if (
+          onboardRes.ok &&
+          onboardJson.ok &&
+          !onboardJson.already_onboarded &&
+          onboardJson.project_id &&
+          // Explicit destinations (e.g. /pricing mid-checkout) are honored
+          // even for first-timers — '/killerapp' is safeNext's fallback
+          // default, i.e. "no stated destination".
+          redirectTo === '/killerapp'
+        ) {
+          destination = `/killerapp?project=${encodeURIComponent(onboardJson.project_id)}&first_run=1`;
+        }
+      }
+    } catch (e) {
+      console.warn('[auth/callback] onboard-new-user failed (continuing to prior destination):', e);
+    }
+  }
+
+  const response = NextResponse.redirect(`${origin}${destination}`);
+  pendingCookies.forEach(({ name, value, options }) =>
+    response.cookies.set(name, value, options),
+  );
 
   // DIY-COLD: stamp the bkg-lane cookie so the redirect target carries it and SSR
   // can set body[data-diy-cockpit] on the first byte. UI hint only — server still
