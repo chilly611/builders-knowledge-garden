@@ -152,13 +152,16 @@ function LoginPageContent() {
       if (res.ok && json.ok && json.project_id) {
         // Explicit destinations (e.g. /pricing mid-checkout, a deep workflow
         // link) survive signup: the account is onboarded either way, and a
-        // buyer should land back where they were heading. The first-run
-        // cockpit is for signups with no stated destination ('/killerapp'
-        // is safeNext's fallback default).
+        // buyer should land back where they were heading.
         if (nextParam !== '/killerapp') {
           return nextParam;
         }
-        return `/killerapp?project=${encodeURIComponent(json.project_id)}&first_run=1`;
+        // No stated destination → the first-run SEQUENCE (One Door → role →
+        // tiers → cockpit via "go deeper"), not the cockpit directly (first-run
+        // doctrine Principle #5). The seeded project persists; /killerapp
+        // resolves it on go-deeper. Dropping first_run=1 keeps the legacy
+        // OnboardingModal from bootstrapping, so the sequence is the sole onboarding.
+        return '/start';
       }
       console.warn('[login] onboard-new-user returned no project_id:', json);
     } catch (err) {
