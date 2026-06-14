@@ -4190,6 +4190,26 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 ---
 
+## 2026-06-13 — [Claude Code] LANE: `feat/honesty-review-queue-ui` — LOOP 2 / Slice B "B5": the reviewer queue UI (§6) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-review-queue` off `origin/main` @ `a700438`. Founder picked B5 as the next honesty step (only unblocked one; the human surface for the gate B2 shipped). Pulled the `knowledge-gardens-design` brand kit first — design fidelity is a stated concern right now.
+
+**What shipped — the human-in-the-loop approval screen (§6):**
+- **`src/components/admin/ReviewQueue.tsx` (new)** — presentational, herbarium-locked via the design-system `colors` tokens (paper-cream ground, ink-graphite text, brass accent, the sage/amber/rust flag taxonomy; **no #E8443A, no pure white, no emoji, sentence case, mono UPPERCASE labels, em-dashes**). Renders the review/needs_changes inbox: per-row AI's-read flag chip ("AI flagged · 58%" rust / "AI cleared · 93%" sage / "not yet checked"), plain-language entity-type labels, an expandable §6 detail (source links open-out, the 6-item reviewer checklist, history timeline), and the actions — **Approve & publish (gated on the four substantive checks, per §6 "invitation not instruction"), Request changes (note required), Reject (reason required)**. Invitation-Card empty state. Goal-8 machine twin (JSON `<script>`).
+- **`src/app/admin/review/page.tsx` + `ReviewQueueClient.tsx` (new)** — owner/admin route; fetches `GET review-queue`, wires `approve`/`reject`/`request-changes` + `history` via `authedFetch`; refetches after each action. `?demo=1` renders seeded sample rows for design review (no session/data needed). Sibling to the legacy `/admin/verify`.
+
+**Verification (real browser, dev server from THIS worktree on :3492, `lsof`-cwd-confirmed, `?demo=1`):** queue renders on-brand with 3 sample rows correctly Wave-1 sorted (flagged-first, least-confident-first); the detail expands with sources + checklist + history; **Approve & publish is disabled until the four substantive checks are ticked, then enables (brass)** — gating verified live; zero console errors. Screenshots captured. Static: `tsc` 121→121 (0 in my files — the 121 are pre-existing design-system `__tests__` jest-type errors) · `next build` exit 0 · `vitest` 26 failed / 805 passed (identical baseline — UI change, no tests touched).
+
+**Flags / deferred (flagged, not silently skipped):**
+- **Empty until fed.** No rows are in `review` yet (the 2,256 are all `published`). This queue lights up as ingestion gates new rows (B2.1) and the backlog wave (§5) moves rows into `review`. The live (non-demo) view shows the Invitation empty state until then — honest, by design.
+- **Global FAB bleeds onto `/admin/review`** (same app-shell chrome as `/start`) — an admin tool shouldn't carry the consumer compass FAB; same chrome-suppression follow-up.
+- **jurisdiction_ids → name** isn't resolved (needs a jurisdictions join); the row shows "Globally applicable" as fallback. Small follow-up.
+- **Consolidation with the legacy `/admin/verify`** (attest-already-published model) into one queue, and **bulk-approve** (admin-only, §6) are follow-ups.
+- **Session-log drift:** main's log (this worktree's base) ends at the B2 PR2 entry — the Sonnet-migration and first-run entries appear to have been lost in parallel-branch squash merges. Worth re-adding to main's `docs/session-log.md` in a tidy-up.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/honesty-review-queue-ui` → PR. Honesty tail remaining: B2.1 (needs ingestion topology), B3 (needs Q1), B4 (re-bucket, shared prod), B6 (backfill).
+
+---
+
 ## 2026-06-13 — [Claude Code] LANE: `feat/first-run-rebuild` — LOOP 3 PR1: The One Door (first-run Principle #1) → PR
 **Agent:** Claude Code (Opus 4.8). Worktree `bkg-first-run` off `origin/main` @ `61d4f90`. Founder pivoted here and flagged low focus for decisions — so this PR is **decision-light by design**: built straight from the locked doctrine (`docs/first-run-and-onboarding.md` + `docs/visual-first-and-flags.md`), inventing no new design, and the deliverable is a real screen the founder can react to (the "demo feedback" this loop wanted) rather than a list of questions.
 
