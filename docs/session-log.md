@@ -4225,3 +4225,20 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Now the gate is closed end-to-end going forward:** seed/expand → lands at `review` → appears in `/admin/review` (B5) → owner approves (= attest + publish, B2) → serves. The existing 2,256 backlog is still Option-B / the backfill wave (B6).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/seed-gate-review` → PR. Honesty tail remaining: B3 (needs Q1 = Option B), B4 (re-bucket, shared prod), B6 (backfill).
+
+---
+
+## 2026-06-13 — [Claude Code] LANE: `feat/honesty-badge-gating` — LOOP 2 / Slice B "B3": trust-badge honesty (Option B) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-badge-honesty` off `origin/main` @ `1c44ac9`. **Founder confirmed Q1 = Option B** (keep the 2,256 published, gate the trust treatment on `manually_verified_at`, honest provisional language otherwise).
+
+**The gap this closes (dogfood verdict):** "a citation plus a freshness stamp reads as 'someone checked this.' No one did." Recon confirmed it: the trust primitive `TrustStrip` shows source-count + a freshness stamp (which implies verification), and the **public knowledge entity page (`/knowledge/[slug]`) — where all 2,256 rows are served as authoritative — shows NO verification signal at all.** Zero rows have `manually_verified_at`.
+
+**What shipped:**
+- **`src/components/knowledge/VerificationBanner.tsx` (new)** — reusable, presentational, design-system tokens (vellum panel, flag-taxonomy left bar, no #E8443A, no pure white, no emoji, sentence case, mono UPPERCASE label). `verificationLevelOf(row)` mirrors `compliance-lookup.toVerification` (manual > auto-not-flagged > unverified). Three honest treatments: **manually_verified** → sage "Human-verified — checked against {source} on {date}"; **auto_verified** → amber "AI-cross-checked, not yet human-reviewed — confirm with your AHJ"; **unverified** → amber "AI-assembled reference, awaiting human review — verify with your AHJ and the cited source before relying on it."
+- **`src/app/knowledge/[slug]/entity-detail-client.tsx`** — added the verification fields to the `Entity` type (the row already carries them) and render `<VerificationBanner>` between the summary and the body, gated on `manually_verified_at`. Every published-but-unverified row now reads honestly; **no false "verified" implication.** This is the Option-B core on the primary serve surface.
+
+**Verification:** `tsc` 121→121 (0 in changed files) · `next build` exit 0 (`/knowledge/[slug]` builds) · `vitest` 26 failed / 805 passed (identical baseline; presentational change, no tests touched). The component's three states were rendered for the founder inline (faithful mock — the real entity page is env-gated: it fetches shared prod and this worktree has no `.env.local`, so the live look is a 30-second founder dogfood — visit any `/knowledge/<slug>` and see the amber "awaiting human review" banner on the 2,256).
+
+**Flagged follow-ups (to fully close "no false-verified badge anywhere"):** roll the same treatment to the other fact surfaces — the `TrustStrip` primitive (add a `verification` prop; it's "non-optional anywhere a fact appears", so it's the highest-leverage next step), the compliance/code-lookup pages (`killerapp/compliance`, `stage-kit/CodeLookup`), and `AskAnswer`. And `SourceCountBadge` still uses a "red" 0-source treatment worth checking against the no-#E8443A rule. Each is a small adopt-the-banner/level change now that the component + `verificationLevelOf` exist.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/honesty-badge-gating` → PR. Honesty tail remaining: B4 (474-row re-bucket, shared prod), B6 (1,998-row backfill), + the badge roll-out to the remaining fact surfaces. Also still open: B5 (`feat/honesty-review-queue-ui`) — the review queue UI, not yet merged.
