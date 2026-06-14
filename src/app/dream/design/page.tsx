@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProjectProvider, useProject } from '../../dream-shared/ProjectContext';
 import SaveLoadPanel from '../../dream-shared/SaveLoadPanel';
 import ProjectPicker from '../../dream-shared/ProjectPicker';
 import type { DesignStudioState, DreamProject } from '../../dream-shared/types';
 
+import { supabase } from '@/lib/supabase';
 import {
-  ACCENT, ACCENT_GLOW, BG_DARK, GRID_LINE, TEXT_PRIMARY, TEXT_DIM, BORDER,
+  ACCENT, ACCENT_DIM, ACCENT_GLOW, GOLD, BG_DARK, GRID_LINE, TEXT_PRIMARY, TEXT_DIM, BORDER, ON_ACCENT,
   ROOMS, DEFAULT_CONTROLS,
-  generateBlueprintSVG, mockExtractElements,
+  generateBlueprintSVG, buildStudioPrompt, mockExtractElements,
   type Phase, type StyleControlValues, type GeneratedImage, type BoardItem, type DesignToken,
 } from './shared';
 import DesignBrief from './DesignBrief';
@@ -34,66 +35,182 @@ function DesignStudioInner() {
   const [showPicker, setShowPicker] = useState(false);
   const [saveRoom, setSaveRoom] = useState<{ genId: string; open: boolean }>({ genId: '', open: false });
   const [blueprintExported, setBlueprintExported] = useState(false);
+  const [rendering, setRendering] = useState(false);
+  const [status, setStatus] = useState<{ kind: 'info' | 'warn'; text: string } | null>(null);
   const genCounter = useRef(0);
 
   const updateControl = useCallback((key: keyof StyleControlValues, value: number) => {
     setControls(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  /* Call the real render API. Returns image URLs, or null on any failure
+   * (unconfigured / rate-limited / timeout / error) — the caller then keeps the
+   * local concept sketch so the grid is NEVER empty. Sends the Supabase bearer
+   * token when signed in (anonymous is allowed under a tighter server cap). */
+  const callRender = useCallback(async (promptText: string, count: number): Promise<string[] | null> => {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      } catch { /* anonymous is fine */ }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 40000);
+      let res: Response;
+      try {
+        res = await fetch('/api/v1/render', {
+          method: 'POST', headers,
+          body: JSON.stringify({ prompt: promptText, mode: 'concepts', count }),
+          signal: controller.signal,
+        });
+      } finally { clearTimeout(timeout); }
+
+      if (!res.ok) {
+        let code = '';
+        try { code = (await res.json())?.code || ''; } catch { /* no body */ }
+        if (res.status === 429 && code === 'anon_limit') {
+          setStatus({ kind: 'warn', text: 'Free preview limit reached — sign in to keep generating photoreal renders. Showing concept sketches for now.' });
+        } else if (res.status === 503) {
+          setStatus({ kind: 'info', text: 'Live renders are warming up — here are concept sketches you can keep refining.' });
+        } else {
+          setStatus({ kind: 'info', text: 'Showing concept sketches — live renders will retry next time.' });
+        }
+        return null;
+      }
+      const data = await res.json();
+      const urls: string[] = (data.renders || []).map((r: { imageUrl?: string }) => r.imageUrl).filter(Boolean);
+      if (!urls.length) {
+        setStatus({ kind: 'info', text: 'Showing concept sketches — live renders will retry next time.' });
+        return null;
+      }
+      return urls;
+    } catch {
+      setStatus({ kind: 'info', text: 'Showing concept sketches — live renders will retry next time.' });
+      return null;
+    }
+  }, []);
+
+  /* Insert N instant concept-sketch tiles (so something shows immediately), then
+   * upgrade them in place with real renders as they arrive. */
+  const runConcepts = useCallback((promptText: string, labels: string[]) => {
+    const batchIds: string[] = [];
+    const placeholders: GeneratedImage[] = labels.map((label, i) => {
+      genCounter.current += 1;
+      const id = `gen-${Date.now()}-${i}`;
+      batchIds.push(id);
+      return {
+        id, prompt: promptText,
+        imageUrl: generateBlueprintSVG(genCounter.current * 17 + i * 7, label),
+        timestamp: new Date().toISOString(), refinements: [], saved: false,
+        kind: 'concept', pending: true,
+      };
+    });
+    setGenerations(prev => [...placeholders, ...prev]);
+    setActiveTab('results');
+    setPhase('results');
+    setRendering(true);
+    callRender(promptText, labels.length).then(urls => {
+      setGenerations(prev => prev.map(g => {
+        const idx = batchIds.indexOf(g.id);
+        if (idx < 0) return g;
+        if (urls && urls[idx]) return { ...g, imageUrl: urls[idx], kind: 'render', pending: false };
+        return { ...g, pending: false }; // keep the concept sketch
+      }));
+    }).finally(() => setRendering(false));
+  }, [callRender]);
+
   const handleGenerate = useCallback(() => {
     if (!brief.trim()) return;
-    setPhase('generating');
-    setActiveTab('results');
-    setTimeout(() => {
-      const newGens: GeneratedImage[] = [];
-      for (let i = 0; i < 4; i++) {
-        genCounter.current += 1;
-        const id = `gen-${Date.now()}-${i}`;
-        const seed = genCounter.current * 17 + i * 7;
-        const labels = ['Concept A', 'Concept B', 'Concept C', 'Concept D'];
-        newGens.push({
-          id, prompt: brief,
-          imageUrl: generateBlueprintSVG(seed, labels[i]),
-          timestamp: new Date().toISOString(), refinements: [], saved: false,
-        });
-      }
-      setGenerations(prev => [...newGens, ...prev]);
-      setPhase('results');
-    }, 2500);
-  }, [brief]);
+    setStatus(null);
+    runConcepts(buildStudioPrompt(brief, controls), ['Exterior', 'Interior', 'Aerial', 'Sketch']);
+  }, [brief, controls, runConcepts]);
 
   const handleRefine = useCallback((genId: string, refinement: string) => {
-    setGenerations(prev => {
-      const original = prev.find(g => g.id === genId);
-      if (!original) return prev;
-      genCounter.current += 1;
-      const newGen: GeneratedImage = {
-        id: `gen-${Date.now()}-ref`, prompt: `${original.prompt} — refined: ${refinement}`,
-        imageUrl: generateBlueprintSVG(genCounter.current * 31, `Refined: ${refinement.slice(0, 20)}`),
-        timestamp: new Date().toISOString(), refinements: [...original.refinements, refinement], saved: false,
-      };
-      return [newGen, ...prev];
-    });
-  }, []);
+    const original = generations.find(g => g.id === genId);
+    if (!original) return;
+    setStatus(null);
+    const refinedPrompt = `${original.prompt} — ${refinement}`;
+    genCounter.current += 1;
+    const id = `gen-${Date.now()}-ref`;
+    const placeholder: GeneratedImage = {
+      id, prompt: refinedPrompt,
+      imageUrl: generateBlueprintSVG(genCounter.current * 31, 'Refined'),
+      timestamp: new Date().toISOString(),
+      refinements: [...original.refinements, refinement], saved: false,
+      kind: 'concept', pending: true,
+    };
+    setGenerations(prev => [placeholder, ...prev]);
+    setActiveTab('results');
+    setRendering(true);
+    callRender(refinedPrompt, 1).then(urls => {
+      setGenerations(prev => prev.map(g => g.id === id
+        ? (urls && urls[0] ? { ...g, imageUrl: urls[0], kind: 'render', pending: false } : { ...g, pending: false })
+        : g));
+    }).finally(() => setRendering(false));
+  }, [generations, callRender]);
 
   const handleMoreLike = useCallback((genId: string) => {
     const original = generations.find(g => g.id === genId);
     if (!original) return;
-    setPhase('generating');
-    setTimeout(() => {
-      const newGens: GeneratedImage[] = [];
-      for (let i = 0; i < 2; i++) {
-        genCounter.current += 1;
-        newGens.push({
-          id: `gen-${Date.now()}-ml${i}`, prompt: `Variation of: ${original.prompt}`,
-          imageUrl: generateBlueprintSVG(genCounter.current * 23 + i * 11, `Variation ${i + 1}`),
-          timestamp: new Date().toISOString(), refinements: [], saved: false,
-        });
+    setStatus(null);
+    const batchIds: string[] = [];
+    const placeholders: GeneratedImage[] = [0, 1].map(i => {
+      genCounter.current += 1;
+      const id = `gen-${Date.now()}-ml${i}`;
+      batchIds.push(id);
+      return {
+        id, prompt: `Variation of: ${original.prompt}`,
+        imageUrl: generateBlueprintSVG(genCounter.current * 23 + i * 11, `Variation ${i + 1}`),
+        timestamp: new Date().toISOString(), refinements: [], saved: false,
+        kind: 'concept', pending: true,
+      };
+    });
+    setGenerations(prev => [...placeholders, ...prev]);
+    setActiveTab('results');
+    setRendering(true);
+    callRender(`${original.prompt}, alternative variation`, 2).then(urls => {
+      setGenerations(prev => prev.map(g => {
+        const idx = batchIds.indexOf(g.id);
+        if (idx < 0) return g;
+        if (urls && urls[idx]) return { ...g, imageUrl: urls[idx], kind: 'render', pending: false };
+        return { ...g, pending: false };
+      }));
+    }).finally(() => setRendering(false));
+  }, [generations, callRender]);
+
+  /* Pick up the dream handed off from /dream (express type/voice or discover) and
+   * prefill the brief. For the express ramp, auto-generate so "type your dream →
+   * see images" takes zero extra clicks. One-shot: the handoff key is cleared. */
+  useEffect(() => {
+    if (typeof window === 'undefined' || brief) return;
+    try {
+      const source = new URLSearchParams(window.location.search).get('source');
+      let seed = '';
+      const express = localStorage.getItem('bkg-dream-express');
+      if (express) {
+        const p = JSON.parse(express);
+        if (p?.prompt) seed = String(p.prompt);
+        localStorage.removeItem('bkg-dream-express');
       }
-      setGenerations(prev => [...newGens, ...prev]);
-      setPhase('results');
-    }, 1800);
-  }, [generations]);
+      if (!seed) {
+        const profile = localStorage.getItem('bkg-dream-profile');
+        if (profile) {
+          const p = JSON.parse(profile);
+          seed = String(p?.freeformNotes || p?.summary || p?.profileSummary || p?.description || '').trim();
+          localStorage.removeItem('bkg-dream-profile');
+        }
+      }
+      if (seed) {
+        setBrief(seed);
+        if (source === 'express') {
+          setTimeout(() => runConcepts(buildStudioPrompt(seed, DEFAULT_CONTROLS), ['Exterior', 'Interior', 'Aerial', 'Sketch']), 50);
+        }
+      }
+    } catch { /* ignore malformed handoff */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveToBoard = useCallback((genId: string, room: string) => {
     const gen = generations.find(g => g.id === genId);
@@ -148,7 +265,10 @@ function DesignStudioInner() {
     if (d) {
       setBrief(d.brief || '');
       setControls(d.styleControls || { ...DEFAULT_CONTROLS });
-      setGenerations((d.generations || []).map(g => ({ ...g, saved: g.saved ?? false })));
+      setGenerations((d.generations || []).map(g => ({
+        ...g, saved: g.saved ?? false,
+        kind: (g.imageUrl || '').startsWith('data:') ? 'concept' : 'render', pending: false,
+      })));
       setBoard((d.board || []).map(b => ({ id: b.id, generationId: b.generationId, imageUrl: b.imageUrl, room: b.room, label: b.label })));
       setTokens((d.extractedElements || []).map(t => ({ id: t.id, label: t.label, category: t.category, color: t.color, sourceGenerationId: t.sourceGenerationId, description: t.description })));
       setPhase(d.generations && d.generations.length > 0 ? 'results' : 'brief');
@@ -178,8 +298,8 @@ function DesignStudioInner() {
       {/* Ambient holographic glow */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: `radial-gradient(ellipse at 30% 20%, rgba(0,212,255,0.06) 0%, transparent 50%),
-                     radial-gradient(ellipse at 70% 80%, rgba(0,136,170,0.04) 0%, transparent 50%)`,
+        background: `radial-gradient(ellipse at 30% 20%, rgba(216,90,48,0.05) 0%, transparent 50%),
+                     radial-gradient(ellipse at 70% 80%, rgba(196,164,74,0.05) 0%, transparent 50%)`,
       }} />
 
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '24px 20px 80px' }}>
@@ -188,13 +308,13 @@ function DesignStudioInner() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
-              background: `linear-gradient(135deg, ${ACCENT}, #0088AA)`,
+              background: `linear-gradient(135deg, ${ACCENT}, ${GOLD})`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 22, boxShadow: `0 0 20px ${ACCENT_GLOW}`,
             }}>✏️</div>
             <h1 style={{
               margin: 0, fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px',
-              background: `linear-gradient(135deg, ${ACCENT}, #66E0FF)`,
+              background: `linear-gradient(135deg, ${ACCENT}, ${GOLD})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>AI DESIGN STUDIO</h1>
           </div>
@@ -216,8 +336,8 @@ function DesignStudioInner() {
                 disabled={!brief.trim()}
                 style={{
                   width: '100%', padding: '18px 24px',
-                  background: brief.trim() ? `linear-gradient(135deg, ${ACCENT}, #0088AA)` : 'rgba(255,255,255,0.06)',
-                  color: brief.trim() ? '#000' : TEXT_DIM,
+                  background: brief.trim() ? `linear-gradient(135deg, ${ACCENT}, ${GOLD})` : 'rgba(44,24,16,0.06)',
+                  color: brief.trim() ? ON_ACCENT : TEXT_DIM,
                   border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800,
                   cursor: brief.trim() ? 'pointer' : 'default', fontFamily: 'inherit',
                   letterSpacing: '0.5px', boxShadow: brief.trim() ? `0 0 30px ${ACCENT_GLOW}` : 'none',
@@ -242,6 +362,18 @@ function DesignStudioInner() {
               {activeTab === 'results' && (
                 <div>
                   <GenerateBar brief={brief} onBriefChange={setBrief} onGenerate={handleGenerate} onAdjustSliders={() => { setPhase('brief'); setActiveTab('results'); }} />
+                  {(rendering || status) && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+                      padding: '10px 14px', borderRadius: 10,
+                      background: status?.kind === 'warn' ? 'rgba(196,164,74,0.12)' : ACCENT_DIM,
+                      border: `1px solid ${status?.kind === 'warn' ? 'rgba(196,164,74,0.4)' : BORDER}`,
+                      color: TEXT_PRIMARY, fontSize: 12.5, fontFamily: 'monospace',
+                    }}>
+                      <span style={{ fontSize: 14 }}>{rendering ? '✨' : status?.kind === 'warn' ? '🔒' : '✏️'}</span>
+                      <span>{rendering ? 'Rendering photoreal concepts… your sketches are ready below in the meantime.' : status?.text}</span>
+                    </div>
+                  )}
                   <GenerationGrid
                     generations={generations} extractingId={extractingId}
                     onSave={(id) => { if (!generations.find(g => g.id === id)?.saved) setSaveRoom({ genId: id, open: true }); }}
@@ -276,8 +408,8 @@ function DesignStudioInner() {
             initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
             style={{
               position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
-              zIndex: 200, background: `linear-gradient(135deg, ${ACCENT}, #0088AA)`,
-              color: '#000', padding: '14px 28px', borderRadius: 12,
+              zIndex: 200, background: `linear-gradient(135deg, ${ACCENT}, ${GOLD})`,
+              color: ON_ACCENT, padding: '14px 28px', borderRadius: 12,
               fontSize: 14, fontWeight: 700, fontFamily: 'monospace',
               boxShadow: `0 0 40px ${ACCENT_GLOW}`,
             }}
@@ -296,7 +428,7 @@ function DesignStudioInner() {
       />
 
       <style jsx global>{`
-        @keyframes blueprintPulse { 0%, 100% { box-shadow: 0 0 20px rgba(0,212,255,0.1); } 50% { box-shadow: 0 0 40px rgba(0,212,255,0.2); } }
+        @keyframes blueprintPulse { 0%, 100% { box-shadow: 0 0 20px rgba(216,90,48,0.1); } 50% { box-shadow: 0 0 40px rgba(216,90,48,0.2); } }
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
       `}</style>
     </div>
