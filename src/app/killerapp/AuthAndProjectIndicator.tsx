@@ -104,6 +104,13 @@ export default function AuthAndProjectIndicator({ inline = false }: AuthAndProje
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
+  // 2026-06-14 (founder dogfood): the desktop auth pill is now a clickable
+  // ACCOUNT MENU (New project / Switch project / Sign out). Founder couldn't
+  // find sign-out (it only lived in the compass) or start a new project, and
+  // needs to switch between accounts on one machine.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   // 2026-05-19 (Ship 18): "Saved Xs ago" subtitle. `lastSavedAt` is the
   // epoch ms of the most recent `bkg:workflow:autosaved` event for the
   // ACTIVE project. `nowTick` is a counter we bump every 5s so the
@@ -226,6 +233,37 @@ export default function AuthAndProjectIndicator({ inline = false }: AuthAndProje
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
+  // Close the desktop account menu on outside-click / Escape (mirrors the drawer).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as Node | null;
+      if (menuRef.current && t && !menuRef.current.contains(t)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
+  // Sign out → full reload to /login so ALL cached project/session state is
+  // cleared and any account (incl. a different one) can sign in fresh on the
+  // same machine. Founder dogfood: "sign out and then in again anytime,
+  // different accounts on the same machine."
+  const handleSignOut = useCallback(async () => {
+    setMenuOpen(false);
+    setDrawerOpen(false);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Still send them to /login — a stale local session is better cleared there.
+    }
+    if (typeof window !== 'undefined') window.location.href = '/login';
+  }, []);
+
   const startRenaming = () => {
     if (project) {
       setRenamingText(project.name ?? '');
@@ -325,6 +363,58 @@ export default function AuthAndProjectIndicator({ inline = false }: AuthAndProje
       </Link>
     </span>
   );
+
+  // 2026-06-14 (dogfood): shared account-menu bits. When signed in, the
+  // desktop auth pill (inline + fixed) becomes a button that toggles this
+  // dropdown. No emoji in chrome (brand rule) — plain text labels.
+  const menuItemStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    textAlign: 'left',
+    padding: '8px 12px',
+    borderRadius: 6,
+    fontSize: 13,
+    color: 'var(--graphite, #2E2E30)',
+    background: 'transparent',
+    border: 'none',
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  };
+  const accountMenuPanel = email && menuOpen ? (
+    <div
+      role="menu"
+      data-testid="account-menu"
+      style={{
+        position: 'absolute',
+        top: 'calc(100% + 6px)',
+        right: 0,
+        minWidth: 184,
+        background: 'var(--bp-paper-white, #FFFDF7)',
+        border: '0.5px solid var(--faded-rule, #C9C3B3)',
+        borderRadius: 10,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        padding: 6,
+        zIndex: 200,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        fontFamily: 'var(--font-archivo), sans-serif',
+      }}
+    >
+      <Link href="/projects/new" role="menuitem" onClick={() => setMenuOpen(false)} style={menuItemStyle}>
+        New project
+      </Link>
+      <Link href="/killerapp" role="menuitem" onClick={() => setMenuOpen(false)} style={menuItemStyle}>
+        Switch project
+      </Link>
+      <div style={{ height: 1, background: 'var(--faded-rule, #C9C3B3)', margin: '4px 6px', opacity: 0.6 }} />
+      <button type="button" role="menuitem" data-testid="account-menu-signout" onClick={() => void handleSignOut()} style={menuItemStyle}>
+        Sign out
+      </button>
+    </div>
+  ) : null;
 
   // 2026-05-19 (Ship 18): the "Saved Xs ago" subtitle, always rendered
   // under the project name when a project is active. Falls back to
@@ -622,18 +712,41 @@ export default function AuthAndProjectIndicator({ inline = false }: AuthAndProje
                   </div>
                 )}
 
-                <Link
-                  href="/killerapp"
-                  onClick={closeDrawer}
-                  style={{
-                    fontSize: 13,
-                    color: 'var(--brass, #B6873A)',
-                    textDecoration: 'underline',
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  Switch project
-                </Link>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
+                  <Link
+                    href="/projects/new"
+                    onClick={closeDrawer}
+                    style={{ fontSize: 13, color: 'var(--brass, #B6873A)', textDecoration: 'underline' }}
+                  >
+                    New project
+                  </Link>
+                  <Link
+                    href="/killerapp"
+                    onClick={closeDrawer}
+                    style={{ fontSize: 13, color: 'var(--brass, #B6873A)', textDecoration: 'underline' }}
+                  >
+                    Switch project
+                  </Link>
+                  {email ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleSignOut()}
+                      data-testid="account-menu-signout-mobile"
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--graphite, #2E2E30)',
+                        textDecoration: 'underline',
+                        background: 'transparent',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  ) : null}
+                </div>
               </motion.div>
             </>
           )}
@@ -671,24 +784,34 @@ export default function AuthAndProjectIndicator({ inline = false }: AuthAndProje
           }}
         />
 
-        {/* Auth pill — compact for nav bar */}
-        <div
-          style={{
-            pointerEvents: 'auto',
-            padding: '5px 10px',
-            height: 28,
-            display: 'flex',
-            alignItems: 'center',
-            background: 'var(--trace, #F4F0E6)',
-            border: '0.5px solid var(--faded-rule, #C9C3B3)',
-            borderRadius: 999,
-            fontSize: 11,
-            color: 'var(--graphite, #2E2E30)',
-            fontFamily: 'var(--font-archivo), sans-serif',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {authPillBody}
+        {/* Auth pill — compact for nav bar; doubles as the account-menu trigger */}
+        <div ref={menuRef} style={{ position: 'relative', pointerEvents: 'auto' }}>
+          <div
+            onClick={email ? () => setMenuOpen((o) => !o) : undefined}
+            role={email ? 'button' : undefined}
+            aria-haspopup={email ? 'menu' : undefined}
+            aria-expanded={email ? menuOpen : undefined}
+            data-testid="account-menu-trigger"
+            style={{
+              padding: '5px 10px',
+              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'var(--trace, #F4F0E6)',
+              border: '0.5px solid var(--faded-rule, #C9C3B3)',
+              borderRadius: 999,
+              fontSize: 11,
+              color: 'var(--graphite, #2E2E30)',
+              fontFamily: 'var(--font-archivo), sans-serif',
+              whiteSpace: 'nowrap',
+              cursor: email ? 'pointer' : 'default',
+            }}
+          >
+            {authPillBody}
+            {email ? <span aria-hidden style={{ opacity: 0.5, fontSize: 9 }}>▾</span> : null}
+          </div>
+          {accountMenuPanel}
         </div>
 
         {/* Project pill — compact, beside auth pill */}
@@ -739,25 +862,35 @@ export default function AuthAndProjectIndicator({ inline = false }: AuthAndProje
       }}
       data-testid="auth-and-project-indicator"
     >
-      {/* Auth pill — always visible. 2026-05-19 (Ship 18): font 11 -> 13,
-          padding 8/12 -> 10/16 for investor-demo prominence. */}
-      <div
-        style={{
-          pointerEvents: 'auto',
-          padding: '10px 16px',
-          minHeight: 44,
-          display: 'flex',
-          alignItems: 'center',
-          background: 'var(--trace, #F4F0E6)',
-          border: '0.5px solid var(--faded-rule, #C9C3B3)',
-          borderRadius: 999,
-          fontSize: 13,
-          color: 'var(--graphite, #2E2E30)',
-          fontFamily: 'var(--font-archivo), sans-serif',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {authPillBody}
+      {/* Auth pill — always visible; account-menu trigger when signed in.
+          2026-05-19 (Ship 18): font 11 -> 13, padding 8/12 -> 10/16. */}
+      <div ref={menuRef} style={{ position: 'relative', pointerEvents: 'auto' }}>
+        <div
+          onClick={email ? () => setMenuOpen((o) => !o) : undefined}
+          role={email ? 'button' : undefined}
+          aria-haspopup={email ? 'menu' : undefined}
+          aria-expanded={email ? menuOpen : undefined}
+          data-testid="account-menu-trigger"
+          style={{
+            padding: '10px 16px',
+            minHeight: 44,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'var(--trace, #F4F0E6)',
+            border: '0.5px solid var(--faded-rule, #C9C3B3)',
+            borderRadius: 999,
+            fontSize: 13,
+            color: 'var(--graphite, #2E2E30)',
+            fontFamily: 'var(--font-archivo), sans-serif',
+            whiteSpace: 'nowrap',
+            cursor: email ? 'pointer' : 'default',
+          }}
+        >
+          {authPillBody}
+          {email ? <span aria-hidden style={{ opacity: 0.5, fontSize: 10 }}>▾</span> : null}
+        </div>
+        {accountMenuPanel}
       </div>
 
       {/* Project pill — only when a project is active. 2026-05-19 (Ship 18):

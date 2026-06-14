@@ -4325,3 +4325,24 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags / deferred:** the OnboardingModal is now effectively retired for new signups (it only fired via `first_run=1`); a follow-up could remove it outright once the new flow is confirmed in a real browser. Grounded estimates + Stripe checkout remain queued (spawned as reminder chips).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/post-signup-first-run` → PR. The first-run experience is now wired into the funnel: signup → One Door → role → tiers → cockpit.
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `fix/header-account-menu` — dogfood fix: header account menu (sign-out + switch accounts + new project) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `63c9aba`. Founder dogfooding live prod hit three blockers; this PR clears two. The third (editable jurisdiction) is a separate lane.
+
+**The gaps (founder, verbatim):** "need to be able to make a new project. Need to be able to sign out and then in again anytime, different accounts on the same machine even."
+
+**Root cause:** `AuthAndProjectIndicator` (the "signed in · {email}" header pill) was a passive label — no menu. Sign-out only existed buried in `CompassNav`; a `/projects/new` page existed but was unlinked. So a signed-in user had no way to sign out, switch accounts, or start a project from the chrome.
+
+**What shipped (one file — `src/app/killerapp/AuthAndProjectIndicator.tsx`):** the auth pill is now a clickable **account menu** when signed in:
+- **New project** → `/projects/new` (the existing, working creation flow — POST `/api/v1/projects` → redirect into the new project).
+- **Switch project** → `/killerapp`.
+- **Sign out** → `supabase.auth.signOut()` then a full reload to `/login`, clearing ALL cached session/project state so **any account (incl. a different one) can sign in fresh on the same machine.**
+- Wired into all three layouts: inline (the nav-bar pill — what the founder sees on desktop), fixed (top-right), and the existing mobile drawer (added New project / Switch project / Sign out). Outside-click + Escape close the dropdown. On-brand (trace/vellum/brass/graphite tokens, no emoji, ▾ caret).
+
+**Verification (real browser, dev server from THIS worktree on :3498, `lsof`-cwd-confirmed):** **not-signed-in** state intact (header shows "Not signed in · Sign in / Sign up", no menu trigger, cockpit renders). The **signed-in account menu** was confirmed by temporarily forcing the signed-in state (3 `// TEMP-VERIFY` edits, all reverted before commit): the dropdown renders on-brand with New project / Switch project / Sign out, correctly positioned, no overflow, console clean. Static: `tsc` 121→121 (0 in the file) · `next build` exit 0. The live sign-out→re-login round-trip needs a real account → founder dogfood (real auth isn't available in the sandbox).
+
+**Flags / deferred:** ask #3 — **editable jurisdiction** on the size-up ROM estimate (the jurisdiction is derived from an editable address but shown fixed on the ROM result; founder wants to change it directly, with a warning) — is a separate, more careful lane (touches the estimate compute). Next.
+
+**Write-lane:** **RELEASED** on push. Branch `fix/header-account-menu` → PR. Clears dogfood blockers #1 (new project) + #2 (sign out / switch accounts).
