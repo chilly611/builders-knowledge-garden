@@ -4325,3 +4325,21 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags / deferred:** the OnboardingModal is now effectively retired for new signups (it only fired via `first_run=1`); a follow-up could remove it outright once the new flow is confirmed in a real browser. Grounded estimates + Stripe checkout remain queued (spawned as reminder chips).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/post-signup-first-run` → PR. The first-run experience is now wired into the funnel: signup → One Door → role → tiers → cockpit.
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `fix/editable-jurisdiction` — dogfood fix #3: editable jurisdiction on the size-up estimate → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `63c9aba`. The third founder dogfood ask: "when the jurisdiction is changed by the user there can be a warning but it needs to be possible." (Asks #1/#2 — account menu — shipped on `fix/header-account-menu`.)
+
+**Finding:** the estimate compute already supports it — `runSizeUpEstimate(input)` accepts `jurisdiction`, and `resolveJurisdiction`/`resolveLocale` already factor it into the name, cost multiplier, and code coverage. The block was purely UI: `src/app/killerapp/stages/size-up/page.tsx` pinned `jurisdiction` as a fixed const (read-only "Jurisdiction read: X") while `address` was editable. So this is a **UI-only change — no money-path logic touched.**
+
+**What shipped (one file — `src/app/killerapp/stages/size-up/page.tsx`):**
+- `const jurisdiction = prefill.jurisdiction` → `const [jurisdiction, setJurisdiction] = useState(prefill.jurisdiction)` (mirrors the existing editable `address` state; stable at mount).
+- The read-only "Jurisdiction read" line on the 'place' step is now an **editable input** (+ MicButton, same pattern as the address field), defaulting to the address-derived value, with placeholder "Read from the address — edit to override."
+- A **warning** (amber/brass, italic) shows whenever the jurisdiction is manually changed from the prefill: "Heads up — you've set the jurisdiction manually. We'll use it for the cost basis and code coverage instead of reading it from the address. Confirm it with your AHJ." The edited value flows into the next `runSizeUpEstimate` run automatically (it's already in the deps).
+
+**Verification:** `tsc` 121→121 (0 in the file) · `next build` exit 0 (size-up compiles) · the size-up flow loads cleanly in a real browser (dev :3499, `lsof`-cwd-confirmed; 'type' step renders, no breakage). **Could NOT screenshot the 'place' step in-sandbox** — the global "Ask or tell the garden" FAB **overlaps the size-up "Next" button**, blocking the click path. The jurisdiction field is a faithful copy of the proven `address` input (compile-clean), so it's low-risk; its live render is one Next-click away → founder dogfood.
+
+**Flags (dogfood findings worth their own fix):** the **global FAB overlaps the size-up "Next" primary action** on `/killerapp/stages/*` — a real UX bug (you can hit the FAB instead of Next). Separate chrome-z-order/suppression fix.
+
+**Write-lane:** **RELEASED** on push. Branch `fix/editable-jurisdiction` → PR. Completes the three founder dogfood asks (#1 new project + #2 sign-out/switch on `fix/header-account-menu`; #3 editable jurisdiction here).

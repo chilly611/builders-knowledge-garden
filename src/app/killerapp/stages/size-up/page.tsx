@@ -292,7 +292,12 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
   const [ringFill, setRingFill] = useState(false);
   const advancedRef = useRef(false);
 
-  const jurisdiction = prefill.jurisdiction;
+  // 2026-06-14 (founder dogfood): jurisdiction is now EDITABLE (was a fixed
+  // const). It still defaults to the address-derived prefill, but the user can
+  // override it — changing the cost basis + code coverage — with a warning.
+  // runSizeUpEstimate already accepts `jurisdiction`, so the override flows
+  // straight into the next estimate run.
+  const [jurisdiction, setJurisdiction] = useState(prefill.jurisdiction);
   const scopeText = prefill.scopeText;
   const L = (human: string, pro: string) => (proMode ? pro : human);
 
@@ -421,8 +426,21 @@ function SizeUpBody({ projectId, prefill }: { projectId: string | null; prefill:
                 <AutoFillButton onFill={autofillPlace} label="Auto-fill" />
               </div>
               <MapPanel address={address || jurisdiction || 'San Francisco, CA'} />
-              {address && (
-                <p style={{ fontSize: 12.5, color: C.navy, marginTop: 8 }}>Jurisdiction read: <strong>{jurisdiction || (/(san francisco|soma|\bsf\b)/i.test(address) ? 'San Francisco, CA' : address)}</strong></p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                <label htmlFor="juris-input" style={{ fontSize: 12.5, color: C.navy, fontWeight: 700 }}>Jurisdiction</label>
+                <input
+                  id="juris-input"
+                  value={jurisdiction}
+                  onChange={(e) => setJurisdiction(e.target.value)}
+                  placeholder={address ? 'Read from the address — edit to override' : 'County or city, e.g. Marin County, CA'}
+                  style={{ ...inputStyle, maxWidth: 300 }}
+                />
+                <MicButton onText={(t) => setJurisdiction(t)} label="the jurisdiction" />
+              </div>
+              {jurisdiction.trim() && jurisdiction.trim() !== (prefill.jurisdiction || '').trim() && (
+                <p style={{ fontSize: 12.5, color: C.brass, marginTop: 8, fontStyle: 'italic' }}>
+                  Heads up — you&rsquo;ve set the jurisdiction manually. We&rsquo;ll use it for the cost basis and code coverage instead of reading it from the address. Confirm it with your AHJ.
+                </p>
               )}
             </section>
           )}
