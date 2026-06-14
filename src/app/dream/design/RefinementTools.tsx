@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ACCENT, ACCENT_DIM, ACCENT_GLOW, BG_PANEL, BORDER, TEXT_PRIMARY, TEXT_DIM } from './shared';
+import { ACCENT, ACCENT_DIM, ACCENT_GLOW, GOLD, BG_PANEL, BORDER, TEXT_PRIMARY, TEXT_DIM, ON_ACCENT, OVERLAY } from './shared';
 
 export function BlueprintLoader() {
   return (
@@ -52,9 +52,9 @@ export function GenerateBar({ brief, onBriefChange, onGenerate, onAdjustSliders 
         style={{ flex: 1, background: BG_PANEL, color: TEXT_PRIMARY, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 12, fontSize: 14, fontFamily: 'inherit', resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onGenerate} disabled={!brief.trim()}
-          style={{ flex: 1, padding: '10px 20px', background: brief.trim() ? `linear-gradient(135deg, ${ACCENT}, #0088AA)` : 'rgba(255,255,255,0.06)',
-            color: brief.trim() ? '#000' : TEXT_DIM, border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: brief.trim() ? 'pointer' : 'default', fontFamily: 'monospace', whiteSpace: 'nowrap', boxShadow: brief.trim() ? `0 0 12px ${ACCENT_GLOW}` : 'none' }}>Generate</motion.button>
-        <button onClick={onAdjustSliders} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.04)', color: TEXT_DIM, border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, cursor: 'pointer', fontFamily: 'monospace' }}>Adjust Sliders</button>
+          style={{ flex: 1, padding: '10px 20px', background: brief.trim() ? `linear-gradient(135deg, ${ACCENT}, ${GOLD})` : 'rgba(44,24,16,0.06)',
+            color: brief.trim() ? ON_ACCENT : TEXT_DIM, border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: brief.trim() ? 'pointer' : 'default', fontFamily: 'monospace', whiteSpace: 'nowrap', boxShadow: brief.trim() ? `0 0 12px ${ACCENT_GLOW}` : 'none' }}>Generate</motion.button>
+        <button onClick={onAdjustSliders} style={{ padding: '8px 16px', background: 'rgba(44,24,16,0.04)', color: TEXT_DIM, border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 11, cursor: 'pointer', fontFamily: 'monospace' }}>Adjust Sliders</button>
       </div>
     </div>
   );
@@ -66,9 +66,9 @@ export function RoomPicker({ open, rooms, onSelect, onClose }: {
   if (!open) return null;
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: OVERLAY, backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
       <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()}
-        style={{ background: '#0F1623', borderRadius: 16, border: `1px solid ${BORDER}`, padding: 24, maxWidth: 360, width: '90%' }}>
+        style={{ background: BG_PANEL, borderRadius: 16, border: `1px solid ${BORDER}`, padding: 24, maxWidth: 360, width: '90%' }}>
         <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TEXT_PRIMARY }}>Save to Room</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {rooms.map(r => <motion.button key={r} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => onSelect(r)}
