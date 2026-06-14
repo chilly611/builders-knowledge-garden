@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { ACCENT, ACCENT_DIM, BG_PANEL, BORDER, TEXT_PRIMARY, TEXT_DIM, EXAMPLE_PROMPTS } from './shared';
+import { ACCENT, ACCENT_DIM, BG_PANEL, BORDER, TEXT_PRIMARY, TEXT_DIM, INPUT_BG, EXAMPLE_PROMPTS } from './shared';
 
 interface DesignBriefProps {
   brief: string;
@@ -50,7 +50,7 @@ export default function DesignBrief({ brief, onBriefChange }: DesignBriefProps) 
         placeholder="Describe what you want to see: a modern kitchen with white oak cabinets, quartz countertops..."
         rows={4}
         style={{
-          width: '100%', background: 'rgba(0,0,0,0.3)', color: TEXT_PRIMARY,
+          width: '100%', background: INPUT_BG, color: TEXT_PRIMARY,
           border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14,
           fontSize: 15, fontFamily: 'inherit', resize: 'vertical',
           lineHeight: 1.6, outline: 'none', boxSizing: 'border-box',
@@ -58,7 +58,7 @@ export default function DesignBrief({ brief, onBriefChange }: DesignBriefProps) 
         }}
         onFocus={(e) => {
           (e.target as HTMLTextAreaElement).style.borderColor = ACCENT;
-          (e.target as HTMLTextAreaElement).style.boxShadow = `0 0 20px rgba(0,212,255,0.1)`;
+          (e.target as HTMLTextAreaElement).style.boxShadow = `0 0 16px rgba(216,90,48,0.12)`;
         }}
         onBlur={(e) => {
           (e.target as HTMLTextAreaElement).style.borderColor = BORDER;

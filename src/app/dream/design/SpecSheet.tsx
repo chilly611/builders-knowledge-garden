@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ACCENT, ACCENT_DIM, ACCENT_GLOW, BORDER, TEXT_PRIMARY, TEXT_DIM, type BoardItem, type DesignToken, type StyleControlValues } from './shared';
+import { ACCENT, ACCENT_DIM, ACCENT_GLOW, GOLD, BORDER, TEXT_PRIMARY, TEXT_DIM, ON_ACCENT, type BoardItem, type DesignToken, type StyleControlValues } from './shared';
 
 function Sec({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -59,7 +59,7 @@ export default function SpecSheet({ board, tokens, brief, controls, onBuildBluep
       <Sec title="MATERIALS PALETTE">
         {!tokens.length ? <p style={{ fontSize: 13, color: TEXT_DIM, fontStyle: 'italic' }}>Extract elements from designs to populate this.</p>
          : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
-            {categories.map(cat => <div key={cat} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 10, border: `1px solid ${BORDER}` }}>
+            {categories.map(cat => <div key={cat} style={{ background: 'rgba(44,24,16,0.05)', borderRadius: 8, padding: 10, border: `1px solid ${BORDER}` }}>
               <p style={{ fontSize: 11, color: TEXT_DIM, margin: '0 0 6px', fontFamily: 'monospace' }}>{cat}</p>
               {tokens.filter(t => t.category === cat).map(t => <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <div style={{ width: 12, height: 12, borderRadius: 3, background: t.color, flexShrink: 0 }} />
@@ -78,7 +78,7 @@ export default function SpecSheet({ board, tokens, brief, controls, onBuildBluep
       </Sec>
 
       <motion.button whileHover={{ scale: 1.02, boxShadow: `0 0 50px ${ACCENT_GLOW}` }} whileTap={{ scale: 0.98 }} onClick={onBuildBlueprint}
-        style={{ width: '100%', padding: '18px 24px', marginTop: 32, background: `linear-gradient(135deg, ${ACCENT}, #0088AA)`, color: '#000', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: 'pointer', letterSpacing: '0.5px', boxShadow: `0 0 30px ${ACCENT_GLOW}`, position: 'relative', overflow: 'hidden' }}>
+        style={{ width: '100%', padding: '18px 24px', marginTop: 32, background: `linear-gradient(135deg, ${ACCENT}, ${GOLD})`, color: ON_ACCENT, border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: 'pointer', letterSpacing: '0.5px', boxShadow: `0 0 30px ${ACCENT_GLOW}`, position: 'relative', overflow: 'hidden' }}>
         <span style={{ position: 'relative' }}>BUILD BLUEPRINT</span>
       </motion.button>
       <p style={{ textAlign: 'center', fontSize: 11, color: TEXT_DIM, marginTop: 8, fontFamily: 'monospace' }}>Compile your design board into a spec for the 3D visualization pipeline</p>

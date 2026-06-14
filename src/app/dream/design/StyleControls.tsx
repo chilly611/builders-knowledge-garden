@@ -38,7 +38,7 @@ function StudioSlider({ label, low, high, value, onChange }: {
         onMouseDown={handleMouseDown}
         style={{
           position: 'relative', height: 28, cursor: 'pointer',
-          background: `linear-gradient(90deg, ${ACCENT_DIM}, rgba(0,212,255,0.08))`,
+          background: `linear-gradient(90deg, ${ACCENT_DIM}, rgba(216,90,48,0.06))`,
           borderRadius: 6, border: `1px solid ${BORDER}`,
         }}
       >
@@ -46,7 +46,7 @@ function StudioSlider({ label, low, high, value, onChange }: {
         <div style={{
           position: 'absolute', top: 0, left: 0, bottom: 0,
           width: `${value}%`, borderRadius: 6,
-          background: `linear-gradient(90deg, rgba(0,212,255,0.08), rgba(0,212,255,0.22))`,
+          background: `linear-gradient(90deg, rgba(216,90,48,0.12), rgba(216,90,48,0.32))`,
           transition: 'width 0.05s linear',
         }} />
         {/* Thumb with glow */}
