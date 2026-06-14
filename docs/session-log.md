@@ -4208,6 +4208,11 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 **Write-lane:** **RELEASED** on push. Branch `feat/honesty-review-queue-ui` → PR. Honesty tail remaining: B2.1 (needs ingestion topology), B3 (needs Q1), B4 (re-bucket, shared prod), B6 (backfill).
 
+**Founder review → fix (same lane, same PR, dev server :3494):** Founder reviewed both screens; the `?demo=1` design read well, but the **live `/admin/review` was a dead end** — *"it said I needed to be signed in and there's nowhere to sign in or any way to navigate that I noticed."* Fixed on this branch:
+- **`ReviewQueue.tsx`** — new `authError` / `signInHref` / `homeHref` props. A persistent **`← Builder's Knowledge Garden`** back-link now renders in every state (never a dead end). When access is blocked: a vellum **"Reviewer access / Sign in to review the queue"** panel with a brass **Sign in** CTA (→ `/login?next=/admin/review`) + **Back to the app** link, and an honest subhead ("A reviewer seat is needed to work this queue.") replacing the misleading "0 items waiting." Empty-state condition guarded (`!authError`) so it can't collide with the access state; the original rust `error` panel preserved as the `else` branch.
+- **`ReviewQueueClient.tsx`** — now treats **401 as well as 403** as "not a reviewer" (signed-out → 401, wrong seat → 403; both → the sign-in CTA, not a bare error string). New `authError` state, reset on each load, passed to the component.
+- **Verified (real browser, clean `.next` rebuild):** the back-link + sign-in panel render on-brand; brass CTA points at `/login?next=%2Fadmin%2Freview`. A transient dev-only **hydration mismatch** flagged by the Next overlay ("1 Issue") was an HMR server/client desync at the newly-added back-link — **cleared on a fresh build, console clean, no production impact** (`next build` does a single coherent render). `next build` exit 0 · `vitest` 26 fail / 805 pass (baseline held). Screenshot captured.
+
 ---
 
 ## 2026-06-13 — [Claude Code] LANE: `feat/first-run-rebuild` — LOOP 3 PR1: The One Door (first-run Principle #1) → PR
