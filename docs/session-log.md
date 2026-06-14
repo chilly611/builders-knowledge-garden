@@ -4328,21 +4328,18 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 ---
 
-## 2026-06-14 — [Claude Code] LANE: `fix/header-account-menu` — dogfood fix: header account menu (sign-out + switch accounts + new project) → PR
-**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `63c9aba`. Founder dogfooding live prod hit three blockers; this PR clears two. The third (editable jurisdiction) is a separate lane.
+## 2026-06-14 — [Claude Code] LANE: `fix/editable-jurisdiction` — dogfood fix #3: editable jurisdiction on the size-up estimate → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `63c9aba`. The third founder dogfood ask: "when the jurisdiction is changed by the user there can be a warning but it needs to be possible." (Asks #1/#2 — account menu — shipped on `fix/header-account-menu`.)
 
-**The gaps (founder, verbatim):** "need to be able to make a new project. Need to be able to sign out and then in again anytime, different accounts on the same machine even."
+**Finding:** the estimate compute already supports it — `runSizeUpEstimate(input)` accepts `jurisdiction`, and `resolveJurisdiction`/`resolveLocale` already factor it into the name, cost multiplier, and code coverage. The block was purely UI: `src/app/killerapp/stages/size-up/page.tsx` pinned `jurisdiction` as a fixed const (read-only "Jurisdiction read: X") while `address` was editable. So this is a **UI-only change — no money-path logic touched.**
 
-**Root cause:** `AuthAndProjectIndicator` (the "signed in · {email}" header pill) was a passive label — no menu. Sign-out only existed buried in `CompassNav`; a `/projects/new` page existed but was unlinked. So a signed-in user had no way to sign out, switch accounts, or start a project from the chrome.
+**What shipped (one file — `src/app/killerapp/stages/size-up/page.tsx`):**
+- `const jurisdiction = prefill.jurisdiction` → `const [jurisdiction, setJurisdiction] = useState(prefill.jurisdiction)` (mirrors the existing editable `address` state; stable at mount).
+- The read-only "Jurisdiction read" line on the 'place' step is now an **editable input** (+ MicButton, same pattern as the address field), defaulting to the address-derived value, with placeholder "Read from the address — edit to override."
+- A **warning** (amber/brass, italic) shows whenever the jurisdiction is manually changed from the prefill: "Heads up — you've set the jurisdiction manually. We'll use it for the cost basis and code coverage instead of reading it from the address. Confirm it with your AHJ." The edited value flows into the next `runSizeUpEstimate` run automatically (it's already in the deps).
 
-**What shipped (one file — `src/app/killerapp/AuthAndProjectIndicator.tsx`):** the auth pill is now a clickable **account menu** when signed in:
-- **New project** → `/projects/new` (the existing, working creation flow — POST `/api/v1/projects` → redirect into the new project).
-- **Switch project** → `/killerapp`.
-- **Sign out** → `supabase.auth.signOut()` then a full reload to `/login`, clearing ALL cached session/project state so **any account (incl. a different one) can sign in fresh on the same machine.**
-- Wired into all three layouts: inline (the nav-bar pill — what the founder sees on desktop), fixed (top-right), and the existing mobile drawer (added New project / Switch project / Sign out). Outside-click + Escape close the dropdown. On-brand (trace/vellum/brass/graphite tokens, no emoji, ▾ caret).
+**Verification:** `tsc` 121→121 (0 in the file) · `next build` exit 0 (size-up compiles) · the size-up flow loads cleanly in a real browser (dev :3499, `lsof`-cwd-confirmed; 'type' step renders, no breakage). **Could NOT screenshot the 'place' step in-sandbox** — the global "Ask or tell the garden" FAB **overlaps the size-up "Next" button**, blocking the click path. The jurisdiction field is a faithful copy of the proven `address` input (compile-clean), so it's low-risk; its live render is one Next-click away → founder dogfood.
 
-**Verification (real browser, dev server from THIS worktree on :3498, `lsof`-cwd-confirmed):** **not-signed-in** state intact (header shows "Not signed in · Sign in / Sign up", no menu trigger, cockpit renders). The **signed-in account menu** was confirmed by temporarily forcing the signed-in state (3 `// TEMP-VERIFY` edits, all reverted before commit): the dropdown renders on-brand with New project / Switch project / Sign out, correctly positioned, no overflow, console clean. Static: `tsc` 121→121 (0 in the file) · `next build` exit 0. The live sign-out→re-login round-trip needs a real account → founder dogfood (real auth isn't available in the sandbox).
+**Flags (dogfood findings worth their own fix):** the **global FAB overlaps the size-up "Next" primary action** on `/killerapp/stages/*` — a real UX bug (you can hit the FAB instead of Next). Separate chrome-z-order/suppression fix.
 
-**Flags / deferred:** ask #3 — **editable jurisdiction** on the size-up ROM estimate (the jurisdiction is derived from an editable address but shown fixed on the ROM result; founder wants to change it directly, with a warning) — is a separate, more careful lane (touches the estimate compute). Next.
-
-**Write-lane:** **RELEASED** on push. Branch `fix/header-account-menu` → PR. Clears dogfood blockers #1 (new project) + #2 (sign out / switch accounts).
+**Write-lane:** **RELEASED** on push. Branch `fix/editable-jurisdiction` → PR. Completes the three founder dogfood asks (#1 new project + #2 sign-out/switch on `fix/header-account-menu`; #3 editable jurisdiction here).
