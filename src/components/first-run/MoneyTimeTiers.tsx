@@ -25,6 +25,7 @@
 
 import { useState } from 'react';
 import { colors } from '@/design-system';
+import { type FirstRunRole } from './InferRole';
 
 const SAGE = '#5E7A56'; // flag green / ease (visual-first-and-flags.md §3)
 const C = {
@@ -121,12 +122,14 @@ const mono: React.CSSProperties = {
 export interface MoneyTimeTiersProps {
   /** The user's words from The One Door — echoed back, unedited. */
   intent?: string;
+  /** Inferred/confirmed role (Principle #4) — swaps the framing voice only. */
+  role?: FirstRunRole;
   tiers?: CostTier[];
   onSelect: (key: CostTier['key']) => void;
   onGoDeeper?: () => void;
 }
 
-export default function MoneyTimeTiers({ intent, tiers = SAMPLE_TIERS, onSelect, onGoDeeper }: MoneyTimeTiersProps) {
+export default function MoneyTimeTiers({ intent, role = 'owner', tiers = SAMPLE_TIERS, onSelect, onGoDeeper }: MoneyTimeTiersProps) {
   const recommendedKey = tiers.find((t) => t.recommended)?.key ?? tiers[0]?.key;
   const [selected, setSelected] = useState<CostTier['key']>(recommendedKey);
 
@@ -134,6 +137,13 @@ export default function MoneyTimeTiers({ intent, tiers = SAMPLE_TIERS, onSelect,
     setSelected(k);
     onSelect(k);
   };
+
+  // Same engine, copy swaps only (Principle #4). Owner reads outcomes ("build");
+  // GC reads the working frame ("price the bid"). The numbers don't change.
+  const voice =
+    role === 'gc'
+      ? { label: 'Money & time · scope the bid', verb: 'price', generic: 'Three ways to price it' }
+      : { label: 'Money & time · pick a starting point', verb: 'build', generic: 'Three ways to build it' };
 
   return (
     <main
@@ -153,6 +163,7 @@ export default function MoneyTimeTiers({ intent, tiers = SAMPLE_TIERS, onSelect,
           __html: JSON.stringify({
             type: 'money_time_tiers',
             intent: intent ?? null,
+            role,
             recommended: recommendedKey,
             note: 'ranges are the engine read, not quotes',
             tiers: tiers.map((t) => ({
@@ -167,9 +178,9 @@ export default function MoneyTimeTiers({ intent, tiers = SAMPLE_TIERS, onSelect,
       />
 
       <div style={{ maxWidth: 920, margin: '0 auto' }}>
-        <p style={{ ...mono, color: C.brass, margin: '0 0 8px' }}>Money &amp; time · pick a starting point</p>
+        <p style={{ ...mono, color: C.brass, margin: '0 0 8px' }}>{voice.label}</p>
         <h1 style={{ fontSize: 'clamp(24px,4vw,34px)', fontWeight: 700, margin: '0 0 6px', lineHeight: 1.15 }}>
-          {intent ? <>Three ways to build “{intent}”</> : 'Three ways to build it'}
+          {intent ? <>Three ways to {voice.verb} “{intent}”</> : voice.generic}
         </h1>
         <p style={{ color: C.muted, margin: '0 0 24px', fontSize: 14, lineHeight: 1.5 }}>
           Ranges are the engine&rsquo;s read — a starting estimate, not a quote. Confirm costs, codes, and permits with

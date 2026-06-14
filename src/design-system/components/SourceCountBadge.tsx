@@ -18,7 +18,7 @@
  *   3+ verified → green  "N sources verified"
  *   2 verified  → amber  "2 sources verified — confirm with code official"
  *   1 verified  → amber  "1 source — confirm with code official"
- *   0 verified  → red    "Preliminary — confirm with code official before relying"
+ *   0 verified  → rust   "Preliminary — confirm with code official before relying"
  *
  * No hardcoded hex outside the design-system token reference.
  */
@@ -94,8 +94,11 @@ export default function SourceCountBadge({
   } else {
     label = 'Preliminary — confirm with code official before relying';
     icon = '⚠';
-    backgroundColor = 'rgba(232, 68, 58, 0.10)'; // red-tint stop
-    color = '#A02A1F';
+    // Sanctioned "risk" flag = specimen-rust (#A53A2D), NOT the prohibited
+    // Killer-App red #E8443A. Same honest "preliminary — call the AHJ" signal,
+    // now brand-compliant and aligned with the rust risk tier used elsewhere.
+    backgroundColor = `${colors.redline}1F`; // specimen-rust @ ~12%
+    color = '#7A2A20'; // deep rust for legible text (matches the deeper-shade pattern of the green/amber tiers)
     title = 'No verified code source has been retrieved for this query. Speak to your local building department before acting.';
   }
 
@@ -103,8 +106,11 @@ export default function SourceCountBadge({
   // sources. The label keeps the numbers honest; the tooltip carries the
   // "human reviewer signed off" provenance.
   if (manuallyAttested && sources >= 1) {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    title = `${title} Includes a manual review by the org owner against an external licensed source (reviewed ${today}).`;
+    // No fabricated date: the attestation timestamp lives on the row
+    // (manually_verified_at), not "now". Stamping today would misstate when
+    // the review happened, and new Date() in a client render risks an
+    // SSR/client hydration mismatch on the title.
+    title = `${title} Includes a manual review by the org owner against an external licensed source.`;
   }
 
   // AUTO-VERIFY: distinct yellow tick + tooltip. Strictly weaker than
