@@ -4282,3 +4282,32 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags / deferred:** the tier ranges are honest **samples** — wiring them to a **grounded** per-project estimate (the `/api/v1/projects/estimate` `{low,high}`) is the follow-up (so the numbers reflect the user's actual jurisdiction/sqft, still as labeled ranges). The full sequence — One Door → infer-the-role (Principle #4) → these tiers → cockpit via go-deeper — isn't stitched yet (each screen exists; the routing between them + the post-signup landing rewire is a deliberate later PR). Global FAB still bleeds onto the first-run routes (chrome-suppression follow-up).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/first-run-tiers` → PR. Loop 3 remaining: infer-the-role (Principle #4), stitch the sequence + grounded estimates, progressive-reveal to cockpit, headless-agent acceptance. Honesty tail: B4/B6 (shared prod), badge roll-out to remaining surfaces; B5 still unmerged.
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `feat/first-run-closeout` — LOOP 3 close-out: infer-the-role + stitch the full first-run sequence → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `6053914`. Founder: "get Loop 3 closed out and done first." Closes the gap between the built-but-standalone first-run screens (One Door, money/time tiers) and a navigable end-to-end sequence.
+
+**The first-run sequence is now wired end-to-end:** **/start (One Door) → /start/role (infer the role) → /start/tiers (money, voiced) → cockpit via "go deeper."**
+
+- **`src/components/first-run/InferRole.tsx` (new)** — Principle #4. Echoes the user's exact words back unedited; infers Owner vs GC via a transparent keyword read (`inferRole()`, exported + unit-tested — not a model call); presents the inferred role as the **bright pre-selected card**, the alternate visible-but-recessive; one whisper-line rationale; switching is instant and non-punishing. Owner voice = outcomes/cost/timeline/look; GC = working-docs/compliance/lifecycle. Herbarium lock, one-thing-brightest, reduced-motion, Goal-8 machine twin. v1 = Owner + GC (beachhead); roles are data, so the nine-lane canon extends without redesign.
+- **`src/app/start/role/page.tsx` (new)** — reads the One Door intent (sessionStorage / `?intent=`), renders InferRole, stores `bkg-role` on confirm, advances to `/start/tiers`.
+- **`src/app/start/page.tsx`** — The One Door now hands off to `/start/role` (was `/dream`), wiring the sequence.
+- **`src/app/start/tiers/page.tsx` + `MoneyTimeTiers.tsx`** — tiers reads `bkg-role` and swaps **voice only** ("same engine, copy swaps only"): owner "pick a starting point / Three ways to **build**"; GC "scope the bid / Three ways to **price**." Numbers, flags, and the recommendation are unchanged. Role added to the machine twin.
+- **`src/components/GlobalChromeGate.tsx`** — suppresses the ambient bloom + AI fab on `/start*` (Principle #1: "no floating buttons"). The FAB-bleed flagged in both prior first-run PRs is gone.
+- **`src/components/first-run/InferRole.test.ts` (new)** — 5 tests for `inferRole` (GC signals, owner/dreamer voice, empty→owner default, case-insensitivity, the role catalog).
+
+**Bug caught + fixed IN browser verification (the founder's bar earning its keep):** the role screen first rendered with the WRONG card pre-selected — `intent` loads from sessionStorage in a client effect, so the first render inferred from an empty string (→ owner) and `useState(inferred)` locked the selection to that stale value; when the real words loaded and the inference flipped to GC, the selection didn't follow. Fixed: the selection now syncs to the inference until the user manually picks (a `touched` ref guards the override). Re-verified green.
+
+**Verification (real browser, dev server from THIS worktree on :3497, `lsof`-cwd-confirmed):** walked the whole sequence — One Door (FAB gone) → tapped "Bid the Twin Peaks remodel" → /start/role (echoed the words, **GC inferred + pre-selected**, owner recessive, FAB gone) → Continue → /start/tiers (**GC voice**: "scope the bid" / "price", honest ranges, Business Class recommended, every tier a non-green flag, "go deeper" present, FAB gone). Console clean (no hydration warning from the new effect). Screenshots captured. Static: `tsc` 121→121 (0 in my files) · `vitest` 26 fail / **810 pass** (805 baseline + 5 new) · `next build` exit 0.
+
+**Done vs. doctrine (docs/first-run-and-onboarding.md):** Principles #1 (One Door), #3 (money/time), #4 (infer-the-role), #5 (go-deeper to cockpit), #6 (one-thing-brightest), #7 (re-house) — all present and navigable; machine twins on every first-run screen (Goal 8); herbarium lock + no `#E8443A` throughout.
+
+**Flags / deferred (NOT silently done):**
+- **Post-signup LANDING rewire** — `/start` is reachable on its own but isn't yet the post-signup destination. That rewire touches Loop 1 onboarding routing and is a deliberate, separate, founder-gated PR (behavior change).
+- **Grounded estimates** — tier ranges are honest SAMPLES with the engine's-read label (doctrine-compliant: "render as honest ranges with the engine's-read label"). Wiring to a grounded per-project estimate (`/api/v1/projects/estimate`, by jurisdiction/sqft) is an enhancement, not a blocker.
+- **"Money within two screens"** — the sequence puts money on the 3rd view (door → role → tiers). The role screen is a one-tap confirm, so money is one quick tap away; if you'd rather fold the role read into a header ON the tiers screen (money on screen 2), that's a small reshuffle — flagging the interpretation for your call.
+- **Headless-agent acceptance pass** — every screen emits a coherent machine twin (`first_run_door` / `first_run_role` / `money_time_tiers`); a formal headless traversal harness is a follow-up.
+- **Persistence** — intent/role/tier ride sessionStorage (survive reload); durable persistence lands when a project is created server-side.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/first-run-closeout` → PR. Loop 3's first-run experience is now navigable end-to-end; everything remaining is founder-gated (post-signup landing) or enhancement (grounded estimates, headless harness).

@@ -28,6 +28,10 @@ function GlobalChromeGateInner() {
 
   if (hideShell) return null;
   if (pathname === '/intro' || pathname.startsWith('/intro/')) return null;
+  // First-run sequence (/start, /start/role, /start/tiers) is Principle #1 —
+  // "one door, no competing CTAs, no floating buttons." Suppress the ambient
+  // bloom + AI fab so each screen's single bright element is the only affordance.
+  if (/^\/start(\/|$)/.test(pathname)) return null;
   // Lifecycle stage screens render their own self-contained chrome + a sticky
   // primary-action bar at the bottom; the floating bloom + AI fab just hover
   // over that action button. Hide them on /killerapp/stages/* the same way.
