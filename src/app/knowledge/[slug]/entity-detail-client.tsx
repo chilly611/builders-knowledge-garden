@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import CopilotPanel from "@/components/CopilotPanel";
 import { getImageForEntity } from "@/lib/image-service";
+import { VerificationBanner, verificationLevelOf } from "@/components/knowledge/VerificationBanner";
 
 const ENTITY_TYPES: Record<string, { label: string; icon: string; color: string }> = {
   building_code: { label: "Code", icon: "📋", color: "#D85A30" },
@@ -42,6 +43,11 @@ interface Entity {
   metadata?: Record<string, unknown>;
   source_urls?: string[];
   updated_at?: string;
+  // Verification provenance (B3 / Option B) — present on the full row.
+  manually_verified_at?: string | null;
+  manually_verified_source?: string | null;
+  auto_verified_at?: string | null;
+  auto_verification_flagged?: boolean | null;
 }
 
 interface RelatedEntity {
@@ -191,6 +197,15 @@ export default function EntityDetailClient({ entity, relatedEntities }: Props) {
             {summary}
           </div>
         )}
+
+        {/* Verification status (B3 / Option B, docs/code-ingestion-hitl.md §5):
+            honest treatment gated on manually_verified_at — a published-but-
+            unverified row never reads as human-confirmed. */}
+        <VerificationBanner
+          level={verificationLevelOf(entity)}
+          source={entity.manually_verified_source}
+          verifiedAt={entity.manually_verified_at}
+        />
 
         {/* Body - rendered as paragraphs */}
         {bodyParagraphs.length > 0 && (
