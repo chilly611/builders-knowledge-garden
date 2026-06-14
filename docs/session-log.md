@@ -4282,3 +4282,19 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags / deferred:** the tier ranges are honest **samples** — wiring them to a **grounded** per-project estimate (the `/api/v1/projects/estimate` `{low,high}`) is the follow-up (so the numbers reflect the user's actual jurisdiction/sqft, still as labeled ranges). The full sequence — One Door → infer-the-role (Principle #4) → these tiers → cockpit via go-deeper — isn't stitched yet (each screen exists; the routing between them + the post-signup landing rewire is a deliberate later PR). Global FAB still bleeds onto the first-run routes (chrome-suppression follow-up).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/first-run-tiers` → PR. Loop 3 remaining: infer-the-role (Principle #4), stitch the sequence + grounded estimates, progressive-reveal to cockpit, headless-agent acceptance. Honesty tail: B4/B6 (shared prod), badge roll-out to remaining surfaces; B5 still unmerged.
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `feat/honesty-source-badge-rust` — honesty primitive: kill the prohibited #E8443A red in SourceCountBadge → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `6053914`. Founder: "continue" through the honesty tail — took the badge-roll-out flag (the summary's "check SourceCountBadge's 0-source red vs the #E8443A rule").
+
+**What shipped (one file — `src/design-system/components/SourceCountBadge.tsx`):**
+- **Killed the prohibited `#E8443A` red.** The 0-source "preliminary" tier used `rgba(232,68,58,0.10)` + `#A02A1F` — a Do-Not-list violation (no red `#E8443A`) on a LIVE, revenue-facing trust signal (this badge renders on every compliance-specialist answer via AnalysisPane). Now the sanctioned **specimen-rust** risk flag: `${colors.redline}1F` (#A53A2D @ ~12%) background + deep-rust `#7A2A20` text. Same honest "preliminary — confirm with the AHJ" label + ⚠ icon; brand-compliant; aligned with the rust risk tier used by the flag taxonomy / VerificationBanner (B3).
+- **Removed a fabricated date + hydration risk.** The manual-attestation tooltip stamped "(reviewed {today})" via `new Date()` in a client render — both misstated *when* the review happened (the real timestamp is `manually_verified_at` on the row, not "now") and risked an SSR/client hydration mismatch on the title. Dropped the fabricated date.
+- Other tiers unchanged (1–2 amber, 3+ green, auto-verified yellow "ai-checked" tick).
+
+**Verification (real browser, dev server from THIS worktree on :3496, `lsof`-cwd-confirmed):** a throwaway `/preview-source-badge` route rendered all six tier/flag states; **0-source now renders RUST, not red**; deep-rust text legible; other tiers intact; console clean (no hydration warning — confirming the `new Date()` removal). Screenshot captured; preview route deleted before commit. Static: `tsc` 122→122 (0 in the changed file; this worktree's baseline is 122 vs the B4 worktree's 121 — node_modules drift + a transient `.next/dev/types` artifact, confirmed by a stash-and-recount) · `next build` exit 0.
+
+**Flags / deferred (NOT silently fixed):** the prohibited `#E8443A` appears in **~14 other files** (GanttTimeline — which documents its own `#E8443A → #A1473A` migration — plus onboarding, admin healthcheck/email-status, intro, marketing/CompassNav/CapabilityShowcase, etc.). That repo-wide red purge is a separate cleanup lane, out of scope here (tight scope). TrustStrip was audited and is clean — its contested color is `#8B2A1F` (not the banned hex) and its lowest tier is honest grey "unverified."
+
+**Write-lane:** **RELEASED** on push. Branch `feat/honesty-source-badge-rust` → PR. Honesty tail remaining: B4 (pushed, unmerged — `feat/honesty-b4-domain-guard`), B6 (backfill Wave 1, shared prod), the DB-trigger backstop (§4 defense-in-depth), and the repo-wide `#E8443A` purge.
