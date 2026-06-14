@@ -4282,3 +4282,28 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags / deferred:** the tier ranges are honest **samples** — wiring them to a **grounded** per-project estimate (the `/api/v1/projects/estimate` `{low,high}`) is the follow-up (so the numbers reflect the user's actual jurisdiction/sqft, still as labeled ranges). The full sequence — One Door → infer-the-role (Principle #4) → these tiers → cockpit via go-deeper — isn't stitched yet (each screen exists; the routing between them + the post-signup landing rewire is a deliberate later PR). Global FAB still bleeds onto the first-run routes (chrome-suppression follow-up).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/first-run-tiers` → PR. Loop 3 remaining: infer-the-role (Principle #4), stitch the sequence + grounded estimates, progressive-reveal to cockpit, headless-agent acceptance. Honesty tail: B4/B6 (shared prod), badge roll-out to remaining surfaces; B5 still unmerged.
+
+---
+
+## 2026-06-13 — [Claude Code] LANE: `feat/honesty-b4-domain-guard` — LOOP 2 / Slice B "B4": domain↔entity_type guard + reversible 474-row re-bucket (§4 / §8 step 4) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree `bkg-domain-guard` off `origin/main` @ `6053914` (B5 + its sign-in fix #44/#45/#46 already merged — #45/#46 were a harmless double-merge of the same fix, #46 an empty no-op). Founder: "everything is merged, move to B4." Q1 (Option B treatment) is already settled — B3 shipped it (#42).
+
+**B4 splits into two halves; only one ships active.**
+
+**Half A — the forward guard (CODE, ships active, no shared-prod mutation):**
+- **`src/lib/knowledge/entity-domain.mjs` (new)** — the canonical routing law: `domainForEntityType(type)` maps the four compliance types (`building_code`/`code`/`code_section` → `codes`, `permit_requirement` → `permits`) and defaults everything else to `construction`. Frozen map; total function (null/unknown/empty → construction). Scope is deliberately the compliance set the migration touches — NOT the full taxonomy (locking `material→materials` etc. is a separate founder-blessed decision per §4), so the guard re-buckets nothing outside the 474. `.mjs` so the node seed script and the bundler/vitest all import one source of truth.
+- **`scripts/seed-code-entities.mjs`** — the root-cause fix. It hardcoded `domain: "construction"` for EVERY row (line 94) — the actual drift source (457 `building_code` rows landed in `construction`), and worse, with `resolution=merge-duplicates` it *overwrote* existing rows' domains back to `construction` on every re-seed. Now: NEW rows get `domainForEntityType(type)`; EXISTING rows omit `domain` entirely (mirroring the `delete rest.status` guard) so a re-seed NEVER re-buckets the live corpus — correcting existing rows is the one controlled migration's job, never a seed side-effect.
+- **`src/lib/knowledge/entity-domain.test.ts` (new)** — 5 tests: the four mappings, default-to-construction (incl. `material`/`safety_regulation` deliberately out of scope), totality, frozen map, compliance-domains-locked.
+
+**Half B — the reversible 474-row re-bucket (MUTATES shared prod, DRAFTED-NOT-APPLIED, founder-supervised):**
+- **`supabase/migrations/20260613_rebucket_domain_entity_type.sql` (new, NOT applied)** — re-tags exactly the 474 drifted compliance rows. Live counts verified read-only 2026-06-13 = **457 building_code + 9 permit_requirement + 7 code_section + 1 code = 474** (matches the spec exactly; all 474 currently `published`). Discipline baked in: (1) a `DO`-block **assert `expected 474`**, aborts on drift; (2) **capture** each row's prior domain into `metadata.domain_premigration` (idempotent) before mutating → reversible; (3) re-bucket **in place**, status + verification columns untouched (the recommended §9 Q2 path); (4) one append-only **`knowledge_review_events`** row per touched entity (`action='edit'`, from→to in the note); (5) a **post-condition** assert that 0 compliance rows remain mis-bucketed — all in ONE transaction. Commented DOWN block restores domain from the captured value.
+
+**FOUNDER GATES (before the migration is applied — the code half needs none of these):**
+- **§9 Q2 — confirm the recommended path.** Implemented as: change `domain` in place, leave verification state untouched (re-tagging a routing label isn't a content change; don't burn reviewer attention on 474 rows whose content didn't change). If you'd rather route them through `review`, say so and it's re-cut.
+- **Order dependency:** apply `20260612_knowledge_review_events.sql` FIRST — the re-bucket writes one event per row and the transaction rolls back if that table is absent. Verified read-only 2026-06-13: that table does NOT yet exist in prod.
+
+**Verification:** seed `--dry-run` exit 0 (import + map exercised, 59 entities assigned canonical domain, 0 writes) · `tsc` 121→121 (0 in my files; the `.test.ts` imports the `.mjs` cleanly via JSDoc types) · `vitest` 26 failed / **810 passed** (805 baseline + 5 new) · `next build` exit 0. Against shared prod: **read-only SQL only** — three COUNT/introspection queries to ground the 474, confirm the events-table dependency, and check column types. NO writes.
+
+**Deferred (flagged, not silently skipped):** the DB-trigger backstop (`entity_type_domain_map` table + BEFORE INSERT/UPDATE trigger, §4 defense-in-depth) — lower priority than the application guard that ships here; separate PR. Full-taxonomy lock awaits a founder taxonomy decision.
+
+**Write-lane:** **RELEASED** on push. Branch `feat/honesty-b4-domain-guard` → PR. Honesty tail remaining: **B6** (backfill Wave 1 — the 1,998 flagged rows, shared prod, founder-supervised) + badge roll-out to the remaining fact surfaces.
