@@ -89,7 +89,13 @@ export async function GET(request: NextRequest) {
           // default, i.e. "no stated destination".
           redirectTo === '/killerapp'
         ) {
-          destination = `/killerapp?project=${encodeURIComponent(onboardJson.project_id)}&first_run=1`;
+          // First-timer, no stated destination → the first-run SEQUENCE (One
+          // Door → role → tiers → cockpit via "go deeper"), not the cockpit
+          // directly (first-run doctrine Principle #5: the cockpit is earned,
+          // never auto-shown). The seeded project persists and /killerapp
+          // resolves it on go-deeper; dropping first_run=1 also keeps the legacy
+          // OnboardingModal from bootstrapping, so the sequence is the onboarding.
+          destination = '/start';
         }
       }
     } catch (e) {
