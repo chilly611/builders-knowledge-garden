@@ -28,6 +28,8 @@
 // the authoritative publisher. This is citation-for-navigation, not code reproduction.
 // Contractors must still consult the adopted edition at their AHJ.
 
+import { domainForEntityType } from "../src/lib/knowledge/entity-domain.mjs";
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -91,7 +93,10 @@ function entity(slug, title, summary, type, tags, metadata = {}, body = "") {
     summary: { en: summary },
     body: { en: body },
     entity_type: type,
-    domain: "construction",
+    // Routing label derived from entity_type (HITL spec §4), not a free-text
+    // default — this is the forward guard that stops new code/permit rows from
+    // drifting into the generic `construction` bucket the way 457 did historically.
+    domain: domainForEntityType(type),
     status: SEED_STATUS,
     tags,
     metadata: {
@@ -1144,20 +1149,24 @@ async function main() {
       : "Gate: NEW rows land at status='review' — approve them in /admin/review before they serve (pass --publish to bypass for a vetted batch)."
   );
 
-  // Don't demote the live corpus: existing rows (matched by slug) keep their
-  // current status; SEED_STATUS is stamped only on genuinely-new slugs.
+  // Don't demote OR re-bucket the live corpus: existing rows (matched by slug)
+  // keep their current status AND domain; SEED_STATUS and the canonical domain
+  // are stamped only on genuinely-new slugs.
   const existing = DRY_RUN ? new Set() : await fetchExistingSlugs(all.map((r) => r.slug));
   const prepared = all.map((r) => {
-    if (!existing.has(r.slug)) return r; // new slug → keeps status = SEED_STATUS
+    if (!existing.has(r.slug)) return r; // new slug → keeps status = SEED_STATUS + canonical domain
     const rest = { ...r };
     delete rest.status; // existing → omit status so the upsert leaves it untouched
+    delete rest.domain; // existing → omit domain too: a re-seed must NEVER re-bucket the live
+                        // corpus (merge-duplicates would overwrite it). Correcting existing
+                        // rows is the one reversible migration's job (HITL spec §4 / B4).
     return rest;
   });
   const newCount = prepared.filter((r) => "status" in r).length;
-  console.log(`  ${newCount} new → status='${SEED_STATUS}'; ${all.length - newCount} existing → status preserved.`);
+  console.log(`  ${newCount} new → status='${SEED_STATUS}' + canonical domain; ${all.length - newCount} existing → status + domain preserved.`);
 
   if (DRY_RUN) {
-    console.log(`\n[dry-run] No rows written. ${newCount} would be created at '${SEED_STATUS}'; ${all.length - newCount} existing would update content with status untouched.`);
+    console.log(`\n[dry-run] No rows written. ${newCount} would be created at '${SEED_STATUS}'; ${all.length - newCount} existing would update content with status + domain untouched.`);
     return;
   }
 
