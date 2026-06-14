@@ -4343,3 +4343,19 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags (dogfood findings worth their own fix):** the **global FAB overlaps the size-up "Next" primary action** on `/killerapp/stages/*` — a real UX bug (you can hit the FAB instead of Next). Separate chrome-z-order/suppression fix.
 
 **Write-lane:** **RELEASED** on push. Branch `fix/editable-jurisdiction` → PR. Completes the three founder dogfood asks (#1 new project + #2 sign-out/switch on `fix/header-account-menu`; #3 editable jurisdiction here).
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `fix/stage-fab-overlap` — the FAB-overlaps-Next bug (and the verification it was blocking) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `0a87d15` (both dogfood PRs #52/#53 merged). The FAB-overlaps-Next bug I flagged on the jurisdiction lane was blocking clean verification of the jurisdiction field (in-sandbox AND on prod), so fixing it unblocks both.
+
+**One-line fix (`src/app/killerapp/layout.tsx`):** `ShellNav` (the app-shell "Ask the garden" + compass bottom-right cluster) was missing the `!isStageRoute` guard that the legacy `CompassWorkflowNav` already had — so it painted over the size-up "Next" button. The layout comment already states the intent ("hide it there for the same reason the cockpit is hidden"); the app-shell path just never honored it. Now `{USE_APP_SHELL ? (!isStageRoute && <ShellNav />) : (!isStageRoute && <CompassWorkflowNav />)}` — both paths suppressed on `/killerapp/stages/*`.
+
+**Verification (real browser, dev :3500, `lsof`-cwd-confirmed) — closed two open gaps at once:**
+- **FAB fix:** on `/killerapp/stages/size-up` the "Next" button now renders clean, no FAB overlap. Screenshot.
+- **Editable jurisdiction (#53, now fully proven):** reached the 'place' step (Next was unobscured), confirmed the new **Jurisdiction field** renders (label + input + mic); typed "Sonoma County, CA" → the field accepts input, the **override warning fires** ("…we'll use it for the cost basis and code coverage instead of reading it from the address. Confirm it with your AHJ."), and the **map pin updated to "Sonoma County, CA"** (the value flows through). Screenshot.
+- Static: `tsc` 121→121 (0 in the file) · `next build` exit 0.
+
+**Remaining for founder dogfood (needs real auth, sandbox can't):** the account-menu **sign-out → re-login round-trip** on the deployed app — confirm Sign out lands on `/login` and a *different* account can sign in on the same machine.
+
+**Write-lane:** **RELEASED** on push. Branch `fix/stage-fab-overlap` → PR.

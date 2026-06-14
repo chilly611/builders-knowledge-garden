@@ -144,8 +144,12 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
         <CommandPalette />
         {/* Workflow-nav compass FAB floats over the StageShell action bar
             on lifecycle stages; hide it there for the same reason the cockpit
-            is hidden above. */}
-        {USE_APP_SHELL ? <ShellNav /> : (!isStageRoute && <CompassWorkflowNav />)}
+            is hidden above. 2026-06-14 (founder dogfood): ShellNav was missing
+            the !isStageRoute guard the legacy CompassWorkflowNav already had, so
+            its "Ask the garden" + compass cluster painted over the size-up
+            "Next" button (users could mis-tap the FAB instead of advancing).
+            Both paths are now suppressed on /killerapp/stages/*. */}
+        {USE_APP_SHELL ? (!isStageRoute && <ShellNav />) : (!isStageRoute && <CompassWorkflowNav />)}
         <SaveStatusToast />
         {/* W9.D-W2 (2026-05-22): StageWelcome mounted via StageWelcomeMount.
             Renders nothing when there is no active project, when we're on
