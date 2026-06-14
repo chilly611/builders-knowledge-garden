@@ -77,16 +77,19 @@ export default function ReviewQueueClient() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [demo, setDemo] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setAuthError(false);
     try {
       const res = await authedFetch('/api/v1/knowledge-entities/review-queue?limit=50');
-      if (res.status === 403) {
-        setError('Reviewer access only — sign in with an owner or admin seat.');
+      if (res.status === 403 || res.status === 401) {
+        // Not a reviewer (or not signed in) — show the sign-in CTA, not a dead end.
+        setAuthError(true);
         setItems([]);
         return;
       }
@@ -161,6 +164,7 @@ export default function ReviewQueueClient() {
       items={items}
       loading={loading}
       error={error}
+      authError={authError}
       busyId={busyId}
       onApprove={(id, source) => act(id, 'approve', { source })}
       onReject={(id, reason) => act(id, 'reject', { reason })}
