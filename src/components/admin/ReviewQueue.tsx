@@ -62,6 +62,12 @@ export interface ReviewQueueProps {
   items: ReviewItem[];
   loading?: boolean;
   error?: string | null;
+  /** True when the load failed because the caller isn't a reviewer — shows a sign-in CTA, not a bare error. */
+  authError?: boolean;
+  /** Where the "Sign in" CTA points (defaults to /login?next=/admin/review). */
+  signInHref?: string;
+  /** Where the back / nav links point (defaults to /killerapp). */
+  homeHref?: string;
   busyId?: string | null;
   onApprove: (id: string, source: string) => void;
   onReject: (id: string, reason: string) => void;
@@ -124,6 +130,9 @@ export default function ReviewQueue({
   items,
   loading = false,
   error = null,
+  authError = false,
+  signInHref = '/login?next=%2Fadmin%2Freview',
+  homeHref = '/killerapp',
   busyId = null,
   onApprove,
   onReject,
@@ -161,6 +170,13 @@ export default function ReviewQueue({
       />
 
       <div style={{ maxWidth: 880, margin: '0 auto' }}>
+        {/* Persistent way out — the page is never a dead end (founder review). */}
+        <a
+          href={homeHref}
+          style={{ display: 'inline-block', color: C.teal, fontSize: 13, textDecoration: 'none', marginBottom: 16 }}
+        >
+          ← Builder&rsquo;s Knowledge Garden
+        </a>
         <p style={{ ...mono, color: C.brass, margin: '0 0 6px' }}>
           Human-in-the-loop · approval gate
         </p>
@@ -168,10 +184,32 @@ export default function ReviewQueue({
         <p style={{ color: C.muted, margin: '0 0 28px', fontSize: 15 }}>
           {loading
             ? 'Loading the queue…'
-            : `${items.length} ${items.length === 1 ? 'item is' : 'items are'} waiting for your eyes — flagged first, least-confident first.`}
+            : authError
+              ? 'A reviewer seat is needed to work this queue.'
+              : `${items.length} ${items.length === 1 ? 'item is' : 'items are'} waiting for your eyes — flagged first, least-confident first.`}
         </p>
 
-        {error && (
+        {/* Access-blocked: give a real way in (sign in) and out — not a dead end. */}
+        {authError ? (
+          <div style={{ border: `1px solid ${C.edge}`, background: C.vellum, borderRadius: 12, padding: '24px 20px' }}>
+            <div style={{ ...mono, color: C.brass, marginBottom: 6 }}>Reviewer access</div>
+            <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 6px' }}>Sign in to review the queue</h2>
+            <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.55, margin: '0 0 16px' }}>
+              Approving knowledge requires an owner or admin seat. Sign in and you&rsquo;ll come right back here.
+            </p>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+              <a
+                href={signInHref}
+                style={{ background: C.brass, color: C.paper, borderRadius: 8, padding: '10px 22px', fontSize: 15, fontWeight: 600, textDecoration: 'none' }}
+              >
+                Sign in
+              </a>
+              <a href={homeHref} style={{ color: C.teal, fontSize: 14 }}>
+                Back to the app
+              </a>
+            </div>
+          </div>
+        ) : error ? (
           <div
             style={{
               border: `1px solid ${C.rust}`,
@@ -184,9 +222,9 @@ export default function ReviewQueue({
           >
             {error}
           </div>
-        )}
+        ) : null}
 
-        {!loading && !error && items.length === 0 && <EmptyInvitation />}
+        {!loading && !error && !authError && items.length === 0 && <EmptyInvitation />}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {items.map((item) => (
