@@ -40,3 +40,15 @@ The canonical flow was wired to a **mock generator**, never to the real image AP
 ## Follow-ups (not in this slice)
 - Consolidate the ~20 `/dream/*` experiments (retire/redirect orphans: alchemist, cosmos, timemachine, worldwalker, _page_v3, the orphaned `describe`).
 - For true cross-device durability, persist renders to Supabase storage instead of relying on the onError concept-sketch heal.
+
+## UPDATE 2026-06-14 — `REPLICATE_API_TOKEN` set in Vercel ✅
+Founder action #1 done. Replicate "Vercel Integration" key (validated against `GET /v1/account` → HTTP 200) set on project `builders-knowledge-garden`:
+- **Production** — `vercel env add` (CLI 54.14.0).
+- **Preview (all branches)** — Vercel REST `POST /v10/projects/.../env` (CLI 54.14.0's non-interactive "all preview branches" path is broken: it kept returning `git_branch_required` even with `--value … --yes`).
+- Confirmed present in both via `vercel env ls`.
+
+**Deploy caveat — photoreal is NOT live yet.** Env vars apply only to *new* deployments, and the render-calling code is on this branch (`feat/dream-machine-visuals`), unmerged:
+- **Production** photoreal needs this PR merged to `main` + a prod deploy (current prod = `main`, which lacks the render code — so the token alone changes nothing there yet).
+- The **`feat/dream-machine-visuals` preview URL** will show photoreal once redeployed with the token present — fastest way to dogfood before merge.
+
+Method: Vercel dashboard locked out (support pending) → CLI-only with a session `VERCEL_TOKEN`; no CLI installed → `npx vercel@latest` from `bkg-main`; token never written to disk. See memory `bkg-vercel-cli-only-token`.

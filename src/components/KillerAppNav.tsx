@@ -21,7 +21,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
-import Logomark from '@/components/Logomark';
+import { Seal } from '@/components/app-shell';
 import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 
 export default function KillerAppNav() {
@@ -108,6 +108,7 @@ export default function KillerAppNav() {
       {/* Brand → workflow picker (preserves ?project=<id> if active) */}
       <Link
         href={withProjectId('/killerapp')}
+        aria-label="Builder's Knowledge Garden — workflow picker"
         style={{
           textDecoration: 'none',
           display: 'flex',
@@ -116,10 +117,12 @@ export default function KillerAppNav() {
           flexShrink: 0,
         }}
       >
-        {/* Canonical Viver seal (hammer-roots mark) — 40px desktop, 32px
-            mobile. One mark, every page: Logomark now points at
-            /brand/bkg-mark.png (see Logomark.tsx, SEAL 2026-06-07). */}
-        <Logomark size={isMobile ? 32 : 40} alt="Builder's Knowledge Garden" />
+        {/* Canonical Viver seal (hammer-roots mark), header variant: the
+            lightweight static plate (local /brand/bkg-mark.png) with a subtle
+            breathe — never the multi-MB video, which on every route would hurt
+            perf + re-trigger the prod autoplay "black square" bug. One mark,
+            every page. */}
+        <Seal size={isMobile ? 32 : 40} variant="header" poster="/brand/bkg-mark.png" />
 
         {/* Wordmark: hidden on mobile (<640px), visible above */}
         {!isMobile && (

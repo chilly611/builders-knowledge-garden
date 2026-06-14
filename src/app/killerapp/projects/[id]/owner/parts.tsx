@@ -15,6 +15,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { Ico } from './icons';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
+import { Seal } from '@/components/app-shell';
 
 // ── Journey phases — the 7 LOCKED lifecycle stages, sourced from the shared
 //    canon (KAC_STAGES) so the owner strip can never drift from the rest of the
@@ -33,48 +34,11 @@ const MONEY_STATE: Record<string, 'paid' | 'now' | 'soon'> = {
 const fmtUSD = (n: number) => '$' + n.toLocaleString('en-US');
 const fmtK = (n: number) => '$' + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
 
-// ── Animated botanical logo mark ─────────────────────────────────────────────
-export function BkgMark({ size = 28, radius = 4 }: { size?: number; radius?: number }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const v = ref.current;
-    if (!v) return;
-    v.muted = true;
-    const go = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
-    go();
-    if (v.readyState < 2) v.addEventListener('loadeddata', go, { once: true });
-  }, []);
-  return (
-    <span className="bkg-mark" style={{ width: size, height: size, borderRadius: radius }}>
-      <video ref={ref} src="/owner-lane/bkg-logo.mp4" autoPlay loop muted playsInline preload="auto" />
-    </span>
-  );
-}
-
-// ── The seal — the big animated botanical mark ───────────────────────────────
-// Wraps the looping BkgMark video in a spring entrance + a slow "breathing"
-// scale so the seal reads as alive and prominent. Honors prefers-reduced-motion:
-// when reduced, it appears at rest with no entrance and no loop.
-export function SealMark({ size = 72, radius, delay = 0.1 }: { size?: number; radius?: number; delay?: number }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.span
-      className="ov-seal"
-      style={{ display: 'inline-flex' }}
-      initial={reduce ? false : { scale: 0.55, opacity: 0, rotate: -12 }}
-      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-      transition={{ type: 'spring', stiffness: 150, damping: 15, delay }}
-    >
-      <motion.span
-        style={{ display: 'inline-flex' }}
-        animate={reduce ? undefined : { scale: [1, 1.035, 1] }}
-        transition={reduce ? undefined : { duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        <BkgMark size={size} radius={radius ?? Math.round(size / 6)} />
-      </motion.span>
-    </motion.span>
-  );
-}
+// ── Brand seal ────────────────────────────────────────────────────────────────
+// The Owner strip now renders the shared, variant-aware <Seal>
+// (components/app-shell/Seal.tsx) — one mark, one asset. The local BkgMark /
+// SealMark twin (a second copy of the mark, via /owner-lane/bkg-logo.mp4) was
+// removed 2026-06-09 to end the duplication that caused logo drift.
 
 // ── Reveal — a small entrance wrapper (fade + rise) for owner sections ────────
 export function Reveal({ children, delay = 0, y = 16, className }: { children: ReactNode; delay?: number; y?: number; className?: string }) {
@@ -382,7 +346,7 @@ export function GlobalStrips({ projectName, active = 'build', payApp, budgetLeft
     <div className="gstrips">
       <div className="gstrip">
         <div className="gstrip-lead">
-          <SealMark size={40} delay={0} />
+          <Seal size={40} delay={0} variant="header" poster="/brand/bkg-mark.png" className="ov-seal" />
           <div className="gstrip-lead-txt">
             <div className="gstrip-brand">{projectName}</div>
             <div className="gstrip-kicker">Builder&apos;s Knowledge Garden · Owner</div>

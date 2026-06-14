@@ -6,6 +6,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "static-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8137", "--directory", "/Users/chilly/Developer/bkg/public"],
+      "port": 8137
+    },
+    {
+      "name": "kg-umbrella",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8788", "--directory", "/Users/chilly/Developer/knowledge-gardens-root"],
+      "port": 8788
     }
   ]
 }

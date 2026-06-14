@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth";
 import { useAuthModal } from "@/components/AuthModal";
-import Logomark from "@/components/Logomark";
+import { Seal } from "@/components/app-shell";
 
 const DESTINATIONS = [
   { icon: "🌿", label: "Knowledge Garden", desc: "Codes, materials, methods", href: "/knowledge", color: "#1D9E75" },
@@ -85,7 +85,7 @@ function DesktopSidebar() {
       }}
     >
       {/* Logo / Home */}
-      <Link href="/" style={{
+      <Link href="/" aria-label="Builder's Knowledge Garden — home" style={{
         display: "flex", alignItems: "center", gap: 10,
         padding: "14px 12px", textDecoration: "none", color: "inherit",
         borderBottom: "1px solid var(--border, #e5e5e5)", minHeight: 56,
@@ -94,7 +94,8 @@ function DesktopSidebar() {
           width: 36, height: 36, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <Logomark size={34} alt="Builder's Knowledge Garden" />
+          {/* header variant: local static Viver plate + breathe (no heavy video). */}
+          <Seal size={34} variant="header" poster="/brand/bkg-mark.png" />
         </div>
         {showExpanded && (
           <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
