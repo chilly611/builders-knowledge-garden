@@ -72,3 +72,32 @@ Each cast member needs: `id, name, role, company?, lane, laneSubtype, joined_at,
 2. Register it wherever Marin is registered (`getCanonicalProject` / demo-seed) as a *second* selectable project — do NOT replace Marin.
 3. Add a module-load invariant check (like Marin's) that warns if the sums drift.
 4. Verify `?project=<sf-fourplex-id>` flips every surface; Marin unchanged.
+
+## Visual seed set (portal imagery) — GENERATED 2026-06-14 (local draft)
+
+*The visual parallel to the Marin seed set in `docs/design/seed-and-portals.md` §5. The brand **render register** (warm cream/vellum/brass/amber + teal shadow, no pure white, no red, filmic for heroes / cream-paper ink for studies) is the CONSTANT; only the subject below is the variable layer, derived from this spec (4-unit SF infill, 5,200 sqft, stacked over a garage, **Build / 42%**). Slugs and seeds are deliberately distinct from Marin's so both sets coexist in `brand-assets/assets/bkg/fidelity/` with no collision.*
+
+| slug | kind | seed | model | use |
+|---|---|---|---|---|
+| `hero-sf-fourplex-golden-a` | hero (16:9) | 430017 | flux-1.1-pro | Builder hero — golden-hour establishing |
+| `hero-sf-fourplex-golden-b` | hero (16:9) | 430042 | flux-1.1-pro | Builder hero — dusk, warm interior glow |
+| `study-sf-massing-options` | study (4:5) | 780304 | flux-dev | Dream "In motion" — massing trio |
+| `study-sf-stacking-clearance` | study (4:5) | 780302 | flux-dev | Dream "In motion" — site/setback + stacking |
+| `study-sf-light-well` | study (4:5) | 780303 | flux-dev | Dream "In motion" — light-well daylight section |
+| `thumb-sf-site-framing` | thumb (1:1) | 661101 | flux-1.1-pro | field-log / plate |
+| `thumb-sf-material-detail` | thumb (1:1) | 661102 | flux-1.1-pro | field-log / plate |
+| `thumb-sf-detail-sketch` | thumb (1:1) | 661103 | flux-dev | field-log / plate |
+| `gauge-face-primary` | gauge-face | — | (hand-authored) | **reused** — `public/_design-preview/gauge-face-primary.svg` is a brand constant; no SF variant |
+
+Seeds are fixed so a chosen option regenerates byte-similar at production resolution.
+
+### How they were made / how to remake them
+The recipe lives in `stage-sf-fourplex-assets.mjs` (repo root) — the SF parallel to `stage-fidelity-assets.mjs`. Exact prompts + params are in that file.
+
+```bash
+node stage-sf-fourplex-assets.mjs --dry-run                                 # plan only
+node --env-file=.env stage-sf-fourplex-assets.mjs --go                      # generate LOCAL → ./fidelity-out-sf/
+node --env-file=.env stage-sf-fourplex-assets.mjs --go --only=study-sf-light-well   # regenerate one
+```
+
+**Status:** all 8 generated 2026-06-14 to `./fidelity-out-sf/` (local, draft, NOT committed — binaries are gitignored). **Not uploaded to the shared `brand-assets` bucket and not cataloged** — that is the supervised, founder-run promotion step (`--upload`, then `--catalog --schema-confirmed` after confirming `public.brand_assets` columns). Code never promotes. (`study-sf-massing-options` was re-rolled to seed 780304 with a hardened negative prompt to clear a stray red speck — now clean.)

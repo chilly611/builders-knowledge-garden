@@ -52,3 +52,7 @@ scripts/__pycache__/
 gitlock-trash/
 copy/
 .gitlock-quarantine/
+
+# generated portal-imagery (local draft renders — promote via the staging script, never commit binaries)
+/fidelity-out/
+/fidelity-out-sf/
