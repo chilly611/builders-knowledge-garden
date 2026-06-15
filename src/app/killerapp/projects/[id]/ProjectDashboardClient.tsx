@@ -27,8 +27,9 @@
  * radius, no global token churn.
  */
 
-import Image from 'next/image';
 import { useStageProject } from '@/lib/hooks/useStageProject';
+import { usePortalImage } from '@/lib/hooks/usePortalImage';
+import { archetypeFor } from '@/lib/portal-imagery';
 import { useShellConfig } from '@/components/app-shell/ShellConfigContext';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 import { fmtMoney, laneLabel } from '@/components/app-shell/config';
@@ -39,10 +40,6 @@ import {
 } from '@/design-system/components';
 import type { GaugeTone, WorkflowTone } from '@/design-system/components';
 import './builder-lane.css';
-
-// Placeholder cinematic plate until the Cowork-staged hero asset lands. The
-// brand surface plate (not generated content) — swap for the staged render.
-const HERO_PLATE = '/plates/chrome-killer-app.png';
 
 function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -64,6 +61,21 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
   const activeStage = KAC_STAGES.find((s) => s.slug === activeSlug);
   const pct = Math.round(cfg.journey?.pct ?? 0);
   const hasJourney = !!cfg.journey?.show && !!activeStage;
+
+  // ── B2 portal hero — the archetype-matched seed shows instantly as the WIP
+  //    placeholder, then a per-project render swaps in; guaranteed-visual
+  //    fallback to a concept sketch on any failure. Every input flows from
+  //    useStageProject() — switching ?project= flips the portal with no bleed.
+  //    (Called before the early returns below to satisfy rules-of-hooks.)
+  const heroPortal = usePortalImage({
+    kind: 'hero',
+    projectId: sp.projectId,
+    buildingType: sp.buildingType,
+    location: sp.jurisdiction,
+    stage: activeStage?.short ?? null,
+    progress: hasJourney ? pct : null,
+    archetype: archetypeFor(sp.buildingKind, sp.buildingType),
+  });
 
   // ── B3 BUDGET gauge — the one gauge with a real source (spent / total). ──
   const total = sp.budgetTotal;
@@ -121,14 +133,10 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
         {/* ── B2 · Cinematic hero band ─────────────────────────────────── */}
         <header className="bld-hero">
           <div className="bld-hero-art" aria-hidden="true">
-            <Image
-              src={HERO_PLATE}
-              alt=""
-              fill
-              sizes="(max-width: 1000px) 100vw, 900px"
-              style={{ objectFit: 'cover', opacity: 0.9, mixBlendMode: 'multiply' }}
-              priority={false}
-            />
+            {/* eslint-disable-next-line @next/next/no-img-element -- portal imagery is a
+                Supabase/render URL with a data-URI fallback; next/image can't serve the
+                data-URI fallback, and the art is decorative (aria-hidden). */}
+            <img src={heroPortal.src} alt="" onError={heroPortal.onError} />
             <div className="bld-hero-wash" />
           </div>
           <div className="bld-hero-text">
