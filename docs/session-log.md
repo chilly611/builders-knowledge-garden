@@ -6,6 +6,15 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-15 — [Claude Code] Cataloged the Marin fidelity seed (draft); flagged the Folsom hero-hookup lane boundary
+**Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity` (DB write only; no code).
+
+- **(B) Cataloged the 8 Marin fidelity drafts** into `public.brand_assets` via the Supabase MCP — `status='draft'`, `approved_for_production=false` (promotion stays founder/service-role). Used the REAL schema (the script's `--catalog` would have failed: `asset_type` enum is `plate/illustration/poster/…` not `image/diagram`, `generator` enum is `flux` not `replicate`; `status` default `'working'` even violates the CHECK, so `draft` must be explicit). Keys `fidelity.{hero-marin-farmhouse-golden-a/b, study-massing-options, study-clearance, study-daylight, thumb-site-framing, thumb-material-detail, thumb-detail-sketch}`, matching the published SF set's pattern (heroes/thumbs=illustration, studies=plate). Naming wart: the Marin study/thumb slugs are generic (not `-marin-` namespaced) because the bucket files are; titles disambiguate.
+- **Discovery:** the **Folsom Street Fourplex** fidelity set (2 heroes + 3 studies + 3 thumbs, keys `fidelity.*-sf-*`) is already generated + **published+approved** in `brand_assets` by the parallel **`feat/seed-folsom-fourplex`** lane.
+- **(A) catalog-resolved hero hookup + "wire fourplex" — NOT done in this lane (collision avoidance).** `feat/seed-folsom-fourplex` (in flight, **unpushed** — not on origin/main) OWNS `src/lib/portal-imagery.ts` (the `archetypeFor` map; absent on my branch) + the Folsom `DEMO_PROJECTS` seed. The hero hookup must CONSUME `archetypeFor`; building it here would fork that map + collide on `demo-seeder`/`portal-imagery.ts`, and the Folsom project can't be activated/tested in this worktree. Left my B2 hero as-is (Marin demo → Marin hero, verified — correct + non-colliding). Recommendation: land the B2 catalog-resolved hero hookup ON `feat/seed-folsom-fourplex` (it has `archetypeFor` + the Folsom project to test), or merge that lane → main and add the hookup here on a rebase. Marin assets being draft-cataloged makes them available to that resolver once promoted.
+
+---
+
 ## 2026-06-15 — [Claude Code] B2 hero (hero-A live on the site) + B1/B3 copy + image allowlist
 **Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity`.
 
