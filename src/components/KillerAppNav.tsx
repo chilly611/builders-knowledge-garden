@@ -25,7 +25,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import Logomark from '@/components/Logomark';
 import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
 import { useStageProject } from '@/lib/hooks/useStageProject';
@@ -54,6 +54,10 @@ export default function KillerAppNav() {
   const [isMobile, setIsMobile] = useState(false);
   // Preserve ?project=<id> across the brand-link + surface-tab clicks.
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  // Mobile: the surface tabs collapse to a labelled dropdown (3 full names
+  // won't fit across a phone).
+  const [surfaceMenuOpen, setSurfaceMenuOpen] = useState(false);
+  const surfaceMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -85,6 +89,16 @@ export default function KillerAppNav() {
     };
   }, [pathname]);
 
+  // Close the mobile surface menu on an outside click.
+  useEffect(() => {
+    if (!surfaceMenuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (surfaceMenuRef.current && !surfaceMenuRef.current.contains(e.target as Node)) setSurfaceMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [surfaceMenuOpen]);
+
   if (!mounted) return null;
 
   const withProjectId = (href: string): string => {
@@ -99,6 +113,7 @@ export default function KillerAppNav() {
     : pathname.startsWith('/knowledge')
       ? 'garden'
       : 'killer';
+  const activeSurfaceDef = SURFACES.find((s) => s.id === activeSurface) ?? SURFACES[0];
   const role = roleLabel(sp.lane);
 
   return (
@@ -134,6 +149,41 @@ export default function KillerAppNav() {
           </span>
         )}
       </Link>
+
+      {/* Mobile — the surface switcher collapses to a labelled dropdown. */}
+      {isMobile && (
+        <div ref={surfaceMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => setSurfaceMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={surfaceMenuOpen}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px', fontFamily: DISPLAY, fontSize: 12.5, fontWeight: 700, color: 'var(--ink-graphite, #2A2620)' }}
+          >
+            {activeSurfaceDef.label}
+            <span aria-hidden style={{ fontSize: 9, color: 'var(--ink-faded, #8A8478)', transition: 'transform 140ms', transform: surfaceMenuOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+          </button>
+          {surfaceMenuOpen && (
+            <div role="menu" style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, minWidth: 224, background: 'var(--paper-cream, #F2E9D2)', border: '1px solid var(--specimen-brass-aged, #8C6D3F)', borderRadius: 4, boxShadow: '0 6px 20px rgba(42,38,32,0.18)', padding: 4, zIndex: 10 }}>
+              {SURFACES.map((s) => {
+                const isActive = s.id === activeSurface;
+                return (
+                  <Link
+                    key={s.id}
+                    href={withProjectId(s.href)}
+                    role="menuitem"
+                    onClick={() => setSurfaceMenuOpen(false)}
+                    style={{ display: 'block', textDecoration: 'none', padding: '8px 10px', borderRadius: 2, background: isActive ? 'rgba(60,122,138,0.08)' : 'transparent' }}
+                  >
+                    <div style={{ fontFamily: DISPLAY, fontSize: 13, fontWeight: 700, color: 'var(--ink-graphite, #2A2620)' }}>{s.label}</div>
+                    <div style={{ fontFamily: MONO, fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-faded, #8A8478)', marginTop: 1 }}>{s.sub}</div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Center — surface switcher (desktop). Absolutely centered so it stays
           put regardless of the left/right cluster widths. */}
