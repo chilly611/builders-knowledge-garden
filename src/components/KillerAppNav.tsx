@@ -1,70 +1,92 @@
 'use client';
-// Builder's Knowledge Garden — App chrome (minimal, post-fork-correction)
-//
-// Replaces the legacy "Command Center" KillerAppNav:
-//   ❌ 2,840 XP + 7-day streak badges  (violates direction doc Decision #8)
-//   ❌ 7 hardcoded module tabs, 4 of them SOON placeholders (#1, #11)
-//   ❌ /field-pointed Voice button + /knowledge Copilot button in chrome
-//
-// New minimal chrome:
-//   ✓ Brand pill with actual Logomark that routes to /killerapp (the workflow picker — Decision #3)
-//   ✓ Refined wordmark in graphite (not red), lowercase treatment, proper letterspacing
-//   ✓ Blueprint hairline bottom border (0.5px var(--faded-rule)) in place of red divider
-//   ✓ "Workflows" back-link when inside a workflow route (fluid, not quest-driven)
-//   ✓ Auth + project chip on the right (signed-in + project name)
-//   (Stage chip row removed 2026-05-28 — KillerAppChrome Journey row owns
-//    stage nav; rendering both produced a duplicate strip.)
-//
-// Export name preserved (default `KillerAppNav`) so the 8 route groups
-// that already import it don't break. Renaming can happen later.
+
+/**
+ * KillerAppNav — A1 surface-switcher (component-fidelity spec §A).
+ *
+ * The canonical top bar / masthead for every Killer App surface. Replaces the
+ * old ad-hoc brand+Projects+Workflows links with a real surface switcher:
+ *   - Left:   Viver seal + "builder's knowledge garden" wordmark → /killerapp
+ *   - Center: 3 surface tabs (Killer App / Dream Machine / Knowledge Garden)
+ *             each with a Space Mono undercaption; active tab boxed (cream fill
+ *             + brass-aged hairline + teal marker), routing preserves ?project=
+ *   - Right:  role chip (Builder / Owner, from the REAL per-project lane — no
+ *             fabricated yard/crew) + the account menu (AuthAndProjectIndicator:
+ *             new project / switch / sign out, preserved from #52)
+ *
+ * GROUND is LIGHT (paper-vellum), per the design system's canonical chrome
+ * (the kit Sidebar + the no-dark constitution rule + the cream chrome-killer-app
+ * plate) — NOT the spec's loose "brown/ink ground" wording.
+ *
+ * Export name preserved (default `KillerAppNav`) so the route groups that
+ * import it don't break. Tabs link out to /dream + /knowledge; mounting the
+ * switcher on those surfaces too is a follow-up. Mobile shows brand + account
+ * only (tabs would overflow) — mobile surface-switching is a follow-up.
+ */
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
 import Logomark from '@/components/Logomark';
 import AuthAndProjectIndicator from '@/app/killerapp/AuthAndProjectIndicator';
+import { useStageProject } from '@/lib/hooks/useStageProject';
+import type { ProjectRole } from '@/lib/use-user-lane';
+
+const MONO = 'var(--bp-font-mono, ui-monospace, monospace)';
+const DISPLAY = 'var(--font-archivo), sans-serif';
+
+const SURFACES = [
+  { id: 'killer', label: 'Killer App', sub: 'What gets done', href: '/killerapp' },
+  { id: 'dream', label: 'Dream Machine', sub: 'What gets imagined', href: '/dream' },
+  { id: 'garden', label: 'Knowledge Garden', sub: 'What gets remembered', href: '/knowledge' },
+] as const;
+
+/** Real per-project lane → display role. Null lane (no project / picker) → no chip. */
+function roleLabel(lane: ProjectRole | null): string | null {
+  if (lane === 'owner') return 'Owner';
+  if (lane === 'gc') return 'Builder';
+  return null;
+}
 
 export default function KillerAppNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
+  const sp = useStageProject();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  // Preserve ?project=<id> across the brand-link click + workflow back-link.
+  // Preserve ?project=<id> across the brand-link + surface-tab clicks.
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    // Check if mobile on mount and listen to window resize
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    const checkMobile = () => setIsMobile(window.innerWidth < 760);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Watch the URL for ?project=<id>. We can't use useSearchParams here
-  // because this component renders inside the global layout — wrapping
-  // it in Suspense at the layout level would cascade through the rest
-  // of the app. Read directly from window.location instead and update
-  // on the popstate event so client-side navigations refresh the value.
+  // Watch the URL for ?project=<id> — read from window.location (not
+  // useSearchParams, which would force a Suspense boundary around this global
+  // chrome) and refresh on client navigations via our custom event.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const sync = () => {
-      const params = new URLSearchParams(window.location.search);
-      setActiveProjectId(params.get('project'));
+      // Project context lives either in ?project=<id> (picker/workflow surfaces)
+      // or in the /killerapp/projects/<id> path (the lane-aware home) — read
+      // both so the surface tabs preserve the active project everywhere.
+      const q = new URLSearchParams(window.location.search).get('project');
+      const fromPath = window.location.pathname.match(/^\/killerapp\/projects\/([^/?#]+)/);
+      setActiveProjectId(q || (fromPath ? decodeURIComponent(fromPath[1]) : null));
     };
     sync();
     window.addEventListener('popstate', sync);
-    // Next.js doesn't fire popstate on router.push, so listen to a custom
-    // event we dispatch ourselves whenever a Spine-aware nav happens.
     window.addEventListener('bkg:project:changed', sync);
     return () => {
       window.removeEventListener('popstate', sync);
       window.removeEventListener('bkg:project:changed', sync);
     };
-  }, [pathname]); // re-read on every route change
+  }, [pathname]);
 
   if (!mounted) return null;
 
-  // Append ?project=<id> to a stage href if a project is active.
   const withProjectId = (href: string): string => {
     if (!activeProjectId) return href;
     if (href.includes('?project=')) return href;
@@ -72,14 +94,12 @@ export default function KillerAppNav() {
     return `${href}${sep}project=${encodeURIComponent(activeProjectId)}`;
   };
 
-  // Show "Workflows" back-link whenever we're nested under a workflow route.
-  // Root /killerapp is the picker itself, so no back-link there.
-  const inWorkflow = pathname.startsWith('/killerapp/workflows/');
-
-  // Show "Projects" link when NOT on the projects page itself.
-  // Used for quick navigation to the projects dashboard.
-  const inProjects = pathname === '/killerapp/projects';
-  const showProjectsNav = !inProjects;
+  const activeSurface = pathname.startsWith('/dream')
+    ? 'dream'
+    : pathname.startsWith('/knowledge')
+      ? 'garden'
+      : 'killer';
+  const role = roleLabel(sp.lane);
 
   return (
     <div
@@ -90,134 +110,103 @@ export default function KillerAppNav() {
         right: 0,
         height: 48,
         zIndex: 99,
-        background: 'rgba(244,240,230,0.72)',
+        background: 'rgba(242,233,210,0.86)', // paper-cream/vellum, light (no dark grounds)
         backdropFilter: 'blur(14px)',
-        borderBottom: 'none',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderBottom: '1px solid var(--faded-rule, rgba(42,38,32,0.12))',
         display: 'flex',
         alignItems: 'center',
-        // Match the page content's 28px horizontal padding so the logo
-        // aligns with body content on all screen sizes. Previously left:64
-        // + paddingLeft:16 left a phantom 64px sidebar gap (the sidebar
-        // component exists but is never mounted — GlobalAiFab: "unused").
-        paddingLeft: isMobile ? 20 : 28,
+        paddingLeft: isMobile ? 18 : 24,
         paddingRight: isMobile ? 12 : 16,
         gap: 12,
-        fontFamily: 'var(--font-archivo), sans-serif',
+        fontFamily: DISPLAY,
       }}
     >
-      {/* Brand → workflow picker (preserves ?project=<id> if active) */}
+      {/* Brand → workflow picker (preserves ?project=) */}
       <Link
         href={withProjectId('/killerapp')}
-        style={{
-          textDecoration: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: isMobile ? 6 : 8,
-          flexShrink: 0,
-        }}
+        style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 9, flexShrink: 0, zIndex: 2 }}
       >
-        {/* Canonical Viver seal (hammer-roots mark) — 40px desktop, 32px
-            mobile. One mark, every page: Logomark now points at
-            /brand/bkg-mark.png (see Logomark.tsx, SEAL 2026-06-07). */}
-        <Logomark size={isMobile ? 32 : 40} alt="Builder's Knowledge Garden" />
-
-        {/* Wordmark: hidden on mobile (<640px), visible above */}
+        <Logomark size={isMobile ? 30 : 34} alt="Builder's Knowledge Garden" />
         {!isMobile && (
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: '0.5px',
-              textTransform: 'lowercase',
-              color: 'var(--graphite)',
-              lineHeight: 1,
-            }}
-          >
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.4px', textTransform: 'lowercase', color: 'var(--ink-graphite, #2A2620)', lineHeight: 1 }}>
             builder&apos;s knowledge garden
           </span>
         )}
       </Link>
 
-      {inWorkflow && (
-        <>
-          <span
-            style={{
-              width: 1,
-              height: isMobile ? 16 : 20,
-              background: 'var(--faded-rule)',
-              flexShrink: 0,
-            }}
-          />
-          <Link
-            href={withProjectId('/killerapp')}
-            style={{
-              textDecoration: 'none',
-              fontSize: isMobile ? 11 : 12,
-              fontWeight: 400,
-              color: 'var(--fg-secondary)',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? 2 : 4,
-              minHeight: 44,
-              minWidth: 44,
-              justifyContent: 'center',
-            }}
-            title="Back to all workflows"
-          >
-            <span style={{ fontSize: isMobile ? 14 : 11, lineHeight: 1 }}>‹</span>
-            {!isMobile && <span>All Workflows</span>}
-          </Link>
-        </>
+      {/* Center — surface switcher (desktop). Absolutely centered so it stays
+          put regardless of the left/right cluster widths. */}
+      {!isMobile && (
+        <nav
+          aria-label="Surfaces"
+          style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'stretch', gap: 4, height: '100%' }}
+        >
+          {SURFACES.map((s) => {
+            const isActive = s.id === activeSurface;
+            return (
+              <Link
+                key={s.id}
+                href={withProjectId(s.href)}
+                aria-current={isActive ? 'page' : undefined}
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: 1,
+                  padding: '0 14px',
+                  textDecoration: 'none',
+                  borderLeft: '1px solid transparent',
+                  borderRight: '1px solid transparent',
+                  borderBottom: isActive ? '2px solid var(--specimen-teal, #3C7A8A)' : '2px solid transparent',
+                  background: isActive ? 'var(--paper-cream, #F2E9D2)' : 'transparent',
+                  borderTop: isActive ? '1px solid var(--specimen-brass-aged, #8C6D3F)' : '1px solid transparent',
+                  ...(isActive ? { borderLeftColor: 'var(--specimen-brass-aged, #8C6D3F)', borderRightColor: 'var(--specimen-brass-aged, #8C6D3F)' } : null),
+                }}
+              >
+                <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '0.01em', color: isActive ? 'var(--ink-graphite, #2A2620)' : 'var(--ink-faded, #6A6256)' }}>
+                  {s.label}
+                </span>
+                <span style={{ fontFamily: MONO, fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: isActive ? 'var(--specimen-teal-deep, #234C5A)' : 'var(--ink-faded, #8A8478)', opacity: isActive ? 0.9 : 0.6 }}>
+                  {s.sub}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
       )}
 
-      {/* Projects link — visible except when already on projects page */}
-      {showProjectsNav && !isMobile && (
-        <>
-          <span
-            style={{
-              width: 1,
-              height: 20,
-              background: 'var(--faded-rule)',
-              flexShrink: 0,
-            }}
-          />
-          <Link
-            href="/killerapp/projects"
-            style={{
-              textDecoration: 'none',
-              fontSize: 12,
-              fontWeight: 400,
-              color: 'var(--fg-secondary)',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              minHeight: 44,
-              minWidth: 44,
-              justifyContent: 'center',
-              padding: '0 8px',
-            }}
-            title="View all projects"
-          >
-            <span>Projects</span>
-          </Link>
-        </>
-      )}
-
-      {/* spacer */}
+      {/* spacer pushes the right cluster to the edge (tabs are absolute) */}
       <div style={{ flex: 1 }} />
 
-      {/* Stage landscape chip row REMOVED (2026-05-28): the new Journey row
-          inside KillerAppChrome (completion rings + due-date markers) IS
-          the stage nav now. Mounting both produced a duplicate stage strip
-          in the header AND below — see brand-consolidation pass. */}
+      {/* Right — real role chip (no fabricated yard/crew), then the account menu */}
+      {!isMobile && role ? (
+        <span
+          style={{
+            flexShrink: 0,
+            fontFamily: MONO,
+            fontSize: 9.5,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--specimen-brass-aged, #8C6D3F)',
+            border: '1px solid var(--specimen-brass, #B08D5C)',
+            borderRadius: 999,
+            padding: '3px 9px',
+            zIndex: 2,
+          }}
+          title="Your role on this project"
+        >
+          {role}
+        </span>
+      ) : null}
 
-      {/* Auth + project indicator — embedded in the nav bar to avoid
-          overlapping the stage chips. Uses inline mode (no fixed position).
-          Suspense required: AuthAndProjectIndicator uses useSearchParams. */}
-      <Suspense fallback={null}>
-        <AuthAndProjectIndicator inline={!isMobile} />
-      </Suspense>
+      <div style={{ zIndex: 2, flexShrink: 0 }}>
+        <Suspense fallback={null}>
+          <AuthAndProjectIndicator inline={!isMobile} />
+        </Suspense>
+      </div>
     </div>
   );
 }

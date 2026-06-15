@@ -4426,4 +4426,22 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 **⚠️ Coordination note (the fork):** this session's earlier B1–B5 work lives on `feat/instrument-gauges` (built off the *old* main `0a87d15`, before #54). PR #54 ("Builder-lane fidelity — Section A primitives + B1–B6 home") is now on main and implements the same spec sections as a *different* component suite (`ProjectCockpit`, `InstrumentGauge`, `JourneyArc`…) wired to `/killerapp/projects/[id]` (`ProjectDashboardClient`), while my B1–B5 wired a parallel set into `/killerapp`'s `KillerappProjectShell`. The two fidelity implementations target different surfaces and **need a founder call on which is canonical** before either merges. The asset-staging pipeline is duplicated (`feat/killer-app-fidelity` `bcb27e2` ↔ my `b3ec7eb`). This chrome cutover was deliberately branched fresh off main to stay independent of that fork.
 
-**Write-lane:** branch `refactor/chrome-cutover` → push → **PR for founder merge**.
+**Write-lane:** branch `refactor/chrome-cutover` → push → **PR for founder merge**. (Merged as #56.)
+
+---
+
+## 2026-06-15 — A1 surface-switcher masthead (component-fidelity spec §A)
+**Agent:** Claude Code (Opus) · branch `feat/a1-surface-switcher` off `origin/main` (`1c23d30`).
+
+**What:** the last piece of the chrome reconciliation — rewrote `KillerAppNav` (the canonical top bar) into the **A1 surface-switcher**:
+- **Left:** Viver seal + "builder's knowledge garden" wordmark → /killerapp.
+- **Center:** 3 surface tabs — **Killer App / WHAT GETS DONE**, **Dream Machine / WHAT GETS IMAGINED**, **Knowledge Garden / WHAT GETS REMEMBERED** (Space Mono undercaptions). Active tab boxed (cream fill + brass-aged hairline + teal bottom-marker). Routes preserve `?project=` — reads the id from BOTH `?project=` AND the `/killerapp/projects/<id>` path so context survives on the lane-aware home.
+- **Right:** real role chip (Builder for `gc`, Owner for `owner`, from `useStageProject().lane`) — **hidden when there's no real lane (anon/picker), never a fabricated `YARD 03 · CREW 04`** — then the preserved #52 account menu (AuthAndProjectIndicator: new project / switch / sign out).
+
+**Brand call — resolved via the design system, NOT punted:** the spec's "brown/ink ground" conflicts with the locked light-bg-only rule. The `knowledge-gardens-design` skill is authoritative for branded chrome and its canonical surface-switcher (the kit Sidebar) uses a **light `--paper-vellum` ground** with a brass-aged active border + teal marker; the cream `chrome-killer-app` plate agrees. So A1 is a **light vellum masthead** (rule-compliant). Founder can flip to a dark masthead if they want the exception — flagged.
+
+**Scoped out (flagged):** tabs link to /dream + /knowledge but A1 only mounts on the /killerapp layout for now — mounting the switcher on those surfaces too is a follow-up. Mobile shows brand + account only (tabs would overflow) — mobile surface-switching is a follow-up. Bar kept at 48px (no layout `paddingTop` / BudgetClient `top` change — tightest blast radius).
+
+**Verified (real browser, dev :3508):** A1 renders on the dashboard (`/killerapp/projects/<Marin>`) AND the picker (`/killerapp`); active tab = Killer App; tabs carry `?project=<id>` on all three surfaces; role chip correctly hidden for anon; light vellum ground, on-brand. Console clean. `tsc` 121 baseline (0 in KillerAppNav) · `next build` exit 0.
+
+**Write-lane:** branch `feat/a1-surface-switcher` → push → **PR for founder merge**.
