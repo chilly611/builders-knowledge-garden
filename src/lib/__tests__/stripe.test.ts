@@ -46,6 +46,7 @@ import {
   getCustomerCountSnapshot,
   constructWebhookEvent,
   canAccessFeature,
+  tierToLane,
   _resetStripeForTests,
 } from '../stripe';
 
@@ -160,6 +161,22 @@ describe('canAccessFeature', () => {
   it('treats legacy `explorer` as `free`', () => {
     expect(canAccessFeature('explorer', 'free')).toBe(true);
     expect(canAccessFeature('explorer', 'pro')).toBe(false);
+  });
+});
+
+describe('tierToLane', () => {
+  it('passes paid tiers through unchanged', () => {
+    expect(tierToLane('pro')).toBe('pro');
+    expect(tierToLane('team')).toBe('team');
+    expect(tierToLane('enterprise')).toBe('enterprise');
+  });
+
+  it('collapses free/explorer/unknown/null to explorer (the lane CHECK floor)', () => {
+    expect(tierToLane('free')).toBe('explorer');
+    expect(tierToLane('explorer')).toBe('explorer');
+    expect(tierToLane('mystery')).toBe('explorer');
+    expect(tierToLane(null)).toBe('explorer');
+    expect(tierToLane(undefined)).toBe('explorer');
   });
 });
 

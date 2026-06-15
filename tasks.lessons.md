@@ -1,6 +1,16 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-06-10
+## Updated: 2026-06-14
+
+---
+
+## 2026-06-14 — Lessons (Stripe checkout hardening)
+
+- **`CREATE TABLE IF NOT EXISTS` makes conflicting migrations a silent footgun.** Three different `subscriptions` schemas shipped as separate files (email-keyed vs. user_id-keyed; only one made `stripe_subscription_id` unique) — all `IF NOT EXISTS`, so whichever ran first won and the rest no-op'd with zero error. The webhook was written against the *union* of all three plus an `org_id` column and a `stripe_webhook_events` table that **no committed migration created** → a real purchase would 500 at the DB write and never unlock. Rules: (a) one canonical table = one migration, supersede don't duplicate; (b) a doc naming a migration (`subscriptions_stripe_wire_extend`) is not proof it exists — `ls` the file; (c) when the live schema is unknowable from files, ship ONE idempotent reconcile migration (`ADD COLUMN IF NOT EXISTS`, conditional unique indexes, `CREATE TABLE IF NOT EXISTS`) correct regardless of which variant is live, founder-applied supervised.
+- **PostgREST `upsert(onConflict: X)` needs a real, FULL unique index on X.** A *partial* unique index won't serve as the `ON CONFLICT` arbiter (PostgREST omits the WHERE). The webhook upserts on both `stripe_subscription_id` and `email`, so both need full unique indexes. Nullable is fine — each NULL is distinct, so rows lacking the key never conflict; that's how one table carries two independent upsert arbiters.
+- **Mirror columns drift from their writers.** The webhook + a trigger both wrote `user_profiles.tier`; the real column is `lane` (CHECK excludes 'free'). The `.update()` silently no-op'd (supabase-js returns `{error}`, doesn't throw) and the trigger would have *thrown* and rolled back the sub write. Verify the target column exists AND its CHECK admits your values (map 'free'→'explorer').
+- **Webhook idempotency: record AFTER success (or release on failure), never record-before-process.** The handler inserted `event.id` as a dedup lock *before* running, so a transient failure → 500 → Stripe retry → short-circuited as "duplicate" → event permanently dropped. Fix: delete the idempotency row in the catch so the retry reprocesses.
+- **A post-payment success redirect races the webhook.** Stripe redirects to `success_url` the instant payment clears, before `checkout.session.completed` lands — a success page that reads subscription state once shows "Free". Poll a few times AND always show a "continue into the product" CTA so the buyer is never stranded while the row catches up.
 
 ---
 

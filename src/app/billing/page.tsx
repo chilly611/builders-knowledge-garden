@@ -45,8 +45,12 @@ export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionState | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'test' | 'live' | 'unconfigured' | 'unknown'>('unknown');
+  // Post-checkout success landing (set when Stripe redirects back with
+  // ?success=true). `activating` = still waiting on the webhook to write the row.
+  const [justPurchased, setJustPurchased] = useState(false);
+  const [activating, setActivating] = useState(false);
 
-  const loadState = useCallback(async () => {
+  const loadState = useCallback(async (): Promise<SubscriptionState | null> => {
     setLoading(true);
     setError(null);
     try {
@@ -66,15 +70,58 @@ export default function BillingPage() {
       } catch {
         // healthcheck is detailed-only authed, fine to skip
       }
+      return json;
     } catch (e: any) {
       setError(e?.message || 'failed_to_load');
+      return null;
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Skip the normal initial load when we've just come back from Stripe — the
+  // post-checkout poller below owns the first fetch (and the retries).
   useEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('success') === 'true'
+    ) {
+      return;
+    }
     loadState();
+  }, [loadState]);
+
+  // Post-checkout landing: Stripe redirects here the instant payment succeeds,
+  // but the subscription row isn't written until the `checkout.session.completed`
+  // webhook lands (usually a beat later). Detect ?success=true and poll the
+  // subscription a few times so the page flips Free → paid without a manual
+  // refresh. The "continue into the product" CTA shows regardless, so a fresh
+  // buyer is never stranded here even if the webhook is slow.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('success') !== 'true') return;
+    setJustPurchased(true);
+
+    let cancelled = false;
+    let attempts = 0;
+    const tick = async () => {
+      attempts += 1;
+      const s = await loadState();
+      const active =
+        !!s &&
+        s.tier !== 'free' &&
+        (s.status === 'active' || s.status === 'trialing');
+      if (active || cancelled || attempts >= 6) {
+        setActivating(false);
+        return;
+      }
+      setActivating(true);
+      window.setTimeout(tick, 2000);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+    };
   }, [loadState]);
 
   async function handleUpgrade(tier: 'pro' | 'team' | 'enterprise') {
@@ -147,6 +194,43 @@ export default function BillingPage() {
       <p style={{ color: '#666', marginBottom: 24 }}>
         Manage your BKG subscription, payment method, and invoices.
       </p>
+
+      {justPurchased && (
+        <div
+          style={{
+            background: '#e9f7ef',
+            border: '1px solid #2a7a2a',
+            borderRadius: 8,
+            padding: '16px 18px',
+            marginBottom: 24,
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#1a5a2a', marginBottom: 4 }}>
+            🎉 You&apos;re all set
+            {sub && sub.tier !== 'free' ? ` — welcome to ${TIER_LABEL[sub.tier] || sub.tier}` : ''}.
+          </div>
+          <div style={{ fontSize: 14, color: '#2a5a2a', marginBottom: 12 }}>
+            {activating
+              ? 'Finalizing your subscription… this can take a few seconds.'
+              : 'Your plan is active. Jump back into your projects:'}
+          </div>
+          <a
+            href="/killerapp"
+            style={{
+              display: 'inline-block',
+              padding: '10px 18px',
+              borderRadius: 8,
+              background: '#1a1a1a',
+              color: '#fff',
+              fontWeight: 600,
+              textDecoration: 'none',
+              fontSize: 14,
+            }}
+          >
+            Go to your projects →
+          </a>
+        </div>
+      )}
 
       {stripeMode === 'test' && (
         <div
