@@ -6,6 +6,22 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-14 — [Cowork → Claude Code] Killer App fidelity-pass image assets (materialized + dry-run green; --go blocked on creds)
+**Agents:** Cowork (Opus, authored the spec/script/SVG in its scratchpad) → Claude Code (Opus, materialized + validated + ran on the Mac). **Branch:** `feat/killer-app-fidelity`.
+
+**Materialized to the repo (the Cowork lane couldn't write — no creds/no repo access there):**
+- **`fidelity-flux-prompts.md`** — locked Replicate FLUX prompt spec for the canonical project (Modern Farmhouse Marin, 4,000 sqft, golden hour — NOT Twin Peaks): hero "Where the build stands" ×2 (21:9, seeds 420017/420042, flux-1.1-pro); 3 line/sketch Dream-Machine studies in one register (massing/clearance/daylight, 4:5, flux-dev, seed family 770301–303); 3 field-log/plate thumbs (1:1). Palette-locked to the herbarium tokens; exclusions baked in; FLUX negative-prompt reality noted (1.1-pro has none; dev does).
+- **`stage-fidelity-assets.mjs`** — zero-dep Node staging script (reconstructed with correct template literals — the original paste had its backticks stripped; `node --check` now passes). Generates each asset on Replicate, uploads to `brand-assets` at `assets/bkg/fidelity/<slug>.png`, writes catalog rows `status='draft'` ONLY. Structurally cannot promote (no approved/production code path); defaults to `--dry-run`; refuses to spend without `REPLICATE_API_TOKEN`; refuses upload without Supabase creds; catalog-insert gated behind `--catalog --schema-confirmed`. `fidelity-out/` gitignored (generated PNGs live in the bucket, not the repo).
+- **`public/_design-preview/gauge-face-primary.svg`** — static instrument-gauge FACE (brass bezel + 0–100 tick ring + numerals on aged-cream), herbarium hexes only, documented angle map (−135°→+135°, pivot 200,200) + `#needle` slot left for the Code lane. xmllint well-formed; the lone `#E8443A` is in the `<desc>` prose ("no #E8443A"), not a rendered color; `#00FFE0` is the deliberate teal "live flash" pip in the illustrative layer (to be replaced by Code). (`gauge-face-compact.svg` referenced in the original Cowork note was NOT provided in this hand-off — not created.)
+
+**Execution:** `node stage-fidelity-assets.mjs --dry-run` → GREEN (all 8 assets enumerated, catalog OFF, zero spend). `--go` **could not run**: this checkout has no `.env` and no `REPLICATE_API_TOKEN`/Supabase creds in the environment (same wall the Cowork sandbox hit) — the founder's `node --env-file=.env … --go` errors `node: .env: not found`, and `node … --go` (no env-file) hits the script's own safe refusal `✖ REPLICATE_API_TOKEN not set`. **No generation, no upload, no spend.**
+
+**To finish (founder, where creds live):** drop a real `.env` with `REPLICATE_API_TOKEN` + `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_CREATOR_KEY` (creator-scoped, draft-only RLS), then `node --env-file=.env stage-fidelity-assets.mjs --go`. Review the two heroes → pick one → it becomes the real B2 hero (replacing the `/plates/chrome-killer-app.png` placeholder wired this session). Promotion of drafts stays founder/service-role.
+
+**Note:** Cowork intended these as research-lane (no repo write). Per the founder's "generate all of these and execute" they were committed to this branch instead — drop the commit if you'd rather keep them out of the PR. `public.brand_assets` columns unconfirmed (no SQL run against shared prod) → keep `--catalog` off until verified.
+
+---
+
 ## 2026-06-14 — [Claude Code] Killer App Builder lane fidelity (Section A shared primitives + B1–B6)
 **Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity` (off `origin/main` `0a87d15`/#53) · PR-only, awaiting founder merge.
 
