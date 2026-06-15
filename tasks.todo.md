@@ -35,6 +35,12 @@
 - [ ] Parallel founder: attorney engagement letter · brand_assets migration window ·
       private-docs git rm · Seed Bank slots · local clone: checkout main + pull
 - [x] Session-log catch-up entries for #28/#29/#30 — appended this lane (2026-06-12, `chore/authed-fetch-leftovers`)
+- [x] LOOP 3 — money/time tiers wired to a GROUNDED per-project estimate (lane
+      `feat/first-run-tiers-grounded` off `feat/post-signup-first-run`): deterministic
+      sqft × jurisdiction × building-type engine (`src/lib/first-run/estimate.ts`); honest
+      ranges + per-tier AHJ flag + machine-twin basis preserved; verified in real browser
+      /start→/start/role→/start/tiers; tsc 121 & vitest 26-fail baselines held, build green.
+      **Uncommitted — awaiting founder commit/PR.**
 
 ## NOW (2026-06-10 — superseded by 2026-06-12 block above)
 

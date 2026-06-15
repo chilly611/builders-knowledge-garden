@@ -6,6 +6,21 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-14 — [Claude Code] Session: first-run money/time tiers → grounded estimate
+**Agent:** Claude Code (Opus 4.8, 1M). **Lane:** new worktree `feat/first-run-tiers-grounded` off `feat/post-signup-first-run` — `main` lacks the first-run tiers files, so this builds on the close-out branch whose own comment named this "the remaining enhancement." **Status:** uncommitted in the worktree — awaiting founder commit/PR.
+
+**What was built:**
+- **New `src/lib/first-run/estimate.ts`** — pure, deterministic per-project cost engine. Parses sqft / building-type / jurisdiction from the user's One-Door words (or a light refine row), then computes three honest tier ranges = `sqft × CA-baseline $/sf × building-type factor × regional cost index`. Cross-checked: fed ADU defaults it reproduces the prior hand-tuned ADU samples within a few %.
+- **`MoneyTimeTiers.tsx`** now takes grounded `tiers` + a `basis` + an optional refine row (size/location inputs). The `CostTier`/`TierFlag`/`FlagKind` types moved to the lib and are re-exported (no import churn for `/start/tiers`); `fmt` now renders ≥$1M; the **Goal-8 machine twin is PRESERVED and enriched** with `source:'grounded_estimate'` + a `basis` trace.
+- **`/start/tiers/page.tsx`** parses the intent, holds the refine state, computes via `estimateTiers` (`useMemo`), and passes it down. Handlers unchanged (`bkg-tier`→`/dream`, go-deeper→`/killerapp`).
+- **KEPT** (doctrine): engine's-read honesty label, a "verify with your AHJ" hedge on every tier, the sage/amber/rust taxonomy, ≥1 non-green flag per tier (no all-green), and no fabricated precision (ranges rounded to $5K/$10K steps). When size/location are unknown they fall back to honest defaults that surface amber "assumed" flags + a refine-row badge.
+
+**Why not `POST /api/v1/projects/estimate`** (the route the doctrine names): it requires auth + a real `projectId`, deletes/inserts shared-prod `project_budget_lines`, runs a per-request Claude call, and returns a single `{totalCost, marketComparison}` — not three `{low,high}` tiers. Unusable from a cold pre-project screen, and an LLM-priced number is the "hallucinated money" the doctrine forbids. No cost-data table exists to import either, so a deterministic cited model is the right grounding source.
+
+**Verification:** `tsc` 121 (baseline held; 0 in changed files) · `vitest` 26-fail baseline held + 12 new passing estimate tests (the 2 jsdom worker errors are a pre-existing env issue) · `next build` exit 0 · real-browser walk `/start → /start/role → /start/tiers` (dev server lsof-cwd-confirmed in the worktree): grounded ranges render (Marin 1,200 sf ADU → $360K / $500K / $705K–$1M), honesty label + AHJ flags + machine-twin basis present, refine recomputes live (Fresno ↓), assumed-path flags+badge correct, GC voice swap intact, no console errors.
+
+**Flag:** temporarily added then restored a preview config in the session-cwd `.claude/launch.json` (to point the preview server at this worktree, sidestepping the session-cwd gotcha).
+
 ## 2026-05-29 — [Cowork] Session: FUNCTIONAL Owner Lane (real persisted approval loop)
 **Agent:** Cowork (Opus)
 **Commits:** `ed455a0` (structure + data + permissions) · `f165730` (Framer Motion) — local; awaiting founder push.

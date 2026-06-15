@@ -26,6 +26,11 @@
 import { useState } from 'react';
 import { colors } from '@/design-system';
 import { type FirstRunRole } from './InferRole';
+import { type CostTier, type TierFlag, type FlagKind, type EstimateBasis } from '@/lib/first-run/estimate';
+
+// The canonical definitions now live with the estimate engine; re-export them so
+// existing importers (e.g. /start/tiers) keep their import path unchanged.
+export type { CostTier, TierFlag, FlagKind };
 
 const SAGE = '#5E7A56'; // flag green / ease (visual-first-and-flags.md §3)
 const C = {
@@ -41,33 +46,19 @@ const C = {
   body: '#5A5141',
 };
 
-export type FlagKind = 'ease' | 'watch' | 'risk';
 const FLAG_COLOR: Record<FlagKind, string> = { ease: SAGE, watch: C.amber, risk: C.rust };
 
-export interface TierFlag {
-  kind: FlagKind;
-  headline: string;
-  why: string;
-}
-
-export interface CostTier {
-  key: 'budget' | 'business' | 'first_class';
-  name: string;
-  blurb: string;
-  moneyLow: number;
-  moneyHigh: number;
-  timeline: string;
-  flags: TierFlag[]; // honesty rule: at least one is not 'ease'
-  recommended?: boolean;
-  rationale?: string; // one whisper line, shown only on the recommended tier
-}
-
-const fmt = (n: number) => (n >= 1000 ? `$${Math.round(n / 1000)}K` : `$${n}`);
+const fmt = (n: number) => {
+  if (n >= 1_000_000) return `$${Math.round(n / 100_000) / 10}M`; // one decimal, e.g. $1.3M
+  if (n >= 1000) return `$${Math.round(n / 1000)}K`;
+  return `$${n}`;
+};
 
 /**
- * Sample tiers for an ADU — honest ranges (engine's read, not quotes), each
- * with a non-green flag. The route passes these until the flow is wired to a
- * grounded estimate.
+ * Fallback sample tiers for an ADU — honest ranges (engine's read, not quotes),
+ * each with a non-green flag. Used only when the component renders standalone
+ * (e.g. a preview); the live /start/tiers passes a grounded per-project estimate
+ * from src/lib/first-run/estimate.
  */
 export const SAMPLE_TIERS: CostTier[] = [
   {
@@ -119,17 +110,40 @@ const mono: React.CSSProperties = {
   fontSize: 11,
 };
 
+// Recessive inline input for the optional refine row — underline only, so it
+// reads as editable text, never competing with the tier cards (one-thing-brightest).
+const refineInput = (width: number): React.CSSProperties => ({
+  width,
+  border: 'none',
+  borderBottom: `1.5px solid ${C.edge}`,
+  background: 'transparent',
+  color: C.ink,
+  fontFamily: 'inherit',
+  fontSize: 'inherit',
+  fontWeight: 600,
+  padding: '1px 3px',
+  outline: 'none',
+});
+
 export interface MoneyTimeTiersProps {
   /** The user's words from The One Door — echoed back, unedited. */
   intent?: string;
   /** Inferred/confirmed role (Principle #4) — swaps the framing voice only. */
   role?: FirstRunRole;
   tiers?: CostTier[];
+  /** Grounded estimate basis (size / jurisdiction the ranges were built from) —
+   *  drives the refine row's labels and placeholders. */
+  basis?: EstimateBasis;
+  /** Light refine row (size / location). Omit to hide it (standalone preview). */
+  refine?: {
+    value: { sqft: string; location: string };
+    onChange: (next: { sqft: string; location: string }) => void;
+  };
   onSelect: (key: CostTier['key']) => void;
   onGoDeeper?: () => void;
 }
 
-export default function MoneyTimeTiers({ intent, role = 'owner', tiers = SAMPLE_TIERS, onSelect, onGoDeeper }: MoneyTimeTiersProps) {
+export default function MoneyTimeTiers({ intent, role = 'owner', tiers = SAMPLE_TIERS, basis, refine, onSelect, onGoDeeper }: MoneyTimeTiersProps) {
   const recommendedKey = tiers.find((t) => t.recommended)?.key ?? tiers[0]?.key;
   const [selected, setSelected] = useState<CostTier['key']>(recommendedKey);
 
@@ -166,6 +180,20 @@ export default function MoneyTimeTiers({ intent, role = 'owner', tiers = SAMPLE_
             role,
             recommended: recommendedKey,
             note: 'ranges are the engine read, not quotes',
+            source: basis ? 'grounded_estimate' : 'sample',
+            ...(basis
+              ? {
+                  basis: {
+                    sqft: basis.sqft,
+                    location: basis.location,
+                    building_type: basis.buildingType,
+                    region_multiplier: basis.regionMultiplier,
+                    cost_per_sqft: basis.costPerSqFt,
+                    assumed_sqft: basis.assumedSqft,
+                    assumed_location: basis.assumedLocation,
+                  },
+                }
+              : {}),
             tiers: tiers.map((t) => ({
               key: t.key,
               money_range: [t.moneyLow, t.moneyHigh],
@@ -186,6 +214,34 @@ export default function MoneyTimeTiers({ intent, role = 'owner', tiers = SAMPLE_
           Ranges are the engine&rsquo;s read — a starting estimate, not a quote. Confirm costs, codes, and permits with
           your AHJ. The middle option is our default; it&rsquo;s a suggestion, not a lock-in.
         </p>
+
+        {refine && basis ? (
+          <div
+            data-machine="tiers_refine"
+            style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 6, margin: '-12px 0 22px', fontSize: 13.5, color: C.body }}
+          >
+            <span style={{ color: C.muted }}>Tuned for your {basis.buildingTypeLabel} —</span>
+            <input
+              aria-label="Square footage"
+              inputMode="numeric"
+              value={refine.value.sqft}
+              placeholder={basis.sqft.toLocaleString()}
+              onChange={(e) => refine.onChange({ ...refine.value, sqft: e.target.value.replace(/[^\d,]/g, '') })}
+              style={refineInput(70)}
+            />
+            <span style={{ color: C.muted }}>sq ft in</span>
+            <input
+              aria-label="Location, city or county"
+              value={refine.value.location}
+              placeholder={basis.location}
+              onChange={(e) => refine.onChange({ ...refine.value, location: e.target.value })}
+              style={refineInput(160)}
+            />
+            {basis.assumedSqft || basis.assumedLocation ? (
+              <span style={{ ...mono, color: C.amber, fontSize: 10.5 }}>assumed — edit for a sharper read</span>
+            ) : null}
+          </div>
+        ) : null}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
           {tiers.map((tier) => {

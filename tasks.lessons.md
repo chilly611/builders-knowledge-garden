@@ -1,8 +1,16 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-06-10
+## Updated: 2026-06-14
 
 ---
+
+## 2026-06-14 — first-run grounded tiers (Claude Code / Opus 4.8)
+
+### A worktree `node_modules` symlink breaks Turbopack build AND vitest jsdom resolution — use `npm ci`
+Spinning up a new worktree off a feature branch, I symlinked `node_modules` to a sibling worktree's to skip an install. `tsc` and a targeted test passed — but `next build` failed with `Symlink [project]/node_modules is invalid, it points out of the filesystem root` (Turbopack rejects a node_modules symlink that escapes the project root), and `vitest` threw `Cannot find package 'jsdom'` for jsdom-env test files (resolution chased the symlink's target tree). Fix: `rm` the symlink and `npm ci` for a real, in-tree `node_modules`. **Rule:** every worktree gets its own real `node_modules` via `npm ci` — never symlink it. The shortcut silently invalidates `next build` and a subset of tests, and a green `tsc` won't catch it.
+
+### "Grounded estimate" with no cost API/table = a deterministic cited model, NOT an LLM call
+The first-run doctrine named `/api/v1/projects/estimate` for tier ranges, but that route needs auth + a real `projectId`, writes shared-prod `project_budget_lines`, and returns one `{totalCost, marketComparison}` via a per-request Claude call — unusable from a cold pre-project screen, and an LLM-priced number is precisely the "hallucinated money" the doctrine forbids. No cost-data table existed in the repo either. The right grounding was a pure deterministic model (`sqft × regional index × building-type factor`) in `src/lib/first-run/estimate.ts`: same inputs → same ranges, instant, every figure traceable, honest-by-construction. **Rule:** when "grounded" is required and there's no trustworthy data/API, a transparent cited formula driven by the user's real inputs beats — and is more honest than — an LLM guess. Confirm a doctrine-named endpoint's actual contract + side effects before wiring to it; the doctrine described `{low,high}`, the route did something else entirely.
 
 ## 2026-06-09/10 — Lessons
 
