@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400"
+     role="img" aria-label="Herbarium instrument gauge face — brass bezel, aged-cream dial, 0–100 tick ring"
+     data-bkg-asset="gauge-face-primary"
+     data-value-min="0" data-value-max="100"
+     data-sweep-deg="270" data-start-angle-deg="-135" data-end-angle-deg="135"
+     data-pivot-x="200" data-pivot-y="200">
+  <title>BKG instrument gauge face (primary, 270° / 0–100)</title>
+  <desc>
+    Static FACE ONLY. The Code lane owns the needle + live data.
+    Angle map: screen angle = -135deg at value 0, +135deg at value 100 (270deg clockwise sweep).
+    To place a needle for value v: angle = -135 + (v/100)*270, then rotate(angle 200 200).
+    Pivot is (200,200). Herbarium palette only; no #E8443A, no pure white, no neon.
+    The illustrative example arc/readout/flash-pip have been removed per spec; Code
+    renders the live progress arc + needle + readout (see #needle slot).
+  </desc>
+
+  <defs>
+    <!-- Brass bezel: pale top-left highlight -> brass -> deep bottom-right -->
+    <linearGradient id="brassRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="#E2CFA6"/>
+      <stop offset="34%" stop-color="#B08D5C"/>
+      <stop offset="72%" stop-color="#8C5E22"/>
+      <stop offset="100%" stop-color="#B08D5C"/>
+    </linearGradient>
+    <!-- Aged-cream dial: cream center -> vellum -> fold edge -->
+    <radialGradient id="dialFace" cx="42%" cy="38%" r="72%">
+      <stop offset="0%"  stop-color="#F2E9D2"/>
+      <stop offset="62%" stop-color="#E8DDB8"/>
+      <stop offset="100%" stop-color="#D8C9A0"/>
+    </radialGradient>
+    <radialGradient id="hubGrad" cx="38%" cy="34%" r="70%">
+      <stop offset="0%" stop-color="#E2CFA6"/>
+      <stop offset="60%" stop-color="#B08D5C"/>
+      <stop offset="100%" stop-color="#8C5E22"/>
+    </radialGradient>
+    <filter id="dialShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#234C5A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- outer keyline -->
+  <circle cx="200" cy="200" r="192" fill="none" stroke="#2A2620" stroke-opacity="0.25" stroke-width="1.5"/>
+  <!-- brass bezel ring -->
+  <circle cx="200" cy="200" r="176" fill="none" stroke="url(#brassRing)" stroke-width="28"/>
+  <!-- inner + outer bevel definition -->
+  <circle cx="200" cy="200" r="190" fill="none" stroke="#8C5E22" stroke-opacity="0.55" stroke-width="1"/>
+  <circle cx="200" cy="200" r="162" fill="none" stroke="#8C5E22" stroke-opacity="0.65" stroke-width="1.5"/>
+  <circle cx="200" cy="200" r="160" fill="none" stroke="#E2CFA6" stroke-opacity="0.7" stroke-width="1"/>
+
+  <!-- dial face -->
+  <circle cx="200" cy="200" r="159" fill="url(#dialFace)" filter="url(#dialShadow)"/>
+  <!-- faint concentric paper rings -->
+  <circle cx="200" cy="200" r="138" fill="none" stroke="#B5A270" stroke-opacity="0.18" stroke-width="1"/>
+  <circle cx="200" cy="200" r="96"  fill="none" stroke="#B5A270" stroke-opacity="0.12" stroke-width="1"/>
+
+  <!-- ===== TICK RING (majors every 10, minors every 5) ===== -->
+  <g stroke="#2A2620" stroke-linecap="round">
+    <!-- minor ticks -->
+    <g stroke-width="1.4" stroke-opacity="0.55">
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(-121.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(-94.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(-67.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(-40.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(-13.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(13.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(40.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(67.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(94.5 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="66" transform="rotate(121.5 200 200)"/>
+    </g>
+    <!-- major ticks -->
+    <g stroke-width="2.6">
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(-135 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(-108 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(-81 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(-54 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(-27 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(0 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(27 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(54 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(81 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(108 200 200)"/>
+      <line x1="200" y1="60" x2="200" y2="76" transform="rotate(135 200 200)"/>
+    </g>
+  </g>
+
+  <!-- ===== NUMERALS (Archivo per brand) ===== -->
+  <g fill="#234C5A" font-family="'Archivo','Archivo Black',system-ui,sans-serif"
+     font-size="15" font-weight="700" text-anchor="middle" dominant-baseline="middle">
+    <text x="120.8" y="279.2">0</text>
+    <text x="93.5"  y="234.6">10</text>
+    <text x="89.4"  y="182.5">20</text>
+    <text x="109.4" y="134.2">30</text>
+    <text x="149.2" y="100.2">40</text>
+    <text x="200"   y="88">50</text>
+    <text x="250.8" y="100.2">60</text>
+    <text x="290.6" y="134.2">70</text>
+    <text x="310.6" y="182.5">80</text>
+    <text x="306.5" y="234.6">90</text>
+    <text x="279.2" y="279.2">100</text>
+  </g>
+
+  <!-- dial label -->
+  <text x="200" y="250" text-anchor="middle" fill="#2A2620" fill-opacity="0.7"
+        font-family="'Archivo','Archivo Black',system-ui,sans-serif" font-size="13"
+        font-weight="800" letter-spacing="2">BUILD</text>
+
+  <!-- ===== NEEDLE SLOT — Code lane owns this ===== -->
+  <g id="needle" data-pivot-x="200" data-pivot-y="200" data-angle-at-value-0="-135" data-deg-per-value="2.7">
+    <!--
+      Code: insert needle here and rotate around (200,200):
+        angle = -135 + (value/100) * 270
+        <g transform="rotate(${angle} 200 200)"><polygon points="..."/></g>
+      Example needle (commented) points to ~42%:
+        <polygon points="196,205 204,205 200,82" fill="#A53A2D"
+                 transform="rotate(-21.6 200 200)"/>
+    -->
+    <!-- hub cap (stays under the needle root) -->
+    <circle cx="200" cy="200" r="16" fill="url(#hubGrad)" stroke="#8C5E22" stroke-width="1.5"/>
+    <circle cx="200" cy="200" r="6.5" fill="#2A2620" fill-opacity="0.85"/>
+    <circle cx="196.5" cy="196.5" r="2.4" fill="#E2CFA6" fill-opacity="0.8"/>
+  </g>
+</svg>

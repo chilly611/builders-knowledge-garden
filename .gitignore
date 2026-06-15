@@ -52,3 +52,6 @@ scripts/__pycache__/
 gitlock-trash/
 copy/
 .gitlock-quarantine/
+
+# fidelity-pass staging script local output (never commit generated PNGs)
+fidelity-out/
