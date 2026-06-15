@@ -26,6 +26,7 @@ import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
 import { useProject } from '@/lib/hooks/useProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
+import InstrumentGauges from '@/components/cockpit/InstrumentGauges';
 import { applyJurisdictionOverride } from '@/lib/project-display';
 import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
 import { MARIN_AI_TAKE } from '@/lib/seed-data/marin-farmhouse';
@@ -472,6 +473,11 @@ export default function KillerappProjectShell() {
               </p>
             );
           })()}
+
+          {/* B3 (fidelity spec) — "This week's instruments": the signature
+              brass dials. Data-honest: real budget/schedule needles, honest
+              "no signal yet" faces where a metric has no data. */}
+          <InstrumentGauges />
 
           <div style={{ marginBottom: 20 }}>
             <div

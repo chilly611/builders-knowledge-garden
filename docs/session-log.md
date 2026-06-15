@@ -4343,3 +4343,19 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags (dogfood findings worth their own fix):** the **global FAB overlaps the size-up "Next" primary action** on `/killerapp/stages/*` — a real UX bug (you can hit the FAB instead of Next). Separate chrome-z-order/suppression fix.
 
 **Write-lane:** **RELEASED** on push. Branch `fix/editable-jurisdiction` → PR. Completes the three founder dogfood asks (#1 new project + #2 sign-out/switch on `fix/header-account-menu`; #3 editable jurisdiction here).
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `feat/instrument-gauges` — Component Fidelity program, slice 1: B3 instrument gauges → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main`. Founder handed the Component Fidelity Spec ("make good choices for me"). **Decisions locked:** (1) **Marin canonical**, Twin Peaks = layout reference only, zero hardcoded Twin Peaks (every component reads `useStageProject()`); (2) **StageChip = access/billing ladder** (paid/current/soon), current chip % = stage-progress, the **budget readout owns spend-%** — distinct numbers (mockup's matching 82%/82% treated as coincidence; flagged to flip if intended). **Slice plan:** B3 gauges (here) → shell fidelity + clickable-chrome regression → Killer App lane to 100% → chrome reconciliation → Dream Machine. Started with B3 (the signature "wow," lowest blast radius, code-only — no asset dependency).
+
+**What shipped:**
+- **`src/components/cockpit/InstrumentGauges.tsx` (new)** — "This week's instruments": 3 analog dials (On schedule? / Budget burn? / Quality?) with **brass herbarium bezels**, tick marks, swept needle, sage/amber/rust tier faces — Decision 19 (Legible Judgment) made physical. SVG, tokens-only, reduced-motion (needle static at value, no sweep), Goal-8 machine twin.
+- **HONEST data (spec B3, "never a fake reading"):** Budget burn = real, read from the SAME `useProjectLedger` the budget ribbon reads (consumed/total, so the dial agrees with "$N left of $M"). On schedule = progress-vs-weeks-elapsed health from `useShellConfig().journey`, **honest "no signal yet" when no timeline exists**. Quality = "no signal yet" (no rollup yet; wired when one lands). Cap shows `WK n OF m` only when real — **no fabricated YARD/CREW**.
+- **`src/app/killerapp/KillerappProjectShell.tsx`** — mounts `<InstrumentGauges />` on the project cockpit (after the project facts, before "Choose your next move").
+
+**Verification (real browser, dev :3501, `lsof`-cwd-confirmed, demo cockpit):** the three dials render on-brand (brass bezels, ticks, needles, teal/rust/sage face washes). **Bug caught + fixed mid-verify:** budget first showed "no signal yet" because I sourced it from `useStageProject` (only populated for canonical Marin) instead of the ledger — re-sourced to `useProjectLedger`, now reads **66%** matching the header's $116K-of-$340K, needle swept, "spent of plan" sub. Schedule + Quality correctly "no signal yet" (this demo has no timeline / no quality rollup). Console clean (no hydration warning — the needle's min→target initial state matches SSR+client). `tsc` 121→121 (0 in my files) · `next build` exit 0.
+
+**Flags / deferred:** budget tier is absolute-burn thresholds (sage<70 / amber<90 / rust≥90); a richer "burn vs schedule pace" health is a later refinement. The honest "no signal yet" faces light up as schedule timelines + a quality rollup land (future slices).
+
+**Write-lane:** **RELEASED** on push. Branch `feat/instrument-gauges` → PR (slice 1 of the fidelity program). Next slice: shell fidelity + clickable-chrome regression (A3/A4/A5).
