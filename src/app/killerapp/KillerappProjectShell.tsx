@@ -28,6 +28,8 @@ import { useProject } from '@/lib/hooks/useProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import InstrumentGauges from '@/components/cockpit/InstrumentGauges';
 import CockpitHero from '@/components/cockpit/CockpitHero';
+import FieldLogPlates from '@/components/cockpit/FieldLogPlates';
+import ReflectCard from '@/components/cockpit/ReflectCard';
 import { applyJurisdictionOverride } from '@/lib/project-display';
 import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
 import { MARIN_AI_TAKE } from '@/lib/seed-data/marin-farmhouse';
@@ -564,6 +566,11 @@ export default function KillerappProjectShell() {
             )}
           </div>
 
+          {/* B4 (fidelity spec) — "Field log": the project's real recent
+              site activity (project_attachments) as herbarium plates; an
+              honest, inviting empty-state when there's nothing yet. */}
+          <FieldLogPlates projectId={projectId} />
+
           {/* 2026-05-19 (Ship 16): contextual "Choose your next move" panel.
               Replaces the prior 3-chip strip (Estimate / Codes / Contracts).
               Now 9 chips across 3 lifecycle stages (Size Up / Lock It In /
@@ -624,6 +631,10 @@ export default function KillerappProjectShell() {
               </div>
             ))}
           </div>
+
+          {/* B5 (fidelity spec) — Reflect close-out card: real journey %,
+              honest "opens at wrap-up" preview; the cockpit's end-note. */}
+          <ReflectCard projectId={projectId} />
         </div>
       )}
     </section>

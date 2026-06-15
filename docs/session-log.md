@@ -4366,3 +4366,22 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 - **Verified (real browser, dev :3503):** greeting → hero → gauges compose on-brand; **caught + fixed a project-name mis-source** (`sp.projectName` fallback "Project" → `cfg.projectName` "Willow Creek ADU", same class as the budget-gauge ledger fix). Console clean. `tsc` 121→121 (0 in my files) · `next build` exit 0.
 
 **Branch is now the "Killer App lane top" PR** (gauges B3 + greeting B1 + hero B2). Remaining program slices: B4 field-log plates + B5 reflect (lane to 100%) → chrome reconciliation → Dream Machine. Asset B-asset-1 (real hero photo) is the parallel Cowork track.
+
+### + Fidelity asset pipeline (materialized + dry-run) and B4 + B5 (same branch)
+
+**Cowork fidelity-asset pipeline — materialized, dry-run proven, `--go` BLOCKED on creds:**
+- Wrote the founder's Cowork artifacts into the repo: `stage-fidelity-assets.mjs` (root — zero-dep Node staging script, **draft-only**, refuses to spend without `REPLICATE_API_TOKEN`, refuses upload without Supabase creds, catalog-insert gated behind `--schema-confirmed`), `docs/design/fidelity-flux-prompts.md` (the 8-asset FLUX prompt spec), and `public/design-assets/gauge-face-primary.svg` (**cleaned** — stripped the illustrative `example-*` groups per the SVG's own `<desc>`, which also removed the out-of-palette neon `#00FFE0` pip; valid XML, palette-lint clean). Added `fidelity-out/` to `.gitignore`.
+- `--dry-run` previews all 8 assets (hero ×2, studies ×3, thumbs ×3), zero spend. `node --check` clean. Running the real `--go` with no creds in env correctly **refuses** at the guard ("REPLICATE_API_TOKEN not set").
+- **`--go` cannot run here:** there is **no `.env` anywhere** (worktree / session cwd / bkg-main — only `.env.example`) and **nothing exported** (REPLICATE/SUPABASE/VERCEL all absent). This is the founder's to run where the real creds live (`node --env-file=.env stage-fidelity-assets.mjs --go`). Nothing was generated, nothing staged to the shared `brand-assets` bucket — honest blocker, surfaced not papered over.
+
+**B4 — `FieldLogPlates` (cockpit) — real persisted data, honest empty:**
+- Reads the REAL store `GET /api/v1/projects/<id>/attachments` (site photos/docs, newest-first) → herbarium plate strip (plate №, EXIF/created date, caption/title, kind tag, signed-url thumb). No emoji (inline SVG glyphs).
+- Honest empty-state ("Your field log is empty — site photos, receipts, and notes you capture on the job plate up here") for anon/demo/no-uploads. **Never** the Owner-Lane demo fixture (0041/0040 are hardcoded there, not a store). Added an 8s `Promise.race` timeout so a stalled `authedFetch`→`getSession()` can't skeleton forever — it settles to the honest empty.
+
+**B5 — `ReflectCard` (cockpit) — real journey %, honest "opens at wrap-up":**
+- Reads `useShellConfig().journey.pct`. Mid-build → honest preview ("You're 62% through. When you wrap, this is where warranty, lessons learned, your portfolio update, and referrals come together") with a "Peek at Reflect →" link. At ≥98% → close-out prompt. Mirrors the Reflect *stage's* own "coming soon" honesty; never fabricates a retrospective. Dusk-purple stage-7 accent. (Mid-verify: relaxed the % gate from `cfg.ready` — false on demos — to `pct>0`; hydration-safe since SSR + first render both see 0.)
+- Mounted both in `KillerappProjectShell` (B4 after the AI take, B5 as the closing card). **Browser-verified** both honest states on the demo cockpit; `pct=62` real, field log empty-state on-brand.
+
+**Verification + flags:**
+- `tsc` 121→121 (0 in my files; no stray `ready`) · `next build` exit 0. Console: the `ReferenceError: ready is not defined` errors were **HMR-transient** (mid-edit fast-refresh, stack through `performReactRefresh`/`applyUpdate`) — gone on fresh load, and tsc would flag a real one.
+- **Flag (out of scope, pre-existing):** the *entire* cockpit renders **twice** in the DOM (one hidden / one visible) — affects `cockpit_hero`/`instrument_gauges` identically, not introduced by B4/B5. Visible instances all correct. Worth a look (wasted renders; the hidden copy's fetches never resolve).
