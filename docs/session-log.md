@@ -4428,4 +4428,23 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 
 **⚠️ Coordination note (the fork):** this session's earlier B1–B5 work lives on `feat/instrument-gauges` (built off the *old* main `0a87d15`, before #54). PR #54 ("Builder-lane fidelity — Section A primitives + B1–B6 home") is now on main and implements the same spec sections as a *different* component suite (`ProjectCockpit`, `InstrumentGauge`, `JourneyArc`…) wired to `/killerapp/projects/[id]` (`ProjectDashboardClient`), while my B1–B5 wired a parallel set into `/killerapp`'s `KillerappProjectShell`. The two fidelity implementations target different surfaces and **need a founder call on which is canonical** before either merges. The asset-staging pipeline is duplicated (`feat/killer-app-fidelity` `bcb27e2` ↔ my `b3ec7eb`). This chrome cutover was deliberately branched fresh off main to stay independent of that fork.
 
-**Write-lane:** branch `refactor/chrome-cutover` → push → **PR for founder merge**.
+**Write-lane:** branch `refactor/chrome-cutover` → push → **PR for founder merge**. (Merged as #56.)
+
+---
+
+## 2026-06-15 — Project-home routing: /killerapp?project= → the lane-aware dashboard
+**Agent:** Claude Code (Opus) · branch `feat/project-home-routing` off `origin/main` (`9d0c366`, #57).
+
+**The fork decision (founder, this session):** of the two parallel Builder-lane cockpits, **#54's `ProjectDashboardClient` at `/killerapp/projects/[id]` is the canonical home** (lane-aware via `LaneRouter` — Owner→OwnerHome, GC→dashboard; spec-faithful B1–B6 + honest empties + real engraving hero). This session's `feat/instrument-gauges` B1–B5 (on the `/killerapp` picker-cockpit) is **retired — do NOT merge it** (superseded; the one thing it did better — a field log reading real `project_attachments` — is worth porting onto #54 later).
+
+**Platform context that shaped the how:** `/killerapp?project=<id>` was the app's *de-facto* project home — ~20 landing points (onboarding/`first_run`, the `/intro` investor demo, Dream-Machine "make this real", the projects-list card, workflow returns) all land there; the lane-aware `/killerapp/projects/[id]` was reached by almost nothing. Rather than rewrite 20 call sites (touches signup/first-run/demo), founder chose **one redirect**.
+
+**Change (1 file, `src/app/killerapp/page.tsx`):** the server page now reads `searchParams` and, for the plain "land on a project" case, `redirect()`s `/killerapp?project=<id>` → `/killerapp/projects/<id>`. Two flows are deliberately preserved on the picker: `first_run=1` (new-signup sequence, #50) and `cockpit=diy` (DIY overlay). The bare picker (`/killerapp`, no project) is untouched.
+
+**Why the investor demo is safe:** `/intro` + `OnboardingModal` use the **Marin UUID** `55730cd3-…`, which renders **consistently** on the dashboard (chrome + body both "Modern Farmhouse in Marin", $1.65M/$312K/42%). Only the first-visit auto-seed slug `demo-san-diego-adu` is mismatched ("Willow Creek ADU / $116K" in chrome vs Marin in body) — a **pre-existing demo-data bug** (auto-seed doesn't reconcile to canonical Marin per CLAUDE.md), chipped as a separate task, NOT caused by this redirect.
+
+**Verified (real browser, dev :3507):** plain `?project=<Marin>` → address bar lands on `/killerapp/projects/<Marin>`, dashboard renders "Modern Farmhouse in Marin"; bare `/killerapp` → workflow picker (no redirect); `&cockpit=diy` → stays on picker; `&first_run=1` → same guard. Console clean. `tsc` 121 baseline (0 in page.tsx) · `next build` exit 0.
+
+**Open items for founder:** (1) merge `feat/project-home-routing`; (2) delete the retired `feat/instrument-gauges` remote branch (superseded by #54); (3) the two chips — duplicate-cockpit render + demo-data reconcile; (4) run the `--go` fidelity image generation where creds live.
+
+**Write-lane:** branch `feat/project-home-routing` → push → **PR for founder merge**.

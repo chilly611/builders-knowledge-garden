@@ -26,6 +26,7 @@
  */
 
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Suspense } from 'react';
@@ -255,9 +256,22 @@ const STAGE_COLORS: Record<number, string> = {
 export default async function KillerAppPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string }>;
+  searchParams: Promise<{ project?: string; first_run?: string; cockpit?: string }>;
 }) {
-  const { project: activeProjectId } = await searchParams;
+  const { project: activeProjectId, first_run: firstRun, cockpit } = await searchParams;
+
+  // HOME ROUTING (component-fidelity §A · founder 2026-06-15): the canonical
+  // project home is the lane-aware /killerapp/projects/[id] (LaneRouter →
+  // Owner / GC). Historically every "open a project" path landed on
+  // /killerapp?project=<id> (this picker rendering the cockpit inline); send
+  // that plain case to the real home so there is ONE project surface. Two
+  // flows intentionally keep the picker and are preserved:
+  //   • first_run=1 — new-signup first-run sequence (#50 keeps signups off the cockpit)
+  //   • cockpit=diy — the DIY cockpit overlay variant (homeowner DIY path)
+  if (activeProjectId && !firstRun && cockpit !== 'diy') {
+    redirect(`/killerapp/projects/${encodeURIComponent(activeProjectId)}`);
+  }
+
   const data = loadWorkflows();
   const stages = [...data.lifecycleStages].sort((a, b) => a.id - b.id);
   const byStage = new Map<number, WorkflowSummary[]>();
