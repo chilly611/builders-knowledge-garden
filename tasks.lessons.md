@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-06-14 — Lessons
+
+- **Shared component CSS must be imported BY the component, or it silently no-ops.** The Builder-lane workflow/specimen cards rendered unstyled (no frame, invisible on cream) because `specimen.css` was never imported anywhere; the gauges only *looked* fine because their colours are inline. Rule: a self-contained primitive imports its own stylesheet (`import './x.css'` in the .tsx, like `ShellStrips` imports `app-shell.css`) so the style travels with the component to every surface that reuses it.
+- **In SVG, set stroke/fill/stop-color INLINE with GLOBAL token vars — not via CSS classes, and never via a locally-scoped `--var` inside `<defs>`.** A gauge face whose gradient stops used `stop-color: var(--ig-accent)` (a var set on the wrapping `.ig--good`) rendered solid black; class-based `stroke` on child `<line>`/`<circle>` rendered `none`. The brass bezel worked only because its stops used inline `style={{stopColor:'var(--specimen-brass)'}}` (a global token). Custom properties don't inherit into the `<defs>` subtree reliably across engines. Also rotate an SVG needle with a nested `<g transform="translate(cx cy)">` + inner `rotate()` (origin 0,0 == centre) — `transform-box:view-box; transform-origin:85px 85px` computed to `0 0` and threw the needle off-dial.
+- **Verify a worktree in the browser by pointing preview at YOUR port, not `preview_start` in session cwd.** `preview_start` runs in the session cwd (the *other* checkout) and refuses to reuse a Bash-started server. Working pattern: add a launch.json config whose command `cd`s into the worktree (or let `preview_start` own it via `autoPort`), `lsof`-verify the listening PID's cwd == worktree, then drive it; revert any session-cwd launch.json edit after.
+
 ## 2026-06-09/10 — Lessons
 
 - **In-thread doctrine must land in the repo same-day, or agents contradict each other.** Decisions authored in chat ("#18/#19") were cited by one lane and declared "phantom" by another, while a third found a *different* existing #18. Rule: doctrine is referred to by NAME until a canon PR verifies its number; numbering is discovered from origin/main, never assumed; never overwrite an existing decision.

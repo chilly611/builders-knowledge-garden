@@ -1,0 +1,149 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   SHARED HERBARIUM PRIMITIVES — InstrumentGauge · SpecimenPlate · WorkflowEntryCard
+   (Section A: the Killer App Builder lane composes these for B3/B4/B6; the
+   Dream Machine inherits the same classes later.)
+
+   Ported from the design-system kit (ui_kits/builders-knowledge-garden/
+   styles.css). Tokens only — every colour is a --paper- / --specimen- / --ink-
+   var from src/styles/tokens.css. NO #E8443A, no pure #fff, light surfaces
+   only. Fonts use the var(--font-*) tokens, so a surface that scopes Space
+   Mono / Cormorant Garamond (the Builder + Owner lanes) gets them for free.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* The engraved label/eyebrow shared by all three primitives. Some surfaces
+   already define `.eng-label`; this is a harmless, identical fallback scoped
+   to the primitives so they look right anywhere they're dropped. */
+.ig .eng-label,
+.specimen .eng-label,
+.we .eng-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  font-weight: 600;
+}
+
+/* ─── InstrumentGauge ──────────────────────────────────────────────────── */
+.ig {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 0 auto; /* centre within a wider cell; wrapper max-width caps size */
+}
+.ig svg { display: block; width: 100%; height: auto; }
+
+/* Health → face accent is set INLINE on the gradient stops (see FACE_VAR in
+   InstrumentGauge.tsx): sage = good, amber = watch, rust = risk (Decision
+   19/21). A locally-scoped --var does not inherit into <defs> reliably. */
+
+.ig-bezel { stroke: var(--specimen-brass-aged); stroke-width: 1.5; }
+.ig-rim { fill: var(--paper-cream); stroke: var(--specimen-brass-aged); stroke-width: 0.5; }
+
+/* Ticks, needle stroke + hub fills are set INLINE on the SVG elements (global
+   token vars). Class-based stroke/fill on these nested SVG children rendered
+   unreliably in testing; inline is bulletproof. */
+.ig-label { font-family: var(--font-mono); font-size: 8px; letter-spacing: 1.6px; fill: var(--ink-graphite); }
+
+/* The needle's inner group rotates around its own origin (the dial centre, via
+   the outer translate), so no transform-box/transform-origin is needed. The
+   transition gives the sweep; it's stripped under reduced-motion below. */
+.ig-needle { transition: transform 1.05s var(--ease-out-paper); }
+
+.ig-display {
+  font-family: var(--font-display);
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  color: var(--ink-graphite);
+  margin-top: -8px;
+  font-variant-numeric: tabular-nums;
+}
+.ig-display--empty { color: var(--ink-faded); font-size: 20px; }
+.ig-caption {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-script);
+  margin-top: 2px;
+}
+.ig--none .ig-caption { color: var(--ink-faded); }
+
+/* ─── SpecimenPlate ────────────────────────────────────────────────────── */
+.specimen {
+  background: var(--bg-raised);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs);
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-page-2);
+  position: relative;
+}
+.specimen.is-clickable { cursor: pointer; transition: transform 180ms var(--ease-out-paper), box-shadow 180ms var(--ease-out-paper); }
+.specimen.is-clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-page-3); }
+.specimen.is-clickable:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 2px; }
+.specimen-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--paper-edge); padding-bottom: 8px; margin-bottom: 10px;
+}
+.specimen-tag {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid currentColor; border-radius: var(--radius-xs); white-space: nowrap;
+}
+.specimen-tag.tone-rust { color: var(--specimen-rust); }
+.specimen-tag.tone-sage { color: var(--specimen-sage-deep); }
+.specimen-tag.tone-amber { color: var(--specimen-amber-deep); }
+.specimen-tag.tone-teal { color: var(--specimen-teal-deep); }
+.specimen-title {
+  font-family: var(--font-display); font-size: 20px; letter-spacing: -0.01em;
+  color: var(--ink-graphite); margin: 2px 0 4px; line-height: 1.1;
+}
+.specimen-meta { font-family: var(--font-ui); font-size: 13px; color: var(--ink-faded); margin-bottom: 8px; }
+.specimen-quote {
+  font-family: var(--font-editorial); font-style: italic; font-size: 15px;
+  color: var(--ink-script); line-height: 1.35; margin: 0 0 6px;
+}
+.specimen-caption { text-align: center; font-size: 22px; margin-top: 6px; }
+
+/* ─── WorkflowEntryCard ────────────────────────────────────────────────── */
+.we--teal { --we-accent: var(--specimen-teal); }
+.we--rust { --we-accent: var(--specimen-rust); }
+.we--sage { --we-accent: var(--specimen-sage); }
+.we--amber { --we-accent: var(--specimen-amber); }
+.we--brass { --we-accent: var(--specimen-brass-aged); }
+.we {
+  display: flex; align-items: stretch; gap: 14px; width: 100%;
+  background: var(--bg-raised); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); padding: 16px 18px;
+  cursor: pointer; text-align: left; font-family: var(--font-ui);
+  text-decoration: none; color: inherit;
+  transition: transform 180ms var(--ease-out-paper), box-shadow 180ms var(--ease-out-paper), border-color 180ms var(--ease-out-paper);
+  box-shadow: var(--shadow-page-1); position: relative;
+}
+.we:hover { border-color: var(--we-accent); box-shadow: var(--shadow-page-2); transform: translateY(-1px); }
+.we:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 2px; }
+.we.is-soon { cursor: default; opacity: 0.62; }
+.we.is-soon:hover { transform: none; border-color: var(--paper-edge); box-shadow: var(--shadow-page-1); }
+.we-marker { width: 3px; flex: 0 0 auto; background: var(--we-accent); border-radius: 1px; }
+.we-body { flex: 1; min-width: 0; }
+.we-phase { color: var(--we-accent); }
+.we-title {
+  font-family: var(--font-display); font-size: 18px; letter-spacing: -0.01em;
+  color: var(--ink-graphite); margin: 4px 0 4px; line-height: 1.1;
+}
+.we-blurb {
+  font-family: var(--font-editorial); font-style: italic; font-size: 14px;
+  color: var(--ink-script); line-height: 1.35;
+}
+.we-cta {
+  align-self: center; display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--we-accent); white-space: nowrap;
+}
+.we-arrow { transition: transform 180ms var(--ease-out-paper); }
+.we:not(.is-soon):hover .we-arrow { transform: translateX(3px); }
+
+/* ─── Motion discipline — static end-states under reduced-motion ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ig-needle { transition: none; }
+  .specimen.is-clickable, .we, .we-arrow { transition: none; }
+}

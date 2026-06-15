@@ -1,0 +1,200 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   KILLER APP BUILDER LANE — in-app stylesheet (Section B composition).
+
+   Layout + lane chrome for the GC home (ProjectDashboardClient). The shared
+   primitives (.ig / .specimen / .we) carry their own styling from
+   src/design-system/components/specimen.css; this file lays them out and sets
+   the lane's locked type trio.
+
+   Scoped under `.bld-root`, mirroring the Owner lane's `.ov-root`: the locked
+   stack (Archivo + Cormorant Garamond + Space Mono) is loaded + scoped here so
+   the rest of the Killer App keeps the tokens.css fonts (minimal blast radius).
+   Tokens (--paper-*, --specimen-*, --ink-*, shadows, radii) are the canonical
+   ones from src/styles/tokens.css. Herbarium only — no #E8443A, no pure #fff.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Mono:wght@400;700&display=swap');
+
+.bld-root {
+  position: relative;
+  background: var(--paper-cream);
+  min-height: 100%;
+  color: var(--ink-sepia);
+  font-family: var(--font-ui);
+  /* Scope the locked trio to the Builder surface only — no global token churn. */
+  --font-editorial: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* Faint engineering grid behind the lane (matches the kit + owner shell). */
+.bld-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(124, 98, 53, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 98, 53, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.bld-root > * { position: relative; z-index: 1; }
+
+.bld { padding: 0 0 96px; }
+
+.bld-root .eng-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  font-weight: 600;
+}
+
+/* ─── B2 · Cinematic hero band ───────────────────────────────────────────── */
+.bld-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  margin: 22px 28px 0;
+  min-height: 212px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-page-2);
+}
+.bld-hero-art { position: absolute; inset: 0; z-index: 0; }
+.bld-hero-art img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; mix-blend-mode: multiply; }
+/* Cream wash on the text side for legibility + a teal×rust surface tint
+   (the Killer App accent pair, Decision-locked) — keeps it light + on-brand. */
+.bld-hero-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--paper-cream) 2%, color-mix(in oklab, var(--paper-cream) 55%, transparent) 44%, transparent 76%),
+    linear-gradient(0deg, color-mix(in oklab, var(--specimen-rust) 13%, transparent), transparent 58%),
+    linear-gradient(180deg, color-mix(in oklab, var(--specimen-teal) 12%, transparent), transparent 52%);
+}
+.bld-hero-text { position: relative; z-index: 1; padding: 22px 26px 20px; max-width: 72%; }
+.bld-hero-eyebrow { color: var(--specimen-teal-deep); }
+.bld-hero-title {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.0;
+  letter-spacing: -0.025em;
+  color: var(--ink-graphite);
+  margin: 7px 0 6px;
+  font-weight: 400;
+}
+.bld-hero-sub { font-family: var(--font-editorial); font-style: italic; font-size: 17px; color: var(--ink-script); }
+
+/* ─── B1 · Greeting ──────────────────────────────────────────────────────── */
+.bld-greet { padding: 20px 28px 2px; }
+.bld-greet-line {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.32;
+  color: var(--ink-sepia);
+  margin: 0;
+}
+.bld-greet-line strong { font-style: normal; font-family: var(--font-display); font-weight: 400; color: var(--ink-graphite); }
+.bld-greet-stage {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.74em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--specimen-rust);
+}
+.bld-greet-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  margin: 8px 0 0;
+}
+
+/* ─── Sections ───────────────────────────────────────────────────────────── */
+.bld-section { padding: 22px 28px 2px; }
+.bld-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed var(--paper-edge);
+  padding-bottom: 8px;
+}
+.bld-section-head h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: -0.015em;
+  color: var(--ink-graphite);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* B3 · gauges row */
+.bld-gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.bld-gauge-cell {
+  background: var(--bg-raised);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs);
+  padding: 18px 16px 16px;
+  box-shadow: var(--shadow-page-2);
+}
+
+/* B6 · workflow entries */
+.bld-workflows { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+/* B4 · field-log empty / B5 · recall — single, readable column */
+.bld-fieldlog-empty { max-width: 660px; }
+.bld-section > .specimen { max-width: 660px; }
+
+/* ─── Honest loading / not-found states ──────────────────────────────────── */
+.bld-state {
+  padding: 64px 28px;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink-faded);
+  min-height: 50vh;
+}
+.bld-state--empty {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-style: normal;
+}
+.bld-state--empty h1 { font-family: var(--font-display); font-weight: 400; color: var(--ink-graphite); font-size: 28px; margin: 4px 0; }
+.bld-state--empty p { font-family: var(--font-ui); color: var(--ink-sepia); max-width: 440px; margin: 0; }
+
+/* ─── Responsive — 1280 is the desktop default; collapse below the kit
+       breakpoint; tighten for the 390px phone target. ───────────────────── */
+@media (max-width: 1000px) {
+  .bld-gauges { grid-template-columns: 1fr; max-width: 360px; }
+  .bld-workflows { grid-template-columns: 1fr; }
+  .bld-hero { min-height: 176px; }
+  .bld-hero-text { max-width: 88%; }
+  .bld-hero-title { font-size: 32px; }
+}
+
+@media (max-width: 480px) {
+  .bld-hero { margin: 14px 14px 0; min-height: 152px; border-radius: var(--radius-xs); }
+  .bld-hero-text { padding: 16px 16px 14px; max-width: 96%; }
+  .bld-hero-title { font-size: 26px; }
+  .bld-hero-sub { font-size: 15px; }
+  .bld-greet { padding: 16px 14px 2px; }
+  .bld-greet-line { font-size: 19px; }
+  .bld-section { padding: 18px 14px 2px; }
+  .bld-section-head h2 { font-size: 19px; }
+  .bld-gauges { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bld-root * { animation: none !important; }
+}
