@@ -36,7 +36,7 @@
 
 ## B — Hero photo · "Where the build stands"  (pick 1 of 2)
 
-Photoreal cinematic hero. Model: **black-forest-labs/flux-1.1-pro** · aspect_ratio: "21:9" (wide hero; use "16:9" if the slot is shallower).
+Photoreal cinematic hero. Model: **black-forest-labs/flux-1.1-pro** · aspect_ratio: **"16:9"** (flux-1.1-pro rejects "21:9" with a 422 — 16:9 is the widest valid enum; the hero band cover-crops it anyway).
 
 ### B-asset-1 · Option A — wide establishing, low golden sun
 - **slug:** hero-marin-farmhouse-golden-a · **seed:** 420017

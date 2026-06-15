@@ -35,11 +35,11 @@ const REG = "Architect's hand-drawn study on aged cream paper, fine ink-graphite
 
 const ASSETS = [
   { slug:'hero-marin-farmhouse-golden-a', kind:'hero', model:'black-forest-labs/flux-1.1-pro',
-    intended_use:['hero','where-the-build-stands'], params:{ aspect_ratio:'21:9', seed:420017, output_format:'png', prompt_upsampling:true, safety_tolerance:2 },
+    intended_use:['hero','where-the-build-stands'], params:{ aspect_ratio:'16:9', seed:420017, output_format:'png', prompt_upsampling:true, safety_tolerance:2 },
     prompt:"Cinematic architectural photograph of a modern farmhouse under construction on an oak-studded golden hillside in Marin County, California, at golden hour. Wide establishing shot, low warm sun raking from the left casting long soft shadows. Board-and-batten cladding in warm cream and aged vellum tones, standing-seam metal roof in soft brass, large black-framed windows, a generous covered porch; framing and scaffolding still visible on one wing to read as 42% built. Dry golden grass, coastal live oaks, distant blue-green ridgeline. Palette strictly warm cream, vellum, brass, amber, with cool teal shadows; muted and filmic, no oversaturation. Shot on medium-format, 35mm-equivalent, deep depth of field, fine natural grain, calm and aspirational. No people, no signage, no text, no pure white, no bright red." },
 
   { slug:'hero-marin-farmhouse-golden-b', kind:'hero', model:'black-forest-labs/flux-1.1-pro',
-    intended_use:['hero','where-the-build-stands'], params:{ aspect_ratio:'21:9', seed:420042, output_format:'png', prompt_upsampling:true, safety_tolerance:2 },
+    intended_use:['hero','where-the-build-stands'], params:{ aspect_ratio:'16:9', seed:420042, output_format:'png', prompt_upsampling:true, safety_tolerance:2 },
     prompt:"Cinematic architectural photograph of a modern Marin County farmhouse at the golden-to-blue dusk transition, three-quarter front angle. Warm interior light glowing amber through large windows against a cooling teal sky; gabled board-and-batten volumes in cream and vellum, soft-brass metal roof, deep porch shadows. A partially framed addition with exposed timber on the right edge reads the build as mid-progress. Foreground of golden grass and a live oak silhouette, hillside falling away to a hazy ridge. Strictly herbarium palette — cream, vellum, brass, amber warmth, teal-deep shadow; filmic, restrained, slight haze. Medium-format look, shallow-to-deep focus, fine grain. No people, no text, no signage, no pure white, no fire-engine red." },
 
   { slug:'study-massing-options', kind:'study', model:'black-forest-labs/flux-dev',
