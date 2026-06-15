@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import KillerAppNav from '@/components/KillerAppNav';
-import { KillerAppChrome } from '@/components/killerapp-chrome';
 import { Suspense } from 'react';
 import { GreenFlashProvider } from '@/components/GreenFlashProvider';
 import { NavigatorProvider } from '@/components/navigator/NavigatorContext';
@@ -12,7 +11,6 @@ import LegalFooter from '@/components/LegalFooter';
 import StageBackdrop from '@/design-system/components/StageBackdrop';
 import VoiceCommandNav from '@/design-system/components/VoiceCommandNav';
 import CommandPalette from '@/design-system/components/CommandPalette';
-import CompassWorkflowNav from '@/components/CompassWorkflowNav';
 import { ShellConfigProvider, ShellStrips, ShellNav } from '@/components/app-shell';
 import SaveStatusToast from '@/components/SaveStatusToast';
 import StageWelcomeMount from '@/components/StageWelcomeMount';
@@ -21,12 +19,13 @@ import { stageFromPathname } from '@/lib/stage-from-pathname';
 import { autoSeedDemoOnFirstVisit } from '@/lib/demo-seed';
 import '@/design-system/animations/scroll-timeline.css';
 
-// APP-SHELL (2026-05-31): the shared herbarium shell (ShellStrips + ShellNav,
-// promoted from the proven Owner Lane) is the ONE chrome every Killer App
-// surface mounts, replacing the generic KillerAppChrome + CompassWorkflowNav.
-// Flag-gated for instant rollback: set NEXT_PUBLIC_APP_SHELL=0 to restore the
-// previous chrome without a code change.
-const USE_APP_SHELL = process.env.NEXT_PUBLIC_APP_SHELL !== '0';
+// APP-SHELL (canonical 2026-06-14): the shared herbarium shell (ShellStrips +
+// ShellNav, promoted from the proven Owner Lane) is the ONE chrome every Killer
+// App surface mounts. The chrome cutover (component-fidelity spec §A) retired
+// the legacy KillerAppChrome + CompassWorkflowNav alt-renderings that used to
+// be swapped in here behind NEXT_PUBLIC_APP_SHELL=0 — rollback is now a git
+// revert, not an env flag. (KillerAppNav, the top utility bar + account menu,
+// stays until the A1 surface-switcher absorbs it — a separate slice.)
 
 // Outer wrapper exists so the useSearchParams call inside the inner layout
 // is wrapped in Suspense, which Next 16 requires for any static prerender
@@ -46,7 +45,7 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
   // /intro Act 4 embeds /killerapp/budget in an iframe and needs the global
-  // chrome (KillerAppNav, CompassWorkflowNav, etc.) suppressed.
+  // chrome (KillerAppNav, ShellStrips/ShellNav, etc.) suppressed.
   // ?hideShell=1 renders only the providers + the page body.
   // BudgetClient still needs ProjectContext, so the providers must wrap the
   // children. Auto-seed is also skipped inside the iframe so the embed doesn't
@@ -56,7 +55,7 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
   const stageId = stageFromPathname(pathname);
   // The /killerapp/stages/* routes carry their own full stage chrome
   // (StageShell = JourneyRow + BudgetRibbon + ProToggle). Suppress the
-  // layout-level KillerAppChrome there so the page never shows two budget
+  // layout-level ShellStrips there so the page never shows two budget
   // ribbons / two journey rows with different numbers (founder demo fix,
   // 2026-05-27).
   const isStageRoute = pathname.startsWith('/killerapp/stages/');
@@ -110,31 +109,19 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
             in fix/header-overlap (2026-05-27). */}
         <KillerAppNav />
         {/* paddingTop:48 reserves space for the fixed KillerAppNav band.
-            KillerAppChrome and ProjectCockpit live INSIDE this wrapper so
-            they start at y=48 (flush below the nav) rather than at y=0
-            where the fixed nav would paint over their top half. */}
+            ShellStrips lives INSIDE this wrapper so it starts at y=48 (flush
+            below the nav) rather than at y=0 where the fixed nav would paint
+            over its top half. */}
         <div style={{ paddingTop: 48 }}>
-          {/* KillerAppChrome — BudgetRibbon + JourneyTimeRow. This is the
-              canonical stage nav (completion rings + due-date markers).
-              Suppressed on /killerapp/stages/* where StageShell owns the
-              chrome exclusively.
-              ProjectCockpit was removed 2026-05-28 — it stacked a second
-              7-segment journey strip below this one (the "OLD pill-button
-              row" the brand consolidation pass eliminated). Budget +
-              Time-Machine functionality continues to live in BudgetRibbon
-              + the in-flight Time Machine surface in KillerAppChrome. */}
-          {USE_APP_SHELL ? (
-            !isStageRoute && (
-              <div className="bkg-shell" data-shell-mount="layout">
-                <ShellStrips />
-              </div>
-            )
-          ) : (
-            !isStageRoute && (
-              <Suspense fallback={null}>
-                <KillerAppChrome />
-              </Suspense>
-            )
+          {/* ShellStrips — the canonical project chrome: A2 header + A3
+              journey · time-machine + A4 stage chips + A5 budget. Suppressed
+              on /killerapp/stages/* where StageShell owns the chrome
+              exclusively. (Chrome cutover, spec §A: the legacy KillerAppChrome
+              alt-rendering that used to swap in here was retired.) */}
+          {!isStageRoute && (
+            <div className="bkg-shell" data-shell-mount="layout">
+              <ShellStrips />
+            </div>
           )}
           {children}
           {/* W8.6: Thin legal footer — Terms / Privacy / Disclaimer + one-line advisory copy. */}
@@ -142,10 +129,10 @@ function KillerAppLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
         <VoiceCommandNav onNavigate={handleVoiceNavigate} />
         <CommandPalette />
-        {/* Workflow-nav compass FAB floats over the StageShell action bar
-            on lifecycle stages; hide it there for the same reason the cockpit
-            is hidden above. */}
-        {USE_APP_SHELL ? <ShellNav /> : (!isStageRoute && <CompassWorkflowNav />)}
+        {/* ShellNav — the canonical "Ask the garden" FAB + nav (A7), on every
+            surface. (Chrome cutover, spec §A: the legacy CompassWorkflowNav
+            alt-rendering that used to swap in here was retired.) */}
+        <ShellNav />
         <SaveStatusToast />
         {/* W9.D-W2 (2026-05-22): StageWelcome mounted via StageWelcomeMount.
             Renders nothing when there is no active project, when we're on
