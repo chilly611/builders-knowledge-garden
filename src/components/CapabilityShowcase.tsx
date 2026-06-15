@@ -670,7 +670,7 @@ export default function CapabilityShowcase({
               Replaces QuickBooks + Excel + Procore + pen & paper
             </strong>
             <br />
-            All in one $49/mo platform
+            All in one $99/mo platform
           </p>
         </div>
       )}

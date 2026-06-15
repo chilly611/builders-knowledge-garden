@@ -218,8 +218,8 @@ export const TIERS: TierInfo[] = [
   {
     name: "Pro",
     slug: "pro",
-    monthlyPrice: 49,
-    yearlyPrice: 470,
+    monthlyPrice: 99,
+    yearlyPrice: 950,
     description: "Everything a solo builder needs to run jobs end-to-end.",
     features: [
       "5 active projects",
@@ -236,8 +236,8 @@ export const TIERS: TierInfo[] = [
   {
     name: "Team",
     slug: "team",
-    monthlyPrice: 149,
-    yearlyPrice: 1430,
+    monthlyPrice: 199,
+    yearlyPrice: 1910,
     description: "Multi-user org with sub-bid inbox and unlimited contracts.",
     features: [
       "Unlimited projects",
@@ -253,8 +253,8 @@ export const TIERS: TierInfo[] = [
   {
     name: "Enterprise",
     slug: "enterprise",
-    monthlyPrice: 1500,
-    yearlyPrice: 14400,
+    monthlyPrice: 499,
+    yearlyPrice: 4790,
     description: "For builders running enterprise-grade construction ops.",
     features: [
       "Everything in Team",

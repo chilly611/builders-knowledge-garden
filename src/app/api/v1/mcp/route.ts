@@ -252,7 +252,7 @@ export async function GET() {
     },
     pricing: {
       explorer: "5 calls/day (free)",
-      pro: "1,000 calls/day ($49/mo)",
+      pro: "1,000 calls/day ($99/mo)",
       team: "10,000 calls/day ($199/mo)",
       enterprise: "unlimited (custom)",
       platform: "bulk access + SLA (custom)",

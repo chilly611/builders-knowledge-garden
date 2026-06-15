@@ -34,12 +34,16 @@ real purchase is charged but the subscription is never recorded and entitlement
 never flips. After applying, reload the PostgREST schema cache:
 `NOTIFY pgrst, 'reload schema';` (Supabase usually auto-reloads on DDL).
 
-**On "$99":** there is no $99 tier in the code. The checkout charges whatever
-Stripe price you map to `STRIPE_PRICE_PRO`. To sell the first contractor at
-$99/mo, create a $99 recurring price in Stripe (test then live) and point
-`STRIPE_PRICE_PRO` at it — no code change needed. The `$49 / $199 / $499` labels
-shown on `/pricing` and `/billing` are cosmetic and currently disagree with each
-other and with `lib/stripe.ts`; reconcile those display strings separately.
+**On "$99":** the displayed tier labels are now **Pro $99 / Team $199 /
+Enterprise $499** monthly — reconciled 2026-06-14 across `/pricing`, `/billing`,
+`lib/stripe.ts`, `lib/auth.tsx`, and the rest of the UI so they no longer
+disagree. But those strings are cosmetic: the checkout charges whatever Stripe
+price `STRIPE_PRICE_PRO` (etc.) maps to. **The operator action that makes the
+labels true:** point `STRIPE_PRICE_PRO` at a **$99/mo** recurring price (test
+then live), and confirm `STRIPE_PRICE_TEAM` is **$199** and — if Enterprise is
+ever sold self-serve rather than via `mailto:` — `STRIPE_PRICE_ENTERPRISE` is
+**$499**. If a Stripe price still says $49, the buyer is charged $49 while the
+page shows $99; fix that in the Stripe dashboard, not in code.
 
 ## Required env vars
 
@@ -78,15 +82,15 @@ For each tier in **test mode**:
 
 | Product name | Pricing model | Monthly price | Notes |
 |---|---|---|---|
-| BKG Pro | Recurring, per-month | $49.00 USD | One price object, monthly. |
-| BKG Team | Recurring, per-month | $149.00 USD | Set quantity behavior to “let customer choose” if you want seats, or leave default. |
-| BKG Enterprise | (skip) | — | Don’t create a product; the UI sends Enterprise users to `mailto:`. |
+| BKG Pro | Recurring, per-month | $99.00 USD | One price object, monthly. Must match the `/pricing` + `/billing` label. |
+| BKG Team | Recurring, per-month | $199.00 USD | Set quantity behavior to “let customer choose” if you want seats, or leave default. |
+| BKG Enterprise | (skip) | — | Don’t create a product; the UI sends Enterprise users to `mailto:`. The `$499/mo` shown on `/pricing` is a published “starting at” anchor only. |
 
 For each, click into the Product → Pricing → copy the **recurring Price
 ID** (looks like `price_1Q…`). Don’t use the Product ID — it won’t work.
 
-Optionally create a yearly Price on each Product (Pro $470/yr, Team
-$1,430/yr) and copy those IDs too.
+Optionally create a yearly Price on each Product (Pro $950/yr, Team
+$1,910/yr) and copy those IDs too.
 
 ### 4. Set env vars in Vercel
 In the Vercel project → Settings → Environment Variables. Add for the
