@@ -40,17 +40,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
-import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
-import {
-  MARIN_PROJECT_NAME,
-  MARIN_CLIENT_NAME,
-  MARIN_LOCATION,
-  MARIN_SQFT,
-  MARIN_BUDGET_TOTAL,
-  MARIN_RAW_INPUT,
-  MARIN_AI_SUMMARY,
-  MARIN_PROJECT,
-} from '@/lib/seed-data/marin-farmhouse';
+import { getDemoFixture } from '@/lib/projects/getCanonicalProject';
 
 export const ACTIVE_PROJECT_KEY = 'bkg-active-project';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -224,26 +214,27 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       setError(null);
       return;
     }
-    // CANONICAL DEMO (fix/canonical-demo-polish): the Marin demo is a fixture,
-    // not a DB read. Its source-of-truth row (command_center_projects 55730cd3-…)
-    // has drifted (stale sqft / budget / raw_input), and we must not let that
-    // bleed into the investor deep-link. Serve the canonical record straight from
-    // the seed — no fetch — so a cold ?project= deep-link shows the documented
-    // numbers whether or not the visitor is signed in. Non-canonical ids fall
-    // through to the live API below.
-    if (isCanonicalProjectId(projectId)) {
+    // DEMO FIXTURES (fix/canonical-demo-polish; extended for the SF Fourplex):
+    // the seeded demo projects (Marin, Folsom Street Fourplex) are CODE
+    // fixtures, not DB reads. Their source rows have drifted (or don't exist),
+    // and we must not let that bleed into the investor deep-link. Serve the
+    // fixture record straight from the seed — no fetch — so a cold ?project=
+    // deep-link shows the documented numbers whether or not the visitor is
+    // signed in. Non-fixture ids fall through to the live API below.
+    const fixture = getDemoFixture(projectId);
+    if (fixture) {
       const canonical: ProjectRecord = {
         id: projectId,
-        name: MARIN_PROJECT_NAME,
-        raw_input: MARIN_RAW_INPUT,
-        ai_summary: MARIN_AI_SUMMARY,
-        jurisdiction: MARIN_LOCATION,
-        sqft: String(MARIN_SQFT), // "4000" — the shell formats via Number(sqft)
-        project_type: MARIN_PROJECT.project_type,
-        estimated_cost_low: MARIN_PROJECT.estimated_cost_low,
-        estimated_cost_high: MARIN_PROJECT.estimated_cost_high,
-        client_name: MARIN_CLIENT_NAME,
-        budget_amount: MARIN_BUDGET_TOTAL,
+        name: fixture.name,
+        raw_input: fixture.rawInput,
+        ai_summary: fixture.aiSummary,
+        jurisdiction: fixture.location,
+        sqft: fixture.sqftDisplay.replace(/,/g, ''), // "4000"/"5200" — shell formats via Number()
+        project_type: fixture.projectType,
+        estimated_cost_low: fixture.estimatedCostLow,
+        estimated_cost_high: fixture.estimatedCostHigh,
+        client_name: fixture.clientName,
+        budget_amount: fixture.budget.total,
       };
       setProject(canonical);
       setLoading(false);

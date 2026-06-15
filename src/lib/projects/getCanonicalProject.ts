@@ -17,6 +17,7 @@
 import {
   MARIN_PROJECT_ID,
   MARIN_PROJECT_NAME,
+  MARIN_CLIENT_NAME,
   MARIN_LOCATION,
   MARIN_SQFT,
   MARIN_BEDROOMS,
@@ -32,7 +33,27 @@ import {
   MARIN_START_DATE,
   MARIN_SUBSTANTIAL_COMPLETION,
   MARIN_STAGE_COMPLETION,
+  MARIN_RAW_INPUT,
+  MARIN_AI_SUMMARY,
+  MARIN_AI_TAKE,
+  MARIN_PROJECT,
 } from '@/lib/seed-data/marin-farmhouse';
+import {
+  FOLSOM_PROJECT_ID,
+  FOLSOM_PROJECT_NAME,
+  FOLSOM_CLIENT_NAME,
+  FOLSOM_LOCATION,
+  FOLSOM_SQFT_DISPLAY,
+  FOLSOM_BUDGET_TOTAL,
+  FOLSOM_BUDGET_SPENT,
+  FOLSOM_BUDGET_COMMITTED,
+  FOLSOM_BUDGET_REMAINING,
+  FOLSOM_STAGE_COMPLETION,
+  FOLSOM_RAW_INPUT,
+  FOLSOM_AI_SUMMARY,
+  FOLSOM_AI_TAKE,
+  FOLSOM_PROJECT,
+} from '@/lib/seed-data/sf-fourplex';
 import type {
   KacProject,
   KacStageId,
@@ -111,4 +132,105 @@ export function isCanonicalProjectId(id: string | undefined | null): boolean {
   return id === MARIN_PROJECT_ID;
 }
 
+// ─── Demo-fixture registry (Marin + Folsom Street Fourplex) ──────────────────
+//
+// Both demo projects are served CLIENT-SIDE from their seed modules — no
+// `command_center_projects` row, no shared-prod mutation. This registry is the
+// ONE place the four project hooks consult to flip identity + budget + journey
+// + AI take when `?project=<id>` changes:
+//
+//   - ProjectContext      → fixture ProjectRecord (identity, type, budget)
+//   - useStageProject     → identity + budgetTotal/budgetSpent
+//   - useProjectLedger    → budget split + journey (stage/progress)
+//   - KillerappProjectShell → investor-clean AI take
+//
+// Marin keeps `isCanonicalProjectId` for its Marin-specific behaviors; this
+// registry is the generic, multi-project path. Adding a third demo = one entry
+// here + a seed module, with zero per-project branching in the consumers.
+
+/** Budget split a demo fixture exposes (cash already canonical — never summed). */
+export interface DemoFixtureBudget {
+  total: number;
+  spent: number;
+  committed: number;
+  remaining: number;
+}
+
+/** The normalized view every project hook needs for a code-fixture demo. */
+export interface DemoFixture {
+  id: string;
+  name: string;
+  clientName: string;
+  /** Marketing jurisdiction shown by the chrome. */
+  location: string;
+  /** "4,000" — display string the shell formats via Number(). */
+  sqftDisplay: string;
+  /** Free-text project_type → CodeLookup + portal archetype. */
+  projectType: string;
+  rawInput: string;
+  aiSummary: string;
+  /** Stable, investor-clean copilot take for the deep-link. */
+  aiTake: string;
+  estimatedCostLow: number;
+  estimatedCostHigh: number;
+  budget: DemoFixtureBudget;
+  /** Per-stage completion (1..7) — drives the journey row + active stage. */
+  stageCompletion: Record<number, number>;
+}
+
+const DEMO_FIXTURES: Record<string, DemoFixture> = {
+  [MARIN_PROJECT_ID]: {
+    id: MARIN_PROJECT_ID,
+    name: MARIN_PROJECT_NAME,
+    clientName: MARIN_CLIENT_NAME,
+    location: MARIN_LOCATION,
+    sqftDisplay: String(MARIN_SQFT),
+    projectType: MARIN_PROJECT.project_type,
+    rawInput: MARIN_RAW_INPUT,
+    aiSummary: MARIN_AI_SUMMARY,
+    aiTake: MARIN_AI_TAKE,
+    estimatedCostLow: MARIN_PROJECT.estimated_cost_low,
+    estimatedCostHigh: MARIN_PROJECT.estimated_cost_high,
+    budget: {
+      total: MARIN_BUDGET_TOTAL,
+      spent: MARIN_BUDGET_SPENT,
+      committed: MARIN_BUDGET_COMMITTED,
+      remaining: MARIN_BUDGET_REMAINING,
+    },
+    stageCompletion: MARIN_STAGE_COMPLETION,
+  },
+  [FOLSOM_PROJECT_ID]: {
+    id: FOLSOM_PROJECT_ID,
+    name: FOLSOM_PROJECT_NAME,
+    clientName: FOLSOM_CLIENT_NAME,
+    location: FOLSOM_LOCATION,
+    sqftDisplay: FOLSOM_SQFT_DISPLAY,
+    projectType: FOLSOM_PROJECT.project_type,
+    rawInput: FOLSOM_RAW_INPUT,
+    aiSummary: FOLSOM_AI_SUMMARY,
+    aiTake: FOLSOM_AI_TAKE,
+    estimatedCostLow: FOLSOM_PROJECT.estimated_cost_low,
+    estimatedCostHigh: FOLSOM_PROJECT.estimated_cost_high,
+    budget: {
+      total: FOLSOM_BUDGET_TOTAL,
+      spent: FOLSOM_BUDGET_SPENT,
+      committed: FOLSOM_BUDGET_COMMITTED,
+      remaining: FOLSOM_BUDGET_REMAINING,
+    },
+    stageCompletion: FOLSOM_STAGE_COMPLETION,
+  },
+};
+
+/** Look up a demo fixture by id, or null when the id isn't a seeded demo. */
+export function getDemoFixture(id: string | undefined | null): DemoFixture | null {
+  if (!id) return null;
+  return DEMO_FIXTURES[id] ?? null;
+}
+
+/** Whether the given id is a code-served demo fixture (Marin OR Folsom). */
+export function isDemoFixtureId(id: string | undefined | null): boolean {
+  return !!id && id in DEMO_FIXTURES;
+}
+
 export { MARIN_PROJECT_ID } from '@/lib/seed-data/marin-farmhouse';
+export { FOLSOM_PROJECT_ID } from '@/lib/seed-data/sf-fourplex';

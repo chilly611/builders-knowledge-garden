@@ -20,6 +20,16 @@ import {
   MARIN_CLIENT_NAME,
   MARIN_SQFT_DISPLAY,
 } from '@/lib/seed-data/marin-farmhouse';
+import {
+  FOLSOM_PROJECT_ID,
+  FOLSOM_PROJECT_NAME,
+  FOLSOM_LOCATION,
+  FOLSOM_BUDGET_TOTAL,
+  FOLSOM_CLIENT_NAME,
+  FOLSOM_SQFT_DISPLAY,
+  FOLSOM_UNIT_MIX,
+  FOLSOM_BUILD_PROGRESS,
+} from '@/lib/seed-data/sf-fourplex';
 
 export type Lane = 'dreamer' | 'builder' | 'specialist' | 'merchant' | 'ally' | 'crew' | 'fleet' | 'machine';
 export type ProjectPhase = 'dream' | 'plan' | 'build' | 'complete';
@@ -177,6 +187,24 @@ export const DEMO_PROJECTS: DemoProject[] = [
     participants: [MARIN_CLIENT_NAME, 'Marcus Rivera'],
     progress: 42,
     createdDate: '2026-01-10',
+  },
+  {
+    // Folsom Street Fourplex — SECOND code-fixture demo (alongside Marin). All
+    // values sourced from src/lib/seed-data/sf-fourplex.ts. A 4-unit ground-up
+    // infill multifamily in SF; its portal imagery uses the sf-fourplex seed
+    // set. Resolves via the demo-fixture registry (getCanonicalProject).
+    id: FOLSOM_PROJECT_ID,
+    title: FOLSOM_PROJECT_NAME,
+    description: `${FOLSOM_SQFT_DISPLAY} sq ft ground-up 4-unit infill multifamily — three residential floors over a ground-floor garage. Unit mix ${FOLSOM_UNIT_MIX}.`,
+    lane: 'builder',
+    phase: 'build',
+    owner: FOLSOM_CLIENT_NAME,
+    location: FOLSOM_LOCATION,
+    budget: FOLSOM_BUDGET_TOTAL,
+    timeline: 'Week 6 of 14 (Build phase)',
+    participants: [FOLSOM_CLIENT_NAME, 'Castro Ridge Builders'],
+    progress: FOLSOM_BUILD_PROGRESS,
+    createdDate: '2025-12-01',
   },
   {
     id: 'proj-downtown-office',

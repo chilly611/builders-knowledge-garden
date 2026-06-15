@@ -27,8 +27,7 @@ import { authedFetch } from '@/lib/authed-fetch';
 import { useProject } from '@/lib/hooks/useProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import { applyJurisdictionOverride } from '@/lib/project-display';
-import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
-import { MARIN_AI_TAKE } from '@/lib/seed-data/marin-farmhouse';
+import { isDemoFixtureId, getDemoFixture } from '@/lib/projects/getCanonicalProject';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -171,10 +170,10 @@ export default function KillerappProjectShell() {
 
     setActiveProjectInLocalStorage(projectId);
 
-    // CANONICAL DEMO: the Marin deep-link shows a fixture AI take (see
-    // rawAiText), so never load its project_conversations — the latest row has
-    // drifted to a stale, off-topic answer. Skip the fetch for the demo id.
-    if (isCanonicalProjectId(projectId)) {
+    // DEMO FIXTURES: the seeded demos (Marin, Folsom) show a fixture AI take
+    // (see rawAiText), so never load their project_conversations — Marin's
+    // latest row drifted to a stale answer, and Folsom has none. Skip the fetch.
+    if (isDemoFixtureId(projectId)) {
       setConversations([]);
       setLoading(false);
       return;
@@ -217,7 +216,7 @@ export default function KillerappProjectShell() {
 
   useEffect(() => {
     if (!projectId || !project) return;
-    if (isCanonicalProjectId(projectId)) return; // canonical demo uses a fixture take — never auto-fire copilot
+    if (isDemoFixtureId(projectId)) return; // seeded demos use a fixture take — never auto-fire copilot
     if (project.id !== projectId) return; // guard: project record not yet refreshed for this id
     if (loading || streaming) return;
     if (!ledger.ready) return; // wait for the project's REAL current stage before firing
@@ -371,11 +370,13 @@ export default function KillerappProjectShell() {
   // recent text the user saw). The "streaming…" label still flips off
   // via the `streaming` flag, but the body text stays stable across the
   // stream-end / persist-write window.
-  // CANONICAL DEMO: render the stable, investor-clean fixture take for the
-  // Marin deep-link — never the latest project_conversations row (which has
-  // drifted to a stale, off-topic answer). Other projects keep live behavior.
-  const rawAiText = isCanonicalProjectId(projectId)
-    ? MARIN_AI_TAKE
+  // DEMO FIXTURES: render the stable, investor-clean fixture take for a seeded
+  // demo deep-link (Marin, Folsom) — never the latest project_conversations row
+  // (Marin's drifted to a stale answer; Folsom has none). Other projects keep
+  // live behavior.
+  const demoTake = getDemoFixture(projectId)?.aiTake;
+  const rawAiText = demoTake
+    ? demoTake
     : streamingResponse ||
       persistedAssistant?.content ||
       project?.ai_summary ||
