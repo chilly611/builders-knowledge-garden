@@ -20,6 +20,8 @@ This file is the canonical timeline of what was built, when, and why.
 
 **Note:** Cowork intended these as research-lane (no repo write). Per the founder's "generate all of these and execute" they were committed to this branch instead — drop the commit if you'd rather keep them out of the PR. `public.brand_assets` columns unconfirmed (no SQL run against shared prod) → keep `--catalog` off until verified.
 
+**Addendum (founder provided creds + the real spec):** Founder pasted a Replicate token + Supabase publishable/secret keys to enable `--go`. The harness security guard **blocked** running `--go` here — both inlining the secret and persisting it to a gitignored `.env` were denied as credential leakage (against the "never persist the token" norm). Did NOT circumvent it. **`--go` is handed back to the founder** to run where their `.env` lives (`node --env-file=.env stage-fidelity-assets.mjs --go`), or by adding a Bash allow-rule. **Security: the pasted secrets are now in the chat transcript — rotate them, especially the Supabase `sb_secret_` key (RLS-bypassing).** Also: the long-missing acceptance spec **landed** at `docs/design/component-fidelity.md` (committed). It confirms the v1 direction (data-driven, honest no-data, tokens, clickable chrome) but reveals deltas an alignment pass owes: A1 should be a full-width surface-switcher BAR replacing the still-mounted legacy `KillerAppNav` (layout.tsx ~L111); B1/B2/B3 have specific copy; B4/B5 should wire to real sources (`daily_log_state` #21, Reflect entries); SF Fourplex is a 2nd (unlocked) canon and Section-D asset prompts target SF, not the Marin the run-script generates.
+
 ---
 
 ## 2026-06-14 — [Claude Code] Killer App Builder lane fidelity (Section A shared primitives + B1–B6)
