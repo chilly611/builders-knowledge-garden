@@ -35,7 +35,7 @@ export const TIERS: Record<Tier, TierConfig> = {
     mode: "dream",
   },
   pro: {
-    id: "pro", name: "Pro", price: "$49/mo", priceMonthly: 49,
+    id: "pro", name: "Pro", price: "$99/mo", priceMonthly: 99,
     features: ["Unlimited AI copilot", "5 projects", "Estimating + scheduling", "Compliance checks", "Full marketplace"],
     limits: { aiQueriesPerDay: Infinity, projects: 5, teamMembers: 1, voiceMinutesPerDay: 30 },
     mode: "build",
@@ -305,7 +305,7 @@ export function BuildGate({ children, feature, requiredTier = "pro" }: BuildGate
         Upgrade to {TIERS[requiredTier].name} →
       </button>
       <p className="text-[9px] mt-2" style={{ color: "var(--fg-tertiary)" }}>
-        Dream Builder is free forever · BUILD mode starts at $49/mo
+        Dream Builder is free forever · BUILD mode starts at $99/mo
       </p>
     </div>
   );
@@ -329,7 +329,7 @@ export function AIRateLimit({ children }: { children: ReactNode }) {
         onClick={() => upgrade("pro")}
         className="px-5 py-2 rounded-full text-white text-xs font-medium transition-all hover:scale-105"
         style={{ background: "#1D9E75" }}>
-        Upgrade to Pro — $49/mo →
+        Upgrade to Pro — $99/mo →
       </button>
     </div>
   );

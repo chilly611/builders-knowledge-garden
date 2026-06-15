@@ -116,7 +116,7 @@ const pricingTiers = [
   },
   {
     name: 'Pro',
-    price: '$49/mo',
+    price: '$99/mo',
     requests: '1,000/day',
     features: ['All Explorer features', 'Cost estimation', 'Permit workflows', 'Schedule generation', 'Email support'],
   },

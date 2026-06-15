@@ -6,6 +6,30 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-14 — [Claude Code] LANE: `fix/price-display-reconcile` — subscription price strings → one canon (Pro $99 / Team $199 / Ent $499) → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `ae0a00e`/#55. Closes the price-display reconcile that #55 explicitly deferred ("the $49/$199/$499 display prices disagree across /pricing, /billing, lib/stripe.ts, and the setup doc").
+
+**The bug:** displayed subscription prices disagreed across the app, so a buyer could see one price and be charged another. The real charge is the Stripe price object behind `STRIPE_PRICE_*`; these strings are cosmetic. Two camps — majority (pricing/billing/auth/mcp/LaneSelector/…) Pro $49 / Team $199 / Ent $499; outliers (`lib/stripe.ts` TIERS + STRIPE-SETUP) Team $149 / Ent $1500. The 2026-04-02 log shows the live recurring Stripe objects were built at Team **$199** / Ent **$499** → the outliers were stale.
+
+**Founder pricing call (asked + answered this session):** Pro **$99** (raise — the revenue-plan/GTM number; matches #55's "$99 checkout"), Team **$199**, Enterprise **$499**. Scope = **all** display strings, not just the 4 named.
+
+**What shipped (11 files, display-only — NO checkout/webhook/entitlement/`getPriceId` logic touched):**
+- `app/pricing/page.tsx` — Pro 49→**99**/mo (yearly 470→**950**, the codebase's uniform 9.6× convention; Team/Ent already $199/$499).
+- `app/billing/page.tsx` — TIER_LABEL + UPGRADE_TIERS Pro $49→**$99**; rewrote the stale 2026-05-23 sync comment to state the canon + the `STRIPE_PRICE_PRO`=$99 requirement.
+- `lib/stripe.ts` TIERS — Pro 49→**99**/470→950; Team **149→199**/1430→1910; Ent **1500→499**/14400→4790 (display metadata only).
+- `lib/auth.tsx` TIERS + 2 upsell strings; `mcp/page.tsx`, `api/v1/mcp/route.ts`, `profile/page.tsx`, `CapabilityShowcase.tsx`, `CopilotPanel.tsx`, `LaneSelector.tsx` (×7) — Pro $49→**$99**.
+- `docs/STRIPE-SETUP.md` — product table Pro $49→**$99**, Team $149→**$199**; yearly $470/$1430→**$950/$1910**; rewrote the "On $99" note from "reconcile separately" → "reconciled; now point `STRIPE_PRICE_PRO` at a $99/mo recurring price so the label is true."
+
+**Verification:** `tsc` 121→**121** (0 in touched files) · residual-price sweep: no stale Pro $49 / Team $149 / Ent $1500 anywhere in `src` · **real browser** (worktree dev server :3199): `/pricing` renders Pro **$99** / Team **$199** / Ent **$499** in the price elements, BEST-VALUE badge intact, no crash. (`/billing` is auth-gated — same trivial string change, covered by tsc + sweep.)
+
+**⚠️ Operator follow-up (this is what makes the labels TRUE — founder, in the Stripe dashboard):** the page now says Pro **$99** but the charge is still whatever `STRIPE_PRICE_PRO` maps to. Point `STRIPE_PRICE_PRO` at a **$99/mo** recurring price (test→live) and confirm `STRIPE_PRICE_TEAM`=$199. Until then display ≠ charge. (If yearly checkout is offered: `STRIPE_PRICE_PRO_YEARLY`=$950, `STRIPE_PRICE_TEAM_YEARLY`=$1910.)
+
+**Flags (out of scope — NOT touched):** `/pricing` dark-theme + pure-white + near-red (locked-rule violations) — owned by the `fix/pricing-herbarium-rebrand` lane, left alone to avoid collision. `app/manifesto/page.tsx` "$149/mo Pro+ tier" — fundraising-narrative projection, not a point-of-sale price; left as-is.
+
+**Write-lane:** branch `fix/price-display-reconcile` → push → **PR for founder merge**.
+
+---
+
 ## 2026-06-14 — [Claude Code] Killer App Builder lane fidelity (Section A shared primitives + B1–B6)
 **Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity` (off `origin/main` `0a87d15`/#53) · PR-only, awaiting founder merge.
 
