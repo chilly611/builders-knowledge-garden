@@ -4427,3 +4427,18 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **⚠️ Coordination note (the fork):** this session's earlier B1–B5 work lives on `feat/instrument-gauges` (built off the *old* main `0a87d15`, before #54). PR #54 ("Builder-lane fidelity — Section A primitives + B1–B6 home") is now on main and implements the same spec sections as a *different* component suite (`ProjectCockpit`, `InstrumentGauge`, `JourneyArc`…) wired to `/killerapp/projects/[id]` (`ProjectDashboardClient`), while my B1–B5 wired a parallel set into `/killerapp`'s `KillerappProjectShell`. The two fidelity implementations target different surfaces and **need a founder call on which is canonical** before either merges. The asset-staging pipeline is duplicated (`feat/killer-app-fidelity` `bcb27e2` ↔ my `b3ec7eb`). This chrome cutover was deliberately branched fresh off main to stay independent of that fork.
 
 **Write-lane:** branch `refactor/chrome-cutover` → push → **PR for founder merge**.
+
+---
+
+## 2026-06-15 — [Claude Code] LANE: `feat/pricing-herbarium-canon` — fold the /pricing rebrand onto the $99 price canon → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` (`1c23d30`). Follow-up to the Stripe hardening (#55): reconcile the two pricing-page lanes the chips spawned so they don't fight over `pricing/page.tsx`.
+
+**The fork it resolves:** `fix/pricing-herbarium-rebrand` (committed @ `464823e`, pushed, NOT merged) redesigned `/pricing` to the herbarium system but was branched off `#55` — *before* `#57` set the price canon (Pro **$99** / Team $199 / Ent $499). Merging it as-is would visually regress Pro back to the stale **$49**. The price-reconcile lane meanwhile already merged as `#57`. So instead of a two-branch conflict, this folds them: the rebrand's redesigned file, rebased onto current main, with Pro corrected to the $99 canon.
+
+**What shipped (1 file):** `src/app/pricing/page.tsx` — took the rebrand commit's redesigned file verbatim (herbarium light theme, Archivo Black, paper-cream surface) and bumped only the stale Pro price `49→99` monthly / `470→950` yearly. Team/Ent/Explorer already matched canon. Checkout contract untouched (slug→`/api/v1/stripe/checkout`, signed-out→`/login?next=/pricing`, success/cancel URLs).
+
+**Verification:** `tsc` 121→**121** (0 in the file) · `next build` **exit 0** · **real browser** (Playwright headless, dev :3011): `/pricing` renders the herbarium light theme (paper-cream body — not dark/pure-white), Pro card shows **$99**, Team $199, Ent $499, no stale $49, no page errors — screenshot captured.
+
+**Supersedes `fix/pricing-herbarium-rebrand`** — merge THIS branch (it carries the redesign AND the $99 canon); close the rebrand PR to avoid the price regression. The 7 non-pricing files the price-reconcile chip touched (`mcp`, `profile`, `CopilotPanel`, `LaneSelector`, `auth.tsx`…) landed via `#57` and are out of scope here.
+
+**Write-lane:** branch `feat/pricing-herbarium-canon` → push → **PR for founder merge**.
