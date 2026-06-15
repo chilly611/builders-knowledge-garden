@@ -3,6 +3,23 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   /**
+   * Remote images — the public brand-assets bucket (Seal posters + the Seed &
+   * Portals imagery: heroes / studies / thumbs). Lets next/image optimize
+   * Supabase-hosted assets; the brand bucket is public-read.
+   */
+  images: {
+    // StageBackdrop + a few surfaces request q=70; Next 16 defaults qualities
+    // to [75] and warns otherwise. Allow both.
+    qualities: [70, 75],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'vlezoyalutexenbnzzui.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+  /**
    * 301 redirects for stale routes.
    *
    * 2026-05-08: /compass was a top-level Project Compass route in an early

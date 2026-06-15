@@ -88,6 +88,13 @@
   font-weight: 400;
 }
 .bld-hero-sub { font-family: var(--font-editorial); font-style: italic; font-size: 17px; color: var(--ink-script); }
+/* B2 caption — bottom-right over the hero, with a cream halo for legibility on the photo. */
+.bld-hero-cap {
+  position: absolute; right: 22px; bottom: 16px; z-index: 1; max-width: 58%; text-align: right;
+  font-family: var(--font-editorial); font-style: italic; font-size: 16px; line-height: 1.2;
+  color: var(--ink-graphite);
+  text-shadow: 0 1px 2px var(--paper-cream), 0 0 10px var(--paper-cream);
+}
 
 /* ─── B1 · Greeting ──────────────────────────────────────────────────────── */
 .bld-greet { padding: 20px 28px 2px; }
@@ -108,10 +115,11 @@
   text-transform: uppercase;
   color: var(--specimen-rust);
 }
-.bld-greet-sub {
+.bld-greet-sub,
+.bld-greet-meta {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-faded);
   margin: 8px 0 0;
@@ -142,8 +150,19 @@
   background: var(--bg-raised);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-xs);
-  padding: 18px 16px 16px;
+  padding: 16px 16px 16px;
   box-shadow: var(--shadow-page-2);
+}
+/* B3 question label — Space Mono, above each dial (spec §B3). */
+.bld-gauge-q {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--specimen-teal-deep);
+  text-align: center;
+  margin-bottom: 6px;
 }
 
 /* B6 · workflow entries */

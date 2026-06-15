@@ -31,7 +31,7 @@ import Image from 'next/image';
 import { useStageProject } from '@/lib/hooks/useStageProject';
 import { useShellConfig } from '@/components/app-shell/ShellConfigContext';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
-import { fmtMoney, laneLabel } from '@/components/app-shell/config';
+import { fmtMoney } from '@/components/app-shell/config';
 import {
   InstrumentGauge,
   SpecimenPlate,
@@ -40,9 +40,11 @@ import {
 import type { GaugeTone, WorkflowTone } from '@/design-system/components';
 import './builder-lane.css';
 
-// Placeholder cinematic plate until the Cowork-staged hero asset lands. The
-// brand surface plate (not generated content) — swap for the staged render.
+// Seed & Portals (docs/design/seed-and-portals.md): the canonical-demo hero is
+// the staged hero seed; other projects fall back to the brand plate until
+// per-project portal imagery lands. Brand-assets bucket is public-read.
 const HERO_PLATE = '/plates/chrome-killer-app.png';
+const PORTAL_ASSETS = 'https://vlezoyalutexenbnzzui.supabase.co/storage/v1/object/public/brand-assets/assets/bkg/fidelity';
 
 function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0;
@@ -77,6 +79,17 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
       : spentRatio >= 0.7
         ? 'watch'
         : 'good';
+
+  // ── B2 hero seed + B1 meta row (real data only; no fabricated yard/crew). ──
+  const heroSrc = sp.isCanonicalDemo ? `${PORTAL_ASSETS}/hero-marin-farmhouse-golden-a.png` : HERO_PLATE;
+  const greetMeta = [
+    sp.clientName ? `for ${sp.clientName}` : null,
+    sp.jurisdiction || null,
+    sp.sqftDisplay ? `${sp.sqftDisplay} sqft` : null,
+    sp.buildingKind || null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   // ── B6 workflow entries — real live routes; preserve project context. ──
   const withProject = (href: string) =>
@@ -122,40 +135,38 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
         <header className="bld-hero">
           <div className="bld-hero-art" aria-hidden="true">
             <Image
-              src={HERO_PLATE}
+              src={heroSrc}
               alt=""
               fill
               sizes="(max-width: 1000px) 100vw, 900px"
-              style={{ objectFit: 'cover', opacity: 0.9, mixBlendMode: 'multiply' }}
-              priority={false}
+              style={{ objectFit: 'cover', opacity: 0.92 }}
+              priority
             />
             <div className="bld-hero-wash" />
           </div>
           <div className="bld-hero-text">
-            <div className="eng-label bld-hero-eyebrow">
-              Builder lane · {laneLabel(sp.lane)}
-            </div>
-            <h1 className="bld-hero-title">{sp.projectName}</h1>
-            {sp.projectMeta && <div className="bld-hero-sub">{sp.projectMeta}</div>}
+            <div className="eng-label bld-hero-eyebrow">Your week · by the instruments</div>
+            <h1 className="bld-hero-title">Where the build stands</h1>
           </div>
+          {sp.projectName && (
+            <div className="bld-hero-cap">{sp.projectName} — the dream view</div>
+          )}
         </header>
 
         {/* ── B1 · Greeting ─────────────────────────────────────────────── */}
         <section className="bld-greet">
           <p className="bld-greet-line">
-            Welcome back.{' '}
+            Good to see you, crew —{' '}
             {hasJourney ? (
               <>
                 <strong>{sp.projectName}</strong> is in{' '}
-                <span className="bld-greet-stage">{activeStage!.short}</span> — {pct}% of the way through.
+                <span className="bld-greet-stage">{activeStage!.short}</span>, {pct}% of the way through.
               </>
             ) : (
-              <>Here&apos;s where <strong>{sp.projectName}</strong> stands today.</>
+              <>here&apos;s where <strong>{sp.projectName}</strong> stands today.</>
             )}
           </p>
-          {sp.clientName && (
-            <p className="bld-greet-sub">For {sp.clientName}.</p>
-          )}
+          {greetMeta && <p className="bld-greet-meta">{greetMeta}</p>}
         </section>
 
         {/* ── B3 · Instrument gauges (the signature row) ───────────────── */}
@@ -167,14 +178,16 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
           <div className="bld-gauges">
             {/* Schedule — no honest variance source yet (Decision 19/21). */}
             <div className="bld-gauge-cell">
+              <div className="bld-gauge-q">On schedule?</div>
               <InstrumentGauge
                 label="Schedule"
                 tone="none"
                 caption="No schedule data yet"
               />
             </div>
-            {/* Budget — real: spent of total, from useStageProject. */}
+            {/* Budget burn — real: spent of total, from useStageProject. */}
             <div className="bld-gauge-cell">
+              <div className="bld-gauge-q">Budget burn?</div>
               <InstrumentGauge
                 label="Budget"
                 tone={budgetTone}
@@ -185,6 +198,7 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
             </div>
             {/* Quality — no source anywhere; honest no-data. */}
             <div className="bld-gauge-cell">
+              <div className="bld-gauge-q">Quality?</div>
               <InstrumentGauge
                 label="Quality"
                 tone="none"

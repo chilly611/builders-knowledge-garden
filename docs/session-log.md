@@ -6,6 +6,21 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-15 — [Claude Code] B2 hero (hero-A live on the site) + B1/B3 copy + image allowlist
+**Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity`.
+
+Continued the spec-delta alignment + got the first generated asset onto the surface.
+- **B2 hero** now renders the staged **hero-A** (golden-hour Marin farmhouse) data-drivenly: `heroSrc = isCanonicalDemo ? <bucket hero-A> : placeholder` (Seed & Portals — canonical demo gets the seed; others fall back until per-project portal imagery lands). Image is `priority` (it's the LCP). Copy now matches the spec: eyebrow "Your week · by the instruments", headline **"Where the build stands"**, bottom-right Cormorant caption "{project} — the dream view".
+- **`next.config.ts`** — allowlisted the public Supabase brand bucket for `next/image` (`remotePatterns` + `qualities: [70,75]`, which also clears a pre-existing StageBackdrop q=70 warning). Foundational for all portal imagery.
+- **B1 greeting** — "Good to see you, crew — {project} is in {stage}, {pct}%…" + a Space-Mono meta row from REAL data (`for {client} · {jurisdiction} · {sqft} sqft · {kind}`); no fabricated yard/crew (honest).
+- **B3** — "On schedule? / Budget burn? / Quality?" question labels above each dial (spec §B3); gauges unchanged (budget real, schedule/quality honest no-data).
+
+**Verified (real browser :4137):** next build EXIT 0; tsc 0 errors in changed files (121 baseline held); eslint clean; rendered 1280 — hero-A photo paints behind "Where the build stands" with the cream wash keeping the headline legible, caption + greeting + meta + gauge questions all correct; no console errors (cleared the LCP + q=70 warnings). Hero-A loads slowly on the cold DEV image optimizer (first hit) but caches; prod optimizes once.
+
+**Still pending alignment:** A4 stage-chip spend-% number; wire B4 field-log → `daily_log_state` (#21) + B5 recall → Reflect entries. Queued: catalog the 8 drafts (Supabase MCP); SF Fourplex 2nd canon (needs its seed-data lane).
+
+---
+
 ## 2026-06-15 — [Claude Code] A1 surface-switcher bar + chrome reconciliation (spec §A acceptance gate)
 **Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity`.
 
