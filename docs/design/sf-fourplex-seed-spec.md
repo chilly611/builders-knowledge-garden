@@ -1,32 +1,31 @@
-# SF Fourplex — Seed-Data Spec (PROPOSED — founder to LOCK)
+# Folsom Street Fourplex — Seed-Data Spec (LOCKED)
 
-*Second canonical demo project, added alongside Marin (which stays per `CLAUDE.md`). This is the reference project for the SF fidelity mockups. It mirrors the structure of `src/lib/seed-data/marin-farmhouse.ts` so the seed lane can build it the same way.*
+*Second demo project, added alongside Marin (which stays per `CLAUDE.md`). This is the reference project for the SF fidelity mockups. It mirrors the structure of `src/lib/seed-data/marin-farmhouse.ts`.*
 
-> **⚠️ EVERYTHING below is PROPOSED.** Numbers are internally consistent and realistic for SF multifamily, but they are NOT locked. Founder confirms/edits, THEN a Code lane writes `src/lib/seed-data/sf-fourplex.ts`. Do not bake these into a seed module before sign-off. Names are example/fictional — confirm or replace. "Demo data must reconcile everywhere" is a locked rule, so the invariants at the bottom must hold after any edits.
+> **✅ LOCKED (founder-approved 2026-06-15).** The numbers below are canon — they are baked into `src/lib/seed-data/sf-fourplex.ts` (the source of truth) and reconcile everywhere via the demo-fixture registry in `src/lib/projects/getCanonicalProject.ts`. "Demo data must reconcile everywhere" is a locked rule, so the invariants at the bottom MUST continue to hold after any edit. Built in the `feat/seed-folsom-fourplex` lane.
 
 ## Project meta
-| Field | Proposed value | Notes |
+| Field | Locked value | Notes |
 |---|---|---|
-| `id` | (new UUID — generate at seed time) | not `55730cd3…` (that's Marin) |
-| `name` | **SF Fourplex** | working name — confirm (e.g. "Folsom Street Fourplex") |
-| `clientName` | (developer entity) | e.g. "Dolores Built LLC" — example, confirm |
-| `type` | Ground-up multifamily infill, 4 units | |
-| `location` | San Francisco, CA | neighborhood optional (e.g. Mission) |
+| `id` | `f0150f0e-4d78-4f0c-9aaa-bbccdd015000` | a real hex UUID (not `55730cd3…`, which is Marin); resolves through the `ProjectContext` validator without widening it |
+| `name` | **Folsom Street Fourplex** | |
+| `clientName` | **Dolores Built LLC** | |
+| `type` | 4-unit ground-up infill multifamily | |
+| `location` | San Francisco, CA | Mission neighborhood (flavor) |
 | `unitMix` | 2× 2BR/2BA + 2× 1BR/1BA | |
 | `grossSqft` | 5,200 | |
-| `stories` | 4 (3 residential over garage) | |
+| `stories` | 4 (3 residential over a ground-floor garage) | |
 | `activeStage` | **Build** | matches the mockup |
 | `buildProgress` | 42% | schedule progress (journey node) |
 | `week` | 6 of 14 | |
 
 ## Budget (the load-bearing numbers — must reconcile)
-| Constant | Proposed | 
+| Constant | Locked |
 |---|---|
 | `TOTAL` | **$3,200,000** |
 | `SPENT` | **$1,340,000** |
 | `COMMITTED` | **$410,000** |
 | `REMAINING` | **$1,450,000** |
-| `HEADROOM` (optional, mirrors Marin) | $190,000 |
 
 Project-level spend = 1,340,000 / 3,200,000 = **41.9% ≈ 42%** (this is the figure that feeds the budget readout's "NN% SPENT" and the active stage-chip number).
 
@@ -44,8 +43,8 @@ Project-level spend = 1,340,000 / 3,200,000 = **41.9% ≈ 42%** (this is the fig
 | Contingency | 160,000 | 5% |
 | **Sum** | **3,200,000** | **100%** |
 
-## Cast (scaled for a 4-unit developer project; mirror Marin's `MARIN_CAST` shape)
-All example/fictional — confirm or replace. Roles use the existing `Lane`/`LaneSubtype` model.
+## Cast (scaled for a 4-unit developer project; mirrors Marin's `MARIN_CAST` shape)
+Fictional but locked, in `FOLSOM_CAST`. Roles use the existing `Lane`/`LaneSubtype` model.
 
 | Lane | Who (example) | Subtype |
 |---|---|---|
@@ -58,20 +57,21 @@ All example/fictional — confirm or replace. Roles use the existing `Lane`/`Lan
 
 Each cast member needs: `id, name, role, company?, lane, laneSubtype, joined_at, invited_by, personalizing_detail, status` — same fields as Marin. The `invited_by` graph must close (every ref resolves to another cast id or `'founder'`).
 
-## Owner-lens content (mirror `MARIN_OWNER_LENS`, optional for first pass)
-- `welcome_message`, a few `contributions`, and 1–2 `pending_approvals` (e.g. a framing pay-app + a change order), with amounts that fit within the budget lines above.
+## Owner-lens content (mirrors `MARIN_OWNER_LENS`)
+- `FOLSOM_OWNER_LENS`: a `welcome_message`, two `contributions`, and two `pending_approvals` (a framing pay-app + a roof-deck change order), with amounts that fit within the budget lines above.
 
 ## Invariants (must hold — `CLAUDE.md` "reconcile everywhere")
 - `SPENT + COMMITTED + REMAINING = TOTAL` → 1,340,000 + 410,000 + 1,450,000 = **3,200,000 ✓**
 - `sum(budget lines) = TOTAL` → **3,200,000 ✓**
-- Every component reads these via `useStageProject()`; switching `?project=` between SF Fourplex and Marin flips ALL dimensions with **no bleed** (this is also an acceptance-gate item in `component-fidelity.md`).
+- A module-load check in `sf-fourplex.ts` warns (dev only) if either sum drifts.
+- Every component reads these via `useStageProject()` / the demo-fixture registry; switching `?project=` between Folsom and Marin flips ALL dimensions with **no bleed** (also an acceptance-gate item in `component-fidelity.md`).
 - Zero hardcoding of any project's figures in components.
 
-## Build steps (after founder locks numbers)
-1. Create `src/lib/seed-data/sf-fourplex.ts` mirroring `marin-farmhouse.ts` (constants, budget lines, cast, lens).
-2. Register it wherever Marin is registered (`getCanonicalProject` / demo-seed) as a *second* selectable project — do NOT replace Marin.
-3. Add a module-load invariant check (like Marin's) that warns if the sums drift.
-4. Verify `?project=<sf-fourplex-id>` flips every surface; Marin unchanged.
+## Build steps — DONE (`feat/seed-folsom-fourplex`)
+1. ✅ `src/lib/seed-data/sf-fourplex.ts` mirrors `marin-farmhouse.ts` (constants, budget lines, cast, owner lens).
+2. ✅ Registered alongside Marin via the demo-fixture registry in `src/lib/projects/getCanonicalProject.ts` (`getDemoFixture` / `isDemoFixtureId`) and listed in `DEMO_PROJECTS` — a *second* selectable project; Marin untouched.
+3. ✅ Module-load invariant check (mirrors Marin's) warns if the sums drift.
+4. ✅ `portal-imagery.ts` routes the multifamily archetype to the `*-sf-*` seed set (Marin keeps the farmhouse set); `?project=<id>` flips identity + budget + journey + portal imagery, Marin unchanged.
 
 ## Visual seed set (portal imagery) — GENERATED 2026-06-14 (local draft)
 

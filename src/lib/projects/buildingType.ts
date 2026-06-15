@@ -21,6 +21,14 @@ export function inferBuildingType(s: string): BuildingType | null {
   const l = s.toLowerCase();
   if (/(office|retail|warehouse|commercial|\bti\b|tenant improvement|restaurant|shop)/.test(l)) return 'commercial';
   if (/(mixed[- ]?use|live[- ]?work)/.test(l)) return 'mixed';
-  if (/(home|house|farmhouse|adu|residence|residential|dwelling|cabin|bedroom|bath)/.test(l)) return 'residential';
+  // Multifamily reads as residential here (the Size Up cost model is the same
+  // residential band); the portal layer refines it to its own archetype via
+  // `archetypeFor`, which keys off the same multifamily words.
+  if (
+    /(home|house|farmhouse|adu|residence|residential|dwelling|cabin|bedroom|bath|multi[- ]?family|multifamily|fourplex|four[- ]?plex|duplex|triplex|apartment|condo|townhouse|\d+\s*-?\s*unit)/.test(
+      l,
+    )
+  )
+    return 'residential';
   return null;
 }

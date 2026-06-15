@@ -26,18 +26,9 @@
  */
 
 import { useProjectContext, type ProjectRole } from '@/contexts/ProjectContext';
-import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
+import { getDemoFixture, type DemoFixture } from '@/lib/projects/getCanonicalProject';
 import { inferBuildingType, type BuildingType } from '@/lib/projects/buildingType';
-import {
-  MARIN_PROJECT_ID,
-  MARIN_PROJECT_NAME,
-  MARIN_CLIENT_NAME,
-  MARIN_LOCATION,
-  MARIN_SQFT_DISPLAY,
-  MARIN_BUDGET_TOTAL,
-  MARIN_BUDGET_SPENT,
-  MARIN_PROJECT,
-} from '@/lib/seed-data/marin-farmhouse';
+import { MARIN_PROJECT_ID } from '@/lib/seed-data/marin-farmhouse';
 
 export interface StageProject {
   /** Active project id passed to StageShell/BudgetRibbon/JourneyRow. Always concrete — Marin id in the canonical/no-project case. */
@@ -80,32 +71,41 @@ function meta(sqftDisplay: string, jurisdiction: string): string {
   return [sqftDisplay ? `${sqftDisplay} sqft` : '', jurisdiction].filter(Boolean).join(' · ');
 }
 
-/** Canonical Marin context — used for the Marin id and the no-project fallback. */
-function canonicalStageProject(lane: ProjectRole | null): StageProject {
+/**
+ * Build a StageProject from a code-served demo fixture (Marin OR Folsom). Used
+ * for any seeded demo id and, with the Marin fixture, for the no-project
+ * fallback — so switching `?project=` between the two demos flips every
+ * dimension (identity, jurisdiction, budget) with no bleed.
+ */
+function fixtureStageProject(fixture: DemoFixture, lane: ProjectRole | null): StageProject {
   return {
-    projectId: MARIN_PROJECT_ID,
+    projectId: fixture.id,
     isCanonicalDemo: true,
     loading: false,
     notFound: false,
-    projectName: MARIN_PROJECT_NAME,
-    clientName: MARIN_CLIENT_NAME,
-    jurisdiction: MARIN_LOCATION,
-    buildingType: MARIN_PROJECT.project_type,
-    buildingKind: inferBuildingType(MARIN_PROJECT.project_type),
+    projectName: fixture.name,
+    clientName: fixture.clientName,
+    jurisdiction: fixture.location,
+    buildingType: fixture.projectType,
+    buildingKind: inferBuildingType(fixture.projectType),
     lane,
-    sqftDisplay: MARIN_SQFT_DISPLAY,
-    projectMeta: meta(MARIN_SQFT_DISPLAY, MARIN_LOCATION),
-    budgetTotal: MARIN_BUDGET_TOTAL,
-    budgetSpent: MARIN_BUDGET_SPENT,
+    sqftDisplay: fixture.sqftDisplay,
+    projectMeta: meta(fixture.sqftDisplay, fixture.location),
+    budgetTotal: fixture.budget.total,
+    budgetSpent: fixture.budget.spent,
   };
 }
 
 export function useStageProject(): StageProject {
   const { project, projectId, loading, projectRole } = useProjectContext();
 
-  // (1) nothing active, or (2) the canonical Marin id → canonical fixture.
-  if (!projectId || isCanonicalProjectId(projectId)) {
-    return canonicalStageProject(projectRole);
+  // (1) nothing active → display-only canonical Marin fallback;
+  // (2) a seeded demo id (Marin OR Folsom) → that fixture.
+  const fixture = getDemoFixture(projectId ?? MARIN_PROJECT_ID);
+  if (!projectId || fixture) {
+    // `fixture` is non-null whenever projectId is null (we fell back to Marin)
+    // or projectId is a seeded demo; the `?? MARIN` guard keeps it defined.
+    return fixtureStageProject(fixture ?? getDemoFixture(MARIN_PROJECT_ID)!, projectRole);
   }
 
   // (3)/(4) a non-canonical project is active.
