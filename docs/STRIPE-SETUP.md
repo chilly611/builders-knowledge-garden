@@ -14,13 +14,32 @@ do automatically.
   — HTTP surface. All return 503 `{error: 'stripe_not_configured'}`
   when `STRIPE_SECRET_KEY` is missing.
 - `src/app/billing/page.tsx` — user-facing billing dashboard.
-- `public.subscriptions` — extended by migration
-  `subscriptions_stripe_wire_extend` to carry org_id, user_id, period
-  dates, etc. Email column kept nullable for legacy.
+- `public.subscriptions` — reconciled by migration
+  `20260614_stripe_wire_reconcile.sql` to carry org_id, user_id, period
+  dates, and dual unique arbiters (`stripe_subscription_id` + `email`).
+  Both `email` and `user_id` are nullable so either code path can write.
 - `public.stripe_webhook_events` — idempotency log (Stripe retries on
   any non-2xx + sometimes on 2xx).
 - `/api/v1/healthcheck` reports a `stripe` sub-check (configured?
   test/live? has customers?).
+
+## ⚠️ Step 0 — apply the schema reconcile migration FIRST
+
+Before any checkout will *persist*, apply
+`supabase/migrations/20260614_stripe_wire_reconcile.sql` to the shared prod DB
+(supervised). It is idempotent and safe to re-run. Without it the webhook's
+upsert — which needs unique arbiters on **both** `stripe_subscription_id` and
+`email` — and the idempotency insert into `stripe_webhook_events` can fail, so a
+real purchase is charged but the subscription is never recorded and entitlement
+never flips. After applying, reload the PostgREST schema cache:
+`NOTIFY pgrst, 'reload schema';` (Supabase usually auto-reloads on DDL).
+
+**On "$99":** there is no $99 tier in the code. The checkout charges whatever
+Stripe price you map to `STRIPE_PRICE_PRO`. To sell the first contractor at
+$99/mo, create a $99 recurring price in Stripe (test then live) and point
+`STRIPE_PRICE_PRO` at it — no code change needed. The `$49 / $199 / $499` labels
+shown on `/pricing` and `/billing` are cosmetic and currently disagree with each
+other and with `lib/stripe.ts`; reconcile those display strings separately.
 
 ## Required env vars
 

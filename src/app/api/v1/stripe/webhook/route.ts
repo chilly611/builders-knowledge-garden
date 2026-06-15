@@ -20,6 +20,7 @@ import {
   isStripeConfigured,
   constructWebhookEvent,
   getTierFromPriceId,
+  tierToLane,
 } from "@/lib/stripe";
 import { getServiceClient } from "@/lib/auth-server";
 
@@ -161,19 +162,33 @@ export async function POST(req: NextRequest) {
           await db.from("subscriptions").insert(payload);
         }
 
-        // Mirror tier on user_profiles for fast UI reads.
-        if (customerEmail) {
-          const { data: profile } = await db
-            .from("user_profiles")
-            .select("id")
-            .eq("email", customerEmail)
-            .maybeSingle();
-          if (profile?.id) {
+        // Mirror the entitlement onto user_profiles.lane for fast UI reads.
+        // NB: the column is `lane`, NOT `tier` (user_profiles has no `tier`
+        // column); billing-world 'free' collapses to 'explorer' via tierToLane
+        // to satisfy the lane CHECK. A DB trigger also does this on user_id, so
+        // keep it best-effort — never fail the webhook if the row/column isn't
+        // there. Resolve the profile by user_id first, then email.
+        try {
+          let profileId: string | null = userId;
+          if (!profileId && customerEmail) {
+            const { data: profile } = await db
+              .from("user_profiles")
+              .select("id")
+              .eq("email", customerEmail)
+              .maybeSingle();
+            profileId = profile?.id ?? null;
+          }
+          if (profileId) {
             await db
               .from("user_profiles")
-              .update({ tier, updated_at: new Date().toISOString() })
-              .eq("id", profile.id);
+              .update({ lane: tierToLane(tier), updated_at: new Date().toISOString() })
+              .eq("id", profileId);
           }
+        } catch (e) {
+          console.warn(
+            "[stripe-webhook] user_profiles.lane mirror failed (non-fatal):",
+            (e as Error).message,
+          );
         }
 
         console.log(
@@ -305,6 +320,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (e: any) {
     console.error("[stripe-webhook] handler error:", e);
+    // We recorded event.id in `alreadyProcessed` BEFORE running the handler
+    // (an in-flight de-dup lock against concurrent/retry deliveries). Since
+    // processing failed, release that lock so Stripe's retry re-runs the
+    // handler instead of being short-circuited as a duplicate and silently
+    // dropped. Best-effort — the 500 below is the real retry trigger.
+    try {
+      await db
+        .from("stripe_webhook_events")
+        .delete()
+        .eq("event_id", event.id);
+    } catch (delErr) {
+      console.warn(
+        "[stripe-webhook] failed to release idempotency lock for",
+        event.id,
+        (delErr as Error).message,
+      );
+    }
     // 500 → Stripe will retry, which is what we want for transient errors.
     return NextResponse.json(
       { error: e?.message || "handler_failed" },

@@ -27,6 +27,10 @@
 - [ ] Founder gate on #29: real-browser prod verify (fresh acct + collaborator), Chrome+Safari
 - [ ] LOOP 1 — onboarding trust: wire onboard-new-user into live signup; consent-screen
       branding; one $99 Stripe checkout E2E
+      └ $99 Stripe checkout: code + schema HARDENED (PR `feat/stripe-checkout-harden`,
+        2026-06-14). FOUNDER GATE to close: apply `20260614_stripe_wire_reconcile.sql`
+        to prod (supervised) → set `STRIPE_PRICE_PRO`=$99 + `STRIPE_WEBHOOK_SECRET` →
+        TEST-mode 4242 E2E → live-mode `STRIPE_LIVE_MODE=true` re-test.
 - [ ] LOOP 2 — honesty backend (Item C): per-fact contract + 3-tier gate + HITL queue;
       CA honesty pass (AB 2622, 2025-edition currency); UPCODES_API_KEY flip;
       image + prompt caching

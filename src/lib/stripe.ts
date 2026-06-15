@@ -282,6 +282,28 @@ export function canAccessFeature(
   return order.indexOf(norm(userTier)) >= order.indexOf(norm(requiredTier));
 }
 
+/**
+ * Map a billing tier slug to the value stored on `user_profiles.lane` — the
+ * column the app actually reads for entitlement. That column's CHECK only
+ * permits explorer/pro/team/enterprise, so the billing-world `free` collapses
+ * to `explorer`. (The webhook used to write a non-existent `tier` column; this
+ * keeps the mirror writing the right column with a valid value.)
+ */
+export function tierToLane(
+  tier: string | null | undefined,
+): "explorer" | "pro" | "team" | "enterprise" {
+  switch (tier) {
+    case "pro":
+      return "pro";
+    case "team":
+      return "team";
+    case "enterprise":
+      return "enterprise";
+    default:
+      return "explorer"; // free / explorer / unknown
+  }
+}
+
 // ---------------------------------------------------------------------------
 // High-level helpers — return null when Stripe is unconfigured so route
 // handlers can return 503 without try/catching every call.

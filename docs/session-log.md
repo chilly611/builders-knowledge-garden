@@ -4363,3 +4363,28 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags (dogfood findings worth their own fix):** the **global FAB overlaps the size-up "Next" primary action** on `/killerapp/stages/*` — a real UX bug (you can hit the FAB instead of Next). Separate chrome-z-order/suppression fix.
 
 **Write-lane:** **RELEASED** on push. Branch `fix/editable-jurisdiction` → PR. Completes the three founder dogfood asks (#1 new project + #2 sign-out/switch on `fix/header-account-menu`; #3 editable jurisdiction here).
+
+---
+
+## 2026-06-14 — [Claude Code] LANE: `feat/stripe-checkout-harden` — finish + harden the live $99 Stripe checkout E2E → PR
+**Agent:** Claude Code (Opus 4.8). Worktree off `origin/main` @ `0a87d15`. LOOP-1 close-out: the "one $99 Stripe checkout E2E" item, building on the TEST-mode audit (this log, `feat/onboarding-trust-loop` entry).
+
+**Recon verdict:** the *code* surface is mature (singleton client + live-mode guard; webhook handles all 6 events, signature-required-in-prod, idempotency LOGIC correct). The real gaps were in the **DB schema and the success landing**, not the handlers:
+- **Schema incoherence (the live-flow breaker):** three conflicting `subscriptions` migrations, all `CREATE TABLE IF NOT EXISTS` → only the first to ever run wins, the rest silently no-op. The webhook upserts on **both** `stripe_subscription_id` AND `email`, but no single live variant makes both unique; the `subscriptions_stripe_wire_extend` migration the setup doc named was **never committed**; `org_id` exists in no migration.
+- **Idempotency unbacked:** `stripe_webhook_events` (the table the dedup logic inserts into) had **no migration** — if absent in prod, every Stripe retry reprocesses.
+- **Wrong mirror column:** webhook + the `sync_subscription_tier` trigger write `user_profiles.tier`, but the entitlement column is **`lane`** (there is no `tier` column). Silent no-op — and the trigger would *throw* on `SET tier`, rolling back the sub write that fired it.
+- **Success redirect race + dead-end:** `/billing?success=true` ignored the params and fetched once on mount → a fresh buyer often saw "Free", with **no path into the product**.
+
+**What shipped (5 files; tight scope):**
+- **`supabase/migrations/20260614_stripe_wire_reconcile.sql`** (NEW) — one idempotent migration converging the live schema onto what the code needs: ADD COLUMN IF NOT EXISTS for the full union (user_id, org_id, email, period dates, …); drop NOT NULL on email + user_id; relax the strict tier/status CHECKs (handler writes `free`/`none`); **full unique indexes on both `stripe_subscription_id` and `email`** (the two upsert arbiters); `CREATE TABLE IF NOT EXISTS stripe_webhook_events`; redefine `sync_subscription_tier` to write **`lane`** (free→explorer). **Founder applies it supervised** on shared prod — see Step 0 in `docs/STRIPE-SETUP.md`.
+- **`stripe/webhook/route.ts`** — mirror now writes `lane` via new `tierToLane()` (best-effort; resolves profile by user_id then email). **Idempotency poison-pill fix:** on handler error, DELETE the event row so Stripe's retry can reprocess (was: record-before-process → a transient failure permanently dropped the event).
+- **`lib/stripe.ts`** — `tierToLane()` helper (+ 6 unit tests).
+- **`billing/page.tsx`** — reads `?success=true`, polls the subscription up to 6× (~10s) for the webhook to land, and ALWAYS shows a "🎉 You're all set" banner + **"Go to your projects →" CTA into `/killerapp`** so a buyer is never stranded.
+
+**Decisions (founder, this session):** "$99" = **shorthand** — harden the existing `pro` path; founder sets the real price on `STRIPE_PRICE_PRO` (no code price change). "Entitlement unlocks" = **recorded + reflected** (sub row + `lane` + /billing), **no new paywall** (matches "no paywall before legal/first sale"). DB: **author idempotent migration; founder applies**.
+
+**Verification:** `tsc` 121→**121** (0 in touched files) · `vitest` **26 fail / 817 pass** (baseline held; +6 new `tierToLane` assertions pass) · `next build` **exit 0**. **Real browser** (Playwright headless vs the worktree dev server @ :3009): `/billing?success=true` renders the banner, CTA `href=/killerapp`, no page errors — screenshot captured. The **live $99 charge E2E is the founder's** (no Stripe keys reachable here; constraint = no real cards / no live charges) — TEST-mode script + go-live checklist handed off.
+
+**Flags (out of scope — chipped, not fixed):** `/pricing` page is **dark-themed + pure-white + near-red orange** (violates the light-bg / no-pure-white / no-red locked rules) · the **$49 / $199 / $499 display prices disagree** across `/pricing`, `/billing`, `lib/stripe.ts`, and the setup doc.
+
+**Write-lane:** branch `feat/stripe-checkout-harden` → push → **PR for founder merge**. The migration apply + the TEST/live verification are founder steps.
