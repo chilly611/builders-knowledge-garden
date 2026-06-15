@@ -8,6 +8,7 @@ Each agent: keep the active-locks list short — only files actively being edite
 
 | Agent | File | Started (PT) | Status | Notes |
 |---|---|---|---|---|
+| Claude Code (killer-app-fidelity) | `src/design-system/components/{InstrumentGauge,SpecimenPlate,WorkflowEntryCard}.tsx` (NEW) + `specimen.css` (NEW); `src/app/killerapp/projects/[id]/ProjectDashboardClient.tsx` + `builder-lane.css` (NEW); `src/components/app-shell/config.ts`; `src/design-system/components/index.ts`; `docs/{in-flight,session-log}.md` | 2026-06-14 | RELEASED | **`feat/killer-app-fidelity` pushed (PR-only; founder merges).** Section A shared primitives (gauge/specimen/workflow, herbarium kit) + A1 Surfaces switcher + B1–B6 Builder-lane home. Data-driven from `useStageProject` (Marin reconciles $312K/$1.65M·Build 42%); honest "no data" for schedule/quality/field-log/recall. Build green, tsc/eslint clean on changed files, verified 1280+390 + ?project= no-bleed + chrome click-through in a real browser. |
 | _none_ | _none_ | _—_ | _—_ | _Mac 3 released Collect/Reflect+DB lock 2026-05-28 ~05:45 PT (see Recently released)._ |
 | _none_ | _none_ | _—_ | _—_ | _2026-05-20 evening — clean state after Wednesday's 13-commit ship. HEAD `f22f6e1` GREEN on Vercel. Pre-Thursday-demo._ |
 | _none_ | _none_ | _—_ | _—_ | _Agent B released its stage-chrome lock 2026-05-27 (see below)._ |

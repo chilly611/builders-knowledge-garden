@@ -6,6 +6,26 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-14 — [Claude Code] Killer App Builder lane fidelity (Section A shared primitives + B1–B6)
+**Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity` (off `origin/main` `0a87d15`/#53) · PR-only, awaiting founder merge.
+
+**Lane gate (first):** Confirmed the nav-chrome demo-blocker PR is **merged + closed** — it shipped as squash-merged **#27** (`55a50bd`, in `origin/main`); the stale local branch `fix/nav-chrome-demo-blockers` (`6deabc2`) shows 0 diff vs main on all five chrome files (CompassWorkflowNav, AskAnswer, ShellNav, ShellStrips, config) and its remote is deleted. Lane free → proceeded.
+
+**Discovery / reconciliation (read-only, reported before building):**
+- **Chrome canonical = `src/components/app-shell/`** (newest, from #27; mounted for all `/killerapp/*` non-stage routes via `ShellConfigProvider` in `killerapp/layout.tsx`; renders A2 project strip / A3 journey row / A4 stage chips / A5 budget readout in `ShellStrips`, data-driven from `useProjectLedger`). `stage-shell/` kept as the in-viewport stage specialization (`/killerapp/stages/*`); `killerapp-chrome/` is **dead** (only behind `NEXT_PUBLIC_APP_SHELL=0`) and holds the only hardcoded-Marin chrome coupling (`marin-adapter.ts`, moot). Did **not** fork `KAC_STAGES`/lifecycle.
+- **Data audit (`useStageProject` #18):** budget (spent/total) is real; **schedule variance + quality have NO source** → honest "no data"; field-log + recall have no GC source → honest empty. `?project=` flips every dimension with no Marin bleed (only the dead chrome falls back to Marin).
+- **Spec gap:** the named acceptance spec `docs/design/component-fidelity.md` **does not exist** anywhere on disk, and the only on-disk Builder mockup (`public/killer-app.html`) is a stale 2026-04 gamified XP prototype. Founder ruling (this session): **build to the design-system kit** (`.claude/skills/knowledge-gardens-design/ui_kits/builders-knowledge-garden/` — `Gauge`/`SpecimenCard`/`WorkflowCard`/`styles.css`), flag assumptions in the PR. `/mnt/skills/frontend-design` is absent in this environment.
+
+**What was built:**
+- **Section A shared primitives** (in `src/design-system/components/`, so Dream Machine inherits): `InstrumentGauge` (brass bezel, needle sweep, sage/amber/rust health per Decision 19/21, honest `tone="none"` no-data with parked needle, SSR-safe `useId`, reduced-motion static end-state), `SpecimenPlate` (PLATE NO. header, tag, Archivo-Black title, Cormorant quote, script caption), `WorkflowEntryCard` (accent marker, mono verb+arrow, `comingSoon`). Shared `specimen.css` (tokens only). A1 surface-switcher: added a **"Surfaces"** group (Killer App / Dream Machine / Knowledge Garden — verified live routes, emoji-free) to the compass-bloom nav in `app-shell/config.ts`.
+- **Section B Builder home** = rebuilt `ProjectDashboardClient.tsx` (was a demo-only stub that rendered "Project not found" for the real Marin UUID) into the data-driven herbarium home: B1 greeting (real stage/pct/client), B2 cinematic hero band (placeholder plate `/plates/chrome-killer-app.png` until the Cowork asset lands), B3 three gauges (Budget real → $312K/$1.65M sage; Schedule + Quality honest no-data), B4 field-log plate (honest empty), B5 recall card (honest no-data), B6 four workflow entries (real live routes, `?project=` preserved). Locked type trio (Archivo / Archivo Black / Space Mono / Cormorant Garamond) scoped under `.bld-root` mirroring `.ov-root` (no global token churn). `builder-lane.css` for layout + responsive (1280 3-col / 390 1-col).
+
+**Verification (real browser, worktree dev server :4137):** `next build` EXIT 0 (✓ Compiled in 8.1s); `tsc` 0 errors in changed files (121 baseline held); `eslint` clean on changed files; rendered at **1280 and 390** against the kit (hero, greeting, 3 brass gauges, journey/budget chrome); **`?project=` swap proven no-Marin-bleed** (unknown id → honest "We couldn't find that project", `bodyMentionsMarin:false`; Marin id → Marin data); journey node → `/killerapp/stages/plan` and budget cell → `/killerapp/budget` (both preserve project); A1 Surfaces group live in the bloom; no console errors. Marin reconciles ($312K/$1.65M, Build 42%, Harwell family).
+
+**Constraints honored:** tokens only (`--paper-*`/`--specimen-*`/`--ink-*`; teal `--specimen-teal` + brass `--specimen-brass` already existed); no `#E8443A`, no pure white, no dark, no "CRM"/"AI COO", no emoji in chrome; reduced-motion respected. Did NOT build Section C (Dream Machine). Note: an unmerged `feat/dream-machine-visuals` commit (`9403d01`) sits on its own branch — separate lane, no collision (I branched off `origin/main`).
+
+---
+
 ## 2026-05-29 — [Cowork] Session: FUNCTIONAL Owner Lane (real persisted approval loop)
 **Agent:** Cowork (Opus)
 **Commits:** `ed455a0` (structure + data + permissions) · `f165730` (Framer Motion) — local; awaiting founder push.

@@ -71,6 +71,19 @@ export function fmtMoney(n: number): string {
   return '$' + Math.round(n).toLocaleString('en-US');
 }
 
+/**
+ * A1 surface-switcher (2026-06-14): the cross-surface nav the chrome lacked.
+ * The live layout chose top-strips + a compass FAB over the kit's left
+ * sidebar, so the switcher lives at the top of the compass bloom rather than
+ * as a sidebar. Emoji-free per chrome rules; routes verified live (/dream,
+ * /knowledge). Copy mirrors the design-system kit's Sidebar.
+ */
+const SURFACE_NAV: ShellNavItem[] = [
+  { id: 'surface-killer', label: 'Killer App', sub: 'What gets done', href: '/killerapp', group: 'Surfaces' },
+  { id: 'surface-dream', label: 'Dream Machine', sub: 'What gets imagined', href: '/dream', group: 'Surfaces' },
+  { id: 'surface-garden', label: 'Knowledge Garden', sub: 'What gets remembered', href: '/knowledge', group: 'Surfaces' },
+];
+
 const STAGE_NAV = (activeSlug: string): ShellNavItem[] =>
   KAC_STAGES.map((s) => ({
     id: s.slug,
@@ -148,6 +161,7 @@ export function buildDefaultConfig(opts: {
   // known; neutral state keeps it to the essentials (no lane-specific tool
   // firehose for an unresolved visitor).
   const nav: ShellNavItem[] = [
+    ...SURFACE_NAV,
     { id: 'picker', label: 'Pick a project', sub: 'Your projects & tools', href: '/killerapp' },
     { id: 'budget', label: 'Budget', sub: 'Money & estimating', href: '/killerapp/budget', group: 'Money' },
     ...(laneKnown && lane ? [...STAGE_NAV(activeSlug), ...CATALOG_NAV(lane)] : []),
