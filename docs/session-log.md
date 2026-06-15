@@ -6,6 +6,28 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-15 — [Cowork] Seed & Portals: runtime portal imagery (lib + B2 wiring) + generalized staging script + umbrella seeds + DS section
+**Agent:** Cowork (Opus) · **Lane:** `bkg-portal-imagery` (`feat/portal-imagery`, off `origin/main` `ae0a00e`) · PR-only, founder merges. **Reconciles TWO Cowork sessions that worked this lane** — runtime wiring + staging-tool generalization — into one branch (in-repo files only; the umbrella + design-system work lives in OTHER repos and remains uncommitted in their own trees for founder review).
+
+**Runtime portals — the app now SHOWS WIP imagery (spec §1/§4):**
+- **`src/lib/portal-imagery.ts`** — universal, SSR-safe lib. `buildPortalPrompt({buildingType,location,style,stage,progress,kind})` = the CONSTANT herbarium render register (§2) + per-project substitutions (§3), **REUSING** `buildStudioPrompt` + `conceptFallbackFor` from `src/app/dream/design/shared.ts` (no duplication). Plus `archetypeFor`, `seedSlugFor` (archetype→seed; slugs match the staging set), `seedAssetUrl`, `portalRenderBody`, `portalFallbackSrc` (guaranteed data-URI).
+- **`src/lib/hooks/usePortalImage.ts`** — bleed-proof seed→render→swap→fallback flow; async results keyed to the active inputs so a `?project=` switch can't show a stale render; sends the Supabase bearer when signed in (anon allowed under the server cap).
+- **Wired the Builder B2 hero** (`ProjectDashboardClient.tsx`): the archetype-matched seed shows instantly as the WIP placeholder, a per-project render via `POST /api/v1/render` swaps in when ready, guaranteed concept-sketch fallback on any failure. Every input from `useStageProject()` — zero hardcoded Marin/SF. `builder-lane.css` adds one calm fade, disabled by the existing `prefers-reduced-motion` block (static end-state). Replaced the static `/plates/chrome-killer-app.png` placeholder.
+- **`src/lib/__tests__/portal-imagery.test.ts`** — 16/16: brand lock (no `#E8443A`/pure white/neon; no people in heroes), universality (Marin vs SF office → different prompts, no bleed), kind→API mapping, archetype/seed mapping, guaranteed fallback.
+
+**Staging tooling (founder-run, draft-only):**
+- **`portal-imagery.mjs`** (generalizes the original `stage-fidelity-assets.mjs`) — profile-driven `{buildingType,location,style,stage,progress}` → register (§2) + substitutions (§3). hero `flux-1.1-pro` `16:9` (**never `21:9`**), study `flux-dev` `4:5` + `negative_prompt`, thumb `1:1`. Rails kept: **draft-only/never-promotes**, `--dry-run` default, creds-gated, catalog behind `--catalog --schema-confirmed`; `--target=bkg|umbrella`, `--emit-manifest`. Archetypes: farmhouse-marin (verbatim seeds; reconciles to 4,000 sqft / 42%), sf-infill-fourplex, adu, kitchen-remodel. Preflight guard rejects bad aspect / `21:9` / wrong model / missing `negative_prompt` / banned color.
+- **CATALOG ROW FIXED against the LIVE `public.brand_assets`** (confirmed via Supabase MCP this session) — the original/generalized insert would have **400'd on four counts**: no `provenance` column (→ `metadata`); `asset_type` CHECK forbids `'diagram'`/`'image'` (→ poster/illustration/plate); `generator` CHECK forbids `'replicate'` (→ `'flux'`); `filename`/`mime_type`/`title`/`key` are NOT-NULL with no default (now set). Upsert on UNIQUE `key` for idempotent re-runs. (A duplicate ported `stage-fidelity-assets.mjs` from the runtime session was dropped in favor of this generalized successor.)
+- **Umbrella (other repo):** `--target=umbrella` → `knowledge-gardens-root/assets/fidelity/` (`seed-set.json` 4 heroes + `SEED-AND-PORTALS.md`). **Design-system (other repo):** new `seed-and-portals.md` section + README refs. Both OUTSIDE this repo — uncommitted there, founder reviews/commits separately.
+
+**Verification:** `next build` EXIT 0 (223 pages, ✓ compiled); `tsc` 121 baseline held (0 in changed files); `eslint` clean on changed files; lib unit tests 16/16; `portal-imagery.mjs --dry-run` exit 0, 32 assets, 0 guard failures; **real browser (worktree prod server :3940) at 1280 & 390** — Builder dashboard hydrates, hero shows the guaranteed concept-sketch fallback (no Replicate token + seeds not yet staged ⇒ render 503 + seed 404 ⇒ fallback), "Modern Farmhouse in Marin" / 4,000 sqft / Build 42% all from `useStageProject()`, no SSR crash, static plate gone.
+
+**Open / founder:** (1) run `node --env-file=.env portal-imagery.mjs --go --catalog --schema-confirmed` where Replicate + Supabase creds live (real spend + shared-prod `brand-assets` write — founder-supervised); promotion to `published` stays founder/service-role. (2) Reconcile the `storage_path` convention flagged in the script (object path `assets/bkg/fidelity/<slug>.png` vs row value `bkg/fidelity/<slug>`). (3) Teach the runtime lib the per-archetype seed slugs (sf-infill-fourplex/adu/kitchen) once staged — today non-residential heroes fall back to the concept sketch. (4) Wire Dream "In motion" cards + field-log thumbs to `usePortalImage` once those surfaces gain real entries (field log is honest-empty by Decision 19/21 — not fabricated).
+
+**Lane rules honored:** off `origin/main`, PR-only; draft-only staging, founder promotes; no shared-prod mutation by the agent (the catalog run is handed to the founder); tokens only; no `#E8443A` / pure white / neon; no people in heroes; reduced-motion static end-state.
+
+---
+
 ## 2026-06-14 — [Claude Code] Killer App Builder lane fidelity (Section A shared primitives + B1–B6)
 **Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity` (off `origin/main` `0a87d15`/#53) · PR-only, awaiting founder merge.
 

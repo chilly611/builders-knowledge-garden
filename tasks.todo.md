@@ -19,6 +19,14 @@
 
 > **Live backlog resets here (2026-06-07).** Completed/superseded batches through 2026-05-31 moved to [tasks.todo.archive.md](tasks.todo.archive.md).
 
+## NOW (2026-06-15 — Cowork: Seed & Portals · `bkg-portal-imagery` lane · draft-only · TWO sessions reconciled)
+- [x] **Runtime portals:** `src/lib/portal-imagery.ts` (`buildPortalPrompt` = register §2 + substitutions §3, reuses `buildStudioPrompt`/`conceptFallbackFor`) + `usePortalImage` hook; **wired Builder B2 hero** (seed→render→swap→guaranteed fallback, all from `useStageProject()`, `?project=` no-bleed, reduced-motion static); 16/16 lib unit tests; `next build` EXIT 0; real-browser 1280+390 (guaranteed fallback proven)
+- [x] Generalize `stage-fidelity-assets.mjs` → **`portal-imagery.mjs`** (profile-driven; hero 16:9 / study 4:5 / thumb 1:1; guard rejects 21:9; draft-only; `--target=bkg|umbrella`; archetypes: farmhouse-marin, sf-infill-fourplex, adu, kitchen-remodel)
+- [x] **Fixed `portal-imagery.mjs` catalog row vs LIVE `brand_assets`** (asset_type/generator CHECK enums; +filename/mime_type/title/key NOT-NULL; provenance→metadata; idempotent upsert on `key`) — confirmed via Supabase MCP; dropped the duplicate ported `stage-fidelity-assets.mjs`
+- [x] Stage umbrella surface-hero seeds → `knowledge-gardens-root/assets/fidelity/seed-set.json` + `SEED-AND-PORTALS.md` *(other repo)*
+- [x] DS "Seed & Portals" section (`Knowledge Gardens Design System/seed-and-portals.md` + README refs) *(other repo)*
+- [ ] **Founder:** PR/merge `feat/portal-imagery`; review + commit the umbrella/DS diffs in their own repos; run `--go --catalog --schema-confirmed` (Replicate + Supabase creds) to render+stage drafts; promote chosen seeds (bkg: `status='published'` / `approved_for_production=true`; umbrella: commit PNGs); reconcile the `storage_path` convention; teach the runtime lib per-archetype seed slugs once staged
+
 ## NOW (2026-06-12 — serial write lane; one BKG lane at a time)
 - [x] P0 crash path — cured by #24 ssr migration, founder-verified on prod
 - [x] Canon reconciliation (#26) — Visual-First = D20, Legible Judgment = D21
