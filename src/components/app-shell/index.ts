@@ -14,6 +14,7 @@
 export { ShellConfigProvider, useShellConfig, useSetShellConfig } from './ShellConfigContext';
 export { ShellStrips } from './ShellStrips';
 export { ShellNav } from './ShellNav';
+export { SurfaceSwitcher } from './SurfaceSwitcher';
 export { Seal } from './Seal';
 export { AskTheGarden } from './AskTheGarden';
 export { buildDefaultConfig, SEAL_SRC, laneLabel, fmtMoney, STAGE_PLAIN } from './config';

@@ -84,6 +84,51 @@
 .bkg-shell .gstrip-redacted-mark { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-aged); border: 1px solid var(--specimen-brass-aged); border-radius: var(--radius-xs); padding: 3px 7px; }
 .bkg-shell .gstrip-redacted-txt { font-family: var(--font-editorial); font-style: italic; font-size: 13px; }
 
+/* ─── A1 · SURFACE-SWITCHER BAR ──────────────────────────────────────────────
+   The one top bar (replaces legacy KillerAppNav). Warm aged-tan ground (NOT a
+   dark bar — locked "light only / no pure-dark grounds"), ink text, brass
+   accents. Self-scoped (.surfbar*), so it applies wherever it mounts. */
+.surfbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 99;
+  display: flex; align-items: center; gap: 16px; padding: 0 24px;
+  background: var(--paper-fold);
+  border-bottom: 1.5px solid var(--specimen-brass-aged);
+  box-shadow: var(--shadow-page-1);
+  font-family: var(--font-ui);
+}
+.surfbar-brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; text-decoration: none; min-width: 0; }
+.surfbar-brand-txt { display: flex; flex-direction: column; min-width: 0; }
+.surfbar-brand-name { font-size: 13px; font-weight: 600; letter-spacing: 0.4px; text-transform: lowercase; color: var(--ink-graphite); line-height: 1.1; }
+.surfbar-brand-sub { font-family: var(--font-editorial); font-style: italic; font-size: 12px; color: var(--ink-faded); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+
+.surfbar-tabs { display: flex; align-items: stretch; gap: 6px; flex: 1; justify-content: center; }
+.surfbar-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 14px; border: 1px solid transparent; border-radius: var(--radius-xs);
+  text-decoration: none; transition: all 140ms var(--ease-out-paper);
+}
+.surfbar-tab:hover { background: rgba(124, 98, 53, 0.08); }
+.surfbar-tab-label { font-size: 13px; font-weight: 600; letter-spacing: -0.005em; color: var(--ink-faded); }
+.surfbar-tab-sub { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); opacity: 0.7; }
+.surfbar-tab.is-active { background: var(--paper-cream); border-color: var(--specimen-brass-aged); box-shadow: var(--shadow-page-1); }
+.surfbar-tab.is-active .surfbar-tab-label { color: var(--ink-graphite); }
+.surfbar-tab.is-active .surfbar-tab-sub { color: var(--specimen-rust); opacity: 1; }
+.surfbar-tab:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 2px; }
+
+.surfbar-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-left: auto; }
+.surfbar-role { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--specimen-brass-aged); border: 1px solid var(--specimen-brass-aged); border-radius: var(--radius-xs); padding: 3px 7px; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .surfbar { gap: 8px; padding: 0 14px; }
+  .surfbar-brand-name, .surfbar-brand-sub { display: none; }
+  .surfbar-tab-sub { display: none; }
+  .surfbar-tab { padding: 8px 10px; }
+  .surfbar-role { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .surfbar-tab { transition: none; }
+}
+
 /* ─── PERSISTENT NAV — compass bloom + Ask/tell the garden ───────────────── */
 .bkg-shell .pnav { position: fixed; right: 18px; bottom: 18px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
 .bkg-shell .pnav-cluster { display: flex; align-items: center; gap: 10px; }

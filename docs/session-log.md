@@ -6,6 +6,20 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-15 — [Claude Code] A1 surface-switcher bar + chrome reconciliation (spec §A acceptance gate)
+**Agent:** Claude Code (Opus) · **Branch:** `feat/killer-app-fidelity`.
+
+Closed the spec-delta the founder prioritized first: the **A1 surface-switcher bar** + removing the legacy chrome mounts.
+- **New `src/components/app-shell/SurfaceSwitcher.tsx`** — the one top bar: seal + "Builder's Knowledge Garden" + active project (Cormorant italic, from `useStageProject`); 3 surface tabs (Killer App / Dream Machine / Knowledge Garden, Space-Mono undercaptions, active boxed) routing to `/killerapp` `/dream` `/knowledge` preserving `?project=`; right side reuses `AuthAndProjectIndicator` (no auth function dropped) + the resolved role (hidden when unknown — no fabricated yard/crew).
+- **`killerapp/layout.tsx` reconciled** — replaced `<KillerAppNav />` with `<SurfaceSwitcher />`; **removed the legacy `KillerAppChrome` + `CompassWorkflowNav` fallback mounts and the `NEXT_PUBLIC_APP_SHELL` rollback flag** so app-shell (SurfaceSwitcher + ShellStrips + ShellNav) is the ONE chrome (spec §E: "legacy mounts removed from layout.tsx"). `KillerAppNav` the *file* is untouched (still used by other routes — clients/field/finances/etc.).
+- **Brand call (flagged):** spec mockup shows a "brown/ink ground"; the locked "light backgrounds only / no pure-dark grounds" rule wins → bar ground is warm aged-tan `--paper-fold` with ink text + brass accents (also keeps the auth indicator legible). If the founder wants the literal dark bar, that needs a "no dark" exception + restyling the auth indicator.
+
+**Verified (real browser, :4137):** next build EXIT 0; tsc 0 errors in changed files (121 baseline held); eslint clean (also fixed a pre-existing `any` on `handleVoiceNavigate` → `NavigationIntent`); rendered 1280 (full bar) + 390 (collapses to logo + label-only tabs + account hamburger, bar 56px, no overlap with ShellStrips); no double-nav (legacy KillerAppNav gone); no console errors; tabs carry `?project=`; surface-active state correct.
+
+**Minor follow-up:** `AuthAndProjectIndicator` shows its own project pill ("Untitled project" unauthenticated) while the bar's left sub shows the canonical project — reconcile the two project-name sources (or suppress the pill's name) in a later pass.
+
+---
+
 ## 2026-06-14 — [Cowork → Claude Code] Killer App fidelity-pass image assets (materialized + dry-run green; --go blocked on creds)
 **Agents:** Cowork (Opus, authored the spec/script/SVG in its scratchpad) → Claude Code (Opus, materialized + validated + ran on the Mac). **Branch:** `feat/killer-app-fidelity`.
 
