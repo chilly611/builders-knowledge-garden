@@ -153,23 +153,44 @@ async function uploadDraft(slug, bytes) {
   return `${SB_URL}/storage/v1/object/public/${BUCKET}/${objectPath}`;
 }
 
-async function insertDraftRow(asset, storagePath, publicUrl, predictionId) {
+// Mappings matched to the LIVE public.brand_assets CHECK constraints (verified
+// 2026-06-15): asset_type ∈ plate/illustration/poster/…  generator ∈ flux/…
+const ASSET_TYPE = { hero: 'illustration', study: 'plate', thumb: 'illustration' };
+const RENDITION  = { hero: 'hero',         study: 'original', thumb: 'thumb' };
+const prettyName = (slug) => slug.replace(/^(hero|study|thumb)-sf-(fourplex-)?/, '').replace(/-/g, ' ');
+const titleFor = (a) => `SF Fourplex · ${a.kind === 'study' ? 'Study' : a.kind === 'hero' ? 'Hero' : 'Plate'} · ${prettyName(a.slug)}`;
+
+// Draft-only catalog insert, matched to the LIVE public.brand_assets schema:
+//   NOT-NULL (no default): storage_path, filename, mime_type, slug, title, key,
+//     asset_type, garden_scope. status default is 'working' which the CHECK
+//     REJECTS, so 'draft' must be set explicitly.
+//   UNIQUE: slug, key, storage_path → upsert on slug for idempotency.
+//   approved_for_production keeps its default (false) — this script never approves.
+async function insertDraftRow(asset, predictionId, publicUrl) {
   const row = {
-    garden_scope: 'bkg',
-    asset_type: asset.kind === 'study' ? 'diagram' : 'image',
+    bucket: BUCKET,
+    storage_path: `${CATALOG_PREFIX}/${asset.slug}.png`,  // 'assets/' stripped, extension kept (resolver re-adds assets/)
+    filename: `${asset.slug}.png`,
+    mime_type: 'image/png',
     slug: `bkg-${asset.slug}`,
-    storage_path: `${CATALOG_PREFIX}/${asset.slug}`,
+    key: `fidelity.${asset.slug}`,
+    title: titleFor(asset),
+    asset_type: ASSET_TYPE[asset.kind] || 'illustration',
+    garden_scope: 'bkg',
     status: 'draft',                      // <<< the only status this script ever writes
-    generator: 'replicate',
+    visibility: 'system',
+    rendition_role: RENDITION[asset.kind] || 'original',
+    generator: 'flux',
     model: asset.model,
     prompt: asset.prompt,
     params: asset.params,
-    provenance: { source: 'sf-fourplex-portal-seed', prediction_id: predictionId, public_url: publicUrl },
     intended_use: asset.intended_use,
+    metadata: { source: 'sf-fourplex-portal-seed', prediction_id: predictionId, public_url: publicUrl },
   };
-  const res = await fetch(`${SB_URL}/rest/v1/brand_assets`, {
+  const res = await fetch(`${SB_URL}/rest/v1/brand_assets?on_conflict=slug`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${SB_KEY}`, apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    headers: { Authorization: `Bearer ${SB_KEY}`, apikey: SB_KEY, 'Content-Type': 'application/json',
+               Prefer: 'return=representation,resolution=merge-duplicates' },
     body: JSON.stringify(row),
   });
   if (!res.ok) throw new Error(`catalog insert ${res.status}: ${await res.text()}`);
@@ -212,7 +233,7 @@ for (const a of queue) {
     if (UPLOAD) {
       log(`  ↳ uploading draft → ${PREFIX}/${a.slug}.png`);
       publicUrl = await uploadDraft(a.slug, bytes);
-      if (DO_CATALOG) { const row = await insertDraftRow(a, `${CATALOG_PREFIX}/${a.slug}`, publicUrl, predictionId); rowId = row?.id ?? null; log(`  ↳ catalog draft row ${rowId}`); }
+      if (DO_CATALOG) { const row = await insertDraftRow(a, predictionId, publicUrl); rowId = row?.id ?? null; log(`  ↳ catalog draft row ${rowId}`); }
     }
     manifest.push({ slug:a.slug, model:a.model, params:a.params, prediction_id:predictionId, public_url:publicUrl, storage_path:`${CATALOG_PREFIX}/${a.slug}`, status:'draft', catalog_row_id:rowId });
     log(`  ✓ ${a.slug}`);
