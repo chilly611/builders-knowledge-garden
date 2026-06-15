@@ -92,13 +92,13 @@ function heroA(p) {
   const light = p.interior
     ? 'soft warm daylight pouring through large windows, long gentle shadows'
     : 'at golden hour. Wide establishing shot, low warm sun raking from the left casting long soft shadows';
-  return `${open} of a ${p.style} ${p.buildingType} ${p.underPhrase||'under construction'} ${p.locPrep||'on'} ${p.location}, ${light}. ${p.materials}. ${p.constructionCue}. ${p.scene}. Palette strictly ${PHOTO_PALETTE}; muted and filmic, no oversaturation. Shot on medium-format, 35mm-equivalent, deep depth of field, fine natural grain, calm and aspirational. ${HERO_GUARDS}`;
+  return `${open} of a ${p.style} ${p.buildingType} ${p.underPhrase||'under construction'} ${p.locPrep||'on'} ${p.location}, ${light}. ${p.materials}. ${p.constructionCue}. ${p.scene}. Palette strictly ${PHOTO_PALETTE}; muted and filmic, no oversaturation. Shot on medium-format, 35mm-equivalent, deep depth of field, fine natural grain, calm and aspirational. ${HERO_GUARDS}${p.emphasisA ? ' ' + p.emphasisA : ''}`;
 }
 function heroB(p) {
   if (p.interior) {
-    return `Cinematic interior architectural photograph of a ${p.style} ${p.buildingType} ${p.underPhrase||'mid-remodel'}, evening — warm lamplight and the last of the daylight; ${p.materials}. ${p.constructionCue}. Strictly herbarium palette — cream, vellum, brass, amber warmth, teal-deep shadow; filmic, restrained. Medium-format look, fine grain. ${HERO_GUARDS}`;
+    return `Cinematic interior architectural photograph of a ${p.style} ${p.buildingType} ${p.underPhrase||'mid-remodel'}, evening — warm lamplight and the last of the daylight; ${p.materials}. ${p.constructionCue}. Strictly herbarium palette — cream, vellum, brass, amber warmth, teal-deep shadow; filmic, restrained. Medium-format look, fine grain. ${HERO_GUARDS}${p.emphasisB ? ' ' + p.emphasisB : ''}`;
   }
-  return `Cinematic architectural photograph of a ${p.style} ${p.buildingType} at the golden-to-blue dusk transition, three-quarter front angle. Warm interior light glowing amber through the windows against a cooling teal sky; ${p.materials}. ${p.constructionCue}. ${p.scene}. Strictly herbarium palette — cream, vellum, brass, amber warmth, teal-deep shadow; filmic, restrained, slight haze. Medium-format look, shallow-to-deep focus, fine grain. ${HERO_GUARDS}`;
+  return `Cinematic architectural photograph of a ${p.style} ${p.buildingType} at the golden-to-blue dusk transition, three-quarter front angle. Warm interior light glowing amber through the windows against a cooling teal sky; ${p.materials}. ${p.constructionCue}. ${p.scene}. Strictly herbarium palette — cream, vellum, brass, amber warmth, teal-deep shadow; filmic, restrained, slight haze. Medium-format look, shallow-to-deep focus, fine grain. ${HERO_GUARDS}${p.emphasisB ? ' ' + p.emphasisB : ''}`;
 }
 const studyPrompt = (subject) => REG + subject;
 const photoThumb  = (subject) => `${subject} ${THUMB_GUARDS}`;
@@ -236,7 +236,8 @@ const UMB_CATHEDRAL = { key:'umbrella-cathedral', target:'umbrella', heroesOnly:
   materials:'soaring exposed glue-laminated timber arches, a warm stone base, tall black-framed glazing, soft-brass roof flashing',
   constructionCue:'scaffolding along the nave and a tower crane to read the great room as mid-build',
   scene:'oak-studded ridgeline, dry golden grass, distant blue-green hills',
-  seeds:{ heroA:460017, heroB:460042 } };
+  emphasisA:'The hillside site is completely deserted — no people, no workers, no figures anywhere on the grounds or the plaza; vacant and pre-occupancy.',
+  seeds:{ heroA:460071, heroB:460042 } };
 
 const UMB_BUILDERS = { key:'umbrella-builders-surface', target:'umbrella', heroesOnly:true,
   label:'Umbrella — Builder\'s surface hero',
@@ -245,7 +246,9 @@ const UMB_BUILDERS = { key:'umbrella-builders-surface', target:'umbrella', heroe
   materials:'warm cream stucco and cedar, large black-framed windows, a soft-brass canopy',
   constructionCue:'framing and scaffolding on the upper floor to read as mid-build',
   scene:'low golden sun, a calm street, live oaks',
-  seeds:{ heroA:461017, heroB:461042 } };
+  emphasisA:'The street and storefronts are completely empty and deserted — no people, no parked cars, and absolutely no signage, lettering, logos, or shop names; blank unbranded glass on a quiet pre-opening street.',
+  emphasisB:'Interiors glow warm but are completely empty and unfurnished — no people, no silhouettes, no figures at the windows; vacant pre-occupancy rooms, and no signage or lettering anywhere.',
+  seeds:{ heroA:461071, heroB:461073 } };
 
 const PROFILES = [ MARIN, SF4, ADU, KITCHEN, UMB_CATHEDRAL, UMB_BUILDERS ];
 
