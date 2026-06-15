@@ -290,19 +290,28 @@ const FEATURE_COMPARISON: FeatureCategory[] = [
   },
 ];
 
-/* ─── Color Palette ─── */
+/* ─── Color Palette ───────────────────────────────────────────────────────
+ * Herbarium design tokens (src/styles/tokens.css). We reference the RAW
+ * --paper-* / --ink-* / --specimen-* tokens, NOT the semantic --bg/--fg/
+ * --accent/--danger aliases: globals.css is imported after tokens.css and
+ * re-declares those aliases to legacy non-herbarium values (--bg:#fff,
+ * --accent:#1D9E75, --danger:#dc3545), so the raw tokens are the only ones
+ * that resolve to the locked palette here. Keys retained for a tight diff;
+ * each now maps to its on-brand equivalent.
+ * ───────────────────────────────────────────────────────────────────────── */
 const COLORS = {
-  bg_dark: '#0A0F1C',
-  bg_medium: '#141B2D',
-  accent_green: '#1D9E75',
-  accent_orange: '#D85A30',
-  accent_purple: '#7F77DD',
-  accent_blue: '#378ADD',
-  text_primary: '#FFFFFF',
-  text_secondary: '#B8C1D4',
-  text_muted: '#7A8499',
-  border_light: 'rgba(255, 255, 255, 0.08)',
-  success: '#10B981',
+  bg_dark: 'var(--paper-cream)',        // page base — aged herbarium leaf (#F2E9D2)
+  bg_medium: 'var(--bg-raised)',        // raised card/panel surface (#FAF3DE)
+  accent_green: 'var(--specimen-teal)', // PRIMARY accent — CTA, highlight, toggle-on (#3C7A8A)
+  accent_orange: 'var(--specimen-amber)', // warm highlight — savings badge (#C68A3D); replaces near-red #D85A30
+  accent_purple: 'var(--specimen-sage)',  // (legacy key, no longer used)
+  accent_blue: 'var(--specimen-teal-deep)', // pressed / gradient pair (#234C5A)
+  text_primary: 'var(--ink-graphite)', // headings & primary text on cream (#2A2620)
+  text_secondary: 'var(--ink-sepia)',  // body copy (#5A3B1F)
+  text_muted: 'var(--ink-faded)',      // tertiary / strikethrough / dashes (#8C6A45)
+  border_light: 'var(--paper-edge)',   // 1px sepia hairlines (#C9B98A)
+  success: 'var(--specimen-sage)',     // (legacy key)
+  on_accent: 'var(--paper-cream)',     // light glyph/label/text on a filled accent surface
 };
 
 export default function PricingPage() {
@@ -363,7 +372,7 @@ export default function PricingPage() {
     minHeight: '100vh',
     background: `linear-gradient(135deg, ${COLORS.bg_dark} 0%, ${COLORS.bg_medium} 100%)`,
     padding: '60px 20px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily: 'var(--font-ui)',
   };
 
   const sectionStyle: React.CSSProperties = {
@@ -377,6 +386,7 @@ export default function PricingPage() {
   };
 
   const headingStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-display)',
     fontSize: 'clamp(2.5rem, 5vw, 4rem)',
     fontWeight: 700,
     color: COLORS.text_primary,
@@ -426,7 +436,8 @@ export default function PricingPage() {
   const toggleDotStyle: React.CSSProperties = {
     width: '24px',
     height: '24px',
-    background: COLORS.text_primary,
+    background: COLORS.on_accent,
+    border: `1px solid ${COLORS.border_light}`,
     borderRadius: '12px',
     transition: 'transform 0.3s ease',
     transform: isYearly ? 'translateX(32px)' : 'translateX(0)',
@@ -434,7 +445,7 @@ export default function PricingPage() {
 
   const savingsBadgeStyle: React.CSSProperties = {
     display: 'inline-block',
-    background: `linear-gradient(135deg, ${COLORS.accent_orange}, ${COLORS.accent_green})`,
+    background: COLORS.accent_orange, // flat herbarium amber — ink-graphite text reads on it
     color: COLORS.text_primary,
     padding: '4px 12px',
     borderRadius: '20px',
@@ -453,14 +464,16 @@ export default function PricingPage() {
   const getTierCardStyle = (highlighted: boolean): React.CSSProperties => ({
     position: 'relative',
     background: `linear-gradient(135deg, ${COLORS.bg_medium}, ${COLORS.bg_dark})`,
-    border: `2px solid ${highlighted ? COLORS.accent_green : COLORS.border_light}`,
-    borderRadius: '16px',
+    border: `${highlighted ? '2px' : '1px'} solid ${highlighted ? COLORS.accent_green : COLORS.border_light}`,
+    borderRadius: '6px',
     padding: '40px 32px',
     transition: 'all 0.3s ease',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     overflow: 'hidden',
+    // Specimen card — sits on the cream page with a short, warm shadow + sepia hairline
+    boxShadow: highlighted ? 'var(--shadow-page-3)' : 'var(--shadow-page-2)',
   });
 
   const tierBadgeStyle: React.CSSProperties = {
@@ -469,16 +482,18 @@ export default function PricingPage() {
     left: '50%',
     transform: 'translateX(-50%)',
     background: `linear-gradient(135deg, ${COLORS.accent_green}, ${COLORS.accent_blue})`,
-    color: COLORS.text_primary,
+    color: COLORS.on_accent,
+    fontFamily: 'var(--font-mono)',
     padding: '6px 16px',
     borderRadius: '20px',
-    fontSize: '0.75rem',
-    fontWeight: 700,
+    fontSize: '0.7rem',
+    fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.12em',
   };
 
   const tierNameStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-display)',
     fontSize: '1.5rem',
     fontWeight: 700,
     color: COLORS.text_primary,
@@ -498,6 +513,7 @@ export default function PricingPage() {
   };
 
   const priceNumberStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-display)',
     fontSize: '3.5rem',
     fontWeight: 700,
     color: COLORS.text_primary,
@@ -552,16 +568,18 @@ export default function PricingPage() {
   const ctaButtonStyle = (highlighted: boolean): React.CSSProperties => ({
     width: '100%',
     padding: '14px 24px',
+    fontFamily: 'var(--font-ui)',
     fontSize: '1rem',
     fontWeight: 600,
-    border: 'none',
-    borderRadius: '8px',
+    border: highlighted ? 'none' : `1px solid ${COLORS.border_light}`,
+    borderRadius: '4px',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
+    // Highlighted tier = filled teal (primary action); others = paper outline button
     background: highlighted
       ? `linear-gradient(135deg, ${COLORS.accent_green}, ${COLORS.accent_blue})`
-      : `rgba(255, 255, 255, 0.08)`,
-    color: COLORS.text_primary,
+      : COLORS.bg_medium,
+    color: highlighted ? COLORS.on_accent : COLORS.text_primary,
     marginTop: 'auto',
   });
 
@@ -570,6 +588,7 @@ export default function PricingPage() {
   };
 
   const comparisonHeadingStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-display)',
     fontSize: '2.5rem',
     fontWeight: 700,
     color: COLORS.text_primary,
@@ -581,19 +600,21 @@ export default function PricingPage() {
     width: '100%',
     borderCollapse: 'collapse',
     background: COLORS.bg_medium,
-    borderRadius: '12px',
+    borderRadius: '4px',
     overflow: 'hidden',
     border: `1px solid ${COLORS.border_light}`,
+    boxShadow: 'var(--shadow-page-2)',
   };
 
   const tableCategoryStyle: React.CSSProperties = {
-    fontSize: '0.85rem',
-    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.8rem',
+    fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.12em',
     color: COLORS.accent_green,
     padding: '16px 24px',
-    background: `rgba(29, 158, 117, 0.08)`,
+    background: `rgba(60, 122, 138, 0.08)`, // faint teal wash
     borderBottom: `1px solid ${COLORS.border_light}`,
   };
 
@@ -623,6 +644,7 @@ export default function PricingPage() {
   };
 
   const faqHeadingStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-display)',
     fontSize: '2.5rem',
     fontWeight: 700,
     color: COLORS.text_primary,
@@ -632,16 +654,18 @@ export default function PricingPage() {
 
   const faqItemStyle: React.CSSProperties = {
     marginBottom: '16px',
+    background: COLORS.bg_medium,
     border: `1px solid ${COLORS.border_light}`,
-    borderRadius: '8px',
+    borderRadius: '4px',
     overflow: 'hidden',
     transition: 'all 0.3s ease',
+    boxShadow: 'var(--shadow-page-1)',
   };
 
   const faqButtonStyle = (isExpanded: boolean): React.CSSProperties => ({
     width: '100%',
     padding: '20px 24px',
-    background: isExpanded ? `rgba(29, 158, 117, 0.08)` : 'transparent',
+    background: isExpanded ? `rgba(60, 122, 138, 0.08)` : 'transparent',
     border: 'none',
     borderBottom: isExpanded ? `1px solid ${COLORS.border_light}` : 'none',
     cursor: 'pointer',
@@ -695,10 +719,10 @@ export default function PricingPage() {
   const ctaLinkStyle: React.CSSProperties = {
     display: 'inline-block',
     padding: '14px 32px',
-    background: `linear-gradient(135deg, ${COLORS.accent_orange}, ${COLORS.accent_green})`,
-    color: COLORS.text_primary,
+    background: COLORS.accent_green, // flat teal primary CTA
+    color: COLORS.on_accent,
     textDecoration: 'none',
-    borderRadius: '8px',
+    borderRadius: '4px',
     fontWeight: 600,
     fontSize: '1rem',
     transition: 'all 0.3s ease',
@@ -817,10 +841,11 @@ export default function PricingPage() {
                     const button = e.currentTarget;
                     if (tier.highlighted) {
                       button.style.transform = 'scale(1.02)';
-                      button.style.boxShadow = `0 12px 24px rgba(29, 158, 117, 0.3)`;
+                      // short, warm teal-deep shadow — pages sit on a wall, not in glass
+                      button.style.boxShadow = `0 8px 20px rgba(35, 76, 90, 0.28)`;
                     } else {
                       button.style.opacity = '1';
-                      button.style.background = `rgba(255, 255, 255, 0.12)`;
+                      button.style.background = `var(--paper-vellum)`;
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -829,7 +854,7 @@ export default function PricingPage() {
                     button.style.boxShadow = 'none';
                     button.style.opacity = '1';
                     if (!tier.highlighted) {
-                      button.style.background = `rgba(255, 255, 255, 0.08)`;
+                      button.style.background = `var(--bg-raised)`;
                     }
                   }}
                 >
@@ -968,7 +993,7 @@ export default function PricingPage() {
             style={ctaLinkStyle}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(216, 90, 48, 0.3)';
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(35, 76, 90, 0.28)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
