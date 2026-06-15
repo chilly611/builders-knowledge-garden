@@ -114,7 +114,7 @@ export default function CopilotPanel({ jurisdiction, buildingType, projectContex
       const limitMsg: Message = {
         id: `limit-${Date.now()}`,
         role: "assistant",
-        content: `You've used ${aiQueriesUsedToday} of ${tier.limits.aiQueriesPerDay} AI queries today on the ${tier.name} plan. Upgrade to Pro ($49/mo) for unlimited queries.`,
+        content: `You've used ${aiQueriesUsedToday} of ${tier.limits.aiQueriesPerDay} AI queries today on the ${tier.name} plan. Upgrade to Pro ($99/mo) for unlimited queries.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, { id: `user-${Date.now()}`, role: "user", content: q, timestamp: new Date() }, limitMsg]);

@@ -23,18 +23,21 @@ interface SubscriptionState {
 const TIER_LABEL: Record<string, string> = {
   free: 'Free',
   explorer: 'Free',
-  pro: 'Pro — $49/mo',
+  pro: 'Pro — $99/mo',
   team: 'Team — $199/mo',
   enterprise: 'Enterprise — $499/mo',
 };
 
-// 2026-05-23: prices reflect actual products in Stripe sandbox
-// (prod_UGbZRkCHq81Tca / prod_UGbbXH0eDldM3M / prod_UGbexzn30upB0v).
-// Server-side, the actual price IDs come from STRIPE_PRICE_* env vars,
-// so these labels are display-only and must stay in sync if Stripe
-// pricing changes. Update both places together.
+// Display-only labels. The real charge is whatever the Stripe price object
+// behind STRIPE_PRICE_* costs, so these strings MUST equal it — otherwise a
+// buyer sees one price and is charged another. Canonical monthly (founder,
+// 2026-06-14): Pro $99 / Team $199 / Enterprise $499. Pro now shows $99, so
+// STRIPE_PRICE_PRO must point at a $99/mo recurring price (see
+// docs/STRIPE-SETUP.md). Sandbox products created at $199/$499 for Team/Ent:
+// prod_UGbZRkCHq81Tca / prod_UGbbXH0eDldM3M / prod_UGbexzn30upB0v. Keep these
+// labels, TIER_LABEL above, and lib/stripe.ts TIERS in sync.
 const UPGRADE_TIERS: Array<{ slug: 'pro' | 'team' | 'enterprise'; label: string; price: string }> = [
-  { slug: 'pro', label: 'Pro', price: '$49 / month' },
+  { slug: 'pro', label: 'Pro', price: '$99 / month' },
   { slug: 'team', label: 'Team', price: '$199 / month (up to 10 users)' },
   { slug: 'enterprise', label: 'Enterprise', price: '$499 / month' },
 ];

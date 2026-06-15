@@ -33,8 +33,8 @@ const TIERS: TierInfo[] = [
   {
     name: 'Pro',
     slug: 'pro',
-    monthlyPrice: 49,
-    yearlyPrice: 470,
+    monthlyPrice: 99,
+    yearlyPrice: 950,
     description: 'Everything you need to build professionally',
     features: [
       'Unlimited AI Copilot queries',

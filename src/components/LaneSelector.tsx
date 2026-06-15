@@ -20,7 +20,7 @@ export const LANES: Lane[] = [
     desc: "Projects, crews, invoicing, pipeline, compliance — one platform replacing Procore + QuickBooks + Excel.",
     color: "#1D9E75",
     features: ["Full PM suite", "AIA invoicing", "Pipeline", "Scheduling", "Safety briefings"],
-    pricing: "Pro $49/mo or Team $199/mo",
+    pricing: "Pro $99/mo or Team $199/mo",
   },
   {
     id: "diy", icon: "🔨", label: "DIY / Owner-Builder",
@@ -28,7 +28,7 @@ export const LANES: Lane[] = [
     desc: "First-time builder? We explain the codes, find the permits, and make sure you pass inspection.",
     color: "#D85A30",
     features: ["Dream Builder", "Permit navigator", "Budget tracking", "Code guidance"],
-    pricing: "Free → Pro $49/mo",
+    pricing: "Free → Pro $99/mo",
   },
   {
     id: "specialty", icon: "⚡", label: "Specialty Contractor",
@@ -36,7 +36,7 @@ export const LANES: Lane[] = [
     desc: "Electrical, plumbing, HVAC, concrete, steel, roofing — trade-specific codes and crew management.",
     color: "#7F77DD",
     features: ["Trade-specific codes", "Cert tracking", "Job costing", "Crew scheduling"],
-    pricing: "Pro $49/mo or Team $199/mo",
+    pricing: "Pro $99/mo or Team $199/mo",
   },
   {
     id: "supplier", icon: "📦", label: "Supplier / Manufacturer",
@@ -44,7 +44,7 @@ export const LANES: Lane[] = [
     desc: "List products, receive RFQs, auto-match when a code requires your material.",
     color: "#378ADD",
     features: ["Product listings", "RFQ inbox", "Code-connected products", "Lead analytics"],
-    pricing: "Pro $49/mo",
+    pricing: "Pro $99/mo",
   },
   {
     id: "equipment", icon: "🚜", label: "Equipment Sales & Rental",
@@ -52,7 +52,7 @@ export const LANES: Lane[] = [
     desc: "Fleet management, availability calendar, auto-bookings from project schedules.",
     color: "#BA7517",
     features: ["Fleet management", "Availability calendar", "Utilization tracking", "Booking pipeline"],
-    pricing: "Pro $49/mo or Team $199/mo",
+    pricing: "Pro $99/mo or Team $199/mo",
   },
   {
     id: "service", icon: "🔧", label: "Service Provider",
@@ -60,7 +60,7 @@ export const LANES: Lane[] = [
     desc: "Architects, engineers, surveyors, inspectors, consultants — portfolio + lead generation.",
     color: "#639922",
     features: ["Portfolio showcase", "Lead pipeline", "Proposal templates", "Client portal"],
-    pricing: "Pro $49/mo",
+    pricing: "Pro $99/mo",
   },
   {
     id: "worker", icon: "👷", label: "Job Seeker / Worker",
@@ -68,7 +68,7 @@ export const LANES: Lane[] = [
     desc: "Skills profile, certification tracking, training courses, job board, crew matching.",
     color: "#EC4899",
     features: ["Skills profile", "Cert tracking", "Training courses", "Job board"],
-    pricing: "Free → Pro $49/mo",
+    pricing: "Free → Pro $99/mo",
   },
   {
     id: "robot", icon: "🤖", label: "Robot / AI Agent",
