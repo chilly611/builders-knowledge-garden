@@ -27,6 +27,7 @@ import { authedFetch } from '@/lib/authed-fetch';
 import { useProject } from '@/lib/hooks/useProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import InstrumentGauges from '@/components/cockpit/InstrumentGauges';
+import CockpitHero from '@/components/cockpit/CockpitHero';
 import { applyJurisdictionOverride } from '@/lib/project-display';
 import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
 import { MARIN_AI_TAKE } from '@/lib/seed-data/marin-farmhouse';
@@ -425,6 +426,10 @@ export default function KillerappProjectShell() {
             boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
           }}
         >
+          {/* B1+B2 (fidelity spec) — crew greeting + cinematic hero, the warm
+              lead-in above the project context + instruments. */}
+          <CockpitHero />
+
           {displayQuery && (
             <div style={{ marginBottom: 20 }}>
               <div
