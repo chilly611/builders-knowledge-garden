@@ -80,7 +80,10 @@ export function fmtMoney(n: number): string {
  */
 const SURFACE_NAV: ShellNavItem[] = [
   { id: 'surface-killer', label: 'Killer App', sub: 'What gets done', href: '/killerapp', group: 'Surfaces' },
-  { id: 'surface-dream', label: 'Dream Machine', sub: 'What gets imagined', href: '/dream', group: 'Surfaces' },
+  // Dream Machine surface = the project-scoped "what-if" on the shared shell
+  // (component-fidelity §C) — keeps ?project= context via ShellNav.go(), unlike
+  // the standalone /dream creativity playground. (2026-06-16)
+  { id: 'surface-dream', label: 'Dream Machine', sub: 'What gets imagined', href: '/killerapp/dream', group: 'Surfaces' },
   { id: 'surface-garden', label: 'Knowledge Garden', sub: 'What gets remembered', href: '/knowledge', group: 'Surfaces' },
 ];
 
