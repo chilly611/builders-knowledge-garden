@@ -29,13 +29,10 @@ import type { Metadata } from 'next';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Suspense } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import ScrollStage from '@/design-system/components/ScrollStage';
 import { STAGE_ACCENTS } from '@/design-system/tokens/stage-accents';
-import { LIFECYCLE_STAGES } from '@/lib/lifecycle-stages';
-import WorkflowPickerSearchBox from './WorkflowPickerSearchBox';
-import SearchBoxErrorBoundary from './SearchBoxErrorBoundary';
+import CaptureZone from './CaptureZone';
 import KillerappProjectShell from './KillerappProjectShell';
 import EmptyStateOrProjectIndicator from './EmptyStateOrProjectIndicator';
 import DiyCockpitOverlay from './DiyCockpitOverlay';
@@ -273,71 +270,15 @@ export default async function KillerAppPage({
           so it travels with the nav bar on every /killerapp/* route and
           never overlaps the stage chips. Removed standalone instance here. */}
 
-      {/* Hero with blueprint grid background.
-          2026-05-28 (brand consolidation pass):
-            - Replaced the 180px B-mark Logomark with the canonical tree
-              illustration. The B mark is a chrome / brand pill asset
-              (top-left, 40px) — using it twice at 180px in the hero made
-              the mark feel decorative rather than authoritative. The tree
-              IS the hero illustration; the B IS the brand mark. One job
-              each.
-            - Gated the whole hero on `!activeProjectId`. Once a project is
-              selected (`?project=<id>`), KillerappProjectShell renders the
-              project dashboard inline and the empty-state hero is gone.
-              "Pick a workflow." copy only makes sense BEFORE you've picked
-              one. */}
-      {!activeProjectId && (
-        <header className={styles.heroSection}>
-          {/* Blueprint 32px grid background */}
-          <div className={styles.blueprintGrid} />
-
-          {/* Hairline rule — architectural aesthetic */}
-          <div className={styles.hairlineRule} />
-
-          <div className={styles.heroContent}>
-            {/* Tree illustration anchors the empty state — evocative without
-                pretending to be the brand mark. */}
-            <div className={styles.heroLogomark}>
-              <Image
-                src="/logos/gardens/knowledge-gardens-tree.png"
-                alt=""
-                width={180}
-                height={180}
-                priority
-              />
-            </div>
-
-            <div className={styles.heroTextStack}>
-              <h1 className={styles.heroHeading}>
-                Pick a workflow.
-              </h1>
-
-              <p className={styles.heroSubhead}>
-                Start anywhere in the 7-stage lifecycle. Every tool wired together.
-              </p>
-            </div>
-          </div>
-
-          {/* Natural-language entry: styled as engraved field */}
-          <div className={styles.searchBoxWrapper}>
-            <div
-              style={{
-                fontSize: '13px',
-                color: 'var(--graphite)',
-                opacity: 0.65,
-                marginBottom: '8px',
-                fontWeight: 400,
-                letterSpacing: '0.2px',
-              }}
-            >
-              Tell us what you&apos;re working on. We&apos;ll point you at the right tool.
-            </div>
-            <SearchBoxErrorBoundary>
-              <WorkflowPickerSearchBox />
-            </SearchBoxErrorBoundary>
-          </div>
-        </header>
-      )}
+      {/* CAPTURE ZONE (2026-06-15 redline, fix 1): the obvious first move.
+          The capture card — a real text box + a modality row (talk · photo ·
+          video · upload · sketch · note), all routing into the one #21
+          capture/persist path — replaces the old "Pick a workflow." hero.
+          Gated on `!activeProjectId`: once a project is selected
+          (`?project=<id>`), KillerappProjectShell renders that project's AI
+          take inline and the capture-first empty state is gone. "Pick a
+          workflow" is demoted below into the single ordered stage list. */}
+      {!activeProjectId && <CaptureZone />}
 
       {/*
         Project Spine v1 — when ?project=<id> is present, this client
@@ -367,6 +308,17 @@ export default async function KillerAppPage({
         <Suspense fallback={null}>
           <EmptyStateOrProjectIndicator />
         </Suspense>
+
+        {/* "Pick a workflow" — DEMOTED beneath the capture zone to the ONE
+            ordered workflow presentation (stages 1→7 below). This is now the
+            single list: the project shell's duplicate "Choose your next move"
+            group was removed so the IA isn't doubled (2026-06-15 redline, fix 1). */}
+        <div className={styles.pickerHeader}>
+          <span className={styles.pickerEyebrow}>Or pick a workflow</span>
+          <p className={styles.pickerSub}>
+            Start anywhere in the 7-stage lifecycle — every tool wired together.
+          </p>
+        </div>
 
         {stages.map((stage) => {
           const list = (byStage.get(stage.id) ?? []).sort((a, b) =>
