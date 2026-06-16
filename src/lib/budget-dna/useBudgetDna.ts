@@ -46,9 +46,8 @@ export function useBudgetDna(): UseBudgetDnaResult {
   const isMarin = isCanonicalProjectId(sp.projectId);
   const [storedLines, setStoredLines] = useState<BudgetLine[] | null>(null);
 
-  // Non-canonical projects read their lines from the BudgetClient spine.
   useEffect(() => {
-    if (isMarin) { setStoredLines(null); return; }
+    if (getDemoFixture(sp.projectId)) { setStoredLines(null); return; }
     if (typeof window === 'undefined') return;
     try {
       const raw = window.localStorage.getItem(storageKeyFor(sp.projectId));
@@ -64,8 +63,8 @@ export function useBudgetDna(): UseBudgetDnaResult {
   }, [sp.projectId, isMarin]);
 
   return useMemo<UseBudgetDnaResult>(() => {
-    const lines: DnaLine[] = isMarin ? MARIN_BUDGET_LINES : (storedLines ?? []);
-    const phases: PhaseInput[] = isMarin ? MARIN_PLAN_PHASES : DEFAULT_BUILD_PHASES;
+    const lines: DnaLine[] = fixture?.budgetLines ?? storedLines ?? [];
+    const phases: PhaseInput[] = fixture?.phases ?? DEFAULT_BUILD_PHASES;
     const total = sp.budgetTotal ?? 0;
     const totals = ledger.budget ?? {
       total,
@@ -83,5 +82,5 @@ export function useBudgetDna(): UseBudgetDnaResult {
       ready: ledger.ready && (isMarin || storedLines !== null),
       lane: sp.lane,
     };
-  }, [isMarin, storedLines, ledger.budget, ledger.ready, sp.budgetTotal, sp.budgetSpent, sp.lane]);
+  }, [fixture, storedLines, ledger.budget, ledger.ready, sp.budgetTotal, sp.budgetSpent, sp.lane]);
 }

@@ -226,6 +226,31 @@
   flex: 1;
 }
 
+/* "Pick a workflow" — DEMOTED secondary entry beneath the capture zone.
+   (2026-06-15 redline, fix 1) — the single ordered 1→7 workflow presentation. */
+.pickerHeader {
+  margin: 8px 0 24px;
+  padding-top: 28px;
+  border-top: 1px solid var(--faded-rule);
+}
+
+.pickerEyebrow {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.pickerSub {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--graphite);
+  opacity: 0.65;
+  font-style: italic;
+}
+
 /* Stage section */
 .stageSection {
   margin-bottom: 72px;

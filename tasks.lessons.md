@@ -2579,3 +2579,28 @@ src/lib/supabase.ts client. Route-level integration tests: non-owner collaborato
 collaborator (401/403/502/500 covered). RLS backstop policies drafted in
 supabase/migrations/20260611_ccp_member_write_rls.sql — NOT yet applied to prod (shared
 instance, founder-gated).
+
+## 2026-06-15 — Changing a SHARED hook's behavior: opt-in, don't broadcast (cockpit-capture-voice)
+The redline said "in `useSpeechRecognition` set continuous=true… don't auto-stop." Taken
+literally that's a one-line flip — but `grep -rl useSpeechRecognition src` found **8 consumers**,
+and two of them (`VoiceCommandNav`, `VoiceCaptureFAB`) depend on the *exact* legacy behavior:
+they wait for the 8s silence timer to flip `listening=false` and THAT is what fires their
+command-match / contact-submit. Globally removing the auto-stop would have silently broken voice
+nav and the CRM capture FAB — a regression nowhere near the file I was "fixing."
+
+### The rules
+- Before changing a SHARED hook/util/component's behavior, `grep -rl` its consumers and read how
+  each one drives it. A behavior change is an API change even when the signature doesn't move.
+- Make the new behavior **opt-in via an options arg whose defaults reproduce the old behavior
+  byte-for-byte**; have only the surface that needs it pass the new options. Zero-regression beats
+  a "cleaner" global flip every time. (CaptureZone passes `{continuous, autoRestart,
+  silenceTimeoutMs:null, accumulate}`; the other 7 call sites are untouched.)
+- Preserve the full public return shape (incl. `@deprecated` aliases + the existing `error`
+  union) — additive fields only (`liveTranscript`, `rawPhrases`).
+- "Raw vs boiled" is a data-model boundary, not a UI flag: keep the user's words VERBATIM in
+  `raw_input`; let any summarizing land in `ai_summary`. Never pipe the transcript through a
+  structurer before it hits the box on screen.
+- Headless Chromium has no mic — the voice happy-path can still be proven in a real browser by
+  injecting a fake `SpeechRecognition` and driving `onresult`/`onend` through the actual hook
+  (interim→live, final→commit, simulated ~60s onend→restart, second phrase→accumulates). The
+  real-mic pass stays a founder gate.
