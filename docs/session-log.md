@@ -6,6 +6,31 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-15 — [Claude Code] Budget-DNA ribbon + 8-category color system + time-sync + chrome consolidation
+**Agent:** Claude Code (Opus) · **Lane:** `bkg-budget-dna` (`feat/budget-dna-ribbon`, off `origin/main` `76e60d8`) · PR-only, founder merges. Scope split confirmed in `in-flight.md`: this lane owns ONLY the budget ribbon + journey/time row + color tokens; `feat/killer-app-fidelity` (released) owns the rest of the shell.
+
+**Blocker resolved up front:** the spec `docs/design/budget-dna-and-color-system.md` + the "Cowork data-viz prototype / per-week-per-category data shape" the task referenced **did not exist anywhere** (no branch, no worktree, no Projects dir). Surfaced to founder with the code-grounded landscape; founder chose **draft + build in one PR**, **rebrand the existing palette**, **full retire stage-shell**. Built to those rulings.
+
+**§1 color system** (`src/styles/tokens.css` + `src/design-system/tokens/colors.ts` lineage): 8 herbarium category fills (`--cat-*`), each **verified ≥3:1 on cream** + **distinct from every stage-accent hex** + paired with a texture + label (never hue-alone); payment-state treatments (`--pay-*`, paid=sage everywhere); `--cat-profit` lens-gated flag.
+
+**§3 data model** (`src/lib/budget-dna/`, pure + 28 unit tests green): `lineToCategory` (CSI→category map + keyword rules), `schedulePhases` (parallel-group week offsets; Marin = 37 wk), `deriveBudgetDna` (per-week-per-category series + cumulative-spend playhead + paid/due/overdue ticks + lens-gated projected profit). `useBudgetDna` binds it to `useStageProject`/`useProjectLedger` — **zero hardcoded names**; Marin's 8 buckets sum to exactly $1.65M, playhead lands at **wk 7** ($312.4K spent).
+
+**§2 ribbon** (`BudgetDnaRibbon.tsx` in app-shell `ShellStrips`, top strip above the journey row): hand-coded SVG stacked-category streamgraph (no d3 dep), past-solid / future-hatched-veil, baseline payment ticks, **lens-aware right cap** (Owner = total/paid/unpaid, NO margin; builder = projected gross profit + sub-markup), collapsible specimen-key legend. **One shared WK playhead** time-synced with the journey row (scrub either → both move; reduced-motion = no draw-in).
+
+**§4 reflections:** budget line-item table (`BudgetClient` `LineRow`) colors each line by its canonical trade category (same color+texture as the ribbon) + per-line chip; 10 accounting headers rebranded to herbarium (off-brand `#1D9E75`/`#1565C0` removed) + state chips → `--pay-*`; `InstrumentGauge` gains an additive `segments` prop → the dashboard Budget gauge shows a category-composition "burn" ring. Workflow-card stage accents left stage-based (untouched).
+
+**§5 chrome consolidation:** deleted the dead `killerapp-chrome` chrome set (10 files: KillerAppChrome + BudgetRibbon/JourneyTimeRow/StageNode/TimelineMarkers/CompletionRing/SpendBlock/IncomeStackedTracks/HeadroomGauge/marin-adapter — zero mounts/importers; barrel keeps the still-used `KAC_STAGES`/`Kac*` types). `StageShell` now **consumes the canonical `BudgetDnaRibbon`** (its duplicate compact BudgetRibbon deleted) so every stage route shows the one ribbon.
+
+**Flagged / NOT done (with reason, per tight-scope):** the literal "ShellStrips on all 7 stage routes" — stage bodies depend on `StageShell`'s bounded `100dvh-48` height (`size-up:386` `height:100%`/`flex:1`), so hosting the full global strips needs per-stage layout rework that would risk the shipping-gate stage flow. StageShell remains the per-stage scaffold (title + ProToggle + StageActionBar + consumed ribbon + JourneyRow stage-nav). Remaining: unify the journey row (app-shell inline vs `stage-shell/JourneyRow`). Cross-lane additive touch on the released fidelity-lane `InstrumentGauge`/`ProjectDashboardClient` (the gauge `segments`) — flagged in in-flight.
+
+**Verification:** `tsc` clean on all changed files (only pre-existing `voice-commands.test`/`CommandPalette.test` errors remain — uninstalled test deps, untouched); 28/28 budget-dna unit tests; **real browser on the worktree dev server (`:4123`) at 1280 + 390** — project dashboard, budget page, and Size Up stage all render the ribbon; silhouette reads materials-early / finishes-late; playhead wk 7 synced ribbon↔journey; owner-lane cap hides margin (verified via the null/owner path); cap reconciles $1.65M / $312K paid / $1.34M unpaid; no console errors. `next build` — see PR.
+
+**Open / founder (§6 of the spec):** ratify the projected gross-margin assumption (`GROSS_MARGIN_PCT 0.15` / `SUB_MARKUP_PCT 0.10`), the profit-visible lens set (gc/contractor/diy), the playhead=spend-front vs journey-fill=stage-progress split, and the rebranded accounting-category header hexes.
+
+**Lane rules honored:** off `origin/main`, PR-only; tokens only, no `#E8443A`/pure-white/pure-dark; worktree `npm ci` (no symlink); appended this log; in-flight lock claimed + released.
+
+---
+
 ## 2026-06-15 — [Cowork] Seed & Portals: runtime portal imagery (lib + B2 wiring) + generalized staging script + umbrella seeds + DS section
 **Agent:** Cowork (Opus) · **Lane:** `bkg-portal-imagery` (`feat/portal-imagery`, off `origin/main` `ae0a00e`) · PR-only, founder merges. **Reconciles TWO Cowork sessions that worked this lane** — runtime wiring + staging-tool generalization — into one branch (in-repo files only; the umbrella + design-system work lives in OTHER repos and remains uncommitted in their own trees for founder review).
 
