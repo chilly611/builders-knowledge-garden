@@ -15,12 +15,14 @@
  * render inside this same chrome — that's the rule.
  */
 
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { StageChromeProvider } from './stage-chrome-context';
 import JourneyRow from './JourneyRow';
-import BudgetRibbon from './BudgetRibbon';
 import ProToggle from './ProToggle';
 import StageActionBar from './StageActionBar';
+import BudgetDnaRibbon from '@/components/app-shell/BudgetDnaRibbon';
+import { useBudgetDna } from '@/lib/budget-dna';
+import '@/components/app-shell/app-shell.css';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
 import { colors, fonts } from '@/design-system/tokens';
 
@@ -49,12 +51,15 @@ export default function StageShell({
   projectId,
   projectName,
   projectMeta,
-  initialBudget,
-  budgetSpent,
   primaryAction,
   children,
 }: StageShellProps) {
   const accent = STAGE_ACCENTS[stageId].hex;
+  // Stage chrome now consumes the ONE canonical Budget-DNA ribbon (the
+  // stage-shell BudgetRibbon duplicate was retired 2026-06-15) — same
+  // streamgraph + shared playhead the rest of the app shows.
+  const dna = useBudgetDna();
+  const [scrubWeek, setScrubWeek] = useState<number | null>(null);
 
   return (
     <StageChromeProvider>
@@ -122,8 +127,18 @@ export default function StageShell({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
-              <BudgetRibbon projectId={projectId} initialBudget={initialBudget} spent={budgetSpent} />
               <ProToggle />
+            </div>
+          </div>
+
+          {/* Canonical Budget-DNA ribbon — full-width strip (wrapped in
+              .bkg-shell so the chrome styles resolve), bled to the header edges. */}
+          <div
+            className="bkg-shell"
+            style={{ marginLeft: 'calc(-1 * clamp(12px, 3vw, 28px))', marginRight: 'calc(-1 * clamp(12px, 3vw, 28px))' }}
+          >
+            <div className="gstrips is-lit">
+              <BudgetDnaRibbon dna={dna} scrubWeek={scrubWeek} onScrub={setScrubWeek} />
             </div>
           </div>
 

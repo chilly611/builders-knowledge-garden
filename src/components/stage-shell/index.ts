@@ -1,16 +1,17 @@
 /**
- * stage-shell — the persistent stage chrome for the Plan + Build stages.
+ * stage-shell — the per-stage scaffold every lifecycle stage lives inside.
  *
- * Distinct from Agent A's `@/components/killerapp-chrome` (the V3 layout-level
- * chrome). These are the stage-level components the Plan + Build stages
- * compose: StageShell wraps a stage body with the JourneyRow, BudgetRibbon,
- * and ProToggle. The two chrome systems coexist pending reconciliation.
+ * StageShell wraps a stage body with the stage title, the JourneyRow stage
+ * nav, the ProToggle, and (optionally) the StageActionBar — and now CONSUMES
+ * the one canonical Budget-DNA ribbon from `@/components/app-shell` rather than
+ * carrying its own. The old stage-shell BudgetRibbon duplicate was retired
+ * 2026-06-15 (budget-DNA chrome consolidation); the dead `killerapp-chrome`
+ * chrome was deleted in the same pass. app-shell is the single chrome source.
  */
 
 export { default as StageShell } from './StageShell';
 export type { StageShellProps } from './StageShell';
 export { default as JourneyRow } from './JourneyRow';
-export { default as BudgetRibbon } from './BudgetRibbon';
 export { default as ProToggle } from './ProToggle';
 export {
   StageChromeProvider,

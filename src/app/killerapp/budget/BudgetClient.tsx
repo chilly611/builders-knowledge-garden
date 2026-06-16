@@ -42,6 +42,7 @@ import { useProject } from '@/lib/hooks/useProject';
 import { authedFetch as authedFetchJSON } from '@/lib/authed-fetch';
 import { useRealtimeChannel } from '@/lib/use-realtime-channel';
 import { normalizeStoredLines } from './budget-storage';
+import { lineToCategory, CATEGORY_BY_ID } from '@/lib/budget-dna';
 import CostPerSquareFootBadge from '@/design-system/components/CostPerSquareFootBadge';
 import { colors } from '@/design-system/tokens/colors';
 import {
@@ -92,7 +93,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'materials',
     label: 'Materials',
     emoji: '\u{1F3D7}\u{FE0F}', // construction
-    hex: '#C9913F',
+    hex: '#A9743C',
     hint: 'Lumber, drywall, paint, hardware, fixtures, fasteners…',
     missingHint:
       'Most projects this size need at least 3 material line items. Want a template?',
@@ -101,7 +102,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'raw-supplies',
     label: 'Raw materials & supplies',
     emoji: '\u{1F9F1}',
-    hex: '#B6873A',
+    hex: '#7C6235',
     hint: 'Concrete, sand, gravel, rebar, lumber stock…',
     missingHint:
       'No raw materials yet — concrete, gravel and rebar usually live here.',
@@ -110,7 +111,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'labor',
     label: 'Labor (W-2)',
     emoji: '\u{1F477}\u{200D}\u{2642}\u{FE0F}',
-    hex: '#E05E4B',
+    hex: '#6E4527',
     hint: 'Crew wages, foreman, helper hours, overtime…',
     missingHint:
       'Add the crew you’re paying weekly — even a rough hourly × hours is a real start.',
@@ -119,7 +120,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'subcontractors',
     label: 'Subcontractors',
     emoji: '\u{1F91D}',
-    hex: '#B23A7F',
+    hex: '#3C7A8A',
     hint: 'Electrician, plumber, HVAC, roofer, drywaller…',
     missingHint:
       'Sub bids belong here — drop the amounts even before contracts are signed.',
@@ -128,7 +129,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'equipment',
     label: 'Equipment',
     emoji: '\u{1F69C}',
-    hex: '#2E9E9A',
+    hex: '#5C6660',
     hint: 'Rentals, lifts, scaffold, tools, generator, fuel…',
     missingHint:
       'Track rentals and big tool buys here so they don’t surprise you later.',
@@ -137,7 +138,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'permits',
     label: 'Permits & fees',
     emoji: '\u{1F4DC}',
-    hex: '#3E3A6E',
+    hex: '#5A3B1F',
     hint: 'Building permit, plan check, inspection fees, impact fees…',
     missingHint:
       'Pull a number from your jurisdiction — even an estimate keeps the budget honest.',
@@ -146,7 +147,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'admin',
     label: 'Admin & office',
     emoji: '\u{1F4BC}',
-    hex: '#5E4B7C',
+    hex: '#4F4636',
     hint: 'Office rent, software, phone, printing, mileage…',
     missingHint:
       'Don’t forget your phone, software, and the truck — they all add up.',
@@ -155,7 +156,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'insurance',
     label: 'Insurance & bonds',
     emoji: '\u{1F6E1}\u{FE0F}',
-    hex: '#7FCFCB',
+    hex: '#234C5A',
     hint: 'GL, workers comp, builder’s risk, performance bond…',
     missingHint:
       'Insurance and bonds are usually a % of contract — drop a placeholder now.',
@@ -164,7 +165,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'contingency',
     label: 'Contingency',
     emoji: '\u{1F9F0}',
-    hex: '#6F6F73',
+    hex: '#8C6A45',
     hint: '5–10% buffer for the unknown unknowns…',
     missingHint:
       'Every project needs a buffer. 10% of your current total is a safe starting point.',
@@ -173,7 +174,7 @@ const CATEGORIES: CategoryDef[] = [
     id: 'profit',
     label: 'Profit margin',
     emoji: '\u{1F4B5}',
-    hex: '#1D9E75',
+    hex: '#2E5E3C',
     hint: 'What you actually take home after costs…',
     missingHint:
       'You’re running a business — bake in 10–20% profit on top of all costs.',
@@ -186,33 +187,35 @@ const STATE_META: Record<
   BudgetState,
   { label: string; emoji: string; bg: string; fg: string; border: string }
 > = {
+  // Herbarium payment-state treatments (mirrors --pay-* in tokens.css).
+  // paid = sage everywhere; never hue-alone (each keeps its emoji + label).
   pending: {
     label: 'Pending',
     emoji: '\u{23F3}',
-    bg: '#F4F0E6',
-    fg: '#6F6F73',
-    border: '#C9C3B3',
+    bg: '#EDE4CC',
+    fg: '#8C6A45', // --pay-pending (ink-faded)
+    border: '#C9B98A',
   },
   estimated: {
     label: 'Estimated',
     emoji: '\u{1F4DD}',
-    bg: '#FFF3E0',
-    fg: '#E65100',
-    border: '#FFD3A8',
+    bg: '#F3E4C8',
+    fg: '#8C5E22', // --pay-estimated (amber)
+    border: '#E2CFA6',
   },
   'locked-in': {
     label: 'Locked-in',
     emoji: '\u{1F512}',
-    bg: '#E8F5E9',
-    fg: '#1D9E75',
-    border: '#9FD9BB',
+    bg: '#D9E6E3',
+    fg: '#234C5A', // --pay-committed (teal-deep)
+    border: '#A6C4CC',
   },
   paid: {
     label: 'Paid',
     emoji: '\u{1F4B8}',
-    bg: '#E3F2FD',
-    fg: '#1565C0',
-    border: '#A5C9EC',
+    bg: '#E0E8D6',
+    fg: '#3E5638', // --pay-paid (sage-deep)
+    border: '#B5C4A8',
   },
 };
 
@@ -844,14 +847,16 @@ function StackedBar({
 
 interface LineRowProps {
   line: BudgetLine;
-  categoryHex: string;
   onUpdate: (patch: Partial<BudgetLine>) => void;
   onDelete: () => void;
   onCycleState: () => void;
 }
 
-function LineRow({ line, categoryHex, onUpdate, onDelete, onCycleState }: LineRowProps) {
+function LineRow({ line, onUpdate, onDelete, onCycleState }: LineRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Reflect the canonical Budget-DNA trade category — the SAME color (and
+  // texture) this line carries in the ribbon, so table ↔ ribbon read as one.
+  const canon = CATEGORY_BY_ID[lineToCategory(line)];
 
   const inputStyle: CSSProperties = {
     width: '100%',
@@ -874,8 +879,15 @@ function LineRow({ line, categoryHex, onUpdate, onDelete, onCycleState }: LineRo
           value={line.description}
           placeholder="e.g., 20 yards concrete for foundation"
           onChange={(e) => onUpdate({ description: e.target.value })}
-          style={{ ...inputStyle, borderLeft: `3px solid ${categoryHex}` }}
+          style={{ ...inputStyle, borderLeft: `3px solid ${canon.cssVar}` }}
         />
+        <span
+          title={`Budget-DNA category: ${canon.label}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: 10, color: PAL.graphite, fontFamily: fonts.mono, letterSpacing: '0.04em' }}
+        >
+          <span aria-hidden style={{ width: 9, height: 9, borderRadius: 2, background: canon.cssVar, border: '1px solid rgba(20,16,10,0.25)', flex: '0 0 auto' }} />
+          {canon.short}
+        </span>
       </td>
       <td style={{ padding: '8px', verticalAlign: 'top', width: 110 }}>
         <input
@@ -1209,7 +1221,6 @@ function CategoryCard({
                     <LineRow
                       key={line.id}
                       line={line}
-                      categoryHex={category.hex}
                       onUpdate={(patch) => onUpdateLine(line.id, patch)}
                       onDelete={() => onDeleteLine(line.id)}
                       onCycleState={() => onCycleState(line.id)}
