@@ -77,8 +77,43 @@
 .bkg-shell .jnode.is-cur .jname { color: var(--specimen-rust); }
 .bkg-shell .jplain { font-family: var(--font-editorial); font-style: italic; font-size: 10px; color: var(--ink-faded); opacity: 0.75; white-space: nowrap; }
 .bkg-shell .jnode:hover .jplain { opacity: 1; color: var(--ink-script); }
-.bkg-shell .jscrub { position: absolute; top: -3px; transform: translateX(-50%); z-index: 4; }
+.bkg-shell .jscrub { position: absolute; top: -3px; transform: translateX(-50%); z-index: 4; cursor: ew-resize; touch-action: none; }
 .bkg-shell .jscrub-flag { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-cream); background: var(--ink-graphite); padding: 2px 6px; border-radius: var(--radius-xs); white-space: nowrap; }
+.bkg-shell button.jscrub-flag { appearance: none; border: 0; cursor: pointer; }
+.bkg-shell .jscrub-flag.is-scrubbed { background: var(--specimen-teal-deep); }
+.bkg-shell .jscrub-flag:focus-visible { outline: 2px solid var(--flash-teal); outline-offset: 1px; }
+
+/* ─── BUDGET-DNA RIBBON — streamgraph strip directly above the journey row ── */
+.bkg-shell .gstrip-dna { padding-top: 7px; padding-bottom: 5px; }
+.bkg-shell .gstrip-lead-dna { flex-direction: column; align-items: flex-start; gap: 4px; }
+.bkg-shell .gstrip-lead-dna .eng-label { color: var(--specimen-brass-aged); }
+.bkg-shell .gdna-key-toggle { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); background: transparent; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); padding: 3px 7px; cursor: pointer; transition: border-color 140ms var(--ease-out-paper), color 140ms var(--ease-out-paper); }
+.bkg-shell .gdna-key-toggle:hover { border-color: var(--specimen-brass-aged); color: var(--ink-sepia); }
+.bkg-shell .gdna-key-toggle:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 1px; }
+
+.bkg-shell .gdna-track { position: relative; padding-top: 15px; }
+.bkg-shell .gdna-svg { display: block; width: 100%; }
+.bkg-shell .gdna-empty { font-family: var(--font-editorial); font-style: italic; font-size: 12px; color: var(--ink-faded); padding: 18px 4px; }
+
+@keyframes gdna-rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.bkg-shell .gstrips.is-lit .gdna-band { animation: gdna-rise 460ms var(--ease-out-paper) both; }
+
+.bkg-shell .gdna-flag { position: absolute; top: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-cream); background: var(--ink-graphite); border: 0; padding: 2px 6px; border-radius: var(--radius-xs); white-space: nowrap; cursor: pointer; z-index: 5; }
+.bkg-shell .gdna-flag.is-scrubbed { background: var(--specimen-teal-deep); }
+.bkg-shell .gdna-flag:focus-visible { outline: 2px solid var(--flash-teal); outline-offset: 1px; }
+
+.bkg-shell .gdna-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 9px 2px 1px; }
+.bkg-shell .gdna-legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ink-sepia); white-space: nowrap; }
+.bkg-shell .gdna-legend-sw { width: 13px; height: 10px; border-radius: 1px; border: 1px solid rgba(20,16,10,0.28); flex: 0 0 auto; }
+.bkg-shell .gdna-legend-sep { width: 1px; height: 13px; background: var(--paper-edge); }
+.bkg-shell .gdna-legend-tick { width: 8px; height: 8px; flex: 0 0 auto; display: inline-block; }
+.bkg-shell .gdna-tk-paid { border-radius: 50%; background: var(--pay-paid); }
+.bkg-shell .gdna-tk-due { border-radius: 50%; border: 1.4px solid var(--pay-due); }
+.bkg-shell .gdna-tk-overdue { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--pay-overdue); }
+
+.bkg-shell .gdna-cap { display: flex; flex-direction: column; justify-content: center; }
+.bkg-shell .gdna-cap-row { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.03em; color: var(--ink-faded); margin-top: 3px; line-height: 1.3; }
+.bkg-shell .gdna-cap-paid { color: var(--specimen-sage-deep); }
 
 .bkg-shell .gstrip-redacted { display: inline-flex; align-items: center; gap: 10px; padding: 6px 10px; color: var(--ink-faded); }
 .bkg-shell .gstrip-redacted-mark { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-aged); border: 1px solid var(--specimen-brass-aged); border-radius: var(--radius-xs); padding: 3px 7px; }
