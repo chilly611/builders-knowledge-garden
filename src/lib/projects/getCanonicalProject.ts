@@ -37,6 +37,9 @@ import {
   MARIN_AI_SUMMARY,
   MARIN_AI_TAKE,
   MARIN_PROJECT,
+  MARIN_BUDGET_LINES,
+  MARIN_PLAN_PHASES,
+  type PlanPhase,
 } from '@/lib/seed-data/marin-farmhouse';
 import {
   FOLSOM_PROJECT_ID,
@@ -53,7 +56,9 @@ import {
   FOLSOM_AI_SUMMARY,
   FOLSOM_AI_TAKE,
   FOLSOM_PROJECT,
+  FOLSOM_BUDGET_LINES,
 } from '@/lib/seed-data/sf-fourplex';
+import type { BudgetLine } from '@/app/killerapp/budget/budget-storage';
 import type {
   KacProject,
   KacStageId,
@@ -176,6 +181,10 @@ export interface DemoFixture {
   budget: DemoFixtureBudget;
   /** Per-stage completion (1..7) — drives the journey row + active stage. */
   stageCompletion: Record<number, number>;
+  /** Budget line items for the Budget-DNA ribbon (Σ = budget.total). */
+  budgetLines: BudgetLine[];
+  /** Optional schedule phases; falls back to the generic build sequence. */
+  phases?: PlanPhase[];
 }
 
 const DEMO_FIXTURES: Record<string, DemoFixture> = {
@@ -198,6 +207,8 @@ const DEMO_FIXTURES: Record<string, DemoFixture> = {
       remaining: MARIN_BUDGET_REMAINING,
     },
     stageCompletion: MARIN_STAGE_COMPLETION,
+    budgetLines: MARIN_BUDGET_LINES,
+    phases: MARIN_PLAN_PHASES,
   },
   [FOLSOM_PROJECT_ID]: {
     id: FOLSOM_PROJECT_ID,
@@ -218,6 +229,7 @@ const DEMO_FIXTURES: Record<string, DemoFixture> = {
       remaining: FOLSOM_BUDGET_REMAINING,
     },
     stageCompletion: FOLSOM_STAGE_COMPLETION,
+    budgetLines: FOLSOM_BUDGET_LINES,
   },
 };
 

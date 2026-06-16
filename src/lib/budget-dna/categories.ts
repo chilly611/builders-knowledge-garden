@@ -97,7 +97,7 @@ const KEYWORD_RULES: ReadonlyArray<[RegExp, CategoryId]> = [
   [/roof|weatherproof|window|exterior door|siding|stucco|cladding|gutter|flashing/i, 'envelope'],
   [/electric|\bplumb|hvac|mechanical|ductwork|\bduct\b|wiring|\bmep\b|fire ?sprinkler|low.?voltage/i, 'systems'],
   [/landscape|hardscape|driveway|\bfence\b|\bpatio\b|paving|irrigation|exterior improvement/i, 'site-improv'],
-  [/drywall|insulation|\bfloor|cabinet|counter|\bpaint|\btile|finish|interior|\btrim\b|millwork|appliance|fixture|specialt|furnish/i, 'finishes'],
+  [/drywall|insulation|\bfloor|cabinet|counter|\bpaint|\btile|finish|interior|\btrim\b|millwork|appliance|fixture|kitchen|\bbath|vanity|specialt|furnish/i, 'finishes'],
 ];
 
 /** Coarse fallback when neither CSI nor a keyword matched — the accounting bucket. */
