@@ -89,6 +89,42 @@
   --surface-garden:     var(--specimen-sage);
   --surface-umbrella:   var(--ink-sepia);
 
+  /* ── BUDGET-DNA CATEGORY PALETTE ──────────────────────────────────────
+     Eight cost-category fills for the Budget-DNA ribbon streamgraph, the
+     budget line-item table, and the burn gauge. Herbarium-native; each is
+     verified ≥3:1 on --paper-cream and is DISTINCT from every stage-accent
+     hex (stage accents stay stage-based — categories NEVER recolor them).
+     NEVER hue-alone: every category pairs its fill with a texture
+     (.cat-tex-* in app-shell.css) AND a text label. Ordered by where the
+     money lands across a build, early → late (drives the ribbon silhouette
+     and the canonical stacking order, bottom → top). */
+  --cat-softcosts:    var(--ink-sepia);          /* #5A3B1F  Soft costs & GC — permits, design, general conditions */
+  --cat-site:         var(--specimen-brass-aged);/* #7C6235  Site & earthwork — clearing, excavation, equipment    */
+  --cat-foundation:   #5C6660;                   /* stone slate (herbarium ext.) — footings, slab, flatwork        */
+  --cat-framing:      #A9743C;                   /* timber tan (herbarium ext.) — rough carpentry, lumber, steel   */
+  --cat-envelope:     var(--specimen-teal);      /* #3C7A8A  Envelope — roofing, windows, siding, weatherproofing  */
+  --cat-systems:      var(--specimen-amber-deep);/* #8C5E22  Systems (MEP) — electrical, plumbing, HVAC            */
+  --cat-finishes:     #8A5670;                   /* muted plum (herbarium ext.) — drywall, floors, cabinets, paint */
+  --cat-site-improv:  var(--specimen-sage);      /* #5E7A56  Site improvements — landscape, hardscape, driveway    */
+
+  /* Gross-profit flag — LENS-GATED (GC / admin only; never the Owner lane).
+     Not a stacked band: it colors the ribbon's right-cap profit readout and
+     a documented PROJECTED margin. A clean "kept money" green, deliberately
+     distinct from the sage site-improvements band so the two never read alike. */
+  --cat-profit:       #2E5E3C;
+  --cat-profit-pale:  #BCD3C0;
+
+  /* Payment-state treatments — baseline ticks (paid / due / overdue) + the
+     line-item lifecycle chips (pending → estimated → locked-in → paid).
+     Coherent across every surface (paid = sage everywhere); always pair
+     color + glyph + label, never color alone. */
+  --pay-paid:         var(--specimen-sage);      /* cash out, reconciled — solid ●✓ */
+  --pay-committed:    var(--specimen-teal);      /* locked-in sub / PO, not yet billed */
+  --pay-estimated:    var(--specimen-amber);     /* estimated, not committed */
+  --pay-pending:      var(--ink-faded);          /* floating, unselected */
+  --pay-due:          var(--specimen-amber);     /* upcoming payment — hollow ring ◌ */
+  --pay-overdue:      var(--specimen-rust);      /* past due & unpaid — filled triangle ▲ */
+
   /* ── ELEVATION ────────────────────────────────────────────────────── */
   /* Pages sit on a wall, not in a UI. Shadows are short and warm —
      never a wide soft blur. Always paired with a 1px sepia hairline. */

@@ -29,6 +29,14 @@ import './specimen.css';
 
 export type GaugeTone = 'good' | 'watch' | 'risk' | 'none';
 
+/** A slice of the category-composition ring (e.g. a Budget-DNA category's share). */
+export interface GaugeSegment {
+  /** CSS color (a `--cat-*` token or hex). */
+  color: string;
+  /** Relative weight; normalized across all segments. */
+  value: number;
+}
+
 export interface InstrumentGaugeProps {
   /** Reading, 0..1. Ignored (needle parked) when `tone="none"`. */
   value?: number;
@@ -42,9 +50,26 @@ export interface InstrumentGaugeProps {
   tone?: GaugeTone;
   /** Pixel width of the dial (height tracks it). */
   size?: number;
+  /**
+   * Optional category-composition ring drawn along the arc (the "burn"
+   * breakdown — what the reading is made of, by Budget-DNA category). Purely
+   * additive: omit it and the gauge renders exactly as before.
+   */
+  segments?: GaugeSegment[];
 }
 
 const REST_DEG = -130; // needle home position (far left of the 260° sweep)
+const SWEEP = 260;
+
+/** Stroked-arc path between two sweep angles at radius r, centred on (85,85). */
+function arc(r: number, a0deg: number, a1deg: number): string {
+  const a0 = (a0deg * Math.PI) / 180;
+  const a1 = (a1deg * Math.PI) / 180;
+  const x0 = 85 + r * Math.cos(a0), y0 = 85 + r * Math.sin(a0);
+  const x1 = 85 + r * Math.cos(a1), y1 = 85 + r * Math.sin(a1);
+  const large = a1deg - a0deg > 180 ? 1 : 0;
+  return `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)}`;
+}
 
 /**
  * Face accent per health tone — a GLOBAL token var, set INLINE on the gradient
@@ -71,6 +96,7 @@ export default function InstrumentGauge({
   caption,
   tone = 'good',
   size = 200,
+  segments,
 }: InstrumentGaugeProps) {
   const reduce = useReducedMotion();
   const rawId = useId();
@@ -145,6 +171,27 @@ export default function InstrumentGauge({
         <circle cx="85" cy="85" r="62" fill={noData ? 'var(--paper-cream)' : `url(#ig-face-${gid})`} className="ig-face" />
 
         {ticks}
+
+        {/* Category-composition ring — the "burn" breakdown, by Budget-DNA
+            category. A thin band in the face/rim gap; omitted with no data. */}
+        {!noData && segments && segments.length > 0 && (() => {
+          const total = segments.reduce((s, x) => s + Math.max(0, x.value), 0);
+          if (total <= 0) return null;
+          let acc = 0;
+          return (
+            <g className="ig-segments">
+              {segments.map((seg, i) => {
+                const f0 = acc / total;
+                acc += Math.max(0, seg.value);
+                const f1 = acc / total;
+                const a0 = REST_DEG + f0 * SWEEP + 0.5;
+                const a1 = REST_DEG + f1 * SWEEP - 0.5;
+                if (a1 <= a0) return null;
+                return <path key={i} d={arc(63.5, a0, a1)} fill="none" stroke={seg.color} strokeWidth={3} strokeLinecap="butt" opacity={0.92} />;
+              })}
+            </g>
+          );
+        })()}
 
         <text x="85" y="128" textAnchor="middle" className="ig-label">
           {label.toUpperCase()}

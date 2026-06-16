@@ -33,6 +33,7 @@ import { archetypeFor } from '@/lib/portal-imagery';
 import { useShellConfig } from '@/components/app-shell/ShellConfigContext';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
 import { fmtMoney, laneLabel } from '@/components/app-shell/config';
+import { useBudgetDna, CATEGORY_BY_ID } from '@/lib/budget-dna';
 import {
   InstrumentGauge,
   SpecimenPlate,
@@ -89,6 +90,13 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
       : spentRatio >= 0.7
         ? 'watch'
         : 'good';
+
+  // Budget-DNA category composition → the gauge's "burn" ring (same colors as
+  // the ribbon). Omitted (undefined) when there's no line data — honest.
+  const dna = useBudgetDna();
+  const budgetSegments = dna.ready && !dna.empty
+    ? dna.series.filter((s) => s.total > 0).map((s) => ({ color: CATEGORY_BY_ID[s.id].cssVar, value: s.total }))
+    : undefined;
 
   // ── B6 workflow entries — real live routes; preserve project context. ──
   const withProject = (href: string) =>
@@ -189,6 +197,7 @@ export default function ProjectDashboardClient({ projectId }: ProjectDashboardCl
                 value={spentRatio}
                 display={hasBudget ? fmtMoney(spent) : undefined}
                 caption={hasBudget ? `spent · ${fmtMoney(total!)} total` : 'No budget set yet'}
+                segments={budgetSegments}
               />
             </div>
             {/* Quality — no source anywhere; honest no-data. */}

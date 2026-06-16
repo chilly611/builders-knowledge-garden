@@ -1,20 +1,17 @@
 /**
- * Killer App Chrome — barrel export.
+ * Killer App Chrome — barrel export (types only).
  *
- * Consumers should import from '@/components/killerapp-chrome' and get
- * the top-level KillerAppChrome plus any primitives they want to
- * compose directly.
+ * The chrome COMPONENTS (KillerAppChrome + its BudgetRibbon / JourneyTimeRow /
+ * StageNode / … and the marin-adapter) were retired 2026-06-15 with the
+ * budget-DNA chrome consolidation — the app-shell (ShellStrips + BudgetDnaRibbon)
+ * is the one canonical chrome, and the stage shell consumes it. Those files were
+ * dead (no mounts, no external importers) and are deleted.
+ *
+ * What remains is the LOCKED data vocabulary in `./types` — KAC_STAGES (the
+ * 7-stage canon) + the Kac* shapes — still consumed by app-shell, the project
+ * dashboard, the owner lane, and getCanonicalProject. Import those from here
+ * or directly from '@/components/killerapp-chrome/types'.
  */
-
-export { default as KillerAppChrome } from './KillerAppChrome';
-export { default as BudgetRibbon } from './BudgetRibbon';
-export { default as JourneyTimeRow } from './JourneyTimeRow';
-export { default as StageNode } from './StageNode';
-export { default as TimelineMarkers } from './TimelineMarkers';
-export { default as CompletionRing } from './CompletionRing';
-export { default as SpendBlock } from './SpendBlock';
-export { default as IncomeStackedTracks } from './IncomeStackedTracks';
-export { default as HeadroomGauge } from './HeadroomGauge';
 
 export { KAC_COLORS, KAC_FONTS, KAC_STAGES } from './types';
 export type {
