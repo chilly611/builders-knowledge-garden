@@ -15,8 +15,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStageProject } from '@/lib/hooks/useStageProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
-import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
-import { MARIN_BUDGET_LINES, MARIN_PLAN_PHASES } from '@/lib/seed-data/marin-farmhouse';
+import { getDemoFixture } from '@/lib/projects/getCanonicalProject';
 import {
   normalizeStoredLines,
   storageKeyFor,
@@ -35,12 +34,13 @@ export interface UseBudgetDnaResult extends BudgetDna {
 export function useBudgetDna(): UseBudgetDnaResult {
   const sp = useStageProject();
   const ledger = useProjectLedger(sp.projectId);
-  const isMarin = isCanonicalProjectId(sp.projectId);
+  // Demo fixtures (Marin, Folsom, …) carry their own seed lines + phases via
+  // the fixture registry; any other project reads the BudgetClient spine.
+  const fixture = getDemoFixture(sp.projectId);
   const [storedLines, setStoredLines] = useState<BudgetLine[] | null>(null);
 
-  // Non-canonical projects read their lines from the BudgetClient spine.
   useEffect(() => {
-    if (isMarin) { setStoredLines(null); return; }
+    if (getDemoFixture(sp.projectId)) { setStoredLines(null); return; }
     if (typeof window === 'undefined') return;
     try {
       const raw = window.localStorage.getItem(storageKeyFor(sp.projectId));
@@ -48,11 +48,11 @@ export function useBudgetDna(): UseBudgetDnaResult {
     } catch {
       setStoredLines([]);
     }
-  }, [sp.projectId, isMarin]);
+  }, [sp.projectId]);
 
   return useMemo<UseBudgetDnaResult>(() => {
-    const lines: DnaLine[] = isMarin ? MARIN_BUDGET_LINES : (storedLines ?? []);
-    const phases: PhaseInput[] = isMarin ? MARIN_PLAN_PHASES : DEFAULT_BUILD_PHASES;
+    const lines: DnaLine[] = fixture?.budgetLines ?? storedLines ?? [];
+    const phases: PhaseInput[] = fixture?.phases ?? DEFAULT_BUILD_PHASES;
     const total = sp.budgetTotal ?? 0;
     const totals = ledger.budget ?? {
       total,
@@ -63,8 +63,8 @@ export function useBudgetDna(): UseBudgetDnaResult {
     const dna = deriveBudgetDna({ lines, phases, totals, lane: sp.lane });
     return {
       ...dna,
-      ready: ledger.ready && (isMarin || storedLines !== null),
+      ready: ledger.ready && (!!fixture || storedLines !== null),
       lane: sp.lane,
     };
-  }, [isMarin, storedLines, ledger.budget, ledger.ready, sp.budgetTotal, sp.budgetSpent, sp.lane]);
+  }, [fixture, storedLines, ledger.budget, ledger.ready, sp.budgetTotal, sp.budgetSpent, sp.lane]);
 }

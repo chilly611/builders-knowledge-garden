@@ -113,7 +113,7 @@ const PHASE_RULES: ReadonlyArray<[RegExp, string[] | 'preroll' | 'continuous']> 
   [/hvac|mechanical|ductwork|\bduct\b/i, ['rough-hvac']],
   [/insulation|drywall/i, ['insul-drywall']],
   [/landscape|hardscape|driveway|\bfence\b|\bpatio\b|paving|irrigation/i, ['exterior']],
-  [/floor|cabinet|counter|\bpaint|\btile|finish|interior|\btrim\b|millwork|appliance|fixture/i, ['finishes']],
+  [/floor|cabinet|counter|\bpaint|\btile|finish|interior|\btrim\b|millwork|appliance|fixture|kitchen|\bbath|vanity/i, ['finishes']],
 ];
 
 export function lineToTimeWindow(
