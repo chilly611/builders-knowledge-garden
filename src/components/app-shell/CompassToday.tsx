@@ -23,6 +23,7 @@ import { useCallback } from 'react';
 import { useStageProject } from '@/lib/hooks/useStageProject';
 import { useDailyBriefing } from '@/lib/hooks/useDailyBriefing';
 import { useCompassLogbook, type LogbookEntry } from '@/lib/hooks/useCompassLogbook';
+import { BriefMarkdown } from './BriefMarkdown';
 
 function todayLabel(): string {
   try {
@@ -97,7 +98,7 @@ export function CompassToday({ draft, onDraftChange }: Props) {
           <p className="today-muted">Brief unavailable right now.</p>
         ) : brief.briefing ? (
           <>
-            <p className="today-brief">{brief.briefing}</p>
+            <BriefMarkdown text={brief.briefing} />
             {brief.quests.length > 0 && (
               <ul className="today-focus">
                 {brief.quests.slice(0, 3).map((q) => (
