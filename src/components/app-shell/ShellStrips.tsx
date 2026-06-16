@@ -13,15 +13,17 @@
  * (KAC_STAGES): Size Up → Lock → Plan → Build → Adapt → Collect → Reflect.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import { KAC_STAGES } from '@/components/killerapp-chrome/types';
+import { useBudgetDna } from '@/lib/budget-dna';
 import './app-shell.css';
 import { Seal } from './Seal';
 import { StageIco } from './icons';
 import { STAGE_PLAIN } from './config';
 import { useShellConfig } from './ShellConfigContext';
+import { BudgetDnaRibbon } from './BudgetDnaRibbon';
 import type { ShellConfig } from './types';
 
 function Redacted({ label }: { label: string }) {
@@ -60,6 +62,26 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
   const ai = KAC_STAGES.findIndex((s) => s.slug === journey.activeStage);
   const segW = 100 / KAC_STAGES.length;
   const cur = (ai < 0 ? 0 : ai) * segW + segW * (journey.pct / 100);
+
+  // Budget-DNA + the shared time playhead. The ribbon and the journey row share
+  // ONE x-axis (project start → substantial completion) and ONE playhead at the
+  // cumulative-spend week; scrubbing either strip moves both. Falls back to the
+  // stage-progress fill when the ledger has no schedule to time-scale against.
+  const dna = useBudgetDna();
+  const [scrubWeek, setScrubWeek] = useState<number | null>(null);
+  const draggedRef = useRef(false);
+  useEffect(() => { setScrubWeek(null); }, [dna.totalWeeks, cfg.projectId]);
+  const hasTime = dna.ready && !dna.empty && dna.totalWeeks > 0;
+  const playWeek = scrubWeek ?? dna.currentWeek;
+  const playPct = hasTime ? (playWeek / dna.totalWeeks) * 100 : cur;
+  const scrubFromClientX = useCallback((clientX: number, rect: DOMRect) => {
+    if (!hasTime) return;
+    const inset = rect.width * 0.03;
+    const plotW = rect.width - inset * 2;
+    const rel = (clientX - rect.left - inset) / Math.max(1, plotW);
+    const week = Math.round(Math.max(0, Math.min(1, rel)) * dna.totalWeeks);
+    setScrubWeek(week === dna.currentWeek ? null : week);
+  }, [hasTime, dna.totalWeeks, dna.currentWeek]);
 
   return (
     <div className={`gstrips ${lit ? 'is-lit' : ''}`}>
@@ -123,6 +145,11 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
         )}
       </div>
 
+      {/* Budget-DNA ribbon — stacked cost streamgraph sharing the journey x-axis */}
+      {budget.show && (
+        <BudgetDnaRibbon dna={dna} scrubWeek={scrubWeek} onScrub={setScrubWeek} interactive={interactive} />
+      )}
+
       {/* Journey / time-machine strip */}
       <div className="gstrip gstrip-j">
         <div className="gstrip-lead gstrip-lead-j">
@@ -131,7 +158,7 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
         {journey.show ? (
           <>
             <div className="gstrip-track jtrack">
-              <div className="jline"><motion.div className="jline-fill" initial={reduce ? false : { width: 0 }} animate={{ width: cur + '%' }} transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }} /></div>
+              <div className="jline"><motion.div className="jline-fill" initial={reduce ? false : { width: 0 }} animate={{ width: cur + '%' }} transition={reduce ? { duration: 0 } : { duration: 0.9, delay: 0.15, ease: 'easeOut' }} /></div>
               {KAC_STAGES.map((s, i) => {
                 const Icon = StageIco[s.slug];
                 const cls = `jnode ${ai > i ? 'is-done' : ''} ${s.slug === journey.activeStage ? 'is-cur' : ''}`;
@@ -158,13 +185,25 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
                   <div key={s.slug} className={cls}>{body}</div>
                 );
               })}
-              {journey.weeksTotal > 0 && (
-                <div className="jscrub" style={{ left: cur + '%' }}><span className="jscrub-flag">wk {journey.weekOf}</span></div>
+              {hasTime && (
+                <div
+                  className="jscrub"
+                  style={{ left: playPct + '%' }}
+                  onPointerDown={interactive ? (e) => { draggedRef.current = false; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } : undefined}
+                  onPointerMove={interactive ? (e) => { if (e.buttons === 1) { draggedRef.current = true; const tr = (e.currentTarget as HTMLElement).closest('.jtrack'); if (tr) scrubFromClientX(e.clientX, (tr as HTMLElement).getBoundingClientRect()); } } : undefined}
+                >
+                  <button
+                    type="button"
+                    className={`jscrub-flag${scrubWeek != null ? ' is-scrubbed' : ''}`}
+                    onClick={interactive ? () => { if (draggedRef.current) { draggedRef.current = false; return; } setScrubWeek(null); } : undefined}
+                    title={scrubWeek != null ? 'Return to live' : 'Schedule week — drag to time-travel'}
+                  >wk {playWeek}</button>
+                </div>
               )}
             </div>
             <div className="gstrip-end">
               <div className="gstrip-end-big">{journey.pct}%</div>
-              <div className="gstrip-end-sub">{journey.weeksTotal > 0 ? `wk ${journey.weekOf} / ${journey.weeksTotal}` : 'in progress'}</div>
+              <div className="gstrip-end-sub">{hasTime ? `wk ${playWeek} / ${dna.totalWeeks}` : (journey.weeksTotal > 0 ? `wk ${journey.weekOf} / ${journey.weeksTotal}` : 'in progress')}</div>
             </div>
           </>
         ) : (
