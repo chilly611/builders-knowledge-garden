@@ -6,6 +6,37 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-16 — [Claude Code] Session: Dream Machine surface — exploration renders + "Choose your direction" style picker
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-explorations-and-styles` (worktree off `origin/main` @ `c54b986`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
+
+**Mandate:** build the Dream Machine surface (component-fidelity spec §C) on the shared App Shell — two project-scoped pieces, both data-driven via `useStageProject()`, referencing the PUBLIC `brand-assets` bucket by URL (no catalog/promote/asset-DB write):
+1. **Exploration renders (§C2 "In motion"):** wire the 3 Cowork-staged line-and-wash studies (massing / clearance / daylight, per project) from `assets/bkg/fidelity/batch-2026-06-15/` into the cards; honest fallback when a project has none.
+2. **"Choose your direction" style picker:** a style-less project picks one of 3 staged styles (`assets/bkg/styles/batch-2026-06-16/style-{midcentury-modern,mediterranean,asian-fusion}-a.png`); the pick persists and replaces the picker.
+
+**What was built (all NEW unless noted):**
+- **`src/app/killerapp/dream/{page.tsx,DreamMachineClient.tsx,dream-machine.css}`** — the surface. Lives under `/killerapp` because that layout mounts the killerapp `ProjectProvider` (which `useStageProject()` requires — `useProjectContext()` throws without it) AND the shared shell (ShellStrips A2–A5 + ShellNav A7). So the surface inherits the project header / Budget-DNA ribbon / Journey row / Ask FAB for free (spec §C "inherits A"). C1 header + "Choose your direction" + "In motion". Scoped to `.dream-root` (Archivo · Archivo Black · Space Mono · Cormorant), mirroring the Builder lane's `.bld-root` — minimal blast radius; brass Dream-Machine accent, teal action, herbarium tokens only.
+- **`src/lib/dream/exploration-assets.ts`** — pure asset registry. `explorationStudiesFor(projectId)` keys staged studies by **project id** (imported `MARIN_PROJECT_ID` / `FOLSOM_PROJECT_ID`, never name strings) → `marin-study-*` / `sf-study-*`; always returns 3, with `staged:false` + a guaranteed `conceptFallbackFor()` data-URI for projects with no set (honest, never 404s). `STYLE_OPTIONS` = the 3 exact founder-specified style URLs.
+- **`src/lib/dream/useArchitecturalStyle.ts`** — read/persist hook. **localStorage `bkg-arch-style:<projectId>`** is the working store (so "remembers across reload" holds TODAY for every project, incl. the fixture-only Folsom which has no `command_center_projects` row). The DB is the system-of-record via the **existing** PATCH `/api/v1/projects` path — feature-detected from the GET response so no doomed PATCH fires before the column lands.
+- **`supabase/migrations/20260616_architectural_style.sql`** — additive, nullable, idempotent `architectural_style text` column (founder grant: "only add a column if needed"). The PATCH route spreads `...updates` and GET does `select('*')`, so it flows through with **zero route code change**. **NOT applied to prod** — the harness correctly blocked an unsupervised shared-prod migration; **founder to apply** (until then localStorage carries persistence; on apply, Marin + real projects auto-upgrade to DB with no code change).
+- **`src/components/app-shell/config.ts`** (1 line) — repointed the shell's `surface-dream` nav from `/dream` (standalone creativity playground, untouched) → `/killerapp/dream` (the project-scoped surface), so the compass "Dream Machine" tab reaches it carrying `?project=`. **Flagged for founder** — easy to revert if you want the tab to stay on `/dream`.
+
+**Key decisions:**
+- Surface home = `/killerapp/dream`, not the standalone `/dream`, because `useStageProject()` + the shared shell only exist under `/killerapp`. The public `/dream` playground is left as-is.
+- Persistence is localStorage-primary today (verifiable now) + DB-on-apply, because (a) the harness blocked the prod migration and (b) Folsom is a code fixture with no DB row. Honest, no fake DB round-trip.
+
+**Verification (real browser, worktree dev server @ :4311):**
+- `next build` EXIT 0 (route `/killerapp/dream` in the manifest); `tsc --noEmit` + `eslint` clean on all changed files. Clean-base build also green (the break in `useBudgetDna` noted 2026-06-15 was reverted in `ec5e5f2`).
+- All 9 staged asset URLs return `200 image/png` on the public bucket.
+- Marin (`?project=55730cd3…`): 3 cards render `marin-study-*` (naturalWidth 896, no fallback); picker shows all 3 styles; pick Mediterranean → chosen view replaces picker → **reload → still Mediterranean** (localStorage retained).
+- Folsom (`?project=f0150f0e…`): identity flips ("Folsom Street Fourplex · 5,200 sqft · San Francisco, CA"), studies flip to `sf-study-*`, picker reappears (no pick) — **no bleed** (Marin stays `mediterranean`, Folsom independent); pick Asian-fusion → reload → sticks (fixture-only project persists via localStorage).
+- Tokens only (no `#E8443A`, no pure white); reduced-motion disables animation/transition in CSS.
+
+**Scope:** Dream Machine surface only — did NOT touch the cockpit (`/killerapp/page.tsx`, CaptureZone, KillerappProjectShell), the workflow-card list, budget files, the `brand_assets` catalog, or the existing `/dream/*` pages.
+
+**Follow-ups for founder:** (1) apply `20260616_architectural_style.sql` to prod to flip persistence to the DB system-of-record; (2) confirm the `surface-dream` nav repoint; (3) live-domain dogfood after merge (assets are already live/public).
+
+---
+
 ## 2026-06-15 — [Claude Code] Session: Cockpit polish (workflow cards + daily-brief render) + P0 build-break finding
 **Agent:** Claude Code (Opus 4.8, 1M) · **Branch:** `feat/cockpit-polish` (worktree off `origin/main` @ `bd86e18`, real `node_modules` via `npm ci`) · PR-only, founder merges.
 

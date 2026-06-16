@@ -1,0 +1,276 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   DREAM MACHINE SURFACE — in-app stylesheet (component-fidelity §C).
+
+   Project-scoped "what-if" surface that mounts on the shared App Shell. Sibling
+   to the Builder lane's builder-lane.css: same locked type trio + token palette,
+   scoped under `.dream-root` so the rest of the Killer App keeps tokens.css
+   fonts (minimal blast radius). Dream Machine accent = brass (--specimen-brass);
+   primary action = teal. Herbarium only — no #E8443A, no pure #fff.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Mono:wght@400;700&display=swap');
+
+.dream-root {
+  position: relative;
+  background: var(--paper-cream);
+  min-height: 100%;
+  color: var(--ink-sepia);
+  font-family: var(--font-ui);
+  --font-editorial: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* Faint engineering grid behind the surface (matches the Builder lane + shell). */
+.dream-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(124, 98, 53, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 98, 53, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.dream-root > * { position: relative; z-index: 1; }
+
+.dream { padding: 0 0 96px; }
+
+.dream-root .eng-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+  font-weight: 600;
+}
+
+/* ─── C1 · Prompt header ──────────────────────────────────────────────────── */
+.dream-hero {
+  position: relative;
+  margin: 22px 28px 0;
+  padding: 26px 28px 24px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(ellipse at 88% 12%, color-mix(in oklab, var(--specimen-brass) 16%, transparent), transparent 56%),
+    var(--bg-raised);
+  box-shadow: var(--shadow-page-2);
+  overflow: hidden;
+}
+.dream-hero-eyebrow { color: var(--specimen-brass-aged); }
+.dream-hero-title {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.0;
+  letter-spacing: -0.025em;
+  color: var(--ink-graphite);
+  margin: 9px 0 8px;
+  font-weight: 400;
+}
+.dream-hero-sub {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--ink-script);
+}
+
+/* ─── Sections ────────────────────────────────────────────────────────────── */
+.dream-section { padding: 24px 28px 2px; }
+.dream-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed var(--paper-edge);
+  padding-bottom: 8px;
+}
+.dream-section-head h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: -0.015em;
+  color: var(--ink-graphite);
+  margin: 0;
+  font-weight: 400;
+}
+.dream-lede {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--ink-sepia);
+  margin: 0 0 16px;
+  max-width: 720px;
+}
+.dream-lede strong { font-style: normal; font-family: var(--font-display); font-weight: 400; color: var(--ink-graphite); }
+.dream-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faded);
+  margin: 14px 0 0;
+}
+
+/* ─── "Choose your direction" · style picker ──────────────────────────────── */
+.dream-styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.dream-style {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-raised);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-page-2);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.dream-style:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(90, 59, 31, 0.14); }
+.dream-style.is-selected { border-color: var(--specimen-teal); box-shadow: 0 0 0 2px color-mix(in oklab, var(--specimen-teal) 40%, transparent); }
+.dream-style-art { position: relative; aspect-ratio: 4 / 3; background: var(--paper-fold); }
+.dream-style-art img { width: 100%; height: 100%; object-fit: cover; display: block; animation: dream-fade 0.6s ease both; }
+.dream-style-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.dream-style-title { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--ink-graphite); margin: 0; }
+.dream-style-tagline { font-family: var(--font-editorial); font-style: italic; font-size: 15px; line-height: 1.35; color: var(--ink-script); margin: 0 0 6px; flex: 1; }
+.dream-pick {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-cream);
+  background: var(--specimen-teal);
+  border: none;
+  border-radius: var(--radius-xs);
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.dream-pick:hover { background: var(--specimen-teal-deep); }
+.dream-pick:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
+
+/* ─── Chosen direction (replaces the picker once set) ─────────────────────── */
+.dream-chosen {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 220px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-page-2);
+  max-width: 760px;
+}
+.dream-chosen-art { position: absolute; inset: 0; z-index: 0; }
+.dream-chosen-art img { width: 100%; height: 100%; object-fit: cover; opacity: 0.96; animation: dream-fade 0.7s ease both; }
+.dream-chosen-wash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, color-mix(in oklab, var(--ink-graphite) 62%, transparent) 2%, color-mix(in oklab, var(--ink-graphite) 22%, transparent) 36%, transparent 64%);
+}
+.dream-chosen-text { position: relative; z-index: 1; padding: 20px 22px 18px; }
+.dream-chosen-text .eng-label { color: var(--specimen-brass-pale); }
+.dream-chosen-title { font-family: var(--font-display); font-weight: 400; font-size: 28px; color: var(--paper-cream); margin: 6px 0 4px; }
+.dream-chosen-tagline { font-family: var(--font-editorial); font-style: italic; font-size: 16px; color: var(--paper-vellum); margin: 0 0 10px; max-width: 30ch; }
+.dream-textbtn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-cream);
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--paper-cream) 70%, transparent);
+  border-radius: var(--radius-xs);
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.dream-textbtn:hover { background: color-mix(in oklab, var(--paper-cream) 16%, transparent); }
+.dream-textbtn:focus-visible { outline: 2px solid var(--paper-cream); outline-offset: 2px; }
+
+/* ─── §C2 · "In motion" exploration cards ─────────────────────────────────── */
+.dream-studies { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.dream-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-raised);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-page-2);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.dream-card:hover { transform: translateY(-2px); border-color: var(--specimen-brass); box-shadow: 0 4px 14px rgba(90, 59, 31, 0.14); }
+.dream-card:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 2px; }
+.dream-card-art { position: relative; aspect-ratio: 4 / 5; background: var(--paper-fold); }
+.dream-card-art img { width: 100%; height: 100%; object-fit: cover; display: block; animation: dream-fade 0.6s ease both; }
+.dream-card-flag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-sepia);
+  background: color-mix(in oklab, var(--paper-cream) 86%, transparent);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs);
+  padding: 3px 7px;
+}
+.dream-card-body { padding: 13px 15px 16px; display: flex; flex-direction: column; gap: 5px; }
+.dream-card-title { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--ink-graphite); margin: 2px 0 0; }
+.dream-card-text { font-family: var(--font-editorial); font-style: italic; font-size: 15px; line-height: 1.36; color: var(--ink-script); margin: 0; }
+.dream-card-action {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--specimen-teal-deep);
+}
+
+/* ─── Honest loading / not-found states ───────────────────────────────────── */
+.dream-state {
+  padding: 64px 28px;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink-faded);
+  min-height: 50vh;
+}
+.dream-state--empty {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-style: normal;
+}
+.dream-state--empty h1 { font-family: var(--font-display); font-weight: 400; color: var(--ink-graphite); font-size: 28px; margin: 4px 0; }
+.dream-state--empty p { font-family: var(--font-ui); color: var(--ink-sepia); max-width: 440px; margin: 0; }
+
+@keyframes dream-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ─── Responsive — 1280 desktop default; collapse below the kit breakpoint;
+       tighten for the 390px phone target. ─────────────────────────────────── */
+@media (max-width: 1000px) {
+  .dream-styles { grid-template-columns: 1fr; max-width: 420px; }
+  .dream-studies { grid-template-columns: 1fr; max-width: 420px; }
+  .dream-hero-title { font-size: 32px; }
+}
+@media (max-width: 480px) {
+  .dream-hero { margin: 14px 14px 0; padding: 18px 16px 16px; border-radius: var(--radius-xs); }
+  .dream-hero-title { font-size: 26px; }
+  .dream-hero-sub { font-size: 16px; }
+  .dream-section { padding: 18px 14px 2px; }
+  .dream-section-head h2 { font-size: 19px; }
+  .dream-styles, .dream-studies { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dream-root * { animation: none !important; transition: none !important; }
+}
