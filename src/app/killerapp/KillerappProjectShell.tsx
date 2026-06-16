@@ -52,6 +52,11 @@ interface ConversationRow {
 
 const ACTIVE_PROJECT_KEY = 'bkg-active-project';
 
+// AI-take backstop (2026-06-15 redline, fix 3): if the "Running the numbers…"
+// pulse hasn't resolved to real text within this window, fall back to an honest
+// terminal state instead of pulsing forever.
+const AI_TAKE_TIMEOUT_MS = 20_000;
+
 function setActiveProjectInLocalStorage(id: string) {
   try {
     window.localStorage.setItem(ACTIVE_PROJECT_KEY, id);
@@ -123,7 +128,11 @@ export default function KillerappProjectShell() {
   // 2026-06-02: when the copilot can't produce an AI take (401 anon, 5xx,
   // network), record WHY so the UI can show a graceful state instead of the
   // "Running the numbers…" pulse spinning forever. 'auth' → invite sign-in.
-  const [aiUnavailable, setAiUnavailable] = useState<null | 'auth' | 'error'>(null);
+  // 'empty' = signed-in, but the project has nothing to summarize (no
+  // raw_input / ai_summary / conversation) — an honest terminal state, not a
+  // spinner. 'auth' = sign-in needed. 'error' = copilot failed or timed out.
+  const [aiUnavailable, setAiUnavailable] = useState<null | 'auth' | 'error' | 'empty'>(null);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const triggeredStreamFor = useRef<string | null>(null);
 
   // Anon short-circuit (2026-06-02): for signed-out viewers the auto-trigger
@@ -134,7 +143,9 @@ export default function KillerappProjectShell() {
   useEffect(() => {
     let cancelled = false;
     void supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled && !data.session) setAiUnavailable('auth');
+      if (cancelled) return;
+      setSignedIn(Boolean(data.session));
+      if (!data.session) setAiUnavailable('auth');
     });
     return () => {
       cancelled = true;
@@ -356,36 +367,57 @@ export default function KillerappProjectShell() {
     [userQuery, project?.jurisdiction]
   );
 
-  if (!projectId) return null;
-
-  // 2026-05-19 (Ship 14): the prior `streaming ? streamingResponse : …`
-  // ternary caused a visible regression to the "Running the numbers…"
-  // spinner the moment the stream finished. Why: persistProjectExchange
-  // (the server-side write to project_conversations) is fire-and-forget,
-  // so `refreshAfterStream` often fetches BEFORE the row exists →
-  // `persistedAssistant` is undefined → `project?.ai_summary` is also
-  // empty on a brand-new project → final fallback is '' → spinner.
+  // The displayed AI take, computed BEFORE the early return so the resolve
+  // effects below can depend on it (Rules of Hooks).
   //
-  // Prefer streamingResponse whenever it has content (it's the most
-  // recent text the user saw). The "streaming…" label still flips off
-  // via the `streaming` flag, but the body text stays stable across the
-  // stream-end / persist-write window.
-  // DEMO FIXTURES: render the stable, investor-clean fixture take for a seeded
-  // demo deep-link (Marin, Folsom) — never the latest project_conversations row
-  // (Marin's drifted to a stale answer; Folsom has none). Other projects keep
-  // live behavior.
-  const demoTake = getDemoFixture(projectId)?.aiTake;
-  const rawAiText = demoTake
-    ? demoTake
-    : streamingResponse ||
-      persistedAssistant?.content ||
-      project?.ai_summary ||
-      '';
-  // Strip the trailing **What next?** action block — the static link row
-  // below renders the canonical CTAs. Without this, the markdown leaks
-  // as literal text alongside the rendered buttons. (Demo readiness fix
-  // 2026-05-07.)
-  const aiText = stripTrailingActionBlock(rawAiText);
+  // Precedence (2026-05-19, Ship 14): prefer streamingResponse whenever it has
+  // content — it's the most recent text the user saw — because the server write
+  // to project_conversations is fire-and-forget, so refreshAfterStream often
+  // fetches before the row exists (persistedAssistant undefined, ai_summary
+  // empty on a brand-new project) and the body would otherwise flash back to a
+  // spinner the moment the stream ends.
+  // DEMO FIXTURES (Marin, Folsom): always render the stable fixture take, never
+  // the latest project_conversations row (Marin's drifted; Folsom has none).
+  // The trailing **What next?** block is stripped — the picker below is the
+  // canonical CTA source.
+  const aiText = useMemo(() => {
+    const demoTake = projectId ? getDemoFixture(projectId)?.aiTake : undefined;
+    const raw = demoTake
+      ? demoTake
+      : streamingResponse || persistedAssistant?.content || project?.ai_summary || '';
+    return stripTrailingActionBlock(raw);
+  }, [projectId, streamingResponse, persistedAssistant, project?.ai_summary]);
+
+  // Is there anything for the copilot to summarize for this project?
+  const hasSeed = useMemo(() => userQuery.trim().length > 0, [userQuery]);
+
+  // Resolve the "Running the numbers…" pulse to an HONEST terminal state
+  // (2026-06-15 redline, fix 3). Without this, a signed-in user on a project
+  // with no raw_input / ai_summary / conversation never fires the auto-trigger
+  // (no seed query), so aiUnavailable stays null and the pulse spins forever.
+  useEffect(() => {
+    if (!projectId || isDemoFixtureId(projectId)) return;
+    if (aiText || aiUnavailable) return;
+    if (streaming || loading || projectLoading) return; // still working
+    if (!project || !ledger.ready) return; // still hydrating
+    if (signedIn === false) return; // anon already resolves to 'auth'
+    if (hasSeed) return; // a take is genuinely coming via the auto-trigger
+    setAiUnavailable('empty');
+  }, [projectId, aiText, aiUnavailable, streaming, loading, projectLoading, project, ledger.ready, signedIn, hasSeed]);
+
+  // Timeout backstop: even when a take SHOULD be coming, never pulse forever —
+  // if nothing resolves within the window (stalled stream, an auto-trigger that
+  // never fired), fall back to the honest error state.
+  useEffect(() => {
+    if (!projectId || isDemoFixtureId(projectId)) return;
+    if (aiText || aiUnavailable) return;
+    const timer = setTimeout(() => {
+      setAiUnavailable((prev) => prev ?? 'error');
+    }, AI_TAKE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [projectId, aiText, aiUnavailable, streaming, loading, projectLoading, hasSeed]);
+
+  if (!projectId) return null;
 
   return (
     <section
@@ -498,8 +530,9 @@ export default function KillerappProjectShell() {
                 {aiText}
               </div>
             ) : aiUnavailable ? (
-              // 2026-06-02: the copilot couldn't run (anon 401, 5xx, network).
-              // Never leave the pulse spinning forever — say why, quietly.
+              // 2026-06-02 / 2026-06-15 (fix 3): the take couldn't run (anon
+              // 401, 5xx, network), there's nothing to summarize ('empty'), or
+              // it timed out. Never leave the pulse spinning forever — say why.
               <div
                 style={{
                   fontSize: 14,
@@ -520,15 +553,19 @@ export default function KillerappProjectShell() {
                     </a>{' '}
                     to see the AI take for this project.
                   </>
+                ) : aiUnavailable === 'empty' ? (
+                  <>
+                    No AI take yet — this project doesn&rsquo;t have a description to summarize.
+                    Pick a workflow below to get going.
+                  </>
                 ) : (
                   <>The AI take isn&rsquo;t available right now — it&rsquo;ll be here next visit.</>
                 )}
               </div>
             ) : (
-              // The auto-trigger fires on hydrate, so the empty state is
-              // a brief flash. Show a "thinking" pulse instead of stale
-              // "hit refresh" copy that confused users into thinking the
-              // AI was broken when it was just streaming.
+              // A take is genuinely in flight (auto-trigger / live stream). The
+              // fix-3 effects above guarantee this pulse resolves to an honest
+              // empty/error state and can't spin forever.
               <div
                 style={{
                   display: 'flex',
@@ -541,6 +578,7 @@ export default function KillerappProjectShell() {
                 aria-live="polite"
               >
                 <span
+                  data-bkg-pulse
                   style={{
                     width: 8,
                     height: 8,
@@ -554,66 +592,12 @@ export default function KillerappProjectShell() {
             )}
           </div>
 
-          {/* 2026-05-19 (Ship 16): contextual "Choose your next move" panel.
-              Replaces the prior 3-chip strip (Estimate / Codes / Contracts).
-              Now 9 chips across 3 lifecycle stages (Size Up / Lock It In /
-              Plan It Out) with stage-color accents + plain-English label +
-              pro-term sublabel — matches the dual-label format used in the
-              workflow picker so the platform feels consistent stem-to-stern. */}
-          <div
-            style={{
-              borderTop: '1px solid var(--faded-rule)',
-              paddingTop: 20,
-              marginTop: 4,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                letterSpacing: 1.5,
-                textTransform: 'uppercase',
-                color: 'var(--graphite)',
-                opacity: 0.6,
-                marginBottom: 14,
-              }}
-            >
-              Choose your next move
-            </div>
-            {NEXT_STEP_GROUPS.map((group) => (
-              <div key={group.stageLabel} style={{ marginBottom: 18 }}>
-                <div
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    textTransform: 'uppercase',
-                    color: group.stageColor,
-                    opacity: 0.9,
-                    fontWeight: 600,
-                    marginBottom: 8,
-                  }}
-                >
-                  {group.stageLabel}
-                </div>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: 8,
-                  }}
-                >
-                  {group.items.map((item) => (
-                    <NextStepCard
-                      key={item.label}
-                      href={`${item.href}?project=${encodeURIComponent(projectId)}`}
-                      label={item.label}
-                      subLabel={item.subLabel}
-                      accentColor={group.stageColor}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* "Choose your next move" panel REMOVED (2026-06-15 redline, fix 1):
+              it duplicated the workflow picker. The cockpit now shows ONE
+              ordered workflow presentation — the 7-stage list (1→7) on the
+              /killerapp page below — instead of this 3-stage subset plus that
+              full list. The AI take stays here; workflow selection lives in the
+              single demoted picker. */}
         </div>
       )}
     </section>
@@ -630,130 +614,14 @@ function PulseKeyframes() {
         0%, 100% { opacity: 1; transform: scale(1); }
         50%      { opacity: 0.55; transform: scale(1.25); }
       }
+      @media (prefers-reduced-motion: reduce) {
+        [data-bkg-pulse] { animation: none !important; }
+      }
     `}</style>
   );
 }
 
-function NextStepLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '10px 14px',
-        minHeight: 44,
-        minWidth: 44,
-        border: '0.5px solid var(--faded-rule)',
-        borderRadius: 8,
-        background: 'transparent',
-        fontSize: 13,
-        color: 'var(--graphite)',
-        textDecoration: 'none',
-        fontWeight: 500,
-      }}
-      data-testid={`next-step-${label.toLowerCase().replace(/\s+/g, '-')}`}
-    >
-      {label} →
-    </Link>
-  );
-}
-
-// 2026-05-19 (Ship 16): 9-chip contextual next-step panel.
-// Three lifecycle stages × 3 chips each, with plain-English labels +
-// pro-term sublabel so investors + contractors both grok what each
-// surface does. Stage colors match STAGE_ACCENTS used in the journey
-// strip so the cockpit / picker / shell all speak the same visual
-// language stage-by-stage.
-const NEXT_STEP_GROUPS: ReadonlyArray<{
-  stageLabel: string;
-  stageColor: string;
-  items: ReadonlyArray<{ label: string; subLabel: string; href: string }>;
-}> = [
-  {
-    stageLabel: '1 · Size up',
-    stageColor: '#C9913F', // brass (Size Up)
-    items: [
-      { label: 'Quick estimate', subLabel: 'What might it cost?', href: '/killerapp/workflows/estimating' },
-      { label: 'Check codes', subLabel: 'Which codes apply?', href: '/killerapp/workflows/code-compliance' },
-      { label: "Who's asking?", subLabel: 'Capture a lead by voice', href: '/killerapp/who-is-asking' },
-    ],
-  },
-  {
-    stageLabel: '2 · Lock it in',
-    stageColor: '#3E3A6E', // indigo (Lock In)
-    items: [
-      { label: 'Contract drafts', subLabel: 'Generate paperwork', href: '/killerapp/workflows/contract-templates' },
-      { label: 'Permit checklist', subLabel: 'What permits do I need?', href: '/killerapp/workflows/permit-applications' },
-      { label: 'Compare sub bids', subLabel: 'Pick the right sub', href: '/killerapp/workflows/sub-management' },
-    ],
-  },
-  {
-    stageLabel: '3 · Plan it out',
-    stageColor: '#2E9E9A', // teal (Plan)
-    items: [
-      { label: 'Supply ordering', subLabel: 'Order the materials', href: '/killerapp/workflows/supply-ordering' },
-      { label: 'Crew sizing', subLabel: 'How many people?', href: '/killerapp/workflows/worker-count' },
-      { label: 'Equipment', subLabel: 'Rent or buy?', href: '/killerapp/workflows/equipment' },
-    ],
-  },
-];
-
-function NextStepCard({
-  href,
-  label,
-  subLabel,
-  accentColor,
-}: {
-  href: string;
-  label: string;
-  subLabel: string;
-  accentColor: string;
-}) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-        padding: '12px 14px',
-        minHeight: 56,
-        border: '0.5px solid var(--faded-rule)',
-        borderLeft: `3px solid ${accentColor}`,
-        borderRadius: 8,
-        background: 'rgba(255,255,255,0.55)',
-        color: 'var(--graphite)',
-        textDecoration: 'none',
-        transition: 'background 180ms ease, border-color 180ms ease, transform 180ms ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
-        e.currentTarget.style.borderColor = accentColor;
-        e.currentTarget.style.borderLeftColor = accentColor;
-        e.currentTarget.style.transform = 'translateY(-1px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(255,255,255,0.55)';
-        e.currentTarget.style.borderColor = 'var(--faded-rule)';
-        e.currentTarget.style.borderLeftColor = accentColor;
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-      data-testid={`next-step-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
-    >
-      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.3 }}>
-        {label} →
-      </div>
-      <div
-        style={{
-          fontSize: 11,
-          opacity: 0.7,
-          lineHeight: 1.3,
-          fontStyle: 'italic',
-        }}
-      >
-        {subLabel}
-      </div>
-    </Link>
-  );
-}
+// NextStepLink / NEXT_STEP_GROUPS / NextStepCard were removed with the
+// "Choose your next move" panel (2026-06-15 redline, fix 1 — de-double the IA).
+// Workflow selection now lives in the single ordered 7-stage picker on the
+// /killerapp page.
