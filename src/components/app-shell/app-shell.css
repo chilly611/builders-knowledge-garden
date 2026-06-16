@@ -245,3 +245,45 @@ body.bkg-lane-owner [data-shell-mount="layout"] .gstrips { display: none !import
 .bkg-shell .pnav-aa-status { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faded); }
 .bkg-shell .pnav-aa-error { margin-top: 8px; font-size: 12px; color: var(--specimen-rust); }
 .bkg-shell .pnav-aa-answer { margin-top: 10px; font-size: 13px; line-height: 1.5; color: var(--ink-graphite); white-space: pre-wrap; border-top: 1px solid var(--paper-edge); padding-top: 10px; max-height: 280px; overflow-y: auto; }
+
+/* ─── COMPASS DUAL-BLOOM (2026-06-15) ────────────────────────────────────────
+   The compass blooms TWO rectangles side by side: (a) the existing navigation
+   rectangle (.pnav-menu) and (b) the TODAY rectangle (.pnav-today = daily
+   brief + daily logbook). Both reuse .pnav-panel, so they're visually
+   identical to the prior nav bloom and inherit the prefers-reduced-motion rule
+   above (no bloom animation → instant open). Herbarium tokens only. */
+.bkg-shell .pnav-bloom { display: flex; flex-direction: row; align-items: flex-end; justify-content: flex-end; gap: 12px; }
+
+.bkg-shell .pnav-today { display: flex; flex-direction: column; }
+.bkg-shell .pnav-today .today-sec { padding-top: 10px; }
+.bkg-shell .pnav-today .today-sec + .today-sec { margin-top: 10px; border-top: 1px solid var(--paper-edge); }
+.bkg-shell .pnav-today .today-sec-head { display: block; margin-bottom: 8px; }
+.bkg-shell .pnav-today .today-muted { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-faded); margin: 0; line-height: 1.4; }
+.bkg-shell .pnav-today .today-brief { font-family: var(--font-ui); font-size: 13px; line-height: 1.5; color: var(--ink-sepia); margin: 0; white-space: pre-wrap; max-height: 168px; overflow-y: auto; }
+
+.bkg-shell .pnav-today .today-focus { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.bkg-shell .pnav-today .today-focus-item { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-left: 3px solid var(--specimen-teal); background: rgba(60, 122, 138, 0.06); border-radius: var(--radius-xs); }
+.bkg-shell .pnav-today .today-focus-t { font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--ink-graphite); }
+.bkg-shell .pnav-today .today-focus-d { font-family: var(--font-editorial); font-style: italic; font-size: 11px; color: var(--ink-faded); }
+
+.bkg-shell .pnav-today .today-log { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 156px; overflow-y: auto; }
+.bkg-shell .pnav-today .today-log-item { display: flex; gap: 9px; align-items: baseline; }
+.bkg-shell .pnav-today .today-log-when { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--ink-faded); white-space: nowrap; flex: 0 0 auto; min-width: 42px; }
+.bkg-shell .pnav-today .today-log-txt { font-family: var(--font-ui); font-size: 13px; line-height: 1.4; color: var(--ink-sepia); overflow-wrap: anywhere; }
+.bkg-shell .pnav-today .today-log-form { display: flex; flex-direction: column; gap: 8px; }
+.bkg-shell .pnav-today .today-log-input { width: 100%; box-sizing: border-box; resize: none; font-family: var(--font-ui); font-size: 13px; color: var(--ink-graphite); background: var(--paper-cream); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); padding: 8px 10px; box-shadow: var(--shadow-inset); outline: none; line-height: 1.45; }
+.bkg-shell .pnav-today .today-log-input::placeholder { color: var(--ink-faded); font-style: italic; font-family: var(--font-editorial); }
+.bkg-shell .pnav-today .today-log-input:focus { border-color: var(--specimen-teal); box-shadow: var(--shadow-focus); }
+.bkg-shell .pnav-today .today-log-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bkg-shell .pnav-today .today-log-hint { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faded); }
+.bkg-shell .pnav-today .today-log-err { font-family: var(--font-mono); font-size: 11px; color: var(--specimen-rust); }
+.bkg-shell .pnav-today .today-log-add { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--paper-cream); background: var(--specimen-teal); border: 1.5px solid var(--specimen-teal); border-radius: var(--radius-xs); padding: 8px 16px; cursor: pointer; transition: background-color 160ms var(--ease-out-paper); }
+.bkg-shell .pnav-today .today-log-add:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
+.bkg-shell .pnav-today .today-log-add:disabled { opacity: 0.5; cursor: default; }
+
+/* Below the kit breakpoint two 300px panels won't sit side by side — stack
+   them (TODAY above NAV) and cap each so both fit a phone viewport. */
+@media (max-width: 1000px) {
+  .bkg-shell .pnav-bloom { flex-direction: column; align-items: flex-end; }
+  .bkg-shell .pnav-bloom .pnav-panel { max-height: calc(50vh - 76px); }
+}
