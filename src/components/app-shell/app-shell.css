@@ -259,7 +259,20 @@ body.bkg-lane-owner [data-shell-mount="layout"] .gstrips { display: none !import
 .bkg-shell .pnav-today .today-sec + .today-sec { margin-top: 10px; border-top: 1px solid var(--paper-edge); }
 .bkg-shell .pnav-today .today-sec-head { display: block; margin-bottom: 8px; }
 .bkg-shell .pnav-today .today-muted { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-faded); margin: 0; line-height: 1.4; }
-.bkg-shell .pnav-today .today-brief { font-family: var(--font-ui); font-size: 13px; line-height: 1.5; color: var(--ink-sepia); margin: 0; white-space: pre-wrap; max-height: 168px; overflow-y: auto; }
+/* Daily brief — container for markdown rendered to elements (BriefMarkdown).
+   No `white-space: pre-wrap` (block elements own their spacing now) so the
+   model's "# heading" / "**bold**" no longer leak through as literal glyphs. */
+.bkg-shell .pnav-today .today-brief { font-family: var(--font-ui); font-size: 13px; line-height: 1.5; color: var(--ink-sepia); margin: 0; max-height: 168px; overflow-y: auto; }
+.bkg-shell .pnav-today .today-brief-p { margin: 0 0 7px; }
+.bkg-shell .pnav-today .today-brief-p:last-child { margin-bottom: 0; }
+.bkg-shell .pnav-today .today-brief-h { font-family: var(--font-ui); font-weight: 700; color: var(--ink-graphite); margin: 0 0 6px; line-height: 1.3; }
+.bkg-shell .pnav-today .today-brief-h1 { font-size: 14px; }
+.bkg-shell .pnav-today .today-brief-h2, .bkg-shell .pnav-today .today-brief-h3 { font-size: 13px; }
+.bkg-shell .pnav-today .today-brief-list { list-style: none; margin: 0 0 7px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.bkg-shell .pnav-today .today-brief-list li { position: relative; padding-left: 14px; }
+.bkg-shell .pnav-today .today-brief-list li::before { content: '·'; position: absolute; left: 4px; color: var(--specimen-brass); font-weight: 700; }
+.bkg-shell .pnav-today .today-brief strong { font-weight: 700; color: var(--ink-graphite); }
+.bkg-shell .pnav-today .today-brief em { font-family: var(--font-editorial); font-style: italic; }
 
 .bkg-shell .pnav-today .today-focus { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .bkg-shell .pnav-today .today-focus-item { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-left: 3px solid var(--specimen-teal); background: rgba(60, 122, 138, 0.06); border-radius: var(--radius-xs); }

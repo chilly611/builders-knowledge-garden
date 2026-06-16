@@ -307,21 +307,26 @@
   gap: 12px;
 }
 
-/* Workflow row */
+/* Workflow row — a raised, clickable card.
+   The herbarium rebrand remapped --trace from light paper (#F4F0E6) to the
+   mid-tan --paper-edge (#C9B98A) — the SAME value as the page ground — which
+   collapsed the card/ground distinction and made these read as floating, not
+   clickable. Restore the card: a light --paper-cream surface raised over the
+   --trace ground, a visible hairline border, and the stage-accent left edge
+   (the signature affordance). The full-card click target lives on
+   .workflowLink (display:block) below; focus state is defined there too. */
 .workflowRow {
   display: grid;
   grid-template-columns: 60px 1fr auto;
   gap: 24px;
   align-items: center;
   padding: 20px 16px;
-  background: var(--trace);
-  border: 1px solid #C9C3B3;
+  background: var(--paper-cream);
+  border: 1px solid var(--paper-edge);
+  border-left: 3px solid var(--stage-accent, var(--brass));
   border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(30, 59, 94, 0.04);
-}
-
-.workflowRow:last-child {
-  border-bottom: 1px solid #C9C3B3;
+  box-shadow: 0 1px 2px rgba(42, 38, 32, 0.06);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 /* Workflow code (q2, q4, q11) */
@@ -411,16 +416,37 @@
   opacity: 0.5;
 }
 
-/* Workflow link */
+/* Workflow link — the full-card click target (wraps the whole .workflowRow). */
 .workflowLink {
   text-decoration: none;
   color: inherit;
   display: block;
-  transition: all 0.15s cubic-bezier(0.33, 0.66, 0.66, 1);
+  border-radius: 4px;
 }
 
 .workflowLink:hover .workflowRow {
-  box-shadow: 0 2px 12px rgba(30, 59, 94, 0.10);
+  box-shadow: 0 4px 14px rgba(42, 38, 32, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Keyboard focus — the card reads as focusable; ring in the stage accent. */
+.workflowLink:focus-visible {
+  outline: none;
+}
+
+.workflowLink:focus-visible .workflowRow {
+  outline: 2px solid var(--stage-accent, var(--brass));
+  outline-offset: 2px;
+  box-shadow: 0 4px 14px rgba(42, 38, 32, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflowRow {
+    transition: none;
+  }
+  .workflowLink:hover .workflowRow {
+    transform: none;
+  }
 }
 
 .workflowLink:hover .workflowCode {
@@ -443,11 +469,13 @@
   cursor: not-allowed;
 }
 
-/* Peak moment: Supply Ordering (q11) */
+/* Peak moment: Supply Ordering (q11) — same raised cream card as its
+   siblings, but framed in robin instead of the stage accent (its identity).
+   The 2px `border` shorthand intentionally overrides the base left-edge rule. */
 .workflowRowPeakMoment {
-  background: rgba(127, 207, 203, 0.04);
+  background: var(--paper-cream);
   border: 2px solid var(--robin);
-  box-shadow: 0 1px 2px rgba(30, 59, 94, 0.04);
+  box-shadow: 0 1px 2px rgba(42, 38, 32, 0.06);
 }
 
 .workflowRowPeakMoment .workflowCode {

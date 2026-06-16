@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { laneToBriefingKey } from '../useDailyBriefing';
+import { laneToBriefingKey, fillBriefDate } from '../useDailyBriefing';
+import { parseBrief } from '../../../components/app-shell/BriefMarkdown';
 import {
   parseLogbookEntries,
   mergeLogbookEntries,
@@ -69,5 +70,70 @@ describe('mergeLogbookEntries — never clobbers other daily_log_state keys', ()
     const entries: LogbookEntry[] = [{ at: '2026-06-15T08:00:00.000Z', text: 'first note' }];
     expect(parseLogbookEntries(mergeLogbookEntries(undefined, entries))).toEqual(entries);
     expect(parseLogbookEntries(mergeLogbookEntries({}, entries))).toEqual(entries);
+  });
+});
+
+describe('fillBriefDate — never lets a bare [Date] reach the UI', () => {
+  // Compute the expectation the same way the helper does so the test is
+  // locale-independent (CI locale need not be en-US).
+  const now = new Date('2026-06-15T12:00:00');
+  const expected = now.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  it('substitutes the model\'s "[Date]" placeholder in the heading', () => {
+    const out = fillBriefDate('# Morning Briefing — [Date]\n\nFive projects, zero fires.', now);
+    expect(out).not.toMatch(/\[date\]/i);
+    expect(out).toBe(`# Morning Briefing — ${expected}\n\nFive projects, zero fires.`);
+  });
+
+  it('handles the common placeholder variants', () => {
+    expect(fillBriefDate('[DATE]', now)).toBe(expected);
+    expect(fillBriefDate('[Current Date]', now)).toBe(expected);
+    expect(fillBriefDate('[Today\'s Date]', now)).toBe(expected);
+    expect(fillBriefDate('[today]', now)).toBe(expected);
+    expect(fillBriefDate('{date}', now)).toBe(expected);
+    expect(fillBriefDate('{{date}}', now)).toBe(expected);
+  });
+
+  it('leaves non-date brackets and plain text untouched', () => {
+    expect(fillBriefDate('Check the [punch list] and update the bid.', now)).toBe(
+      'Check the [punch list] and update the bid.'
+    );
+    expect(fillBriefDate('', now)).toBe('');
+  });
+});
+
+describe('parseBrief — markdown to block tokens', () => {
+  it('detects headings and caps the level at 3', () => {
+    expect(parseBrief('# Title')).toEqual([{ kind: 'heading', level: 1, text: 'Title' }]);
+    expect(parseBrief('### Sub')).toEqual([{ kind: 'heading', level: 3, text: 'Sub' }]);
+    expect(parseBrief('##### Deep')).toEqual([{ kind: 'heading', level: 3, text: 'Deep' }]);
+  });
+
+  it('joins wrapped paragraph lines and splits blocks on blank lines', () => {
+    expect(parseBrief('Five projects,\nzero fires.\n\nSteel is late.')).toEqual([
+      { kind: 'paragraph', text: 'Five projects, zero fires.' },
+      { kind: 'paragraph', text: 'Steel is late.' },
+    ]);
+  });
+
+  it('groups unordered and ordered list items', () => {
+    expect(parseBrief('- a\n- b')).toEqual([{ kind: 'list', items: ['a', 'b'] }]);
+    expect(parseBrief('1. one\n2) two')).toEqual([{ kind: 'list', items: ['one', 'two'] }]);
+  });
+
+  it('keeps inline **bold**/*italic* markers in the text for the renderer', () => {
+    expect(parseBrief('Call the **supplier** now.')).toEqual([
+      { kind: 'paragraph', text: 'Call the **supplier** now.' },
+    ]);
+  });
+
+  it('returns [] for empty / whitespace-only input', () => {
+    expect(parseBrief('')).toEqual([]);
+    expect(parseBrief('   \n  \n')).toEqual([]);
   });
 });
