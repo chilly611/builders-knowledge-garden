@@ -45,14 +45,6 @@ const sfOffice: PortalInputs = {
   stage: 'Build',
   progress: 70,
 };
-// The Folsom Street Fourplex demo — 4-unit ground-up infill multifamily.
-const folsomFourplex: PortalInputs = {
-  kind: 'hero',
-  buildingType: '4-unit ground-up infill multifamily — 4 stories, 5,200 sqft',
-  location: 'San Francisco, CA',
-  stage: 'Build',
-  progress: 42,
-};
 
 describe('buildPortalPrompt — brand lock (constant across all users)', () => {
   for (const kind of ['hero', 'study', 'thumb'] as const) {
@@ -72,18 +64,6 @@ describe('buildPortalPrompt — brand lock (constant across all users)', () => {
     expect(study).toContain('working drawing');
     expect(study).toContain('no photographic rendering');
   });
-
-  // (c) Brand locks still hold for the multifamily subject — the register is a
-  // constant, so a fourplex hero forbids the same things a farmhouse hero does.
-  it('the multifamily hero prompt keeps every brand lock', () => {
-    const p = buildPortalPrompt(folsomFourplex).toLowerCase();
-    expect(p).not.toContain('#e8443a');
-    expect(p).toContain('no pure white');
-    expect(p).toContain('no neon');
-    expect(p).toContain('no bright red');
-    expect(p).toContain('no people');
-    expect(p).toMatch(/cream|vellum|brass|teal/);
-  });
 });
 
 describe('buildPortalPrompt — universal substitutions (no hardcoded Marin/SF)', () => {
@@ -99,15 +79,6 @@ describe('buildPortalPrompt — universal substitutions (no hardcoded Marin/SF)'
     // the SF office prompt must NOT mention the Marin subject
     expect(buildPortalPrompt(sfOffice)).not.toContain('farmhouse');
     expect(buildPortalPrompt(sfOffice)).not.toContain('Marin');
-  });
-
-  it('the Folsom fourplex prompt reflects its own subject, not Marin', () => {
-    const folsom = buildPortalPrompt(folsomFourplex);
-    expect(folsom).toContain('multifamily');
-    expect(folsom).toContain('San Francisco, CA');
-    expect(folsom).not.toContain('farmhouse');
-    expect(folsom).not.toContain('Marin');
-    expect(folsom).not.toEqual(buildPortalPrompt(marinHero));
   });
 
   it('encodes the build progress as a construction cue', () => {
@@ -135,19 +106,6 @@ describe('archetypeFor', () => {
     expect(archetypeFor(null, 'retail shop buildout')).toBe('commercial');
     expect(archetypeFor(null, 'something unclassifiable')).toBe('generic');
   });
-  it('detects multifamily from the project type (data-driven, any project)', () => {
-    expect(archetypeFor(null, '4-unit ground-up infill multifamily')).toBe('multifamily');
-    expect(archetypeFor(null, 'fourplex')).toBe('multifamily');
-    expect(archetypeFor(null, 'a duplex in Oakland')).toBe('multifamily');
-    expect(archetypeFor(null, 'triplex')).toBe('multifamily');
-    expect(archetypeFor(null, '12 unit apartment building')).toBe('multifamily');
-    expect(archetypeFor(null, 'condo development')).toBe('multifamily');
-  });
-  it('multifamily wins even when the building kind reads as residential', () => {
-    // The Size Up enum classifies a fourplex as residential; the portal layer
-    // must still route it to the multifamily seed set via the type text.
-    expect(archetypeFor('residential', '4-unit infill multifamily')).toBe('multifamily');
-  });
 });
 
 describe('seedSlugFor — archetype-matched WIP placeholder', () => {
@@ -163,42 +121,6 @@ describe('seedSlugFor — archetype-matched WIP placeholder', () => {
     const a = seedSlugFor({ ...marinHero, kind: 'study' }, { variantKey: 'p1:study' });
     const b = seedSlugFor({ ...marinHero, kind: 'study' }, { variantKey: 'p1:study' });
     expect(a).toEqual(b);
-  });
-});
-
-describe('seedSlugFor — multifamily routes to the sf-fourplex seed set', () => {
-  // (a) A 4-unit multifamily project maps to the sf-fourplex hero/study/thumb.
-  it('maps a multifamily project to ITS hero/study/thumb seeds', () => {
-    expect(seedSlugFor({ ...folsomFourplex, kind: 'hero' }, { archetype: 'multifamily' }))
-      .toMatch(/^hero-sf-fourplex-golden-[ab]$/);
-    expect(seedSlugFor({ ...folsomFourplex, kind: 'study' }, { archetype: 'multifamily' }))
-      .toMatch(/^study-sf-/);
-    expect(seedSlugFor({ ...folsomFourplex, kind: 'thumb' }, { archetype: 'multifamily' }))
-      .toMatch(/^thumb-sf-/);
-  });
-
-  // (b) Marin still maps to the Marin seeds — not the SF set.
-  it('keeps Marin on the Marin (farmhouse) seeds', () => {
-    const hero = seedSlugFor({ ...marinHero, kind: 'hero' }, { archetype: 'residential' });
-    const study = seedSlugFor({ ...marinHero, kind: 'study' }, { archetype: 'residential' });
-    const thumb = seedSlugFor({ ...marinHero, kind: 'thumb' }, { archetype: 'residential' });
-    expect(hero).toMatch(/^hero-marin-farmhouse-golden-[ab]$/);
-    expect(study).toMatch(/^study-(massing-options|clearance|daylight)$/);
-    expect(thumb).toMatch(/^thumb-(site-framing|material-detail|detail-sketch)$/);
-    // None of the Marin slugs leak the SF identifier.
-    expect(hero).not.toMatch(/sf-fourplex|-sf-/);
-    expect(study).not.toMatch(/sf-fourplex|-sf-/);
-    expect(thumb).not.toMatch(/sf-fourplex|-sf-/);
-  });
-
-  // (d) No bleed across a ?project= switch: each archetype resolves within its
-  // own set, so the SF fourplex never serves a Marin hero and vice-versa.
-  it('does not bleed seeds across archetypes', () => {
-    const mfHero = seedSlugFor({ ...folsomFourplex, kind: 'hero' }, { archetype: 'multifamily' });
-    const marinHeroSlug = seedSlugFor({ ...marinHero, kind: 'hero' }, { archetype: 'residential' });
-    expect(mfHero).toMatch(/sf-fourplex/);
-    expect(mfHero).not.toEqual(marinHeroSlug);
-    expect(marinHeroSlug).not.toMatch(/sf-fourplex/);
   });
 });
 

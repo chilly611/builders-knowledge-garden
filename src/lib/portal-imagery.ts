@@ -48,14 +48,7 @@ export interface PortalInputs {
   kind: PortalKind;
 }
 
-/**
- * Coarse subject archetype the seed set keys off. `multifamily` is residential
- * in spirit (so the Size Up `BuildingType` enum still reads it as residential)
- * but gets its OWN staged seed set — a 4-unit infill stack photographs very
- * differently from a single-family farmhouse. Keep this list and the SEED_SETS
- * keys in sync.
- */
-export type Archetype = 'residential' | 'multifamily' | 'commercial' | 'mixed' | 'generic';
+export type Archetype = 'residential' | 'commercial' | 'mixed' | 'generic';
 
 /* ─────────────────── §2 · The render register (the brand lock) ───────────────────
  * CONSTANT across all users. Whatever the subject, the *look* is fixed. Kept in
@@ -178,102 +171,47 @@ export const FIDELITY_BUCKET = 'brand-assets';
 /** Public object path; the catalog row's storage_path strips the leading "assets/". */
 export const FIDELITY_PUBLIC_PREFIX = 'assets/bkg/fidelity';
 
-/**
- * Archetype-keyed seed sets. The set is the VARIABLE here; the render register
- * (§2) stays constant. Each archetype that has staged assets gets its own
- * hero/study/thumb slugs so two demos can coexist in the same bucket with no
- * collision. Archetypes WITHOUT a staged set (commercial, mixed, generic) fall
- * through to the universal residential studies/thumbs and emit no photoreal
- * hero (the consumer then shows the guaranteed concept fallback).
- *
- * This is asset routing, not project data — keyed off archetype, so ANY future
- * multifamily project gets the sf-fourplex placeholder set, and ANY future
- * single-family project gets the Marin set, with zero per-project hardcoding.
- */
-const SEED_SETS: Partial<Record<Archetype, Record<PortalKind, readonly string[]>>> = {
-  residential: {
-    hero: ['hero-marin-farmhouse-golden-a', 'hero-marin-farmhouse-golden-b'],
-    study: ['study-massing-options', 'study-clearance', 'study-daylight'],
-    thumb: ['thumb-site-framing', 'thumb-material-detail', 'thumb-detail-sketch'],
-  },
-  multifamily: {
-    hero: ['hero-sf-fourplex-golden-a', 'hero-sf-fourplex-golden-b'],
-    study: ['study-sf-massing-options', 'study-sf-stacking-clearance', 'study-sf-light-well'],
-    thumb: ['thumb-sf-site-framing', 'thumb-sf-material-detail', 'thumb-sf-detail-sketch'],
-  },
+const SEED_SETS: Record<PortalKind, readonly string[]> = {
+  hero: ['hero-marin-farmhouse-golden-a', 'hero-marin-farmhouse-golden-b'],
+  study: ['study-massing-options', 'study-clearance', 'study-daylight'],
+  thumb: ['thumb-site-framing', 'thumb-material-detail', 'thumb-detail-sketch'],
 };
 
-/** The universal placeholder set used for study/thumb when an archetype has none. */
-const FALLBACK_SEED_SET = SEED_SETS.residential!;
-
-/**
- * Coarse subject archetype from the building kind (the three-way enum) plus a
- * free-text fallback. Multifamily is detected from the project TYPE text first
- * — it reads as `residential` to the Size Up enum, so `buildingKind` alone
- * can't distinguish a fourplex from a farmhouse; the words "multifamily",
- * "fourplex", "duplex", "triplex", "apartment", "condo", or an "N-unit" / "N
- * units" phrase are what route it to the multifamily seed set.
- */
+/** Coarse archetype from the building kind (with a free-text fallback). */
 export function archetypeFor(
   buildingKind?: string | null,
   buildingType?: string | null,
 ): Archetype {
-  const t = (buildingType || '').toLowerCase();
-
-  // Multifamily first — it would otherwise be swallowed by `residential`.
-  if (
-    /(multi[- ]?family|multifamily|fourplex|four[- ]?plex|duplex|triplex|apartment|condo|townhom|townhouse|\d+\s*-?\s*unit)/.test(
-      t,
-    )
-  ) {
-    return 'multifamily';
+  if (buildingKind === 'residential' || buildingKind === 'commercial' || buildingKind === 'mixed') {
+    return buildingKind;
   }
-
-  if (buildingKind === 'commercial' || buildingKind === 'mixed') return buildingKind;
-  if (buildingKind === 'residential') return 'residential';
-
+  const t = (buildingType || '').toLowerCase();
   if (/(office|retail|warehouse|commercial|tenant|restaurant|shop)/.test(t)) return 'commercial';
   if (/(mixed[- ]?use|live[- ]?work)/.test(t)) return 'mixed';
   if (/(home|house|farmhouse|adu|residence|residential|dwelling|cabin)/.test(t)) return 'residential';
   return 'generic';
 }
 
-/** Archetypes that have a staged photoreal HERO seed (so a hero placeholder exists). */
-function hasStagedHero(a: Archetype): boolean {
-  return a === 'residential' || a === 'multifamily';
-}
-
 /**
  * Pick the archetype-matched seed slug for a kind, or null when no seed fits
  * (the consumer then falls straight to the guaranteed concept fallback).
  *
- * - hero  → only archetypes with a staged photoreal hero (residential,
- *           multifamily) return a slug; commercial/mixed/generic return null.
- * - study / thumb → the archetype's own set if it has one, else the universal
- *           residential set (those plates are generic enough for any project).
- *
- * The slug names are asset identifiers, not project data — the per-project
- * render still carries the user's actual building type / location / style.
+ * NOTE: only the residential (Marin farmhouse) HERO set is staged today, so it
+ * is the universal residential placeholder until more archetype heroes exist.
+ * Studies and thumbs are generic enough to use for any project. The slug names
+ * are asset identifiers, not project data — the per-project render is what
+ * carries the user's actual building type/location/style.
  */
 export function seedSlugFor(
   i: PortalInputs,
   opts?: { archetype?: Archetype; variantKey?: string },
 ): string | null {
-  const archetype = opts?.archetype ?? 'generic';
-
-  if (i.kind === 'hero' && !hasStagedHero(archetype)) {
-    // No photoreal hero seed for this archetype yet.
+  const set = SEED_SETS[i.kind];
+  if (!set.length) return null;
+  if (i.kind === 'hero' && (opts?.archetype ?? 'generic') !== 'residential') {
+    // No photoreal hero seed for non-residential archetypes yet.
     return null;
   }
-
-  // Heroes resolve within their own archetype set (so multifamily ≠ Marin).
-  // Studies/thumbs use the archetype set when present, else the universal one.
-  const set =
-    i.kind === 'hero'
-      ? (SEED_SETS[archetype] ?? FALLBACK_SEED_SET)[i.kind]
-      : (SEED_SETS[archetype] ?? FALLBACK_SEED_SET)[i.kind] ?? FALLBACK_SEED_SET[i.kind];
-
-  if (!set || !set.length) return null;
   const key = opts?.variantKey || `${i.kind}:${i.buildingType ?? ''}:${i.location ?? ''}`;
   return set[seedFromString(key) % set.length];
 }
