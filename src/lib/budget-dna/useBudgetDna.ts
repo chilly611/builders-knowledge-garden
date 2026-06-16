@@ -16,6 +16,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStageProject } from '@/lib/hooks/useStageProject';
 import { useProjectLedger } from '@/components/app-shell/useProjectLedger';
 import { getDemoFixture } from '@/lib/projects/getCanonicalProject';
+import { isCanonicalProjectId } from '@/lib/projects/getCanonicalProject';
+import { MARIN_BUDGET_LINES, MARIN_PLAN_PHASES } from '@/lib/seed-data/marin-farmhouse';
 import {
   normalizeStoredLines,
   storageKeyFor,
@@ -41,6 +43,12 @@ export function useBudgetDna(): UseBudgetDnaResult {
 
   useEffect(() => {
     if (getDemoFixture(sp.projectId)) { setStoredLines(null); return; }
+  const isMarin = isCanonicalProjectId(sp.projectId);
+  const [storedLines, setStoredLines] = useState<BudgetLine[] | null>(null);
+
+  // Non-canonical projects read their lines from the BudgetClient spine.
+  useEffect(() => {
+    if (isMarin) { setStoredLines(null); return; }
     if (typeof window === 'undefined') return;
     try {
       const raw = window.localStorage.getItem(storageKeyFor(sp.projectId));
@@ -53,6 +61,11 @@ export function useBudgetDna(): UseBudgetDnaResult {
   return useMemo<UseBudgetDnaResult>(() => {
     const lines: DnaLine[] = fixture?.budgetLines ?? storedLines ?? [];
     const phases: PhaseInput[] = fixture?.phases ?? DEFAULT_BUILD_PHASES;
+  }, [sp.projectId, isMarin]);
+
+  return useMemo<UseBudgetDnaResult>(() => {
+    const lines: DnaLine[] = isMarin ? MARIN_BUDGET_LINES : (storedLines ?? []);
+    const phases: PhaseInput[] = isMarin ? MARIN_PLAN_PHASES : DEFAULT_BUILD_PHASES;
     const total = sp.budgetTotal ?? 0;
     const totals = ledger.budget ?? {
       total,
@@ -67,4 +80,8 @@ export function useBudgetDna(): UseBudgetDnaResult {
       lane: sp.lane,
     };
   }, [fixture, storedLines, ledger.budget, ledger.ready, sp.budgetTotal, sp.budgetSpent, sp.lane]);
+      ready: ledger.ready && (isMarin || storedLines !== null),
+      lane: sp.lane,
+    };
+  }, [isMarin, storedLines, ledger.budget, ledger.ready, sp.budgetTotal, sp.budgetSpent, sp.lane]);
 }
