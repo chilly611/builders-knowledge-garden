@@ -18,6 +18,7 @@ import { useShellConfig } from './ShellConfigContext';
 import './app-shell.css';
 import { AskTheGarden } from './AskTheGarden';
 import { AskAnswer } from './AskAnswer';
+import CompassToday from './CompassToday';
 import type { ShellNavItem } from './types';
 
 function CompassRose({ open }: { open: boolean }) {
@@ -39,8 +40,15 @@ export function ShellNav() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // `nav` = the compass bloom is open. The bloom shows the navigation
+  // rectangle AND the TODAY rectangle (daily brief + daily logbook) side by
+  // side — see the dual-bloom render below (compass dual-bloom, 2026-06-15).
   const [nav, setNav] = useState(false);
   const [ask, setAsk] = useState(false);
+  // Logbook draft is lifted here so a half-typed note survives the TODAY
+  // panel unmounting when the bloom closes and reopens.
+  const [logDraft, setLogDraft] = useState('');
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The single entry point reaches both functions (2026-06-10 merge):
   // "Ask" = question → answer (the legacy GlobalAiFab copilot, now in-panel);
   // "Tell" = the multimodal capture (AskTheGarden). Ask is the default tab.
@@ -70,6 +78,28 @@ export function ShellNav() {
     router.push(href);
   }, [router, searchParams, config.projectId]);
 
+  // Hover-or-press dual bloom. Hovering the compass opens it; leaving the
+  // whole cluster closes it after a short grace period (so the pointer can
+  // travel across the gap into the panels); pressing toggles it (so touch +
+  // keyboard work too). prefers-reduced-motion is handled in CSS — the shell
+  // kills all animation — so "open" is simply instant there.
+  const cancelClose = useCallback(() => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }, []);
+  const openBloom = useCallback(() => {
+    cancelClose();
+    setNav(true);
+    setAsk(false);
+  }, [cancelClose]);
+  const scheduleClose = useCallback(() => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setNav(false), 150);
+  }, [cancelClose]);
+  useEffect(() => () => cancelClose(), [cancelClose]);
+
   // Group nav items in declared order.
   const groups: { title: string | null; items: ShellNavItem[] }[] = [];
   for (const item of config.nav) {
@@ -81,7 +111,7 @@ export function ShellNav() {
 
   return (
     <div className="bkg-shell" data-shell-mount="nav">
-      <div className="pnav" ref={rootRef}>
+      <div className="pnav" ref={rootRef} onMouseEnter={cancelClose} onMouseLeave={scheduleClose}>
         {ask && (
           <div className="pnav-panel pnav-ask-panel" role="dialog" aria-label="Ask or tell the garden">
             <div className="pnav-panel-head">
@@ -114,7 +144,11 @@ export function ShellNav() {
         )}
 
         {nav && (
-          <div className="pnav-panel pnav-menu" role="dialog" aria-label="Navigate">
+          <div className="pnav-bloom">
+            {/* (b) TODAY rectangle — daily brief + daily logbook */}
+            <CompassToday draft={logDraft} onDraftChange={setLogDraft} />
+            {/* (a) the existing NAVIGATION rectangle */}
+            <div className="pnav-panel pnav-menu" role="dialog" aria-label="Navigate">
             <div className="pnav-panel-head">
               <span className="eng-label">Navigate</span>
               <span className="pnav-lane">{config.laneLabel} lane</span>
@@ -144,6 +178,7 @@ export function ShellNav() {
                 })}
               </div>
             ))}
+            </div>
           </div>
         )}
 
@@ -151,7 +186,14 @@ export function ShellNav() {
           <button className="pnav-ask" type="button" onClick={() => { setAsk((v) => !v); setNav(false); }}>
             <span className="pnav-ask-dot" /> <span className="pnav-ask-label">Ask or tell the garden</span>
           </button>
-          <button className="pnav-compass" type="button" aria-label="Navigate" aria-expanded={nav} onClick={() => { setNav((v) => !v); setAsk(false); }}>
+          <button
+            className="pnav-compass"
+            type="button"
+            aria-label={nav ? 'Close compass' : 'Open compass — navigation and today'}
+            aria-expanded={nav}
+            onMouseEnter={openBloom}
+            onClick={() => { setNav((v) => !v); setAsk(false); }}
+          >
             <CompassRose open={nav} />
           </button>
         </div>
