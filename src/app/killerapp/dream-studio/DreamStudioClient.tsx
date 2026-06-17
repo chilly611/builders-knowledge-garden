@@ -24,7 +24,7 @@
  * CAD/DWG/BIM export is a labeled Phase 2.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authedFetch } from '@/lib/authed-fetch';
 import { createSnapshot } from '@/lib/time-machine';
@@ -37,6 +37,7 @@ import {
   type IntakeAnswers,
 } from './intake';
 import { deriveRoomProgram, floorPlanDataUri } from './floorplan';
+import { Lightbox, type LightboxItem } from './Lightbox';
 import './dream-studio.css';
 
 type Phase = 'intake' | 'concepts' | 'blueprint';
@@ -57,6 +58,15 @@ interface Concept {
 
 const CONCEPT_LABELS = ['Street view', 'Garden side', 'Golden hour', 'Sketch'];
 
+/** Blueprint-page perspectives: the chosen direction from more angles + interiors. */
+const PERSPECTIVES: { key: string; label: string; mod: string }[] = [
+  { key: 'aerial', label: 'From above', mod: 'aerial view from directly overhead showing the roof and the site, birds-eye' },
+  { key: 'street', label: 'Street side', mod: 'front street elevation, straight-on architectural view' },
+  { key: 'rear', label: 'Garden side', mod: 'rear elevation facing the back garden' },
+  { key: 'living', label: 'Inside · living', mod: 'interior of the open-plan living room, large windows, natural daylight' },
+  { key: 'kitchen', label: 'Inside · kitchen', mod: 'interior of the kitchen with island and cabinetry' },
+];
+
 export default function DreamStudioClient() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>('intake');
@@ -69,7 +79,10 @@ export default function DreamStudioClient() {
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [views, setViews] = useState<Concept[]>([]); // blueprint-page perspectives
+  const [lightbox, setLightbox] = useState<{ items: LightboxItem[]; index: number; kind: 'concepts' | 'views' } | null>(null);
   const genRef = useRef(0);
+  const viewsForRef = useRef<string | null>(null); // chosen id the perspectives were generated for
 
   const profile = useMemo(() => buildProfile(answers), [answers]);
   const q = INTAKE[stepIdx];
@@ -129,6 +142,37 @@ export default function DreamStudioClient() {
       setRendering(false);
     })();
   }, [callRender]);
+
+  /* ── Perspectives for the Blueprint page: the chosen direction from more
+       angles + a couple of interiors. One render per view (parallel), each with
+       the same never-empty concept-sketch fallback. ── */
+  const runPerspectives = useCallback((p: ReturnType<typeof buildProfile>) => {
+    genRef.current += 1;
+    const base = genRef.current;
+    const placeholders: Concept[] = PERSPECTIVES.map((v, i) => ({
+      id: `v-${base}-${i}`, label: v.label,
+      src: conceptFallbackFor(`${p.buildingType}:${v.key}:${base}`, v.label),
+      kind: 'concept', pending: true,
+    }));
+    setViews(placeholders);
+    PERSPECTIVES.forEach((v, i) => {
+      const prompt = `${profileToBrief(p)} ${v.mod}. Architectural photography, golden hour, warm and filmic, no people, no text, no signage.`;
+      void callRender(prompt, 1).then((urls) => {
+        setViews((prev) => prev.map((x) => x.id === placeholders[i].id
+          ? (urls && urls[0] ? { ...x, src: urls[0], kind: 'render', pending: false } : { ...x, pending: false })
+          : x));
+      });
+    });
+  }, [callRender]);
+
+  // Generate the perspectives once we reach the blueprint with a chosen look
+  // (and re-generate if the chosen concept changes).
+  useEffect(() => {
+    if (phase === 'blueprint' && chosen && viewsForRef.current !== chosen) {
+      viewsForRef.current = chosen;
+      runPerspectives(profile);
+    }
+  }, [phase, chosen, profile, runPerspectives]);
 
   /* ── Intake navigation ── */
   const answerValue = (id: typeof q.id) => answers[id];
@@ -313,17 +357,18 @@ export default function DreamStudioClient() {
               </div>
             )}
             <div className="dstudio-grid">
-              {concepts.map((c) => (
+              {concepts.map((c, i) => (
                 <button
                   key={c.id}
                   type="button"
                   className={`dstudio-concept${chosen === c.id ? ' is-chosen' : ''}${c.pending ? ' is-pending' : ''}`}
-                  onClick={() => setChosen(c.id)}
-                  aria-pressed={chosen === c.id}
+                  onClick={() => setLightbox({ items: concepts.map((x) => ({ src: x.src, label: x.label })), index: i, kind: 'concepts' })}
+                  aria-label={`${c.label} — open full frame`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- render URL or data-URI fallback */}
                   <img src={c.src} alt={c.label} loading="lazy" />
-                  <span className="dstudio-concept-tag eng-label">{c.label}{chosen === c.id ? ' · chosen' : ''}</span>
+                  <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                  <span className="dstudio-concept-tag eng-label">{c.label}{chosen === c.id ? ' · chosen ✓' : ''}</span>
                 </button>
               ))}
             </div>
@@ -337,37 +382,91 @@ export default function DreamStudioClient() {
           </section>
         )}
 
-        {/* ── BLUEPRINT · schematic plan + build handoff ── */}
-        {phase === 'blueprint' && (
-          <section className="dstudio-card" aria-label="Blueprint">
-            <div className="dstudio-blueprint">
-              <div className="dstudio-plan">
-                {/* eslint-disable-next-line @next/next/no-img-element -- generated SVG data-URI */}
-                <img src={planSrc} alt={`Schematic floor plan — ${profile.buildingType}`} />
+        {/* ── BLUEPRINT · the look from every angle + schematic plan + build ── */}
+        {phase === 'blueprint' && (() => {
+          const chosenConcept = concepts.find((c) => c.id === chosen) ?? null;
+          // One navigable set: floor plan first, then the chosen look + perspectives.
+          const gallery: LightboxItem[] = [
+            { src: planSrc, label: 'Floor plan — schematic' },
+            ...(chosenConcept ? [{ src: chosenConcept.src, label: 'Your look' }] : []),
+            ...views.map((v) => ({ src: v.src, label: v.label })),
+          ];
+          const openLb = (i: number) => setLightbox({ items: gallery, index: i, kind: 'views' });
+          const stillRendering = views.some((v) => v.pending);
+          return (
+            <section className="dstudio-card" aria-label="Blueprint">
+              {/* Perspectives gallery */}
+              <div className="dstudio-section-head">
+                <span className="eng-label">The look · {profile.style ? profile.style.replace(/-/g, ' ') : profile.vibe || 'your direction'}</span>
+                <span className="eng-label">{stillRendering ? 'Rendering more views…' : 'Tap any image to view full frame'}</span>
               </div>
-              <aside className="dstudio-program">
-                <div className="eng-label">Room program · {program.reduce((s, r) => s + r.sqft, 0).toLocaleString('en-US')} sf</div>
-                <ul className="dstudio-program-list">
-                  {program.map((r) => (
-                    <li key={r.name}><span>{r.name}</span><span className="dstudio-program-sf">{r.sqft} sf</span></li>
-                  ))}
-                </ul>
-                <a className="dstudio-btn dstudio-btn-ghost dstudio-dl" href={planSrc} download={`dream-floorplan-${profile.buildingType.replace(/\s+/g, '-')}.svg`}>
-                  ↓ Download SVG
-                </a>
-                <p className="dstudio-disclaimer">Schematic — a starting point, not engineered construction documents.</p>
-              </aside>
-            </div>
-            <div className="dstudio-actions">
-              <button type="button" className="dstudio-btn dstudio-btn-ghost" onClick={back}>← Back to concepts</button>
-              <button type="button" className="dstudio-btn dstudio-btn-build" onClick={realize} disabled={saving}>
-                {saving ? 'Starting your build…' : 'Build this in the Killer App →'}
-              </button>
-            </div>
-            {saveError && <p className="dstudio-error" role="alert">{saveError}</p>}
-          </section>
-        )}
+              <div className="dstudio-views">
+                {chosenConcept && (
+                  <button type="button" className="dstudio-view" onClick={() => openLb(1)} aria-label="Your look — open full frame">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- render URL or data-URI fallback */}
+                    <img src={chosenConcept.src} alt="Your look" loading="lazy" />
+                    <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                    <span className="dstudio-view-tag eng-label">Your look</span>
+                  </button>
+                )}
+                {views.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    className={`dstudio-view${v.pending ? ' is-pending' : ''}`}
+                    onClick={() => openLb(gallery.findIndex((g) => g.src === v.src))}
+                    aria-label={`${v.label} — open full frame`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- render URL or data-URI fallback */}
+                    <img src={v.src} alt={v.label} loading="lazy" />
+                    <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                    <span className="dstudio-view-tag eng-label">{v.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Schematic plan + room program */}
+              <div className="dstudio-blueprint">
+                <button type="button" className="dstudio-plan" onClick={() => openLb(0)} aria-label="Open the floor plan full frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- generated SVG data-URI */}
+                  <img src={planSrc} alt={`Schematic floor plan — ${profile.buildingType}`} />
+                  <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                </button>
+                <aside className="dstudio-program">
+                  <div className="eng-label">Room program · {program.reduce((s, r) => s + r.sqft, 0).toLocaleString('en-US')} sf</div>
+                  <ul className="dstudio-program-list">
+                    {program.map((r) => (
+                      <li key={r.name}><span>{r.name}</span><span className="dstudio-program-sf">{r.sqft} sf</span></li>
+                    ))}
+                  </ul>
+                  <a className="dstudio-btn dstudio-btn-ghost dstudio-dl" href={planSrc} download={`dream-floorplan-${profile.buildingType.replace(/\s+/g, '-')}.svg`}>
+                    ↓ Download SVG
+                  </a>
+                  <p className="dstudio-disclaimer">Schematic — a starting point, not engineered construction documents.</p>
+                </aside>
+              </div>
+
+              <div className="dstudio-actions">
+                <button type="button" className="dstudio-btn dstudio-btn-ghost" onClick={back}>← Back to concepts</button>
+                <button type="button" className="dstudio-btn dstudio-btn-build" onClick={realize} disabled={saving}>
+                  {saving ? 'Starting your build…' : 'Build this in the Killer App →'}
+                </button>
+              </div>
+              {saveError && <p className="dstudio-error" role="alert">{saveError}</p>}
+            </section>
+          );
+        })()}
       </main>
+
+      <Lightbox
+        items={lightbox?.items ?? []}
+        index={lightbox ? lightbox.index : null}
+        onIndex={(i) => setLightbox((lb) => (lb ? { ...lb, index: i } : lb))}
+        onClose={() => setLightbox(null)}
+        action={lightbox?.kind === 'concepts'
+          ? { label: 'Choose this concept →', onActivate: (i) => { const c = concepts[i]; if (c) setChosen(c.id); setLightbox(null); } }
+          : undefined}
+      />
     </div>
   );
 }

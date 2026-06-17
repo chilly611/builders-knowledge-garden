@@ -6,6 +6,22 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: Dream Machine — full-frame lightbox + Blueprint perspectives gallery
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-studio-gallery` (worktree off `origin/main`, post #77 dream-machine-v2, real `node_modules`) · PR-only, founder merges.
+
+**Mandate (founder feedback on the live flagship):** (1) you have to be able to click the concept images and see them full-frame; (2) the Blueprint page should show the chosen style from multiple perspectives — various sides, above, and a couple of interiors — on the same page as the floor plan, and ALL of those + the plan should be clickable to full-frame and navigable.
+
+**What was built:**
+- **`Lightbox.tsx` (NEW)** — a shared full-frame viewer: ‹ › buttons + ←/→ keys + Esc + backdrop-click, caption with `n / total`, optional CTA. **Portaled to `document.body`** via `createPortal` — without it `position:fixed` anchored to a transformed shell ancestor and the overlay didn't cover the viewport (caught + fixed in-browser). The scrim is a deep ink wash OVER imagery (allowed by the herbarium lock, like the Dream Studio OVERLAY — not a page ground, never pure black). Reduced-motion honored (rule extended to `.dstudio-lb` since it's now outside `.dstudio-root`).
+- **CONCEPTS** — tiles now open the lightbox (full-frame) on click; "Choose this concept →" moved into the lightbox caption (so click = see it big, then choose). A ⤢ hover affordance signals expand; the chosen tile keeps its ✓ badge.
+- **BLUEPRINT** — new perspectives gallery: the chosen look + **5 generated views** (From above / Street side / Garden side / Inside·living / Inside·kitchen) via one `/api/v1/render` call per view (parallel) with the same never-empty concept-sketch fallback; generated on entering the phase and regenerated if the chosen concept changes. The floor plan is now a button. The plan + every view feed ONE navigable lightbox set (plan first — 7 items total); views-mode has no choose CTA.
+
+**Verification (real browser, worktree dev @ :4313):** concept click → full-frame lightbox, ‹ ›/keys navigate 1→4, "Choose this concept" selects + closes (confirmed via screenshot — scrim, centered frame, controls); blueprint shows the 6-tile gallery + plan; clicking the plan opens the lightbox at "Floor plan · 1 / 7" and navigates across all 7 with no choose CTA. (Views render as concept sketches in dev — no FLUX key — and as real renders in prod, where the founder already confirmed live renders work.) `next build` EXIT 0; tsc + eslint clean on changed files.
+
+**Note:** in dev `window.innerWidth` read 0 in one eval (stale preview viewport from a prior live-domain nav) — a tooling artifact, not a layout bug; the screenshot confirmed full-frame coverage.
+
+---
+
 ## 2026-06-16 — [Claude Code] Session: Dream Machine v2 — guided flagship (imagine → concepts → blueprint → build)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-v2` (worktree off `origin/main` @ `319b97e`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
 
