@@ -1,0 +1,293 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   DREAM MACHINE v2 — surface stylesheet. Recreated from the Claude Design mock
+   (decoded bundler export). The .dm2-* rules are ported VERBATIM (uniquely
+   namespaced); the mock was authored on our herbarium paper / specimen / ink
+   token families, so nothing is re-defined here. The shared .btn was
+   namespaced to .dm2-btn to avoid any global collision. Scoped under .ds2-root.
+   ───────────────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Space+Mono:wght@400;700&display=swap");
+
+.ds2-root {
+  --font-editorial: "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  --font-mono: "Space Mono", "JetBrains Mono", ui-monospace, monospace;
+  background: var(--paper-cream); color: var(--ink-sepia);
+  font-family: var(--font-ui); min-height: 100%;
+  max-width: 1280px; margin: 0 auto;
+}
+
+/* button base (ported from the mock shared .btn, namespaced) */
+.dm2-btn { font-family: var(--font-ui); font-size: 14px; font-weight: 600; line-height: 1.1; border-radius: var(--radius-xs); padding: 11px 20px; cursor: pointer; border: 1.5px solid var(--ink-graphite); background: var(--ink-graphite); color: var(--paper-cream); transition: transform 80ms var(--ease-out-paper), background-color 180ms var(--ease-out-paper), border-color 180ms var(--ease-out-paper); display: inline-flex; align-items: center; gap: 9px; letter-spacing: 0.01em; }
+.dm2-btn:active { transform: translateY(1px); }
+.dm2-btn:disabled { opacity: 0.45; cursor: default; }
+.dm2-btn-accent { background: var(--specimen-teal); border-color: var(--specimen-teal); color: var(--paper-cream); }
+.dm2-btn-accent:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
+
+.dm2-spine { position: sticky; top: 0; z-index: 24; background: color-mix(in oklab, var(--specimen-brass) 8%, var(--paper-cream)); border-bottom: 1px solid var(--paper-edge); box-shadow: var(--shadow-page-1); }
+.dm2-spine-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; padding: 9px 24px; }
+.dm2-spine-id { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.dm2-spine-id-seal { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto; background: radial-gradient(circle at 38% 32%, var(--specimen-brass-pale), var(--specimen-brass) 60%, var(--specimen-brass-aged)); border: 1px solid var(--specimen-brass-aged); box-shadow: var(--shadow-page-1); display: flex; align-items: center; justify-content: center; }
+.dm2-spine-id-txt { min-width: 0; }
+.dm2-spine-id-kick { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-aged); }
+.dm2-spine-id-name { font-family: var(--font-display); font-size: 15px; letter-spacing: -0.01em; color: var(--ink-graphite); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the five-node rail */
+.dm2-rail { display: grid; grid-template-columns: repeat(5, 1fr); align-items: start; position: relative; padding: 4px 6px 2px; }
+.dm2-rail-line { position: absolute; left: 9%; right: 9%; top: 16px; height: 2px; background: var(--paper-edge); border-radius: 2px; }
+.dm2-rail-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--specimen-brass-aged); border-radius: 2px; transition: width 420ms var(--ease-out-paper); }
+.dm2-node { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; cursor: pointer; padding: 0 4px; }
+.dm2-node-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--paper-cream); border: 2px solid var(--paper-edge); display: flex; align-items: center; justify-content: center; transition: all 220ms var(--ease-out-paper); }
+.dm2-node-dot span { font-family: var(--font-mono); font-size: 8px; color: var(--ink-faded); }
+.dm2-node.is-done .dm2-node-dot { background: var(--specimen-brass-aged); border-color: var(--specimen-brass-aged); }
+.dm2-node.is-done .dm2-node-dot span { color: var(--paper-cream); }
+.dm2-node.is-cur .dm2-node-dot { background: var(--specimen-rust); border-color: var(--specimen-rust-deep); box-shadow: 0 0 0 4px color-mix(in oklab, var(--specimen-rust) 18%, transparent); }
+.dm2-node.is-cur .dm2-node-dot span { color: var(--paper-cream); }
+.dm2-node-lab { font-family: var(--font-ui); font-weight: 700; font-size: 12px; letter-spacing: 0.01em; color: var(--ink-faded); margin-top: 2px; transition: color 180ms var(--ease-out-paper); }
+.dm2-node.is-cur .dm2-node-lab { color: var(--specimen-rust); }
+.dm2-node.is-done .dm2-node-lab { color: var(--ink-graphite); }
+.dm2-node-sub { font-family: var(--font-editorial); font-style: italic; font-size: 10.5px; color: var(--ink-faded); line-height: 1.0; text-align: center; }
+.dm2-node:hover .dm2-node-lab { color: var(--specimen-rust); }
+
+.dm2-spine-act { display: flex; align-items: center; gap: 10px; }
+.dm2-step-of { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); white-space: nowrap; }
+.dm2-step-of b { color: var(--ink-graphite); font-weight: 700; }
+
+/* ─── STAGE BODY — shared scaffold ─────────────────────────────────────*/
+.dm2-body { padding: 0 0 110px; }
+.dm2-stagehead { padding: 22px 28px 6px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.dm2-stagehead-l { min-width: 0; }
+.dm2-stagehead .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-aged); }
+.dm2-stagehead h1 { font-family: var(--font-display); font-size: 36px; letter-spacing: -0.03em; line-height: 1.0; color: var(--ink-graphite); margin: 8px 0 4px; }
+.dm2-stagehead .sub { font-family: var(--font-editorial); font-style: italic; font-size: 17px; color: var(--ink-script); max-width: 56ch; }
+.dm2-stagehead-meta { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faded); text-align: right; line-height: 1.8; white-space: nowrap; }
+.dm2-sec { padding: 18px 28px 0; }
+.dm2-sec-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+.dm2-sec-head h2 { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.015em; color: var(--ink-graphite); margin: 0; }
+.dm2-sec-head .eng-label { color: var(--specimen-brass-aged); }
+
+/* the always-present forward affordance — the "no dead ends" promise */
+.dm2-next { margin: 30px 28px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; background: var(--ink-graphite); border-radius: var(--radius-sm); box-shadow: var(--shadow-page-2); }
+.dm2-next-txt { color: var(--paper-cream); }
+.dm2-next-txt .l { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-pale); }
+.dm2-next-txt .t { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.01em; margin-top: 2px; }
+.dm2-next-txt .t em { font-style: normal; color: var(--specimen-brass-pale); }
+.dm2-next .row { display: flex; gap: 10px; align-items: center; }
+.dm2-btn-onlight { background: var(--specimen-brass); border-color: var(--specimen-brass); color: var(--ink-graphite); }
+.dm2-btn-onlight:hover { background: var(--specimen-brass-pale); border-color: var(--specimen-brass-pale); }
+.dm2-btn-back { background: transparent; border-color: color-mix(in oklab, var(--paper-cream) 36%, transparent); color: var(--paper-cream); }
+.dm2-btn-back:hover { border-color: var(--paper-cream); background: color-mix(in oklab, var(--paper-cream) 8%, transparent); }
+
+/* ─── STAGE 1 · IMAGINE — three converging doors + style picker ────────*/
+.dm2-doors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; position: relative; }
+.dm2-door { position: relative; background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-sm); box-shadow: var(--shadow-page-2); padding: 22px 22px 20px; cursor: pointer; text-align: left; transition: transform 180ms var(--ease-out-paper), box-shadow 180ms var(--ease-out-paper), border-color 180ms var(--ease-out-paper); overflow: hidden; }
+.dm2-door:hover { transform: translateY(-3px); box-shadow: var(--shadow-page-3); border-color: var(--specimen-brass-aged); }
+.dm2-door.is-on { border-color: var(--specimen-rust); box-shadow: 0 0 0 1.5px var(--specimen-rust), var(--shadow-page-3); }
+.dm2-door-ico { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--specimen-brass-pale); background: color-mix(in oklab, var(--specimen-brass) 12%, var(--paper-cream)); display: flex; align-items: center; justify-content: center; color: var(--specimen-brass-aged); margin-bottom: 14px; }
+.dm2-door-n { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--specimen-brass-aged); }
+.dm2-door-t { font-family: var(--font-display); font-size: 21px; letter-spacing: -0.02em; color: var(--ink-graphite); margin: 5px 0 7px; line-height: 1.02; }
+.dm2-door-d { font-family: var(--font-editorial); font-size: 14.5px; line-height: 1.42; color: var(--ink-script); }
+.dm2-door-foot { margin-top: 16px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--specimen-teal-deep); display: flex; align-items: center; gap: 7px; }
+.dm2-door .conv { position: absolute; right: -1px; bottom: 18px; opacity: 0.5; }
+
+/* the converging seed line — a tiny "all roads lead to one seed" caption */
+.dm2-converge { text-align: center; margin: 16px 0 4px; font-family: var(--font-editorial); font-style: italic; font-size: 15px; color: var(--ink-faded); display: flex; align-items: center; gap: 14px; justify-content: center; }
+.dm2-converge .ln { width: 56px; height: 1px; background: var(--paper-edge); }
+
+/* live talk transcript shown inside the chosen door */
+.dm2-transcript { margin-top: 14px; border-top: 1px dashed var(--paper-edge); padding-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+.dm2-tline { font-family: var(--font-ui); font-size: 13px; line-height: 1.4; color: var(--ink-sepia); }
+.dm2-tline .who { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--specimen-brass-aged); margin-right: 8px; }
+.dm2-mic { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--specimen-rust); }
+.dm2-mic .wave { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+.dm2-mic .wave i { width: 2px; background: var(--specimen-rust); border-radius: 1px; animation: dm2wave 900ms var(--ease-in-out-paper) infinite; }
+.dm2-mic .wave i:nth-child(2){ animation-delay: 120ms } .dm2-mic .wave i:nth-child(3){ animation-delay: 240ms } .dm2-mic .wave i:nth-child(4){ animation-delay: 360ms } .dm2-mic .wave i:nth-child(5){ animation-delay: 480ms }
+@keyframes dm2wave { 0%,100%{ height: 4px } 50%{ height: 14px } }
+
+/* constraint-first mini form (Describe door) */
+.dm2-constraints { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 14px; }
+.dm2-cfield { border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); background: var(--paper-cream); padding: 8px 10px; }
+.dm2-cfield .k { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); }
+.dm2-cfield .v { font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--ink-graphite); margin-top: 2px; }
+
+/* show-me upload tray */
+.dm2-tray { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.dm2-tray-img { width: 52px; height: 52px; border-radius: var(--radius-xs); border: 1px solid var(--paper-edge); background-size: cover; background-position: center; filter: saturate(0.9); }
+.dm2-tray-add { width: 52px; height: 52px; border-radius: var(--radius-xs); border: 1px dashed var(--specimen-brass-aged); display: flex; align-items: center; justify-content: center; color: var(--specimen-brass-aged); font-size: 20px; }
+
+/* style picker — the fast on-ramp */
+.dm2-styles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.dm2-style { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); overflow: hidden; cursor: pointer; background: var(--paper-cream); box-shadow: var(--shadow-page-1); transition: transform 160ms var(--ease-out-paper), box-shadow 160ms var(--ease-out-paper); }
+.dm2-style:hover { transform: translateY(-2px); box-shadow: var(--shadow-page-2); }
+.dm2-style.is-on { box-shadow: 0 0 0 2px var(--specimen-rust), var(--shadow-page-2); }
+.dm2-style-img { height: 96px; background-size: cover; background-position: center; filter: saturate(0.92); border-bottom: 1px solid var(--paper-edge); }
+.dm2-style-cap { padding: 9px 11px; }
+.dm2-style-cap .nm { font-family: var(--font-ui); font-weight: 700; font-size: 13px; color: var(--ink-graphite); }
+.dm2-style-cap .dd { font-family: var(--font-editorial); font-style: italic; font-size: 12px; color: var(--ink-faded); margin-top: 1px; }
+.dm2-style-tick { position: absolute; top: 7px; right: 7px; width: 18px; height: 18px; border-radius: 50%; background: var(--specimen-rust); color: var(--paper-cream); display: none; align-items: center; justify-content: center; }
+.dm2-style.is-on .dm2-style-tick { display: flex; }
+
+/* ─── STAGE 2 · EXPLORE — concept grid + blend + alchemist + shoppable ─*/
+.dm2-explore { display: grid; grid-template-columns: 1fr 308px; gap: 18px; align-items: start; }
+.dm2-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.dm2-concept { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); overflow: hidden; cursor: pointer; background: var(--paper-cream); box-shadow: var(--shadow-page-1); transition: box-shadow 160ms var(--ease-out-paper), transform 160ms var(--ease-out-paper); }
+.dm2-concept:hover { transform: translateY(-2px); box-shadow: var(--shadow-page-2); }
+.dm2-concept.is-sel { box-shadow: 0 0 0 2px var(--specimen-rust), var(--shadow-page-2); }
+.dm2-concept-img { height: 128px; background-size: cover; background-position: center; filter: saturate(0.92); position: relative; }
+.dm2-concept-tag { position: absolute; top: 7px; left: 7px; font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper-cream); background: color-mix(in oklab, var(--ink-graphite) 78%, transparent); padding: 3px 7px; border-radius: var(--radius-xs); }
+.dm2-concept-acts { position: absolute; inset: 0; background: linear-gradient(0deg, color-mix(in oklab, var(--ink-graphite) 84%, transparent), transparent 62%); opacity: 0; transition: opacity 160ms var(--ease-out-paper); display: flex; align-items: flex-end; gap: 6px; padding: 10px; }
+.dm2-concept:hover .dm2-concept-acts, .dm2-concept.is-sel .dm2-concept-acts { opacity: 1; }
+.dm2-cact { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-cream); background: color-mix(in oklab, var(--paper-cream) 14%, transparent); border: 1px solid color-mix(in oklab, var(--paper-cream) 30%, transparent); border-radius: var(--radius-xs); padding: 5px 8px; cursor: pointer; }
+.dm2-cact:hover { background: var(--specimen-rust); border-color: var(--specimen-rust); }
+.dm2-concept-cap { padding: 8px 10px; }
+.dm2-concept-cap .nm { font-family: var(--font-ui); font-weight: 700; font-size: 13px; color: var(--ink-graphite); }
+.dm2-concept-cap .mt { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faded); margin-top: 3px; }
+
+/* the right column — blend + alchemist */
+.dm2-rail-r { display: flex; flex-direction: column; gap: 14px; }
+.dm2-panel { background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); box-shadow: var(--shadow-page-1); padding: 15px 16px; }
+.dm2-panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.dm2-panel-h .eng-label { color: var(--specimen-brass-aged); }
+.dm2-panel-t { font-family: var(--font-display); font-size: 16px; letter-spacing: -0.01em; color: var(--ink-graphite); }
+
+/* style-blend sliders */
+.dm2-blend-row { display: grid; grid-template-columns: 64px 1fr 34px; align-items: center; gap: 10px; margin-bottom: 10px; }
+.dm2-blend-row .nm { font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--ink-graphite); }
+.dm2-blend-row .pc { font-family: var(--font-mono); font-size: 11px; color: var(--specimen-brass-aged); text-align: right; }
+.dm2-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px; background: var(--paper-fold); outline: none; border: 1px solid var(--paper-edge); }
+.dm2-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 15px; height: 15px; border-radius: 50%; background: var(--specimen-brass); border: 1.5px solid var(--specimen-brass-aged); cursor: pointer; box-shadow: var(--shadow-page-1); }
+.dm2-slider::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--specimen-brass); border: 1.5px solid var(--specimen-brass-aged); cursor: pointer; }
+
+/* alchemist crucible */
+.dm2-crucible { border: 1px dashed var(--specimen-brass-aged); border-radius: var(--radius-sm); background: radial-gradient(120% 130% at 50% 0%, color-mix(in oklab, var(--specimen-amber) 16%, transparent), transparent 64%), var(--paper-cream); padding: 14px; min-height: 92px; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+.dm2-ingredient { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--specimen-brass-aged); background: var(--paper-cream); border: 1px solid var(--specimen-brass-pale); border-radius: 999px; padding: 5px 11px; display: inline-flex; align-items: center; gap: 6px; }
+.dm2-ingredient .x { color: var(--ink-faded); cursor: pointer; }
+.dm2-ingredient.add { border-style: dashed; color: var(--ink-faded); cursor: pointer; }
+.dm2-recipe { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-script); margin-top: 10px; line-height: 1.4; }
+.dm2-recipe b { font-style: normal; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--specimen-brass-aged); }
+
+/* shoppable detail — hotspots over a concept */
+.dm2-shop { margin-top: 4px; }
+.dm2-shop-stage { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); overflow: hidden; box-shadow: var(--shadow-page-2); }
+.dm2-shop-img { height: 300px; background-size: cover; background-position: center; }
+.dm2-hot { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: color-mix(in oklab, var(--paper-cream) 86%, transparent); border: 1.5px solid var(--specimen-rust); color: var(--specimen-rust); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; cursor: pointer; box-shadow: var(--shadow-page-1); transition: transform 140ms var(--ease-out-paper); }
+.dm2-hot:hover, .dm2-hot.is-on { transform: scale(1.18); background: var(--specimen-rust); color: var(--paper-cream); }
+.dm2-hot::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid color-mix(in oklab, var(--specimen-rust) 40%, transparent); animation: dm2ping 2.6s var(--ease-in-out-paper) infinite; }
+@keyframes dm2ping { 0%{ transform: scale(0.7); opacity: 0.8 } 70%,100%{ transform: scale(1.5); opacity: 0 } }
+.dm2-shop-card { border: 1px solid var(--paper-edge); border-top: 0; background: var(--bg-raised); padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: start; }
+.dm2-shop-card .nm { font-family: var(--font-display); font-size: 17px; letter-spacing: -0.01em; color: var(--ink-graphite); }
+.dm2-shop-card .dd { font-family: var(--font-editorial); font-style: italic; font-size: 14px; color: var(--ink-script); margin-top: 2px; }
+.dm2-shop-card .price { font-family: var(--font-display); font-size: 22px; letter-spacing: -0.02em; color: var(--ink-graphite); text-align: right; font-variant-numeric: tabular-nums; }
+.dm2-shop-card .price small { display: block; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faded); font-weight: 400; }
+.dm2-shop-meta { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; border-top: 1px dashed var(--paper-edge); padding-top: 10px; }
+.dm2-chiplet { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--paper-edge); color: var(--ink-faded); display: inline-flex; align-items: center; gap: 6px; }
+.dm2-chiplet.code { color: var(--specimen-sage-deep); border-color: var(--specimen-sage-pale); background: color-mix(in oklab, var(--specimen-sage) 8%, transparent); }
+.dm2-chiplet.supplier { color: var(--specimen-teal-deep); border-color: var(--specimen-teal-pale); }
+.dm2-shop-hint { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-faded); margin-top: 8px; }
+
+/* ─── STAGE 3 · SHAPE — architect table + genome + drone-eye ───────────*/
+.dm2-shape { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+.dm2-table { background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-sm); box-shadow: var(--shadow-page-2); padding: 16px; }
+.dm2-massing { width: 100%; height: 268px; background: var(--paper-cream); border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); display: block; }
+.dm2-table-strip { display: flex; gap: 8px; margin-top: 12px; }
+.dm2-table-thumb { width: 56px; height: 44px; border-radius: var(--radius-xs); border: 1px solid var(--paper-edge); background-size: cover; background-position: center; filter: saturate(0.9); opacity: 0.85; }
+.dm2-table-thumb.is-pin { opacity: 1; box-shadow: 0 0 0 1.5px var(--specimen-brass-aged); }
+
+/* genome sliders */
+.dm2-genome .grow { margin-bottom: 16px; }
+.dm2-grow-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; }
+.dm2-grow-h .nm { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--ink-graphite); }
+.dm2-grow-h .val { font-family: var(--font-mono); font-size: 12px; color: var(--specimen-brass-aged); font-variant-numeric: tabular-nums; }
+.dm2-grow-h .val b { color: var(--specimen-rust); font-weight: 700; }
+
+/* drone-eye site placement */
+.dm2-drone { margin-top: 0; }
+.dm2-dronestage { position: relative; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); overflow: hidden; box-shadow: var(--shadow-page-2); background: color-mix(in oklab, var(--specimen-sage) 10%, var(--paper-cream)); }
+.dm2-lot { width: 100%; height: 230px; display: block; }
+.dm2-dronectl { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-top: 1px solid var(--paper-edge); background: var(--bg-raised); }
+.dm2-dronectl .sun { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--specimen-amber-deep); white-space: nowrap; }
+.dm2-dronectl .sun b { color: var(--ink-graphite); }
+.dm2-view-note { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-script); margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--specimen-amber); }
+
+/* ─── STAGE 4 · REALIZE — buildable sheet + schedule + cost/code ───────*/
+.dm2-realize { display: grid; grid-template-columns: 1fr 326px; gap: 18px; align-items: start; }
+.dm2-tier { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+.dm2-tier.v1 { color: var(--specimen-sage-deep); border: 1px solid var(--specimen-sage-pale); background: color-mix(in oklab, var(--specimen-sage) 10%, transparent); }
+.dm2-tier.pro { color: var(--ink-faded); border: 1px dashed var(--paper-edge); }
+.dm2-sheet { background: var(--bg-raised); border: 1px solid var(--paper-edge); border-radius: var(--radius-sm); box-shadow: var(--shadow-page-2); overflow: hidden; }
+.dm2-sheet-tabs { display: flex; border-bottom: 1px solid var(--paper-edge); background: color-mix(in oklab, var(--specimen-brass) 7%, var(--paper-cream)); }
+.dm2-sheet-tab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); background: none; border: 0; border-right: 1px solid var(--paper-edge); padding: 11px 16px; cursor: pointer; }
+.dm2-sheet-tab.is-on { color: var(--ink-graphite); background: var(--bg-raised); box-shadow: inset 0 -2px 0 var(--specimen-rust); }
+.dm2-sheet-canvas { position: relative; background: var(--paper-cream); }
+.dm2-draw { width: 100%; height: 372px; display: block; }
+.dm2-sheet-cap { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-top: 1px solid var(--paper-edge); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faded); }
+.dm2-overlay-toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; color: var(--specimen-teal-deep); }
+.dm2-overlay-toggle .sw { width: 26px; height: 14px; border-radius: 999px; background: var(--paper-fold); border: 1px solid var(--paper-edge); position: relative; transition: background-color 160ms; }
+.dm2-overlay-toggle .sw::after { content: ""; position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--paper-cream); border: 1px solid var(--paper-edge); transition: left 160ms var(--ease-out-paper); }
+.dm2-overlay-toggle.is-on .sw { background: var(--specimen-teal); }
+.dm2-overlay-toggle.is-on .sw::after { left: 13px; }
+
+/* right column — material schedule + cost + code */
+.dm2-realize-r { display: flex; flex-direction: column; gap: 14px; }
+.dm2-schedule { width: 100%; border-collapse: collapse; }
+.dm2-schedule th { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faded); text-align: left; padding: 0 0 8px; border-bottom: 1px solid var(--paper-edge); font-weight: 600; }
+.dm2-schedule th.r, .dm2-schedule td.r { text-align: right; }
+.dm2-schedule td { font-family: var(--font-ui); font-size: 13px; color: var(--ink-sepia); padding: 8px 0; border-bottom: 1px dashed var(--paper-edge); }
+.dm2-schedule td.r { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-graphite); }
+.dm2-schedule td .it { font-weight: 600; color: var(--ink-graphite); }
+.dm2-schedule td .sp { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faded); display: block; margin-top: 1px; letter-spacing: 0.04em; }
+.dm2-schedule tr.total td { border-bottom: 0; padding-top: 12px; font-weight: 700; }
+.dm2-schedule tr.total td .it { font-family: var(--font-display); font-size: 15px; }
+.dm2-schedule tr.total td.r { font-family: var(--font-display); font-size: 18px; color: var(--ink-graphite); }
+/* code-compliance bars */
+.dm2-code-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--paper-edge); }
+.dm2-code-row:last-child { border-bottom: 0; }
+.dm2-code-row .nm { font-family: var(--font-ui); font-size: 13px; color: var(--ink-sepia); }
+.dm2-code-row .nm small { display: block; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--ink-faded); margin-top: 1px; }
+.dm2-pass { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+.dm2-pass.ok { color: var(--specimen-sage-deep); background: color-mix(in oklab, var(--specimen-sage) 12%, transparent); border: 1px solid var(--specimen-sage-pale); }
+.dm2-pass.watch { color: var(--specimen-amber-deep); background: color-mix(in oklab, var(--specimen-amber) 12%, transparent); border: 1px solid color-mix(in oklab, var(--specimen-amber) 40%, transparent); }
+.dm2-pass .pip { width: 6px; height: 6px; border-radius: 50%; }
+.dm2-pass.ok .pip { background: var(--specimen-sage); } .dm2-pass.watch .pip { background: var(--specimen-amber); }
+
+/* ─── STAGE 5 · BUILD — make this real, port to Killer App ─────────────*/
+.dm2-build { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 20px; align-items: start; }
+.dm2-port-hero { background: var(--ink-graphite); border-radius: var(--radius-sm); box-shadow: var(--shadow-plate); padding: 30px 30px 28px; color: var(--paper-cream); position: relative; overflow: hidden; }
+.dm2-port-hero .eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--specimen-brass-pale); }
+.dm2-port-hero h2 { font-family: var(--font-display); font-size: 32px; letter-spacing: -0.03em; color: var(--paper-cream); margin: 12px 0 8px; line-height: 1.0; }
+.dm2-port-hero p { font-family: var(--font-editorial); font-style: italic; font-size: 16px; color: color-mix(in oklab, var(--paper-cream) 76%, transparent); margin: 0 0 22px; max-width: 42ch; }
+.dm2-port-flow { display: flex; align-items: center; gap: 12px; margin: 0 0 24px; }
+.dm2-port-app { flex: 1; border: 1px solid color-mix(in oklab, var(--paper-cream) 22%, transparent); border-radius: var(--radius-xs); padding: 10px 12px; text-align: center; }
+.dm2-port-app .l { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in oklab, var(--paper-cream) 56%, transparent); }
+.dm2-port-app .n { font-family: var(--font-display); font-size: 15px; color: var(--paper-cream); margin-top: 3px; }
+.dm2-port-app.from { border-color: var(--specimen-brass-aged); }
+.dm2-port-app.to { border-color: var(--specimen-teal); background: color-mix(in oklab, var(--specimen-teal) 16%, transparent); }
+.dm2-port-arrow { color: var(--specimen-brass-pale); flex: 0 0 auto; }
+.dm2-makebtn { width: 100%; justify-content: center; font-size: 16px; padding: 15px; background: var(--specimen-teal); border-color: var(--specimen-teal); }
+.dm2-makebtn:hover { background: var(--specimen-teal-deep); border-color: var(--specimen-teal-deep); }
+.dm2-port-note { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in oklab, var(--paper-cream) 50%, transparent); text-align: center; margin-top: 12px; }
+
+/* what carries — manifest */
+.dm2-manifest-h { font-family: var(--font-display); font-size: 18px; letter-spacing: -0.01em; color: var(--ink-graphite); margin: 2px 0 4px; }
+.dm2-manifest-sub { font-family: var(--font-editorial); font-style: italic; font-size: 14px; color: var(--ink-script); margin: 0 0 14px; }
+.dm2-carry { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); overflow: hidden; box-shadow: var(--shadow-page-1); }
+.dm2-carry-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: center; padding: 13px 15px; border-bottom: 1px solid var(--paper-edge); background: var(--bg-raised); }
+.dm2-carry-row:last-child { border-bottom: 0; }
+.dm2-carry-ico { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--specimen-sage-pale); background: color-mix(in oklab, var(--specimen-sage) 10%, var(--paper-cream)); display: flex; align-items: center; justify-content: center; color: var(--specimen-sage-deep); }
+.dm2-carry-txt .k { font-family: var(--font-ui); font-weight: 700; font-size: 13.5px; color: var(--ink-graphite); }
+.dm2-carry-txt .v { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-script); margin-top: 1px; }
+.dm2-carry-dest { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--specimen-teal-deep); border: 1px solid var(--specimen-teal-pale); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+
+/* ported confirmation state */
+.dm2-ported { text-align: center; padding: 26px 24px; border: 1px solid var(--specimen-sage-pale); border-radius: var(--radius-sm); background: color-mix(in oklab, var(--specimen-sage) 9%, var(--paper-cream)); box-shadow: var(--shadow-page-2); }
+.dm2-ported .seal { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px; background: var(--specimen-sage); color: var(--paper-cream); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 6px color-mix(in oklab, var(--specimen-sage) 18%, transparent); }
+.dm2-ported h2 { font-family: var(--font-display); font-size: 24px; letter-spacing: -0.02em; color: var(--ink-graphite); margin: 0 0 6px; }
+.dm2-ported p { font-family: var(--font-editorial); font-style: italic; font-size: 15px; color: var(--ink-script); margin: 0 auto 18px; max-width: 40ch; }
+
+
+
+/* sit the sticky spine just below the fixed KillerAppNav band (48px) — the
+   only adaptation from the mock spec (which sticks at top:0 under GlobalStrips). */
+.ds2-root .dm2-spine { top: 48px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds2-root *, .ds2-root *::before, .ds2-root *::after { animation: none !important; transition: none !important; }
+}
