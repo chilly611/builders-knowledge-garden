@@ -23,6 +23,8 @@ This file is the canonical timeline of what was built, when, and why.
 
 **Verification (real browser, worktree dev @ :4314):** all 5 stages render; spine nav works (rail fill 0→50→100%, z-24, sticky); **Genome footprint slider live-redraws the massing SVG** (1,850 → 2,600 sqft); Realize sheet tabs switch the schematic (Floor plan/Elevations/Site plan) + code overlay; Explore concept grid (6) + blend (3) + hotspots retarget the shop card; Build "Make This Real" → ported state. `/killerapp/dream-studio` and `/killerapp/dream` both still 200 (untouched — git status shows ONLY the new dir). `next build` EXIT 0 (route in manifest); tsc + eslint clean on changed files. Screenshots captured (Imagine doors + Shape massing/genome/drone).
 
+**Image perf (same session, founder flag "images load slowly"):** the staged hero/style source PNGs are 1.5–2 MB each (~10 MB to load a wall of them). Routed all surface imagery through Supabase's `render/image/public` transform endpoint (`?width=760&quality=62`, auto-webp negotiated from the browser `Accept` header, CDN-cached) — ~1.7 MB → ~70 KB each (~0.4 MB total). Verified in the network panel: all six now 200 webp; images render crisp. (`src/app/killerapp/dream-studio-2/dm2-data.ts` only.) The same heavy PNGs are also used raw by `/killerapp/dream` (`src/lib/dream/exploration-assets.ts`) — NOT touched here (out of this branch's scope); same one-line transform would speed it up too.
+
 **Follow-ups (per brief, not this PR):** wire live FLUX generation, real plan generation, and the persisted Make-This-Real port onto a useStageProject() id.
 
 ---
