@@ -6,6 +6,22 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: demo-link triage — hide stubs, fix /cinematic dead-end, full site map
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/site-map-and-hygiene` (worktree off current `origin/main`) · PR-only, founder merges.
+
+**Mandate (founder, live):** after I gave the "links for John" inventory, founder said fix the flagged items: (1) dream-studio-2 fix → *already merged* (#82/#83, confirmed `render/image` on main); (2) `/clients` + `/site` "Coming Q3/Q4 2026" stubs → **DEFINITELY HIDE**; (3) `/cinematic` dead-ends after the animation → fix it **and generate a full site map of every destination we can always refer to, even ones we'll never use again**; (4) investor-site URL → *"there have been more than one — fix the rest and I'll look"*; (5) `contract-templates` stays DRAFT-locked → OK for now.
+
+**Changes (5 files):**
+- **`/cinematic` no longer dead-ends** (`src/app/cinematic/page.tsx`): it only advanced when `anim.html` posted `'done'` — if that never fired the user was trapped on the splash. Added a persistent **"Skip intro →"** button (SSR-rendered, always clickable) **+ a 12 s timeout fallback** that reveals the path picker regardless. Also removed two hard constitution violations while in the file: forbidden red `#E8443A` (Build card accent → `#A53A2D`) and pure-white backgrounds `#ffffff`/`rgba(255,255,255,.95)` → paper-cream `#FBF6EC`/`rgba(251,246,236,.95)`. (Remaining `#fff` are text/translucent overlay — allowed.)
+- **`/clients` + `/site` hidden** (de-linked + noindexed, route kept for internal reference): removed the 3 nav entries that pointed to them in `CompassBloom.tsx` (merchant "Clients", ally "Pipeline", machine "Site Intel") — CompassBloom still renders on marketing surfaces via GlobalChromeGate, so those were the only in-app paths. Added server-component `clients/layout.tsx` + `site/layout.tsx` exporting `robots: { index:false, follow:false }` (pages stay `'use client'`, untouched). Not in `sitemap.ts`, so nothing to pull there.
+- **`docs/sitemap.md`** — NEW canonical full site map: all 139 page routes + 41 workflows + the sibling pitch sites (theknowledgegardens.com, frontiermap + /john,/walkthrough,/theKnowledgeGardensOS, decisionconservatory.com) + investor-site candidates for founder to confirm. Status legend (live/demo/prototype/stub/hidden/archived/internal/api) + a reviewer-attention matrix (investor/marketing/legal/UX/contractor/ops/CTO/founder) + curated demo paths.
+
+**Verified (prod build, not dev):** `npm run build` green (only pre-existing Sentry/CSS warnings). `next start` + curl: `/cinematic` serves the Skip button + `anim.html`, **no `#E8443A`**; `/clients` + `/site` both emit `<meta name="robots" content="noindex, nofollow">`; `/` (control) has none. Pushed, not merged.
+
+**Founder follow-ups:** confirm/consolidate the investor-site URL(s) — multiple exist (`umbrella-strategy/investor-site/index.html`, `decision-room.html`, `deploy/index.html`).
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: dream-studio-2 prod fixes — hydration double-mount + image weight
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/dream-studio-2-prod` (worktree off current `origin/main`) · PR-only, founder merges.
 

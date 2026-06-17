@@ -78,14 +78,12 @@ const LANES: LaneConfig[] = [
       { label: "Marketplace", href: "/marketplace", emoji: "\u{1F6D2}", desc: "Products & bids" },
       { label: "Knowledge Base", href: "/knowledge", emoji: "\u{1F33F}", desc: "Materials library" },
       { label: "My Profile", href: "/profile", emoji: "\u{1F4E6}", desc: "Your listings" },
-      { label: "Clients", href: "/clients", emoji: "\u{1F465}", desc: "Customer pipeline" },
     ],
   },
   {
     id: "ally", label: "The Ally", sub: "Service Provider", emoji: "\u{1F4D0}", color: "#1D9E75", angle: 180,
     routes: [
       { label: "Knowledge Garden", href: "/knowledge", emoji: "\u{1F33F}", desc: "Full library" },
-      { label: "Pipeline", href: "/clients", emoji: "\u{1F465}", desc: "Client management" },
       { label: "Documents", href: "/documents", emoji: "\u{1F4C4}", desc: "Contracts & docs" },
       { label: "Projects", href: "/projects", emoji: "\u{1F3A8}", desc: "Your portfolio" },
     ],
@@ -113,7 +111,6 @@ const LANES: LaneConfig[] = [
     routes: [
       { label: "API Console", href: "/mcp", emoji: "\u{1F4BB}", desc: "MCP server" },
       { label: "Knowledge API", href: "/knowledge", emoji: "\u{1F33F}", desc: "Entity queries" },
-      { label: "Site Intel", href: "/site", emoji: "\u{1F4E1}", desc: "Telemetry" },
       { label: "Integrations", href: "/profile", emoji: "\u{1F50C}", desc: "Connect systems" },
     ],
   },
