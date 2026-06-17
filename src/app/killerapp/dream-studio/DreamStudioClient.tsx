@@ -38,6 +38,7 @@ import {
 } from './intake';
 import { deriveRoomProgram, floorPlanDataUri } from './floorplan';
 import { Lightbox, type LightboxItem } from './Lightbox';
+import { IconExpand, IconRefresh, IconDownload, IconClose, IconCheck, StatusRing, DreamOrrery } from './icons';
 import './dream-studio.css';
 
 type Phase = 'intake' | 'concepts' | 'blueprint';
@@ -275,6 +276,7 @@ export default function DreamStudioClient() {
       <main className="dstudio">
         {/* ── Header + progress ── */}
         <header className="dstudio-head">
+          <DreamOrrery />
           <div className="eng-label dstudio-eyebrow">Dream Machine</div>
           <h1 className="dstudio-title">
             {phase === 'intake' ? 'Dream it.' : phase === 'concepts' ? 'See it.' : 'Plan it.'}
@@ -332,7 +334,7 @@ export default function DreamStudioClient() {
               <div className="dstudio-chips">
                 {(answers.musthaves as string[]).map((m) => (
                   <button key={m} type="button" className="dstudio-chip" onClick={() => toggleMulti(m)} aria-label={`Remove ${m}`}>
-                    {m} ✕
+                    {m}<IconClose className="ds-ico ds-ico-sm" />
                   </button>
                 ))}
               </div>
@@ -353,7 +355,8 @@ export default function DreamStudioClient() {
             <p className="dstudio-brief"><em>{profileToBrief(profile)}</em></p>
             {(rendering || status) && (
               <div className="dstudio-status">
-                <span>{rendering ? '✦ Rendering photoreal concepts — your sketches are ready below in the meantime.' : status}</span>
+                {rendering && <StatusRing />}
+                <span>{rendering ? 'Rendering photoreal concepts — your sketches are ready below in the meantime.' : status}</span>
               </div>
             )}
             <div className="dstudio-grid">
@@ -367,14 +370,14 @@ export default function DreamStudioClient() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- render URL or data-URI fallback */}
                   <img src={c.src} alt={c.label} loading="lazy" />
-                  <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
-                  <span className="dstudio-concept-tag eng-label">{c.label}{chosen === c.id ? ' · chosen ✓' : ''}</span>
+                  <span className="dstudio-concept-zoom" aria-hidden="true"><IconExpand /></span>
+                  <span className="dstudio-concept-tag eng-label">{chosen === c.id && <IconCheck className="ds-ico ds-ico-sm" />}{c.label}{chosen === c.id ? ' · chosen' : ''}</span>
                 </button>
               ))}
             </div>
             <div className="dstudio-actions">
               <button type="button" className="dstudio-btn dstudio-btn-ghost" onClick={back}>← Tweak answers</button>
-              <button type="button" className="dstudio-btn dstudio-btn-ghost" onClick={() => runConcepts(profile)} disabled={rendering}>↻ Regenerate</button>
+              <button type="button" className="dstudio-btn dstudio-btn-ghost" onClick={() => runConcepts(profile)} disabled={rendering}><IconRefresh /> Regenerate</button>
               <button type="button" className="dstudio-btn dstudio-btn-go" onClick={() => setPhase('blueprint')} disabled={!chosen}>
                 Draw the blueprint →
               </button>
@@ -405,7 +408,7 @@ export default function DreamStudioClient() {
                   <button type="button" className="dstudio-view" onClick={() => openLb(1)} aria-label="Your look — open full frame">
                     {/* eslint-disable-next-line @next/next/no-img-element -- render URL or data-URI fallback */}
                     <img src={chosenConcept.src} alt="Your look" loading="lazy" />
-                    <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                    <span className="dstudio-concept-zoom" aria-hidden="true"><IconExpand /></span>
                     <span className="dstudio-view-tag eng-label">Your look</span>
                   </button>
                 )}
@@ -419,7 +422,7 @@ export default function DreamStudioClient() {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element -- render URL or data-URI fallback */}
                     <img src={v.src} alt={v.label} loading="lazy" />
-                    <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                    <span className="dstudio-concept-zoom" aria-hidden="true"><IconExpand /></span>
                     <span className="dstudio-view-tag eng-label">{v.label}</span>
                   </button>
                 ))}
@@ -430,7 +433,7 @@ export default function DreamStudioClient() {
                 <button type="button" className="dstudio-plan" onClick={() => openLb(0)} aria-label="Open the floor plan full frame">
                   {/* eslint-disable-next-line @next/next/no-img-element -- generated SVG data-URI */}
                   <img src={planSrc} alt={`Schematic floor plan — ${profile.buildingType}`} />
-                  <span className="dstudio-concept-zoom" aria-hidden="true">⤢</span>
+                  <span className="dstudio-concept-zoom" aria-hidden="true"><IconExpand /></span>
                 </button>
                 <aside className="dstudio-program">
                   <div className="eng-label">Room program · {program.reduce((s, r) => s + r.sqft, 0).toLocaleString('en-US')} sf</div>
@@ -440,7 +443,7 @@ export default function DreamStudioClient() {
                     ))}
                   </ul>
                   <a className="dstudio-btn dstudio-btn-ghost dstudio-dl" href={planSrc} download={`dream-floorplan-${profile.buildingType.replace(/\s+/g, '-')}.svg`}>
-                    ↓ Download SVG
+                    <IconDownload /> Download SVG
                   </a>
                   <p className="dstudio-disclaimer">Schematic — a starting point, not engineered construction documents.</p>
                 </aside>

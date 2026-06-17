@@ -6,6 +6,25 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: Dream Machine — consolidate onto the real surface, make it on-brand
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (worktree off `origin/main`) · PR-only, founder merges.
+
+**Mandate (founder, frustrated):** `/killerapp/dream-studio-2` shows zero images, dead buttons, "nothing about it feels like the Knowledge Gardens design system," nothing generates from input — "a total fail and embarrassment." Make it real + on-brand + intuitive, fast, toward marketplace/B2B/B2C. Use the design system.
+
+**Diagnosis (the key reframe):** there were three dream surfaces. `/killerapp/dream-studio-2` was a **static design mock** (the "Twin Peaks" demo literal — no generation, no real assets) — that was the embarrassment. But **`/killerapp/dream-studio` (the flagship) already does the real thing**: guided intake → live FLUX renders → blueprint perspectives + schematic floor plan → "Build in the Killer App" handoff. Proved live: `POST https://builders.theknowledgegardens.com/api/v1/render {prompt,mode}` returns a real **flux-1.1-pro** image in ~6 s (`REPLICATE_API_TOKEN` is set in prod; works anonymously under a cap). So this was a **consolidation + on-brand polish**, not a rebuild.
+
+**What I did (one PR, verified in a real browser via `next build` + `next start` + the preview tools):**
+- **Elevated `/killerapp/dream-studio` to the Dream Machine identity:** swapped its accent from teal (the Killer App color) to **brass + amber** (the orrery plate's signature) — teal kept only for the focus halo and the "Build in the Killer App" handoff button (a deliberate semantic). Added a hand-drawn **orrery emblem** (`DreamOrrery`) in the header. `dream-studio.css` rewritten on those lines.
+- **Fixed the fonts:** the flagship was loading **Cormorant Garamond + Space Mono — the Orchids sub-brand fonts** — via an `@import`. Removed that; the surface now inherits the app's `next/font` tokens (`--font-editorial` = EB Garamond, `--font-mono` = JetBrains Mono — the BKG trio). Confirmed in-browser: `document.fonts.check('16px "EB Garamond"')` and `"JetBrains Mono"` both true; computed brass button bg = `rgb(176,141,92)` = `#B08D5C`.
+- **Removed every emoji from chrome** (`✦ ⤢ ↻ ↓ ✕ ‹ ›`) → a new `icons.tsx` of line SVGs (expand/refresh/download/close/check/chevrons/status-ring), in `DreamStudioClient.tsx` + `Lightbox.tsx`.
+- **Retired `/killerapp/dream-studio-2`** → `next.config.ts` redirect (307, reversible) to `/killerapp/dream-studio`; page kept as a fallback. The mock client/data/css are preserved (orphaned) in case we port the v2 "spine" onto the live engine later.
+
+**Verified:** prod build green; `/killerapp/dream-studio-2` → **307 → /killerapp/dream-studio**; no Cormorant/Space-Mono in the served CSS; no forbidden glyphs; browser screenshot shows the orrery + "Dream it." + brass + the BKG fonts. Pushed, not merged.
+
+**Gaps flagged for founder:** (1) the **Midjourney assets we made are NOT uploaded to the `brand-assets` bucket** — every in-app image is FLUX-generated; the locked-`--sref` MJ set needs uploading to appear. (2) Live generation is rate-limited (anon 6/15-min per IP) with no credit accounting yet. (3) Optional fast-follow: a free-form "describe your whole dream" hero box (today each intake question already accepts free text).
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: dream-studio-2 prod fixes — hydration double-mount + image weight
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/dream-studio-2-prod` (worktree off current `origin/main`) · PR-only, founder merges.
 
