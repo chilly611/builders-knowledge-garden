@@ -6,6 +6,26 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-16 — [Claude Code] Session: Cockpit polish-2 — workflow-card affordance (brief was already fixed)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/cockpit-polish-2` (worktree off `origin/main` @ `c29274e`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
+
+**Mandate:** two cockpit polish fixes — (1) workflow cards read as floating, not clickable; (2) compass TODAY daily brief renders raw template. Both were the subject of #73 (`fix(cockpit): clickable workflow cards + render the daily brief`), already on `main`. Investigated empirically before changing anything.
+
+**Finding #1 — workflow cards (REAL residual bug, fixed):**
+- #73 raised the `.workflowRow` cards to `--paper-cream` on the `--trace` ground with a `1px solid var(--paper-edge)` hairline. But `--trace` resolves to `var(--paper-edge)` (`#C9B98A`) — the SAME value as the border — so the hairline is **invisible against the ground**, and with only a `0.06`-alpha shadow the cards still read as soft, floating cream blobs (exactly the founder's report). Confirmed in a real browser: `pageBg rgb(201,185,138)` == card `borderTopColor rgb(201,185,138)`.
+- **Fix (`src/app/killerapp/landing.module.css`, CSS-only):** border → `var(--paper-shadow)` (`#B5A270`, one step darker than the ground, so the card has a crisp visible edge) + a two-layer drop shadow (`0 1px 2px /.1`, `0 4px 12px /.07`) so it clearly lifts. Matched the peak-moment (`.workflowRowPeakMoment`) shadow to the same lift (kept its robin identity border). Everything else #73 got right — stage-accent left edge, hover lift + accent border-color, `:focus-visible`, full-card `.workflowLink` target, reduced-motion — left unchanged. Tokens only; no forbidden hex.
+- Verified in a real browser (worktree dev server): cards now render as crisp, visibly-bordered, raised clickable cards on the tan ground (SIZE UP orange edge, LOCK navy edge); computed `borderTopColor rgb(181,162,112)` = `--paper-shadow`.
+
+**Finding #2 — daily brief (already correct on `main`; NO-OP):**
+- The compass TODAY panel (`CompassToday`, mounted in `ShellNav`) already routes the brief through `BriefMarkdown` (safe markdown → elements) with `useDailyBriefing.fillBriefDate` substituting the real date. Empirically reproduced the founder's exact symptom by mocking `/api/v1/briefing` with `"# Morning Briefing — [Date]\n\n**…**\n\n## Today's focus\n- …"`: it rendered as a real heading + `<strong>` + `<ul>`, with `[Date]` → "Tuesday, June 16, 2026" — **no literal `#`, no `[Date]`.**
+- Conclusion: #73 fixed this; the founder's live view was a **pre-#73 deploy**. No code change — fabricating one would be dishonest. This PR carries the correct brief code forward on current `main`, so merging + deploying resolves the live view.
+
+**Scope:** CSS-only (`landing.module.css`) + docs. Did NOT touch the brief components, `useDailyBriefing`, the cockpit page/CaptureZone, budget files, or the Budget-DNA ribbon.
+
+**Verification:** `next build` EXIT 0; CSS-only change; cards confirmed crisp/clickable + brief render pipeline confirmed correct, both in a real browser.
+
+---
+
 ## 2026-06-16 — [Claude Code] Session: Dream Machine surface — exploration renders + "Choose your direction" style picker
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-explorations-and-styles` (worktree off `origin/main` @ `c54b986`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
 
