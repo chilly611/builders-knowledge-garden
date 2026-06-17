@@ -6,41 +6,6 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
-## 2026-06-17 — [Claude Code] Session: demo-link triage — hide stubs, fix /cinematic dead-end, full site map
-**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/site-map-and-hygiene` (worktree off current `origin/main`) · PR-only, founder merges.
-
-**Mandate (founder, live):** after I gave the "links for John" inventory, founder said fix the flagged items: (1) dream-studio-2 fix → *already merged* (#82/#83, confirmed `render/image` on main); (2) `/clients` + `/site` "Coming Q3/Q4 2026" stubs → **DEFINITELY HIDE**; (3) `/cinematic` dead-ends after the animation → fix it **and generate a full site map of every destination we can always refer to, even ones we'll never use again**; (4) investor-site URL → *"there have been more than one — fix the rest and I'll look"*; (5) `contract-templates` stays DRAFT-locked → OK for now.
-
-**Changes (5 files):**
-- **`/cinematic` no longer dead-ends** (`src/app/cinematic/page.tsx`): it only advanced when `anim.html` posted `'done'` — if that never fired the user was trapped on the splash. Added a persistent **"Skip intro →"** button (SSR-rendered, always clickable) **+ a 12 s timeout fallback** that reveals the path picker regardless. Also removed two hard constitution violations while in the file: forbidden red `#E8443A` (Build card accent → `#A53A2D`) and pure-white backgrounds `#ffffff`/`rgba(255,255,255,.95)` → paper-cream `#FBF6EC`/`rgba(251,246,236,.95)`. (Remaining `#fff` are text/translucent overlay — allowed.)
-- **`/clients` + `/site` hidden** (de-linked + noindexed, route kept for internal reference): removed the 3 nav entries that pointed to them in `CompassBloom.tsx` (merchant "Clients", ally "Pipeline", machine "Site Intel") — CompassBloom still renders on marketing surfaces via GlobalChromeGate, so those were the only in-app paths. Added server-component `clients/layout.tsx` + `site/layout.tsx` exporting `robots: { index:false, follow:false }` (pages stay `'use client'`, untouched). Not in `sitemap.ts`, so nothing to pull there.
-- **`docs/sitemap.md`** — NEW canonical full site map: all 139 page routes + 41 workflows + the sibling pitch sites (theknowledgegardens.com, frontiermap + /john,/walkthrough,/theKnowledgeGardensOS, decisionconservatory.com) + investor-site candidates for founder to confirm. Status legend (live/demo/prototype/stub/hidden/archived/internal/api) + a reviewer-attention matrix (investor/marketing/legal/UX/contractor/ops/CTO/founder) + curated demo paths.
-
-**Verified (prod build, not dev):** `npm run build` green (only pre-existing Sentry/CSS warnings). `next start` + curl: `/cinematic` serves the Skip button + `anim.html`, **no `#E8443A`**; `/clients` + `/site` both emit `<meta name="robots" content="noindex, nofollow">`; `/` (control) has none. Pushed, not merged.
-
-**Founder follow-ups:** confirm/consolidate the investor-site URL(s) — multiple exist (`umbrella-strategy/investor-site/index.html`, `decision-room.html`, `deploy/index.html`).
-
----
-
-## 2026-06-17 — [Claude Code] Session: dream-studio-2 prod fixes — hydration double-mount + image weight
-**Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/dream-studio-2-prod` (worktree off current `origin/main`) · PR-only, founder merges.
-
-**Mandate (founder, live):** "still no images showing up at all and most of the buttons don't seem to work" on the merged `/killerapp/dream-studio-2`.
-
-**Diagnosis (the surface was squash-merged via #80/#81 WITHOUT the earlier perf commit, so live = original):**
-- Pulled the live SSR HTML — it used the raw `object/public` 1.5–2 MB PNGs (perf commit never reached main). "No images" = those huge PNGs still downloading (screenshots caught them blank).
-- The preview browser is sandboxed to localhost, so I reproduced in a local PRODUCTION build (`next build` + `next start`, not `next dev`). Buttons were dead AND the DOM showed **2× `ds2-root` / 6 doors** — the whole surface double-mounted. Raw SSR HTML had it ONCE → the **client duplicated it during hydration** (a production-only hydration mismatch). The guided `/killerapp/dream-studio` on the same layout rendered once and worked, so it was specific to this component. No React error surfaced in the console and the default Imagine stage has nothing locale/Date/random-dependent, so rather than chase a phantom mismatch in a throwaway-data prototype, I gated it to a clean client-only mount.
-
-**Fixes (2 files):**
-- `DreamStudio2Client.tsx` — **client-only mount**: a `mounted` flag (set in a one-shot effect) gates the render; SSR + the first client render both emit an empty `.ds2-root` placeholder, so hydration matches cleanly, then the live surface swaps in. Kills the double-mount; restores every interaction. (eslint `set-state-in-effect` is a false positive for the canonical mount flag — annotated.)
-- `dm2-data.ts` — **image weight**: route the six staged hero/style images through Supabase's `render/image/public` transform (`?width=760&quality=62`, auto-webp via the browser Accept header, CDN-cached) → ~1.7 MB PNG → ~70 KB webp (~10 MB → ~0.4 MB total).
-
-**Verified in a real PRODUCTION build (`next start` :4316):** single `ds2-root`, 3 doors; door-select, spine nav (→ Shape), genome slider (massing redraws 1,850 → 2,600), sheet tabs all work; concept images load `200 image/webp` via the transform. `next build` green; tsc + eslint clean; clean 2-file diff off `origin/main` (the surface itself is already merged).
-
-**Note:** the same heavy PNGs are also served raw by `/killerapp/dream` (`src/lib/dream/exploration-assets.ts`) — same one-line transform would speed it up; left untouched (separate route/PR).
-
----
-
 ## 2026-06-17 — [Claude Code] Session: Dream Machine v2 design build (/killerapp/dream-studio-2)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-studio-v2-design` (worktree off `origin/main` @ `c43a8f4`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
 
@@ -57,6 +22,8 @@ This file is the canonical timeline of what was built, when, and why.
 **The shared App Shell** (UmbrellaBar / GlobalStrips / PersistentNav) is provided by `killerapp/layout.tsx` — the surface renders only the Spine + active stage, so "on the shared shell" is satisfied without re-porting the mock's shell pieces.
 
 **Verification (real browser, worktree dev @ :4314):** all 5 stages render; spine nav works (rail fill 0→50→100%, z-24, sticky); **Genome footprint slider live-redraws the massing SVG** (1,850 → 2,600 sqft); Realize sheet tabs switch the schematic (Floor plan/Elevations/Site plan) + code overlay; Explore concept grid (6) + blend (3) + hotspots retarget the shop card; Build "Make This Real" → ported state. `/killerapp/dream-studio` and `/killerapp/dream` both still 200 (untouched — git status shows ONLY the new dir). `next build` EXIT 0 (route in manifest); tsc + eslint clean on changed files. Screenshots captured (Imagine doors + Shape massing/genome/drone).
+
+**Image perf (same session, founder flag "images load slowly"):** the staged hero/style source PNGs are 1.5–2 MB each (~10 MB to load a wall of them). Routed all surface imagery through Supabase's `render/image/public` transform endpoint (`?width=760&quality=62`, auto-webp negotiated from the browser `Accept` header, CDN-cached) — ~1.7 MB → ~70 KB each (~0.4 MB total). Verified in the network panel: all six now 200 webp; images render crisp. (`src/app/killerapp/dream-studio-2/dm2-data.ts` only.) The same heavy PNGs are also used raw by `/killerapp/dream` (`src/lib/dream/exploration-assets.ts`) — NOT touched here (out of this branch's scope); same one-line transform would speed it up too.
 
 **Follow-ups (per brief, not this PR):** wire live FLUX generation, real plan generation, and the persisted Make-This-Real port onto a useStageProject() id.
 
