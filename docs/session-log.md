@@ -6,6 +6,27 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: Dream Machine v2 design build (/killerapp/dream-studio-2)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-studio-v2-design` (worktree off `origin/main` @ `c43a8f4`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
+
+**Mandate:** implement the Claude Design "Dream Machine v2 — the imagine → build pipeline" mock pixel-faithfully as a NEW surface `/killerapp/dream-studio-2`, coexisting with (and NOT touching) `/killerapp/dream-studio` and `/killerapp/dream`; no compass-nav change (direct URL). Tokens only; reduced-motion; data-driven shape. High-fidelity interactive prototype — no live FLUX/plan/persistence yet.
+
+**Decoding the source:** the standalone HTML is a Claude Design bundler export. `<script type="__bundler/template">` = a JSON-encoded HTML string (the wrapper + 7 `<style>` blocks); `<script type="__bundler/manifest">` = asset map where `compressed:true` entries are gzip'd source. Decoded (base64 → gunzip) to recover: the `window.DM2` data object (Twin Peaks Residence), the five stage-view JSX, the Spine + app wrapper, and the surface CSS (lines 2019–2277 of the style blocks). The mock was authored on OUR herbarium tokens (`--paper-*`/`--specimen-*`/`--ink-*`) — every token it uses exists in `tokens.css`, so nothing was re-defined.
+
+**What was built (all NEW under `src/app/killerapp/dream-studio-2/`):**
+- **`dm2-data.ts`** — the DM2 demo literal ported to TS (shaped like a useStageProject() payload). The mock's `assets/journey/*` (absent here) remapped to staged PUBLIC batch images (fidelity/batch-2026-06-15 + styles/batch-2026-06-16) so nothing is broken.
+- **`DreamStudio2Client.tsx`** — the Spine + 5 stage views ported ~verbatim (Imagine / Explore / Shape / Realize / Build), incl. the inline SVG primitives (Massing redraws from the Genome; LotView sun/shadow; FloorPlan/Elevation/SitePlan schematic line-work). `Ico.*`→local `V2I` icons (+sprig); shared `.btn`→`.dm2-btn` (no global collision).
+- **`dream-studio-2.css`** — the decoded `.dm2-*` surface rules verbatim (uniquely namespaced) + a `.ds2-root` font/scope wrapper + `.dm2-btn` base + sticky-spine `top:48px` (clears our fixed KillerAppNav — the one adaptation from the mock's `top:0`) + reduced-motion. (Bug caught in-browser: a `*/` inside the header comment closed it early → CssSyntaxError; reworded.)
+- **`page.tsx`** — server wrapper; inherits the shared shell from killerapp/layout.tsx.
+
+**The shared App Shell** (UmbrellaBar / GlobalStrips / PersistentNav) is provided by `killerapp/layout.tsx` — the surface renders only the Spine + active stage, so "on the shared shell" is satisfied without re-porting the mock's shell pieces.
+
+**Verification (real browser, worktree dev @ :4314):** all 5 stages render; spine nav works (rail fill 0→50→100%, z-24, sticky); **Genome footprint slider live-redraws the massing SVG** (1,850 → 2,600 sqft); Realize sheet tabs switch the schematic (Floor plan/Elevations/Site plan) + code overlay; Explore concept grid (6) + blend (3) + hotspots retarget the shop card; Build "Make This Real" → ported state. `/killerapp/dream-studio` and `/killerapp/dream` both still 200 (untouched — git status shows ONLY the new dir). `next build` EXIT 0 (route in manifest); tsc + eslint clean on changed files. Screenshots captured (Imagine doors + Shape massing/genome/drone).
+
+**Follow-ups (per brief, not this PR):** wire live FLUX generation, real plan generation, and the persisted Make-This-Real port onto a useStageProject() id.
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: Dream Machine — full-frame lightbox + Blueprint perspectives gallery
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-studio-gallery` (worktree off `origin/main`, post #77 dream-machine-v2, real `node_modules`) · PR-only, founder merges.
 
