@@ -10,18 +10,23 @@
  */
 
 const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vlezoyalutexenbnzzui.supabase.co';
-const A = `${SUPA}/storage/v1/object/public/brand-assets/assets/bkg/fidelity/batch-2026-06-15/`;
-const S = `${SUPA}/storage/v1/object/public/brand-assets/assets/bkg/styles/batch-2026-06-16/`;
+// The staged source PNGs are 1.5–2 MB each — far too heavy to load a wall of.
+// Serve them through Supabase's image-transform endpoint (render/image/public),
+// which resizes to a display-appropriate width and auto-negotiates webp from
+// the browser's Accept header, all CDN-cached. ~1.7 MB PNG → ~70 KB webp.
+const TX = '?width=760&quality=62';
+const A = `${SUPA}/storage/v1/render/image/public/brand-assets/assets/bkg/fidelity/batch-2026-06-15/`;
+const S = `${SUPA}/storage/v1/render/image/public/brand-assets/assets/bkg/styles/batch-2026-06-16/`;
 
 // Stable remap of the mock's six journey images → our staged set (kept
 // consistent so a concept, its style, and its table thumb share one image).
 const IMGS = {
-  structural: `${A}marin-hero-golden-a.png`,
-  build: `${S}style-midcentury-modern-a.png`,
-  sketch: `${A}marin-study-massing-options.png`,
-  sizeup: `${S}style-asian-fusion-a.png`,
-  sequencing: `${A}sf-hero-golden-a.png`,
-  tree: `${S}style-mediterranean-a.png`,
+  structural: `${A}marin-hero-golden-a.png${TX}`,
+  build: `${S}style-midcentury-modern-a.png${TX}`,
+  sketch: `${A}marin-study-massing-options.png${TX}`,
+  sizeup: `${S}style-asian-fusion-a.png${TX}`,
+  sequencing: `${A}sf-hero-golden-a.png${TX}`,
+  tree: `${S}style-mediterranean-a.png${TX}`,
 } as const;
 
 export interface GenomeParam {
