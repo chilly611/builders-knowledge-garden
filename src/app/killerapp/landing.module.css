@@ -311,10 +311,14 @@
    The herbarium rebrand remapped --trace from light paper (#F4F0E6) to the
    mid-tan --paper-edge (#C9B98A) — the SAME value as the page ground — which
    collapsed the card/ground distinction and made these read as floating, not
-   clickable. Restore the card: a light --paper-cream surface raised over the
-   --trace ground, a visible hairline border, and the stage-accent left edge
-   (the signature affordance). The full-card click target lives on
-   .workflowLink (display:block) below; focus state is defined there too. */
+   clickable. The earlier fix raised a --paper-cream surface but kept a
+   --paper-edge hairline, which is invisible BECAUSE the ground is also
+   --paper-edge — so the cards still read as soft, borderless blobs. Fix: a
+   --paper-shadow (#B5A270, one step darker than the ground) hairline so the
+   card has a crisp visible edge, plus a real two-layer drop shadow so it
+   clearly lifts off the ground. Keep the stage-accent left edge (the signature
+   affordance). The full-card click target lives on .workflowLink
+   (display:block) below; focus state is defined there too. */
 .workflowRow {
   display: grid;
   grid-template-columns: 60px 1fr auto;
@@ -322,10 +326,10 @@
   align-items: center;
   padding: 20px 16px;
   background: var(--paper-cream);
-  border: 1px solid var(--paper-edge);
+  border: 1px solid var(--paper-shadow);
   border-left: 3px solid var(--stage-accent, var(--brass));
   border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(42, 38, 32, 0.06);
+  box-shadow: 0 1px 2px rgba(42, 38, 32, 0.1), 0 4px 12px rgba(42, 38, 32, 0.07);
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
@@ -475,7 +479,7 @@
 .workflowRowPeakMoment {
   background: var(--paper-cream);
   border: 2px solid var(--robin);
-  box-shadow: 0 1px 2px rgba(42, 38, 32, 0.06);
+  box-shadow: 0 1px 2px rgba(42, 38, 32, 0.1), 0 4px 12px rgba(42, 38, 32, 0.07);
 }
 
 .workflowRowPeakMoment .workflowCode {
