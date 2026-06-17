@@ -142,7 +142,14 @@
 
 /* ── Blueprint ── */
 .dstudio-blueprint { display: grid; grid-template-columns: 1fr 232px; gap: 20px; align-items: start; }
-.dstudio-plan { border: 1px solid var(--paper-shadow); border-radius: var(--radius-md); overflow: hidden; background: var(--paper-cream); box-shadow: var(--shadow-page-2); }
+.dstudio-plan {
+  position: relative; display: block; width: 100%; padding: 0; text-align: left; cursor: zoom-in;
+  border: 1px solid var(--paper-shadow); border-radius: var(--radius-md); overflow: hidden;
+  background: var(--paper-cream); box-shadow: var(--shadow-page-2);
+  transition: box-shadow 150ms ease;
+}
+.dstudio-plan:hover { box-shadow: 0 4px 14px rgba(42,38,32,0.14); }
+.dstudio-plan:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
 .dstudio-plan img { width: 100%; height: auto; display: block; }
 .dstudio-program { display: flex; flex-direction: column; gap: 10px; }
 .dstudio-program-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -152,6 +159,65 @@
 .dstudio-disclaimer { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-faded); margin: 8px 0 0; }
 .dstudio-error { color: var(--specimen-rust); font-size: 13px; margin: 10px 0 0; text-align: right; }
 
+/* ── Click-to-expand affordance (concepts · views · plan) ── */
+.dstudio-concept, .dstudio-view, .dstudio-plan { cursor: zoom-in; }
+.dstudio-concept-zoom {
+  position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--ink-sepia);
+  background: color-mix(in oklab, var(--paper-cream) 86%, transparent);
+  border: 1px solid var(--paper-edge); border-radius: var(--radius-xs);
+  opacity: 0; transition: opacity 150ms ease; pointer-events: none;
+}
+.dstudio-concept:hover .dstudio-concept-zoom, .dstudio-concept:focus-visible .dstudio-concept-zoom,
+.dstudio-view:hover .dstudio-concept-zoom, .dstudio-view:focus-visible .dstudio-concept-zoom,
+.dstudio-plan:hover .dstudio-concept-zoom, .dstudio-plan:focus-visible .dstudio-concept-zoom { opacity: 1; }
+
+/* ── Blueprint perspectives gallery ── */
+.dstudio-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 2px 0 12px; flex-wrap: wrap; }
+.dstudio-views { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.dstudio-view {
+  position: relative; padding: 0; overflow: hidden; aspect-ratio: 4 / 3;
+  background: var(--paper-fold); border: 1px solid var(--paper-shadow); border-radius: var(--radius-md);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.dstudio-view img { width: 100%; height: 100%; object-fit: cover; display: block; animation: dstudio-fade 0.5s ease both; }
+.dstudio-view:hover { transform: translateY(-2px); border-color: var(--specimen-brass); box-shadow: 0 4px 14px rgba(42,38,32,0.14); }
+.dstudio-view:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
+.dstudio-view.is-pending img { opacity: 0.7; }
+.dstudio-view-tag {
+  position: absolute; left: 7px; bottom: 7px; padding: 3px 7px;
+  background: color-mix(in oklab, var(--paper-cream) 88%, transparent);
+  border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); color: var(--ink-sepia);
+}
+
+/* ── Lightbox · full-frame, navigable ── */
+/* The scrim is a deep ink WASH OVER IMAGERY for legibility (like the Dream
+   Studio OVERLAY) — explicitly allowed by the herbarium lock; it is not a page
+   background, and it is never pure black. */
+.dstudio-lb {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 56px 72px; background: rgba(42, 38, 32, 0.93); animation: dstudio-fade 0.2s ease both;
+}
+.dstudio-lb-fig { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.dstudio-lb-fig img { max-width: 90vw; max-height: 78vh; width: auto; height: auto; object-fit: contain; border-radius: var(--radius-md); background: var(--paper-cream); box-shadow: 0 12px 44px rgba(0,0,0,0.4); }
+.dstudio-lb-cap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.dstudio-lb-cap .eng-label { color: var(--paper-vellum); }
+.dstudio-lb-x {
+  position: absolute; top: 18px; right: 22px; width: 40px; height: 40px; cursor: pointer; font-size: 17px;
+  color: var(--paper-cream); background: transparent; border: 1px solid color-mix(in oklab, var(--paper-cream) 45%, transparent); border-radius: 50%;
+}
+.dstudio-lb-x:hover { background: color-mix(in oklab, var(--paper-cream) 16%, transparent); }
+.dstudio-lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; cursor: pointer;
+  font-size: 30px; line-height: 1; color: var(--paper-cream);
+  background: color-mix(in oklab, var(--ink-graphite) 55%, transparent);
+  border: 1px solid color-mix(in oklab, var(--paper-cream) 35%, transparent); border-radius: 50%;
+}
+.dstudio-lb-nav:hover { background: color-mix(in oklab, var(--paper-cream) 18%, transparent); }
+.dstudio-lb-prev { left: 18px; }
+.dstudio-lb-next { right: 18px; }
+.dstudio-lb-x:focus-visible, .dstudio-lb-nav:focus-visible { outline: 2px solid var(--paper-cream); outline-offset: 2px; }
+
 @keyframes dstudio-fade { from { opacity: 0; } to { opacity: 1; } }
 
 @media (max-width: 720px) {
@@ -159,8 +225,12 @@
   .dstudio-blueprint { grid-template-columns: 1fr; }
   .dstudio-actions { justify-content: stretch; }
   .dstudio-btn { flex: 1; text-align: center; }
+  .dstudio-lb { padding: 44px 12px; }
+  .dstudio-lb-nav { width: 40px; height: 40px; font-size: 26px; }
+  .dstudio-lb-prev { left: 6px; }
+  .dstudio-lb-next { right: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dstudio-root * { animation: none !important; transition: none !important; }
+  .dstudio-root *, .dstudio-lb, .dstudio-lb * { animation: none !important; transition: none !important; }
 }
