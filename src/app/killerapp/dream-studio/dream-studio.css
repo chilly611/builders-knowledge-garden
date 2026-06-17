@@ -1,0 +1,166 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   DREAM MACHINE v2 — guided studio (Imagine → Concepts → Blueprint → Build).
+   Scoped under `.dstudio-root`; locked herbarium type trio + tokens only
+   (no #E8443A, no pure white). Mirrors the Builder/Dream surfaces' approach.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Space+Mono:wght@400;700&display=swap');
+
+.dstudio-root {
+  position: relative;
+  background: var(--paper-cream);
+  min-height: 100%;
+  color: var(--ink-sepia);
+  font-family: var(--font-ui);
+  --font-editorial: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', ui-monospace, monospace;
+}
+.dstudio-root::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(124, 98, 53, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 98, 53, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.dstudio-root > * { position: relative; z-index: 1; }
+
+.dstudio { max-width: 960px; margin: 0 auto; padding: 24px 24px 96px; }
+
+.dstudio-root .eng-label {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-faded); font-weight: 600;
+}
+
+/* ── Header + progress ── */
+.dstudio-head { text-align: center; margin: 8px 0 22px; }
+.dstudio-eyebrow { color: var(--specimen-brass-aged); }
+.dstudio-title {
+  font-family: var(--font-display); font-weight: 400; font-size: 38px;
+  line-height: 1.0; letter-spacing: -0.025em; color: var(--ink-graphite); margin: 8px 0 16px;
+}
+.dstudio-steps {
+  list-style: none; display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap; margin: 0; padding: 0;
+}
+.dstudio-step {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-faded);
+  padding: 5px 12px; border: 1px solid var(--paper-edge); border-radius: 999px;
+  background: var(--bg-raised);
+}
+.dstudio-step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--paper-shadow); }
+.dstudio-step.is-on { color: var(--specimen-teal-deep); border-color: var(--specimen-teal); }
+.dstudio-step.is-on .dstudio-step-dot { background: var(--specimen-teal); }
+
+/* ── Card shell ── */
+.dstudio-card {
+  background: var(--bg-raised); border: 1px solid var(--paper-shadow);
+  border-radius: var(--radius-md); box-shadow: 0 1px 2px rgba(42,38,32,0.1), 0 4px 14px rgba(42,38,32,0.06);
+  padding: 28px 28px 22px; margin: 0 auto;
+}
+
+/* ── Intake ── */
+.dstudio-q {
+  font-family: var(--font-display); font-weight: 400; font-size: 27px;
+  color: var(--ink-graphite); margin: 8px 0 4px; letter-spacing: -0.02em;
+}
+.dstudio-helper { font-family: var(--font-editorial); font-style: italic; font-size: 17px; color: var(--ink-script, var(--ink-sepia)); margin: 0 0 20px; }
+.dstudio-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.dstudio-opt {
+  display: flex; flex-direction: column; gap: 3px; align-items: flex-start;
+  text-align: left; padding: 14px 16px; cursor: pointer;
+  background: var(--paper-cream); border: 1px solid var(--paper-edge);
+  border-left: 3px solid var(--paper-edge); border-radius: var(--radius-xs);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  font-family: var(--font-ui);
+}
+.dstudio-opt:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(42,38,32,0.1); }
+.dstudio-opt.is-selected { border-color: var(--specimen-teal); border-left-color: var(--specimen-teal); box-shadow: 0 0 0 2px color-mix(in oklab, var(--specimen-teal) 32%, transparent); }
+.dstudio-opt:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
+.dstudio-opt-l { font-size: 15px; font-weight: 700; color: var(--ink-graphite); }
+.dstudio-opt-h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-faded); }
+
+.dstudio-free { margin-top: 14px; }
+.dstudio-free-input {
+  width: 100%; box-sizing: border-box; padding: 12px 14px;
+  background: var(--paper-cream); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xs); font-family: var(--font-ui); font-size: 15px; color: var(--ink-graphite);
+}
+.dstudio-free-input::placeholder { color: var(--ink-faded); }
+.dstudio-free-input:focus-visible { outline: 2px solid var(--specimen-teal); outline-offset: 1px; }
+
+.dstudio-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.dstudio-chip {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+  padding: 6px 11px; cursor: pointer; color: var(--specimen-teal-deep);
+  background: var(--specimen-teal-pale); border: 1px solid var(--specimen-teal); border-radius: 999px;
+}
+
+/* ── Actions ── */
+.dstudio-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 24px; }
+.dstudio-btn {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 12px 20px; border-radius: var(--radius-xs); cursor: pointer;
+  border: 1px solid transparent; transition: background 150ms ease, transform 150ms ease, opacity 150ms ease;
+}
+.dstudio-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.dstudio-btn-ghost { background: transparent; border-color: var(--paper-shadow); color: var(--ink-sepia); }
+.dstudio-btn-ghost:hover:not(:disabled) { background: var(--paper-cream); }
+.dstudio-btn-go { background: var(--specimen-teal); color: var(--paper-cream); }
+.dstudio-btn-go:hover:not(:disabled) { background: var(--specimen-teal-deep); transform: translateY(-1px); }
+.dstudio-btn-build { background: var(--specimen-teal-deep); color: var(--paper-cream); font-size: 13px; padding: 14px 26px; }
+.dstudio-btn-build:hover:not(:disabled) { background: var(--specimen-teal); transform: translateY(-1px); }
+.dstudio-btn:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
+.dstudio-mr { margin-right: auto; }
+
+/* ── Concepts ── */
+.dstudio-brief { font-family: var(--font-editorial); font-size: 18px; color: var(--ink-sepia); margin: 0 0 14px; }
+.dstudio-status {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 10px 14px;
+  border-radius: var(--radius-xs); background: color-mix(in oklab, var(--specimen-brass) 12%, transparent);
+  border: 1px solid var(--specimen-brass); color: var(--ink-sepia);
+  font-family: var(--font-mono); font-size: 12px;
+}
+.dstudio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.dstudio-concept {
+  position: relative; padding: 0; cursor: pointer; overflow: hidden;
+  background: var(--paper-fold); border: 1px solid var(--paper-shadow); border-radius: var(--radius-md);
+  aspect-ratio: 4 / 3; transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.dstudio-concept img { width: 100%; height: 100%; object-fit: cover; display: block; animation: dstudio-fade 0.5s ease both; }
+.dstudio-concept:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(42,38,32,0.14); }
+.dstudio-concept.is-chosen { border-color: var(--specimen-teal); box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-teal) 40%, transparent); }
+.dstudio-concept.is-pending img { opacity: 0.78; }
+.dstudio-concept:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
+.dstudio-concept-tag {
+  position: absolute; left: 8px; bottom: 8px; padding: 3px 8px;
+  background: color-mix(in oklab, var(--paper-cream) 88%, transparent);
+  border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); color: var(--ink-sepia);
+}
+
+/* ── Blueprint ── */
+.dstudio-blueprint { display: grid; grid-template-columns: 1fr 232px; gap: 20px; align-items: start; }
+.dstudio-plan { border: 1px solid var(--paper-shadow); border-radius: var(--radius-md); overflow: hidden; background: var(--paper-cream); box-shadow: var(--shadow-page-2); }
+.dstudio-plan img { width: 100%; height: auto; display: block; }
+.dstudio-program { display: flex; flex-direction: column; gap: 10px; }
+.dstudio-program-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.dstudio-program-list li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--ink-graphite); padding: 4px 0; border-bottom: 1px dashed var(--paper-edge); }
+.dstudio-program-sf { font-family: var(--font-mono); font-size: 12px; color: var(--specimen-teal-deep); }
+.dstudio-dl { text-align: center; text-decoration: none; margin-top: 8px; }
+.dstudio-disclaimer { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-faded); margin: 8px 0 0; }
+.dstudio-error { color: var(--specimen-rust); font-size: 13px; margin: 10px 0 0; text-align: right; }
+
+@keyframes dstudio-fade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 720px) {
+  .dstudio-title { font-size: 30px; }
+  .dstudio-blueprint { grid-template-columns: 1fr; }
+  .dstudio-actions { justify-content: stretch; }
+  .dstudio-btn { flex: 1; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dstudio-root * { animation: none !important; transition: none !important; }
+}

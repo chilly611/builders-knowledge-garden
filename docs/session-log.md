@@ -6,6 +6,31 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-16 — [Claude Code] Session: Dream Machine v2 — guided flagship (imagine → concepts → blueprint → build)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-v2` (worktree off `origin/main` @ `319b97e`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
+
+**Mandate:** the founder asked to see the ~14 early dream interfaces and combine the best into a new, innovative, user-friendly Dream Machine — "the Midjourney of architecture" that leads into CAD/blueprints/plans you can port to the Killer App. Also: apply the `architectural_style` migration to prod, and audit approval-gated content.
+
+**Done first (this session):**
+- **Migration APPLIED to prod** (`architectural_style` on `command_center_projects`, idempotent additive nullable, founder-authorized + verified). The /killerapp/dream style picker now persists to the DB via its feature-detected PATCH path — no code change.
+- **Approval audit:** 41 unapproved `brand_assets` drafts (24 recent BKG "Portal seed" archetype visuals from 2026-06-15 + ~17 older umbrella/sibling-garden marks). Files are live/public, just not `approved_for_production`. content_blocks empty; all 2,256 knowledge_entities published. Promotion left to the founder (service-role by design).
+- **Inventoried ~24 `/dream/*` experiments** (Explore agent) → founder picked the **Oracle/Quest guided anchor** + **"include plan/blueprint export"** scope.
+
+**What was built — `/killerapp/dream-studio` (the v2 flagship, all NEW):**
+- **`intake.ts`** — guided, low-jargon 5-question flow (type/place/scale/vibe/must-haves) → `DreamProfile`; `profileToBrief` + `profileToRenderPrompt` mappers. Pure/testable.
+- **`floorplan.ts`** (the net-new piece) — `deriveRoomProgram` (sensible per-archetype room list scaled to target sqft) + `packRooms` (deterministic recursive-slice layout, areas ∝ sqft) + `floorPlanSVG`/`floorPlanDataUri` — a dimensioned, herbarium-register schematic plan with title block, scale bar, north arrow, and a "SCHEMATIC — not for construction" stamp. Pure + SSR-safe (no Date/random).
+- **`DreamStudioClient.tsx`** — orchestrates IMAGINE → CONCEPTS → BLUEPRINT → BUILD with a step indicator. Concepts reuse the live `/api/v1/render` (FLUX) + `conceptFallbackFor` (never-empty). BUILD reuses the proven MakeThisRealButton handoff: POST `/api/v1/projects` → genesis snapshot → `/killerapp?project=`, carrying `architectural_style` via a best-effort PATCH.
+- **`dream-studio.css`** — scoped `.dstudio-root`, herbarium tokens only, reduced-motion honored.
+- **`config.ts`** — repointed the shell's `surface-dream` nav `/killerapp/dream` → `/killerapp/dream-studio` (the what-if surface still lives at /killerapp/dream).
+
+**Honest scope:** BLUEPRINT is a credible **schematic** (room partition + dimensions), NOT engineered CAD/DWG/BIM — that's a labeled Phase 2 (needs a geometry kernel). v1 hits the founder's "port a plan to the Killer App" bar.
+
+**Verification (real browser, worktree dev @ :4313):** walked the full arc — intake assembled the correct brief ("A new home in Marin County, CA around 3,000 sqft about 4 bedrooms in a midcentury modern style with open kitchen, 2-car garage"), concepts rendered (honest concept-sketch fallback in dev — no render key), blueprint drew a 13-room / 3,001 sf schematic with a downloadable SVG, and BUILD showed the honest "Sign in to build your dream" 401 state (signed-in path = the production-proven projects POST). No console errors. `next build` EXIT 0 (route in manifest); tsc + eslint clean on changed files.
+
+**Follow-ups / flags:** (1) on the create-from-scratch studio the shell shows "Pick a project · RESTRICTED" strips (no active project) — consider suppressing the budget/journey strips here, a layout tweak left out of this tight scope; (2) voice intake + real CAD/DWG export are the natural next iterations; (3) founder to review/promote the 41 draft brand_assets.
+
+---
+
 ## 2026-06-16 — [Claude Code] Session: Cockpit polish-2 — workflow-card affordance (brief was already fixed)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/cockpit-polish-2` (worktree off `origin/main` @ `c29274e`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
 
