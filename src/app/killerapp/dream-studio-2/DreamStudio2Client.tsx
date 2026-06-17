@@ -15,7 +15,7 @@
  * schematic), not raster. Tokens only; reduced-motion honored (CSS).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DM2 as D } from './dm2-data';
 import './dream-studio-2.css';
 
@@ -548,10 +548,21 @@ function Spine({ active, setActive, variant }: { active: string; setActive: (id:
 
 export default function DreamStudio2Client() {
   const [active, setActive] = useState('imagine');
+  const [mounted, setMounted] = useState(false);
+  // Canonical "client mounted" flag — a one-shot setState on mount is the intended
+  // pattern here (gates the client-only render below); the rule's a false positive.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
   const ai = D.stages.findIndex((s) => s.id === active);
   const stage = D.stages[ai];
   const go = (dir: number) => setActive(D.stages[Math.min(D.stages.length - 1, Math.max(0, ai + dir))].id);
   const StageView = STAGE_VIEWS[active];
+  // Client-only render. This is a heavy interactive prototype; rendering it during
+  // SSR triggered a production-only hydration mismatch that double-mounted the whole
+  // tree and killed every interaction. SSR + the first client render both emit the
+  // same empty placeholder, so hydration matches cleanly; `mounted` then flips in an
+  // effect and swaps in the live surface. Single tree, fully interactive.
+  if (!mounted) return <div className="ds2-root" aria-busy="true" />;
   return (
     <div className="ds2-root" data-surface="dream-studio-2">
       <Spine active={active} setActive={setActive} variant="desktop" />

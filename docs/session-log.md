@@ -6,6 +6,25 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: dream-studio-2 prod fixes — hydration double-mount + image weight
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/dream-studio-2-prod` (worktree off current `origin/main`) · PR-only, founder merges.
+
+**Mandate (founder, live):** "still no images showing up at all and most of the buttons don't seem to work" on the merged `/killerapp/dream-studio-2`.
+
+**Diagnosis (the surface was squash-merged via #80/#81 WITHOUT the earlier perf commit, so live = original):**
+- Pulled the live SSR HTML — it used the raw `object/public` 1.5–2 MB PNGs (perf commit never reached main). "No images" = those huge PNGs still downloading (screenshots caught them blank).
+- The preview browser is sandboxed to localhost, so I reproduced in a local PRODUCTION build (`next build` + `next start`, not `next dev`). Buttons were dead AND the DOM showed **2× `ds2-root` / 6 doors** — the whole surface double-mounted. Raw SSR HTML had it ONCE → the **client duplicated it during hydration** (a production-only hydration mismatch). The guided `/killerapp/dream-studio` on the same layout rendered once and worked, so it was specific to this component. No React error surfaced in the console and the default Imagine stage has nothing locale/Date/random-dependent, so rather than chase a phantom mismatch in a throwaway-data prototype, I gated it to a clean client-only mount.
+
+**Fixes (2 files):**
+- `DreamStudio2Client.tsx` — **client-only mount**: a `mounted` flag (set in a one-shot effect) gates the render; SSR + the first client render both emit an empty `.ds2-root` placeholder, so hydration matches cleanly, then the live surface swaps in. Kills the double-mount; restores every interaction. (eslint `set-state-in-effect` is a false positive for the canonical mount flag — annotated.)
+- `dm2-data.ts` — **image weight**: route the six staged hero/style images through Supabase's `render/image/public` transform (`?width=760&quality=62`, auto-webp via the browser Accept header, CDN-cached) → ~1.7 MB PNG → ~70 KB webp (~10 MB → ~0.4 MB total).
+
+**Verified in a real PRODUCTION build (`next start` :4316):** single `ds2-root`, 3 doors; door-select, spine nav (→ Shape), genome slider (massing redraws 1,850 → 2,600), sheet tabs all work; concept images load `200 image/webp` via the transform. `next build` green; tsc + eslint clean; clean 2-file diff off `origin/main` (the surface itself is already merged).
+
+**Note:** the same heavy PNGs are also served raw by `/killerapp/dream` (`src/lib/dream/exploration-assets.ts`) — same one-line transform would speed it up; left untouched (separate route/PR).
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: Dream Machine v2 design build (/killerapp/dream-studio-2)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-studio-v2-design` (worktree off `origin/main` @ `c43a8f4`, real `node_modules` via `npm ci`) · PR-only, founder merges on a green Vercel check.
 
