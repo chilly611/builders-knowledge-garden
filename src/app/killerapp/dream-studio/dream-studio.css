@@ -1,10 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   DREAM MACHINE v2 — guided studio (Imagine → Concepts → Blueprint → Build).
-   Scoped under `.dstudio-root`; locked herbarium type trio + tokens only
-   (no #E8443A, no pure white). Mirrors the Builder/Dream surfaces' approach.
+   DREAM MACHINE — guided studio (Imagine → Concepts → Blueprint → Build).
+   Scoped under `.dstudio-root`. Herbarium tokens only (no #E8443A, no pure
+   white). This is the DREAM MACHINE surface, so its signature accent is
+   BRASS + AMBER (the orrery plate) — teal is reserved for the focus halo and
+   the "Build in the Killer App" handoff (the Killer App's own accent).
+   Type is the BKG trio: Archivo Black / EB Garamond / JetBrains Mono.
    ───────────────────────────────────────────────────────────────────────── */
-
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Space+Mono:wght@400;700&display=swap');
 
 .dstudio-root {
   position: relative;
@@ -12,8 +13,13 @@
   min-height: 100%;
   color: var(--ink-sepia);
   font-family: var(--font-ui);
-  --font-editorial: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-  --font-mono: 'Space Mono', 'JetBrains Mono', ui-monospace, monospace;
+  /* Editorial + mono INHERIT the app's next/font tokens — EB Garamond +
+     JetBrains Mono (the BKG trio), set on <html> under hashed family names.
+     Do NOT redefine --font-editorial / --font-mono to literal family strings:
+     the literal "EB Garamond" won't match next/font's hashed name → Georgia. */
+  --dream: var(--specimen-brass);
+  --dream-deep: var(--specimen-brass-aged);
+  --dream-glow: var(--specimen-amber);
 }
 .dstudio-root::before {
   content: '';
@@ -32,12 +38,25 @@
   text-transform: uppercase; color: var(--ink-faded); font-weight: 600;
 }
 
+/* ── Line icons — hand-drawn brass/sepia register, never emoji ── */
+.ds-ico { width: 15px; height: 15px; display: inline-block; vertical-align: -2px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.ds-ico-sm { width: 12px; height: 12px; vertical-align: -1px; }
+
+/* ── Orrery emblem — the Dream Machine signature (decorative) ── */
+.dstudio-orrery { display: block; width: 60px; height: 60px; margin: 0 auto 4px; color: var(--specimen-brass); opacity: 0.95; }
+.dstudio-orrery .o-ring { fill: none; stroke: var(--specimen-brass); stroke-width: 1.1; }
+.dstudio-orrery .o-ring-2 { stroke: var(--specimen-brass-aged); opacity: 0.7; }
+.dstudio-orrery .o-tick { stroke: var(--specimen-brass-aged); stroke-width: 1.1; stroke-linecap: round; }
+.dstudio-orrery .o-core { fill: var(--specimen-amber); stroke: var(--specimen-brass-aged); stroke-width: 1; }
+.dstudio-orrery .o-node { fill: var(--specimen-brass-aged); }
+.dstudio-orrery .o-spin { transform-origin: 30px 30px; animation: dstudio-orbit 48s linear infinite; }
+
 /* ── Header + progress ── */
 .dstudio-head { text-align: center; margin: 8px 0 22px; }
 .dstudio-eyebrow { color: var(--specimen-brass-aged); }
 .dstudio-title {
   font-family: var(--font-display); font-weight: 400; font-size: 38px;
-  line-height: 1.0; letter-spacing: -0.025em; color: var(--ink-graphite); margin: 8px 0 16px;
+  line-height: 1.0; letter-spacing: -0.025em; color: var(--ink-graphite); margin: 6px 0 16px;
 }
 .dstudio-steps {
   list-style: none; display: flex; gap: 8px; justify-content: center;
@@ -51,10 +70,12 @@
   background: var(--bg-raised);
 }
 .dstudio-step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--paper-shadow); }
-.dstudio-step.is-on { color: var(--specimen-teal-deep); border-color: var(--specimen-teal); }
-.dstudio-step.is-on .dstudio-step-dot { background: var(--specimen-teal); }
+.dstudio-step.is-on { color: var(--specimen-brass-aged); border-color: var(--specimen-brass); }
+.dstudio-step.is-on .dstudio-step-dot { background: var(--specimen-brass); }
+.dstudio-step.is-done { color: var(--specimen-brass-aged); }
+.dstudio-step.is-done .dstudio-step-dot { background: var(--specimen-amber); }
 
-/* ── Card shell ── */
+/* ── Card shell — a specimen plate ── */
 .dstudio-card {
   background: var(--bg-raised); border: 1px solid var(--paper-shadow);
   border-radius: var(--radius-md); box-shadow: 0 1px 2px rgba(42,38,32,0.1), 0 4px 14px rgba(42,38,32,0.06);
@@ -76,9 +97,9 @@
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   font-family: var(--font-ui);
 }
-.dstudio-opt:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(42,38,32,0.1); }
-.dstudio-opt.is-selected { border-color: var(--specimen-teal); border-left-color: var(--specimen-teal); box-shadow: 0 0 0 2px color-mix(in oklab, var(--specimen-teal) 32%, transparent); }
-.dstudio-opt:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
+.dstudio-opt:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(42,38,32,0.1); border-left-color: var(--specimen-brass); }
+.dstudio-opt.is-selected { border-color: var(--specimen-brass); border-left-color: var(--specimen-amber); box-shadow: 0 0 0 2px color-mix(in oklab, var(--specimen-brass) 32%, transparent); }
+.dstudio-opt:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; } /* teal focus halo (system rule) */
 .dstudio-opt-l { font-size: 15px; font-weight: 700; color: var(--ink-graphite); }
 .dstudio-opt-h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-faded); }
 
@@ -93,14 +114,17 @@
 
 .dstudio-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .dstudio-chip {
+  display: inline-flex; align-items: center; gap: 6px;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
-  padding: 6px 11px; cursor: pointer; color: var(--specimen-teal-deep);
-  background: var(--specimen-teal-pale); border: 1px solid var(--specimen-teal); border-radius: 999px;
+  padding: 6px 11px; cursor: pointer; color: var(--specimen-brass-aged);
+  background: var(--specimen-brass-pale); border: 1px solid var(--specimen-brass); border-radius: 999px;
 }
+.dstudio-chip:hover { color: var(--specimen-rust); }
 
 /* ── Actions ── */
 .dstudio-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 24px; }
 .dstudio-btn {
+  display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; padding: 12px 20px; border-radius: var(--radius-xs); cursor: pointer;
   border: 1px solid transparent; transition: background 150ms ease, transform 150ms ease, opacity 150ms ease;
@@ -108,8 +132,9 @@
 .dstudio-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .dstudio-btn-ghost { background: transparent; border-color: var(--paper-shadow); color: var(--ink-sepia); }
 .dstudio-btn-ghost:hover:not(:disabled) { background: var(--paper-cream); }
-.dstudio-btn-go { background: var(--specimen-teal); color: var(--paper-cream); }
-.dstudio-btn-go:hover:not(:disabled) { background: var(--specimen-teal-deep); transform: translateY(-1px); }
+.dstudio-btn-go { background: var(--specimen-brass); color: var(--paper-cream); }
+.dstudio-btn-go:hover:not(:disabled) { background: var(--specimen-brass-aged); transform: translateY(-1px); }
+/* The handoff button wears the Killer App's own accent (teal) on purpose. */
 .dstudio-btn-build { background: var(--specimen-teal-deep); color: var(--paper-cream); font-size: 13px; padding: 14px 26px; }
 .dstudio-btn-build:hover:not(:disabled) { background: var(--specimen-teal); transform: translateY(-1px); }
 .dstudio-btn:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
@@ -118,27 +143,31 @@
 /* ── Concepts ── */
 .dstudio-brief { font-family: var(--font-editorial); font-size: 18px; color: var(--ink-sepia); margin: 0 0 14px; }
 .dstudio-status {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 9px; margin-bottom: 16px; padding: 10px 14px;
   border-radius: var(--radius-xs); background: color-mix(in oklab, var(--specimen-brass) 12%, transparent);
   border: 1px solid var(--specimen-brass); color: var(--ink-sepia);
   font-family: var(--font-mono); font-size: 12px;
 }
+.dstudio-status-ring { width: 13px; height: 13px; flex: none; color: var(--specimen-brass-aged); }
+.dstudio-status-ring .r-track { stroke: color-mix(in oklab, var(--specimen-brass) 35%, transparent); }
+.dstudio-status-ring .r-arc { stroke: var(--specimen-brass-aged); transform-origin: center; animation: dstudio-spin 0.9s linear infinite; }
 .dstudio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
 .dstudio-concept {
-  position: relative; padding: 0; cursor: pointer; overflow: hidden;
+  position: relative; padding: 0; cursor: zoom-in; overflow: hidden;
   background: var(--paper-fold); border: 1px solid var(--paper-shadow); border-radius: var(--radius-md);
   aspect-ratio: 4 / 3; transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 .dstudio-concept img { width: 100%; height: 100%; object-fit: cover; display: block; animation: dstudio-fade 0.5s ease both; }
 .dstudio-concept:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(42,38,32,0.14); }
-.dstudio-concept.is-chosen { border-color: var(--specimen-teal); box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-teal) 40%, transparent); }
+.dstudio-concept.is-chosen { border-color: var(--specimen-brass); box-shadow: 0 0 0 3px color-mix(in oklab, var(--specimen-amber) 48%, transparent); }
 .dstudio-concept.is-pending img { opacity: 0.78; }
 .dstudio-concept:focus-visible { outline: 2px solid var(--specimen-teal-deep); outline-offset: 2px; }
 .dstudio-concept-tag {
-  position: absolute; left: 8px; bottom: 8px; padding: 3px 8px;
+  position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;
   background: color-mix(in oklab, var(--paper-cream) 88%, transparent);
   border: 1px solid var(--paper-edge); border-radius: var(--radius-xs); color: var(--ink-sepia);
 }
+.dstudio-concept-tag .ds-ico { color: var(--specimen-brass-aged); }
 
 /* ── Blueprint ── */
 .dstudio-blueprint { display: grid; grid-template-columns: 1fr 232px; gap: 20px; align-items: start; }
@@ -154,16 +183,15 @@
 .dstudio-program { display: flex; flex-direction: column; gap: 10px; }
 .dstudio-program-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .dstudio-program-list li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--ink-graphite); padding: 4px 0; border-bottom: 1px dashed var(--paper-edge); }
-.dstudio-program-sf { font-family: var(--font-mono); font-size: 12px; color: var(--specimen-teal-deep); }
-.dstudio-dl { text-align: center; text-decoration: none; margin-top: 8px; }
+.dstudio-program-sf { font-family: var(--font-mono); font-size: 12px; color: var(--specimen-brass-aged); }
+.dstudio-dl { text-align: center; text-decoration: none; margin-top: 8px; justify-content: center; }
 .dstudio-disclaimer { font-family: var(--font-editorial); font-style: italic; font-size: 13px; color: var(--ink-faded); margin: 8px 0 0; }
 .dstudio-error { color: var(--specimen-rust); font-size: 13px; margin: 10px 0 0; text-align: right; }
 
 /* ── Click-to-expand affordance (concepts · views · plan) ── */
-.dstudio-concept, .dstudio-view, .dstudio-plan { cursor: zoom-in; }
 .dstudio-concept-zoom {
   position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
-  display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--ink-sepia);
+  display: flex; align-items: center; justify-content: center; color: var(--ink-sepia);
   background: color-mix(in oklab, var(--paper-cream) 86%, transparent);
   border: 1px solid var(--paper-edge); border-radius: var(--radius-xs);
   opacity: 0; transition: opacity 150ms ease; pointer-events: none;
@@ -176,7 +204,7 @@
 .dstudio-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 2px 0 12px; flex-wrap: wrap; }
 .dstudio-views { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .dstudio-view {
-  position: relative; padding: 0; overflow: hidden; aspect-ratio: 4 / 3;
+  position: relative; padding: 0; overflow: hidden; aspect-ratio: 4 / 3; cursor: zoom-in;
   background: var(--paper-fold); border: 1px solid var(--paper-shadow); border-radius: var(--radius-md);
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
@@ -203,13 +231,13 @@
 .dstudio-lb-cap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; }
 .dstudio-lb-cap .eng-label { color: var(--paper-vellum); }
 .dstudio-lb-x {
-  position: absolute; top: 18px; right: 22px; width: 40px; height: 40px; cursor: pointer; font-size: 17px;
+  position: absolute; top: 18px; right: 22px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center;
   color: var(--paper-cream); background: transparent; border: 1px solid color-mix(in oklab, var(--paper-cream) 45%, transparent); border-radius: 50%;
 }
 .dstudio-lb-x:hover { background: color-mix(in oklab, var(--paper-cream) 16%, transparent); }
 .dstudio-lb-nav {
-  position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; cursor: pointer;
-  font-size: 30px; line-height: 1; color: var(--paper-cream);
+  position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--paper-cream);
   background: color-mix(in oklab, var(--ink-graphite) 55%, transparent);
   border: 1px solid color-mix(in oklab, var(--paper-cream) 35%, transparent); border-radius: 50%;
 }
@@ -217,16 +245,19 @@
 .dstudio-lb-prev { left: 18px; }
 .dstudio-lb-next { right: 18px; }
 .dstudio-lb-x:focus-visible, .dstudio-lb-nav:focus-visible { outline: 2px solid var(--paper-cream); outline-offset: 2px; }
+.dstudio-lb .ds-ico { width: 20px; height: 20px; }
 
 @keyframes dstudio-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dstudio-spin { to { transform: rotate(360deg); } }
+@keyframes dstudio-orbit { to { transform: rotate(360deg); } }
 
 @media (max-width: 720px) {
   .dstudio-title { font-size: 30px; }
   .dstudio-blueprint { grid-template-columns: 1fr; }
   .dstudio-actions { justify-content: stretch; }
-  .dstudio-btn { flex: 1; text-align: center; }
+  .dstudio-btn { flex: 1; text-align: center; justify-content: center; }
   .dstudio-lb { padding: 44px 12px; }
-  .dstudio-lb-nav { width: 40px; height: 40px; font-size: 26px; }
+  .dstudio-lb-nav { width: 40px; height: 40px; }
   .dstudio-lb-prev { left: 6px; }
   .dstudio-lb-next { right: 6px; }
 }

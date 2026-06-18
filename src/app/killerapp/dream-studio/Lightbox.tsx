@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { IconClose, IconChevronLeft, IconChevronRight } from './icons';
 
 export interface LightboxItem {
   src: string;
@@ -68,14 +69,14 @@ export function Lightbox({ items, index, onIndex, onClose, action }: LightboxPro
   // transformed shell ancestor (which would capture a fixed child).
   return createPortal(
     <div className="dstudio-lb" role="dialog" aria-modal="true" aria-label={`${item.label} — full frame`} onClick={onClose}>
-      <button className="dstudio-lb-x" type="button" aria-label="Close" onClick={onClose}>✕</button>
+      <button className="dstudio-lb-x" type="button" aria-label="Close" onClick={onClose}><IconClose /></button>
       {many && (
         <button
           className="dstudio-lb-nav dstudio-lb-prev"
           type="button"
           aria-label="Previous"
           onClick={(e) => { e.stopPropagation(); go(-1); }}
-        >‹</button>
+        ><IconChevronLeft /></button>
       )}
       <figure className="dstudio-lb-fig" onClick={(e) => e.stopPropagation()}>
         {/* eslint-disable-next-line @next/next/no-img-element -- render URL or SVG data-URI */}
@@ -95,7 +96,7 @@ export function Lightbox({ items, index, onIndex, onClose, action }: LightboxPro
           type="button"
           aria-label="Next"
           onClick={(e) => { e.stopPropagation(); go(1); }}
-        >›</button>
+        ><IconChevronRight /></button>
       )}
     </div>,
     document.body,

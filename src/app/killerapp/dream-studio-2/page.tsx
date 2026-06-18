@@ -1,28 +1,18 @@
 /**
- * Dream Machine v2 — Route Handler (NEW surface, /killerapp/dream-studio-2).
- * =========================================================================
- * The Claude Design "imagine → build pipeline" mock, recreated on the shared
- * App Shell (the killerapp layout provides UmbrellaBar / GlobalStrips /
- * PersistentNav). Coexists with /killerapp/dream-studio and /killerapp/dream
- * — those are untouched; this is reached by direct URL (no compass-nav change).
+ * /killerapp/dream-studio-2 — RETIRED → /killerapp/dream-studio.
+ * ===============================================================
+ * The v2 surface was a static design mock (the "Twin Peaks" demo literal — no
+ * live generation, no real assets, no persistence). The working, on-brand
+ * Dream Machine is /killerapp/dream-studio (live FLUX generation from the
+ * user's brief + real seeds + blueprint + Build handoff), so this route now
+ * points there.
  *
- * High-fidelity interactive prototype: spine nav, stage steps, sheet tabs,
- * Genome sliders, hotspots and blend sliders are live; FLUX/plan/persistence
- * are a follow-up. Content renders from the DM2 demo literal (Twin Peaks).
+ * Temporary redirect (307) on purpose — the mock client (DreamStudio2Client /
+ * dm2-data / dream-studio-2.css) is preserved in this folder so its "spine"
+ * structure can be ported onto the live engine later without git archaeology.
  */
-
-import { Suspense } from 'react';
-import DreamStudio2Client from './DreamStudio2Client';
-
-export const metadata = {
-  title: 'Dream Machine v2',
-  description: 'The imagine → build pipeline — one forward-moving journey from a seed to a buildable plan.',
-};
+import { redirect } from 'next/navigation';
 
 export default function DreamStudio2Page() {
-  return (
-    <Suspense fallback={null}>
-      <DreamStudio2Client />
-    </Suspense>
-  );
+  redirect('/killerapp/dream-studio');
 }
