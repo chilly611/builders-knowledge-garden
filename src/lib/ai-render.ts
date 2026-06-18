@@ -141,11 +141,40 @@ async function callReplicate(token: string, model: string, input: Record<string,
   return Array.isArray(p.output) ? p.output[0] : p.output;
 }
 
+// ── Layer 3: trained house-style models (the ownable look) ───────────────────
+// A FLUX LoRA/finetune trained on our curated brand set (see scripts/dream-lora-*
+// and docs/dream-machine-lora.md). Point an env at the trained Replicate model
+// ref ("owner/name:version") and that style LEADS the cascade. Gated + fallback:
+//   DREAM_LORA_STUDY=<model ref>   trained line-and-wash model for studies
+//   DREAM_LORA_PHOTO=<model ref>   trained filmic model for photos
+//   DREAM_LORA_TRIGGER=BKGHERB     trigger word, prepended to prompts for the LoRA
+function loraStudy(): string | null { return process.env.DREAM_LORA_STUDY || null; }
+function loraPhoto(): string | null { return process.env.DREAM_LORA_PHOTO || null; }
+function loraTrigger(): string { return (process.env.DREAM_LORA_TRIGGER || "").trim(); }
+
+type Attempt = [model: string, input: Record<string, unknown>];
+
+/** Try each [model, input] in order; return the first success, else throw last. */
+async function runChain(token: string, chain: Attempt[], start: number, prompt: string): Promise<RenderResult> {
+  let lastErr: unknown;
+  for (const [model, input] of chain) {
+    try {
+      const imageUrl = await callReplicate(token, model, input);
+      return { imageUrl, renderTime: Date.now() - start, model, prompt };
+    } catch (e) {
+      lastErr = e;
+      console.warn(`[ai-render] ${model} failed; trying next:`, e instanceof Error ? e.message : e);
+    }
+  }
+  throw lastErr ?? new Error("All render attempts failed");
+}
+
 /**
- * Generate one render. Routes by style: flux-dev (line-and-wash studies, with a
- * negative prompt) or flux-1.1-pro (filmic photos). When a brand style anchor is
- * configured (Layer 2), photos are conditioned on it via flux-1.1-pro-ultra,
- * falling back to text-only flux-1.1-pro on any error.
+ * Generate one render, cascading through the brand layers (best → safest), each
+ * attempt falling back to the next on any failure so output is never worse than
+ * the text-only baseline:
+ *   STUDY:  trained LoRA (L3) → flux-dev line-and-wash (L1)
+ *   PHOTO:  trained finetune (L3) → style-anchor ultra (L2) → flux-1.1-pro (L1)
  */
 export async function generateRender(req: RenderRequest): Promise<RenderResult> {
   const token = process.env.REPLICATE_API_TOKEN;
@@ -156,48 +185,52 @@ export async function generateRender(req: RenderRequest): Promise<RenderResult> 
   const fullPrompt = buildPrompt(req);
   const aspect = ASPECT_RATIOS[req.aspect || "landscape"];
   const start = Date.now();
+  const trigger = loraTrigger();
+  const triggered = (p: string) => (trigger ? `${trigger}, ${p}` : p);
 
-  // STUDY — line-and-wash working drawing (flux-dev + negative prompt).
+  // STUDY — line-and-wash working drawing.
   if (isStudy(req.style)) {
-    const imageUrl = await callReplicate(token, STUDY_MODEL, {
-      prompt: fullPrompt,
+    const base = {
       aspect_ratio: aspect,
       output_format: "webp",
       output_quality: 82,
       guidance: 3,
       num_inference_steps: 34,
       negative_prompt: STUDY_NEGATIVE,
-    });
-    return { imageUrl, renderTime: Date.now() - start, model: STUDY_MODEL, prompt: fullPrompt };
+    };
+    const chain: Attempt[] = [];
+    const lora = loraStudy();
+    if (lora) chain.push([lora, { ...base, prompt: triggered(fullPrompt) }]);
+    chain.push([STUDY_MODEL, { ...base, prompt: fullPrompt }]);
+    return runChain(token, chain, start, fullPrompt);
   }
 
-  // PHOTO — Layer 2 brand-anchor path first (if enabled), else text-only flux-1.1-pro.
+  // PHOTO — filmic herbarium.
+  const chain: Attempt[] = [];
+  const photoLora = loraPhoto();
+  if (photoLora) {
+    chain.push([photoLora, { prompt: triggered(fullPrompt), aspect_ratio: aspect, output_format: "webp" }]);
+  }
   const styleRef = photoStyleRef();
   if (styleRef) {
-    try {
-      const imageUrl = await callReplicate(token, ULTRA_MODEL, {
-        prompt: fullPrompt,
-        aspect_ratio: aspect,
-        image_prompt: styleRef,
-        image_prompt_strength: styleStrength(),
-        output_format: "webp",
-        safety_tolerance: 2,
-      });
-      return { imageUrl, renderTime: Date.now() - start, model: ULTRA_MODEL, prompt: fullPrompt };
-    } catch (e) {
-      console.warn("[ai-render] style-ref render failed; using text-only:", e instanceof Error ? e.message : e);
-    }
+    chain.push([ULTRA_MODEL, {
+      prompt: fullPrompt,
+      aspect_ratio: aspect,
+      image_prompt: styleRef,
+      image_prompt_strength: styleStrength(),
+      output_format: "webp",
+      safety_tolerance: 2,
+    }]);
   }
-
-  const imageUrl = await callReplicate(token, HERO_MODEL, {
+  chain.push([HERO_MODEL, {
     prompt: fullPrompt,
     aspect_ratio: aspect,
     output_format: "webp",
     output_quality: req.quality === "high" ? 95 : 82,
     prompt_upsampling: true,
     safety_tolerance: 2,
-  });
-  return { imageUrl, renderTime: Date.now() - start, model: HERO_MODEL, prompt: fullPrompt };
+  }]);
+  return runChain(token, chain, start, fullPrompt);
 }
 
 /**

@@ -56,3 +56,7 @@ copy/
 # generated portal-imagery (local draft renders — promote via the staging script, never commit binaries)
 /fidelity-out/
 /fidelity-out-sf/
+
+# Dream Machine LoRA dataset build artifacts (scripts/dream-lora-dataset.mjs)
+dream-lora-dataset/
+dream-lora-dataset.zip

@@ -6,6 +6,25 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: Dream Machine — Layer 3 ownable house-style LoRA pipeline
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
+
+**Mandate (founder):** "let's get layer 3 done" — train a FLUX model on our curated set for a fully ownable house style.
+
+**Reality:** the training run itself needs the Replicate token + ~$2 + shared-prod resources → founder-run. So I shipped the whole pipeline + inference wiring + runbook; the founder runs one script and sets one env var.
+
+**Shipped:**
+- `scripts/dream-lora-dataset.mjs` (token-free, **VERIFIED by running it**): fetches the curated brand images from the public bucket, writes trigger-word (`BKGHERB`) captions, zips. 15/17 staged assets resolve (8 studies + 7 photos; 2 guessed SF slugs 400 → skipped). `--extra <dir>` folds in your own frames — **drop Midjourney `--sref` exports there to train a FLUX LoRA on the MJ look** (ownable, MJ-free). Output gitignored.
+- `scripts/dream-lora-train.mjs` (founder-run, token, **DRY-RUN default, verified dry-run**): uploads the zip → `ostris/flux-dev-lora-trainer` → a runnable destination model; prints the version + the env to set.
+- `src/lib/ai-render.ts`: a render **CASCADE** — STUDY: trained LoRA (L3) → flux-dev (L1); PHOTO: trained finetune (L3) → style-anchor ultra (L2) → flux-1.1-pro (L1). Gated by `DREAM_LORA_STUDY` / `DREAM_LORA_PHOTO` / `DREAM_LORA_TRIGGER`; each step falls back on failure (never worse than baseline; unset to revert).
+- `docs/dream-machine-lora.md`: the runbook (dataset → train → wire → tune, cost/time, grow-the-dataset + the MJ-into-LoRA play).
+
+**Verified:** prod build green + type-checked; both scripts run (dataset builds the zip; train prints the request in dry-run). Training NOT run (token/$/prod = founder). Pushed, not merged.
+
+**The full ladder is now in this one PR:** on-brand surface → L1 register → L2 style-ref → L3 LoRA pipeline.
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: Dream Machine — Layer 2 brand style-reference (the --sref analog)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
 
