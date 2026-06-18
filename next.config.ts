@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        // 2026-06-17: /killerapp/dream-studio-2 was a static design mock (no
+        // live generation/assets). The working, on-brand Dream Machine is
+        // /killerapp/dream-studio. Temporary (307) so the v2 "spine" can be
+        // ported onto the live engine later without a stale 308 cache.
+        source: '/killerapp/dream-studio-2',
+        destination: '/killerapp/dream-studio',
+        permanent: false,
+      },
+      {
         source: '/compass',
         destination: '/killerapp/workflows/compass-nav',
         permanent: true,
