@@ -6,6 +6,24 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: Dream Machine — on-brand GENERATION (line-and-wash register → live FLUX)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
+
+**Mandate (founder):** shared 4 line-and-wash architectural studies + 1 filmic build photo — "I liked this style; what happened? Model the generated imagery more like this. What's the strategy at the platform-generation level?"
+
+**Diagnosis:** that look lived ONLY in the staging script (`portal-imagery.mjs` "herbarium render register" + flux-dev studies). The LIVE engine `src/lib/ai-render.ts` used a generic photoreal prompt ("8K, Canon EOS R5"), a charcoal-on-WHITE "sketch", and flux-1.1-pro for everything — so users never got our line-and-wash look. The recipe was never ported into live generation.
+
+**Layer 1 shipped (register port + model routing — the 80/20):**
+- `src/lib/ai-render.ts` rewritten: two registers ported from the staging pipeline. STUDY (`study`/`sketch`) → **flux-dev + negative_prompt** = ink-graphite line-and-wash on cream (the studies). PHOTO (`exterior`/`interior`/`aerial`/`material`) → **flux-1.1-pro**, cinematic herbarium palette. Palette + "no pure white / no red" locked into EVERY prompt; model routes by style; seeds left unset (live varies per call).
+- `render/route.ts` already forwards `style` (mode `single`) — no change.
+- `DreamStudioClient.tsx`: `callRender` now forwards a `style`; the **BLUEPRINT stage renders 4 line-and-wash STUDIES** (section / massing / site & clearance / detail — matching the founder's images) via `style:'study'`; the CONCEPTS 4th tile is now a study (not charcoal-on-white). Labels updated.
+
+**Verified:** prod build green + type-checked. NOTE: could NOT run a live test render locally — `REPLICATE_API_TOKEN` is correctly gated by the `.env` deny rule. The look is proven by identity: it's the SAME register + model + negative_prompt + guidance/steps behind the founder's own staged assets. Final visual confirmation is on prod after merge (token set there).
+
+**Strategy beyond Layer 1 (for founder):** Layer 2 = style-reference image (FLUX Redux / IP-Adapter — the Midjourney `--sref` analog) for prompt-proof consistency. Layer 3 = train a FLUX LoRA on the curated brand set (ownable house style). Pushed, not merged.
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: Dream Machine — consolidate onto the real surface, make it on-brand
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (worktree off `origin/main`) · PR-only, founder merges.
 

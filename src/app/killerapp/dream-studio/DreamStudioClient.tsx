@@ -57,15 +57,16 @@ interface Concept {
   pending: boolean;
 }
 
-const CONCEPT_LABELS = ['Street view', 'Garden side', 'Golden hour', 'Sketch'];
+const CONCEPT_LABELS = ['Street view', 'Garden side', 'From above', 'Study'];
 
-/** Blueprint-page perspectives: the chosen direction from more angles + interiors. */
+/** Blueprint-page line-and-wash STUDIES — the architect's working drawings,
+ *  rendered in the herbarium study register (flux-dev). Mirrors our staged
+ *  brand assets: section, massing, site/clearance, detail. */
 const PERSPECTIVES: { key: string; label: string; mod: string }[] = [
-  { key: 'aerial', label: 'From above', mod: 'aerial view from directly overhead showing the roof and the site, birds-eye' },
-  { key: 'street', label: 'Street side', mod: 'front street elevation, straight-on architectural view' },
-  { key: 'rear', label: 'Garden side', mod: 'rear elevation facing the back garden' },
-  { key: 'living', label: 'Inside · living', mod: 'interior of the open-plan living room, large windows, natural daylight' },
-  { key: 'kitchen', label: 'Inside · kitchen', mod: 'interior of the kitchen with island and cabinetry' },
+  { key: 'section', label: 'Section', mod: 'a building section cut through the main living spaces — floor levels, ceiling heights and the roof, with dimension annotations' },
+  { key: 'massing', label: 'Massing', mod: 'an isometric massing study of the whole building on its site, axonometric, showing the volumes and the roof' },
+  { key: 'site', label: 'Site & clearance', mod: 'a site-plan study showing the building footprint, setbacks and clearances, with dimension lines' },
+  { key: 'detail', label: 'Detail', mod: 'a close hand-drawn detail study of a key junction — eave, window head, or stair' },
 ];
 
 export default function DreamStudioClient() {
@@ -89,7 +90,7 @@ export default function DreamStudioClient() {
   const q = INTAKE[stepIdx];
 
   /* ── Render call (reuses the Dream Studio engine; honest fallback) ── */
-  const callRender = useCallback(async (prompt: string, count: number): Promise<string[] | null> => {
+  const callRender = useCallback(async (prompt: string, count: number, style?: string): Promise<string[] | null> => {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       try {
@@ -104,7 +105,7 @@ export default function DreamStudioClient() {
       try {
         res = await fetch('/api/v1/render', {
           method: 'POST', headers,
-          body: JSON.stringify({ prompt, mode: 'concepts', count }),
+          body: JSON.stringify(style ? { prompt, mode: 'single', style } : { prompt, mode: 'concepts', count }),
           signal: controller.signal,
         });
       } finally { clearTimeout(timeout); }
@@ -157,8 +158,8 @@ export default function DreamStudioClient() {
     }));
     setViews(placeholders);
     PERSPECTIVES.forEach((v, i) => {
-      const prompt = `${profileToBrief(p)} ${v.mod}. Architectural photography, golden hour, warm and filmic, no people, no text, no signage.`;
-      void callRender(prompt, 1).then((urls) => {
+      const prompt = `${profileToBrief(p)} — ${v.mod}`;
+      void callRender(prompt, 1, 'study').then((urls) => {
         setViews((prev) => prev.map((x) => x.id === placeholders[i].id
           ? (urls && urls[0] ? { ...x, src: urls[0], kind: 'render', pending: false } : { ...x, pending: false })
           : x));
@@ -400,7 +401,7 @@ export default function DreamStudioClient() {
             <section className="dstudio-card" aria-label="Blueprint">
               {/* Perspectives gallery */}
               <div className="dstudio-section-head">
-                <span className="eng-label">The look · {profile.style ? profile.style.replace(/-/g, ' ') : profile.vibe || 'your direction'}</span>
+                <span className="eng-label">Working drawings · {profile.style ? profile.style.replace(/-/g, ' ') : profile.vibe || 'your direction'}</span>
                 <span className="eng-label">{stillRendering ? 'Rendering more views…' : 'Tap any image to view full frame'}</span>
               </div>
               <div className="dstudio-views">
