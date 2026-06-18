@@ -6,19 +6,75 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
-## 2026-06-17 — [Claude Code] Session: demo-link triage — hide stubs, fix /cinematic dead-end, full site map
-**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/site-map-and-hygiene` (worktree off current `origin/main`) · PR-only, founder merges.
+## 2026-06-17 — [Claude Code] Session: Dream Machine — Layer 3 ownable house-style LoRA pipeline
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
 
-**Mandate (founder, live):** after I gave the "links for John" inventory, founder said fix the flagged items: (1) dream-studio-2 fix → *already merged* (#82/#83, confirmed `render/image` on main); (2) `/clients` + `/site` "Coming Q3/Q4 2026" stubs → **DEFINITELY HIDE**; (3) `/cinematic` dead-ends after the animation → fix it **and generate a full site map of every destination we can always refer to, even ones we'll never use again**; (4) investor-site URL → *"there have been more than one — fix the rest and I'll look"*; (5) `contract-templates` stays DRAFT-locked → OK for now.
+**Mandate (founder):** "let's get layer 3 done" — train a FLUX model on our curated set for a fully ownable house style.
 
-**Changes (5 files):**
-- **`/cinematic` no longer dead-ends** (`src/app/cinematic/page.tsx`): it only advanced when `anim.html` posted `'done'` — if that never fired the user was trapped on the splash. Added a persistent **"Skip intro →"** button (SSR-rendered, always clickable) **+ a 12 s timeout fallback** that reveals the path picker regardless. Also removed two hard constitution violations while in the file: forbidden red `#E8443A` (Build card accent → `#A53A2D`) and pure-white backgrounds `#ffffff`/`rgba(255,255,255,.95)` → paper-cream `#FBF6EC`/`rgba(251,246,236,.95)`. (Remaining `#fff` are text/translucent overlay — allowed.)
-- **`/clients` + `/site` hidden** (de-linked + noindexed, route kept for internal reference): removed the 3 nav entries that pointed to them in `CompassBloom.tsx` (merchant "Clients", ally "Pipeline", machine "Site Intel") — CompassBloom still renders on marketing surfaces via GlobalChromeGate, so those were the only in-app paths. Added server-component `clients/layout.tsx` + `site/layout.tsx` exporting `robots: { index:false, follow:false }` (pages stay `'use client'`, untouched). Not in `sitemap.ts`, so nothing to pull there.
-- **`docs/sitemap.md`** — NEW canonical full site map: all 139 page routes + 41 workflows + the sibling pitch sites (theknowledgegardens.com, frontiermap + /john,/walkthrough,/theKnowledgeGardensOS, decisionconservatory.com) + investor-site candidates for founder to confirm. Status legend (live/demo/prototype/stub/hidden/archived/internal/api) + a reviewer-attention matrix (investor/marketing/legal/UX/contractor/ops/CTO/founder) + curated demo paths.
+**Reality:** the training run itself needs the Replicate token + ~$2 + shared-prod resources → founder-run. So I shipped the whole pipeline + inference wiring + runbook; the founder runs one script and sets one env var.
 
-**Verified (prod build, not dev):** `npm run build` green (only pre-existing Sentry/CSS warnings). `next start` + curl: `/cinematic` serves the Skip button + `anim.html`, **no `#E8443A`**; `/clients` + `/site` both emit `<meta name="robots" content="noindex, nofollow">`; `/` (control) has none. Pushed, not merged.
+**Shipped:**
+- `scripts/dream-lora-dataset.mjs` (token-free, **VERIFIED by running it**): fetches the curated brand images from the public bucket, writes trigger-word (`BKGHERB`) captions, zips. 15/17 staged assets resolve (8 studies + 7 photos; 2 guessed SF slugs 400 → skipped). `--extra <dir>` folds in your own frames — **drop Midjourney `--sref` exports there to train a FLUX LoRA on the MJ look** (ownable, MJ-free). Output gitignored.
+- `scripts/dream-lora-train.mjs` (founder-run, token, **DRY-RUN default, verified dry-run**): uploads the zip → `ostris/flux-dev-lora-trainer` → a runnable destination model; prints the version + the env to set.
+- `src/lib/ai-render.ts`: a render **CASCADE** — STUDY: trained LoRA (L3) → flux-dev (L1); PHOTO: trained finetune (L3) → style-anchor ultra (L2) → flux-1.1-pro (L1). Gated by `DREAM_LORA_STUDY` / `DREAM_LORA_PHOTO` / `DREAM_LORA_TRIGGER`; each step falls back on failure (never worse than baseline; unset to revert).
+- `docs/dream-machine-lora.md`: the runbook (dataset → train → wire → tune, cost/time, grow-the-dataset + the MJ-into-LoRA play).
 
-**Founder follow-ups:** confirm/consolidate the investor-site URL(s) — multiple exist (`umbrella-strategy/investor-site/index.html`, `decision-room.html`, `deploy/index.html`).
+**Verified:** prod build green + type-checked; both scripts run (dataset builds the zip; train prints the request in dry-run). Training NOT run (token/$/prod = founder). Pushed, not merged.
+
+**The full ladder is now in this one PR:** on-brand surface → L1 register → L2 style-ref → L3 LoRA pipeline.
+
+---
+
+## 2026-06-17 — [Claude Code] Session: Dream Machine — Layer 2 brand style-reference (the --sref analog)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
+
+**Mandate (founder):** "go on layer 2" — a style-reference image so generated imagery locks to our look regardless of how the prompt is phrased.
+
+**Shipped (`src/lib/ai-render.ts` only — env-driven, GATED OFF, no caller changes):** PHOTO renders can be conditioned on a canonical brand image via **flux-1.1-pro-ultra's `image_prompt`** (the Midjourney `--sref` analog). Refactored the POST+poll into a `callReplicate()` helper. Env knobs:
+- `DREAM_STYLE_REF=1` — enable (default OFF, so merging changes nothing on prod)
+- `DREAM_STYLE_REF_PHOTO=<url>` — the style anchor (default: staged Marin hero; **point this at an uploaded Midjourney `--sref` frame** once the MJ set is in the bucket)
+- `DREAM_STYLE_REF_STRENGTH=0..1` — `image_prompt_strength`, default 0.12 (subtle)
+
+On ANY style-ref failure (wrong key / anchor 404 / model down) it **falls back to the Layer-1 text-only flux-1.1-pro path — never worse**. Studies stay on the text register (a Redux reference over-constrains drawings; a study LoRA is the Layer-3 lock).
+
+**Verified:** prod build green + type-checked. The `image_prompt` / `image_prompt_strength` schema is confirmed by Replicate docs ("restyle via an image plus a prompt") but **could not be run locally** — `REPLICATE_API_TOKEN` is gated by the `.env` deny rule — so the fallback makes a wrong key self-correcting. **TUNE ON PROD:** set `DREAM_STYLE_REF=1`, choose the anchor, sweep strength 0.08→0.25 and eyeball. Pushed, not merged.
+
+---
+
+## 2026-06-17 — [Claude Code] Session: Dream Machine — on-brand GENERATION (line-and-wash register → live FLUX)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
+
+**Mandate (founder):** shared 4 line-and-wash architectural studies + 1 filmic build photo — "I liked this style; what happened? Model the generated imagery more like this. What's the strategy at the platform-generation level?"
+
+**Diagnosis:** that look lived ONLY in the staging script (`portal-imagery.mjs` "herbarium render register" + flux-dev studies). The LIVE engine `src/lib/ai-render.ts` used a generic photoreal prompt ("8K, Canon EOS R5"), a charcoal-on-WHITE "sketch", and flux-1.1-pro for everything — so users never got our line-and-wash look. The recipe was never ported into live generation.
+
+**Layer 1 shipped (register port + model routing — the 80/20):**
+- `src/lib/ai-render.ts` rewritten: two registers ported from the staging pipeline. STUDY (`study`/`sketch`) → **flux-dev + negative_prompt** = ink-graphite line-and-wash on cream (the studies). PHOTO (`exterior`/`interior`/`aerial`/`material`) → **flux-1.1-pro**, cinematic herbarium palette. Palette + "no pure white / no red" locked into EVERY prompt; model routes by style; seeds left unset (live varies per call).
+- `render/route.ts` already forwards `style` (mode `single`) — no change.
+- `DreamStudioClient.tsx`: `callRender` now forwards a `style`; the **BLUEPRINT stage renders 4 line-and-wash STUDIES** (section / massing / site & clearance / detail — matching the founder's images) via `style:'study'`; the CONCEPTS 4th tile is now a study (not charcoal-on-white). Labels updated.
+
+**Verified:** prod build green + type-checked. NOTE: could NOT run a live test render locally — `REPLICATE_API_TOKEN` is correctly gated by the `.env` deny rule. The look is proven by identity: it's the SAME register + model + negative_prompt + guidance/steps behind the founder's own staged assets. Final visual confirmation is on prod after merge (token set there).
+
+**Strategy beyond Layer 1 (for founder):** Layer 2 = style-reference image (FLUX Redux / IP-Adapter — the Midjourney `--sref` analog) for prompt-proof consistency. Layer 3 = train a FLUX LoRA on the curated brand set (ownable house style). Pushed, not merged.
+
+---
+
+## 2026-06-17 — [Claude Code] Session: Dream Machine — consolidate onto the real surface, make it on-brand
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (worktree off `origin/main`) · PR-only, founder merges.
+
+**Mandate (founder, frustrated):** `/killerapp/dream-studio-2` shows zero images, dead buttons, "nothing about it feels like the Knowledge Gardens design system," nothing generates from input — "a total fail and embarrassment." Make it real + on-brand + intuitive, fast, toward marketplace/B2B/B2C. Use the design system.
+
+**Diagnosis (the key reframe):** there were three dream surfaces. `/killerapp/dream-studio-2` was a **static design mock** (the "Twin Peaks" demo literal — no generation, no real assets) — that was the embarrassment. But **`/killerapp/dream-studio` (the flagship) already does the real thing**: guided intake → live FLUX renders → blueprint perspectives + schematic floor plan → "Build in the Killer App" handoff. Proved live: `POST https://builders.theknowledgegardens.com/api/v1/render {prompt,mode}` returns a real **flux-1.1-pro** image in ~6 s (`REPLICATE_API_TOKEN` is set in prod; works anonymously under a cap). So this was a **consolidation + on-brand polish**, not a rebuild.
+
+**What I did (one PR, verified in a real browser via `next build` + `next start` + the preview tools):**
+- **Elevated `/killerapp/dream-studio` to the Dream Machine identity:** swapped its accent from teal (the Killer App color) to **brass + amber** (the orrery plate's signature) — teal kept only for the focus halo and the "Build in the Killer App" handoff button (a deliberate semantic). Added a hand-drawn **orrery emblem** (`DreamOrrery`) in the header. `dream-studio.css` rewritten on those lines.
+- **Fixed the fonts:** the flagship was loading **Cormorant Garamond + Space Mono — the Orchids sub-brand fonts** — via an `@import`. Removed that; the surface now inherits the app's `next/font` tokens (`--font-editorial` = EB Garamond, `--font-mono` = JetBrains Mono — the BKG trio). Confirmed in-browser: `document.fonts.check('16px "EB Garamond"')` and `"JetBrains Mono"` both true; computed brass button bg = `rgb(176,141,92)` = `#B08D5C`.
+- **Removed every emoji from chrome** (`✦ ⤢ ↻ ↓ ✕ ‹ ›`) → a new `icons.tsx` of line SVGs (expand/refresh/download/close/check/chevrons/status-ring), in `DreamStudioClient.tsx` + `Lightbox.tsx`.
+- **Retired `/killerapp/dream-studio-2`** → `next.config.ts` redirect (307, reversible) to `/killerapp/dream-studio`; page kept as a fallback. The mock client/data/css are preserved (orphaned) in case we port the v2 "spine" onto the live engine later.
+
+**Verified:** prod build green; `/killerapp/dream-studio-2` → **307 → /killerapp/dream-studio**; no Cormorant/Space-Mono in the served CSS; no forbidden glyphs; browser screenshot shows the orrery + "Dream it." + brass + the BKG fonts. Pushed, not merged.
+
+**Gaps flagged for founder:** (1) the **Midjourney assets we made are NOT uploaded to the `brand-assets` bucket** — every in-app image is FLUX-generated; the locked-`--sref` MJ set needs uploading to appear. (2) Live generation is rate-limited (anon 6/15-min per IP) with no credit accounting yet. (3) Optional fast-follow: a free-form "describe your whole dream" hero box (today each intake question already accepts free text).
 
 ---
 
