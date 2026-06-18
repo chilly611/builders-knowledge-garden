@@ -87,44 +87,34 @@ function buildPrompt(req: RenderRequest): string {
   return `${prefix} ${req.prompt}. ${PHOTO_REGISTER}`;
 }
 
-/**
- * Generate one render. Routes to flux-dev (line-and-wash studies, with a
- * negative prompt) or flux-1.1-pro (filmic photos) by style. Replicate hosts
- * the returned image.
- */
-export async function generateRender(req: RenderRequest): Promise<RenderResult> {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) {
-    throw new Error("REPLICATE_API_TOKEN not configured");
-  }
+// ── Layer 2: brand style reference (the Midjourney --sref analog) ────────────
+// When DREAM_STYLE_REF is enabled, PHOTO renders are conditioned on a canonical
+// brand image via flux-1.1-pro-ultra's image_prompt, so the palette/mood lock to
+// our look regardless of how the user phrases the prompt. Tunable + reversible:
+//   DREAM_STYLE_REF=1                  enable (default OFF — merging changes nothing)
+//   DREAM_STYLE_REF_PHOTO=<image url>  the style anchor (default: staged Marin hero;
+//                                      point this at an uploaded Midjourney --sref frame)
+//   DREAM_STYLE_REF_STRENGTH=0.12      image_prompt_strength, 0..1 (subtle by default)
+// Any failure (bad key, anchor 404, model down) falls back to the Layer-1 text
+// path — never worse than text-only. Studies stay on the text register: a Redux
+// reference over-constrains drawings; a study LoRA is the Layer-3 lock.
+const ULTRA_MODEL = "black-forest-labs/flux-1.1-pro-ultra";
+const DEFAULT_PHOTO_ANCHOR =
+  "https://vlezoyalutexenbnzzui.supabase.co/storage/v1/object/public/brand-assets/assets/bkg/fidelity/hero-marin-farmhouse-golden-a.png";
 
-  const fullPrompt = buildPrompt(req);
-  const aspect = ASPECT_RATIOS[req.aspect || "landscape"];
-  const study = isStudy(req.style);
-  const model = study ? STUDY_MODEL : HERO_MODEL;
-  const startTime = Date.now();
+function photoStyleRef(): string | null {
+  const flag = process.env.DREAM_STYLE_REF;
+  if (!flag || flag === "0" || flag === "false") return null;
+  return process.env.DREAM_STYLE_REF_PHOTO || DEFAULT_PHOTO_ANCHOR;
+}
 
-  // flux-dev takes a negative_prompt + guidance/steps; flux-1.1-pro does not
-  // (it has no negative_prompt — the palette is forced positively in the prompt).
-  const input: Record<string, unknown> = study
-    ? {
-        prompt: fullPrompt,
-        aspect_ratio: aspect,
-        output_format: "webp",
-        output_quality: 82,
-        guidance: 3,
-        num_inference_steps: 34,
-        negative_prompt: STUDY_NEGATIVE,
-      }
-    : {
-        prompt: fullPrompt,
-        aspect_ratio: aspect,
-        output_format: "webp",
-        output_quality: req.quality === "high" ? 95 : 82,
-        prompt_upsampling: true,
-        safety_tolerance: 2,
-      };
+function styleStrength(): number {
+  const n = parseFloat(process.env.DREAM_STYLE_REF_STRENGTH || "");
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.12;
+}
 
+/** POST a Replicate model and wait/poll for the hosted image URL. */
+async function callReplicate(token: string, model: string, input: Record<string, unknown>): Promise<string> {
   const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
     method: "POST",
     headers: {
@@ -134,36 +124,80 @@ export async function generateRender(req: RenderRequest): Promise<RenderResult> 
     },
     body: JSON.stringify({ input }),
   });
-
   if (!createRes.ok) {
     const err = await createRes.text();
-    console.error("Replicate API error:", err);
-    throw new Error(`Replicate API error: ${createRes.status}`);
+    throw new Error(`Replicate ${model} ${createRes.status}: ${err.slice(0, 200)}`);
   }
-
-  const prediction = await createRes.json();
-
-  if (prediction.status === "succeeded" && prediction.output) {
-    const imageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
-    return { imageUrl, renderTime: Date.now() - startTime, model, prompt: fullPrompt };
-  }
-
-  // Poll for completion (max 60 seconds)
-  const pollUrl = `https://api.replicate.com/v1/predictions/${prediction.id}`;
-  for (let i = 0; i < 30; i++) {
+  let p = await createRes.json();
+  for (let i = 0; i < 30 && p.status !== "succeeded"; i++) {
+    if (p.status === "failed" || p.status === "canceled") {
+      throw new Error(`Render ${p.status}: ${p.error || "unknown error"}`);
+    }
     await new Promise((r) => setTimeout(r, 2000));
-    const pollRes = await fetch(pollUrl, { headers: { "Authorization": `Bearer ${token}` } });
-    const pollData = await pollRes.json();
-    if (pollData.status === "succeeded") {
-      const imageUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
-      return { imageUrl, renderTime: Date.now() - startTime, model, prompt: fullPrompt };
-    }
-    if (pollData.status === "failed" || pollData.status === "canceled") {
-      throw new Error(`Render ${pollData.status}: ${pollData.error || "unknown error"}`);
+    const getUrl = p.urls?.get || `https://api.replicate.com/v1/predictions/${p.id}`;
+    p = await (await fetch(getUrl, { headers: { "Authorization": `Bearer ${token}` } })).json();
+  }
+  if (p.status !== "succeeded" || !p.output) throw new Error("Render timed out after 60 seconds");
+  return Array.isArray(p.output) ? p.output[0] : p.output;
+}
+
+/**
+ * Generate one render. Routes by style: flux-dev (line-and-wash studies, with a
+ * negative prompt) or flux-1.1-pro (filmic photos). When a brand style anchor is
+ * configured (Layer 2), photos are conditioned on it via flux-1.1-pro-ultra,
+ * falling back to text-only flux-1.1-pro on any error.
+ */
+export async function generateRender(req: RenderRequest): Promise<RenderResult> {
+  const token = process.env.REPLICATE_API_TOKEN;
+  if (!token) {
+    throw new Error("REPLICATE_API_TOKEN not configured");
+  }
+
+  const fullPrompt = buildPrompt(req);
+  const aspect = ASPECT_RATIOS[req.aspect || "landscape"];
+  const start = Date.now();
+
+  // STUDY — line-and-wash working drawing (flux-dev + negative prompt).
+  if (isStudy(req.style)) {
+    const imageUrl = await callReplicate(token, STUDY_MODEL, {
+      prompt: fullPrompt,
+      aspect_ratio: aspect,
+      output_format: "webp",
+      output_quality: 82,
+      guidance: 3,
+      num_inference_steps: 34,
+      negative_prompt: STUDY_NEGATIVE,
+    });
+    return { imageUrl, renderTime: Date.now() - start, model: STUDY_MODEL, prompt: fullPrompt };
+  }
+
+  // PHOTO — Layer 2 brand-anchor path first (if enabled), else text-only flux-1.1-pro.
+  const styleRef = photoStyleRef();
+  if (styleRef) {
+    try {
+      const imageUrl = await callReplicate(token, ULTRA_MODEL, {
+        prompt: fullPrompt,
+        aspect_ratio: aspect,
+        image_prompt: styleRef,
+        image_prompt_strength: styleStrength(),
+        output_format: "webp",
+        safety_tolerance: 2,
+      });
+      return { imageUrl, renderTime: Date.now() - start, model: ULTRA_MODEL, prompt: fullPrompt };
+    } catch (e) {
+      console.warn("[ai-render] style-ref render failed; using text-only:", e instanceof Error ? e.message : e);
     }
   }
 
-  throw new Error("Render timed out after 60 seconds");
+  const imageUrl = await callReplicate(token, HERO_MODEL, {
+    prompt: fullPrompt,
+    aspect_ratio: aspect,
+    output_format: "webp",
+    output_quality: req.quality === "high" ? 95 : 82,
+    prompt_upsampling: true,
+    safety_tolerance: 2,
+  });
+  return { imageUrl, renderTime: Date.now() - start, model: HERO_MODEL, prompt: fullPrompt };
 }
 
 /**

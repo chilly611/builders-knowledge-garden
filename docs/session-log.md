@@ -6,6 +6,22 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-17 — [Claude Code] Session: Dream Machine — Layer 2 brand style-reference (the --sref analog)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
+
+**Mandate (founder):** "go on layer 2" — a style-reference image so generated imagery locks to our look regardless of how the prompt is phrased.
+
+**Shipped (`src/lib/ai-render.ts` only — env-driven, GATED OFF, no caller changes):** PHOTO renders can be conditioned on a canonical brand image via **flux-1.1-pro-ultra's `image_prompt`** (the Midjourney `--sref` analog). Refactored the POST+poll into a `callReplicate()` helper. Env knobs:
+- `DREAM_STYLE_REF=1` — enable (default OFF, so merging changes nothing on prod)
+- `DREAM_STYLE_REF_PHOTO=<url>` — the style anchor (default: staged Marin hero; **point this at an uploaded Midjourney `--sref` frame** once the MJ set is in the bucket)
+- `DREAM_STYLE_REF_STRENGTH=0..1` — `image_prompt_strength`, default 0.12 (subtle)
+
+On ANY style-ref failure (wrong key / anchor 404 / model down) it **falls back to the Layer-1 text-only flux-1.1-pro path — never worse**. Studies stay on the text register (a Redux reference over-constrains drawings; a study LoRA is the Layer-3 lock).
+
+**Verified:** prod build green + type-checked. The `image_prompt` / `image_prompt_strength` schema is confirmed by Replicate docs ("restyle via an image plus a prompt") but **could not be run locally** — `REPLICATE_API_TOKEN` is gated by the `.env` deny rule — so the fallback makes a wrong key self-correcting. **TUNE ON PROD:** set `DREAM_STYLE_REF=1`, choose the anchor, sweep strength 0.08→0.25 and eyeball. Pushed, not merged.
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: Dream Machine — on-brand GENERATION (line-and-wash register → live FLUX)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
 
