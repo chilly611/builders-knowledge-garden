@@ -15,12 +15,13 @@
  * render inside this same chrome — that's the rule.
  */
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { StageChromeProvider } from './stage-chrome-context';
 import JourneyRow from './JourneyRow';
 import ProToggle from './ProToggle';
 import StageActionBar from './StageActionBar';
 import BudgetDnaRibbon from '@/components/app-shell/BudgetDnaRibbon';
+import { useTimeMachine } from '@/components/app-shell/useTimeMachine';
 import { useBudgetDna } from '@/lib/budget-dna';
 import '@/components/app-shell/app-shell.css';
 import { STAGE_ACCENTS, type StageId } from '@/design-system/tokens/stage-accents';
@@ -59,7 +60,7 @@ export default function StageShell({
   // stage-shell BudgetRibbon duplicate was retired 2026-06-15) — same
   // streamgraph + shared playhead the rest of the app shows.
   const dna = useBudgetDna();
-  const [scrubWeek, setScrubWeek] = useState<number | null>(null);
+  const tm = useTimeMachine(dna);
 
   return (
     <StageChromeProvider>
@@ -138,7 +139,7 @@ export default function StageShell({
             style={{ marginLeft: 'calc(-1 * clamp(12px, 3vw, 28px))', marginRight: 'calc(-1 * clamp(12px, 3vw, 28px))' }}
           >
             <div className="gstrips is-lit">
-              <BudgetDnaRibbon dna={dna} scrubWeek={scrubWeek} onScrub={setScrubWeek} />
+              <BudgetDnaRibbon dna={dna} scrubWeek={tm.scrubWeek} onScrubMove={tm.setDragWeek} onScrubCommit={tm.commitWeek} />
             </div>
           </div>
 

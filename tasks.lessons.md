@@ -1,8 +1,15 @@
 
 # Builder's Knowledge Garden — Lessons Learned
-## Updated: 2026-06-14
+## Updated: 2026-06-19
 
 ---
+
+## 2026-06-19 — Lessons (global back-button / Time Machine)
+
+- **A reported "back button bounces to localhost" can be a ghost — verify against the LIVE bundle before chasing code.** The P0 was real once but had been cured by #24; static grep + a live scan of the prod client chunks (fetch every `/_next/` script, count `localhost`) showed the only remaining matches were **library internals** (Supabase host-detection guards, a lib `:9999` default), not app navigation, and a real-browser repro (deep-link → journey node → Back) never bounced. Rule: for "X happens on prod" nav bugs, reproduce in a real browser on the live domain AND scan the deployed bundle for the literal — don't assume the symptom still maps to current code. The one app-owned `localhost` left was a server-side `VERCEL_URL ? … : "http://localhost:3000"` fallback; derive such internal base URLs from the **request origin** (`new URL(request.url).origin`) so they're correct in dev/preview/prod with no literal.
+- **"Back/forward doesn't work here" usually means the state isn't in the URL.** The journey map, surface tabs, and budget cells already worked because they `router.push`. The Time Machine playhead didn't, because the scrub was pure React state (`scrubWeek`) — invisible to history, lost on refresh. Putting it in `?week=N` made Back/Forward act as undo/redo for free. Rule: if a user-meaningful view-state should survive Back/refresh/share, it belongs in the URL, not just `useState`.
+- **Use `window.history.pushState` (not `router.push`) for same-page query state that changes often.** Next.js patches `pushState`/`replaceState` to sync `useSearchParams` + `usePathname` and handle `popstate` WITHOUT a server round-trip — so a time-travel scrub updates the URL + creates an undoable history entry without refetching the route's RSC. `router.push('?week=N')` would re-run the server component each time. Keep a transient local `dragWeek` during the drag (smooth) and `pushState` only on release (one undo step per deliberate scrub, no history spam — guard no-op commits).
+- **When two shells mount the same chrome, extract the behavior into one hook.** The ribbon lived in both `ShellStrips` (/killerapp) and `StageShell` (/killerapp/stages); a shared `useTimeMachine` made the fix genuinely global and kept the two playheads in sync, instead of fixing one surface and silently breaking the other's prop contract.
 
 ## 2026-06-14 — Lessons (Stripe checkout hardening)
 

@@ -107,12 +107,15 @@ interface Props {
   dna: UseBudgetDnaResult;
   /** Shared scrub override (null = live cumulative-spend front). */
   scrubWeek: number | null;
-  onScrub: (week: number | null) => void;
+  /** Transient drag value during an active scrub (smooth; not yet in history). */
+  onScrubMove: (week: number | null) => void;
+  /** Commit the time-travel to the URL — a real, Back-undoable history entry. */
+  onScrubCommit: (week: number | null) => void;
   /** When false (a lens-gated static config), the ribbon is read-only. */
   interactive?: boolean;
 }
 
-export function BudgetDnaRibbon({ dna, scrubWeek, onScrub, interactive = true }: Props) {
+export function BudgetDnaRibbon({ dna, scrubWeek, onScrubMove, onScrubCommit, interactive = true }: Props) {
   const reduce = useReducedMotion();
   const uid = useId().replace(/[:]/g, '');
   const [host, W] = useMeasuredWidth();
@@ -130,14 +133,17 @@ export function BudgetDnaRibbon({ dna, scrubWeek, onScrub, interactive = true }:
     [W, totalWeeks],
   );
 
+  const lastWeekRef = useRef<number | null>(null);
   const handlePointer = useCallback(
     (clientX: number, rect: DOMRect) => {
       const plotW = rect.width * (1 - 2 * INSET);
       const rel = (clientX - rect.left - rect.width * INSET) / Math.max(1, plotW);
       const week = Math.round(Math.max(0, Math.min(1, rel)) * totalWeeks);
-      onScrub(week === currentWeek ? null : week);
+      const wk = week === currentWeek ? null : week;
+      lastWeekRef.current = wk;
+      onScrubMove(wk);
     },
-    [totalWeeks, currentWeek, onScrub],
+    [totalWeeks, currentWeek, onScrubMove],
   );
 
   // Empty / not-ready — honest, never fabricated.
@@ -218,6 +224,7 @@ export function BudgetDnaRibbon({ dna, scrubWeek, onScrub, interactive = true }:
           aria-label={`Budget DNA: ${fmtMoney(totals.total)} across ${totalWeeks} weeks, ${fmtMoney(totals.spent)} spent by week ${currentWeek}`}
           onPointerDown={interactive ? (e) => { (e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId); handlePointer(e.clientX, e.currentTarget.getBoundingClientRect()); } : undefined}
           onPointerMove={interactive ? (e) => { if (e.buttons === 1) handlePointer(e.clientX, e.currentTarget.getBoundingClientRect()); } : undefined}
+          onPointerUp={interactive ? () => onScrubCommit(lastWeekRef.current) : undefined}
           style={{ touchAction: 'none', cursor: interactive ? 'ew-resize' : 'default' }}
         >
           <defs>
@@ -277,7 +284,7 @@ export function BudgetDnaRibbon({ dna, scrubWeek, onScrub, interactive = true }:
           type="button"
           className={`gdna-flag${scrubWeek != null ? ' is-scrubbed' : ''}`}
           style={{ left: `${(playX / Math.max(1, W)) * 100}%` }}
-          onClick={interactive ? () => onScrub(null) : undefined}
+          onClick={interactive ? () => onScrubCommit(null) : undefined}
           title={scrubWeek != null ? 'Return to live' : 'Cumulative-spend week'}
         >
           wk {playWeek}{scrubWeek != null ? '' : ' · live'}
