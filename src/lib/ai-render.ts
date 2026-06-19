@@ -113,16 +113,23 @@ function styleStrength(): number {
   return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.12;
 }
 
-/** POST a Replicate model and wait/poll for the hosted image URL. */
+/** POST a Replicate model and wait/poll for the hosted image URL. A versioned
+ *  ref ("owner/name:<hash>") runs that specific version via /v1/predictions;
+ *  an unversioned model id runs the latest via the models endpoint. */
 async function callReplicate(token: string, model: string, input: Record<string, unknown>): Promise<string> {
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+  const versioned = model.includes(":");
+  const url = versioned
+    ? "https://api.replicate.com/v1/predictions"
+    : `https://api.replicate.com/v1/models/${model}/predictions`;
+  const payload = versioned ? { version: model.slice(model.indexOf(":") + 1), input } : { input };
+  const createRes = await fetch(url, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
       "Prefer": "wait", // synchronous — waits up to 60s
     },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify(payload),
   });
   if (!createRes.ok) {
     const err = await createRes.text();
@@ -190,18 +197,28 @@ export async function generateRender(req: RenderRequest): Promise<RenderResult> 
 
   // STUDY — line-and-wash working drawing.
   if (isStudy(req.style)) {
-    const base = {
+    const chain: Attempt[] = [];
+    const lora = loraStudy();
+    // Trained LoRA (ostris flux-dev-lora schema): no `guidance`/`negative_prompt`
+    // fields exist — the trigger word + lora_scale drive the style.
+    if (lora) chain.push([lora, {
+      prompt: triggered(fullPrompt),
+      aspect_ratio: aspect,
+      num_inference_steps: 34,
+      lora_scale: 1,
+      output_format: "webp",
+      output_quality: 82,
+    }]);
+    // Base flux-dev line-and-wash (L1) — accepts guidance + negative_prompt.
+    chain.push([STUDY_MODEL, {
+      prompt: fullPrompt,
       aspect_ratio: aspect,
       output_format: "webp",
       output_quality: 82,
       guidance: 3,
       num_inference_steps: 34,
       negative_prompt: STUDY_NEGATIVE,
-    };
-    const chain: Attempt[] = [];
-    const lora = loraStudy();
-    if (lora) chain.push([lora, { ...base, prompt: triggered(fullPrompt) }]);
-    chain.push([STUDY_MODEL, { ...base, prompt: fullPrompt }]);
+    }]);
     return runChain(token, chain, start, fullPrompt);
   }
 
@@ -209,7 +226,7 @@ export async function generateRender(req: RenderRequest): Promise<RenderResult> 
   const chain: Attempt[] = [];
   const photoLora = loraPhoto();
   if (photoLora) {
-    chain.push([photoLora, { prompt: triggered(fullPrompt), aspect_ratio: aspect, output_format: "webp" }]);
+    chain.push([photoLora, { prompt: triggered(fullPrompt), aspect_ratio: aspect, output_format: "jpg" }]);
   }
   const styleRef = photoStyleRef();
   if (styleRef) {
@@ -218,7 +235,7 @@ export async function generateRender(req: RenderRequest): Promise<RenderResult> 
       aspect_ratio: aspect,
       image_prompt: styleRef,
       image_prompt_strength: styleStrength(),
-      output_format: "webp",
+      output_format: "jpg", // ultra accepts only jpg/png (not webp)
       safety_tolerance: 2,
     }]);
   }

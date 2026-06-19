@@ -6,6 +6,17 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-18 — [Claude Code] Session: fix the L2/L3 render cascade (404 version-ref + 422 webp)
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/dream-render-cascade` (off `origin/main`) · PR-only.
+
+After the founder enabled L2 (`DREAM_STYLE_REF=1`) + wired L3 (`DREAM_LORA_STUDY=xrworkers/bkg-herbarium-studies:7bb556…`, trained successfully) on Vercel prod, both **fell back to the base models** (study→flux-dev, photo→flux-1.1-pro). Env was correct; the API call shapes were wrong. Vercel runtime logs (`vercel logs --scope the-knowledge-gardens`) showed:
+- **L3 → 404:** `callReplicate` put the versioned ref `owner/name:VERSION` into the `/v1/models/{model}/predictions` PATH. A specific version must use `POST /v1/predictions` with a `version` field.
+- **L2 → 422:** `flux-1.1-pro-ultra` rejects `output_format: "webp"` — `output_format must be one of "jpg","png"`.
+
+**Fixes (`src/lib/ai-render.ts`):** (1) `callReplicate` routes a versioned ref to `/v1/predictions {version,input}`, else the models endpoint; (2) ultra + photo-LoRA use `output_format:"jpg"` (only base flux-dev/flux-1.1-pro do webp); (3) the trained-LoRA attempt gets its own flux-dev-lora-safe input — NO `guidance`/`negative_prompt` (the trainer's model has neither), `+lora_scale:1`; base flux-dev keeps its proven params. Cascade + fallbacks unchanged (still never worse than L1). Build green. Pushed; founder merges → I redeploy from bkg-main + verify both L2 photos and L3 studies on prod.
+
+---
+
 ## 2026-06-17 — [Claude Code] Session: Dream Machine — Layer 3 ownable house-style LoRA pipeline
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `feat/dream-machine-real` (same lane) · PR-only.
 
