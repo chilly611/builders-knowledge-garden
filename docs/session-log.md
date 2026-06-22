@@ -6,6 +6,27 @@ This file is the canonical timeline of what was built, when, and why.
 
 ---
 
+## 2026-06-19 — [Claude Code] Session: global back-button — URL-backed Time Machine + kill the last localhost literal
+**Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/back-button-global` (off `origin/main` `56932cf`, real `node_modules` via `npm ci`) · PR-only, founder merges.
+
+**Mandate:** "Back button bounces prod deep-links to localhost; the back button (incl. the time machine + journey map) must work; we love multi-level undo/redo. Fix it globally."
+
+**What I found (investigation: 2 read-only Explore agents + a live prod bundle scan + live back-button repro in a real browser):**
+- **No app-owned localhost bounce remains on current main.** The original P0 was cured by #24 (the SSR auth migration). A live scan of the prod client bundle found 6 `localhost` matches but all are **library internals** (Supabase host-detection guards `["localhost","127.0.0.1"]` / `/^(localhost|127\./` / allowlist `*.supabase.co`, plus a lib's `:9999` default) — none is app navigation; `anchorsWithLocalhost=0`. Live repro: deep-link → click a journey node → Back returned cleanly, `bouncedToLocalhost=false`. The **only app-owned localhost literal** was server-side `mcp/route.ts` (`VERCEL_URL ? … : "http://localhost:3000"`).
+- **The real broken "back/forth" was the Time Machine.** The journey map, surface tabs, budget cells, and project selection already `router.push` (Back works — verified). But the budget/journey **time playhead scrub was pure local state** (`scrubWeek` in ShellStrips + StageShell), never in the URL — so Back/Forward couldn't traverse it, a deliberate time-travel wasn't undoable, and refresh lost it (`hasWeekParam=false` on prod).
+
+**Fix (global):**
+1. **URL-backed Time Machine** — new shared `src/components/app-shell/useTimeMachine.ts`: a committed time-travel lives in `?week=N`, written with `window.history.pushState` (Next syncs `useSearchParams` + popstate → **no server round-trip**). `dragWeek` keeps the drag smooth; `commitWeek` writes on release; a no-op guard avoids history spam. Both `ShellStrips` (every `/killerapp` surface) and `StageShell` (every `/killerapp/stages/*`) consume it, so the ribbon + journey playheads stay in sync and the fix is platform-wide. Result: **Back/Forward = undo/redo of time-travel**, deep-links/refresh restore the week.
+2. **Killed the last localhost literal** — `mcp/route.ts` now derives `baseUrl` from the request origin (`new URL(request.url).origin`), correct in dev/preview/prod, never a dead localhost.
+
+**Verification (real browser on the worktree dev server :4318):** read path (`?week=20` → both playheads wk 20), **Back → live (wk 7), Forward → wk 20** (undo/redo), write path (flag click commits via pushState + pushes an undoable entry), deep-link/refresh (`?week=15` fresh load → wk 15), **zero console errors**. `next build` EXIT 0 ("Compiled successfully"); `tsc` clean on changed files; 28/28 budget-dna tests green. Journey-map Back verified working on live prod (unchanged code).
+
+**Files:** `src/components/app-shell/{useTimeMachine.ts (NEW), ShellStrips.tsx, BudgetDnaRibbon.tsx}`, `src/components/stage-shell/StageShell.tsx`, `src/app/api/v1/mcp/route.ts`, `docs/{in-flight,session-log}.md`, `tasks.lessons.md`.
+
+**Flag for the founder (NOT code — can't repro a client localhost bounce on current main):** if a localhost bounce still appears, it's almost certainly one of (a) **Supabase Auth → Site URL / Redirect-URLs allowlist** containing a `localhost` leftover (after OAuth, Supabase falls back to its configured Site URL if the redirect isn't whitelisted) — check the dashboard for the prod domain; or (b) **stale pre-#24 history entries** in a long-lived browser session (clear on a fresh session). Both are outside the app code.
+
+---
+
 ## 2026-06-18 — [Claude Code] Session: fix the L2/L3 render cascade (404 version-ref + 422 webp)
 **Agent:** Claude Code (Opus 4.8) · **Branch:** `fix/dream-render-cascade` (off `origin/main`) · PR-only.
 

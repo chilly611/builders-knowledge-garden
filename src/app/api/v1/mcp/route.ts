@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await executeTool(tool, params || {});
+    const result = await executeTool(tool, params || {}, new URL(request.url).origin);
     const latency = Date.now() - start;
 
     // Emit event for RSI tracking
@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
 }
 
 // ─── TOOL EXECUTION ───
-async function executeTool(tool: string, params: Record<string, unknown>): Promise<unknown> {
+async function executeTool(tool: string, params: Record<string, unknown>, origin: string): Promise<unknown> {
   switch (tool) {
     case "lookup_code": {
       const jurisdiction = String(params.jurisdiction || "ibc-2024");
@@ -496,13 +496,13 @@ async function executeTool(tool: string, params: Record<string, unknown>): Promi
       if (params.stage) q.set("stage", String(params.stage));
       if (params.temperature) q.set("temperature", String(params.temperature));
       if (params.search) q.set("q", String(params.search));
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+      const baseUrl = origin; // same-origin internal call — correct in dev/preview/prod, never a dead localhost
       const res = await fetch(`${baseUrl}/api/v1/crm?${q.toString()}`);
       return await res.json();
     }
 
     case "crm_pipeline_stats": {
-      const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+      const baseUrl = origin; // same-origin internal call — correct in dev/preview/prod, never a dead localhost
       const res = await fetch(`${baseUrl}/api/v1/crm?stats=1`);
       return await res.json();
     }

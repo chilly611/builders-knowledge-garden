@@ -24,6 +24,7 @@ import { StageIco } from './icons';
 import { STAGE_PLAIN } from './config';
 import { useShellConfig } from './ShellConfigContext';
 import { BudgetDnaRibbon } from './BudgetDnaRibbon';
+import { useTimeMachine } from './useTimeMachine';
 import type { ShellConfig } from './types';
 
 function Redacted({ label }: { label: string }) {
@@ -68,20 +69,13 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
   // cumulative-spend week; scrubbing either strip moves both. Falls back to the
   // stage-progress fill when the ledger has no schedule to time-scale against.
   const dna = useBudgetDna();
-  const [scrubWeek, setScrubWeek] = useState<number | null>(null);
+  // URL-backed time machine (shared with StageShell via useTimeMachine):
+  // Back/Forward rewind & replay the playhead, deep-links/refresh restore it,
+  // each deliberate scrub is its own undo/redo step. `dragWeek` is the smooth
+  // transient value during a drag; `commitWeek` writes it to `?week` on release.
+  const { hasTime, scrubWeek, playWeek, dragWeek, setDragWeek, commitWeek, weekFromClientX } = useTimeMachine(dna);
   const draggedRef = useRef(false);
-  useEffect(() => { setScrubWeek(null); }, [dna.totalWeeks, cfg.projectId]);
-  const hasTime = dna.ready && !dna.empty && dna.totalWeeks > 0;
-  const playWeek = scrubWeek ?? dna.currentWeek;
   const playPct = hasTime ? (playWeek / dna.totalWeeks) * 100 : cur;
-  const scrubFromClientX = useCallback((clientX: number, rect: DOMRect) => {
-    if (!hasTime) return;
-    const inset = rect.width * 0.03;
-    const plotW = rect.width - inset * 2;
-    const rel = (clientX - rect.left - inset) / Math.max(1, plotW);
-    const week = Math.round(Math.max(0, Math.min(1, rel)) * dna.totalWeeks);
-    setScrubWeek(week === dna.currentWeek ? null : week);
-  }, [hasTime, dna.totalWeeks, dna.currentWeek]);
 
   return (
     <div className={`gstrips ${lit ? 'is-lit' : ''}`}>
@@ -147,7 +141,7 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
 
       {/* Budget-DNA ribbon — stacked cost streamgraph sharing the journey x-axis */}
       {budget.show && (
-        <BudgetDnaRibbon dna={dna} scrubWeek={scrubWeek} onScrub={setScrubWeek} interactive={interactive} />
+        <BudgetDnaRibbon dna={dna} scrubWeek={scrubWeek} onScrubMove={setDragWeek} onScrubCommit={commitWeek} interactive={interactive} />
       )}
 
       {/* Journey / time-machine strip */}
@@ -190,12 +184,13 @@ export function ShellStrips({ config }: { config?: ShellConfig }) {
                   className="jscrub"
                   style={{ left: playPct + '%' }}
                   onPointerDown={interactive ? (e) => { draggedRef.current = false; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } : undefined}
-                  onPointerMove={interactive ? (e) => { if (e.buttons === 1) { draggedRef.current = true; const tr = (e.currentTarget as HTMLElement).closest('.jtrack'); if (tr) scrubFromClientX(e.clientX, (tr as HTMLElement).getBoundingClientRect()); } } : undefined}
+                  onPointerMove={interactive ? (e) => { if (e.buttons === 1) { draggedRef.current = true; const tr = (e.currentTarget as HTMLElement).closest('.jtrack'); if (tr) setDragWeek(weekFromClientX(e.clientX, (tr as HTMLElement).getBoundingClientRect())); } } : undefined}
+                  onPointerUp={interactive ? () => { if (draggedRef.current) { draggedRef.current = false; commitWeek(dragWeek); } } : undefined}
                 >
                   <button
                     type="button"
                     className={`jscrub-flag${scrubWeek != null ? ' is-scrubbed' : ''}`}
-                    onClick={interactive ? () => { if (draggedRef.current) { draggedRef.current = false; return; } setScrubWeek(null); } : undefined}
+                    onClick={interactive ? () => { if (draggedRef.current) { draggedRef.current = false; return; } commitWeek(null); } : undefined}
                     title={scrubWeek != null ? 'Return to live' : 'Schedule week — drag to time-travel'}
                   >wk {playWeek}</button>
                 </div>
