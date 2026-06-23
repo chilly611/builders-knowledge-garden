@@ -1,0 +1,59 @@
+name: Deploy
+
+# Gated deploys — no more direct-to-prod from a laptop (see docs/runbooks/deploy-pipeline.md).
+#   • Pull request  -> Vercel PREVIEW build  (this is "staging": verify here before merge)
+#   • Push to main  -> Vercel PRODUCTION     (only via the protected `production` environment)
+#
+# IMPORTANT: if Vercel's native Git integration is connected to this repo it will ALSO auto-deploy and
+# double up with this workflow. Disconnect Vercel Git auto-deploy (or never connect it) so this pipeline
+# is the single path to prod. Required secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+jobs:
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm i -g vercel@latest
+      - run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+      - run: vercel build --token="$VERCEL_TOKEN"
+      - name: Deploy preview (staging)
+        run: |
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "🔍 Preview / staging URL: $url" >> "$GITHUB_STEP_SUMMARY"
+
+  production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # The GitHub "production" environment carries the protection rule (required reviewer / wait timer).
+    # Configure it in repo Settings → Environments → production. This is the prod-deploy gate.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm i -g vercel@latest
+      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy production
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "🚀 Production URL: $url" >> "$GITHUB_STEP_SUMMARY"
