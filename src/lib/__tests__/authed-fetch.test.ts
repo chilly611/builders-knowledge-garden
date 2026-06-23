@@ -10,16 +10,32 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const state: { token: string | null } = { token: null };
+const state: {
+  token: string | null;
+  expiresAt?: number;
+  refreshedToken?: string;
+  refreshCalls: number;
+} = { token: null, refreshCalls: 0 };
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: async () => ({
         data: {
-          session: state.token ? { access_token: state.token } : null,
+          session: state.token
+            ? { access_token: state.token, expires_at: state.expiresAt }
+            : null,
         },
       }),
+      refreshSession: async () => {
+        state.refreshCalls += 1;
+        return {
+          data: {
+            session: state.refreshedToken ? { access_token: state.refreshedToken } : null,
+          },
+          error: null,
+        };
+      },
     },
   },
 }));
@@ -33,6 +49,9 @@ const fetchSpy = vi.fn(
 
 beforeEach(() => {
   state.token = null;
+  state.expiresAt = undefined;
+  state.refreshedToken = undefined;
+  state.refreshCalls = 0;
   fetchSpy.mockClear();
   vi.stubGlobal('fetch', fetchSpy);
 });
@@ -80,5 +99,28 @@ describe('authedFetch', () => {
     const headers = sentHeaders();
     expect(headers.get('Content-Type')).toBe('image/jpeg');
     expect(headers.get('Authorization')).toBe('Bearer live-access-token');
+  });
+
+  it('refreshes a near-expiry token before sending (bfcache staleness)', async () => {
+    state.token = 'stale-token';
+    state.expiresAt = Math.floor(Date.now() / 1000) - 10; // already expired
+    state.refreshedToken = 'fresh-token';
+    await authedFetch('/api/v1/projects/summarize', { method: 'POST', body: '{}' });
+    expect(state.refreshCalls).toBe(1);
+    expect(sentHeaders().get('Authorization')).toBe('Bearer fresh-token');
+  });
+
+  it('does not refresh a token with plenty of life left', async () => {
+    state.token = 'live-token';
+    state.expiresAt = Math.floor(Date.now() / 1000) + 3600; // an hour out
+    await authedFetch('/api/v1/projects');
+    expect(state.refreshCalls).toBe(0);
+    expect(sentHeaders().get('Authorization')).toBe('Bearer live-token');
+  });
+
+  it('always sends same-origin credentials so the cookie-auth fallback works', async () => {
+    state.token = 'live-token';
+    await authedFetch('/api/v1/projects/summarize', { method: 'POST', body: '{}' });
+    expect(fetchSpy.mock.calls[0]?.[1]?.credentials).toBe('same-origin');
   });
 });

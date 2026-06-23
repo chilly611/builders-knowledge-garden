@@ -179,6 +179,24 @@ describe('POST /api/v1/projects/summarize (P0)', () => {
     expect(state.lastUpdate!.values.ai_summary).toBe(FRESH_SUMMARY);
   });
 
+  // The regression this lane closes: a non-owner session re-summarizing repeatedly
+  // (e.g. ProjectContextBanner firing after each back/forward) must NEVER 401.
+  it('lets a NON-OWNER collaborator re-summarize 10x with ZERO 401s', async () => {
+    state.user = { id: COLLABORATOR_ID, email: 'collab@example.com', name: 'Collab' };
+    state.members = [COLLABORATOR_ID];
+
+    const statuses: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const res = await POST(summarizeRequest({ project_id: PROJECT_ID }));
+      statuses.push(res.status);
+    }
+
+    expect(statuses).toEqual(Array(10).fill(200));
+    expect(statuses).not.toContain(401);
+    expect(statuses).not.toContain(403);
+    expect(state.aiCalls).toBe(10);
+  });
+
   it('returns 401 when unauthenticated', async () => {
     const res = await POST(summarizeRequest({ project_id: PROJECT_ID }));
     expect(res.status).toBe(401);
