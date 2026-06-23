@@ -4,9 +4,18 @@
 -- (CLAUDE.md project id 55730cd3-…; idempotent-ish — run on a fresh DB.)
 begin;
 
-insert into oneloop.project (id, org_id, name, stage, contract_revenue, cost_budget)
-values ('55730cd3-5225-493d-8b5c-49086d942565', null, 'Modern Farmhouse Marin', 'build', 1650000.00, 1650000.00)
+insert into oneloop.project (id, org_id, name, stage, cost_budget)
+values ('55730cd3-5225-493d-8b5c-49086d942565', null, 'Modern Farmhouse Marin', 'build', 1650000.00)
 on conflict (id) do nothing;
+
+-- Contract value lives in the gated table once the lens migration has run; on the
+-- ledger-only stack the financials view falls back to cost_budget (margin is identical).
+do $$ begin
+  if to_regclass('oneloop.project_contract') is not null then
+    insert into oneloop.project_contract (project_id, contract_revenue)
+    values ('55730cd3-5225-493d-8b5c-49086d942565', 1650000.00) on conflict (project_id) do nothing;
+  end if;
+end $$;
 
 -- chart of accounts (org-null for the demo)
 insert into oneloop.account (code, name, type) values
