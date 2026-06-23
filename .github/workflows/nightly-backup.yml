@@ -1,0 +1,85 @@
+name: Nightly DB Backup
+
+# Logical pg_dump of prod shipped off-box to Cloudflare R2, then a restore is verified into a throwaway
+# Postgres every night (a backup you have never restored is not a backup). See docs/runbooks/restore.md.
+#
+# Required secrets:
+#   PROD_SUPABASE_DB_URL   direct (port 5432) postgres connection string of prod
+#   BACKUP_DEST            s3://<r2-bucket>/<prefix>     e.g. s3://bkg-backups/prod
+#   R2_ENDPOINT            https://<account-id>.r2.cloudflarestorage.com
+#   R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY   R2 API token (S3-compatible)
+on:
+  schedule:
+    - cron: '0 9 * * *' # 09:00 UTC daily (~02:00 PT)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install postgresql-client-17 + awscli
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17 awscli
+      - name: Back up prod → R2
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
+          BACKUP_DEST: ${{ secrets.BACKUP_DEST }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          BACKUP_LABEL: prod
+          BACKUP_RETENTION_DAYS: '30'
+        run: bash scripts/backup/pg-backup.sh
+
+  verify-restore:
+    needs: backup
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install postgresql-client-17 + awscli
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17 awscli
+      - name: Restore latest backup → ephemeral Postgres + sanity check
+        env:
+          BACKUP_SRC: ${{ secrets.BACKUP_DEST }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          RESTORE_TARGET_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: |
+          bash scripts/backup/pg-restore.sh latest
+          tables=$(psql "$RESTORE_TARGET_URL" -tAc "select count(*) from information_schema.tables where table_schema='public'")
+          echo "Restored public tables: $tables"
+          test "$tables" -gt 0 || { echo "::error::restore produced no tables"; exit 1; }
+          echo "✅ Nightly restore verification passed ($tables public tables)." >> "$GITHUB_STEP_SUMMARY"
