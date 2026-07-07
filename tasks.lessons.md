@@ -2563,3 +2563,13 @@ src/lib/supabase.ts client. Route-level integration tests: non-owner collaborato
 collaborator (401/403/502/500 covered). RLS backstop policies drafted in
 supabase/migrations/20260611_ccp_member_write_rls.sql — NOT yet applied to prod (shared
 instance, founder-gated).
+
+## 2026-07-06 — Lessons
+
+- **Bulk-update completeness is proven by query, not by tally.** The KG-052
+  board-wiring run skipped exactly one issue — KG-052 itself — because the
+  "processed" and "remaining" lists were reconstructed from memory across turn
+  boundaries and agreed with each other while both being wrong. The miss only
+  surfaced because the Done-transition echo exposed the unwired fields. Rule:
+  before declaring a bulk pass complete, re-query the source inventory and
+  assert count(processed) == count(inventory); echo-verify every mutation.

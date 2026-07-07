@@ -4325,3 +4325,12 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Flags / deferred:** the OnboardingModal is now effectively retired for new signups (it only fired via `first_run=1`); a follow-up could remove it outright once the new flow is confirmed in a real browser. Grounded estimates + Stripe checkout remain queued (spawned as reminder chips).
 
 **Write-lane:** **RELEASED** on push. Branch `feat/post-signup-first-run` → PR. The first-run experience is now wired into the funnel: signup → One Door → role → tiers → cockpit.
+
+## 2026-07-06 — KG-052 executed: Linear board wired via MCP (Chat lane)
+
+57 issues wired: projects assigned from proj:* labels (Raise 18, Ingestion 10,
+Cockpit 9, Foundation 8, WV Pilot 7, Proof 5), 82 blocking relations created
+from embedded canonical IDs, "Blocked by:" text markers stripped, Fibonacci
+estimates + cycles 1–8 set (cycle 1 = Jul 13), proj:*/Migrated labels removed,
+KG-007 + KG-052 → Done. One self-inflicted skip (KG-052 itself) caught via
+response echo and repaired in-session. Board is dogfood-ready.
