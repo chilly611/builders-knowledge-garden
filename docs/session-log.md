@@ -3505,3 +3505,24 @@ API; resolved by awaiting `params`.
 - Animation polish + FINAL logo await the CORRECTED export (precondition still unmet). A new, different `specs/bkg/Owner Lane _standalone_ (3).html` (5.2MB, today) appeared and MAY be the corrected export — render to confirm before acting.
 - Pay-app approval = **needs legal review before wiring live payments** (no Stripe; demo-wrapped). Tracked in tasks.todo (counsel item).
 - Marker change can orphan a pre-existing approved row in prod (benign: read fail-closes to "pending" = showcase state; re-approve self-heals). Couldn't confirm which of the two BKG Supabase projects the app uses (only `.env.example` local).
+
+## 2026-05-31 — Cowork: Jurisdiction sourcing dossiers (branch `docs/jurisdiction-dossiers`)
+
+**Task:** web research → docs only. One building-code sourcing dossier per jurisdiction under `docs/jurisdictions/`. Official/authoritative sources only; no codes from memory; any unsourced field marked `UNVERIFIED — needs local counsel/sourcing`. Branch off `origin/main`. No app code, no schema.
+
+**Branch:** `docs/jurisdiction-dossiers` off `origin/main` (cc54ab9), as worktree `../bkg-jurisdictions`.
+
+**Delivered (6 docs files):** `docs/jurisdictions/{README,austin-tx,oxford-england,lisbon-portugal,dubai-uae,cuenca-ecuador}.md`.
+
+**Method:** 5 parallel research sub-agents (official gov/standards domains only) → synthesis → I re-fetched the load-bearing pages first-hand 2026-05-31 (austintexas.gov building-technical-codes; gov.uk approved-documents; legislation.gov.uk SI 2010/2214; cuenca.gob.ec permiso-de-construccion-mayor). Each field carries a verification flag (✅ re-fetched / 🟡 research-pass official / 🔴 UNVERIFIED / 🚫 JS-only) + a per-claim source log.
+
+**Headline sourcing & verdicts:**
+- Austin TX — 2024 I-Codes (IBC/IRC/IECC/IFC/IEBC/IPMC/ISPSC/IWUIC + UMC/UPC) eff. 2025-07-10, NEC 2023; City Code Title 25 Ch 25-12; DSD permit authority. ✅ verified. **Ready: y** (open footnote: IFGC/fuel-gas).
+- Oxford England — national Building Regulations 2010 (SI 2010/2214) + Approved Documents A–T (MHCLG); Oxford City Council building-control + planning; BSR for higher-risk. ✅ verified. **Ready: y** (standing heritage caveat).
+- Lisbon PT — RJUE (DL 555/99) + RGEU + SCIE (DL 220/2008) + Eurocodes; CML permit. **Ready: n** (current energy decree + in-force PDM text UNVERIFIED).
+- Dubai UAE — Dubai Building Code 2021 (Decree 45/2021); DM/Trakhees/DDA; DCD fire. **Ready: n** (current UAE Fire & Life Safety Code edition UNVERIFIED — DCD pages JS-only).
+- Cuenca EC — Norma Ecuatoriana de la Construcción (NEC, MIDUVI); GAD Cuenca two permit tracks; UNESCO heritage. **Ready: n** (current NEC chapter editions UNVERIFIED — MIDUVI page JS shell).
+
+**Env blocker (NOT committed from sandbox):** the Cowork sandbox's virtiofs mount denies `unlink` inside `.git` (EPERM on `*.lock` cleanup), so `git commit`/`update-ref` fail and leave stale locks. Dossiers were written to the worktree working tree; **commit + push + PR must be run from macOS** (where unlink works). Handoff commands provided in chat. Lesson: do not attempt `git commit` / worktree ref-writes from the Cowork sandbox on this repo — deliver files and hand off the git step.
+
+**Not done (by design):** no commit/push/PR from sandbox (env); no app code; no schema.
