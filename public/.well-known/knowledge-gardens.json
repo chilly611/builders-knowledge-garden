@@ -1,0 +1,38 @@
+{
+  "service": "Robot Knowledge Garden (RKG) directory",
+  "version": "0.1.0",
+  "description": "Machine-readable index of the Knowledge Gardens exposed as read-only MCP endpoints. Every garden returns interpreted, cited answers (never raw corpus dumps). This is a static mirror; the live, authoritative index (with usage counts and live tool schemas) is at /api/gardens.",
+  "canonical": "https://builders.theknowledgegardens.com/api/gardens",
+  "protocol": { "type": "mcp", "version": "2025-06-18", "transport": "streamable-http" },
+  "gardens": [
+    {
+      "id": "bkg",
+      "name": "Builder's Knowledge Garden",
+      "tagline": "Cited construction code, permitting, and jurisdiction knowledge for agents.",
+      "domains": ["building-codes", "permitting", "jurisdictions", "safety", "materials"],
+      "status": "live",
+      "mcp_endpoint": "https://builders.theknowledgegardens.com/api/mcp/bkg",
+      "llms_txt": "https://builders.theknowledgegardens.com/gardens/bkg/llms.txt",
+      "tools": ["lookup_jurisdiction_requirements", "permit_checklist_for_scope", "citation_for_claim"]
+    },
+    {
+      "id": "tkg",
+      "name": "Toxicology Knowledge Garden",
+      "tagline": "Cited substance-restriction and non-toxic-verification knowledge for agents.",
+      "domains": ["toxicology", "regulatory-limits", "water-quality", "non-toxic-verification"],
+      "status": "live",
+      "mcp_endpoint": "https://builders.theknowledgegardens.com/api/mcp/tkg",
+      "llms_txt": "https://builders.theknowledgegardens.com/gardens/tkg/llms.txt",
+      "tools": ["is_substance_restricted", "non_toxic_alternatives_for", "citation_for_claim"]
+    }
+  ],
+  "auth": {
+    "eval": { "requires_key": false, "rate_limit_per_hour": 40, "note": "Free for discovery + trial." },
+    "metered": { "requires_key": true, "rate_limit_per_hour": 1000, "header": "Authorization: Bearer <key> | X-API-Key: <key>", "indicative_unit_price_usd": 0.002 }
+  },
+  "agent_commerce": {
+    "status": "metered-not-enforced",
+    "rails": ["coinbase-x402", "google-ap2", "visa-intelligent-commerce", "mastercard-agent-pay"],
+    "design_note": "https://builders.theknowledgegardens.com/docs/rkg/agent-commerce-readiness.md"
+  }
+}

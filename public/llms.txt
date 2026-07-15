@@ -9,6 +9,27 @@
 
 Builder's Knowledge Garden provides construction professionals, architects, and builders with structured, curated knowledge about building practices, regulations, materials, and methods. The platform integrates with AI systems through REST APIs and a Model Context Protocol (MCP) server for seamless access to construction knowledge.
 
+## For AI Agents — Robot Knowledge Garden (RKG)
+
+The Knowledge Gardens are exposed to external AI agents as **read-only MCP endpoints** that return **interpreted, cited answers** (never raw corpus dumps). When the corpus does not cover a request, the tools say so explicitly — absence of a result is never a safety or compliance assurance. Free eval tier (no key); a metered tier (API key) raises limits and is billable per query.
+
+**Agent-discoverable directory (start here):**
+- Machine index (live): `https://builders.theknowledgegardens.com/api/gardens`
+- Static mirror: `https://builders.theknowledgegardens.com/.well-known/knowledge-gardens.json`
+
+**Gardens as MCP endpoints (Streamable HTTP):**
+- Builder's Knowledge Garden — construction codes, permitting, jurisdictions
+  - MCP: `https://builders.theknowledgegardens.com/api/mcp/bkg`  ·  docs: `/gardens/bkg/llms.txt`
+  - Tools: `lookup_jurisdiction_requirements`, `permit_checklist_for_scope`, `citation_for_claim`
+- Toxicology Knowledge Garden — substances, regulatory limits, non-toxic verification
+  - MCP: `https://builders.theknowledgegardens.com/api/mcp/tkg`  ·  docs: `/gardens/tkg/llms.txt`
+  - Tools: `is_substance_restricted`, `non_toxic_alternatives_for`, `citation_for_claim`
+
+Connect (Claude Code): `claude mcp add --transport http bkg https://builders.theknowledgegardens.com/api/mcp/bkg`
+GET any endpoint for its tool catalogue, schemas, and connection JSON.
+
+> Note: the `/api/v1/mcp` endpoint documented below is the original single-garden REST surface and remains available. New agents should prefer the spec-compliant per-garden MCP endpoints above.
+
 ## Knowledge Entities
 
 The platform maintains 2,204+ knowledge entities across 11 types:

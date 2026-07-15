@@ -1,0 +1,41 @@
+# Builder's Knowledge Garden — Agent (MCP) Interface
+
+> Read-only, interpreted, cited construction knowledge for AI agents. California-first.
+
+## What this garden knows
+Building codes, permitting, jurisdictional requirements, materials, methods, and safety —
+organised as structured, version-tracked entities across 44 jurisdictions. Every answer is
+interpreted from those entities and cited to its code section + source. Coverage is honest:
+out-of-corpus jurisdictions return "not yet covered" rather than a guess.
+
+## MCP endpoint
+- URL: https://builders.theknowledgegardens.com/api/mcp/bkg
+- Transport: Streamable HTTP (Model Context Protocol)
+- Methods: initialize, tools/list, tools/call, ping
+- GET the URL for the live tool catalogue, JSON schemas, and connection snippet.
+
+## Connect
+- Claude Code: `claude mcp add --transport http bkg https://builders.theknowledgegardens.com/api/mcp/bkg`
+- JSON: { "mcpServers": { "bkg": { "type": "http", "url": "https://builders.theknowledgegardens.com/api/mcp/bkg" } } }
+
+## Tools
+- lookup_jurisdiction_requirements(jurisdiction, topic?, discipline?, limit?)
+  → cited code requirements for a topic in a place.
+- permit_checklist_for_scope(jurisdiction, scope)
+  → interpreted permit/compliance checklist grounded in governing code sections.
+- citation_for_claim(claim, jurisdiction?)
+  → corroborating code sections + a verdict tier (authoritative / corroborated / single / uncovered).
+
+## Answer shape
+Each tools/call returns a text block plus structuredContent:
+`{ answer, verdict, citations[], coverage{covered,reason}, disclaimer, meta }`.
+Citations carry: label, source, url, jurisdiction, verification level.
+
+## Access & pricing
+- Eval (free): no key; rate-limited per IP. Send no Authorization header.
+- Metered: `Authorization: Bearer <key>` or `X-API-Key: <key>`; higher limits; billable per query.
+- Directory: https://builders.theknowledgegardens.com/api/gardens
+
+## Use responsibly
+Interpreted from structured data and cited to source — not legal or engineering advice.
+Verify against the authority having jurisdiction before relying on it.

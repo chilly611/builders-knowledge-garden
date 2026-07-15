@@ -1,0 +1,44 @@
+# Toxicology Knowledge Garden — Agent (MCP) Interface
+
+> Read-only, interpreted, cited toxicology knowledge for AI agents.
+
+## What this garden knows
+Substances, regulatory limits (EPA MCL, EWG guidelines), hazard classifications, and
+health-effect links — seeded from the EWG Tap Water Database and enriched with PubChem
+(329 substances, 100 regulatory limits, 800+ health-effect links, 231 EWG contaminants).
+Restriction data is strongest for drinking-water contaminants.
+
+Honesty rules: absence of a limit is reported as "no restriction on record", NEVER as a
+safety claim. "Alternatives" are a corpus hazard comparison, NOT functional substitution advice.
+
+## MCP endpoint
+- URL: https://builders.theknowledgegardens.com/api/mcp/tkg
+- Transport: Streamable HTTP (Model Context Protocol)
+- Methods: initialize, tools/list, tools/call, ping
+- GET the URL for the live tool catalogue, JSON schemas, and connection snippet.
+
+## Connect
+- Claude Code: `claude mcp add --transport http tkg https://builders.theknowledgegardens.com/api/mcp/tkg`
+- JSON: { "mcpServers": { "tkg": { "type": "http", "url": "https://builders.theknowledgegardens.com/api/mcp/tkg" } } }
+
+## Tools
+- is_substance_restricted(substance, context?)
+  → cited regulatory limits + hazard classifications; "no restriction on record" when none.
+- non_toxic_alternatives_for(substance, limit?)
+  → lower-hazard peers within a shared classification, each cited (hazard comparison only).
+- citation_for_claim(claim, substance?)
+  → corroborating evidence (limits, health-effect links, source documents) + a verdict tier.
+
+## Answer shape
+Each tools/call returns a text block plus structuredContent:
+`{ answer, verdict, citations[], coverage{covered,reason}, disclaimer, meta }`.
+Citations carry: label, source, url, agency, verification/evidence level.
+
+## Access & pricing
+- Eval (free): no key; rate-limited per IP.
+- Metered: `Authorization: Bearer <key>` or `X-API-Key: <key>`; higher limits; billable per query.
+- Directory: https://builders.theknowledgegardens.com/api/gardens
+
+## Use responsibly
+Interpreted from structured data and cited to source — not medical or regulatory advice.
+Verify against the relevant agency limit for your jurisdiction and exposure medium.
