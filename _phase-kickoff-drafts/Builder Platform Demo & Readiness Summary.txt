@@ -1,0 +1,111 @@
+Builder Platform Demo & Readiness
+Sun, Jun 7, 2026
+
+Summary:
+
+The meeting reviewed progress toward a shippable, scalable contractor-facing builder platform, demo readiness, and near-term coordination for developer handoffs and legal checks.
+
+Platform progress: Charles reported progress on bypassing repeated permission prompts, running multiple agents across chat, co-work, and code with a chat orchestrator, and preparing demo polish and dog-fooding. He warned parallel development is fragile because merges can overwrite working threads, which complicates running many machines in parallel. He has been uploading project files and images to a shared repo and will publish project instructions after phase one.
+
+Demos and developer engagement: The team evaluated demo assets (intro "descent" and "frontier 59"); John used both and found frontier 59 effective for conveying the OS concept. The intro video will be sped up with a concise voiceover and background music; Charles will provide the video for John to distribute. John proposed a lower-stakes one-hour developer session to refine demos. Kirk saw a rapid healthcare/builders demo, had scaling and SME questions, and offered to introduce developers/builders when the team is ready.
+
+Product and contractor flows: Charles outlined core contractor flows—estimates, code checks, permit flows, contract templates, sequencing, and budget tracking—tied to a Supabase backend with role-based visibility. A $99 subscription was set with special terms for brand ambassadors. The short-term build goal was clarified: create scalable, shippable assets and contractor-ready handoffs, not a field tool for immediate jobsite use.
+
+AI, data ingestion, and compatibility: The AI stack includes Anthropic and ChatGPT with optional Gemini for an "AI Hive Mind." Synthetic dog-food users and contractor scenarios revealed edge cases; synthetic participants from training data helped surface common problems. The descent demo works best in Chrome; Safari has limited background animation despite a recent patch.
+
+Legal, safety, and content provenance: The team raised embedding building codes and permits as a legal/safety constraint. Charles recommended human-in-the-loop checks, a liability disclaimer, and engaging a lawyer to review templates this week. Mike was asked to research contracts and building-code requirements for target jurisdictions (including Virginia Beach and Richmond) with Charles supplying UpCodes access. The group reiterated limits when ingesting UpCodes content and the need to link back to official government sources and require user double-checks to avoid hallucinations.
+
+Scheduling and resources: The team discussed availability; Charles proposed weekend work with Mike to push shippable contractor materials. A working session is scheduled 10:00–15:00 with an end-of-session check-in at 14:30. The team requested Google Cloud components be prioritized to capture cost advantages.
+
+
+Chapters & Topics:
+
+Call start and setup
+The meeting opened with informal greetings and a quick check that audio/video were shared with Read AI, with Charles noting his subscription and confirming recent emails and materials he had sent. Charles emphasized he is working on fixes and getting things fixed in general.
+
+Shippability, permissions, and scalability
+Charles described efforts to make the product shippable, to bypass repeated permission prompts, and to dog-food the system so it can run without manual allows; he also explained challenges coordinating many machines and avoiding merge conflicts when multiple people work in parallel. He said his goal is to reach a state where the team can move fast without stomping on parallel threads.
+* Charles is actively fixing demo polish and permission bypasses to make the product shippable and dog-foodable.
+* Parallel development is fragile because merges and commits can overwrite functioning workstreams.
+
+Running multiple agents and orchestration
+Charles explained that he can run multiple agents across chat, co-work, and code with chat as the orchestrator, and John confirmed this accelerates progress. Charles also noted some attempts to move quickly have caused problems when branches collide.
+* Charles can run multiple agentic workflows (chat, co-work, code) with orchestration from chat.
+
+Kirk meeting and interest
+John reported a quick meeting with Kirk where the high-level vision and a brief healthcare demo were presented; Kirk was interested but asked about scale and SME needs and offered to introduce developers and builders when ready. John suggested using different audiences for demos depending on goals.
+* Kirk understood the vision, showed interest, and offered introductions to developers and builders.
+* Synthetic dog-fooding with contractors is surfacing real-world issues effectively.
+
+Demo links, walkthroughs, and compatibility
+The team reviewed demo links like "descent" and "frontier 59," with Charles explaining the conceptual flow of gardens, the OS idea, and hierarchy of users, while John confirmed he used the intro and frontier 59 walkthroughs in his demo. Charles noted the descent demo had browser issues and worked best in Chrome, and he had patched Safari but with limited background animation.
+* The descent demo has known browser limitations and works best in Chrome.
+
+Developer demo planning and core flows
+The group planned a developer-focused, lower-stakes meeting to refine what to show and discussed whether to provide logins post-demo; Charles proposed guarded access covering estimates, code checks, permits, contract templates, sequencing, and budget tracking as core immediate capabilities.
+* The developer-facing demo should be lower-stakes and may include guarded access to core flows (estimates, permits, contracts, budgets).
+* The team used the intro and frontier 59 walkthroughs for demos and found the frontier walkthrough useful for explaining the OS concept.
+
+AI stack, data model, pricing, and repo setup
+Charles described wiring Anthropic and ChatGPT (and possibly Gemini) into an AI Hive Mind, storing data in Supabase with role-based visibility for contractors, general contractors, and owners, and tracking budgets and payouts; he announced a $99 subscription and special brand-ambassador terms and said he has been uploading files to the repo and will publish new project instructions after phase one.
+* The product backend uses Supabase with role-based visibility and an AI stack (Anthropic/ChatGPT), and a $99 subscription price has been chosen.
+* Charles will publish new project instructions after phase one and is centralizing files in the repo for team setup.
+
+Video selection and scope
+John asked which video to use and whether an umbrella intro covers the knowledge garden, and Charles clarified the intro is the Builder’s Garden video and offered to share it for John to distribute before the meeting. The exchange established the immediate communication step of sending the intro video to stakeholders.
+* The Builder’s Garden intro video is the recommended asset to distribute pre-meeting and Charles will share it for John to send.
+
+Video style and production notes
+The participants discussed pacing and format; they agreed a faster pace with a concise voiceover and possible background music would retain attention, and Charles volunteered to create a voiceover and add music. They also noted that slowing the video risks losing viewer engagement.
+* The video should be faster-paced with a short voiceover and light music to maintain viewer attention.
+
+Scheduling and availability
+Charles urged rapid progress because of market momentum and investor interest, and he proposed intensive work sessions including weekends to reach contractors quickly. John and Mike reviewed upcoming out-of-town dates and family commitments to identify available windows for focused work.
+
+Immediate build goals and scope
+The team clarified the short-term deliverable is not a field-ready job tool but a scalable, shippable system of record intended for contractor onboarding and handoff to contractors and potential contractors. They discussed structuring daily goals and keeping a persistent Google Meet while working.
+* The team agreed to work together in a Google Meet window (10:00–15:00) with a 14:30 sync the next day.
+* The immediate development goal is to produce scalable, shippable artifacts for contractors, not a finished on-job tool.
+
+Legal, codes, and human-in-the-loop
+Charles raised liability concerns around code and permit automation and recommended adding disclaimers, human review for code ingestion, and engaging legal counsel to vet templates this week. The team agreed strict controls are needed to avoid AI hallucination that could cause major financial or legal exposure.
+* Codes and permit data must include a human-in-the-loop and liability disclaimers to mitigate AI hallucination risks.
+
+Assignments and UpCodes work
+Mike was asked to take ownership of the daily brief/daily log lane and to research contracts and building-code requirements for planned jurisdictions, notably Virginia Beach and Richmond, with Charles sending UpCodes access and jurisdiction data to support the work. The team reviewed limitations encountered when AI ingested UpCodes content and noted partial ingestion and the need for human review.
+* Mike will research legal requirements and building codes for target jurisdictions, with Virginia Beach and Richmond prioritized.
+* Charles will provide the UpCodes access and jurisdiction extracts to support Mike’s research.
+
+Decisions, links, and next meeting
+The team decided to keep codes in the product but present government links and explicit advice to users to double-check source materials, scheduled a 14:30 check-in after the next day’s 10:00–15:00 work session, and closed with a request to get Google Cloud pieces working to enable cost-effective scaling.
+* The team must get Google Cloud infrastructure working to take advantage of lower costs for scaling.
+
+
+Action Items:
+
+* Charles will give the team prompts so they can run machines and increase parallel testing
+* Charles will resend the descent/frontier links to the team for review
+* John will show what he walked through in his demo to the team
+* Charles will provide new project instructions after phase one is finished
+* All participants will join a working session in Google Meet from 10:00–15:00 with an end-of-session sync at 14:30 the next day.
+* Charles Dahlgren will engage a lawyer this week to review templates and liability language for the system of record.
+* Mike will take ownership of building the daily brief/daily log lane and integrate it into Wave Two workflows.
+* Charles Dahlgren will consult with Claude and refine the Wave Two project instructions and horizons toward shippability and scalability.
+* Mike will research legal requirements, contracts, and building-code rules for target jurisdictions and add Virginia Beach and Richmond to the list.
+* Charles Dahlgren will send Mike the UpCodes login and jurisdiction extracts for Virginia to support code research.
+* Mike will get the Google Cloud components working so the team can capitalize on lower infrastructure costs.
+
+
+Key Questions:
+
+* How did the meeting with Kirk go and what was his reaction?
+* Did the team see the "descent" demo link and did it land?
+* After a developer demo, will we give the developer a login to try the system?
+* Which video should be used to introduce the knowledge/Builder’s Garden for pre-meeting distribution?
+* What is the immediate development objective for this first week—are we building a tool contractors will use on jobs?
+* Should Virginia be added to the jurisdictions we support and why?
+
+
+Notepad:
+
+* No notes

@@ -6,6 +6,102 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "pricing-worktree",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-pricing-herbarium && exec npm run dev -- -p 3939"],
+      "port": 3939
+    },
+    {
+      "name": "portal-imagery",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-portal-imagery && exec npx next start -p 3940"],
+      "port": 3940
+    },
+    {
+      "name": "cockpit-capture-voice",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-cockpit-capture-voice && exec npm run dev -- -p 3993"],
+      "port": 3993
+    },
+    {
+      "name": "budget-dna",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-budget-dna && exec npm run dev -- -p 4123"],
+      "port": 4123
+    },
+    {
+      "name": "dream-worktree",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-dream && exec npm run dev -- -p 4311"],
+      "port": 4311
+    },
+    {
+      "name": "cockpit-polish-2",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-cockpit-polish-2 && exec npm run dev -- -p 4312"],
+      "port": 4312
+    },
+    {
+      "name": "dream-v2",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-dream-v2 && exec npm run dev -- -p 4313"],
+      "port": 4313
+    },
+    {
+      "name": "dream-studio-v2",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-dream-studio-v2 && exec npm run dev -- -p 4314"],
+      "port": 4314
+    },
+    {
+      "name": "ds2-prod",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-dream-studio-v2 && exec npx next start -p 4316"],
+      "port": 4316
+    },
+    {
+      "name": "dm-real",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/bkg-dreammachine && exec npx next start -p 4319"],
+      "port": 4319
+    },
+    {
+      "name": "mktkg",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd '/Users/chilly/Documents/Claude/Projects/Knowledge Gardens Umbrella/marketing-knowledge-garden' && exec npm run dev -- --port 4321"],
+      "port": 4321
+    },
+    {
+      "name": "rdkg-meristem",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/rdkg && exec npm run dev -- -p 4330"],
+      "port": 4330
+    },
+    {
+      "name": "kg-studio",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/rdkg/studio && exec npm run dev"],
+      "port": 3777
+    },
+    {
+      "name": "kg-studio-test",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/rdkg/studio && STUDIO_ACCESS_CODE=walk-verify-3779 exec npx next dev -p 3779"],
+      "port": 3779
+    },
+    {
+      "name": "the-call",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/the-call && exec npx next dev -p 3117"],
+      "port": 3117
+    },
+    {
+      "name": "frontier-map",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd /Users/chilly/Developer/frontier-map && exec npx --yes serve . -l 4331"],
+      "port": 4331
     }
   ]
 }

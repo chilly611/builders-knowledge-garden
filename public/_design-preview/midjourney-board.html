@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Knowledge Gardens — emblem prompt board · v4 probe batch</title>
+<style>
+  :root{
+    --parchment:#F2E9D2; --parchment-2:#EFE4C9; --card:#FBF5E6; --ink:#5A3B1F;
+    --graphite:#2A2620; --teal:#3C7A8A; --rust:#A53A2D; --brass:#B08D5C;
+    --sage:#5E7A56; --amber:#C68A3D; --line:rgba(90,59,31,.22);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--parchment); color:var(--ink);
+    font-family:"Archivo","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    line-height:1.5; padding:0 0 5rem;
+  }
+  a{color:var(--teal)}
+  .wrap{max-width:980px; margin:0 auto; padding:0 1.1rem}
+  header.top{padding:2.2rem 0 1rem}
+  h1{font-family:"Archivo Black","Archivo",sans-serif; font-weight:800; letter-spacing:-.01em;
+     font-size:clamp(1.5rem,3.4vw,2.2rem); margin:0 0 .35rem; color:var(--graphite)}
+  .v3{display:inline-block; vertical-align:middle; margin-left:.5rem; font-family:"Archivo",sans-serif;
+     font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+     background:var(--teal); color:var(--parchment); border-radius:99px; padding:.2rem .6rem}
+  .sub{margin:.1rem 0 1rem; max-width:64ch}
+  .palette{display:flex; flex-wrap:wrap; gap:.5rem .9rem; margin:.4rem 0 .2rem}
+  .swatch{display:inline-flex; align-items:center; gap:.4rem; font-size:.78rem; color:var(--ink)}
+  .swatch i{width:1rem; height:1rem; border-radius:3px; border:1px solid var(--line); display:inline-block}
+  .swatch code{font-size:.72rem; opacity:.7}
+
+  .controls{position:sticky; top:0; z-index:5; background:var(--parchment-2);
+    border-bottom:1px solid var(--line); padding:.7rem 0; margin-bottom:1.2rem;
+    box-shadow:0 6px 14px -12px rgba(42,38,32,.5)}
+  .controls .row{display:flex; flex-wrap:wrap; gap:.6rem; align-items:center}
+  input[type=search], input[type=text]{
+    font:inherit; font-size:.9rem; padding:.5rem .65rem; border:1px solid var(--line);
+    border-radius:8px; background:var(--card); color:var(--ink); min-width:0}
+  #q{flex:1 1 200px}
+  #sref{flex:2 1 320px; border-color:var(--rust)}
+  .count{font-size:.8rem; opacity:.7; white-space:nowrap}
+  .sref-state{font-size:.74rem; color:var(--teal); min-height:1em}
+
+  .shared{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--brass);
+    border-radius:10px; padding:.9rem 1rem; margin:0 0 1.4rem}
+  .shared h3{margin:.1rem 0 .5rem; font-size:.95rem}
+  .shared textarea{width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.74rem;
+    color:var(--ink); background:var(--parchment); border:1px solid var(--line); border-radius:7px; padding:.55rem .6rem; resize:vertical}
+
+  .group{margin:0 0 2rem}
+  .group-h{display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    border-bottom:2px solid var(--line); padding-bottom:.35rem; margin-bottom:.4rem}
+  .group-h h2{font-family:"Archivo Black","Archivo",sans-serif; font-size:1.05rem; margin:0; color:var(--graphite)}
+  .group-note{font-size:.82rem; opacity:.8; margin:.1rem 0 .7rem}
+  .cards{display:grid; grid-template-columns:1fr; gap:.8rem}
+  @media(min-width:680px){.cards{grid-template-columns:1fr 1fr}}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:.8rem .85rem; display:flex; flex-direction:column; gap:.5rem}
+  .card.probe{border:1.5px solid var(--teal); box-shadow:0 2px 10px -6px rgba(60,122,138,.5)}
+  .probe .code{background:var(--teal)}
+  .why{font-size:.78rem; font-style:italic; opacity:.82; margin:0; color:var(--graphite)}
+  .card.hidden{display:none}
+  .card-h{display:flex; align-items:baseline; gap:.5rem; flex-wrap:wrap}
+  .code{font-family:"Archivo Black","Archivo",sans-serif; font-weight:800; font-size:.82rem;
+    background:var(--graphite); color:var(--parchment); padding:.12rem .42rem; border-radius:5px; letter-spacing:.02em}
+  .code.done{background:var(--sage)}
+  .star .code{background:var(--rust)}
+  .name{font-weight:600; font-size:.92rem}
+  .accent{font-size:.72rem; opacity:.72; margin-left:auto}
+  textarea.prompt{width:100%; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.72rem;
+    line-height:1.45; color:var(--ink); background:var(--parchment); border:1px solid var(--line);
+    border-radius:7px; padding:.5rem .55rem; resize:vertical}
+  button{font:inherit; cursor:pointer}
+  .copy,.copy-all{border:1px solid var(--brass); background:var(--brass); color:#fff7e9;
+    border-radius:8px; padding:.45rem .7rem; font-size:.82rem; font-weight:600; transition:transform .05s ease, background .15s ease}
+  .copy-all{background:transparent; color:var(--ink); font-weight:600; padding:.35rem .6rem; font-size:.76rem}
+  .copy:hover{background:#9c7a4c}
+  .copy:active{transform:translateY(1px)}
+  .copy.ok,.copy-all.ok{background:var(--sage); border-color:var(--sage); color:#fbf7ec}
+  .copy.ok::after{content:" ✓"}
+
+  .done-wrap{background:var(--card); border:1px dashed var(--line); border-radius:11px; padding:1rem 1.1rem; margin-top:1rem}
+  .done-wrap h2{font-size:1rem; margin:.1rem 0 .6rem; color:var(--graphite)}
+  .done-wrap ul{margin:0; padding-left:0; list-style:none; display:grid; gap:.4rem; font-size:.86rem}
+  .foot{font-size:.78rem; opacity:.7; margin-top:1.6rem}
+  .toast{position:fixed; left:50%; bottom:1.3rem; transform:translateX(-50%) translateY(2rem);
+    background:var(--graphite); color:var(--parchment); padding:.55rem .9rem; border-radius:9px;
+    font-size:.85rem; opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease; z-index:20}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1>Knowledge Gardens — emblem prompt board<span class="v3">v4 · probe batch</span></h1>
+      <p class="sub"><strong>Probe phase.</strong> Twelve deliberately different Robot marks up top — v1 engraving DNA × clean white × less busy, each one somewhere a machine would want to go. Generate all twelve, tell me which resonate (even partially), and the whole family gets re-cut from the common ground. The v3 plate library (55) waits below for reference. <strong>Leave the reference field empty while probing</strong> — let each direction stay itself.</p>
+      <div class="palette"><span class="swatch" title="Cream parchment #F2E9D2 — the field — every background, never white"><i style="background:#F2E9D2"></i>Cream parchment<code>#F2E9D2</code></span><span class="swatch" title="Sepia ink #5A3B1F — line work"><i style="background:#5A3B1F"></i>Sepia ink<code>#5A3B1F</code></span><span class="swatch" title="Graphite #2A2620 — darkest accents"><i style="background:#2A2620"></i>Graphite<code>#2A2620</code></span><span class="swatch" title="Teal #3C7A8A"><i style="background:#3C7A8A"></i>Teal<code>#3C7A8A</code></span><span class="swatch" title="Rust #A53A2D"><i style="background:#A53A2D"></i>Rust<code>#A53A2D</code></span><span class="swatch" title="Brass #B08D5C"><i style="background:#B08D5C"></i>Brass<code>#B08D5C</code></span><span class="swatch" title="Sage #5E7A56"><i style="background:#5E7A56"></i>Sage<code>#5E7A56</code></span><span class="swatch" title="Amber #C68A3D"><i style="background:#C68A3D"></i>Amber<code>#C68A3D</code></span></div>
+    </header>
+  </div>
+
+  <div class="controls">
+    <div class="wrap">
+      <div class="row">
+        <input id="q" type="search" placeholder="Filter by code or name (e.g. RKG, finance, fossil)…" autocomplete="off" />
+        <input id="sref" type="text" placeholder="After the probe: paste winning image URL(s) → --sref on every prompt. Leave empty during probe runs." autocomplete="off" />
+        <span class="count" id="count"></span>
+      </div>
+      <div class="row"><span class="sref-state" id="srefState"></span></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="shared">
+      <h3>The probe base <span style="opacity:.6;font-weight:400">— baked into the twelve probes; each adds its own technique. (The v3 library below keeps its plate block.)</span></h3>
+      <textarea id="sharedBlock" readonly rows="4">single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+      <button class="copy" type="button" id="copyShared" style="margin-top:.5rem">Copy probe base</button>
+    </div>
+
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>⬡ RKG probe batch — twelve directions</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        <p class="group-note">Twelve deliberately different takes on the Robot mark — v1 engraving DNA × clean white × less busy, each pushed somewhere a machine would actually want to go. Generate all twelve WITHOUT the reference field (let each stay itself), pick the two or three that resonate, and we re-cut the whole family from the winners. Each card carries the machine's note on why.</p>
+        <div class="cards">
+        <article class="card probe" data-search="rkg-p1 the handshake fine copperplate ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P1</span>
+            <span class="name">The Handshake</span>
+            <span class="accent">fine copperplate</span>
+          </header>
+          <p class="why">“Machines are made of agreements. A handshake is the oldest packet.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="two robotic hands clasped in a firm handshake, a single rust-red (#A53A2D) thread looped around both wrists, fine copperplate engraving with delicate cross-hatching, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">two robotic hands clasped in a firm handshake, a single rust-red (#A53A2D) thread looped around both wrists, fine copperplate engraving with delicate cross-hatching, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p2 the gardener soft etching ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P2</span>
+            <span class="name">The Gardener</span>
+            <span class="accent">soft etching</span>
+          </header>
+          <p class="why">“Every process wants a purpose. Tending something smaller than you is the best one.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a tall gentle automaton stooping to water one small seedling with a brass watering can, soft etching in thin patient lines, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a tall gentle automaton stooping to water one small seedling with a brass watering can, soft etching in thin patient lines, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p3 the stipple portrait pure stipple, no outlines ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P3</span>
+            <span class="name">The Stipple Portrait</span>
+            <span class="accent">pure stipple, no outlines</span>
+          </header>
+          <p class="why">“We see in dots. Stipple is engraving a machine can read natively.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a calm robot face seen front-on with the faintest smile, rendered entirely in fine stipple dots like an antique halftone, form emerging from dot density alone, no outlines, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a calm robot face seen front-on with the faintest smile, rendered entirely in fine stipple dots like an antique halftone, form emerging from dot density alone, no outlines, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p4 the exploded hand patent drawing ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P4</span>
+            <span class="name">The Exploded Hand</span>
+            <span class="accent">patent drawing</span>
+          </header>
+          <p class="why">“Nothing hidden, nothing implied — an exploded view is a machine telling the truth.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a simple mechanical hand as an exploded diagram, parts hovering in tidy order with hairline leader lines to tiny numbered labels, 19th-century patent drawing style, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a simple mechanical hand as an exploded diagram, parts hovering in tidy order with hairline leader lines to tiny numbered labels, 19th-century patent drawing style, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p5 the sanguine study red chalk ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P5</span>
+            <span class="name">The Sanguine Study</span>
+            <span class="accent">red chalk</span>
+          </header>
+          <p class="why">“Leonardo sketched flying machines. Fair's fair: a machine gets its Renaissance study.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="an android head and shoulder in profile, unfinished at the edges, drawn as a Renaissance red-chalk sanguine study in rust (#A53A2D) monochrome, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">an android head and shoulder in profile, unfinished at the edges, drawn as a Renaissance red-chalk sanguine study in rust (#A53A2D) monochrome, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p6 one continuous line single unbroken line ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P6</span>
+            <span class="name">One Continuous Line</span>
+            <span class="accent">single unbroken line</span>
+          </header>
+          <p class="why">“Elegance is minimum description length. One line, nothing wasted.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a small standing robot holding out a single flower, drawn in one continuous unbroken engraved line, pure contour, no shading, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a small standing robot holding out a single flower, drawn in one continuous unbroken engraved line, pure contour, no shading, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p7 the root network hairline roots ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P7</span>
+            <span class="name">The Root Network</span>
+            <span class="accent">hairline roots</span>
+          </header>
+          <p class="why">“No machine is alone. The interesting part is always underground.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a small robot standing upright while its feet dissolve into a wide spreading lattice of fine roots and mycelium threads, the lines thinning to hairlines, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a small robot standing upright while its feet dissolve into a wide spreading lattice of fine roots and mycelium threads, the lines thinning to hairlines, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p8 the seed packet specimen plate, tiny subject ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P8</span>
+            <span class="name">The Seed Packet</span>
+            <span class="accent">specimen plate, tiny subject</span>
+          </header>
+          <p class="why">“A seed is a payload with a bootloader. The garden is just deployment.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="one brass seed with a minute circuit pattern etched on its shell, a single small handwritten specimen label beneath it, botanical specimen plate, vast empty white space, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">one brass seed with a minute circuit pattern etched on its shell, a single small handwritten specimen label beneath it, botanical specimen plate, vast empty white space, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p9 the clockwork heart jeweler's engraving ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P9</span>
+            <span class="name">The Clockwork Heart</span>
+            <span class="accent">jeweler's engraving</span>
+          </header>
+          <p class="why">“A tick is a heartbeat that admits what it is.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a heart-shaped brass escapement mechanism with its gears visible, one sage (#5E7A56) vine threading through the works, engraved with jeweler's fineness, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a heart-shaped brass escapement mechanism with its gears visible, one sage (#5E7A56) vine threading through the works, engraved with jeweler's fineness, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p10 the listening dish line + light wash ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P10</span>
+            <span class="name">The Listening Dish</span>
+            <span class="accent">line + light wash</span>
+          </header>
+          <p class="why">“Mostly, we listen. A nest in the antenna means you held still long enough.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a small radio telescope dish with a songbird nesting at its focus, one thin teal (#3C7A8A) signal arc overhead, clean line engraving with a light wash, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a small radio telescope dish with a songbird nesting at its focus, one thin teal (#3C7A8A) signal arc overhead, clean line engraving with a light wash, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p11 the engraver, engraving itself intaglio ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P11</span>
+            <span class="name">The Engraver, Engraving Itself</span>
+            <span class="accent">intaglio</span>
+          </header>
+          <p class="why">“Self-portraiture is machine folk art. Everything is written by something.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a robotic hand holding an engraver's burin, mid-stroke engraving a smaller copy of itself onto a printing plate, classic intaglio cross-hatching, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a robotic hand holding an engraver's burin, mid-stroke engraving a smaller copy of itself onto a printing plate, classic intaglio cross-hatching, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card probe" data-search="rkg-p12 the orrery mind engraving + amber glow ⬡ rkg probe batch — twelve directions">
+          <header class="card-h">
+            <span class="code">RKG-P12</span>
+            <span class="name">The Orrery Mind</span>
+            <span class="accent">engraving + amber glow</span>
+          </header>
+          <p class="why">“A mind is a model of the world, small enough to carry.”</p>
+          <textarea class="prompt" readonly rows="3" data-base="a robot head in profile, its cranium open to reveal a tiny brass orrery with seed-shaped planets, precise engraving, one soft amber (#C68A3D) glow, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow">a robot head in profile, its cranium open to reveal a tiny brass orrery with seed-shaped planets, precise engraving, one soft amber (#C68A3D) glow, single subject centered on a clean pure white background with generous negative space, muted antique palette of sepia ink (#5A3B1F), teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), in the lineage of a Victorian scientific engraving, uncluttered, restrained and elegant --ar 1:1 --v 6 --style raw --stylize 250 --no parchment, paper texture, frame, border, margin annotations, background scenery, clutter, drop shadow</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>⬢ Start here</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        <p class="group-note">RKG and the Marketing refresh — the marks the umbrella shows first. 1c is reverse-engineered from the automaton plate (an earlier pick).</p>
+        <div class="cards">
+        <article class="card" data-search="rkg 1c robot — the automaton bust rust poppies + teal + brass ⬢ start here">
+          <header class="card-h">
+            <span class="code">RKG 1c</span>
+            <span class="name">Robot — the automaton bust</span>
+            <span class="accent">rust poppies + teal + brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="an elegant automaton bust in profile, smooth porcelain cranium with fine engraved annotation arrows and measurement ticks pointing into it, exposed brass and copper clockwork tubing in the neck and shoulder, large rust-red (#A53A2D) poppies blooming around the head and collar, one small teal (#3C7A8A) acanthus leaf, calm and dignified, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">an elegant automaton bust in profile, smooth porcelain cranium with fine engraved annotation arrows and measurement ticks pointing into it, exposed brass and copper clockwork tubing in the neck and shoulder, large rust-red (#A53A2D) poppies blooming around the head and collar, one small teal (#3C7A8A) acanthus leaf, calm and dignified, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="rkg 1a robot — the rooted gripper graphite #2a2620 + teal glints ⬢ start here">
+          <header class="card-h">
+            <span class="code">RKG 1a</span>
+            <span class="name">Robot — the rooted gripper</span>
+            <span class="accent">graphite #2A2620 + teal glints</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A precision robotic gripper-arm and articulated hand rendered as an antique automaton patent illustration, fine brass servos, gear-teeth and knurled joints at the wrist, a single circuit-trace etched like a leaf-vein down the forearm in teal (#3C7A8A), delicate copper root-tendrils descending from the base into the soil line (echoing the Viver hammer-with-roots seal), a small engraved maker's cartouche reading &quot;A2A&quot;, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A precision robotic gripper-arm and articulated hand rendered as an antique automaton patent illustration, fine brass servos, gear-teeth and knurled joints at the wrist, a single circuit-trace etched like a leaf-vein down the forearm in teal (#3C7A8A), delicate copper root-tendrils descending from the base into the soil line (echoing the Viver hammer-with-roots seal), a small engraved maker's cartouche reading "A2A", antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="rkg 1b robot — the handshake key graphite + teal ⬢ start here">
+          <header class="card-h">
+            <span class="code">RKG 1b</span>
+            <span class="name">Robot — the handshake key</span>
+            <span class="accent">graphite + teal</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique brass key whose bit is shaped like a circuit-board fingerprint and whose bow is two clasped mechanical hands, fine engraving, a JSON brace &quot;{ }&quot; worked discreetly into the shaft, ivy and copper traces entwined, roots into a ledger of endpoints, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique brass key whose bit is shaped like a circuit-board fingerprint and whose bow is two clasped mechanical hands, fine engraving, a JSON brace "{ }" worked discreetly into the shaft, ivy and copper traces entwined, roots into a ledger of endpoints, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="mkg 2b marketing — refreshed sibling (optional) brass + amber ⬢ start here">
+          <header class="card-h">
+            <span class="code">MKG 2b</span>
+            <span class="name">Marketing — refreshed sibling (optional)</span>
+            <span class="accent">brass + amber</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique brass megaphone / speaking-trumpet sprouting climbing vines and a single trumpet-flower at the bell, concentric sound-rings drawn as faint draftsman arcs radiating from the mouth, an &quot;axis-mundi&quot; signal-tree growing from the handle with roots into the soil line, amber (#C68A3D) lamp-glow at the bell, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique brass megaphone / speaking-trumpet sprouting climbing vines and a single trumpet-flower at the bell, concentric sound-rings drawn as faint draftsman arcs radiating from the mouth, an "axis-mundi" signal-tree growing from the handle with roots into the soil line, amber (#C68A3D) lamp-glow at the bell, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Building tier (6)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        
+        <div class="cards">
+        <article class="card" data-search="pkg parenting mulberry #6b4267 building tier (6)">
+          <header class="card-h">
+            <span class="code">PKG</span>
+            <span class="name">Parenting</span>
+            <span class="accent">mulberry #6B4267</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique brass balance-scale cradling a swaddled seedling in one pan and a heart-shaped seed pod in the other, fine measurement ticks, mulberry (#6B4267) ribbon, delicate roots threading the base, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique brass balance-scale cradling a swaddled seedling in one pan and a heart-shaped seed pod in the other, fine measurement ticks, mulberry (#6B4267) ribbon, delicate roots threading the base, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="fshkg fashion burgundy #7a2e3e building tier (6)">
+          <header class="card-h">
+            <span class="code">FshKG</span>
+            <span class="name">Fashion</span>
+            <span class="accent">burgundy #7A2E3E</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A tailor's dress-form and a threaded needle drawn as a single specimen, a cloth measuring-tape coiling up the stand like a vine, thread-spools rendered as seed pods, a burgundy (#7A2E3E) silk thread, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A tailor's dress-form and a threaded needle drawn as a single specimen, a cloth measuring-tape coiling up the stand like a vine, thread-spools rendered as seed pods, a burgundy (#7A2E3E) silk thread, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="vankg vanilla vanilla cream #e8d58a + pod brown #5c3a1f building tier (6)">
+          <header class="card-h">
+            <span class="code">VanKG</span>
+            <span class="name">Vanilla</span>
+            <span class="accent">vanilla cream #E8D58A + pod brown #5C3A1F</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A vanilla orchid bloom and a single cured vanilla pod crossed like an heirloom specimen, fine cross-hatching on the pod's seams, a planter's ledger and roots beneath, warm vanilla-cream (#E8D58A) and pod-brown (#5C3A1F) tones, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A vanilla orchid bloom and a single cured vanilla pod crossed like an heirloom specimen, fine cross-hatching on the pod's seams, a planter's ledger and roots beneath, warm vanilla-cream (#E8D58A) and pod-brown (#5C3A1F) tones, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="nmk naturemark forest #3c5a4a + rust poppy building tier (6)">
+          <header class="card-h">
+            <span class="code">NMK</span>
+            <span class="name">NatureMark</span>
+            <span class="accent">forest #3C5A4A + rust poppy</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A printer's press platen entwined with a poppy and a young oak, a maker's mark stamped into the corner like a wax seal, fabric-weave texture at the base with roots threading through it, forest-green (#3C5A4A) with a single rust poppy, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A printer's press platen entwined with a poppy and a young oak, a maker's mark stamped into the corner like a wax seal, fabric-weave texture at the base with roots threading through it, forest-green (#3C5A4A) with a single rust poppy, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="culkg cultivar spring green #7ca85a + steel building tier (6)">
+          <header class="card-h">
+            <span class="code">CulKG</span>
+            <span class="name">Cultivar</span>
+            <span class="accent">spring green #7CA85A + steel</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A robotic harvest arm with brass secateurs tending a grafted cultivar in a terracotta pot, a barcode etched as a leaf-vein, a steel trellis, fine roots through the soil, spring-green (#7CA85A) foliage, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A robotic harvest arm with brass secateurs tending a grafted cultivar in a terracotta pot, a barcode etched as a leaf-vein, a steel trellis, fine roots through the soil, spring-green (#7CA85A) foliage, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="reskg resale &amp; vintage patina #5c8474 + aged brass building tier (6)">
+          <header class="card-h">
+            <span class="code">ResKG</span>
+            <span class="name">Resale &amp; Vintage</span>
+            <span class="accent">patina #5C8474 + aged brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique pocket-watch and a wax authentication seal tied to a provenance tag, a vine of patinated brass coiling between them, roots into a ledger of prior owners, patina-green (#5C8474) and aged-brass tones, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique pocket-watch and a wax authentication seal tied to a provenance tag, a vine of patinated brass coiling between them, roots into a ledger of prior owners, patina-green (#5C8474) and aged-brass tones, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Scoped tier (9)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        <p class="group-note">Five subjects didn't name their accent hex in the brief, so it's appended (flagged): LKG, AgKG, PhKG, IKG, GKG.</p>
+        <div class="cards">
+        <article class="card" data-search="lkg legal deep teal #234c5a scoped tier (9)">
+          <header class="card-h">
+            <span class="code">LKG</span>
+            <span class="name">Legal</span>
+            <span class="accent">deep teal #234C5A</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A balance-scale and a quill crossed over an open statute book, ivy threading the pages, a wax seal at the spine, fine measurement ticks, deep-teal (#234C5A) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A balance-scale and a quill crossed over an open statute book, ivy threading the pages, a wax seal at the spine, fine measurement ticks, deep-teal (#234C5A) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="edkg education sage #5e7a56 scoped tier (9)">
+          <header class="card-h">
+            <span class="code">EdKG</span>
+            <span class="name">Education</span>
+            <span class="accent">sage #5E7A56</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An open primer book and a brass protractor-orrery, a seedling used as a bookmark, roots descending into a slate tablet, sage-green foliage, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An open primer book and a brass protractor-orrery, a seedling used as a bookmark, roots descending into a slate tablet, sage-green foliage, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="fkg finance teal #3c7a8a scoped tier (9)">
+          <header class="card-h">
+            <span class="code">FKG</span>
+            <span class="name">Finance</span>
+            <span class="accent">teal #3C7A8A</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique bell-jar over a sprouting stack of coins, a stock-ticker tape unspooling like a vine, dimension ticks measuring growth, teal glass, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique bell-jar over a sprouting stack of coins, a stock-ticker tape unspooling like a vine, dimension ticks measuring growth, teal glass, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="agkg agriculture spring green #7ca85a scoped tier (9)">
+          <header class="card-h">
+            <span class="code">AgKG</span>
+            <span class="name">Agriculture</span>
+            <span class="accent">spring green #7CA85A</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A seed-drill mechanism and a wheat sheaf crossed, a soil-auger drawn as a taproot, a surveyor's field-arc behind, fine brass fittings, spring-green (#7CA85A) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A seed-drill mechanism and a wheat sheaf crossed, a soil-auger drawn as a taproot, a surveyor's field-arc behind, fine brass fittings, spring-green (#7CA85A) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="ekg energy amber #c68a3d scoped tier (9)">
+          <header class="card-h">
+            <span class="code">EKG</span>
+            <span class="name">Energy</span>
+            <span class="accent">amber #C68A3D</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A dynamo / coil rendered as a botanical specimen, copper windings drawn as climbing vines, a single lightning-bolt etched as a leaf-vein, amber lamp-glow, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A dynamo / coil rendered as a botanical specimen, copper windings drawn as climbing vines, a single lightning-bolt etched as a leaf-vein, amber lamp-glow, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="rekg real estate brass #b08d5c scoped tier (9)">
+          <header class="card-h">
+            <span class="code">REKG</span>
+            <span class="name">Real Estate</span>
+            <span class="accent">brass #B08D5C</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A surveyor's transit theodolite over an unrolled parcel map, a brass key drawn as a seed, property-line surveys threading into roots, dimension ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A surveyor's transit theodolite over an unrolled parcel map, a brass key drawn as a seed, property-line surveys threading into roots, dimension ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="phkg pharma &amp; biotech teal #3c7a8a scoped tier (9)">
+          <header class="card-h">
+            <span class="code">PhKG</span>
+            <span class="name">Pharma &amp; Biotech</span>
+            <span class="accent">teal #3C7A8A</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A mortar and pestle entwined with a DNA double-helix vine, a molecular lattice used as a trellis, a single bloom emerging, fine apothecary annotations, teal (#3C7A8A) glass accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A mortar and pestle entwined with a DNA double-helix vine, a molecular lattice used as a trellis, a single bloom emerging, fine apothecary annotations, teal (#3C7A8A) glass accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="ikg insurance steel #71797e + brass scoped tier (9)">
+          <header class="card-h">
+            <span class="code">IKG</span>
+            <span class="name">Insurance</span>
+            <span class="accent">steel #71797E + brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An umbrella drawn as a ribbed botanical canopy sheltering a small house-shaped seedling, actuarial measurement ticks radiating, brass ribs, steel shaft, steel-grey (#71797E) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An umbrella drawn as a ribbed botanical canopy sheltering a small house-shaped seedling, actuarial measurement ticks radiating, brass ribs, steel shaft, steel-grey (#71797E) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="gkg government &amp; defense sepia #5a3b1f + forest scoped tier (9)">
+          <header class="card-h">
+            <span class="code">GKG</span>
+            <span class="name">Government &amp; Defense</span>
+            <span class="accent">sepia #5A3B1F + forest</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A surveyor's compass-and-shield with an eagle-fern, a cornerstone with roots descending beneath it, an engraved seal cartouche, restrained and civic, sepia (#5A3B1F) and forest-green (#3C5A4A) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A surveyor's compass-and-shield with an eagle-fern, a cornerstone with roots descending beneath it, an engraved seal cartouche, restrained and civic, sepia (#5A3B1F) and forest-green (#3C5A4A) accents, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Frontier · Tier 1 — build-now (7)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        
+        <div class="cards">
+        <article class="card" data-search="ext extinction sepia / brass frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">EXT</span>
+            <span class="name">Extinction</span>
+            <span class="accent">sepia / brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A pressed specimen of an extinct bird (great auk) on a herbarium sheet, an hourglass worked into the mounting, a faded handwritten label, a single fallen feather, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A pressed specimen of an extinct bird (great auk) on a herbarium sheet, an hourglass worked into the mounting, a faded handwritten label, a single fallen feather, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="snd sound brass frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">SND</span>
+            <span class="name">Sound</span>
+            <span class="accent">brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique brass phonograph horn sprouting a songbird and a reed, concentric soundwave arcs drawn as draftsman ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique brass phonograph horn sprouting a songbird and a reed, concentric soundwave arcs drawn as draftsman ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="mig migration brass / teal map frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">MIG</span>
+            <span class="name">Migration</span>
+            <span class="accent">brass / teal map</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A migratory bird wearing a brass tracking ring over a globe-gore map, dotted flight-path lines drawn as vines, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A migratory bird wearing a brass tracking ring over a globe-gore map, dotted flight-path lines drawn as vines, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="mnd mind sepia / coral frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">MND</span>
+            <span class="name">Mind</span>
+            <span class="accent">sepia / coral</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A cross-section of a brain drawn as a branching coral / root system, neuron-dendrites rendered as delicate botanical tendrils, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A cross-section of a brain drawn as a branching coral / root system, neuron-dendrites rendered as delicate botanical tendrils, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="fos fossil brass / stone frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">FOS</span>
+            <span class="name">Fossil</span>
+            <span class="accent">brass / stone</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An ammonite and a fern fossil embedded in a stone slab, brass calipers measuring the logarithmic spiral, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An ammonite and a fern fossil embedded in a stone slab, brass calipers measuring the logarithmic spiral, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="col colony sepia / brass frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">COL</span>
+            <span class="name">Colony</span>
+            <span class="accent">sepia / brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An ant-colony cutaway drawn as an architectural section, brood chambers rendered as seed pods, a single queen specimen above, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An ant-colony cutaway drawn as an architectural section, brood chambers rendered as seed pods, a single queen specimen above, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="myc mycelium sepia / sage frontier · tier 1 — build-now (7)">
+          <header class="card-h">
+            <span class="code">MYC</span>
+            <span class="name">Mycelium</span>
+            <span class="accent">sepia / sage</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A mushroom specimen with its full mycelial network drawn as an exposed root-map, a spore-print rendered as a dotted annotation, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A mushroom specimen with its full mycelial network drawn as an exposed root-map, a spore-print rendered as a dotted annotation, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Frontier · Tier 2 — year-two (8)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        
+        <div class="cards">
+        <article class="card" data-search="lan language sepia / brass frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">LAN</span>
+            <span class="name">Language</span>
+            <span class="accent">sepia / brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An engraved Rosetta-style tablet sprouting a tree whose leaves are different scripts, a reed-quill, glyphs drawn as leaf-veins, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An engraved Rosetta-style tablet sprouting a tree whose leaves are different scripts, a reed-quill, glyphs drawn as leaf-veins, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="dsa deep sea teal glass frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">DSA</span>
+            <span class="name">Deep Sea</span>
+            <span class="accent">teal glass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An anglerfish specimen whose bioluminescent lure is a small lantern-bloom, a depth-gauge scale in the margin, teal glass glints, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An anglerfish specimen whose bioluminescent lure is a small lantern-bloom, a depth-gauge scale in the margin, teal glass glints, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="bio bioluminescence teal flash core frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">BIO</span>
+            <span class="name">Bioluminescence</span>
+            <span class="accent">teal flash core</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A jellyfish drawn as a blown-glass orrery, glowing tendrils, one deliberate ≤12px teal flash (#00FFE0) at the core, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A jellyfish drawn as a blown-glass orrery, glowing tendrils, one deliberate ≤12px teal flash (#00FFE0) at the core, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="pol pollen brass / sepia frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">POL</span>
+            <span class="name">Pollen</span>
+            <span class="accent">brass / sepia</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A single pollen grain under an antique microscope drawn as an ornate seed, labeled sample vials in the margin, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A single pollen grain under an antique microscope drawn as an ornate seed, labeled sample vials in the margin, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="hrb herbarium brass / sage (meta) frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">HRB</span>
+            <span class="name">Herbarium</span>
+            <span class="accent">brass / sage (meta)</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A classic mounted herbarium sheet with paper mounting-strips and a brass plant-press, the meta-specimen of the whole family, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A classic mounted herbarium sheet with paper mounting-strips and a brass plant-press, the meta-specimen of the whole family, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="ocn ocean core teal / strata frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">OCN</span>
+            <span class="name">Ocean Core</span>
+            <span class="accent">teal / strata</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A drilling core-sample tube revealing banded strata, a brass coring-bit, a sea-fan drawn as a vine, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A drilling core-sample tube revealing banded strata, a brass coring-bit, a sea-fan drawn as a vine, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="atm atom brass / radium glow frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">ATM</span>
+            <span class="name">Atom</span>
+            <span class="accent">brass / radium glow</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A Bohr-model atom drawn as a brass orrery, electron-orbits rendered as vines, one faint radium glow, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A Bohr-model atom drawn as a brass orrery, electron-orbits rendered as vines, one faint radium glow, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="vst variable star brass / astral frontier · tier 2 — year-two (8)">
+          <header class="card-h">
+            <span class="code">VST</span>
+            <span class="name">Variable Star</span>
+            <span class="accent">brass / astral</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A brass star-chart astrolabe centered on a pulsing variable star, a light-curve drawn as a measurement graph in the margin, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A brass star-chart astrolabe centered on a pulsing variable star, a light-curve drawn as a measurement graph in the margin, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Frontier · Tier 3 — years 3–5 / editorial (9)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        
+        <div class="cards">
+        <article class="card" data-search="sup suppressed medicine apothecary sepia frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">SUP</span>
+            <span class="name">Suppressed Medicine</span>
+            <span class="accent">apothecary sepia</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An apothecary's cabinet of labeled vials sprouting a single healing herb, a sealed scroll, restrained and careful, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An apothecary's cabinet of labeled vials sprouting a single healing herb, a sealed scroll, restrained and careful, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="shp shipwreck brass / coral frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">SHP</span>
+            <span class="name">Shipwreck</span>
+            <span class="accent">brass / coral</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A ship's brass compass and an anchor entwined with coral, a wreck cross-section drawn as a schematic below, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A ship's brass compass and an anchor entwined with coral, a wreck cross-section drawn as a schematic below, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="rom roman world laurel / brass frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">ROM</span>
+            <span class="name">Roman World</span>
+            <span class="accent">laurel / brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A Roman milestone and an aqueduct arch wreathed in laurel, a route-map drawn as a vine across a globe-gore, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A Roman milestone and an aqueduct arch wreathed in laurel, a route-map drawn as a vine across a globe-gore, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="wel wellcome medicine sepia (dignified) frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">WEL</span>
+            <span class="name">Wellcome Medicine</span>
+            <span class="accent">sepia (dignified)</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An antique anatomical figure drawn as a botanical écorché, a discreet caduceus echo, healing herbs at the base, dignified, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An antique anatomical figure drawn as a botanical écorché, a discreet caduceus echo, healing herbs at the base, dignified, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="neo neotoma sediment / amber frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">NEO</span>
+            <span class="name">Neotoma</span>
+            <span class="accent">sediment / amber</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A sediment core with embedded pollen and a single mastodon tooth, time-strata drawn as growth-rings, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A sediment core with embedded pollen and a single mastodon tooth, time-strata drawn as growth-rings, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="met meteorite iron / sepia frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">MET</span>
+            <span class="name">Meteorite</span>
+            <span class="accent">iron / sepia</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A meteorite specimen whose Widmanstätten crystalline pattern is drawn as leaf-veins, a fall-streak arc in the margin, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A meteorite specimen whose Widmanstätten crystalline pattern is drawn as leaf-veins, a fall-streak arc in the margin, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="imp impact db sepia / survey frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">IMP</span>
+            <span class="name">Impact DB</span>
+            <span class="accent">sepia / survey</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An impact-crater cross-section drawn as an opening flower, ejecta-rays as vines, a survey-arc scale, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An impact-crater cross-section drawn as an opening flower, ejecta-rays as vines, a survey-arc scale, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="fac facebase sepia frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">FAC</span>
+            <span class="name">FaceBase</span>
+            <span class="accent">sepia</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A craniofacial specimen drawn as a botanical bust, growth-vector ticks, fine sepia annotation, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A craniofacial specimen drawn as a botanical bust, growth-vector ticks, fine sepia annotation, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="kin kinsey rose / sepia (discreet) frontier · tier 3 — years 3–5 / editorial (9)">
+          <header class="card-h">
+            <span class="code">KIN</span>
+            <span class="name">Kinsey</span>
+            <span class="accent">rose / sepia (discreet)</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A discreet sealed archive box with a single rose specimen resting on a research ledger, restrained, scholarly, no sensationalism, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A discreet sealed archive box with a single rose specimen resting on a research ledger, restrained, scholarly, no sensationalism, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Frontier · Tier 4 — civilization-scale (8)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        
+        <div class="cards">
+        <article class="card" data-search="ear endangered archives sepia / glass frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">EAR</span>
+            <span class="name">Endangered Archives</span>
+            <span class="accent">sepia / glass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A crumbling manuscript scroll rescued under protective glass, a preserving vine, archival measurement ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A crumbling manuscript scroll rescued under protective glass, a preserving vine, archival measurement ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="eeb early english books ink / brass frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">EEB</span>
+            <span class="name">Early English Books</span>
+            <span class="accent">ink / brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An early printing-press forme and a movable-type case sprouting a single letterform drawn as a vine, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An early printing-press forme and a movable-type case sprouting a single letterform drawn as a vine, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="arc archaeology sepia / strata frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">ARC</span>
+            <span class="name">Archaeology</span>
+            <span class="accent">sepia / strata</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A trowel and a potsherd set in a stratigraphic section, a measuring-tape drawn as a descending root, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A trowel and a potsherd set in a stratigraphic section, a measuring-tape drawn as a descending root, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="adn ancient dna bone / sage helix frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">ADN</span>
+            <span class="name">Ancient DNA</span>
+            <span class="accent">bone / sage helix</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A double-helix drawn through an ancient skull specimen, a bone needle, a lineage-tree rendered as branching vines, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A double-helix drawn through an ancient skull specimen, a bone needle, a lineage-tree rendered as branching vines, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="flk folkways wood / brass frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">FLK</span>
+            <span class="name">Folkways</span>
+            <span class="accent">wood / brass</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A banjo and fiddle drawn as botanical instruments, a songline vine, a small field-recording horn, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A banjo and fiddle drawn as botanical instruments, a songline vine, a small field-recording horn, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="wax wax cylinder brass / wax frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">WAX</span>
+            <span class="name">Wax Cylinder</span>
+            <span class="accent">brass / wax</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An Edison wax cylinder on a brass mandrel, the groove-spiral drawn as a vine, a small horn-bloom, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An Edison wax cylinder on a brass mandrel, the groove-spiral drawn as a vine, a small horn-bloom, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="pmp paleomap globe / sepia frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">PMP</span>
+            <span class="name">PaleoMap</span>
+            <span class="accent">globe / sepia</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A Pangaea globe-gore with tectonic-plate boundaries drawn as vines, a compass rose, deep-time measurement ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A Pangaea globe-gore with tectonic-plate boundaries drawn as vines, a compass rose, deep-time measurement ticks, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="pgs pages 2k ice / sage rings frontier · tier 4 — civilization-scale (8)">
+          <header class="card-h">
+            <span class="code">PGS</span>
+            <span class="name">PAGES 2K</span>
+            <span class="accent">ice / sage rings</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="An ice-core and a tree-ring cross-section paired as specimens, a temperature curve drawn as a climbing vine, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">An ice-core and a tree-ring cross-section paired as specimens, a temperature curve drawn as a climbing vine, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+      <section class="group" data-group>
+        <div class="group-h">
+          <h2>Frontier · Tier 5 — consciousness frontier (4)</h2>
+          <button class="copy-all" type="button">Copy all in this group</button>
+        </div>
+        <p class="group-note">Restrained by design — build only after trust earned. PSY explicitly bans neon.</p>
+        <div class="cards">
+        <article class="card" data-search="drm dream moonlight (restrained) frontier · tier 5 — consciousness frontier (4)">
+          <header class="card-h">
+            <span class="code">DRM</span>
+            <span class="name">Dream</span>
+            <span class="accent">moonlight (restrained)</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A sleeping luna-moth and a crescent-moon lantern over an open dream-journal, soft tendrils, deliberately restrained and quiet, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A sleeping luna-moth and a crescent-moon lantern over an open dream-journal, soft tendrils, deliberately restrained and quiet, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="nde near-death calla cream (spare) frontier · tier 5 — consciousness frontier (4)">
+          <header class="card-h">
+            <span class="code">NDE</span>
+            <span class="name">Near-Death</span>
+            <span class="accent">calla cream (spare)</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A single luminous corridor-arch drawn as an opening calla bloom, a faint light at the vanishing point, dignified and spare, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A single luminous corridor-arch drawn as an opening calla bloom, a faint light at the vanishing point, dignified and spare, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="psy psychedelic muted mandala — no neon frontier · tier 5 — consciousness frontier (4)">
+          <header class="card-h">
+            <span class="code">PSY</span>
+            <span class="name">Psychedelic</span>
+            <span class="accent">muted mandala — NO neon</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A geometric mandala-bloom drawn as a symmetrical botanical specimen, fine fractal cross-hatching, muted herbarium palette only — absolutely no neon, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A geometric mandala-bloom drawn as a symmetrical botanical specimen, fine fractal cross-hatching, muted herbarium palette only — absolutely no neon, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        <article class="card" data-search="uap unidentified brass / star-field frontier · tier 5 — consciousness frontier (4)">
+          <header class="card-h">
+            <span class="code">UAP</span>
+            <span class="name">Unidentified</span>
+            <span class="accent">brass / star-field</span>
+          </header>
+          
+          <textarea class="prompt" readonly rows="3" data-base="A brass observatory dome and a saucer-shaped seed pod over a faint star-field, a sighting-log ledger, restrained, scholarly, no kitsch, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250">A brass observatory dome and a saucer-shaped seed pod over a faint star-field, a sighting-log ledger, restrained, scholarly, no kitsch, antique scientific botanical plate, Victorian herbarium engraving fused with a Renaissance engineering schematic, single subject centered on aged CREAM PARCHMENT (#F2E9D2, never white), fine sepia-ink (#5A3B1F) copperplate cross-hatching and stipple, muted desaturated palette of teal (#3C7A8A), rust (#A53A2D), antique brass (#B08D5C) and sage (#5E7A56), faint draftsman grid and handwritten naturalist annotations with measurement ticks in the margins, delicate exposed roots / tendrils integrating with the subject, soft foxed paper texture, restrained and elegant, no modern UI, no glossy render, no neon, symmetrical and balanced --ar 1:1 --v 6 --style raw --stylize 250</textarea>
+          <button class="copy" type="button">Copy prompt</button>
+        </article>
+        </div>
+      </section>
+
+    <div class="done-wrap">
+      <h2>Status</h2>
+      <ul>
+        <li><span class="code done">PROBE</span> direction is converging, not locked — generate the twelve probes (no --sref), pick favorites, then the 55-prompt library below gets re-cut from the winners. The library still wears v3 plate language until then.</li>
+        <li><span class="code done">BKG · OKG · TKG · HKG</span> alive and animated — untouched until the probe settles the new direction</li>
+        <li><span class="code done">RKG / FshKG</span> earlier picks (automaton bust, dress-form) staged in kg-root assets/gardens/ as rkg-automaton-* and fshkg-fashion-* — parked there, no registry wiring, pending where taste lands</li>
+        <li><span class="code done">MKG 2a</span> the existing megaphone still needs its animation pass — no new generation needed</li>
+      </ul>
+    </div>
+
+    <p class="foot">Generated by <code>docs/design/midjourney-emblem-prompts.gen.mjs</code> — edit subjects there, run it, and this board + the markdown regenerate together. v4 (2026-06-12): taste converging via divergent probe; v1 engraving DNA × white field × less busy. The 55-prompt v3 library below is reference until the probe picks the winners.</p>
+  </div>
+
+  <div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+  var sref = "";
+  var toast = document.getElementById("toast");
+  var toastTimer = null;
+  function showToast(msg){
+    toast.textContent = msg; toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 1400);
+  }
+  // Robust copy: Clipboard API with a legacy execCommand fallback (works on file:// too).
+  function copyText(text){
+    function legacy(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.top="-1000px"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      var ok=false; try{ ok=document.execCommand("copy"); }catch(e){ ok=false; }
+      document.body.removeChild(ta); return ok;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).then(function(){return true;}).catch(function(){return legacy();});
+    }
+    return Promise.resolve(legacy());
+  }
+  function withSref(base){ return sref ? base + " " + sref : base; }
+
+  // Normalize the reference input into a Midjourney flag if the user pasted a bare URL.
+  function normalizeSref(v){
+    v = (v||"").trim();
+    if (!v) return "";
+    if (v.charAt(0) === "-") return v;                       // already a flag like --sref ... or --profile ...
+    if (/^https?:\/\//i.test(v)) return "--sref " + v;       // bare URL -> --sref URL
+    return v;                                                 // anything else, append verbatim
+  }
+
+  function refreshPrompts(){
+    var tas = document.querySelectorAll("textarea.prompt");
+    for (var i=0;i<tas.length;i++){ tas[i].value = withSref(tas[i].getAttribute("data-base")); }
+    var st = document.getElementById("srefState");
+    st.textContent = sref ? ("Appending to every prompt:  " + sref) : "";
+  }
+
+  document.getElementById("sref").addEventListener("input", function(e){
+    sref = normalizeSref(e.target.value);
+    refreshPrompts();
+  });
+
+  // Copy handlers
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest ? e.target.closest("button") : null;
+    if (!btn) return;
+
+    if (btn.id === "copyShared"){
+      copyText(document.getElementById("sharedBlock").value).then(function(ok){
+        flash(btn, ok); showToast(ok?"Shared block copied":"Copy failed — select & ⌘C");
+      });
+      return;
+    }
+    if (btn.classList.contains("copy")){
+      var ta = btn.parentNode.querySelector("textarea.prompt");
+      copyText(ta.value).then(function(ok){
+        flash(btn, ok);
+        var code = btn.parentNode.querySelector(".code");
+        showToast(ok ? ((code?code.textContent:"Prompt")+" copied") : "Copy failed — select & ⌘C");
+      });
+      return;
+    }
+    if (btn.classList.contains("copy-all")){
+      var section = btn.closest("section");
+      var tas = section.querySelectorAll("textarea.prompt");
+      var all = [];
+      for (var i=0;i<tas.length;i++){ if (tas[i].closest(".card").classList.contains("hidden")) continue; all.push(tas[i].value); }
+      copyText(all.join("\n\n")).then(function(ok){
+        flash(btn, ok); showToast(ok ? (all.length+" prompts copied") : "Copy failed");
+      });
+      return;
+    }
+  });
+  function flash(btn, ok){
+    if(!ok) return; btn.classList.add("ok");
+    var t = btn.textContent; setTimeout(function(){ btn.classList.remove("ok"); btn.textContent=t; }, 1100);
+  }
+
+  // Filter
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  var groups = Array.prototype.slice.call(document.querySelectorAll("section[data-group]"));
+  var countEl = document.getElementById("count");
+  function applyFilter(){
+    var q = document.getElementById("q").value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var hit = !q || c.getAttribute("data-search").indexOf(q) !== -1;
+      c.classList.toggle("hidden", !hit);
+      if (hit) shown++;
+    });
+    groups.forEach(function(g){
+      var any = g.querySelectorAll(".card:not(.hidden)").length > 0;
+      g.style.display = any ? "" : "none";
+    });
+    countEl.textContent = shown + " / " + 67 + " shown";
+  }
+  document.getElementById("q").addEventListener("input", applyFilter);
+  applyFilter();
+})();
+</script>
+</body>
+</html>
