@@ -4771,3 +4771,80 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Security note:** the Replicate token was pasted in chat this session, so it is in that transcript — **rotate it again** after this run.
 
 **Write-lane:** branch `media/3d-library-pipeline` → push → **PR for founder merge**. The Record demo site was not touched.
+
+---
+
+## 2026-08-17 — [Claude Code] LANE: `media/library-landing` — media library upload path + studio 3-D grid → PR
+**Agent:** Claude Code (Opus 5). Branch off `media/3d-library-pipeline` (`14a1d04`), NOT off main — that
+lane is still unmerged and this work builds on its taxonomy, `_lib.py` and migration. **This PR stacks:
+it cannot merge before the pipeline PR.** The studio change is a second PR in `rd-knowledge-garden`.
+
+**Corrections to the brief, found by reading the live DB read-only before writing anything
+(vlezoyalutexenbnzzui = knowledge-gardens-prod, confirmed by project id first as instructed):**
+- **`asset_type 'object-3d'` does not exist and cannot.** The live CHECK admits motion, emblem, plate,
+  glyph, icon, illustration, texture, background, crest, poster, moment. The repo's own token is
+  `3d-model` and the 20260816 migration already adds it — kept that, so the brief's `object-3d` was
+  dropped rather than introducing a second name for one thing.
+- **`generator 'higgsfield'` does not exist either.** Admitted: midjourney, firefly, flux, ideogram,
+  runway, kling, sora, human, upload, wan. Motion rows therefore ship `generator='upload'` with
+  `model='higgsfield/seedance_2_5'` and the real lineage in `params.provenance`. Deliberately NOT
+  `kling` — that would have recorded a false model.
+- **The brief's column list is short four NOT NULL columns:** `filename`, `mime_type`, `garden_scope`,
+  `key`. An insert with only the listed columns fails.
+- **`brand_assets.status` defaults to `'working'`, which is not in its own CHECK list**
+  (draft|in_review|brand_qa|published|retired). So *any* insert that omits `status` fails — the default
+  is unreachable. 264 live rows are all draft or published; nothing uses it. Every row this lane writes
+  sets status explicitly. **Flagged, not fixed** — repairing the default is a shared-prod migration and
+  belongs to whoever owns the table.
+- **Writing through `studio_library` is impossible**, confirming the prior lane: it is a plain view that
+  does not expose garden_scope / key / filename / mime_type / status, all NOT NULL. Rows go to
+  `brand_assets`.
+- **The bucket rejects GLBs.** `brand-assets` allows only png/jpeg/webp/svg+xml/mp4/webm, so every GLB
+  upload 400s at storage before reaching the catalog. `video/mp4` is already allowed, which is why
+  motion needs no bucket change at all.
+
+**What shipped:**
+- **`scripts/media/03_upload_studio.py`** rewritten for four families on the brief's layout —
+  `assets/bkg/3d/models/<slug>.glb`, `.../plates/plate-<slug>.jpg`, `.../blueprints/<slug>.png`,
+  `assets/bkg/motion/<name>.mp4`. Plates and blueprints carry `parent_asset_id` -> their GLB row; the
+  GLB's `params.poster_path` is what the studio grid posters its `<model-viewer>` from. `--verify` GETs
+  every public URL after the write and asserts 200, then prints the full list. Preflight is now
+  **family-aware**, so `--only-family=motion` runs before either migration lands.
+- **`scripts/media/04_blueprints.py`** (new) — the blueprint pass. Cookie-auths against
+  `/api/auth`, then one synchronous `/api/generate` per slug, saving `<slug>.png` plus a
+  prompt/seed sidecar. Resumable: a slug with a PNG is skipped, so an interrupted run does not re-bill.
+- **`supabase/migrations/20260817_brand_assets_bucket_glb_mime.sql`** (new) — appends
+  `model/gltf-binary` to the bucket allow-list, guarded, idempotent, with a post-condition that aborts
+  if the type is still absent. Carries an explicit multi-tenant scope warning: a bucket allow-list
+  cannot be scoped per prefix, so this widens it for all seven garden scopes.
+- **`rd-knowledge-garden` → `studio/public/gallery.html`** — the library grid renders `3d-model` with
+  `<model-viewer>` (auto-rotate, poster from `params.poster_path`, camera-controls in the lightbox),
+  plus a Specimens filter chip and a 3-D badge.
+
+**Bug found by actually running it:** a `<model-viewer>` with a `poster` never reveals its mesh —
+`reveal="auto"` is not enough, `dismissPoster()` is required, and a poster that 404s strands the model
+behind it permanently. Verified in a real browser: `loaded:true` / `modelIsVisible:false` until dismiss.
+Shipping the obvious markup would have left all 38 specimen tiles blank. Now wired to dismiss on `load`
+**and** on `error`, then re-verified with a deliberately broken poster path — mesh renders in both the
+grid tile and the lightbox.
+
+**Verified:** project id confirmed before any query · schema/constraints/view/bucket read live ·
+`03` dry run clean across all four families (38 specimens, 20 motion clips, `gfci-outlet` correctly held
+back as `regenerate`) · `--only-family=motion` isolates to 20 clips · `04` dry run enumerates 39 slugs ·
+gallery renders 200 existing rows with no regression, 3-D grid + lightbox proven against a real GLB.
+
+**NOTHING WAS WRITTEN TO PROD.** No storage object, no catalog row, no DDL. Blocked on inputs, not on code:
+1. **`scripts/media/.env` does not exist** — no `SUPABASE_SERVICE_ROLE` anywhere on this machine, so
+   even the founder-approved DDL could not be applied and no upload could run.
+2. **`STUDIO_GATE_CODE` absent** — blueprint pass cannot authenticate. (The studio's own var is
+   `STUDIO_ACCESS_CODE`; our local copy is `STUDIO_GATE_CODE`.)
+3. **Both migrations unapplied** — GLB rows and GLB storage both rejected until they land.
+4. `assets-staging/` was never created and neither hand-off zip is on disk; per founder ruling the
+   payload is instead the 38 `ready` specimens the pipeline itself produced, so this is not a blocker.
+
+**Acceptance status:** motion (20) and specimens (38 models + 38 plates) are ready to upload the moment
+the service key exists; motion needs nothing further. Blueprints are 0 of 39 until the gate code lands.
+The brief's "15 plates + 15 objects" target is stale — the pipeline produced 38.
+
+**Write-lane:** branch `media/library-landing` → push → **PR for founder merge** (stacked on
+`media/3d-library-pipeline`). Studio: branch `media/studio-3d-grid` in `rd-knowledge-garden` → separate PR.
