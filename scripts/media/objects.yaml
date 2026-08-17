@@ -1,0 +1,311 @@
+# BKG 3-D specimen library — taxonomy v1
+#
+# One entry per specimen object. This file is the single source of truth for the
+# media pipeline in this folder: 01 reads it to build image prompts, 02 turns the
+# images into meshes, 03 publishes the results, preview.py renders contact sheets.
+#
+# Fields
+#   slug         kebab-case id. Becomes the filename stem AND the storage path
+#                (assets/bkg/3d/<slug>.glb) AND the brand_assets.slug. Never reuse.
+#   title        human title for the library row.
+#   domain       trade bucket. Also emitted as a tag on the library row.
+#   aesthetic    photoreal | ceramic. photoreal objects get BASE_STYLE wrapped
+#                around prompt_hint; ceramic objects use prompt_hint verbatim
+#                (they carry their own full studio description + brand glaze).
+#   prompt_hint  the object description. For photoreal this is substituted into
+#                BASE_STYLE's {obj}; for ceramic it IS the whole prompt.
+#   status       ready      — generated and accepted, do not regenerate
+#                regenerate — generated but rejected, prompt fixed, re-run it
+#                todo       — never generated
+#
+# Only `regenerate` and `todo` rows are picked up by a default pipeline run.
+# Pass --all to force ready rows through again.
+
+version: 1
+
+objects:
+  # ---- v1 batch: generated 2026-08-16, accepted -----------------------------
+  - slug: breaker-panel
+    title: "Breaker Panel"
+    domain: electrical
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "residential electrical circuit breaker load center, gray metal cabinet with door open revealing two columns of breaker switches"
+
+  - slug: wall-furnace
+    title: "Wall Furnace"
+    domain: heat
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "vintage wall-mounted gas furnace heater with vented metal grille front, beige enamel finish"
+
+  - slug: kitchen-faucet
+    title: "Kitchen Faucet"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "chrome gooseneck kitchen faucet with single lever handle on a small mounting base"
+
+  - slug: garbage-disposal
+    title: "Garbage Disposal"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "under-sink garbage disposal unit, cylindrical black and stainless body"
+
+  - slug: dishwasher
+    title: "Dishwasher"
+    domain: appliance
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "stainless steel built-in dishwasher with front handle and control panel"
+
+  - slug: hvac-condenser
+    title: "HVAC Condenser"
+    domain: hvac
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "outdoor HVAC air conditioning condenser unit, beige metal cabinet with round fan grille on top"
+
+  - slug: smoke-detector
+    title: "Smoke Detector"
+    domain: safety
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "round white smoke detector alarm with vent slots"
+
+  - slug: deadbolt-lock
+    title: "Deadbolt Lock"
+    domain: hardware
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "brushed nickel deadbolt door lock set with keyed cylinder and thumb turn"
+
+  - slug: toilet
+    title: "Toilet"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white two-piece porcelain toilet with tank and closed lid"
+
+  - slug: pedestal-sink
+    title: "Pedestal Sink"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white porcelain pedestal bathroom sink"
+
+  - slug: gas-range
+    title: "Gas Range"
+    domain: appliance
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "stainless steel freestanding gas range oven with four burners and black cast-iron grates"
+
+  - slug: copper-fitting
+    title: "Copper Fitting"
+    domain: parts
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "copper plumbing pipe assembly with two elbow joints and a tee fitting, polished copper"
+
+  - slug: hammer-roots-3d
+    title: "Hammer Roots"
+    domain: brand
+    aesthetic: ceramic
+    status: ready
+    prompt_hint: "handcrafted matte ceramic figurine of a claw hammer standing upright, its wooden handle transitioning into sprawling bare tree roots at the base, deep teal glazed head, terracotta glazed handle, fine museum craft object, studio product photograph, isolated on a seamless pale warm-gray background, soft even lighting"
+
+  # ---- flagged for regeneration: prompts fixed 2026-08-16 -------------------
+  # ceiling-fan  v1 failed because thin blades defeat image-to-3D — the mesh
+  #              swallowed them. Fix: THICK solid blades, angled down, low camera.
+  - slug: ceiling-fan
+    title: "Ceiling Fan"
+    domain: electrical
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "ceiling fan with five THICK solid wooden blades, blades angled downward, viewed from slightly below, with a round center light fixture"
+
+  # thermostat   v1 failed because a small round face on a small plate extruded
+  #              into a cube. Fix: large flat circular plate, explicit shallow depth.
+  - slug: thermostat
+    title: "Thermostat"
+    domain: hvac
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "round smart thermostat with dark digital display mounted on a LARGE flat circular wall plate, shallow depth"
+
+  # ---- next 24: not yet generated ------------------------------------------
+  - slug: refrigerator
+    title: "Refrigerator"
+    domain: appliance
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "stainless steel french-door refrigerator with a freezer drawer below, doors closed, handles visible"
+
+  - slug: washer
+    title: "Washer"
+    domain: appliance
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white front-loading clothes washing machine with a round glass door and a control panel across the top"
+
+  - slug: dryer
+    title: "Dryer"
+    domain: appliance
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white front-loading clothes dryer with a large round door and a control panel across the top"
+
+  - slug: tank-water-heater-alt
+    title: "Tank Water Heater"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "tall cylindrical residential tank water heater, white insulated jacket, pipe connections on top and a lower access panel"
+
+  - slug: tankless-water-heater
+    title: "Tankless Water Heater"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "wall-mounted tankless water heater, compact white rectangular box with copper pipe connections underneath"
+
+  - slug: sump-pump
+    title: "Sump Pump"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "submersible sump pump, cast iron cylindrical body with a bulb float switch on the side and a thick top discharge outlet"
+
+  - slug: garage-door-opener
+    title: "Garage Door Opener"
+    domain: hardware
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "ceiling-mounted garage door opener motor unit, gray rectangular housing with a light lens and a short section of drive rail attached"
+
+  - slug: window-double-hung
+    title: "Double-Hung Window"
+    domain: envelope
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white vinyl double-hung window unit with two sashes and a THICK solid frame, glass panes clear, standing upright"
+
+  - slug: exterior-door
+    title: "Exterior Door"
+    domain: envelope
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "residential exterior entry door slab with six raised panels, painted deep green, brushed nickel lever handle and deadbolt, standing upright"
+
+  - slug: gutter-downspout-section
+    title: "Gutter & Downspout Section"
+    domain: envelope
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "short section of white aluminum K-style rain gutter with a downspout elbow attached, THICK solid walls"
+
+  - slug: asphalt-shingle-bundle
+    title: "Asphalt Shingle Bundle"
+    domain: envelope
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "bundle of charcoal gray asphalt roofing shingles wrapped in plastic, stacked flat as one solid block"
+
+  - slug: pvc-p-trap
+    title: "PVC P-Trap"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white PVC sink p-trap drain assembly with slip-joint nuts and a tailpiece, THICK pipe walls"
+
+  - slug: ball-valve
+    title: "Ball Valve"
+    domain: plumbing
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "brass ball valve with a red lever handle and threaded ends, chunky solid body"
+
+  # v2 note — a RECTANGULAR flat plate still extrudes into a cube (the thermostat
+  # failure mode); a CIRCULAR one does not, because the round silhouette gives
+  # Trellis no cube to snap to. Fix for rectangular plates is to make the thin
+  # profile visible in the image itself: show the edge, and say how thin it is.
+  - slug: gfci-outlet
+    title: "GFCI Outlet"
+    domain: electrical
+    aesthetic: photoreal
+    status: regenerate
+    prompt_hint: "white GFCI electrical outlet receptacle with TEST and RESET buttons clearly visible on its face, mounted on a LARGE flat rectangular wall plate, shallow depth"
+
+  - slug: light-switch-dimmer
+    title: "Dimmer Switch"
+    domain: electrical
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "white rocker light switch with a vertical slide dimmer beside it, mounted on a LARGE flat rectangular wall plate, shallow depth, turned to a three-quarter angle so the thin side edge of the plate is visible"
+
+  - slug: recessed-light-can
+    title: "Recessed Light Can"
+    domain: electrical
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "recessed ceiling light housing can, cylindrical aluminum canister with a white trim ring and THICK mounting brackets"
+
+  - slug: bathroom-exhaust-fan
+    title: "Bathroom Exhaust Fan"
+    domain: hvac
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "bathroom ceiling exhaust fan unit, white square grille cover attached to a solid metal housing box above it"
+
+  - slug: radiator-cast-iron
+    title: "Cast Iron Radiator"
+    domain: heat
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "vintage cast iron steam radiator with six THICK vertical columns, painted cream, standing on small feet"
+
+  - slug: mini-split-head
+    title: "Mini-Split Head"
+    domain: hvac
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "wall-mounted ductless mini-split air conditioner indoor head unit, white curved plastic housing with a horizontal vent louver, solid body"
+
+  - slug: ladder-6ft
+    title: "Six-Foot Step Ladder"
+    domain: tools
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "six foot aluminum step ladder in the open A-frame position with a fold-out top tray, THICK solid rails and steps"
+
+  - slug: toolbox-open
+    title: "Open Toolbox"
+    domain: tools
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "red steel cantilever toolbox with the lid open showing tiered trays, solid chunky form"
+
+  - slug: cordless-drill
+    title: "Cordless Drill"
+    domain: tools
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "cordless power drill with a battery pack in the handle, keyless chuck, dark gray and yellow body, resting upright"
+
+  - slug: wheelbarrow
+    title: "Wheelbarrow"
+    domain: tools
+    aesthetic: photoreal
+    status: ready
+    prompt_hint: "steel tray wheelbarrow with a single front wheel and two THICK wooden handles"
+
+  # roots-compass-marker is the brand waypoint object used on maps and covers.
+  # Ceramic register, same glaze family as hammer-roots-3d so they read as a set.
+  - slug: roots-compass-marker
+    title: "Roots Compass Marker"
+    domain: brand
+    aesthetic: ceramic
+    status: ready
+    prompt_hint: "handcrafted matte ceramic figurine of a surveyor's compass rose marker standing upright on a rounded base, the base transitioning into sprawling bare tree roots, deep teal glazed compass face with terracotta glazed roots, fine museum craft object, studio product photograph, isolated on a seamless pale warm-gray background, soft even lighting"

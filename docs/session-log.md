@@ -4727,3 +4727,47 @@ CC holds BKG write-lane — code: nav-chrome demo blockers (compass bloom restor
 **Supersedes `fix/pricing-herbarium-rebrand`** — merge THIS branch (it carries the redesign AND the $99 canon); close the rebrand PR to avoid the price regression. The 7 non-pricing files the price-reconcile chip touched (`mcp`, `profile`, `CopilotPanel`, `LaneSelector`, `auth.tsx`…) landed via `#57` and are out of scope here.
 
 **Write-lane:** branch `feat/pricing-herbarium-canon` → push → **PR for founder merge**.
+
+---
+
+## 2026-08-16 · Chat — Media library v1 + Record demo v3
+- Generated 15 3-D assets (FLUX→Trellis→draco): 13 ready, 2 flagged regenerate (ceiling-fan, thermostat).
+- Record demo v3: mascot 3-D on cover, per-issue specimen models (breaker/furnace/dishwasher/heater), models on manager + contractor views. Full harness green; ledger reconciles.
+- Ruling: three aesthetic registers (photoreal / engraved plate / glazed ceramic). Ruling: every noun gets a specimen.
+- Library seed zip + pipeline scripts handed to Code lane. Replicate token rotated post-session.
+
+---
+
+## 2026-08-16 — [Claude Code] LANE: `media/3d-library-pipeline` — repeatable 3-D specimen pipeline + 24 new specimens → PR
+**Agent:** Claude Code (Opus 5). Worktree off `origin/main` @ `91472e0`. Picks up the Chat lane's hand-off: the v1 seed zip (15 assets, 13 accepted) plus the four proven Replicate scripts, to be turned into a pipeline that lives in the repo and a library that lives in Supabase.
+
+**What shipped — `scripts/media/` (new):**
+- **`objects.yaml`** — the taxonomy, 39 rows (slug / title / domain / aesthetic / prompt_hint / status). Single source of truth: 01 builds prompts from it, 03 gates uploads on it, `preview.py` titles from it. A default run picks up `todo` + `regenerate` only.
+- **`_lib.py`** — taxonomy loader (PyYAML when present, strict stdlib mini-parser when not, so a clean machine needs no `pip install`), Replicate client with backoff, and a **resumable** poller that checkpoints after every settled prediction — a killed run resumes instead of re-billing.
+- **`01_generate_images.py` / `01b_poll_images.py`** — FLUX-dev. **`02_generate_3d.py` / `02b_poll_3d.py`** — Trellis (texture_size 1024, mesh_simplify 0.92) → `gltf-transform optimize --compress draco` → poster. Logic is the proven v1 run's; paths and the prompt source moved.
+- **`preview.py`** — a real CPU rasterizer: decodes Draco via gltf-transform, walks the glTF scene graph, z-buffers triangles with numpy, tiles thumbnails into a contact sheet. Renders **geometry, not posters** — both v1 rejects had good posters and bad meshes.
+- **`03_upload_studio.py`** — storage upload + catalog rows, dry-run by default.
+
+**Corrections to the brief, found by reading the live DB (read-only, 2026-08-16):**
+- **`public.studio_library` is a VIEW, not a table.** It selects from `brand_assets` where `bucket='brand-assets' AND status='published' AND visibility IN ('system','shared')`, and **computes** `public_url` from `storage_path`. So rows go to `brand_assets`, `public_url` is never inserted, and a specimen only appears in the library once published.
+- **There is no `bytes` column.** The real column is `file_size_bytes`; the value is also mirrored into `params.bytes`.
+- **Two CHECK constraints reject the specified tags** — `asset_type` does not admit `'3d-model'`, `generator` does not admit `'flux+trellis'`. Authored `supabase/migrations/20260816_brand_assets_3d_model_type.sql` (additive, idempotent, guarded, with an insert-probe post-condition) — **NOT applied**, shared prod, founder-supervised. `03` preflights for these values and **aborts with the remediation rather than mis-tagging specimens** as `illustration`/`flux` to squeeze past the constraint.
+- Each specimen writes **two** rows: the GLB (`3d-model` / `rendition_role='original'`) and its poster (`poster` / `rendition_role='poster'`, `parent_asset_id` → the GLB), which uses the schema as designed and needs no new poster column.
+
+**Generation results — 26 jobs (2 regenerate + 24 todo):**
+- **Both flagged v1 assets are fixed, verified in rendered geometry.** `thermostat` was a cube with an embossed circle → now a round puck on a circular plate. `ceiling-fan` had translucent wafer blades → now five solid blades with real volume.
+- **New failure found and fixed mid-run:** a **rectangular** flat plate still extrudes into a cube (a circular one does not — the round silhouette gives Trellis no cube to snap to). `light-switch-dimmer` came out an unrecognizable box; fixed on the third prompt to a proper thin switch plate.
+- **`gfci-outlet` is the one specimen that did not reach bar.** Four attempts traded face detail against depth and never held both — it keeps either a good receptacle face on a deep box, or a shallow plate with no face. Left `status: regenerate`, and **held back from upload** (03 uploads only `ready` rows), rather than shipped weak.
+- **38 of 39 specimens ready.** Every GLB **under 2,000,000 bytes** — decimal MB, the stricter of the two readings, so the gate passes however it is counted. Largest is `cordless-drill` at 1.94 MB.
+
+**Size gate is now self-healing.** Three meshes came out of plain Draco over budget (`ball-valve` 2.27 MB — *larger* than its 2.10 MB raw, because Draco compresses geometry while the 1024px texture dominates). `02b` now escalates: draco → 768px texture → 512px → 512px + 60% verts, stopping at the first that fits. All three landed ~1.3 MB at 768px with no visible loss.
+
+**Verification:** taxonomy loader parses 39/39 with schema validation · size gate 39/39 under 2 MB · `preview.py` renders 39/39, contact sheets committed · **model-viewer load gate** run in a real browser against a local server, one model at a time.
+
+**Bugs found in my own code and fixed:** the resumable poller carried the *whole* prior state into a `--only` re-run, so a subset run saw `len(done) >= len(preds)` and exited having collected nothing (state is now filtered to the current run's names, then merged back on save); the preview rasterizer took spurious Accelerate-BLAS FP warnings on SIMD padding (suppressed, with a real non-finite triangle filter kept as the actual data guard).
+
+**FOUNDER GATES:** (1) apply `20260816_brand_assets_3d_model_type.sql` on shared prod; (2) supply `SUPABASE_SERVICE_ROLE` in `scripts/media/.env` so `03` can upload — **no upload or catalog write has happened yet**; storage and DB are untouched by this lane. (3) Decide `--publish` (rows land `draft` by default and are invisible in `studio_library` until promoted).
+
+**Security note:** the Replicate token was pasted in chat this session, so it is in that transcript — **rotate it again** after this run.
+
+**Write-lane:** branch `media/3d-library-pipeline` → push → **PR for founder merge**. The Record demo site was not touched.
